@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://21labs.app/schemas/plugin-manifest/v1.json",
+  "title": "21labs Plugin Manifest v1",
+  "description": "Manifest inside a .21labs bundle. See docs/PLUGIN_MANIFEST_SCHEMA.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "version", "kind", "developer"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$",
+      "maxLength": 128,
+      "description": "Reverse-domain identifier: at least two dot-separated segments (developer handle + plugin name)."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "description": "Human-readable plugin name."
+    },
+    "version": { "$ref": "#/$defs/semver" },
+    "description": {
+      "type": "string",
+      "maxLength": 2000,
+      "description": "Short marketing blurb shown in the marketplace."
+    },
+      "kind": {
+        "enum": ["mcp-server", "model-pack", "voice-pack", "effects", "instruments", "ui-panel", "external-app"],
+        "description": "What the bundle installs. mcp-server, ui-panel, and external-app require an entry point. external-app launches an existing system application (a linking layer) and requires explicit user approval."
+      },
+    "developer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "pubkey": {
+          "type": "string",
+          "pattern": "^ed25519:[A-Za-z0-9+/]{43}=?$",
+          "description": "Ed25519 public key (base64 of 32 bytes) that signs this bundle. Required to list on the marketplace."
+        },
+        "email": { "type": "string", "maxLength": 254 },
+        "website": { "type": "string", "maxLength": 254 }
+      }
+    },
+    "entry": { "$ref": "#/$defs/entry" },
+    "tools": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z0-9._*-]+$" },
+      "maxItems": 256,
+      "description": "Assistant tool name patterns the plugin provides, e.g. 21labs.myplugin.export."
+    },
+    "models": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 128 },
+      "maxItems": 256,
+      "description": "Catalog model IDs this plugin bundles or requires."
+    },
+    "permissions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/permission" },
+      "uniqueItems": true,
+      "maxItems": 64,
+      "description": "Declared capabilities; shown to the user at install time."
+    },
+    "min_version": {
+      "$ref": "#/$defs/semver",
+      "description": "Minimum 21labs app version required to install."
+    },
+    "checksums": { "$ref": "#/$defs/checksums" }
+  },
+  "allOf": [
+    {
+      "description": "Runtime kinds must declare an entry point.",
+      "if": {
+        "properties": { "kind": { "enum": ["mcp-server", "ui-panel", "external-app"] } },
+        "required": ["kind"]
+      },
+      "then": { "required": ["entry"] }
+    }
+  ],
+  "$defs": {
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z-.]+)?(\\+[0-9A-Za-z-.]+)?$"
+    },
+    "permission": {
+      "enum": [
+        "read_captures",
+        "write_captures",
+        "read_generations",
+        "write_generations",
+        "read_profiles",
+        "write_profiles",
+        "read_models",
+        "write_models",
+        "network",
+        "microphone",
+        "filesystem"
+      ]
+    },
+    "checksums": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[A-Za-z0-9/._-]+$" },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+      },
+      "description": "Relative file path -> sha256 digest for every bundled file (POSIX-style paths)."
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["mcp", "ui", "external"] },
+        "command": { "type": "string", "minLength": 1, "description": "Executable or interpreter to launch (type=mcp, type=external). For type=external this must be an absolute path to an existing system binary the user approves at install." },
+        "args": { "type": "array", "items": { "type": "string" }, "maxItems": 64 },
+        "transport": { "enum": ["stdio", "socket"], "description": "MCP transport (default stdio)." },
+        "file": { "type": "string", "minLength": 1, "description": "Entry HTML/JS file (type=ui)." }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "mcp" } }, "required": ["type"] },
+          "then": { "required": ["command"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "ui" } }, "required": ["type"] },
+          "then": { "required": ["file"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "external" } }, "required": ["type"] },
+          "then": { "required": ["command"] }
+        }
+      ]
+    }
+  }
+}

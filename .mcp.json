@@ -1,0 +1,11 @@
+{
+  "servers": {
+    "21-labs": {
+      "type": "stdio",
+      "command": "21-labs-mcp",
+      "env": {
+        "TWENTYLABS_MCP_TRANSPORT": "stdio"
+      }
+    }
+  }
+}

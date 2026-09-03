@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://21labs.app/schemas/catalog-v1.json",
+  "title": "21labs Marketplace Catalog v1",
+  "description": "Signed product catalog bundled with the app. Updated via app updates (zero hosting cost).",
+  "type": "object",
+  "required": ["version", "generated_at", "products", "revoked_devices", "sig"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Catalog schema version"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of catalog generation"
+    },
+    "marketplace_public_key": {
+      "type": "string",
+      "description": "Hex-encoded Ed25519 public key for verifying product licenses"
+    },
+    "products": {
+      "type": "array",
+      "description": "List of products available in the marketplace",
+      "items": {
+        "$ref": "#/$defs/product"
+      }
+    },
+    "revoked_devices": {
+      "type": "array",
+      "description": "Device IDs (sha256) that have been revoked (e.g. after refund)",
+      "items": { "type": "string" }
+    },
+    "revoked_devices_sig": {
+      "type": "string",
+      "description": "Ed25519 signature over the revoked_devices list"
+    },
+    "sig": {
+      "type": "string",
+      "description": "Ed25519 signature over the entire catalog (excluding this field)"
+    }
+  },
+  "$defs": {
+    "product": {
+      "type": "object",
+      "required": ["id", "name", "category", "price_usd", "license", "checksum"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique catalog ID, e.g. 'tts.kokoro' or 'llm.qwopus-4b'",
+          "pattern": "^[a-z]+\\.[a-z0-9\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["tts", "stt", "llm", "vc", "music", "sfx", "spatial", "voice-pack", "plugin"],
+          "description": "Product category"
+        },
+        "price_usd": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Price in USD (0 = free)"
+        },
+        "free_after_promo": {
+          "type": "boolean",
+          "description": "If true, product is free for 30 days then switches to price_usd"
+        },
+        "license": {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["apache-2.0", "mit", "community", "custom", "non-commercial"],
+              "description": "License type"
+            },
+            "sellable": {
+              "type": "boolean",
+              "description": "Whether 21labs can sell this product commercially"
+            },
+            "revenue_cap_usd": {
+              "type": "number",
+              "description": "Revenue cap for threshold-licensed products (null = no cap)"
+            },
+            "attribution": {
+              "type": "string",
+              "description": "Required attribution text (e.g. 'Powered by Stability AI')"
+            },
+            "license_text_url": {
+              "type": "string",
+              "format": "uri",
+              "description": "URL to the full license text"
+            }
+          }
+        },
+        "engine": {
+          "type": "string",
+          "description": "Backend engine key this product maps to"
+        },
+        "model_size": {
+          "type": "string",
+          "description": "Model size variant (e.g. '82M', '1.7B')"
+        },
+        "download": {
+          "type": "object",
+          "properties": {
+            "repo_id": {
+              "type": "string",
+              "description": "HuggingFace repo ID or CDN path"
+            },
+            "filename": {
+              "type": "string",
+              "description": "Model filename within the repo"
+            },
+            "size_bytes": {
+              "type": "integer",
+              "description": "Download size in bytes"
+            }
+          }
+        },
+        "checksum": {
+          "type": "object",
+          "required": ["sha256"],
+          "properties": {
+            "sha256": {
+              "type": "string",
+              "description": "SHA-256 hash of the model file"
+            }
+          }
+        },
+        "description": {
+          "type": "string",
+          "description": "Short description for the marketplace listing"
+        },
+        "preview_audio_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to a sample audio clip"
+        },
+        "student_discount_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 50,
+          "description": "Student/indie discount (default: 30%)"
+        }
+      }
+    }
+  }
+}

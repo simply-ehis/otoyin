@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" rx="28" fill="#000000"/>
+  <!-- "2" -->
+  <text x="68" y="92" font-family="'Archivo Black', 'Arial Black', sans-serif" font-size="52" fill="#ffffff" text-anchor="middle">2</text>
+  <!-- "1" -->
+  <text x="118" y="92" font-family="'Archivo Black', 'Arial Black', sans-serif" font-size="52" fill="#ffffff" text-anchor="middle">1</text>
+  <!-- Audio waveform bars -->
+  <g stroke="#ffffff" stroke-width="4" stroke-linecap="round">
+    <line x1="44" y1="135" x2="44" y2="141"/>
+    <line x1="58" y1="130" x2="58" y2="146"/>
+    <line x1="72" y1="123" x2="72" y2="153"/>
+    <line x1="86" y1="127" x2="86" y2="149"/>
+    <line x1="100" y1="117" x2="100" y2="159"/>
+    <line x1="114" y1="126" x2="114" y2="150"/>
+    <line x1="128" y1="121" x2="128" y2="155"/>
+    <line x1="142" y1="129" x2="142" y2="147"/>
+    <line x1="156" y1="134" x2="156" y2="142"/>
+  </g>
+</svg>

@@ -1,0 +1,196 @@
+#!/bin/bash
+# Pre-commit gate: fast checks in parallel, then tests sequentially.
+# Uses local node_modules binaries to avoid cold-start.
+# bash-only, no pwsh dependency.
+set -uo pipefail
+
+root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+failed=0
+
+echo ""
+echo "=== 21-labs Pre-Commit Gate ==="
+echo ""
+
+# Use venv python when available
+PY="python"
+if [ -f "$root/backend/venv/Scripts/python.exe" ]; then PY="$root/backend/venv/Scripts/python.exe"
+elif [ -f "$root/backend/venv/bin/python" ]; then PY="$root/backend/venv/bin/python"
+fi
+RUFF="ruff"
+if [ -f "$root/backend/venv/Scripts/ruff.exe" ]; then RUFF="$root/backend/venv/Scripts/ruff.exe"
+elif [ -f "$root/backend/venv/bin/ruff" ]; then RUFF="$root/backend/venv/bin/ruff"
+fi
+
+# Use local binaries from node_modules (avoids bunx/npx cold-start)
+BIOME="$root/node_modules/.bin/biome"
+TSC="$root/node_modules/.bin/tsc"
+# Vitest lives in app/node_modules — run from app/ dir so setupFiles resolve
+VITEST="$root/app/node_modules/.bin/vitest"
+
+# Fall back to npx if local binaries don't exist
+if [ ! -x "$BIOME" ]; then BIOME="npx @biomejs/biome"; fi
+if [ ! -x "$TSC" ]; then TSC="npx tsc"; fi
+if [ ! -x "$VITEST" ]; then VITEST="npx vitest"; fi
+
+tmpdir=$(mktemp -d)
+trap 'rm -rf "$tmpdir"' EXIT
+
+# ═══════════════════════════════════════════════════════════════════
+# Phase 1: Fast checks IN PARALLEL
+# ═══════════════════════════════════════════════════════════════════
+
+echo "Phase 1: Fast checks (parallel)..."
+
+# [1] Biome lint
+(
+  cd "$root" && $BIOME lint app/src 2>&1 | tail -10
+  echo $? > "$tmpdir/biome.rc"
+) > "$tmpdir/biome.log" 2>&1 &
+pid_biome=$!
+
+# [2] TypeScript typecheck (use precommit tsconfig — excludes test files)
+(
+  cd "$root/app" && $TSC --noEmit -p tsconfig.precommit.json 2>&1 | tail -10
+  echo $? > "$tmpdir/tsc.rc"
+) > "$tmpdir/tsc.log" 2>&1 &
+pid_tsc=$!
+
+# [3] Ruff lint + format
+(
+  cd "$root" && rc=0
+  $RUFF check backend 2>&1 | tail -5 || rc=1
+  $RUFF format --check backend 2>&1 | tail -5 || rc=1
+  echo $rc > "$tmpdir/ruff.rc"
+) > "$tmpdir/ruff.log" 2>&1 &
+pid_ruff=$!
+
+# [4] Each static check runs in its own subshell (parallel + isolated imports)
+#    Each has a 30s timeout so one slow check doesn't block the rest.
+(
+  cd "$root" && timeout 30 $PY -X utf8 -m backend.scripts.check_async_blocking backend/routes 2>&1 | tail -3
+  echo $? > "$tmpdir/async.rc"
+) > "$tmpdir/async.log" 2>&1 &
+pid_async=$!
+
+(
+  cd "$root" && timeout 30 $PY -c "import sys; sys.path.insert(0,'.'); from backend.scripts.check_name_map import main; sys.exit(main())" 2>&1 | tail -3
+  echo $? > "$tmpdir/namemap.rc"
+) > "$tmpdir/namemap.log" 2>&1 &
+pid_namemap=$!
+
+(
+  cd "$root" && timeout 30 $PY -c "import sys; sys.path.insert(0,'.'); from backend.scripts.check_assistant_tools import main; sys.exit(main())" 2>&1 | tail -3
+  echo $? > "$tmpdir/assist.rc"
+) > "$tmpdir/assist.log" 2>&1 &
+pid_assist=$!
+
+(
+  cd "$root" && timeout 15 $PY -c "import sys; sys.path.insert(0,'.'); from backend.scripts.check_placeholders import main; sys.exit(main())" 2>&1 | tail -3
+  echo $? > "$tmpdir/placeholders.rc"
+) > "$tmpdir/placeholders.log" 2>&1 &
+pid_placeholders=$!
+
+# [5] Python syntax check (staged files only)
+(
+  cd "$root" && rc=0
+  staged_py=$(git diff --cached --name-only --diff-filter=ACM -- '*.py' 2>/dev/null | head -20)
+  if [ -n "$staged_py" ]; then
+    for f in $staged_py; do
+      if [ -f "$f" ]; then
+        $PY -c "import py_compile; py_compile.compile('$f', doraise=True)" 2>/dev/null || rc=1
+      fi
+    done
+  fi
+  echo $rc > "$tmpdir/import.rc"
+) > "$tmpdir/import.log" 2>&1 &
+pid_import=$!
+
+# Wait for ALL fast checks
+wait $pid_biome 2>/dev/null
+wait $pid_tsc 2>/dev/null
+wait $pid_ruff 2>/dev/null
+wait $pid_async 2>/dev/null
+wait $pid_namemap 2>/dev/null
+wait $pid_assist 2>/dev/null
+wait $pid_placeholders 2>/dev/null
+wait $pid_import 2>/dev/null
+
+# Report fast check results
+biome_rc=$(cat "$tmpdir/biome.rc" 2>/dev/null || echo 1)
+tsc_rc=$(cat "$tmpdir/tsc.rc" 2>/dev/null || echo 1)
+ruff_rc=$(cat "$tmpdir/ruff.rc" 2>/dev/null || echo 1)
+async_rc=$(cat "$tmpdir/async.rc" 2>/dev/null || echo 1)
+namemap_rc=$(cat "$tmpdir/namemap.rc" 2>/dev/null || echo 1)
+assist_rc=$(cat "$tmpdir/assist.rc" 2>/dev/null || echo 1)
+placeholders_rc=$(cat "$tmpdir/placeholders.rc" 2>/dev/null || echo 1)
+import_rc=$(cat "$tmpdir/import.rc" 2>/dev/null || echo 1)
+
+for check in biome:Biome tsc:TypeScript ruff:Ruff async:Async-BLocking namemap:NAME_MAP assist:Assistant-Tools placeholders:Placeholders import:Python-Import; do
+  name="${check#*:}"
+  key="${check%%:*}"
+  rc_var="${key}_rc"
+  rc="${!rc_var}"
+  if [ "$rc" -eq 0 ]; then
+    echo "  ✅ $name OK"
+  else
+    echo "  ❌ $name FAILED"
+    cat "$tmpdir/${key}.log"
+    failed=1
+  fi
+done
+
+# ═══════════════════════════════════════════════════════════════════
+# Phase 2: Backend tests (~10s)
+# ═══════════════════════════════════════════════════════════════════
+
+echo ""
+echo "Phase 2: Backend tests..."
+cd "$root" || exit 1
+if timeout 90 $PY -X utf8 -m pytest \
+    backend/tests/test_tool_registry.py \
+    backend/tests/test_tr_dispatch.py \
+    backend/tests/test_stt_backends.py \
+    backend/tests/test_stt_self_check.py \
+    backend/tests/test_generation_subfunctions.py \
+    backend/tests/test_items_4_5_6.py \
+    backend/tests/test_items_7_8_9.py \
+    backend/tests/test_verify_system.py \
+    -q --tb=line --no-header --timeout=15 \
+    2>&1 | tail -10; then
+  echo "  ✅ Backend tests passed"
+else
+  echo "  ❌ Backend tests FAILED"
+  failed=1
+fi
+
+# ═══════════════════════════════════════════════════════════════════
+# Phase 3: Frontend tests
+# ═══════════════════════════════════════════════════════════════════
+
+echo ""
+echo "Phase 3: Frontend tests..."
+cd "$root/app" || exit 1
+if timeout 120 $VITEST run --reporter=dot 2>&1 | tail -10; then
+  echo "  ✅ Frontend tests passed"
+else
+  echo "  ❌ Frontend tests FAILED"
+  failed=1
+fi
+
+# ═══════════════════════════════════════════════════════════════════
+# Summary
+# ═══════════════════════════════════════════════════════════════════
+
+echo ""
+echo "============================================"
+if [ $failed -ne 0 ]; then
+  echo "  ❌ PRE-COMMIT GATE FAILED"
+  echo "  Fix the errors above, then re-commit"
+  echo "  Auto-fix: bin/check.ps1 -Fix  or  just fix"
+  echo "============================================"
+  exit 1
+else
+  echo "  ✅ ALL CHECKS PASSED (10/10)"
+  echo "============================================"
+  exit 0
+fi

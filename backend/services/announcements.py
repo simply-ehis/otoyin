@@ -1,0 +1,178 @@
+"""In-app content: changelog feed, announcements, and special offers.
+
+All content is bundled offline in ``backend/data/content.json`` (no network).
+If that file is missing or malformed, the module falls back to the
+``_DEFAULT_CONTENT`` constant below so the endpoints never break.
+
+Content ownership:
+  - what's-new     -> changelog, newest first
+  - announcements  -> top-of-app banners (info / warning / promo)
+  - offers         -> special promotions shown in the bell, offers page, store
+
+Per-item dismiss/"seen" state is tracked client-side (localStorage) and never
+persisted here.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import time
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+_DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+
+
+def _content_dir() -> Path:
+    """Resolve the bundled data directory, supporting frozen PyInstaller builds.
+
+    In a frozen build ``sys._MEIPASS`` points at the extracted bundle root and
+    the data directory is copied there. In normal dev it lives next to the
+    backend package. Falls back to the dev path when no bundle is present.
+    """
+    import sys
+
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        cand = Path(meipass) / "data"
+        if cand.is_dir():
+            return cand
+    return _DATA_DIR
+
+
+def _load_content() -> dict:
+    """Load content from ``content.json``; fall back to defaults on any failure."""
+    path = _content_dir() / "content.json"
+    try:
+        with path.open("r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        if not isinstance(data, dict):
+            raise ValueError("content.json is not an object")
+        return data
+    except Exception:  # content must never break the app
+        logger.exception("Failed to load %s; using bundled defaults", path)
+        return _DEFAULT_CONTENT
+
+
+# Static for the life of the process; content.json is read once at import.
+_CONTENT = _load_content()
+
+
+def get_whats_new() -> list[dict]:
+    """Changelog entries, newest first."""
+    return list(_CONTENT.get("whats_new", []))
+
+
+def get_announcements() -> list[dict]:
+    """Top-of-app banners. ``scope: global`` shows for everyone until dismissed."""
+    return list(_CONTENT.get("announcements", []))
+
+
+def get_offers() -> list[dict]:
+    """Special promotions. ``expires_at`` is ISO date; frontend shows remaining time."""
+    return list(_CONTENT.get("offers", []))
+
+
+def create_support_request(kind: str, subject: str, message: str, email: str | None) -> dict:
+    """Accept a local support/feedback request.
+
+    No external ticketing system is wired up yet, so the request is logged
+    server-side and acknowledged. This keeps the contact/support surface
+    functional offline without a network dependency.
+    """
+    request_id = f"local-{int(time.time() * 1000)}"
+    logger.info(
+        "Support request [%s] %s from %s: %s",
+        kind,
+        subject or "(no subject)",
+        email or "anonymous",
+        message[:200],
+    )
+    return {"status": "received", "id": request_id}
+
+
+_DEFAULT_CONTENT = {
+    "whats_new": [
+        {
+            "version": "1.0.0",
+            "date": "2026-08-19",
+            "title": "Welcome to 21-labs — your offline AI studio",
+            "highlights": [
+                "Your studio, fully offline: voice generation, transcription, neural cleanup, and the planner assistant all run on your machine. Nothing leaves the device.",
+                "New in-app Marketplace: browse the model catalog, download free starter models, and redeem voice-pack licenses without leaving the studio.",
+                "Smarter resource handling: the planner LLM pre-warms on launch and idle-unloads after 3 minutes; Orpheus TTS shows real download progress on first run; DeepFilter cleanup unloads automatically when idle.",
+                "Offline licensing: free models need no key, and paid voice packs install from a license you redeem in-app.",
+            ],
+        },
+        {
+            "version": "1.0.0-beta.3",
+            "date": "2026-08-10",
+            "title": "Faster, lighter, still 100% offline",
+            "highlights": [
+                "Planner LLM now pre-warms on launch and idle-unloads after 3 minutes, freeing VRAM the moment you leave the assistant.",
+                "Orpheus TTS streams a real download-progress bar on first run instead of hanging on a silent cold start.",
+                "DeepFilter neural cleanup unloads automatically when you are not using it.",
+                "New in-app Marketplace: browse the catalog, grab free models, and redeem licenses without leaving the studio.",
+            ],
+        },
+        {
+            "version": "1.0.0-beta.2",
+            "date": "2026-07-22",
+            "title": "Studio polish",
+            "highlights": [
+                "Audio Studio gained automation lanes and a MIDI piano roll.",
+                "Capture dictation now supports per-segment neural cleanup.",
+                "Redesigned Stories timeline with drag-to-trim clips.",
+            ],
+        },
+        {
+            "version": "1.0.0-beta.1",
+            "date": "2026-06-30",
+            "title": "Voice, louder",
+            "highlights": [
+                "Eight preset Orpheus voices with emotion tags.",
+                "Voice profiles can now be cloned from a 30-second sample.",
+                "Added the offline licensing module for paid voice packs.",
+            ],
+        },
+    ],
+    "announcements": [
+        {
+            "id": "offline-promise",
+            "kind": "info",
+            "message": "Everything runs on your machine — your audio never leaves the device.",
+            "dismissible": True,
+            "scope": "global",
+        },
+        {
+            "id": "launch-week",
+            "kind": "promo",
+            "message": "21-labs is live! Get 20% off all voice packs this launch week with code LAUNCH20.",
+            "dismissible": True,
+            "scope": "global",
+            "cta": {"label": "View offers", "href": "/offers"},
+        },
+    ],
+    "offers": [
+        {
+            "id": "launch-20",
+            "title": "Launch week — 20% off all voice packs",
+            "description": "Every paid Orpheus voice pack is 20% cheaper for launch week.",
+            "code": "LAUNCH20",
+            "discount_pct": 20,
+            "expires_at": "2026-09-01",
+            "cta": {"label": "Browse the Marketplace", "href": "/store"},
+        },
+        {
+            "id": "free-starter",
+            "title": "Free starter pack forever",
+            "description": "The base TTS, transcription, and planner models are free — no license needed.",
+            "code": None,
+            "discount_pct": 0,
+            "expires_at": None,
+            "cta": {"label": "Download starter pack", "href": "/models"},
+        },
+    ],
+}

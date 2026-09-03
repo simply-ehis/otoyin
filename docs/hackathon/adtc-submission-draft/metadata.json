@@ -1,0 +1,37 @@
+{
+  "team_id": "[TEAM ID]",
+  "domain": "autonomous_ai_agents",
+  "language_scope": ["en"],
+  "african_alpha_claim": false,
+  "budget_laptop_claim": true,
+  "submitter": {
+    "name": "[SUBMITTER NAME]",
+    "email": "[SUBMITTER EMAIL]",
+    "github_handle": "[GITHUB HANDLE]"
+  },
+  "cross_disciplinary_pairing": {
+    "discipline": "audio production",
+    "load_bearing": true,
+    "description": "The planner turns real audio-production requests into ordered, safe, tool-ready workflows for voice creators and small media teams."
+  },
+  "test_prompts": [
+    {
+      "prompt_id": "tp_001",
+      "prompt": "Create a production plan for a 30-second community-radio announcement about safe water in [TARGET COUNTRY OR REGION]. Return the audience, a concise voiceover script, recording guidance, and an ordered post-production plan. State assumptions and avoid inventing local facts."
+    },
+    {
+      "prompt_id": "tp_002",
+      "prompt": "A creator has one interview recording, one music bed, and a 45-second intro. Produce an ordered, tool-ready plan to clean the speech, remove long silences without damaging words, duck the music under speech, normalize the finished mix, and export a shareable podcast file. State what must be confirmed before execution."
+    }
+  ],
+  "model": {
+    "name": "Qwen3.5-2B.Q4_K_M",
+    "runtime": "llama.cpp",
+    "quantization": "GGUF Q4_K_M",
+    "parameters_estimate": "2B",
+    "packaging": "binary_bundle"
+  },
+  "_runtime": {
+    "model_path": "model/Qwen3.5-2B.Q4_K_M.gguf"
+  }
+}

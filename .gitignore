@@ -1,0 +1,145 @@
+# Dependencies
+node_modules/
+bun.lockb
+package-lock.json
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.prompt
+# Build outputs
+dist/
+build/
+landing/preview/
+*.egg-info/
+*.egg
+target/
+*.app
+*.dmg
+*.exe
+*.msi
+*.deb
+*.AppImage
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data (user-generated)
+data/
+!data/.gitkeep
+
+# Logs and error files
+*.log
+*.err
+logs/
+
+# Process files
+*.pid
+
+# Linter caches
+.ruff_cache/
+.mypy_cache/
+
+# Environment
+.env
+.env.local
+
+# Generated files
+app/openapi.json
+tauri/src-tauri/binaries/*
+tauri/src-tauri/gen/Assets.car
+tauri/src-tauri/gen/di-stefano.icns
+tauri/src-tauri/gen/partial.plist
+
+# PyInstaller
+*.spec
+
+# Windows artifacts
+nul
+
+# Temporary
+tmp/
+temp/
+*.tmp
+
+# E2E test artifacts
+backend/tests/results/
+backend/tests/fixtures/reference_voice.wav
+backend/tests/fixtures/reference_voice.txt
+
+# Patchi local config
+.patchi/
+.patchi/.env
+.patchi/keys.json
+
+# AI tool caches / reports
+.qoder/
+
+# Pytest cache
+.pytest_cache/
+
+# Test artifacts
+backend/*.wav
+backend/output.txt
+backend/results.txt
+backend/*_e2e_out.txt
+
+# Temporary fix scripts and build output
+fix_imports.py
+fix_imports2.py
+fix_button_import.py
+fix_button_size.py
+fix_dubbing.py
+fix_dubbing2.py
+fix_duplicate_music.py
+fix_duplicate_music2.py
+fix_format_elapsed.py
+fix_package_json.py
+fix_react_version.py
+fix_store_genid.py
+fix_template_genid.py
+fix_template_genid2.py
+fix_transcript_editor.py
+fix_transcript_editor2.py
+fix_transcript_editor3.py
+fix_vumeter.py
+fix_alert_import.py
+fix_all_locks.py
+fix_audio_studio2.py
+fix_audio_studio_baseurl.py
+fix_bun_lock.py
+fix_bun_lock_final.py
+check_bun_lock2.py
+check_dnd_imports.py
+*_output.txt
+build_*.txt
+capture*.json
+8bit_samples.wav
+arpeggio.wav
+artifacts_report/
+app/build_out*.txt
+app/tsc_out*.txt
+app/tsc_output*.txt
+check*.txt
+
+# Temp audit scripts
+_import_audit.py
+AGENT_FEEDBACK.md
+
+# Archived session artifacts (moved 2026-08-21 tree cleanup)
+/archive/
+checkpoints/
+checkpoints/needle2.pkl

@@ -1,0 +1,141 @@
+[project]
+name = "21-labs-backend"
+version = "0.2.3"
+requires-python = ">=3.12"
+
+# Build-time only. `build_binary.py` does `import PyInstaller.__main__` at the
+# top level, so the standalone binary build crashes with ModuleNotFoundError
+# unless PyInstaller is installed. It is intentionally NOT a runtime dependency
+# (the server runs from source in dev and from the frozen binary in prod).
+[project.optional-dependencies]
+build = ["pyinstaller>=6.0"]
+
+# ---------------------------------------------------------------------------
+# Ruff – linter + formatter
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+src = ["."]
+
+# Files/dirs to skip entirely.
+extend-exclude = [
+    "21-labs-server.spec",
+    "build_binary.py",
+]
+
+[tool.ruff.lint]
+select = [
+    "F",     # pyflakes
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "I",     # isort
+    "N",     # pep8-naming
+    "UP",    # pyupgrade (modernize syntax for 3.12)
+    "B",     # flake8-bugbear
+    "A",     # flake8-builtins (shadowing built-in names)
+    "SIM",   # flake8-simplify
+    "T20",   # flake8-print (flag print() calls)
+    "RET",   # flake8-return
+    "PIE",   # misc lints
+    "PT",    # flake8-pytest-style
+    "RUF",   # ruff-specific rules
+    "ERA",   # commented-out code detection
+    "FIX",   # flag TODO/FIXME/HACK/XXX for review
+]
+
+ignore = [
+    # Allow print() in existing code -- remove items from this list as files
+    # are migrated to logging during the refactor.
+    "T201",   # print() found
+
+    # These conflict with the formatter or are too noisy during migration:
+    "E501",   # line too long (formatter handles this)
+    "RET504", # unnecessary assignment before return
+    "SIM108", # use ternary operator (sometimes less readable)
+    "B008",   # function call in default argument (FastAPI Depends() pattern)
+    "UP007",  # use X | Y for union (auto-fixed by UP, but noisy on big diffs)
+]
+
+# Per-file rule overrides.
+[tool.ruff.lint.per-file-ignores]
+# Tests can use assert, print, magic values, broad raises, and composite
+# assertions freely; the e2e log handle intentionally outlives its function.
+"tests/**" = ["S101", "T201", "PLR2004", "ERA001", "PT011", "PT018", "SIM115", "N806", "RUF001", "E402"]
+# __init__.py re-exports are expected to have unused imports.
+"**/__init__.py" = ["F401"]
+# Entry points and scripts legitimately use print.
+"server.py" = ["T201", "N806", "E402", "SIM115"]
+"main.py" = ["T201"]
+# AMD GPU env vars must be set before torch import.
+"app.py" = ["E402", "F401"]
+
+# ML backends import torch/heavy deps lazily inside methods (cold-load per the
+# project's lazy-loading philosophy), so ruff sees `torch`/`np` as undefined at
+# module scope. E402 covers the same deliberate late-import pattern.
+"backends/stable_audio_backend.py" = ["F821"]
+"services/deepfilter_cleanup.py" = ["F821"]
+# SQLAlchemy filter() expressions need `== True`/`== False` (operator overload
+# builds the SQL clause); `is True` would evaluate in plain Python and break
+# the query silently.
+"services/model_providers.py" = ["E712"]
+"utils/cache.py" = ["F821"]
+# PyInstaller runtime hooks patch numpy/torch internals with intentional
+# single-letter aliases and pre-import ordering.
+"pyi_rth_numpy_compat.py" = ["F821"]
+"pyi_rth_torch_compiler_disable.py" = ["N806"]
+# Audio DSP uses conventional single-capital coefficient names (Q, K, V0, T)
+# and the loudness/ITU biquad math reads better with them.
+"services/loudness.py" = ["N806"]
+# Public API/query-param names (`format`, `filter`) and DB helper column
+# aliases match the external contract; renaming would break callers.
+"mcp_server/tools/rest_domains.py" = ["A002"]
+"routes/sounds.py" = ["A002"]
+"routes/history.py" = ["N806", "N803"]
+"routes/profiles.py" = ["N806", "N803"]
+"services/standalone_project.py" = ["A002"]
+"database/seed.py" = ["N806", "N803"]
+"utils/hf_progress.py" = ["N803", "N806"]
+# Docstrings/strings intentionally use typographic dashes (brand identity) and
+# CJK fullwidth punctuation (used for sentence splitting in chunked TTS).
+"routes/stories.py" = ["RUF002"]
+"services/refinement.py" = ["RUF002"]
+"utils/chunked_tts.py" = ["RUF002"]
+"utils/model_lifecycle.py" = ["RUF002", "RUF003"]
+# CJK TTS sample strings legitimately contain fullwidth punctuation.
+"backends/_f5_tts_onnx.py" = ["RUF001"]
+# Availability probes: these modules `import X` only to test importability
+# (torch.xpu/IPEX enablement, ONNX runtime presence, MLX/Apple Silicon,
+# DeepFilterNet/HF optional deps). The import is intentionally unused.
+"backends/base.py" = ["F401"]
+"backends/f5_tts_onnx_backend.py" = ["F401"]
+"backends/kokoro_onnx_backend.py" = ["F401"]
+"backends/moss_tts_nano_onnx_backend.py" = ["F401"]
+"backends/pocket_tts_onnx_backend.py" = ["F401"]
+"backends/styletts2_onnx_backend.py" = ["F401"]
+"routes/health.py" = ["F401"]
+"services/deepfilter_onnx.py" = ["F401"]
+"services/stem_separation.py" = ["F401"]
+"services/stem_separation_onnx.py" = ["F401"]
+"utils/hf_offline_patch.py" = ["F401"]
+"utils/platform_detect.py" = ["F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["backend"]
+# Group "from backend.*" imports into the first-party section.
+force-single-line = false
+combine-as-imports = true
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+
+# ---------------------------------------------------------------------------
+# pytest
+# ---------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

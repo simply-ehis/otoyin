@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>otoyin — Open-Source AI Voice Studio</title>
+  <meta name="description" content="Open-source AI voice studio. 14 TTS engines, voice cloning, 30+ effects, 202 MCP tools. Free app, premium models — pay once, no subscription.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --g0:4%;--g1:13%;--g2:18%;--g3:22%;--g4:26%;--g5:30%;
+      --g6:34%;--g7:38%;--g8:42%;--g9:46%;--g10:50%;
+      --g15:58%;--g20:66%;--g25:72%;--g30:78%;--g35:84%;
+      --g40:88%;--g45:93%;--g48:97%;--g50:98%;
+      --ease:cubic-bezier(.23,1,.32,1);
+      --ease-io:cubic-bezier(.77,0,.175,1);
+    }
+    html{scroll-behavior:smooth}
+    body{background:hsl(0 0% var(--g1));color:hsl(0 0% var(--g48));font-family:'Inter',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.6;overflow-x:hidden}
+    .w{max-width:1120px;margin:0 auto;padding:0 24px}
+    @media(min-width:768px){.w{padding:0 48px}}
+
+    /* Nav */
+    nav{position:fixed;top:0;left:0;right:0;z-index:100;background:hsla(0,0%,var(--g1),.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid hsl(0 0% var(--g4))}
+    .nr{display:flex;align-items:center;justify-content:space-between;height:56px}
+    .nl{font-weight:900;font-size:17px;letter-spacing:-.03em}
+    .nk{display:flex;gap:28px;align-items:center}
+    .nk a{color:hsl(0 0% var(--g20));text-decoration:none;font-size:13px;font-weight:500;transition:color 160ms var(--ease)}
+    @media(hover:hover)and(pointer:fine){.nk a:hover{color:hsl(0 0% var(--g48))}}
+    .nc{background:hsl(0 0% var(--g48));color:hsl(0 0% var(--g1));padding:7px 16px;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;border:none;cursor:pointer;transition:transform 160ms var(--ease)}
+    .nc:active{transform:scale(.97)}
+    .nt{display:none;background:none;border:none;cursor:pointer;padding:8px}
+    .nt span{display:block;width:18px;height:2px;background:hsl(0 0% var(--g48));margin:4px 0;transition:all 200ms var(--ease)}
+    @media(max-width:640px){.nt{display:block}.nk{position:fixed;top:56px;left:0;right:0;bottom:0;background:hsl(0 0% var(--g1));flex-direction:column;justify-content:flex-start;padding:40px 24px;gap:28px;transform:translateX(100%);transition:transform 300ms var(--ease)}.nk.open{transform:translateX(0)}.nk a{font-size:16px}}
+
+    /* Hero */
+    .hero{position:relative;min-height:100vh;display:flex;align-items:center;padding-top:56px;overflow:hidden}
+    .hc{position:relative;z-index:2;max-width:620px}
+    .hb{display:inline-flex;align-items:center;gap:8px;padding:5px 14px;border-radius:999px;background:hsl(0 0% var(--g3));border:1px solid hsl(0 0% var(--g5));font-size:12px;font-weight:600;color:hsl(0 0% var(--g25));margin-bottom:28px;letter-spacing:.01em}
+    .hb .d{width:6px;height:6px;border-radius:50%;background:hsl(0 0% var(--g30))}
+    .hero h1{font-size:clamp(40px,7vw,80px);font-weight:900;letter-spacing:-.04em;line-height:1;margin-bottom:24px}
+    .hero h1 em{font-style:normal;color:hsl(0 0% var(--g20))}
+    .hs{font-size:clamp(16px,1.8vw,19px);color:hsl(0 0% var(--g15));max-width:480px;margin-bottom:36px;line-height:1.65;font-weight:400}
+    .hbs{display:flex;gap:12px;flex-wrap:wrap}
+    .bw{display:inline-flex;align-items:center;gap:8px;background:hsl(0 0% var(--g48));color:hsl(0 0% var(--g1));padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;border:none;cursor:pointer;transition:transform 160ms var(--ease)}
+    .bw:active{transform:scale(.97)}
+    .bo{display:inline-flex;align-items:center;gap:8px;background:transparent;color:hsl(0 0% var(--g40));padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;border:1px solid hsl(0 0% var(--g6));cursor:pointer;transition:transform 160ms var(--ease),border-color 200ms var(--ease)}
+    .bo:active{transform:scale(.97)}
+    @media(hover:hover)and(pointer:fine){.bw:hover{opacity:.92}.bo:hover{border-color:hsl(0 0% var(--g10))}}
+    .hp{margin-top:32px;display:flex;align-items:center;gap:12px;font-size:13px;color:hsl(0 0% var(--g10))}
+    .hp .av{width:28px;height:28px;border-radius:50%;background:hsl(0 0% var(--g4));border:2px solid hsl(0 0% var(--g1));margin-left:-8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:hsl(0 0% var(--g20))}
+    .hp .av:first-child{margin-left:0}
+    #hc{position:absolute;top:0;right:0;bottom:0;width:50%;opacity:.35;pointer-events:none}
+    @media(max-width:768px){#hc{width:100%;opacity:.15}}
+
+    /* Stats */
+    .stats{border-top:1px solid hsl(0 0% var(--g4));border-bottom:1px solid hsl(0 0% var(--g4));background:hsl(0 0% var(--g0));padding:28px 0}
+    .sg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;text-align:center}
+    @media(max-width:640px){.sg{grid-template-columns:repeat(2,1fr)}}
+    .sn{font-size:clamp(26px,3.5vw,36px);font-weight:900;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+    .sl{font-size:12px;color:hsl(0 0% var(--g15));margin-top:2px;font-weight:500}
+
+    /* Wave */
+    .wd{height:64px;position:relative;overflow:hidden}
+    .wd canvas{width:100%;height:100%;display:block}
+
+    /* Sections */
+    section{padding:80px 0}
+    @media(min-width:768px){section{padding:120px 0}}
+    .st{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:hsl(0 0% var(--g10));margin-bottom:12px}
+    .sh{font-size:clamp(28px,4.5vw,48px);font-weight:900;letter-spacing:-.03em;line-height:1.08;margin-bottom:16px}
+    .sd{font-size:clamp(15px,1.5vw,17px);color:hsl(0 0% var(--g15));max-width:520px;line-height:1.65;margin-bottom:48px}
+
+    /* Features */
+    .fg{display:grid;gap:1px;background:hsl(0 0% var(--g4))}
+    @media(max-width:767px){.fg{grid-template-columns:1fr}}
+    @media(min-width:768px)and(max-width:1023px){.fg{grid-template-columns:repeat(2,1fr)}}
+    @media(min-width:1024px){.fg{grid-template-columns:repeat(3,1fr)}}
+    .fc{background:hsl(0 0% var(--g2));padding:28px;position:relative;overflow:hidden;transition:background 200ms var(--ease)}
+    @media(hover:hover)and(pointer:fine){.fc:hover{background:hsl(0 0% var(--g3))}}
+    .fi{width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:hsl(0 0% var(--g4));border-radius:8px;margin-bottom:14px;font-size:16px}
+    .fc h3{font-size:16px;font-weight:700;margin-bottom:6px;letter-spacing:-.01em}
+    .fc p{font-size:13px;color:hsl(0 0% var(--g15));line-height:1.55;margin-bottom:14px}
+    .ft{display:flex;flex-wrap:wrap;gap:5px}
+    .fp{padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;background:hsl(0 0% var(--g4));color:hsl(0 0% var(--g25))}
+    .da{margin-top:16px;height:88px;border-radius:6px;overflow:hidden;background:hsl(0 0% var(--g0));border:1px solid hsl(0 0% var(--g4));position:relative}
+    .da canvas{display:block;width:100%;height:100%}
+    .ms{-webkit-appearance:none;appearance:none;width:100%;height:3px;border-radius:2px;background:hsl(0 0% var(--g5));outline:none;cursor:pointer}
+    .ms::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:hsl(0 0% var(--g48));cursor:grab}
+    .ms::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:hsl(0 0% var(--g48));border:none;cursor:grab}
+    .tr{display:flex;align-items:center;gap:5px;margin-bottom:2px}
+    .tl{width:42px;font-size:8px;font-weight:600;text-align:right;color:hsl(0 0% var(--g15));flex-shrink:0}
+    .tt{flex:1;height:12px;background:hsl(0 0% var(--g3));border-radius:2px;position:relative;overflow:hidden}
+    .tc{position:absolute;top:2px;bottom:2px;border-radius:2px;background:hsl(0 0% var(--g7))}
+    .th{position:absolute;top:0;bottom:0;width:1.5px;background:hsl(0 0% var(--g48));z-index:2}
+    .mp{flex-shrink:0;padding:5px 9px;border-radius:5px;background:hsl(0 0% var(--g3));border:1px solid hsl(0 0% var(--g5));font-size:10px;text-align:center;white-space:nowrap}
+    .mp b{display:block;color:hsl(0 0% var(--g48));margin-bottom:1px}
+    .mp span{color:hsl(0 0% var(--g15));font-size:8px}
+    @keyframes sm{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+    /* Testimonials */
+    .tk{display:flex;transition:transform 500ms var(--ease-io)}
+    .ts{min-width:100%;padding:0 24px}
+    @media(min-width:768px){.ts{padding:0 80px}}
+    .ti{max-width:600px;margin:0 auto;text-align:center}
+    .tq{font-size:clamp(17px,2.2vw,22px);font-weight:500;line-height:1.6;color:hsl(0 0% var(--g40));margin-bottom:24px;letter-spacing:-.01em}
+    .tq::before{content:'\201C'}.tq::after{content:'\201D'}
+    .ta{display:flex;align-items:center;justify-content:center;gap:10px}
+    .tv{width:36px;height:36px;border-radius:50%;background:hsl(0 0% var(--g4));border:1px solid hsl(0 0% var(--g6));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:hsl(0 0% var(--g15));flex-shrink:0}
+    .tn{font-size:13px;font-weight:700}.tr2{font-size:11px;color:hsl(0 0% var(--g15))}
+    .td{display:flex;justify-content:center;gap:6px;margin-top:28px}
+    .td button{width:6px;height:6px;border-radius:50%;border:none;cursor:pointer;background:hsl(0 0% var(--g5));transition:background 200ms var(--ease)}
+    .td button.on{background:hsl(0 0% var(--g30))}
+    @media(hover:hover)and(pointer:fine){.td button:hover{background:hsl(0 0% var(--g15))}}
+    .tn2{display:flex;justify-content:center;gap:10px;margin-top:20px}
+    .tn2 button{width:32px;height:32px;border-radius:6px;border:1px solid hsl(0 0% var(--g5));background:hsl(0 0% var(--g2));color:hsl(0 0% var(--g25));cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:transform 160ms var(--ease),background 200ms var(--ease)}
+    .tn2 button:active{transform:scale(.95)}
+    @media(hover:hover)and(pointer:fine){.tn2 button:hover{background:hsl(0 0% var(--g4))}}
+
+    /* Compare */
+    .cw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .ct{width:100%;border-collapse:collapse;font-size:13px}
+    .ct th,.ct td{padding:10px 14px;text-align:center;border-bottom:1px solid hsl(0 0% var(--g4))}
+    .ct th{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:hsl(0 0% var(--g15))}
+    .ct th.hl{color:hsl(0 0% var(--g48))}
+    .ct td:first-child{text-align:left;font-weight:500;color:hsl(0 0% var(--g35))}
+    .ct .ck{color:hsl(0 0% var(--g48));font-weight:700}
+    .ct .xx{color:hsl(0 0% var(--g7))}
+    .ct .lm{color:hsl(0 0% var(--g15));font-size:11px}
+
+    /* Pricing */
+    .pg{display:grid;gap:1px;background:hsl(0 0% var(--g4))}
+    @media(max-width:767px){.pg{grid-template-columns:1fr}}
+    @media(min-width:768px){.pg{grid-template-columns:repeat(3,1fr)}}
+    .pc{background:hsl(0 0% var(--g2));padding:32px;display:flex;flex-direction:column}
+    .pc.hl{background:hsl(0 0% var(--g3))}
+    .pn{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:hsl(0 0% var(--g20));margin-bottom:12px}
+    .pa{font-size:clamp(32px,4vw,44px);font-weight:900;letter-spacing:-.03em}
+    .pp{font-size:13px;color:hsl(0 0% var(--g15));margin-bottom:24px;line-height:1.5}
+    .pl{list-style:none;flex:1;margin-bottom:24px}
+    .pl li{padding:5px 0;font-size:13px;color:hsl(0 0% var(--g30));display:flex;align-items:center;gap:8px}
+    .pl li::before{content:'✓';font-weight:700;color:hsl(0 0% var(--g48));font-size:11px}
+    .pb{display:block;width:100%;text-align:center;padding:10px;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;transition:transform 160ms var(--ease)}
+    .pb:active{transform:scale(.97)}
+    .pbw{background:hsl(0 0% var(--g48));color:hsl(0 0% var(--g1))}
+    .pbo{background:hsl(0 0% var(--g4));color:hsl(0 0% var(--g40));border:1px solid hsl(0 0% var(--g6))}
+
+    /* CTA */
+    .cta{text-align:center;padding:80px 0;border-top:1px solid hsl(0 0% var(--g4))}
+    .cta h2{font-size:clamp(28px,4vw,44px);font-weight:900;letter-spacing:-.03em;margin-bottom:12px}
+    .cta p{font-size:16px;color:hsl(0 0% var(--g15));margin-bottom:28px}
+    .ctb{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+    /* Footer */
+    footer{border-top:1px solid hsl(0 0% var(--g4));padding:40px 0}
+    .fg2{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px}
+    @media(max-width:640px){.fg2{grid-template-columns:1fr 1fr}}
+    .fb{font-weight:900;font-size:15px;margin-bottom:6px}
+    .fd{font-size:12px;color:hsl(0 0% var(--g15));line-height:1.5;max-width:260px}
+    .fh{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:hsl(0 0% var(--g15));margin-bottom:10px}
+    .fl{list-style:none}.fl li{margin-bottom:6px}
+    .fl a{font-size:12px;color:hsl(0 0% var(--g25));text-decoration:none;transition:color 160ms var(--ease)}
+    @media(hover:hover)and(pointer:fine){.fl a:hover{color:hsl(0 0% var(--g48))}}
+    .fbo{margin-top:28px;padding-top:16px;border-top:1px solid hsl(0 0% var(--g4));display:flex;justify-content:space-between;align-items:center;font-size:11px;color:hsl(0 0% var(--g10));flex-wrap:wrap;gap:10px}
+
+    /* Reveal */
+    .rv{opacity:0;transform:translateY(10px);transition:opacity 400ms var(--ease),transform 400ms var(--ease)}
+    .rv.vis{opacity:1;transform:translateY(0)}
+    .rv:nth-child(2){transition-delay:40ms}.rv:nth-child(3){transition-delay:80ms}
+    .rv:nth-child(4){transition-delay:120ms}.rv:nth-child(5){transition-delay:160ms}
+    .rv:nth-child(6){transition-delay:200ms}
+    @media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}.tk{transition:none}@keyframes sm{from{transform:translateX(0)}to{transform:translateX(-50%)}}}
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="w nr">
+      <div class="nl">otoyin</div>
+      <button class="nt" id="ntg" aria-label="Menu"><span></span><span></span><span></span></button>
+      <div class="nk" id="nkl">
+        <a href="#features">Features</a>
+        <a href="#reviews">Reviews</a>
+        <a href="#dl" class="nc">Download Free</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="w hc">
+      <div class="hb"><span class="d"></span> Open source · Desktop app · No subscription</div>
+      <h1>AI voice studio.<br><em>Free app. Pay for models.</em></h1>
+      <p class="hs">14 TTS engines, voice cloning, 30+ effects, 202 MCP tools, multi-track mixing. Everything runs on your machine. Tauri desktop for Windows, macOS, Linux.</p>
+      <div class="hbs">
+        <a href="#dl" class="bw">↓ Download Free</a>
+        <a href="#features" class="bo">See what's inside →</a>
+      </div>
+      <div class="hp">
+        <div class="av">MK</div><div class="av">SR</div><div class="av">JT</div><div class="av">AL</div>
+        <span>Free forever · No credit card · Open source MIT</span>
+      </div>
+    </div>
+    <canvas id="hc"></canvas>
+  </section>
+
+  <div class="stats">
+    <div class="w">
+      <div class="sg">
+        <div class="rv"><div class="sn" data-target="14" data-suffix="">0</div><div class="sl">TTS Engines</div></div>
+        <div class="rv"><div class="sn" data-target="202" data-suffix="">0</div><div class="sl">MCP Tools</div></div>
+        <div class="rv"><div class="sn" data-target="30" data-suffix="+">0</div><div class="sl">Audio Effects</div></div>
+        <div class="rv"><div class="sn" data-target="0" data-suffix="ms" data-static="1">0ms</div><div class="sl">Cloud Latency</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wd"><canvas id="wd1"></canvas></div>
+
+  <!-- Features -->
+  <section id="features">
+    <div class="w">
+      <div class="rv">
+        <div class="st">Capabilities</div>
+        <h2 class="sh">Everything an audio professional needs</h2>
+        <p class="sd">14 TTS engines, 4 STT engines, 3 voice conversion engines, 5 music/SFX engines, 30+ effects, and a full multi-track DAW. All local.</p>
+      </div>
+      <div class="fg">
+        <div class="fc rv">
+          <div class="fi">🎙</div>
+          <h3>14 TTS Engines</h3>
+          <p>Kokoro, Fish Speech, Zonos, StyleTTS2, ChatTTS, F5-TTS, Pocket-TTS, Parler-TTS, MOSS-TTS-Nano, KittenTTS, NeuTTS, Orpheus, Qwen3-TTS, Bark. Streaming playback, emotion presets.</p>
+          <div class="ft"><span class="fp">Streaming</span><span class="fp">Emotion</span><span class="fp">14 Engines</span></div>
+          <div class="da"><canvas id="dt"></canvas></div>
+        </div>
+        <div class="fc rv">
+          <div class="fi">👤</div>
+          <h3>Voice Cloning & Conversion</h3>
+          <p>Zero-shot clone from a 10–30s reference. RVC, Seed-VC, OpenVoice — 3 voice conversion engines. Use in any generation immediately.</p>
+          <div class="ft"><span class="fp">Zero-Shot</span><span class="fp">RVC</span><span class="fp">Seed-VC</span></div>
+          <div class="da" style="display:flex;flex-direction:column;justify-content:center;padding:8px 12px;gap:5px;">
+            <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:8px;font-weight:600;color:hsl(0,0%,45%);width:44px;">Original</span><canvas id="dva" style="flex:1;height:20px;"></canvas></div>
+            <input type="range" min="0" max="100" value="50" class="ms" id="msl">
+            <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:8px;font-weight:600;color:hsl(0,0%,60%);width:44px;">Cloned</span><canvas id="dvb" style="flex:1;height:20px;"></canvas></div>
+          </div>
+        </div>
+        <div class="fc rv">
+          <div class="fi">🎚</div>
+          <h3>30+ Audio Effects</h3>
+          <p>Pitch shift, reverb, delay, chorus, distortion, EQ, compressor, noise gate, spectral denoise, auto-tune, vocoder, and more. Chainable effect pipeline.</p>
+          <div class="ft"><span class="fp">30+ Effects</span><span class="fp">Chainable</span><span class="fp">Mastering</span></div>
+          <div class="da" style="padding:6px;display:flex;flex-direction:column;justify-content:center;">
+            <div class="tr"><span class="tl">Vox</span><div class="tt"><div class="tc" style="left:4%;width:32%;"></div><div class="tc" style="left:44%;width:26%;"></div></div></div>
+            <div class="tr"><span class="tl">Beat</span><div class="tt"><div class="tc" style="left:0;width:100%;"></div></div></div>
+            <div class="tr"><span class="tl">FX</span><div class="tt"><div class="tc" style="left:16%;width:20%;"></div><div class="tc" style="left:52%;width:16%;"></div></div></div>
+            <div class="th" id="tlp" style="left:0%;"></div>
+          </div>
+        </div>
+        <div class="fc rv">
+          <div class="fi">🎬</div>
+          <h3>Video Dubbing</h3>
+          <p>Full pipeline: transcribe → translate → re-voice → mux. Preserve original speakers. 4 STT engines including streaming STT.</p>
+          <div class="ft"><span class="fp">4 STT Engines</span><span class="fp">Voice Preserve</span><span class="fp">MP4</span></div>
+          <div class="da" style="display:flex;align-items:center;justify-content:center;gap:8px;">
+            <span id="ds" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;background:hsl(0,0%,6%);">EN</span>
+            <span style="color:hsl(0,0%,40%);font-size:12px;">→</span>
+            <span id="dt2" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;background:hsl(0,0%,6%);">JA</span>
+            <div style="flex:1;max-width:90px;height:20px;background:hsl(0,0%,5%);border-radius:3px;overflow:hidden;position:relative;">
+              <div id="dw" style="position:absolute;top:0;left:0;height:100%;width:0%;background:hsl(0,0%,10%);transition:width 300ms var(--ease);"></div>
+              <span id="dtx" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:8px;color:hsl(0,0%,50%);white-space:nowrap;"></span>
+            </div>
+          </div>
+        </div>
+        <div class="fc rv">
+          <div class="fi">💬</div>
+          <h3>Voice Chat & Dictation</h3>
+          <p>Real-time speech-to-speech with tool calling, barge-in, memory. Live dictation with streaming STT. Silero VAD turn-taking.</p>
+          <div class="ft"><span class="fp">Real-Time</span><span class="fp">Tool Calling</span><span class="fp">Streaming STT</span></div>
+          <div class="da"><canvas id="dc"></canvas></div>
+        </div>
+        <div class="fc rv">
+          <div class="fi">📦</div>
+          <h3>Marketplace — 35+ Products</h3>
+          <p>Free models included. Premium voices, music engines, and more available in the marketplace. Pay once, own forever, works offline.</p>
+          <div class="ft"><span class="fp">Pay Once</span><span class="fp">Offline</span><span class="fp">No Sub</span></div>
+          <div class="da" style="padding:6px;overflow:hidden;display:flex;align-items:center;">
+            <div id="mkc" style="display:flex;gap:5px;animation:sm 18s linear infinite;width:max-content;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="wd"><canvas id="wd2"></canvas></div>
+
+  <!-- How It Works -->
+  <section id="how">
+    <div class="w">
+      <div class="rv"><div class="st">Workflow</div><h2 class="sh">Download. Pick a voice. Create.</h2></div>
+      <div style="display:flex;flex-direction:column;gap:28px;">
+        <div class="rv" style="display:flex;gap:16px;align-items:flex-start;">
+          <div style="width:36px;height:36px;border-radius:6px;background:hsl(0,0%,3%);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;flex-shrink:0;color:hsl(0,0%,60%);">1</div>
+          <div><h3 style="font-size:16px;font-weight:700;margin-bottom:3px;">Download the app</h3><p style="font-size:13px;color:hsl(0,0%,45%);line-height:1.55;">Free, open-source (MIT). Tauri desktop — Windows, macOS, Linux. No account needed.</p></div>
+        </div>
+        <div class="rv" style="display:flex;gap:16px;align-items:flex-start;">
+          <div style="width:36px;height:36px;border-radius:6px;background:hsl(0,0%,3%);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;flex-shrink:0;color:hsl(0,0%,60%);">2</div>
+          <div><h3 style="font-size:16px;font-weight:700;margin-bottom:3px;">Download a voice engine</h3><p style="font-size:13px;color:hsl(0,0%,45%);line-height:1.55;">Start with Kokoro-82M (free, fast, ONNX). Browse the marketplace for premium voices and music engines.</p></div>
+        </div>
+        <div class="rv" style="display:flex;gap:16px;align-items:flex-start;">
+          <div style="width:36px;height:36px;border-radius:6px;background:hsl(0,0%,3%);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;flex-shrink:0;color:hsl(0,0%,60%);">3</div>
+          <div><h3 style="font-size:16px;font-weight:700;margin-bottom:3px;">Generate, edit, master</h3><p style="font-size:13px;color:hsl(0,0%,45%);line-height:1.55;">Type text, pick a voice + emotion, generate. Drag into the studio — 30+ effects, multi-track mixer, mastering to broadcast LUFS.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Compare -->
+  <section style="background:hsl(0,0%,var(--g0));">
+    <div class="w">
+      <div class="rv"><div class="st">Why otoyin</div><h2 class="sh">The only app that does it all — locally</h2></div>
+      <div class="cw rv">
+        <table class="ct">
+          <thead><tr><th style="text-align:left;">Feature</th><th class="hl">otoyin</th><th>ElevenLabs</th><th>Descript</th><th>Adobe</th></tr></thead>
+          <tbody>
+            <tr><td>Open source (MIT)</td><td class="ck">✓</td><td class="xx">✗</td><td class="xx">✗</td><td class="xx">✗</td></tr>
+            <tr><td>Desktop app (Tauri)</td><td class="ck">✓</td><td class="xx">Web only</td><td class="lm">Desktop</td><td class="xx">Web only</td></tr>
+            <tr><td>14 TTS engines</td><td class="ck">✓</td><td class="lm">1 engine</td><td class="xx">✗</td><td class="xx">✗</td></tr>
+            <tr><td>30+ audio effects</td><td class="ck">✓</td><td class="xx">✗</td><td class="lm">Basic</td><td class="xx">✗</td></tr>
+            <tr><td>Multi-track DAW</td><td class="ck">✓</td><td class="xx">✗</td><td class="ck">✓</td><td class="xx">✗</td></tr>
+            <tr><td>Video dubbing</td><td class="ck">✓</td><td class="xx">✗</td><td class="ck">✓</td><td class="xx">✗</td></tr>
+            <tr><td>MCP / AI agent tools</td><td class="ck">202 tools</td><td class="xx">✗</td><td class="xx">✗</td><td class="xx">✗</td></tr>
+            <tr><td>Pay once, no subscription</td><td class="ck">✓</td><td class="lm">$5–$99/mo</td><td class="lm">$24/mo</td><td class="lm">$23/mo</td></tr>
+            <tr><td>Offline-first</td><td class="ck">✓</td><td class="xx">✗</td><td class="xx">✗</td><td class="xx">✗</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <div class="wd"><canvas id="wd3"></canvas></div>
+
+  <!-- Testimonials -->
+  <section id="reviews">
+    <div class="w">
+      <div class="rv" style="text-align:center;margin-bottom:40px;">
+        <div class="st">From the community</div>
+        <h2 class="sh">Trusted by audio professionals</h2>
+      </div>
+      <div class="tk" id="ttr">
+        <div class="ts"><div class="ti"><p class="tq">otoyin replaced four separate apps. Voice cloning, mixing, mastering — all local. The Kokoro engine alone is worth the download.</p><div class="ta"><div class="tv">MK</div><div><div class="tn">Marcus Kim</div><div class="tr2">Podcast Producer</div></div></div></div></div>
+        <div class="ts"><div class="ti"><p class="tq">Video dubbing pipeline is production-ready. Transcribe, translate, re-voice, mux — all in one app. Voice preservation is better than cloud services.</p><div class="ta"><div class="tv">SR</div><div><div class="tn">Sara Rodriguez</div><div class="tr2">YouTube Creator</div></div></div></div></div>
+        <div class="ts"><div class="ti"><p class="tq">202 MCP tools means my AI agent can generate, mix, and master audio autonomously. No other audio app comes close to this integration.</p><div class="ta"><div class="tv">AL</div><div><div class="tn">Aisha Liu</div><div class="tr2">AI Engineer</div></div></div></div></div>
+        <div class="ts"><div class="ti"><p class="tq">Audiobook production used to mean three apps. EPUB import, multi-voice casting, chapter rendering, .m4b export — all in 21labs.</p><div class="ta"><div class="tv">DM</div><div><div class="tn">David Mitchell</div><div class="tr2">Audiobook Author</div></div></div></div></div>
+        <div class="ts"><div class="ti"><p class="tq">Switched from ElevenLabs. Kokoro through otoyin is indistinguishable — and it runs entirely on my laptop. No cloud, no latency, no subscription.</p><div class="ta"><div class="tv">JT</div><div><div class="tn">James Thornton</div><div class="tr2">Indie Game Dev</div></div></div></div></div>
+      </div>
+      <div class="td" id="tds"></div>
+      <div class="tn2"><button id="tpv" aria-label="Previous">←</button><button id="tnx" aria-label="Next">→</button></div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="dl" class="cta">
+    <div class="w">
+      <h2>Start creating today</h2>
+      <p>Free, open-source, no account required. Download and go.</p>
+      <div class="ctb">
+        <a href="#" class="bw">↓ Download otoyin</a>
+        <a href="#" class="bo">View on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="w">
+      <div class="fg2">
+        <div><div class="fb">otoyin</div><p class="fd">Open-source AI voice studio. 14 TTS engines, voice cloning, 30+ effects, 202 MCP tools. Free app, premium models.</p></div>
+        <div><div class="fh">Product</div><ul class="fl"><li><a href="#">Download</a></li><li><a href="#">Marketplace</a></li><li><a href="#">Changelog</a></li></ul></div>
+        <div><div class="fh">Resources</div><ul class="fl"><li><a href="#">Documentation</a></li><li><a href="#">API (70 routes)</a></li><li><a href="#">Features</a></li><li><a href="#">Contributing</a></li></ul></div>
+        <div><div class="fh">Community</div><ul class="fl"><li><a href="#">GitHub</a></li><li><a href="#">Discord</a></li><li><a href="#">Twitter</a></li></ul></div>
+      </div>
+      <div class="fbo">
+        <span>© 2026 otoyin · Open source · MIT License</span>
+        <div style="display:flex;gap:14px;"><a href="#" style="color:hsl(0,0%,25%);text-decoration:none;font-size:11px;">Privacy</a><a href="#" style="color:hsl(0,0%,25%);text-decoration:none;font-size:11px;">Terms</a></div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('ntg').addEventListener('click',()=>document.getElementById('nkl').classList.toggle('open'));
+
+    // Hero canvas
+    (function(){const c=document.getElementById('hc'),cx=c.getContext('2d');let t=0;
+    function rs(){const r=c.parentElement.getBoundingClientRect();c.width=r.width;c.height=r.height;}
+    rs();window.addEventListener('resize',rs);
+    function d(){cx.clearRect(0,0,c.width,c.height);const n=Math.floor(c.width/7),w=c.width/n;
+    for(let i=0;i<n;i++){const h=8+Math.abs(Math.sin(i*.12+t*1.4))*35+Math.abs(Math.cos(i*.07+t))*.8*18;
+    cx.fillStyle=`hsla(0,0%,${42+Math.sin(i*.08+t)*8}%,${.12+Math.abs(Math.sin(i*.09+t*.6))*.18})`;
+    cx.fillRect(i*w+1,(c.height-h)/2,w-2,h);}t+=.018;requestAnimationFrame(d);}d();})();
+
+    // Wave dividers
+    function iwd(id){const c=document.getElementById(id);if(!c)return;const cx=c.getContext('2d');let t=0;
+    function rs(){c.width=c.parentElement.clientWidth;c.height=c.parentElement.clientHeight;}
+    rs();window.addEventListener('resize',rs);
+    function d(){cx.clearRect(0,0,c.width,c.height);const m=c.height/2;
+    cx.beginPath();cx.moveTo(0,m);for(let x=0;x<c.width;x++)cx.lineTo(x,m+Math.sin(x*.018+t)*12+Math.sin(x*.009+t*.7)*8);
+    cx.strokeStyle='hsl(0,0%,26%)';cx.lineWidth=1;cx.stroke();
+    cx.beginPath();cx.moveTo(0,m);for(let x=0;x<c.width;x++)cx.lineTo(x,m+Math.sin(x*.013+t+1)*10+Math.cos(x*.007+t*.5)*6);
+    cx.strokeStyle='hsl(0,0%,22%)';cx.lineWidth=.8;cx.stroke();t+=.012;requestAnimationFrame(d);}d();}
+    iwd('wd1');iwd('wd2');iwd('wd3');
+
+    // Reveal
+    const ro=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('vis');});},{threshold:.05});
+    document.querySelectorAll('.rv').forEach(el=>ro.observe(el));
+
+    // Counters
+    function ac(el){const tg=parseInt(el.dataset.target),sx=el.dataset.suffix||'+';if(el.dataset.static){el.textContent='0'+sx;return;}
+    const du=1200,st=performance.now();function tk(now){const p=Math.min((now-st)/du,1),e=1-Math.pow(1-p,3);el.textContent=Math.round(e*tg)+sx;if(p<1)requestAnimationFrame(tk);}requestAnimationFrame(tk);}
+    const ce=document.querySelectorAll('.sn');const co=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;ac(e.target);co.unobserve(e.target);});},{threshold:0});
+    ce.forEach(el=>co.observe(el));setTimeout(()=>{ce.forEach(el=>{const r=el.getBoundingClientRect();if(r.top<=window.innerHeight+50&&r.bottom>=-50){ac(el);co.unobserve(el);}});},800);
+
+    // Smooth scroll
+    document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'});document.getElementById('nkl').classList.remove('open');});});
+
+    // Demo TTS
+    (function(){const c=document.getElementById('dt');if(!c)return;const cx=c.getContext('2d');let t=0;
+    function rs(){c.width=c.parentElement.clientWidth;c.height=c.parentElement.clientHeight;}rs();window.addEventListener('resize',rs);
+    function d(){cx.clearRect(0,0,c.width,c.height);const n=Math.floor(c.width/5),w=c.width/n;
+    for(let i=0;i<n;i++){const h=3+Math.abs(Math.sin(i*.25+t*1.8))*18+Math.abs(Math.cos(i*.12+t*1.1))*8;
+    cx.fillStyle=`hsla(0,0%,${40+Math.sin(i*.15+t)*8}%,${.25+Math.abs(Math.sin(i*.18+t))*.35})`;
+    cx.fillRect(i*w+1,(c.height-h)/2,w-2,h);}
+    const px=(t*25)%c.width;cx.fillStyle='hsl(0,0%,65%)';cx.fillRect(px,0,1,c.height);t+=.025;requestAnimationFrame(d);}d();})();
+
+    // Demo Voice Morph
+    (function(){const sl=document.getElementById('msl'),ca=document.getElementById('dva'),cb=document.getElementById('dvb');
+    if(!sl||!ca||!cb)return;const xa=ca.getContext('2d'),xb=cb.getContext('2d');let t=0;
+    function rs(){const w=ca.parentElement.clientWidth-65;[ca,cb].forEach(c=>{c.width=Math.max(40,w);c.height=20;});}
+    rs();window.addEventListener('resize',rs);
+    function dw(ctx,cv,f,a){ctx.clearRect(0,0,cv.width,cv.height);ctx.beginPath();ctx.moveTo(0,cv.height/2);
+    for(let x=0;x<cv.width;x++)ctx.lineTo(x,cv.height/2+Math.sin(x*f+t*3)*a*Math.sin(t*.5+x*.01));
+    ctx.strokeStyle='hsl(0,0%,55%)';ctx.lineWidth=1.2;ctx.stroke();}
+    function an(){const v=sl.value/100;dw(xa,ca,.05+v*.08,5+v*3);dw(xb,cb,.08+(1-v)*.06,5+(1-v)*3);t+=.035;requestAnimationFrame(an);}an();})();
+
+    // Demo Timeline
+    (function(){const ph=document.getElementById('tlp');if(!ph)return;let p=0;
+    function a(){p+=.1;if(p>100)p=0;ph.style.left=p+'%';requestAnimationFrame(a);}a();})();
+
+    // Demo Dubbing
+    (function(){const s=document.getElementById('ds'),tg=document.getElementById('dt2'),wv=document.getElementById('dw'),tx=document.getElementById('dtx');
+    if(!s)return;const ls=[{s:'EN',t:'JA',p:['Hello','こんにちは']},{s:'EN',t:'ES',p:['Hello','Hola']},{s:'EN',t:'DE',p:['Hello','Hallo']},{s:'EN',t:'FR',p:['Hello','Bonjour']},{s:'EN',t:'PT',p:['Hello','Olá']}];
+    let i=0,st=0;function a(){const l=ls[i%ls.length];s.textContent=l.s;tg.textContent=l.t;
+    if(st===0){tx.textContent=l.p[0];wv.style.width='0%';st=1;setTimeout(a,600);}
+    else if(st===1){wv.style.width='100%';st=2;setTimeout(a,400);}
+    else if(st===2){tx.textContent=l.p[1];st=3;setTimeout(a,900);}
+    else{wv.style.width='0%';tx.textContent='';st=0;i++;setTimeout(a,250);}}a();})();
+
+    // Demo Voice Chat
+    (function(){const c=document.getElementById('dc');if(!c)return;const cx=c.getContext('2d');let t=0;
+    function rs(){c.width=c.parentElement.clientWidth;c.height=c.parentElement.clientHeight;}rs();window.addEventListener('resize',rs);
+    function d(){cx.clearRect(0,0,c.width,c.height);const m=c.height/2;
+    cx.beginPath();cx.moveTo(0,m);for(let x=0;x<c.width*.5;x++)cx.lineTo(x,m+Math.sin(x*.07+t*3.5)*(5+Math.sin(t)*3));
+    cx.strokeStyle='hsl(0,0%,50%)';cx.lineWidth=1.2;cx.stroke();
+    cx.beginPath();cx.moveTo(c.width*.5,m);for(let x=c.width*.5;x<c.width;x++)cx.lineTo(x,m+Math.sin(x*.05+t*2.5+1)*(5+Math.cos(t*.7)*3));
+    cx.strokeStyle='hsl(0,0%,38%)';cx.lineWidth=1.2;cx.stroke();
+    cx.strokeStyle='hsl(0,0%,26%)';cx.lineWidth=.8;cx.setLineDash([2,2]);cx.beginPath();cx.moveTo(c.width*.5,0);cx.lineTo(c.width*.5,c.height);cx.stroke();cx.setLineDash([]);
+    cx.fillStyle='hsl(0,0%,45%)';cx.font='8px Inter';cx.fillText('You',3,10);cx.fillStyle='hsl(0,0%,32%)';cx.fillText('AI',c.width*.5+3,10);
+    t+=.025;requestAnimationFrame(d);}d();})();
+
+    // Demo Marketplace
+    (function(){const c=document.getElementById('mkc');if(!c)return;
+    const ms=[{n:'Kokoro',c:'TTS',p:'Free'},{n:'KittenTTS',c:'TTS',p:'Free'},{n:'Whisper',c:'STT',p:'Free'},{n:'StyleTTS2',c:'TTS',p:'$5'},{n:'Zonos',c:'TTS',p:'$32'},{n:'Orpheus 3B',c:'VC',p:'$50'},{n:'ACE-Step',c:'MUSIC',p:'$43'},{n:'RVC',c:'VC',p:'$10'},{n:'Seed-VC',c:'VC',p:'$20'},{n:'Demucs',c:'VOC',p:'Free'}];
+    ms.forEach(m=>{const d=document.createElement('div');d.className='mp';d.innerHTML=`<b>${m.n}</b><span>${m.c} · ${m.p}</span>`;c.appendChild(d);});})();
+
+    // Testimonials
+    (function(){const tr=document.getElementById('ttr'),dc=document.getElementById('tds'),pb=document.getElementById('tpv'),nx=document.getElementById('tnx');
+    if(!tr||!dc)return;const tot=tr.children.length;let cur=0,timer;
+    for(let i=0;i<tot;i++){const d=document.createElement('button');d.className=(i===0?'on':'');d.setAttribute('aria-label','Slide '+(i+1));d.addEventListener('click',()=>{go(i);rst();});dc.appendChild(d);}
+    function go(i){cur=((i%tot)+tot)%tot;tr.style.transform='translateX(-'+cur*100+'%)';dc.querySelectorAll('button').forEach((d,j)=>d.classList.toggle('on',j===cur));}
+    function rst(){clearInterval(timer);timer=setInterval(()=>go(cur+1),5000);}
+    pb.addEventListener('click',()=>{go(cur-1);rst();});nx.addEventListener('click',()=>{go(cur+1);rst();});
+    let sx=0,dr=false;tr.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;dr=true;},{passive:true});
+    tr.addEventListener('touchend',e=>{if(!dr)return;dr=false;const d=sx-e.changedTouches[0].clientX;if(Math.abs(d)>40){go(d>0?cur+1:cur-1);rst();}},{passive:true});
+    tr.addEventListener('mouseenter',()=>clearInterval(timer));tr.addEventListener('mouseleave',rst);rst();})();
+  </script>
+</body>
+</html>

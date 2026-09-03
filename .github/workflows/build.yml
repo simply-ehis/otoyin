@@ -1,0 +1,115 @@
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Frontend build verification ───────────────────────────────────────
+  frontend-build:
+    name: "Frontend: Vite build"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm install --ignore-scripts
+      - run: npm run build --workspace=@otoyin/app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: app/dist/
+          retention-days: 7
+
+  # ── Tauri release builds (on tag) ────────────────────────────────────
+  tauri-build:
+    name: "Tauri: ${{ matrix.platform }} build"
+    runs-on: ${{ matrix.platform }}
+    if: startsWith(github.ref, 'refs/tags/v')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+          - platform: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tauri/src-tauri
+
+      - name: Install frontend dependencies
+        run: npm install --ignore-scripts
+
+      - name: Build frontend
+        run: npm run build --workspace=@otoyin/app
+
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli
+
+      - name: Build Tauri app
+        working-directory: tauri
+        run: cargo tauri build --target ${{ matrix.target }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-${{ matrix.platform }}
+          path: |
+            tauri/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.exe
+            tauri/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.msi
+            tauri/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.deb
+            tauri/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.AppImage
+            tauri/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.dmg
+            tauri/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.app
+          retention-days: 30
+
+  # ── Release (on tag) ─────────────────────────────────────────────────
+  release:
+    name: "Release: Create GitHub Release"
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [tauri-build]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: tauri-*
+          merge-multiple: true
+          path: artifacts/
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          files: artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

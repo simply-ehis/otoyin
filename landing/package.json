@@ -1,0 +1,22 @@
+{
+  "name": "@otoyin/landing",
+  "version": "0.5.0",
+  "description": "Landing page for Otoyin AI voice studio",
+  "scripts": {
+    "dev": "next dev --turbo",
+    "build": "bun --bun next build",
+    "start": "bun --bun next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^14.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
+    "typescript": "^5.3.3"
+  }
+}

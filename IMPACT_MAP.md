@@ -1,0 +1,311 @@
+﻿# IMPACT_MAP.md â€” otoyin Architectural Impact Map
+
+> Updated on structural changes. Outdated maps are worse than none.
+
+## Core Systems
+
+| System | Key Files | Owner | Dependencies |
+|---|---|---|---|
+| **API Client** | `app/src/lib/api/client.ts`, `client*.ts` | Frontend | Backend REST API |
+| **TTS Engine** | `backend/backends/*.py`, `routes/generate.py` | Backend | Model configs, database |
+| **Story Editor** | `app/src/components/StoriesTab/StoryTrackEditor.tsx` | Frontend | API Client, Story Store |
+| **Audio Studio** | `app/src/components/AudioStudio/AudioStudio.tsx`, `audioStudio/` (TrackStripParts, TrackStripInner, templates, interpolateAutomation, applyDuckEnvelope), `lib/hooks/useAudioRecording.ts` | Frontend | Web Audio API, AudioStudioStore |
+| **Voice Profiles** | `app/src/components/VoiceProfiles/`, `backend/services/profiles.py` | Both | TTS engines, database |
+| **Model Downloads** | `app/src/components/ServerSettings/` (legacy detail/list, now via Marketplace), `backend/routes/models/` | Both | HuggingFace API |
+| **Marketplace Store** | `app/src/components/Store/` (`StorePage.tsx` + `StoreProductCard.tsx` + `StoreDetailModal.tsx` + `storeUtils.ts`), `app/src/components/ServerSettings/modelUtils.ts` (rich descriptions), `backend/routes/marketplace.py`, `backend/services/marketplace_catalog.py`, `backend/routes/models/status.py` (TTL cache) | Both | Signed catalog, offline licensing |
+| **Vocal Isolation (Demucs)** | `backend/services/stem_separation*.py`, `backend/routes/audio_processing.py` (`/audio/separate`), `app/src/components/Workspace/VocalIsolationView.tsx`, `app/src/lib/audio/ensureModel.ts`, Audio Studio toolbar isolate | Both | ONNX weights `MrCitron/demucs-v4-onnx` (downloaded via Store), optional torch demucs |
+| **MCP Server** | `backend/mcp_server/` | Backend | All backend services |
+| **Database** | `backend/database/`, `backend/models.py` | Backend | SQLAlchemy, SQLite |
+| **Server Config** | `backend/config.py` (`get_server_base_url/host/port`) | Backend | Env vars `TWENTYLABS_HOST/PORT` |
+| **ONNX Device Strategy** | `backend/backends/_onnx_precision.py`, `bin/setup-onnx.ps1` | Backend | onnxruntime-directml, `data/runtime/onnx_provider.json` |
+| **API Keys Manager** | `backend/routes/model_providers.py`, `app/src/components/ServerTab/ApiKeysPage.tsx` | Both | model_providers table, Fernet encryption |
+| **Voice-Changer** | `backend/voice_changer/` (`__init__`, `pipeline`, `server`, `__main__`) | Backend | VAD, DeepFilterNet, Whisper, Kokoro TTS, LavaSR |
+| **Streaming LavaSR** | `backend/services/streaming_lavasr.py` | Backend | audiosronnx, sliding window + overlap-add crossfade |
+| **Emotion DSP** | `backend/services/audio_tags.py` (`apply_emotion_dsp`, `EMOTION_PRESETS`) | Backend | scipy resample, numpy |
+| **Silero VAD (ONNX)** | `backend/services/vad.py` | Backend | onnxruntime, `silero_vad_16k_op15.onnx` |
+| **faster-whisper STT** | `backend/backends/faster_whisper_backend.py`, `backend/routes/transcript_edit.py` | Backend | CTranslate2 int8, Systran HF repos, word timestamps + confidence |
+| **Transcript Editing** | `backend/routes/transcript_edit.py`, `app/src/lib/transcript/` (TranscriptService, useTranscriptEditor, TranscriptEditor, TranscriptDrawer), `app/src/components/AudioStudio/`, `app/src/components/Workspace/TranscriptEditView.tsx` | Both | faster-whisper STT, non-destructive audio splicing with crossfade |
+| **GGUF Planner LLM** | `backend/backends/gguf_server_backend.py` (spawns llama.cpp `server.exe` sidecar on a free localhost port) | Backend | jackrong Qwen3.5 GGUF repos, Ministral GGUF, llama-server binary, huggingface_hub, aiohttp |
+| **Fish Audio S2 Pro** | `backend/backends/fish_speech_s2_backend.py`, `backends/registry.py:124`, `configs/tts.py:187`, `routes/models/download.py:242` | Backend | s2.cpp binary (`TWENTYLABS_S2_CPP`), `rodrigomt/s2-pro-gguf` Q4_K_M + tokenizer |
+| **Performance Mode** | `backend/database/models.py:297` `PerformanceSettings`, `services/settings.py:124`, `routes/settings.py:71`, `utils/model_lifecycle.py:141`, `app/src/components/ServerTab/GeneralPage.tsx:221`, `VoiceProfiles/ProfileCard.tsx:46` | Both | SQLite singleton, lifecycle 30s poll |
+| **Workflow Skills** | `backend/agents/manifest.py:40` `SkillSpec`×6, `routes/assistant.py:168` `GET /assistant/skills`, `mcp_server/tools/skills.py:1` `21labs.list_skills` | Both | `TOOL-REFERENCE.md`, `SKILL_SPECS` |
+| **App Loading** | `app/src/components/ui/AppLoadingScreen.tsx`, `LoadingState.tsx:12`, `.agents/skills/app-ui-loading/SKILL.md:1` | Frontend | `router.tsx:388` `Suspense fallback`, `aria-busy` |
+| **ADR** | `backend/routes/adr.py` (13 endpoints), `backend/services/adr.py` (DB + scoring + align + waveform), `app/src/components/Workspace/ADRView.tsx` (654 lines, waveform + auto-select + align), `app/src/lib/api/clientADR.ts` (score/autoSelect/align/waveform) | Both | DB ADRSession/Line/Take, soundfile, numpy correlate, AudioContext |
+| **Cloud BYOK (STT/Music/VC)** | `backend/services/cloud_provider.py` (`transcribe_via_cloud`, `generate_music_via_cloud`, `convert_voice_via_cloud`), `backend/backends/cloud_music_backend.py`, `cloud_vc_backend.py`, `cloud_stt_backend.py`, `backend/routes/transcription.py`, `generate.py`, `voice_convert.py`, `app/src/components/Generation/EngineModelSelector.tsx` (`cloud` engine), `app/src/components/Workspace/VoiceConverterView.tsx` (`cloud` toggle), `types.ts` (`WhisperModelSize` includes `cloud`) | Both | BYOK `model_providers` encrypted, httpx, soundfile |
+
+## Change Impact Rules
+
+### Frontend changes
+- **Component in `components/`**: isolated, no cross-component impact
+- **API client change**: all consumers in `components/` affected
+- **Store change**: all consumers of that store affected
+- **Type change in `types.ts`**: all importers affected
+- **GenerationControlsRow.tsx change**: affects all generation flows (main editor, stories)
+
+### Backend changes
+- **Route change**: frontend API client may need update
+- **Backend change**: routes calling that backend may need update
+- **Model/schema change**: database migration may be needed
+- **MCP tool change**: agent tooling may need update
+- **generation.py change**: affects all TTS generation paths (generate, retry, regenerate, edit)
+
+### Cross-cutting
+- **Dependency upgrade**: run `just setup`, verify `bin/check.ps1`
+- **Config change**: check `biome.json`, `tsconfig.json`, `pyproject.toml`
+- **Icon change**: grep for heroicons imports across all components
+- **ONNX provider change**: run `bin/setup-onnx.ps1`, affects all ONNX backends + VAD
+
+## Phases 0â€“7 Implementation Log
+
+### Phase 0 â€” API Dynamization (done)
+- Centralized `config.get_server_base_url()` / `get_server_host()` / `get_server_port()`
+- Fixed hardcoded `http://127.0.0.1:8000` in `voice_chat.py:218`
+- MCP `_common.py` reads `TWENTYLABS_HOST` env
+- `main.py` / `server.py` default port 17493, read env as fallback
+- **Impact**: all HTTP calls to backend now resolve dynamically
+
+### Phase 1 â€” ONNX Device Strategy (done)
+- `bin/setup-onnx.ps1`: GPU detection â†’ `onnxruntime-directml` or `onnxruntime`
+- `_onnx_precision.py`: `resolve_providers()` reads `data/runtime/onnx_provider.json`
+- `record_onnx_provider()` persists choice
+- **Impact**: all ONNX backends + VAD use resolved providers
+
+### Phase 2 â€” Unified API Keys Manager (done)
+- `model_providers` domain enum extended: `tts|music|sfx|vc|llm|stt`
+- `freesound.py` rewritten: DB key via `_get_api_key()` with env fallback
+- `clientProviders.ts` API client for CRUD
+- `ApiKeysPage.tsx` settings UI (grouped by domain, CRUD, encrypted keys)
+- Router wired `/settings/api-keys`
+- **Impact**: all provider keys now centralized in DB, BYOK wired
+
+### Phase 3 â€” Headless Voice-Changer Service (done)
+- `backend/voice_changer/` package: subprocess spawn/kill/status
+- Pipeline: VAD â†’ denoise â†’ transcribe â†’ TTS â†’ enhance (LavaSR)
+- WS endpoint: OpenAI-Realtime protocol on port 17494
+- `VoiceChatSettings`: `voice_changer_enabled`, `voice_changer_port`
+- Settings UI: spawn/kill buttons, status indicator
+- **Impact**: separate process, settings persistence, auto-spawn on startup
+
+### Phase 4 â€” LavaSR Streaming Wrapper (done)
+- `StreamingLavaSR`: sliding 2â€“4s windows, overlap-add crossfade, 16kâ†’48k
+- `audio_enhancer.py`: `get_streaming_lavasr()` factory
+- Voice-changer pipeline uses streaming as primary, batch fallback
+- **Impact**: real-time audio enhancement without batch latency
+
+### Phase 5 â€” Emotion Tags Tier 1 (done)
+- `EMOTION_PRESETS` dict (11 presets) in `audio_tags.py`
+- `apply_emotion_dsp()`: pitch shift, energy scaling, jitter, brightness filter
+- `GenerationRequest.emotion` field (backend + frontend)
+- Emotion selector dropdown in `GenerationControlsRow.tsx`
+- `/audio/emotion-presets` endpoint
+- Wired into `run_generation()` post-normalization
+- **Impact**: all generation paths support emotion post-processing
+
+### Phase 7 â€” UI Polish (done)
+- Settings two-column layout, sidebar collapsible
+- Darker palette, pulse animations, logo CSS breath
+- Amplitude-reactive warm rose glow
+
+### Audit D â€” Plugin manifest schema v1 (P0 deliverable, 2026-08-19, done)
+- `backend/plugins/manifest_schema.json` â€” JSON Schema draft 2020-12, strict (`additionalProperties: false` everywhere): id (reverse-domain), name, version (semver), kind (6 enums), developer (name required, `ed25519:` pubkey format), entry (required for mcp-server/ui-panel; mcp needs command, ui needs file), tools/models/permissions (closed enum, unique)/min_version/checksums (POSIX paths only, `sha256:<64hex>`). Meta-validated against draft 2020-12 at import.
+- `backend/plugins/manifest.py` â€” `validate_manifest(dict|str)`, `load_manifest(path)`, `verify_checksums(manifest, bundle_dir)` (sha256 of declared files). New package `backend/plugins/`.
+- `docs/PLUGIN_MANIFEST_SCHEMA.md` â€” the schema doc (P0 deliverable); knowledge index entry #53.
+- `jsonschema>=4.20.0` declared in `backend/requirements-core.txt` (was transitive, now explicit).
+- Tests: `tests/test_plugin_manifest.py` â€” 33 tests (meta-schema validity, required fields, id/version/pubkey/checksum rejection, entry conditionals, duplicate/unknown permissions, checksum verify ok/mismatch/missing, file load). Full suite: 762 passed, 16 skipped, 0 failed; ruff clean.
+- NOT in v1 (P1): bundle-wide Ed25519 signature verification, install/execution flow, version negotiation.
+
+### Audit C â€” In-app Log viewer (2026-08-19, done)- Gap: logs streamed into `logStore` (Tauri `server-log` events) + persisted to `appData/logs/server_{stdout,stderr}.log` â€” but nothing displayed them.
+- `app/src/components/ServerTab/LogsPage.tsx`: search, stream filter, copy, export (.log, ANSI-stripped), open log folder (Tauri), no-match state, toasts. Route `/settings/logs` already existed.
+- `PlatformFilesystem.getLogsDir()` added (types.ts + webPlatform "" + `tauri/src/platform/filesystem.ts` â†’ `appDataDir()/logs`). i18n Ã—4 locales (16 keys under `settings.logs`).
+- Verification: lint/format clean; zero typecheck errors in touched files (both app + tauri). Full gate red from USER in-progress work (AssistantPanel, StoryTrackEditor, MixerView/TimelineView, useEditorDrag, index.css) â€” untouched.
+
+### Phase 8 â€” GGUF Planner LLM Swap (done, runtime smoke passed 2026-08-19)
+- `lfm_gguf_backend.py` (llama-cpp-python) deleted â†’ `gguf_server_backend.py`: spawns llama.cpp `server.exe` sidecar, OpenAI-compatible `/v1/chat/completions`, `/health` poll, `_resolve_gguf_filename` (list_repo_files + quant tag, never snapshot)
+- Engine id `lfm_llm` â†’ `gguf_llm` across: `protocols.py`, `registry.py`, `config.py` (`DEFAULT_LLM_ENGINE`), `model_lifecycle.py` (`ALWAYS_ON_ENGINES`), `app.py` registration, `capabilities.py`, `routes/llm.py`, `models.py` (2 request patterns), `build_binary.py`, `scripts/download_required_models.py`
+- Catalog `_get_lfm_llm_configs` â†’ `_get_gguf_llm_configs`: planner-2b (free default), planner-0.8b (free fallback), planner-4b-v3 (paid), planner-ministral-3b (paid)
+- `llm_context.py` RAM tiers reworked for 2B/0.8B/4B/3B; recommended pack now `planner-2b`
+- `assistant_stream.py` default `model_id` â†’ `2B-Q4_K_M`; assistant tool prompt text updated
+- **Impact**: API `model_size` values changed â€” frontend slice done 2026-08-19: `types.ts` `Qwen3ModelSize` â†’ `PlannerModelSize` (4 ids), CapturesPage + CapturesTab defaults/options, i18n Ã—4 locales, `database/models.py` `llm_model` default â†’ `2B-Q4_K_M`, AssistantSettings RAM lookup exact-key-first; runtime smoke passed (health, /assistant/models lists 4 planners, capabilities by_size 2B/0.8B/4B-v3/3B-Reasoning, /llm/generate â†’ graceful "being downloaded", invalid `1.7B` â†’ 422, /capture/readiness â†’ planner-2b not-ready); GGUF downloaded + generation proven end-to-end 2026-08-19 (`llama-server.exe` + DLLs in `data/models/`)
+- **Bug fixed 2026-08-19** (`_resolve_gguf_filename`, `gguf_server_backend.py:58`): filter compared uppercase `quant_tag` against lowercased filenames (`quant_tag in f.lower()`), so candidates were ALWAYS empty and every GGUF download silently fell back to the alphabetically-first quant (Q3_K_M instead of catalog Q4_K_M). Fixed to `quant_tag.lower() in f.lower()`; verified live: 2Bâ†’`Qwen3.5-2B.Q4_K_M.gguf` (1212MB), 0.8Bâ†’`Qwen3.5-0.8B.Q5_K_M.gguf`. Wrong-quant partial (1GB Q3_K_M) cancelled + purged; correct Q4_K_M download running (~6MB/s).
+- **Bug fixed 2026-08-19** (`routes/__init__.py` router discovery): `pkgutil.iter_modules` yields extensionless names, so the `not name.endswith(".py")` guard skipped every plain module â€” only health + `models` registered ("Routes: registered 2 routers"). Every backend since the break served 18 paths; the `/llm/generate` 404 traced here, not to stale processes. Loop simplified; now "Routes: registered 64 routers", 305 paths.
+- **Env knob 2026-08-19** (`gguf_runner.py`): `TWENTYLABS_LLAMA_GEN_TIMEOUT` (default 180s) replaces hardcoded read timeout in `chat_completion`/`text_completion` â€” same pattern as `TWENTYLABS_LLAMA_STARTUP_TIMEOUT`.
+- **Runtime proof 2026-08-19**: `/llm/generate` 200 (70s, first app run) with downloaded planner-2b; direct chat completion â†’ "hello world" in 16.8s (~30 tok/s warm on 2-core). Known pre-existing: Opus-Distilled reasoning model can exhaust small token budgets with empty content (500 "spent its token budget thinking" â€” by design).
+- **Sidecar lifecycle fixed 2026-08-19** (`gguf_runner.py`): adopt-or-reap. Before spawning, scan running llama-server processes (psutil): adopt a healthy one already serving the same model file + n_ctx (incl. orphans whose parent died â€” saves the 25-40s cold load), kill stale *orphan* duplicates and orphans running a *different* model (prevents the pile-up that crashed the active sidecar at ~1.3GB each), leave live-parent foreign sidecars alone. Same-model servers that are still cold-loading (parent alive, not yet healthy) are waited for, never torn down. **Refcounted ownership** (`_OWNERS` pidâ†’count): a sidecar shared by two backends is only killed when the LAST owner stops â€” one backend shutting down can never yank the server out from under another mid-generation. `is_alive`/`stop()` handle adopted (`psutil.Process`) vs spawned (`Popen`) handles. **Memory-frugal spawns**: `--cache-type-k/v q8_0` (halves KV RAM, env `TWENTYLABS_LLAMA_KV_CACHE_TYPE`) + `--parallel 1` single slot (env `TWENTYLABS_LLAMA_PARALLEL`) â€” 4 concurrent KV allocations were the exact OOM pressure that crashed the sidecar; measured 0.19GB free on this box while a server runs. Startup timeout default raised 60sâ†’120s (observed 60-180s under memory pressure). Unit tests: `tests/test_gguf_runner.py` (11 tests: arg parsing, finder filtering/orphan flagging, adopt/stale-kill/reap/leave-live/wait-for-loading decisions, refcounted stop). Live proof: spawn â†’ healthy â†’ second instance adopted in 0.9s (vs 25-40s cold) â†’ shared pid/port â†’ A.stop leaves it up â†’ B.stop kills â†’ zero processes remain.
+- **Token budget wired 2026-08-19** (`routes/llm.py`): `/llm/generate` now honors the user's saved `max_tokens` from the Assistant settings panel (which already existed â€” Slice C2 "Context & Token Budget", `GET/PUT /settings/assistant`) via `get_budget_max_tokens(model_size)` when `request.max_tokens` is None; same policy as assistant_stream/captures-refine/personality. Agent does NOT decide budgets â€” users choose in the panel.
+- **Pre-existing (not from this change)**: `test_audio_enhancer.py::test_enhance_invalid_mode` fails â€” `routes/features.py:111` returns structured error dict, test expects string
+
+### Audit B â€” AudioStudio + configs fixes (2026-08-18, done)
+- `StudioTrack.channels` field added (default 1) â€” set at decode/import/MIDI-render sites; bounce config uses it (`AudioStudioStore.ts`, `templates.ts`, `AudioStudio.tsx`)
+- Ducking rebuilt: `duckGain`+`duckMeter` sidechain in `startPlayback`; RMS duck in `updateTime`; `applyDuckEnvelope.ts` (new) applied to offline export
+- Export now mirrors live playback: per-track `buildEffectChain` + `source.start(0)` in `handleExport`
+- Recording switched to id-based (`recordingTrackIdRef`); `useAudioRecording` gains `onRecordingError` teardown
+- `ModelStatus.supports_instruct` (backend `models.py`, `routes/models/status.py`) â†’ frontend `types.ts`, `useGenerationForm.ts`, `useEngineSync.ts`, `EngineModelSelector.tsx` (instruct gate = `emotion_control || supports_instruct`)
+- `biome.json` overrides added: `tauri/dist/**`, `web/dist/**` (linter+formatter disabled â€” build artifacts)
+- **Impact**: pan/loop/duck/export paths share one graph; `channels` flows through store â†’ templates â†’ bounce; instruct toggle visible for engines flagged `supports_instruct` in the model catalog; generated `app/src/lib/api/models/ModelStatus.ts` stays stale by convention (hand-maintained `types.ts` is source of truth)
+
+### Phase 9 â€” P0 Engine Removals (2026-08-19, done; marketplace launch prep)
+- Removed engines: `qwen` (Qwen3-TTS PyTorch), `qwen_custom_voice`, `step_audio_editx`, `pocket_emo` (EmoShift), MLX whisper variant, `bark` non-verbal, `acestep` (music). Kept as P1 paid plans: Qwen3-TTS 1.7B GGUF, Bark Small/Large TTS, ACE-Step 1.5.
+- Deleted backend files: `pytorch_backend.py`, `mlx_backend.py`, `qwen_custom_voice_backend.py`, `step_audio_editx_backend.py`, `pocket_emo_backend.py`, `bark_backend.py`, `acestep_backend.py`, `mcp_server/tools/music_generation.py`, `mcp_server/tools/sound_generation.py`.
+- Wiring: `configs/__init__.py` (configs dropped: qwen 0.6B/1.7B, qwen_custom_voice, step_audio_editx, pocket_emo, bark, acestep, MLX whisper), `protocols.py` (`TTS_ENGINES` 17â†’13, `MUSIC_ENGINES` = stable_audio only, STT = faster-whisper + whisper.cpp), `registry.py` (engine branches removed), `routes/` (qwen/pocket-emo/bark/music endpoints removed), `assistant_tools/` (`generate_music`, `generate_sound`, `list_sounds`, `arrange_music` removed), `mcp_server` tools 110â†’106.
+- Frontend: `ENGINE_OPTIONS`, Sound Studio (Music/Bark tabs removed; StudioView = Instruments/SFX/Noise), Models tab, API client domain files, `useEngineSync`/`EngineModelSelector`.
+- Docs: README (13 engines, 106 MCP tools), PROJECT_STATUS, root+docs FEATURES, engine-atlas + 15+ skill pages (REMOVED banners on tts-qwen/tts-qwen-custom-voice/music-acestep/bark-sfx; 63-pocket-emo REMOVED), GROUNDING-PACK gotchas (incl. corrected `engine_has_model_sizes` note), mcp-tools-extended/audio-orchestration/TOOL-REFERENCE, 01/05/18/33/34/38 knowledge docs, USE_CASES, CLARITY_CAPABILITIES, DEPLOYMENT_TEST_PLAN.
+- **Impact**: default TTS engine `kokoro` everywhere; `engine_has_model_sizes()` True only for kokoro/styletts2/f5_tts/pocket_tts/neutts_2e/orpheus; cloned profiles route only to CLONING_ENGINES = {fish_speech, zonos, styletts2, f5_tts, pocket_tts}; `generations.engine="import"` still valid; `migrations.py` untouched (historical); `services/marketplace_catalog.py` keeps P1 entries (qwen3-tts-1.7b, acestep-1-5) intentionally.
+- **Verification**: all touched files `py_compile` clean; `bin/check.ps1` ALL CHECKS PASSED (2026-08-19); pytest 647 passed / 7 skipped / 0 failed.
+- **Drift fixed 2026-08-19** (marketplace work landed since Phase 9 green run): Biome lint+format â€” AnnouncementBanner/OffersPage/StorePage/WhatsNewPage (useBlockStatements, noNonNullAssertion, noArrayIndexKey, formatting) + NotificationBell/SupportPage format; TS â€” AudioStudio.tsx missing `getPeakWaveform` import; Ruff â€” `audio_tags.py`/`audio_tags_synth.py` import sort + unused re-exports removed + E402 (`dataclasses` import moved to top) + `routes/__init__.py` import sort; **tests broken at collection** â€” `assistant_tools/execution.py` was an async generator with valued `return`s (SyntaxError): rewrote `execute_tool` as plain coroutine, removed dead `stream` param + `_STREAMING_TOOLS` + SSE passthrough branch (no caller ever passed `stream=True`; `sse_event` kept â€” used by `assistant_stream.py`), re-exported `execute_tools_parallel` + `format_tool_error` from `assistant_tools/__init__.py`.
+- **Pre-existing failures fixed 2026-08-19** (all flagged issues resolved): Biome lint â€” NotificationBell extra `open` dep removed, ApiKeysPage `load` wrapped in `useCallback`, useBlockStatements wrapped in EventTimeline + TelemetryPage, generated `app/src/lib/api/**` now skipped via `biome.json` override (linter+formatter disabled, matching `.biomeignore` intent); Ruff lint â€” RET505 unnecessary `else` removed in `utils/chunked_tts.py:386`; Ruff format â€” `services/generation.py` + Biome format drift fixed; `test_audio_enhancer.py::test_enhance_invalid_mode` updated to assert the real structured contract (`detail.code == "invalid_mode"`), the route at `routes/features.py:111` intentionally returns `{code, detail}` dicts.
+
+### Audit E â€” Engine-removal leftovers sweep (2026-08-19, done; closes Phase 9)
+- Backend source removal was already done (Phase 9). This audit swept every remaining live reference to removed engines:
+- `backend/requirements.txt`: Step-Audio-EditX git install + `qwen-tts>=0.0.5` removed; curated comment 10â†’8; Bark/ACE-Step optional comment lines removed.
+- `justfile`: chatterbox-tts / hume-tada `--no-deps` installs, Apple Silicon `requirements-mlx.txt` block, and Qwen3-TTS git install removed (Unix + Windows branches).
+- Deleted: `backend/requirements-mlx.txt` (MLX Whisper removed), `scripts/test_download_progress.py` (referenced only removed engines).
+- `services/tts_enhancer.py` (`qwen-tts`/`qwen-tts-custom` presets dropped), `utils/model_status.py` (`TTS_PREFERENCE_ORDER` â†’ `["chattts","kokoro"]`), `services/audio_tags.py` (chatterbox native tags dropped from `NATIVE_TAG_ENGINES` + `_TAG_NATIVE_MAP`), `build_binary.py` (`--exclude-module` chatterbox + tada dropped; file extend-excluded from ruff by design), `pyproject.toml` (per-file-ignores for deleted backends removed), `tests/test_all_models_e2e.py` (MATRIX â†’ kokoro-only), `tests/E2E_MODEL_TEST_DESIGN.md` + `tests/fixtures/README.md` (rewritten to current matrix), `backend/README.md` (requirements-mlx mention removed).
+- **Impact**: install paths (`just setup-python` / setup) no longer pull removed-engine deps; no runtime code references removed engines; e2e matrix matches live `TTS_ENGINES`.
+- **Verification**: ruff check + format clean on touched files (build_binary.py findings pre-existing + excluded); full suite 839 passed / 17 skipped / 0 failed.
+
+### Phase 10 â€” P1 Engine Integrations, Slice A: Qwen3-TTS 12Hz 1.7B Base (GGUF) (2026-08-19, done)
+- Research (deep-research, verified): llama.cpp >= b10270 (2026-08-04, PR #26254) ships the `llama-tts` CLI (mtmd pipeline) â€” NOT in llama-server. Official GGUFs `ggml-org/Qwen3-TTS-12Hz-1.7B-Base-GGUF`: backbone `Qwen3-TTS-12Hz-1.7B-Base-Q4_K_M.gguf` (1.04GB) + mandatory `mmproj-Qwen3-TTS-12Hz-1.7B-Base-Q8_0.gguf` (446MB). Flags `-m -mm -p --tts-lang --tts-speaker-file -n -o` (24kHz WAV, 512-frame â‰ˆ 41s cap). Weights Apache-2.0 â†’ sellable ($40 catalog id `qwen3-tts-1.7b`). CPU RTF 3-6 on 2-core â†’ batch TTS.
+- New backend: `backend/backends/qwen3_tts_backend.py` â€” `Qwen3TTSBackend`, one-shot `llama-tts` subprocess (no resident model), pure `build_tts_args()`, `find_llama_tts()` (env `TWENTYLABS_LLAMA_TTS` â†’ bundled `data/models/llama-tts.exe` â†’ PATH), `TWENTYLABS_LLAMA_TTS_TIMEOUT` default 300s, module singleton `qwen3_tts_backend`.
+- Wiring: `protocols.py` (`TTS_ENGINES` += `qwen3_tts`), `registry.py` (singleton `_TTSBackendEntry`), `configs/tts.py` (`model_name="qwen3-tts-1.7b"`, engine `qwen3_tts`, hf_repo_id ggml-org, quant Q4_K_M, size_mb 1486, clone_voice, 10 langs), `routes/models/download.py` qwen3_tts branch (backbone + mmproj), `services/profiles.py` (`CLONING_ENGINES` += `qwen3_tts`).
+- Frontend: `EngineModelSelector.tsx` (ENGINE_OPTIONS + ENGINE_DESCRIPTIONS + CLONING_ENGINES), `types.ts` engine union, `profileFormHelpers.ts`, `useGenerationForm.ts` (schema + MODEL_NAME_MAP), `useProfileSync.ts`, `VoiceChatSettings.tsx`, `useModelSections.ts`, `modelUtils.ts` (MODEL_DESCRIPTIONS), `format.ts` (ENGINE_DISPLAY_NAMES), `languages.ts` (10 langs).
+- Tests: new `backend/tests/test_qwen3_tts_backend.py` (18 tests â€” arg building, binary resolution incl. env/bundled/PATH, subprocess lifecycle via monkeypatched `subprocess.run`, timeout/nonzero-exit/no-WAV errors, license-gate catalog id, download branch fetches backbone + mmproj via patched `huggingface_hub.hf_hub_download`).
+- **Verification**: ruff check + format clean; targeted 18/18 pass; full suite 857 passed / 17 skipped / 0 failed; `bun run typecheck` clean (0 errors); biome lint+format clean on touched files.
+- **Impact**: new resident engine slot for llama-tts (one-shot, unloads immediately); voice chat `pick_cached_tts_engine` picks it up via `TTS_ENGINES`; license gate at `routes/models/download.py:151` covers download; catalog product pre-exists (Phase 9 kept it).
+
+### Phase 11 - P1 Engine Integrations, Slice B: Bark Small (GGUF / CrispASR) (2026-08-19, done)
+- **P1-C decision (2026-08-19): Bark Large DROPPED.** No prebuilt bark-large GGUF exists anywhere (cstr org ships bark-small only; cstr/bark-large-GGUF 401; CrispASR TTS table lists only bark-small). Conversion would need in-app torch + suno/bark .pt (~1.2GB) + convert script + quantize - not offline-first. ark-large product removed from marketplace_catalog.py; design doc docs/marketplace/catalog-v1.json entry marked DROPPED with re-add condition.
+- Research (deep-research, verified): llama.cpp has ZERO Bark support; path is CrispASR (CrispStrobe whisper.cpp fork, MIT, v0.8.29, Windows CPU zip). Model cstr/bark-small-GGUF: ark-small-q4_k.gguf 235MB (model card authoritative), single GGUF packs 3 GPT-2 sub-models + EnCodec 24kHz decoder. CLI --backend bark -m <gguf> --tts <text> --tts-output <wav> [--voice <path.npz>]; 13 langs baked into speaker prompts (en de es fr hi it ja ko pl pt ru tr zh); MIT - sellable ( catalog id ark-small). CPU RTF ~3.3 - batch TTS.
+- Key verified detail: --voice takes a DIRECT .npz path (preset names NOT resolved - crispasr_backend_bark.cpp: "speaker presets not yet supported"); npz parser (bark_tts.cpp bark_set_speaker_npz) matches exact member names semantic_prompt/coarse_prompt/fine_prompt and requires STORED (uncompressed) zip members - pack with np.savez, never savez_compressed. Voices from suno/bark-small speaker_embeddings/v2/<lang>_speaker_<n>_{semantic,coarse,fine}_prompt.npy (13 langs x 10 speakers; curated 2/language = 26).
+- New backend: ackend/backends/bark_backend.py - BarkBackend, one-shot crispasr subprocess, pure uild_tts_args(), ind_crispasr() (env TWENTYLABS_CRISPASR -> bundled data/models/crispasr.exe -> PATH), pack_voice_npz() (npy -> npz conversion), BARK_VOICES (26 presets, gender unset - Suno does not document), TWENTYLABS_CRISPASR_TIMEOUT default 600s, module singleton ark_backend.
+- Wiring: protocols.py (TTS_ENGINES += ark_small), 
+egistry.py (singleton entry), configs/tts.py (model_name="bark-small", engine ark_small, hf_repo cstr/bark-small-GGUF, quant q4_k, size_mb 235, clone_voice=False, 13 langs, structured_preset_voices lazily from BARK_VOICES to avoid import cycle), 
+outes/models/download.py bark branch (gguf + per-voice pack_voice_npz), services/profiles.py (_get_preset_voice_ids bark branch).
+- Frontend (10 files, mirror qwen3_tts but NOT cloning lists): EngineModelSelector.tsx (ENGINE_OPTIONS + ENGINE_DESCRIPTIONS "13 languages, 26 preset voices, 24kHz, CPU (CrispASR)"), 	ypes.ts engine union, profileFormHelpers.ts, useGenerationForm.ts (schema + MODEL_NAME_MAP ark-small), useProfileSync.ts, VoiceChatSettings.tsx, useModelSections.ts, modelUtils.ts, ormat.ts, languages.ts (13 langs).
+- Tests: new ackend/tests/test_bark_backend.py (25 tests - arg building, binary resolution, voice npy->npz packing incl. STORED-member + exact-key assertions, npz idempotency, subprocess lifecycle via monkeypatched subprocess.run, missing voice pack / binary / cache / nonzero-exit / no-WAV / timeout errors, registry/config/catalog gate, preset validation, download branch fetches gguf + packs all 26 voices).
+- **Verification**: ruff check + format clean; targeted 25/25 pass; full suite 1021 passed / 17 skipped / 0 failed; un run typecheck clean (0 errors); biome lint+format clean on 9 touched frontend files.
+- **Impact**: second subprocess one-shot TTS slot (CrispASR, unloads immediately); preset-voice profile flow extended to bark_small (26 voices, 13 langs); license gate covers download; catalog product pre-exists (bark-small $5). Voice packs are part of the model download (offline-first).
+
+### Phase 12 - P1 Engine Integrations, Slice C: ACE-Step 1.5 (music) (2026-08-19, done)
+- Research (deep-research, verified): `lnearyux/ACE-Step` does NOT exist (404); official org is `ace-step` (GitHub) / `ACE-Step` (HF). arXiv 2411.00925 is NOT the paper (plasma-lens physics); real papers: v1 = arXiv 2506.00045, 1.5 = arXiv 2602.00744. "1.7B" is the LM planner only (acestep-5Hz-lm-1.7B); full stack ~10GB bundle `ACE-Step/Ace-Step1.5` (ungated): DiT 2B turbo (`acestep-v15-turbo`, 4.78GB bf16) + LM 1.7B + Qwen3-Embedding-0.6B + VAE (337MB). Runs via `pipeline("text-to-audio", model=repo, trust_remote_code=True)` (custom modeling code ships in the bundle); transformers range [4.51, 4.58) - app pinned 4.57.6 OK; torch 2.5.1 older than their 2.7.1 rec - runtime-verify by user. 48kHz stereo, 10s-10min, turbo 8 steps no CFG; CPU ~1-3 min per 10s clip (slow - documented, not fixable). License: code MIT (1.5) / Apache-2.0 (v1), weights MIT - sellable ($43 catalog id `acestep-1-5`). GGML alternative exists (acestep.cpp / ace-server + Serveurperso GGUFs ~5.4GB) but is a third-party community port - NOT chosen; official torch path matches existing torch backends.
+- Rebuilt backend: `backend/backends/acestep_backend.py` (was deleted in P0) - AceStepBackend, resident transformers pipeline, `load_model()` gated on `is_model_cached` (ModelNotCachedError), prompt folding `{genre}, {mood}, {prompt}` + `{tempo} bpm` when set, `max_duration_seconds` + `seed` kwargs, output channel-mean'd mono at model-native 48000 (old 1.0 contract was mono 44100 - kept the mono convention, native rate), `is_available()` via find_spec (transformers + torch), module singleton `acestep_backend`.
+- Wiring: protocols.py MUSIC_ENGINES += acestep; registry.py get_music_backend branch; configs/__init__.py `_get_music_configs()` (model_name="acestep-1-5" == catalog id, engine acestep, hf_repo ACE-Step/Ace-Step1.5, quant bf16, size_mb 10300) wired into get_all_model_configs(); download uses the generic snapshot_download else-branch (bundle ships custom .py code - full snapshot required, no new branch needed); routes/generate.py POST /generate/music (bounds 1-300s, genre/mood/tempo, 503 not-available / 400 uncached / 500 else, WAV stream); mcp_server/tools/generation.py `21labs.generate_music` restored (was removed in P0; list_models auto-includes acestep via MUSIC_ENGINES).
+- Key correctness fix: `with_retry` awaits `func()` - the blocking sync `generate()` is wrapped in `asyncio.to_thread` so the event loop stays free during multi-minute CPU runs (SFX route has the same latent await-tuple bug - logged to AGENT_FEEDBACK, NOT fixed in this slice).
+- Tests: new `backend/tests/test_acestep_backend.py` (19 tests - engine/config/catalog-gate wiring, registry singleton + unknown engine, availability, cache gate, pipeline build idempotency + trust_remote_code, prompt folding incl. tempo/seed omission, mono-mean + sample-rate default, lifecycle, route 200/503/400/422 bounds, MCP tool via patched source module + asyncio.run).
+- **Verification**: ruff check + format clean; targeted 19/19 pass; full suite 1021 passed / 17 skipped / 0 failed (regression-free); no TS changes this slice.
+- **Impact**: music generation capability restored (REST + MCP), second MusicBackend engine; license gate covers download via id==model_name; download = one 10GB snapshot (offline-first, includes custom code). Runtime (real inference) deferred to user: 10GB model not downloadable here; pipeline kwargs follow the official README (max_duration_seconds, seed).
+
+### Phase 14 — Marketplace Unification & Polish (2026-08-21, done)
+- **Goal:** unify Models + Store into one attractive marketplace that is the ONLY place to buy/download/delete, add rich per-model descriptions, fix tab duplication, speed up load, and polish tiny UX.
+- **Marketplace UI:** rebuilt `StorePage.tsx` (298 lines) as the single surface — hero with warm accent, install count + cache path + Open folder, search (name/id/note/description/repo) + category pills (All/Voice/STT/LLM/VC/Music/Extras) + All/Free/Paid filter, grouped-by-category grid with attractive cards. Card shows: gradient accent bar per category, title, 3-line rich description, category/size/capability chips, price badge (Free/$/Installed), footer action is the ONLY buy/download/delete entry (Free→Download, Paid→Buy$/Redeem, Installing→progress+Cancel, Installed→Ready+Delete+Manage). Detail modal is the ONLY delete/redeem surface — includes delete confirm with size, license paste, download progress, specs (license/runs/quality), engine/category chips, HF link, and "why buy" callout.
+- **Split for maintainability (500-line cap):** new `storeUtils.ts` (category config, accent gradients, description builder, capability chips, filtering/sorting), `StoreProductCard.tsx` (213 lines), `StoreDetailModal.tsx` (261 lines). Old `StorePage.tsx` was 553 lines and mixed concerns — now each file <300.
+- **Rich descriptions:** `ServerSettings/modelUtils.ts` expanded `MODEL_DESCRIPTIONS` for all models (TTS/STT/LLM/VC/music/spatial) from one-liners to 2–3 sentence marketing + use-case copy; new entries for whisper-large-v3, parakeet, qwen3-asr, rvc/openvoice/neutts-air, steam-audio size, acestep/heartmula/stable-audio. `getDisplayDescription()` falls back to rich → catalog note → generic.
+- **Tab fix:** `Sidebar.tsx` removed duplicate `Models` tab (`ArchiveBoxIcon`), renamed `Store` → `Marketplace` (`ShoppingBagIcon`, id `marketplace`), kept `Offers` separate. `router.tsx` now redirects `/models` → `/store` (single source). `RecommendedModelsBanner` adds "Browse marketplace →" link and tip that deletes/downloads are marketplace-only.
+- **Slow-load fix:** `backend/routes/models/status.py` now TTL-caches `scan_cache_dir()` for 4s and the assembled `ModelStatusListResponse` for 3s (bypassed when a download is active so progress stays live) — cuts repeated 200–600ms scans on marketplace open/polls. Frontend polls reduced: `activeTasks` 2s only when downloading else 8s (was 30s), `model-status` stale 30s + refetch 30s, catalog 10m stale. `vite.config.ts` adds manualChunks for `page-store` / `page-audio-studio` / `page-workspace` so the marketplace chunk is code-split and not in the initial bundle.
+- **Tiny polish:** `FolderOpen` + Open button + cache path in hero, problems banner (failed downloads + Clear), empty state with Clear filters, skeletons, `title`/`aria-label` on icon-only buttons (Delete, Cancel, Refresh, Clear search), redeem flow with JSON validation, progress bars on cards + modal, offline-license copy, and "one-time purchase · signed offline" messaging to increase willingness to pay.
+- **Verification:** `tsc` clean for new Store files (remaining errors are pre-existing in AudioStudio/TranscriptDrawer/clip.test); `biome check --write` on new files clean after fixes (SVG title, block statements, a11y); manual smoke: `/models` redirects to `/store`, marketplace shows 30+ products with rich copy, installed set flips via `model-status`, download/cancel/delete/license flows delegate to marketplace only.
+
+### Phase 13 - P1 Engine Integrations, Slice D: HeartMuLa 3B (audio.cpp sidecar) (2026-08-19, done)
+- Research (deep-research, verified): official GitHub `HeartMuLa/heartlib` (Apache-2.0), HF org `HeartMuLa`, paper arXiv:2601.10547. Model `HeartMuLa-oss-3B-happy-new-year` (3.94B params: 3B global + 300M local, Llama-3.2-based hierarchical AR + HeartCodec flow-matching decoder; 48kHz MONO, up to 6 min, tags = free-text comma-separated style control). LICENSE: Apache-2.0 code AND weights (explicit 2026-01-20 announcement) - SELLABLE, HIGH confidence ($37 catalog id heartmula-3b).
+- Runtime decision: official `heartlib` Python stack REJECTED - pinned deps (torchtune==0.4.0, torchao==0.9.0, bitsandbytes which blocks non-CUDA installs, modelscope, vq-pytorch), Windows triton import bug (issue #85), CPU 2-3h/song, 22.45GB F32 weights. Chose audio.cpp (0xShug0, 1.9k*, Apache-2.0, whisper.cpp-style ggml engine, prebuilt Windows binaries): `audiocpp_cli --task gen --family heartmula --model <dir> --text <p> --request-option tags=<tags> --request-option duration_sec=<n> [--seed <n>] --out <wav>`; single GGUF `HeartMuLa-GGUF/heartmula-q8_0.gguf` 7.66GB Q8_0 ungated at audio-cpp/audio.cpp-gguf (packs MuLa generator + HeartCodec decoder - no companion files).
+- New backend: backend/backends/heartmula_backend.py - HeartMuLaBackend, one-shot audiocpp subprocess, pure build_args() + build_tags() (genre/mood/tempo -> comma tags, tempo as NNNbpm), find_audiocpp() (env TWENTYLABS_AUDIOCPP -> bundled data/models/audiocpp_cli.exe -> PATH), TWENTYLABS_AUDIOCPP_TIMEOUT default 3600s (CPU songs take minutes), _is_model_cached(required_files=[gguf]), load_model verifies binary+cache, is_available() = binary present, module singleton heartmula_backend. Sync generate (MusicBackend protocol).
+- Wiring: protocols.py MUSIC_ENGINES += heartmula; registry.py branch; configs/__init__.py _get_music_configs += heartmula-3b (model_name == catalog id, hf_repo audio-cpp/audio.cpp-gguf, quant Q8_0, size_mb 7660); download.py heartmula branch (single hf_hub_download of the gguf - license gate id==model_name).
+- Route refactor: /generate/music now takes `engine` param (default acestep), validates against MUSIC_ENGINES (400 unknown), dispatches via get_music_backend(engine) - one generic music route for all MusicBackend engines. MCP 21labs.generate_music gained engine param too (old contract had one). acestep route tests updated to patch backend.backends.get_music_backend.
+- Tests: new backend/tests/test_heartmula_backend.py (25 tests - build_tags incl. tempo omission, args full/minimal/no-seed, binary resolution env/bundled/missing, load_model error paths, is_available/is_loaded, subprocess lifecycle via monkeypatched subprocess.run + soundfile WAV, nonzero-exit/no-WAV/timeout, registry/config/catalog gate, download branch fetches exact gguf path, route dispatch engine=heartmula). test_acestep_backend.py route tests refactored to the dispatch seam + unknown-engine 400 test.
+- **Verification**: ruff check + format clean; targeted 25/25 + 19/19 acestep; full suite 1077 passed / 17 skipped / 0 failed; no TS changes.
+- **Impact**: third MusicBackend engine (music generation now: acestep, heartmula via one generic /generate/music route); second ggml sidecar slot; CPU-gen slow (minutes/song) - documented; runtime deferred to user (7.66GB GGUF not downloadable here; CLI flags verified from audio.cpp docs/model_specs).
+
+### Phase 15 - Ship-Readiness Audit: bug fixes, test repair, web/docs alignment (2026-08-21, done)
+- **Goal:** full audit + fix to ship-ready without building; normal testing + live web testing.
+- **Production bugs fixed (backend):**
+  - `services/generation.py` `run_generation`: every error/cancel/finally handler referenced undefined bare `generation_id` (9× F821) — any failed/cancelled generation crashed its own error path (DB never marked failed, task leaked). Now uses `ctx.generation_id`. Also `_on_chunk` used unimported `save_audio`.
+  - `routes/models/download.py` `download_in_background`: undefined `loop` in ONNX quantize step — post-download quantization always crashed (non-fatal but never ran).
+  - `app.py` `graceful_exit()` Windows branch called `asyncio.get_event_loop()` from worker threads (request handler / watchdog) → RuntimeError swallowed at debug level → **`POST /shutdown` and the parent watchdog silently no-op'd**; process never exited (source of zombie servers across sessions). Fix: set `_uvicorn_server.should_exit = True` (works from any thread; uvicorn lifespan runs `_run_shutdown()`), removed CTRL_C_EVENT fallback (hits whole console), fresh-loop `asyncio.run(_run_shutdown())` last resort.
+  - `main.py`: `sys` used but not imported — port-in-use friendly message crashed with NameError.
+  - `mcp_server/tools/__init__.py` `register_tools()`: TR registry was empty on cold start (`create_app` builds MCP server BEFORE `startup_verify` populates) → live `/mcp` server exposed only 25 of ~216 tools. Fix: populate-if-empty guard inside `register_tools` (single choke point for prod + tests).
+  - `routes/generations.py` `/tts/engines`: one asset-less ONNX-only engine raised ValueError → whole endpoint 500 (marketplace/engine list broken on machines without all weights). Now degrades per-engine (debug log, listed uncached).
+  - Assistant tool schemas: 6 tools defined twice (`studio_add_track/set_master_volume/import_session` in tools_generation.py, `voice_changer_*` in tools_audio_prim.py) with DIVERGED params vs canonical `tools_mcp_wired.py`; stale copies removed.
+  - `routes/features.py`: dead legacy `/batch/jobs*` routes deleted (shadowed by `batch.py`, registered first alphabetically).
+- **Test repairs:** shutdown e2e now drains stdout too (uvicorn access logs → stdout pipe filled and hung the child); STT backend/e2e tests use `asyncio.run` instead of order-dependent `get_event_loop().run_until_complete` (closed-loop pollution); audio-enhancer skip helper also checks model-weight cache; smoke tests updated to real contracts (`/tts/engines` shape, batch `func_name`+`id`+wrapped list, session clipless ⇒ `valid:false` warning) and base URL overridable via `TWENTYLABS_SMOKE_BASE_URL`; MCP registration uniqueness test rewritten against final FastMCP tool set (duplicate registration calls are by-design layering); `test_mcp_assistant_tools` schema-uniqueness now satisfied upstream.
+- **Frontend/web:** stale nested `@types/react@18` under app/ + web/ shadowed the React 19 types the runtime actually uses (app typechecked v18 while running v19) — nests purged, tauri workspace `@types/react(-dom)` bumped ^18→^19 to match its React 19 runtime (landing stays Next14/React18, self-consistent); `StorePage.tsx` missing imports (`KeyIcon`, `Badge`) fixed after concurrent Codebuff commit landed mid-audit; `StarRating.tsx` a11y role + non-index keys; `StoreDetailModal.tsx` fused-statement line split + conditional `useMemo` moved above early return (Rules of Hooks); biome organize-imports applied.
+- **web/ workspace:** added missing `.eslintrc.cjs` (eslint deps were declared but config absent — lint script was dead).
+- **docs/ workspace:** `postinstall` (`fumadocs-mdx`) was broken repo-wide — `source.config.ts` imported `defineDocs` from nonexistent `fumadocs` package; corrected to `fumadocs-mdx/config`.
+- **Tooling:** `bin/check.ps1` pytest invocation had literal `\n` sequences instead of line continuations (core-test step was broken).
+- **Verification:** ruff lint+format clean (436 files); biome check clean (443 files); tsc clean; async-blocking PASS; pytest core 70/70; vitest 201/201; full backend suite green across partitions (973+312+325 passed, skips are missing-model guards); live smoke suite 12/13 pass +1 model-gated skip against restarted dev server on :17493; manual `/shutdown` verified clean exit (~1s, lifespan teardown logged).
+- **Follow-up — root WAV pollution fixed (2026-08-21):** `audio-dsp==0.1.10` renders `arpeggio.wav` / `8bit_samples.wav` into CWD at *import time* (module-level demo code in `utils/arpeggio.py` + `synth/chip_tone.py`); `services/dsp_synth.py` imports the package on every server/test run. Fixed with a chdir-to-tempdir guard around the imports in `dsp_synth.py`; verified import from repo root leaves zero WAVs and synth still works (20 passed on dsp/synth/instrument tests).
+- **Follow-up — ultra-deep audit P0/P1 fixes (2026-08-22):**
+  - **P0 fixed+live-verified:** remote-mode bearer auth was a no-op — `"/"` in RemoteAuthMiddleware EXEMPT_PATHS + prefix matching exempted every path (`server.py`). Removed; live run: no-token→401, with-token→passes, /health exempt.
+  - **P1 CSRF guard added:** new `utils/origin_guard.py` `OriginGuardMiddleware` (pure ASGI, registered outside CORS in `create_app`) rejects POST/PUT/DELETE/PATCH carrying a present-but-untrusted Origin header using the same allowlist as CORS. Non-browser clients (no Origin) unaffected. Live: foreign-Origin POST→403, no-Origin reaches route handler. Tests: `tests/test_origin_guard.py` (11 cases incl. exact-match-not-prefix).
+  - **P1 zip-bomb bounds:** generation ZIP import in `services/export_import.py` now enforces member-count + declared-expansion limits BEFORE any member read, sharing module constants `MAX_ZIP_MEMBERS`/`MAX_ZIP_UNCOMPRESSED` with the profile importer (limits patchable for tests). Tests: `tests/test_export_import_zip_limits.py` (5 cases incl. end-to-end import into tmp storage).
+  - Shutdown-e2e readiness timeout bumped 90→240s after measuring a 137 s cold start under concurrent agent load.
+
+### Phase 16 - Verify-gate greening + BYOK audit & test isolation (2026-08-25, done)
+- **Goal:** green the `just verify` pre-commit gate and harden the BYOK (API keys) layer after a security review; no new features.
+- **Verify-gate:** `just verify-lint` 8/8; 72 targeted backend tests + 45 voice-chat tests pass; `bin/check.ps1` unicode box-chars fixed for pwsh 5.1; backend normalized to LF via `.gitattributes` (`backend/** text eol=lf`) so cross-OS CRLF churn can't re-break the gate.
+- **BYOK audit fixes (5 findings):**
+  - Divergent LLM BYOK paths → consolidated. VoiceChat now reads/writes Layer A (`model_providers` idle LLM domain) in `services/memory.py` (`get_voice_chat_settings` overlays Layer A; `save_voice_chat_settings` writes both layers, single source of truth). `routes/model_providers.py` stays the canonical backend; `routes/assistant.py` consumes `get_api_provider`/Layer A for cloud LLM dispatch.
+  - Inactive domains (`music`, `vc`, `stt`) surfaced in UI: `components/ServerTab/ApiKeysPage.tsx` lists them as INACTIVE and disables Add (existing backends are the only supported BYOK path).
+  - Free-text domain param → validated `ProviderDomain(StrEnum)` in `routes/model_providers.py` (`domain` query/path now typed; invalid domain → 422).
+  - Freesound still legitimately reuses the `sfx` domain (functional, kept).
+  - Cloud LLM with no model selected → `routes/assistant.py` `event_stream` yields a clear, recoverable error instead of an opaque crash.
+- **tool_dispatch (MCP) hardening:** profile tools renamed `profiles.*` → `21labs.profiles.*` namespace (`tool_dispatch/catalog.py` + `routes/profiles.py`) for consistent MCP tool naming; `backend/tests/test_tr_dispatch.py` gained an autouse `_isolate_global_tr` fixture that snapshots/restores the `TR._tools` singleton so dispatch tests can't pollute the global registry (verified worst-case ordering 26 pass; broader 66 pass).
+- **Frontend test hardening:** `app/src/test/clip.test.ts` `afterEach` now also `vi.unstubAllGlobals()` (clip's `fetch`/`Audio` stubs no longer leak into sibling suites) and silences the expected-throw `console.error` noise; still 11/11 green.
+- **Verification:** ruff clean; clip vitest 11/11; branch `checkpoint/gate-byok-wip`.
+
+### Phase 17 — ADR Hardening + Cloud BYOK Restore (2026-08-26, done)
+- **ADR backend hardening:** `backend/services/adr.py` `add_take` now auto-scores via `score_take_quality` (capped 10s, SF read) so `quality_score` + `auto-select` (quality 0.6 + timing 0.4) work without manual score; `calculate_alignment_offset` (numpy correlate), `score_take_quality` (RMS+speech+clipping), `compute_waveform` tested. `backend/tests/test_adr.py` (17 tests: service CRUD + scoring + alignment + waveform + route create/guide/takes/select/auto-select/score/align/waveform/audio + 404s) — 17/17 pass.
+- **ADR frontend:** `app/src/components/Workspace/ADRView.tsx` — `WaveformBars` fixed to render `s*32px` heights (was constant), new `TakeWaveform` per-take query (`getADRTakeWaveform`), `autoSelectMut` (`POST /adr/auto-select`) with “Auto-Select” button per line, `alignMut` (fetch guide/take WAV → AudioContext decode 24k c10s → `POST /adr/align` → `setShiftMs`), guide-first gate (`hasGuide` disables Record/Align, amber banner, toast), unified errors to `showStudioErrorToast`, delete confirm, `Align` button + shift slider (-500…500). `app/src/lib/api/clientADR.ts` added `autoSelectADRTake`.
+- **Cloud BYOK restore:** Tracked backend files (`transcription.py`, `generate.py`, `voice_convert.py`, `registry.py`, `configs/__init__.py`, `protocols.py`, `transcribe.py`, `subtitles.py`, `cloud_provider.py`) restored from stash after `just verify` reset; untracked `cloud_music_backend.py`/`cloud_vc_backend.py`/`cloud_stt_backend.py` fixed (`_decode_audio_bytes` double-decode removed, instances `cloud_music_backend`/`cloud_vc_backend` added); `backend/tests/test_cloud_stt_music_vc.py` recreated (14 tests: unit + route, app readiness patch, backend class patch for thread mocks) — 14/14 pass. Frontend cloud engines already present: `EngineModelSelector.tsx` (`cloud` in ENGINE_OPTIONS + desc), `VoiceConverterView.tsx` (`cloud` toggle), `types.ts` (`WhisperModelSize` includes `cloud`).
+- **Verification:** `pytest backend/tests/test_adr.py` 17 passed, `pytest backend/tests/test_cloud_stt_music_vc.py` 14 passed, `ruff check` clean (fixed unused imports), `biome check` fixed formatting on ADRView/clientADR.
+- **Impact:** ADR take quality badges + auto-select now meaningful; align staged via REST (no destructive timeline mutate); cloud STT/music/VC one-shot via BYOK provider.
+
+## Critical Flows
+
+### TTS Generation Flow
+```
+Frontend (useGenerationForm)
+  â†’ GenerationRequest (with emotion field)
+    â†’ POST /generations
+      â†’ run_generation()
+        â†’ load_engine_model()
+        â†’ generateChunked(tts_model, text, voice_prompt)
+        â†’ normalize_audio()
+        â†’ apply_emotion_dsp() [if emotion set]
+        â†’ _save_generate()
+        â†’ notify_generation_status()
+```
+
+### Voice-Changer Flow
+```
+Settings toggle (voice_changer_enabled)
+  â†’ auto-spawn on startup (backend/app.py)
+    â†’ python -m backend.voice_changer --port 17494
+      â†’ FastAPI WS /voice-changer/ws
+        â†’ mic â†’ VAD â†’ denoise â†’ transcribe â†’ TTS â†’ enhance â†’ out
+```
+
+### GGUF Planner LLM Flow (Phase 8)
+```
+frontend assistant/chat â†’ routes/assistant_stream.py (stream_local, model_id "2B-Q4_K_M")
+  â†’ backend.generate(chat_messages, ctx_override)
+    â†’ GGUFServerLLMBackend.load_model() [first call]
+      â†’ find_llama_server(): TWENTYLABS_LLAMA_SERVER â†’ data/models/llama-server.exe â†’ PATH
+      â†’ _resolve_gguf_filename(): list_repo_files + quant tag (excl. mmproj/mtp/imatrix/embedding/encoder)
+      â†’ hf_hub_download (force_offline_if_cached) â†’ spawn server --host 127.0.0.1 --port <free> -c <n_ctx> -ngl <TWENTYLABS_LLAMA_GPU_LAYERS>
+      â†’ poll GET /health (60s deadline)
+    â†’ POST /v1/chat/completions (top_p 0.9/1.0, max_tokens clamped to n_ctx)
+  â†’ tool-call JSON loop (MAX_TOOL_ITERATIONS=10) via assistant_tools middleware
+  â†’ lifecycle: gguf_llm is ALWAYS_ON (never idle-unloaded)
+```
+
+### ONNX Provider Resolution Flow
+```
+bin/setup-onnx.ps1
+  â†’ detect GPU (WMI)
+  â†’ pip install onnxruntime-directml / onnxruntime
+  â†’ record_onnx_provider("DmlExecutionProvider")
+    â†’ data/runtime/onnx_provider.json
+
+resolve_providers() [at ONNX backend init]
+  â†’ read recorded choice
+  â†’ return ["DmlExecutionProvider", "CPUExecutionProvider"]
+```

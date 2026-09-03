@@ -1,0 +1,139 @@
+"""Voice-conversion endpoints (RVC + Seed-VC)."""
+
+import io
+import logging
+
+import numpy as np
+import soundfile as sf
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+
+from .. import config
+from ..backends import get_vc_backend
+from ..backends.rvc_backend import RVC_VOICE_PACKS
+from ..errors import ERR_AUDIO_NOT_FOUND, ERR_SEED_VC_NEEDS_REF, ERR_VOICE_CONVERSION_FAILED
+from ..utils.async_audio import async_load_audio
+from ..utils.model_lifecycle import lifecycle_manager
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter()
+
+
+class VoiceConvertRequest(BaseModel):
+    audio_path: str
+    engine: str = "rvc"  # "rvc" | "seed_vc"
+    # RVC fields
+    voice_pack: str = ""
+    transpose: int = 0
+    index_rate: float = 0.5
+    f0_method: str = "rmvpe"
+    # Seed-VC fields
+    reference_audio_path: str = ""
+    diffusion_steps: int = 10
+    length_adjust: float = 1.0
+    inference_cfg_rate: float = 0.7
+    f0_condition: bool = False
+
+
+@router.get("/voice-packs")
+async def list_voice_packs():
+    """List available RVC voice packs (installed + downloadable)."""
+    from ..backends.rvc_backend import rvc_backend
+
+    installed = set()
+    models_dir = rvc_backend._get_models_dir()
+    if models_dir.exists():
+        for d in models_dir.iterdir():
+            if d.is_dir() and any(f.suffix == ".pth" for f in d.iterdir()):
+                installed.add(d.name)
+
+    source = rvc_backend.pack_source
+    packs = []
+    for name in RVC_VOICE_PACKS:
+        desc = source(name)
+        packs.append(
+            {
+                "name": name,
+                "repo": desc["repo"],
+                "installed": name in installed,
+            }
+        )
+    return {"voice_packs": packs}
+
+
+@router.post("/voice-convert")
+async def convert_voice(req: VoiceConvertRequest):
+    """Convert a stored audio file into a target voice.
+
+    - engine="rvc": needs a downloaded ``voice_pack`` (pre-trained).
+    - engine="seed_vc": needs a ``reference_audio_path`` (zero-shot clone).
+    Returns WAV audio.
+    """
+    resolved = config.resolve_storage_path(req.audio_path)
+    if resolved is None or not resolved.exists():
+        raise HTTPException(status_code=404, detail=ERR_AUDIO_NOT_FOUND)
+
+    try:
+        audio, sr = await async_load_audio(str(resolved))
+        audio = audio.mean(axis=1) if audio.ndim > 1 else audio
+        audio = np.asarray(audio, dtype=np.float32)
+
+        if req.engine == "cloud":
+            backend = get_vc_backend("cloud")
+            lifecycle_manager.mark_model_used("cloud")
+            voice = req.voice_pack or req.reference_audio_path
+            try:
+                wav, out_sr = backend.convert(audio, sr, voice, pitch_shift=req.transpose)
+            except LookupError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+            buf = io.BytesIO()
+            sf.write(buf, np.asarray(wav, dtype=np.float32), out_sr, format="WAV")
+            buf.seek(0)
+            return StreamingResponse(buf, media_type="audio/wav")
+
+        backend = get_vc_backend(req.engine)
+        lifecycle_manager.mark_model_used(req.engine)
+
+        if req.engine == "seed_vc":
+            ref = config.resolve_storage_path(req.reference_audio_path)
+            if ref is None or not ref.exists():
+                raise HTTPException(
+                    status_code=400,
+                    detail=ERR_SEED_VC_NEEDS_REF,
+                )
+            wav, out_sr = backend.convert(
+                audio,
+                sr,
+                str(ref),
+                diffusion_steps=req.diffusion_steps,
+                length_adjust=req.length_adjust,
+                inference_cfg_rate=req.inference_cfg_rate,
+                f0_condition=req.f0_condition,
+                pitch_shift=req.transpose,
+            )
+        else:
+            if req.voice_pack not in RVC_VOICE_PACKS:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"That voice pack isn't in the studio. Available: {', '.join(RVC_VOICE_PACKS.keys())}",
+                )
+            wav, out_sr = backend.convert(
+                audio,
+                sr,
+                req.voice_pack,
+                transpose=req.transpose,
+                index_rate=req.index_rate,
+                f0_method=req.f0_method,
+            )
+
+        buf = io.BytesIO()
+        sf.write(buf, np.asarray(wav, dtype=np.float32), out_sr, format="WAV")
+        buf.seek(0)
+        return StreamingResponse(buf, media_type="audio/wav")
+    except HTTPException:
+        raise
+    except (RuntimeError, ValueError, OSError) as e:
+        logger.exception("Voice conversion failed")
+        raise HTTPException(status_code=500, detail=ERR_VOICE_CONVERSION_FAILED) from e

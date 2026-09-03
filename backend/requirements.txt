@@ -1,0 +1,152 @@
+# FastAPI and server
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.5.0
+
+# Database
+sqlalchemy>=2.0.0
+
+# ML models
+torch==2.5.1
+torchaudio==2.5.1
+transformers>=4.36.0,<=4.57.6
+accelerate>=0.26.0
+huggingface_hub>=0.20.0
+
+# STT: pywhispercpp — whisper.cpp Python bindings (GGML CPU inference).
+# English-only tiny.en (~75MB, ~100MB RAM). No PyTorch or CTranslate2.
+pywhispercpp>=1.5.0
+
+# STT: faster-whisper — REMOVED (bloat). Use pywhispercpp (GGML) instead.
+# faster-whisper is NOT a dependency and must NOT be auto-installed or bundled.
+
+# Voice conversion (OPTIONAL — both lazy-imported, degrade gracefully if absent):
+#
+# 1) RVC v2 — pre-trained voice packs. See requirements-rvc.txt: its
+#    numpy<=1.23.5 pin conflicts with the numpy>=1.24.0,<2.0 pin below, so it
+#    must be installed separately (dedicated venv) rather than pinned here.
+#
+# 2) Seed-VC — zero-shot clone from a reference clip (no training). NOT a clean
+#    PyPI package: install from git and its own requirements.txt
+#    (pip install git+https://github.com/Plachtaa/seed-vc). Checkpoints
+#    (Plachta/Seed-VC) auto-download on first use. Also heavy (DiT+Whisper+
+#    BigVGAN+CAMPPlus+RMVPE), GPU-recommended. Install separately to avoid
+#    dependency conflicts with the base app.
+# seed-vc is intentionally NOT pinned here; install on demand.
+
+# Other optional, lazy-imported features (degrade to a clean 501 if absent):
+#
+# - Stem separation (services/stem_separation.py) needs `demucs`. Not pinned
+#   here — it pulls its own torch/torchaudio versions that can fight the
+#   pins below. Install on demand: pip install demucs
+# - General MIDI instrument rendering (services/gm_instrument.py) needs
+#   `tinysoundfont` AND a manually downloaded SoundFont file (see that
+#   module's docstring for where to get one and where to put it). Install
+#   on demand: pip install tinysoundfont
+# - NeuTTS-Air (backends/neutts_backend.py) — GGUF backbone + torch-free
+#   ONNX codec when available. Apache 2.0. Install on demand:
+#   pip install "neutts[llama,onnx]"
+# - OpenVoice (backends/openvoice_backend.py) — zero-shot tone-color voice
+#   conversion, torch-based (no ONNX path in the official repo). MIT.
+#   Install on demand: pip install git+https://github.com/myshell-ai/OpenVoice.git
+
+# Curated TTS engines (ranked by quality/footprint) — see backend/backends/__init__.py:TTS_ENGINES
+# 1. Kokoro-82M — REMOVED (bloat). NOT a dependency, never auto-install or bundle.
+# kokoro / misaki removed — use Pocket-TTS / Parler-TTS / ONNX engines instead.
+# 2. Pocket-TTS — tiny, multilingual
+pocket-tts>=0.1.0
+# 3. Parler-TTS (Mini) — descriptive voice synthesis
+parler-tts>=0.1.0
+
+# Shared ONNX TTS dependency: SentencePiece tokenizer. Required by MOSS-TTS-Nano
+# and Pocket-TTS ONNX backends (is_onnx_available() gates on it). Small wheel,
+# no model weights — ONNX graph weights are fetched lazily from HF on first use.
+sentencepiece>=0.2.0
+
+# ONNX Runtime — shared inference runtime for every torch-free ONNX backend:
+# Kokoro ONNX, StyleTTS2 ONNX, F5-TTS ONNX, Pocket-TTS ONNX, MOSS-TTS-Nano ONNX,
+# KittenTTS ONNX, DeepFilterNet ONNX, stem separation ONNX.
+# Lazy-imported and gated by is_onnx_available() (which imports onnxruntime);
+# without it the app silently degrades to the torch paths — or fails outright
+# for MOSS-TTS-Nano, which has no torch fallback. Declared explicitly so fresh
+# installs get the torch-free path. Windows-AMD GPU users may optionally
+# supplement with onnxruntime-directml. macOS users get CoreML via onnxruntime-coreml.
+onnxruntime>=1.17.0
+onnxruntime-coreml>=1.17.0; sys_platform == "darwin"
+
+# Audio processing
+librosa>=0.10.0
+soundfile>=0.12.0
+numpy>=1.24.0
+numba>=0.60.0
+scipy>=1.10.0
+pedalboard>=0.9.0
+
+# Offline DSP / synthesizer — classical audio synthesis (FM, subtractive, chip-tone,
+# dial-up, vocoder, bitcrush, etc.). Optional at runtime (lazy-imported); the
+# backend boots without it and returns 501 on DSP endpoints. Install for the
+# Synth / DSP workspace tab.
+audio-dsp>=0.1.10
+
+# Audio cleanup — DeepFilterNet3 ONNX (neural speech denoiser, torch-free).
+# Uses onnxruntime only. Weights auto-download from HuggingFace on first use
+# and are cached locally. No PyTorch needed.
+# The ONNX model repo: soniqo/DeepFilterNet3-ONNX (MIT license).
+# NOTE: Do NOT install the torch-based `deepfilternet` package — it requires
+# numpy<2.0 and conflicts with the rest of the stack. The ONNX path
+# (services/deepfilter_onnx.py) is the preferred and only denoiser.
+
+# Audio enhancement — LavaSR bandwidth extension (pure ONNX, no torch).
+# Upscales low-quality audio (8-48 kHz) to clean 48 kHz. Preinstalled;
+# degrades gracefully if absent.
+audiosronnx>=0.0.1
+
+# HTTP client (for CUDA backend download)
+httpx>=0.27.0
+
+# HTTP client for OpenAI-compatible streaming/validation (routes/assistant*.py)
+aiohttp>=3.9.0
+
+# MCP server (Model Context Protocol) — lets local AI agents call
+# 21-labs.speak / .transcribe / .list_captures / .list_profiles
+fastmcp>=3.0,<4.0
+sse-starlette>=2.0
+
+# YouTube / video download (optional — lazy-imported, degrades gracefully if absent)
+yt-dlp>=2024.1.0
+
+# Book import — PyMuPDF handles PDF + EPUB offline
+PyMuPDF>=1.24.0
+
+# Translation (optional — lazy-imported, degrades gracefully if absent)
+deep-translator>=1.11.0
+argostranslate>=1.9.0
+
+# Speaker diarization (optional — replaces pyannote, torch-free)
+# Resemblyzer: speaker embeddings via d-vector (~5MB, Apache-2.0)
+resemblyzer>=0.1.4
+# Silero VAD: voice activity detection (~2MB, ONNX-based)
+silero-vad>=5.1.0
+# Scikit-learn: spectral clustering for speaker assignment
+scikit-learn>=1.3.0
+
+# Utilities
+python-multipart>=0.0.6
+Pillow>=10.0.0
+
+# System introspection — utils/llm_context.py reads RAM totals for context sizing
+psutil>=5.9.0
+
+# At-rest secret encryption — utils/secret_store.py (Fernet). Required by the
+# BYOK model-provider service at import time; do not remove.
+cryptography>=41.0.0
+
+# ── Additional optional, lazy-imported engines (degrade to a clean 501 if absent) ──
+# Same on-demand pattern as demucs / tinysoundfont / neuTTS / OpenVoice above:
+#
+# - Stable Audio Open (backends/stable_audio_backend.py) — SFX/music,
+#   `pip install git+https://github.com/Stability-AI/stable-audio-tools.git`
+# - Orpheus (backends/orpheus_backend.py) — needs `snac` on PyPI
+# - Kokoro-ONNX (backends/kokoro_onnx_backend.py) — `pip install kokoro-onnx` (ONNX path)
+# - StyleTTS2/KittenTTS ONNX G2P (backends/_styletts2_onnx.py, _kitten_tts_onnx.py) —
+#   `pip install phonemizer espeakng-loader` (requires espeak-ng system binary)

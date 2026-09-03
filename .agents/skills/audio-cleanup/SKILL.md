@@ -1,0 +1,111 @@
+---
+name: audio-cleanup
+description: Repair noisy, distorted, or poorly recorded audio — noise reduction, de-essing, denoising, normalization, and restoration. Use when a user asks to "clean up audio", "remove noise", "fix this recording", "denoise", or "repair audio".
+---
+# Audio Cleanup
+
+## Purpose
+Restore and improve audio quality by removing noise, reducing sibilance, fixing levels, and applying transparent processing.
+
+## When to use
+- User has a noisy recording (background hum, fan noise, hiss)
+- User needs to remove sibilance (harsh "s" sounds)
+- User has a recording with bad levels (too quiet or clipping)
+- User wants to clean up dialogue before mixing
+- User needs to remove silence or dead air
+
+## Prerequisites
+- Audio file to process
+- Effects chain available (pedalboard or numpy/scipy)
+
+## Parameters / Schema
+- **audio_path**: Path to the audio file
+- **operations**: Which cleanup steps to apply
+- **intensity**: How aggressive the processing should be (light/medium/heavy)
+
+## Agent procedure
+
+### 1. Diagnose the audio
+Before processing, understand what's wrong:
+```
+MCP: 21labs.analyze_loudness(audio_path="input.wav")
+MCP: 21labs.transcribe(audio_path="input.wav")
+```
+- Check LUFS (should be -14 to -24 for dialogue)
+- Check if transcription is accurate (errors suggest noise issues)
+
+### 2. Choose the cleanup pipeline
+
+| Problem | Solution | Tool |
+|---------|----------|------|
+| Background noise/hum | Noise reduction | `noise_reduce` |
+| Harsh sibilance | De-esser | `apply_effects` (deesser) |
+| Too quiet | Normalization | `normalize_audio` |
+| Clipping | Limiting | `apply_effects` (limiter) |
+| Dead air/silence | Silence removal | `trim_audio` |
+| muddy low end | High-pass filter | `apply_effects` (eq) |
+| Room reverb | Denoise | `apply_effects` (spectral_denoise) |
+
+### 3. Apply noise reduction first
+```
+MCP: 21labs.noise_reduce(
+  audio_path="input.wav",
+  method="rnnoise"  # or "spectral" for stationary noise
+)
+```
+- **RNNoise**: Best for non-stationary noise (voices, traffic, music)
+- **Spectral denoise**: Best for stationary noise (fans, hum, hiss)
+
+### 4. Apply de-esser if needed
+```
+MCP: 21labs.apply_effects(
+  audio_path="denoised.wav",
+  effects=[{"type": "deesser", "params": {"frequency": 5000, "threshold": -20}}]
+)
+```
+
+### 5. Fix levels
+```
+MCP: 21labs.normalize_audio(
+  audio_path="processed.wav",
+  target_lufs=-16
+)
+```
+
+### 6. Verify
+```
+MCP: 21labs.analyze_loudness(audio_path="final.wav")
+MCP: 21labs.transcribe(audio_path="final.wav")
+```
+- LUFS should be in target range
+- Transcription should be accurate
+- Listen for artifacts (over-processing sounds watery/metallic)
+
+## Processing order
+Always process in this order for best results:
+1. **Noise reduction** (remove noise before other processing)
+2. **De-esser** (before compression, which can amplify sibilance)
+3. **EQ** (shape tone after noise removal)
+4. **Compression** (control dynamics)
+5. **Normalization** (final level adjustment)
+
+## Pitfalls / Gotchas
+- **Less is more** — aggressive processing creates artifacts (watery, metallic sound)
+- **RNNoise needs training data** — it works best on speech, not music
+- **Don't double-process** — running noise reduction twice degrades quality
+- **Check before/after** — always compare the processed version to the original
+- **Some noise is natural** — a completely silent background sounds robotic
+
+## Cross-links
+- `noise-reduction` — RNNoise vs spectral denoise comparison
+- `effects-cleanup` — De-esser, spectral denoise, noise gate reference
+- `effects-dynamics` — Compressor and limiter
+- `effects-tone` — EQ for cleanup
+- `loudness-metering` — LUFS measurement
+- `mastering` — Final processing chain
+
+## Validation
+- Measure loudness before and after (should be within 3dB)
+- Transcribe the cleaned audio (should match or improve on original)
+- A/B test: listen to original vs cleaned side by side
+- Check for artifacts: watery sound, clicks, phase issues

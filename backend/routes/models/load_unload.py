@@ -1,0 +1,91 @@
+"""Model load/unload endpoints."""
+
+from fastapi import HTTPException
+from fastapi.responses import StreamingResponse
+
+from ...errors import ERR_MODEL_LOAD_FAILED, ERR_MODEL_UNLOAD_FAILED
+from .common import logger, router
+
+
+@router.post("/models/load")
+async def load_model(engine: str | None = None, model_size: str = "default"):
+    """Load a TTS model, offloading any other resident TTS engine first.
+
+    Passing ``engine`` loads that specific provider; omit it to load the default
+    TTS engine. Switching the active provider frees the previous model
+    immediately (single resident TTS slot enforced in the registry).
+    """
+    from ...backends import load_engine_model
+
+    if not engine:
+        raise HTTPException(
+            status_code=400, detail="No engine specified and no default — download a model from the Store first"
+        )
+    target = engine
+    # Manifest gate: never auto-download. A TTS engine may only load if the user
+    # has actually downloaded its model via the Models tab (DB row present).
+    from ...backends import get_all_model_configs
+    from ...services.model_registry import MODEL_NOT_DOWNLOADED_MSG, is_downloaded
+
+    cfg = next((c for c in get_all_model_configs() if c.engine == target), None)
+    if cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size):
+        raise HTTPException(status_code=400, detail=f"{MODEL_NOT_DOWNLOADED_MSG} ({cfg.model_name})")
+
+    try:
+        await load_engine_model(target, model_size)
+        return {"message": f"Model {target} ({model_size}) loaded successfully"}
+    except Exception as e:
+        logger.exception("Failed to load model %s", target)
+        raise HTTPException(status_code=500, detail=ERR_MODEL_LOAD_FAILED) from e
+
+
+@router.post("/models/unload")
+async def unload_model():
+    """Unload the default TTS model to free memory."""
+    from ...services import tts
+
+    try:
+        tts.unload_tts_model()
+        return {"message": "Model unloaded successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=ERR_MODEL_UNLOAD_FAILED) from e
+
+
+@router.post("/models/{model_name}/unload")
+async def unload_model_by_name(model_name: str):
+    """Unload a specific model from memory without deleting it from disk."""
+    from ...backends import get_model_config, unload_model_by_config
+
+    config = get_model_config(model_name)
+    if not config:
+        raise HTTPException(status_code=400, detail=f"Unknown model: {model_name}")
+
+    try:
+        was_loaded = unload_model_by_config(config)
+        if not was_loaded:
+            return {"message": f"Model {model_name} is not loaded"}
+        return {"message": f"Model {model_name} unloaded successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=ERR_MODEL_UNLOAD_FAILED) from e
+
+
+@router.get("/models/progress/{model_name}")
+async def get_model_progress(model_name: str):
+    """Get model download progress via Server-Sent Events."""
+    from ...utils.progress import get_progress_manager
+
+    progress_manager = get_progress_manager()
+
+    async def event_generator():
+        async for event in progress_manager.subscribe(model_name):
+            yield event
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )

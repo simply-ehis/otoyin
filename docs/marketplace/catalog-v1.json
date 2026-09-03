@@ -1,0 +1,474 @@
+{
+  "version": 1,
+  "generated_at": "2026-08-19T00:00:00Z",
+  "marketplace_public_key": "0000000000000000000000000000000000000000000000000000000000000000",
+  "products": [
+    {
+      "id": "tts.kokoro",
+      "name": "Kokoro",
+      "category": "tts",
+      "price_usd": 3.00,
+      "free_after_promo": true,
+      "license": {
+        "type": "apache-2.0",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "kokoro",
+      "model_size": "82M",
+      "checksum": { "sha256": "" },
+      "description": "Fast, lightweight TTS engine. Free for 30 days, then $3 one-time."
+    },
+    {
+      "id": "tts.styletts2",
+      "name": "StyleTTS2",
+      "category": "tts",
+      "price_usd": 5.26,
+      "license": {
+        "type": "mit",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "styletts2",
+      "model_size": "default",
+      "checksum": { "sha256": "" },
+      "description": "Style-based TTS with natural prosody."
+    },
+    {
+      "id": "tts.bark-small",
+      "name": "Bark Small",
+      "category": "tts",
+      "price_usd": 4.80,
+      "license": {
+        "type": "mit",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "bark",
+      "model_size": "small",
+      "checksum": { "sha256": "" },
+      "description": "Suno's Bark TTS engine (small variant)."
+    },
+    {
+      "id": "tts.bark-large",
+      "name": "Bark Large",
+      "category": "tts",
+      "price_usd": 18.00,
+      "license": {
+        "type": "mit",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "bark",
+      "model_size": "large",
+      "checksum": { "sha256": "" },
+      "description": "DROPPED 2026-08-19: no prebuilt bark-large GGUF exists (cstr org ships small only). Re-add only if an artifact or a conversion pipeline ships."
+    },
+    {
+      "id": "tts.parler-mini",
+      "name": "Parler-TTS Mini",
+      "category": "tts",
+      "price_usd": 17.60,
+      "license": {
+        "type": "apache-2.0",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "parler-tts-mini",
+      "model_size": "default",
+      "checksum": { "sha256": "" },
+      "description": "Text-description-controlled TTS — describe the voice you want.",
+      "voice_design": true
+    },
+    {
+      "id": "tts.zonos",
+      "name": "Zonos v0.1",
+      "category": "tts",
+      "price_usd": 32.00,
+      "license": {
+        "type": "apache-2.0",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "zonos",
+      "model_size": "v0.1",
+      "checksum": { "sha256": "" },
+      "description": "Premium expressive TTS with voice cloning."
+    },
+    {
+      "id": "tts.qwen3-tts",
+      "name": "Qwen3-TTS 12Hz 1.7B Base",
+      "category": "tts",
+      "price_usd": 40.00,
+      "license": {
+        "type": "apache-2.0",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "qwen-tts",
+      "model_size": "1.7B",
+      "download": {
+        "repo_id": "HaujetZhao/Qwen3-TTS-12Hz-1.7B-Base-GGUF",
+        "filename": "",
+        "size_bytes": 0
+      },
+      "checksum": { "sha256": "" },
+      "description": "Multilingual TTS with 3-second voice cloning.",
+      "voice_design": true
+    },
+    {
+      "id": "tts.orpheus",
+      "name": "Orpheus 3B",
+      "category": "tts",
+      "price_usd": 80.00,
+      "license": {
+        "type": "apache-2.0",
+        "sellable": true,
+        "revenue_cap_usd": null,
+        "attribution": "Llama license (weights)"
+      },
+      "engine": "orpheus",
+      "model_size": "3B",
+      "checksum": { "sha256": "" },
+      "description": "Expressive TTS with rich emotion control."
+    },
+    {
+      "id": "tts.neutts-air",
+      "name": "NeuTTS-Air",
+      "category": "tts",
+      "price_usd": 10.00,
+      "license": {
+        "type": "community",
+        "sellable": true,
+        "revenue_cap_usd": 5000000
+      },
+      "engine": "neutts-air",
+      "model_size": "default",
+      "checksum": { "sha256": "" },
+      "description": "NeuTTS TTS + voice conversion. Apache-based license, sellable under $5M revenue."
+    },
+    {
+      "id": "tts.neutts-2e",
+      "name": "NeuTTS-2E",
+      "category": "tts",
+      "price_usd": 10.00,
+      "license": {
+        "type": "community",
+        "sellable": true,
+        "revenue_cap_usd": 5000000
+      },
+      "engine": "neutts-2e",
+      "model_size": "default",
+      "checksum": { "sha256": "" },
+      "description": "NeuTTS-2E TTS + voice conversion."
+    },
+    {
+      "id": "stt.whisper-tiny",
+      "name": "Whisper.cpp Tiny",
+      "category": "stt",
+      "price_usd": 0,
+      "license": {
+        "type": "mit",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "whisper",
+      "model_size": "tiny",
+      "checksum": { "sha256": "" },
+      "description": "Free STT engine — 99 languages, 39M params."
+    },
+    {
+      "id": "llm.qwen3.5-2b",
+      "name": "Qwen3.5-2B (Opus-Distilled)",
+      "category": "llm",
+      "price_usd": 20.00,
+      "license": {
+        "type": "apache-2.0",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "llm",
+      "model_size": "2B",
+      "checksum": { "sha256": "" },
+      "description": "Default assistant planner — Claude-4.6-Opus reasoning distill. ~1.7GB Q4_K_M."
+    },
+    {
+      "id": "llm.qwen3.5-0.8b",
+      "name": "Qwen3.5-0.8B (Free Fallback)",
+      "category": "llm",
+      "price_usd": 0,
+      "license": {
+        "type": "apache-2.0",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "llm",
+      "model_size": "0.8B",
+      "checksum": { "sha256": "" },
+      "description": "Free low-RAM fallback assistant planner. ~0.7GB Q5_K_M."
+    },
+    {
+      "id": "llm.qwopus-4b-v3",
+      "name": "Qwopus3.5-4B-v3",
+      "category": "llm",
+      "price_usd": 40.00,
+      "license": {
+        "type": "apache-2.0",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "llm",
+      "model_size": "4B",
+      "checksum": { "sha256": "" },
+      "description": "Paid planner upgrade — 75.6% strict tool eval. GGUF Q4_K_M 2.8GB."
+    },
+    {
+      "id": "llm.ministral-3b",
+      "name": "Ministral-3-3B-Reasoning-2512",
+      "category": "llm",
+      "price_usd": 30.00,
+      "license": {
+        "type": "apache-2.0",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "llm",
+      "model_size": "3B",
+      "checksum": { "sha256": "" },
+      "description": "2nd paid planner — 256K context, native function calling."
+    },
+    {
+      "id": "music.acestep-1.5",
+      "name": "ACE-Step 1.5 1.7B",
+      "category": "music",
+      "price_usd": 43.00,
+      "license": {
+        "type": "mit",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "acestep",
+      "model_size": "1.7B",
+      "checksum": { "sha256": "" },
+      "description": "Music generation — LM 1.7B + DiT."
+    },
+    {
+      "id": "music.heartmula-3b",
+      "name": "HeartMuLa 3B",
+      "category": "music",
+      "price_usd": 37.00,
+      "license": {
+        "type": "apache-2.0",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "heartmula",
+      "model_size": "3B",
+      "checksum": { "sha256": "" },
+      "description": "Best-in-class lyrics music generation. 12GB+ VRAM."
+    },
+    {
+      "id": "music.stable-audio-3-small",
+      "name": "Stable Audio 3 Small SFX",
+      "category": "sfx",
+      "price_usd": 25.00,
+      "license": {
+        "type": "community",
+        "sellable": true,
+        "revenue_cap_usd": 1000000,
+        "attribution": "Powered by Stability AI"
+      },
+      "engine": "stable-audio",
+      "model_size": "small",
+      "checksum": { "sha256": "" },
+      "description": "120s SFX specialist — 459M, CPU-capable, 2.4GB VRAM."
+    },
+    {
+      "id": "music.stable-audio-open",
+      "name": "Stable Audio Open",
+      "category": "sfx",
+      "price_usd": 21.00,
+      "license": {
+        "type": "community",
+        "sellable": true,
+        "revenue_cap_usd": 1000000,
+        "attribution": "Powered by Stability AI"
+      },
+      "engine": "stable-audio-open",
+      "model_size": "default",
+      "checksum": { "sha256": "" },
+      "description": "Open SFX generation. Requires registration."
+    },
+    {
+      "id": "music.minimax-music3",
+      "name": "MiniMax Music 3",
+      "category": "music",
+      "price_usd": 80.00,
+      "license": {
+        "type": "community",
+        "sellable": true,
+        "revenue_cap_usd": 20000000,
+        "attribution": "MiniMax-Music3"
+      },
+      "engine": "minimax-music3",
+      "model_size": "8B",
+      "checksum": { "sha256": "" },
+      "description": "Full 5-min songs, 32kHz stereo. Runtime: SGLang-Omni server."
+    },
+    {
+      "id": "vc.rvc",
+      "name": "RVC",
+      "category": "vc",
+      "price_usd": 10.00,
+      "license": {
+        "type": "mit",
+        "sellable": true,
+        "revenue_cap_usd": null,
+        "attribution": "Packs require voice-rights attestation"
+      },
+      "engine": "rvc",
+      "model_size": "default",
+      "checksum": { "sha256": "" },
+      "description": "Retrieval-based voice conversion."
+    },
+    {
+      "id": "vc.seed-vc",
+      "name": "Seed-VC",
+      "category": "vc",
+      "price_usd": 20.00,
+      "license": {
+        "type": "apache-2.0",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "seed-vc",
+      "model_size": "default",
+      "checksum": { "sha256": "" },
+      "description": "Zero-shot voice conversion."
+    },
+    {
+      "id": "vc.openvoice",
+      "name": "OpenVoice V2",
+      "category": "vc",
+      "price_usd": 10.00,
+      "license": {
+        "type": "mit",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "openvoice",
+      "model_size": "v2",
+      "checksum": { "sha256": "" },
+      "description": "Zero-shot tone-color conversion."
+    },
+    {
+      "id": "spatial.steam-audio",
+      "name": "Spatial Sound Engine",
+      "category": "spatial",
+      "price_usd": 3.00,
+      "license": {
+        "type": "custom",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "steam-audio",
+      "model_size": "default",
+      "checksum": { "sha256": "" },
+      "description": "3D spatializer — binaural, convolution, doppler, soundstage presets."
+    },
+    {
+      "id": "tts.fish-speech",
+      "name": "Fish Speech S1-mini",
+      "category": "tts",
+      "price_usd": 15.00,
+      "license": {
+        "type": "apache-2.0",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "fish_speech",
+      "model_size": "0.5B",
+      "checksum": { "sha256": "" },
+      "description": "Expressive TTS with paralinguistic tags and voice cloning. 13 languages.",
+      "voice_design": true
+    },
+    {
+      "id": "tts.chattts",
+      "name": "ChatTTS",
+      "category": "tts",
+      "price_usd": 5.00,
+      "license": {
+        "type": "cc-by-nc-4.0",
+        "sellable": false,
+        "revenue_cap_usd": null
+      },
+      "engine": "chattts",
+      "model_size": "default",
+      "checksum": { "sha256": "" },
+      "description": "Conversational TTS with emotion tags. CC-BY-NC license."
+    },
+    {
+      "id": "tts.f5-tts",
+      "name": "F5-TTS (Small)",
+      "category": "tts",
+      "price_usd": 8.00,
+      "license": {
+        "type": "cc-by-nc-4.0",
+        "sellable": false,
+        "revenue_cap_usd": null
+      },
+      "engine": "f5_tts",
+      "model_size": "small",
+      "checksum": { "sha256": "" },
+      "description": "Fast diffusion TTS with voice cloning. English and Chinese."
+    },
+    {
+      "id": "tts.pocket-tts",
+      "name": "Pocket-TTS",
+      "category": "tts",
+      "price_usd": 3.00,
+      "license": {
+        "type": "cc-by-4.0",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "pocket_tts",
+      "model_size": "100M",
+      "checksum": { "sha256": "" },
+      "description": "Tiny CPU-friendly TTS with 6 languages and preset voices."
+    },
+    {
+      "id": "tts.moss-tts-nano",
+      "name": "MOSS-TTS-Nano",
+      "category": "tts",
+      "price_usd": 5.00,
+      "license": {
+        "type": "apache-2.0",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "moss_tts_nano",
+      "model_size": "100M",
+      "checksum": { "sha256": "" },
+      "description": "Torch-free ONNX TTS with zero-shot voice cloning. 19 languages."
+    },
+    {
+      "id": "tts.kitten-tts",
+      "name": "KittenTTS (mini)",
+      "category": "tts",
+      "price_usd": 2.00,
+      "license": {
+        "type": "apache-2.0",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "kitten_tts",
+      "model_size": "80MB",
+      "checksum": { "sha256": "" },
+      "description": "Ultra-lightweight TTS. 80MB, 8 preset voices, English only."
+    }
+  ],
+  "revoked_devices": [],
+  "revoked_devices_sig": "",
+  "sig": ""
+}

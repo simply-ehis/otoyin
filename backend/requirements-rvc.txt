@@ -1,0 +1,12 @@
+# RVC v2 voice conversion (OPTIONAL — lazy-imported, degrades gracefully if absent).
+#
+# Pre-trained voice packs via the maintained `rvc-python` package
+# (import: rvc_python.infer.RVCInference). Pulls fairseq/faiss-cpu/pyworld/
+# torchcrepe — heavy, and pins numpy<=1.23.5, which conflicts with the
+# numpy>=1.24.0,<2.0 pin in the base requirements.txt. That's why this is a
+# separate file rather than a line in requirements.txt: installing both in
+# the same environment gives pip's resolver an unsatisfiable constraint.
+#
+# Install in a dedicated venv:
+#   python -m venv .venv-rvc && .venv-rvc/bin/pip install -r requirements.txt -r requirements-rvc.txt
+rvc-python>=0.1.5

@@ -1,0 +1,156 @@
+"""Centralized audio/music-themed error messages for the backend.
+
+All user-facing HTTPException detail strings and error dict values should
+reference constants from this module. This keeps the tone consistent
+(studio/audio metaphors) and makes copy changes a one-file edit.
+
+Pattern: ``raise HTTPException(404, detail=ERR_AUDIO_NOT_FOUND)``
+"""
+
+from __future__ import annotations
+
+# ── 400 Bad Request ────────────────────────────────────────────────
+ERR_INVALID_REQUEST = "Something doesn't sound right — check your request and try again"
+ERR_INVALID_GENERATION_ID = "That generation ID doesn't seem to exist"
+ERR_INVALID_CHUNK_INDEX = "That chunk index is out of range"
+ERR_EMPTY_AUDIO = "The audio file is empty — nothing to play here"
+ERR_EMPTY_OUTPUT = "The engine produced silence — nothing to speak"
+ERR_NO_PROFILE = "No voice profile selected — pick a voice before you hit record"
+ERR_ONLY_FAILED_RETRIES = "Only failed generations can be retried"
+ERR_ONLY_ACTIVE_CANCEL = "Only active generations can be cancelled"
+ERR_REGENERATE_COMPLETED = "That generation needs to finish before we can remix it"
+ERR_NO_VOICE_PROFILE = "No voice profile available — create or assign one first"
+ERR_INVALID_SPLIT_POINT = "That split point doesn't land on a valid position"
+ERR_INVALID_TIMECODE = "That timecode doesn't parse — double-check the format"
+ERR_NO_TAKES = "No takes to select yet — record some takes first"
+ERR_NO_COMP_SEGMENTS = "No comp segments provided — nothing to assemble"
+ERR_NO_AUDIO_DATA = "No audio data to mix — the tracks are empty"
+ERR_INVALID_FILENAME = "That filename doesn't look right"
+ERR_INVALID_JSON_ARGS = "The arguments aren't valid JSON — check your syntax"
+ERR_INVALID_PROJECT_DATA = "That project data looks corrupted"
+ERR_INVALID_MODE = "That mode isn't recognized"
+ERR_INVALID_MODEL_SIZE = "That model variant isn't available. Supported: {sizes}"
+ERR_INVALID_PRESET = "The preset data couldn't be parsed"
+ERR_INVALID_SESSION_DATA = "The session data looks malformed"
+ERR_INVALID_RATE = "That playback rate isn't valid"
+ERR_INVALID_KEYMAP = "That keymap ID doesn't exist"
+ERR_EMPTY_CLIPSBOARD = "The clipboard is empty — copy something first"
+ERR_EMPTY_STORY = "That story has no audio items yet"
+ERR_EMPTY_CHAPTERS = "No chapters to analyze"
+ERR_EMPTY_UTTERANCES = "No utterances found — add some Name: lines first"
+ERR_EMPTY_RENDERED = "No rendered chapters to export yet"
+ERR_EMPTY_JOB_LIST = "The job list is empty"
+ERR_FUNC_NOT_IN_CATALOG = "That function isn't in the catalog"
+ERR_FUNCS_NOT_IN_CATALOG = "These functions aren't in the catalog"
+ERR_RATIO_NOT_POSITIVE = "That ratio needs to be positive"
+ERR_LIMIT_RANGE = "That limit is out of bounds"
+ERR_OFFSET_NEGATIVE = "Offset can't be negative"
+ERR_NO_WORD_INDICES = "No word indices provided"
+ERR_INVALID_WORD_INDEX = "That word index is out of range"
+ERR_NO_VALID_SPANS = "No valid spans to remove"
+ERR_NO_UNDO_SNAPSHOTS = "No autosave snapshots to undo"
+ERR_FILE_EMPTY = "That file is empty — nothing to upload"
+ERR_FORMAT_UNSUPPORTED = "That audio format isn't supported"
+ERR_FORMAT_UNSUPPORTED_VIDEO = "That video format isn't supported"
+ERR_FORMAT_UNSUPPORTED_EPUB = "Only .pdf and .epub are supported"
+ERR_SEED_VC_NEEDS_REF = "Seed-VC needs a reference audio sample"
+ERR_SOURCE_INVALID = "That source type isn't recognized"
+ERR_AUDIO_PATH_REQUIRED = "An audio_path is required"
+
+# ── 401 / 403 ─────────────────────────────────────────────────────
+ERR_ACCESS_DENIED = "Access denied — you don't have permission for that take"
+ERR_PATH_OUTSIDE_DIR = "That path sneaks outside the allowed directory"
+ERR_LOCALHOST_ONLY = "This endpoint only listens on localhost"
+ERR_INVALID_BEARER = "Missing or invalid bearer token"
+ERR_CORS_BLOCKED = "Cross-site request blocked — origin not trusted"
+
+# ── 404 Not Found ─────────────────────────────────────────────────
+ERR_AUDIO_NOT_FOUND = "That recording seems to have gone missing from the studio"
+ERR_GENERATION_NOT_FOUND = "Could not find that generation — it may have been cleared"
+ERR_SESSION_NOT_FOUND = "That session isn't on file — it may have expired"
+ERR_PROFILE_NOT_FOUND = "Voice profile not found — it may have been deleted"
+ERR_STORY_NOT_FOUND = "That story isn't in the library"
+ERR_STORY_ITEM_NOT_FOUND = "That story item doesn't exist anymore"
+ERR_CAPTURE_NOT_FOUND = "That capture isn't on record"
+ERR_PRESET_NOT_FOUND = "That effects preset isn't saved yet"
+ERR_VERSION_NOT_FOUND = "That version doesn't exist"
+ERR_CHANNEL_NOT_FOUND = "That channel isn't set up"
+ERR_JOB_NOT_FOUND = "That batch job isn't in the queue"
+ERR_PROJECT_NOT_FOUND = "That project isn't on file"
+ERR_REF_VOICE_NOT_FOUND = "That reference voice isn't in the library"
+ERR_ADR_SESSION_NOT_FOUND = "That ADR session isn't on file"
+ERR_ADR_LINE_NOT_FOUND = "That line isn't in the session"
+ERR_ADR_TAKE_NOT_FOUND = "That take doesn't exist"
+ERR_GUIDE_AUDIO_NOT_FOUND = "The guide audio isn't available"
+ERR_MODEL_NOT_FOUND = "That model isn't in the catalog"
+ERR_CUDA_NOT_FOUND = "No CUDA backend found to delete"
+ERR_TASK_NOT_FOUND = "That task isn't tracking anymore"
+ERR_KEYMAP_NOT_FOUND = "That keymap isn't saved"
+ERR_COVER_NOT_FOUND = "No cover image on that audiobook"
+ERR_CHAPTER_NOT_FOUND = "That chapter isn't in the book"
+ERR_CAST_NOT_FOUND = "That cast entry isn't assigned"
+ERR_ENTITY_NOT_FOUND = "That item isn't on file"
+
+# ── 413 Payload Too Large ─────────────────────────────────────────
+ERR_FILE_TOO_LARGE = "That file is too heavy for the turntable — try a smaller one"
+ERR_FILE_TOO_LARGE_MB = "That file exceeds the size limit — trim it down"
+ERR_COVER_TOO_LARGE = "The cover image is too large (max 5 MB)"
+
+# ── 422 / 429 ─────────────────────────────────────────────────────
+ERR_VALIDATION_FAILED = "The submission didn't pass validation"
+ERR_DUPLICATE_NAME = "A profile with that name already exists — pick a different one"
+ERR_RATE_LIMITED = "Too many requests — give the studio a moment to breathe"
+
+# ── 500 Internal ──────────────────────────────────────────────────
+ERR_INTERNAL = "Something went wrong inside the studio — our bad"
+ERR_GENERATION_FAILED = "The generation engine stumbled — try again"
+ERR_MUSIC_FAILED = "The music engine couldn't compose a track this time"
+ERR_SFX_FAILED = "The sound effects engine couldn't synthesize that"
+ERR_VOICE_CONVERSION_FAILED = "Voice conversion hit a snag — check your source audio"
+ERR_TRANSCRIPTION_FAILED = "Transcription couldn't decode the audio"
+ERR_DIARIZATION_FAILED = "Speaker detection ran into trouble"
+ERR_AUDIO_ENHANCE_FAILED = "Audio enhancement couldn't clean up that recording"
+ERR_EFFECTS_CHAIN_FAILED = "The effects chain broke somewhere — try simplifying"
+ERR_TAG_PROCESSING_FAILED = "Audio tag processing hit a wall"
+ERR_TAG_PREVIEW_FAILED = "Couldn't preview that tag"
+ERR_REFINEMENT_FAILED = "Refinement pass didn't pan out"
+ERR_RETRANSCRIPTION_FAILED = "Retranscription couldn't re-read the audio"
+ERR_EXPORT_FAILED = "The export didn't land — try again"
+ERR_IMPORT_FAILED = "The import couldn't read that file"
+ERR_CAPTURE_CREATE_FAILED = "Couldn't save that capture"
+ERR_MODEL_LOAD_FAILED = "Couldn't load that model into memory"
+ERR_MODEL_UNLOAD_FAILED = "Couldn't unload that model"
+ERR_MODEL_DELETE_FAILED = "Couldn't delete that model from disk"
+ERR_CACHE_CLEAR_FAILED = "Couldn't clear the cache"
+ERR_STORY_EXPORT_FAILED = "Couldn't export the story audio"
+ERR_RENDER_FAILED = "The render job couldn't complete"
+ERR_LLM_EMPTY_OUTPUT = "The LLM produced silence — nothing to speak"
+ERR_SCRIPT_FAILED = "Script execution didn't complete"
+ERR_FFMPEG_MISSING = "ffmpeg isn't available for concatenation"
+ERR_INSTRUMENT_MISSING = "Instrument rendering isn't available yet"
+ERR_VOICE_CHANGER_FAILED = "Voice changer couldn't start up"
+
+# ── 501 / 502 / 503 Not Available ─────────────────────────────────
+ERR_NOT_IMPLEMENTED = "That feature isn't wired up yet"
+ERR_FRESOUND_UNAVAILABLE = "Freesound service is out of reach"
+ERR_FRESOUND_DOWNLOAD_FAILED = "Couldn't download that sound from Freesound"
+ERR_CUDA_ACTIVE = "Can't remove the CUDA backend while it's active — switch to CPU first"
+ERR_CUDA_IN_PROGRESS = "CUDA backend download is already underway"
+ERR_CUDA_DOWNLOADED = "CUDA backend is already downloaded"
+ERR_ENHANCEMENT_MODELS_MISSING = "Enhancement models aren't downloaded yet — grab them from the Models tab"
+ERR_ENGINE_NOT_AVAILABLE = "That engine isn't loaded — check the Models tab"
+ERR_ENGINE_NOT_DOWNLOADED = "That engine isn't downloaded yet — install it from the Models tab"
+ERR_PROFILE_ENGINE_MISSING = "The profile's engine isn't downloaded"
+ERR_DUBBED_NOT_READY = "The dubbed video isn't ready yet"
+ERR_OUTPUT_MISSING = "The output file didn't make it to disk"
+ERR_INTERNET_NEEDED = "That needs an internet connection"
+
+# ── Model Registry (already themed, kept for reference) ────────────
+# from services/model_registry import MODEL_NOT_DOWNLOADED_MSG, MODEL_FILE_MISSING_MSG
+
+# ── Validation messages (info, not errors) ─────────────────────────
+INFO_AUDIO_TAGS_DISABLED = "Audio tags are disabled — enable them in Settings > Generation"
+INFO_AUDIO_TAGS_NONE = "No audio tags found — use bracketed tags like [pause], [laughs], [sigh]"
+INFO_PROFILE_HINT = (
+    "No voice profile resolved. Pass 'profile' (name or id), or set a default in otoyin > Settings > MCP."
+)

@@ -1,0 +1,56 @@
+# ── Dependencies (rebuilt in Docker) ────────────────────────────────────
+venv/
+.venv/
+env/
+ENV/
+
+# ── Python caches ───────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ── Build artifacts ─────────────────────────────────────────────────────
+dist/
+build/
+*.egg-info/
+*.spec
+
+# ── Logs and temp files ─────────────────────────────────────────────────
+*.log
+*.tmp
+*.temp
+*.bak
+logs/
+
+# ── Data (user-generated, not in image) ────────────────────────────────
+data/
+output.txt
+results.txt
+*_e2e_out.txt
+*.wav
+
+# ── Tests (not needed in production) ────────────────────────────────────
+tests/
+*_test.py
+
+# ── IDE and OS ──────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Git ─────────────────────────────────────────────────────────────────
+.git/
+.gitignore
+
+# ── Dev tools ───────────────────────────────────────────────────────────
+.opencode/
+.freebuff/
+.patchi/
+.qoder/
