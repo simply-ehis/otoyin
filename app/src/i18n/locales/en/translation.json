@@ -776,7 +776,7 @@
 		"createVoice": "Create Voice",
 		"import": {
 			"invalidTitle": "Invalid file type",
-			"invalidDescription": "Please select a valid .21-labs.zip file",
+				"invalidDescription": "Please select a valid .dstf.zip file",
 			"successTitle": "Profile imported",
 			"successDescription": "Voice profile imported successfully",
 			"failedTitle": "Failed to import profile",
@@ -817,7 +817,7 @@
 				"system": "System",
 				"light": "Light",
 				"dark": "Dark",
-				"diStefano": "Di Stefano",
+				"diStefano": "Otoyin",
 				"stripe": "Stripe",
 				"coastalLight": "Coastal Light",
 				"meshDark": "Mesh Dark"

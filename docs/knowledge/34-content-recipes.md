@@ -19,7 +19,7 @@ UPDATED: 2026-07-15
 | Voiceover / ad | TTS | Kokoro/Zonos | Voiceover | −12 | Mono WAV; bright, intimate. |
 | YouTube / long-form | TTS + music bed | Cloned host + Stable Audio Open SFX | Social Media | −14 | Music ducked under voice; intro/outro. |
 
-Full per-recipe playbooks: `.agents/skills/21-labs-studio/recipe-*.md`.
+Full per-recipe playbooks: `.agents/skills/otoyin-studio/recipe-*.md`.
 
 ## RECIPE TEMPLATE (copy for new content types)
 

@@ -195,7 +195,7 @@ synth engines · 6 content recipes.
 | Command palette | Ctrl+K navigation to any view or action | Global shortcut |
 | Feature tour | Guided onboarding (6 steps): welcome, sidebar, generate, models, assistant, help | F1 / Help |
 | Help center | Searchable feature catalog by category | F1 |
-| 7 themes | System, Light, Dark, Di Stefano, Stripe, Coastal Light, Mesh Dark | Settings → General |
+| 7 themes | System, Light, Dark, Otoyin, Stripe, Coastal Light, Mesh Dark | Settings → General |
 | Telemetry | Opt-in, privacy-respecting usage toggle | Settings |
 | Memory | The assistant remembers your project context across sessions | Assistant |
 | i18n | Localized UI (en, zh-CN, zh-TW, ja) | Settings |

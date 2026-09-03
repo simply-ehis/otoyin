@@ -60,7 +60,7 @@ Pay once, own forever, works offline. No subscription. See [docs/MARKETPLACE_PLA
 
 ### Prerequisites
 
-- **Node.js 18+** or **Bun >= 1.0.0** (recommended)
+- **Node.js 18+** (npm is the only JS package manager — no bun/pnpm)
 - **Python 3.11+** (3.12+ preferred)
 - **Rust** (for Tauri desktop builds)
 - **just** command runner (optional — `cargo install just` or `brew install just`)
@@ -70,7 +70,7 @@ Pay once, own forever, works offline. No subscription. See [docs/MARKETPLACE_PLA
 
 ```bash
 # 1. Install JS dependencies
-bun install
+npm install
 
 # 2. Set up Python venv + backend deps
 just setup-python
@@ -92,15 +92,15 @@ source backend/venv/bin/activate # macOS/Linux
 pip install -r backend/requirements.txt
 
 # Frontend
-bun install
+npm install
 
 # Start backend
 uvicorn backend.main:app --reload --port 17493
 
 # Start frontend (in a separate terminal)
-cd app && bun run dev          # Tauri desktop
+cd tauri && npm run dev        # Tauri desktop
 # OR
-cd web && bun run dev          # Web browser
+cd app && npm run dev          # Browser (no Tauri)
 ```
 
 ### Commands
@@ -157,7 +157,7 @@ otoyin/
 ├── tauri/        — Tauri desktop shell (Rust)
 ├── docs/         — Documentation + knowledge base
 │   └── knowledge/ — Per-tool docs + TOOL-REFERENCE.md (204 assistant / 201 MCP tools)
-├── .agents/skills/ — 44 active agent skills
+├── .agents/skills/ — 63 active agent skills
 └── data/         — User-generated data (voices, projects)
 ```
 

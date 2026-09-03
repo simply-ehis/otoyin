@@ -1,4 +1,4 @@
-# 21labs development commands
+# Otoyin development commands
 # Install: brew install just (or cargo install just)
 # Usage: just --list
 
@@ -6,7 +6,8 @@
 backend_dir := "backend"
 tauri_dir := "tauri"
 app_dir := "app"
-web_dir := "web"
+# Browser (no-Tauri) variant is the app workspace itself
+web_dir := "app"
 venv := backend_dir / "venv"
 
 # Platform-aware paths

@@ -26,7 +26,7 @@ export const THEME_META: Record<
 	system: { label: "System", accent: "#888888", dark: false },
 	light: { label: "Light", accent: "#888888", dark: false },
 	dark: { label: "Dark", accent: "#888888", dark: true },
-	"di-stefano": { label: "Di Stefano", accent: "#C87864", dark: true },
+	"di-stefano": { label: "Otoyin", accent: "#C87864", dark: true },
 	stripe: { label: "Stripe", accent: "#FFFFFF", dark: true },
 	"coastal-light": { label: "Coastal Light", accent: "#E8836A", dark: false },
 	"mesh-dark": { label: "Mesh Dark", accent: "#A0A8B4", dark: true },
