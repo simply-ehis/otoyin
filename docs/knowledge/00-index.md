@@ -318,6 +318,7 @@ Every knowledge doc should have an `## Agent Callable` section with exact MCP to
 - [74-api-reference.md](74-api-reference.md) — Complete REST API reference for external integrators.
 - [75-audio-library.md](75-audio-library.md) — Unified Audio Library: browse, tag, batch-manage all clips.
 - [76-effects-pipeline.md](76-effects-pipeline.md) — Two effects paths: effects_chain (single-clip) vs recipe_runner (multi-track).
+- [77-notifications.md](77-notifications.md) — Push-style notices: remote `GET /v1/notices` merged into bundled announcements at startup; admin `POST /v1/notices/admin`; offline-first.
 
 ### Audit info docs
 - [52-cross-tab-clip-linkage.md](52-cross-tab-clip-linkage.md) — Cross-tab clip linkage (copy/paste linked clips) + per-tab autosave & compulsory Save.

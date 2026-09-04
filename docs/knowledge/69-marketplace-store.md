@@ -4,15 +4,25 @@
 > OWNS: backend/routes/store.py, backend/services/marketplace_catalog.py, backend/services/model_registry.py
 > READ-WHEN: browsing models, purchasing packs, managing entitlements, troubleshooting downloads
 > KEY-FILES: backend/routes/store.py (REST), backend/services/marketplace_catalog.py (catalog), backend/services/model_registry.py (download/entitlements)
-> INVARIANTS: free models download without license check; paid models require signed entitlement; catalog is bundled with the app
-> GOTCHAS: marketplace catalog updates ship with app updates; no live API in v1
-> UPDATED: 2026-08-21
+> INVARIANTS: free models download without license check; paid models require signed entitlement; catalog is bundled, then refreshed from the remote marketplace service (signature-verified, offline-first)
+> GOTCHAS: remote refresh never breaks the app — on network failure/tamper the bundled catalog stays; refresh runs at startup (background task) + on Store open + every 24h
+> UPDATED: 2026-09-04
 
 ## Overview
 
 The marketplace provides a catalog of AI models, voice packs, and plugins.
 Free models download directly; paid models require a license (Ed25519-signed
 entitlement, verified locally).
+
+## Remote catalog refresh (07 Part B)
+
+At startup (background task) the app fetches `GET /v1/catalog` from the remote
+marketplace service (`OTOYIN_MARKETPLACE_URL`, default
+`https://otoyin-marketplace.example`), verifies the Ed25519 signature against the
+embedded public key, and swaps the in-memory `PRODUCTS`. Any failure (offline,
+bad signature, timeout) keeps the bundled catalog and logs silently — offline-first.
+Signed catalog documents are never mutated: `local_status` is annotated *after*
+verification. See `backend/services/marketplace_catalog.py::refresh_remote_catalog`.
 
 ## Store categories
 
