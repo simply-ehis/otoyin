@@ -2,13 +2,25 @@
 @import "./styles/tokens.css";
 @import "loaders.css/loaders.min.css";
 
-/* ── Hide all scrollbars globally (scroll still works, bars are invisible) ── */
+/* ── Slim native-feeling scrollbars (desktop-ui-scrolling-navigation):
+   slim, low-contrast, persistent — never hidden on desktop ── */
 * {
-	scrollbar-width: none;
-	-ms-overflow-style: none;
+	scrollbar-width: thin;
+	scrollbar-color: hsl(28 4% 34%) transparent;
 }
 *::-webkit-scrollbar {
-	display: none;
+	width: 8px;
+	height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+	background: hsl(28 4% 34%);
+	border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+	background: hsl(30 4% 52%);
+}
+*::-webkit-scrollbar-track {
+	background: transparent;
 }
 
 /* ──────────────────────────────────────────────────────────────────
@@ -49,27 +61,27 @@
 	--radius-md: 0.5rem;
 	--radius-lg: 0.75rem;
 
-	/* ── Grayscale semantic tokens ── */
-	--color-background: hsl(0 0% var(--gs-bg));
-	--color-foreground: hsl(0 0% var(--gs-fg));
+	/* ── Otoyin default face (proof.html): warm neutrals, flat rose ── */
+	--color-background: hsl(28 6% 9%);
+	--color-foreground: hsl(30 12% 92%);
 
-	--color-card: hsl(0 0% var(--gs-card));
-	--color-card-foreground: hsl(0 0% var(--gs-card-fg));
+	--color-card: hsl(28 5% 13%);
+	--color-card-foreground: hsl(30 12% 92%);
 
-	--color-popover: hsl(0 0% var(--gs-card));
-	--color-popover-foreground: hsl(0 0% var(--gs-card-fg));
+	--color-popover: hsl(28 5% 16%);
+	--color-popover-foreground: hsl(30 12% 92%);
 
-	--color-primary: hsl(0 0% var(--gs-primary));
-	--color-primary-foreground: hsl(0 0% var(--gs-primary-fg));
+	--color-primary: hsl(348 68% 58%);
+	--color-primary-foreground: hsl(0 0% 98%);
 
-	--color-secondary: hsl(0 0% var(--gs-secondary));
-	--color-secondary-foreground: hsl(0 0% var(--gs-secondary-fg));
+	--color-secondary: hsl(28 5% 17%);
+	--color-secondary-foreground: hsl(30 12% 92%);
 
-	--color-muted: hsl(0 0% var(--gs-muted));
-	--color-muted-foreground: hsl(0 0% var(--gs-muted-fg));
+	--color-muted: hsl(28 5% 15%);
+	--color-muted-foreground: hsl(30 6% 68%);
 
-	--color-accent: hsl(0 0% var(--gs-accent));
-	--color-accent-foreground: hsl(0 0% var(--gs-accent-fg));
+	--color-accent: hsl(348 68% 58%);
+	--color-accent-foreground: hsl(0 0% 98%);
 
 	--color-destructive: hsl(0 62% 50%);
 	--color-destructive-foreground: hsl(0 0% 98%);
@@ -82,10 +94,12 @@
 	--color-warning: hsl(38 80% 48%);
 	--color-warning-foreground: hsl(0 0% 4%);
 
-	/* Solid hover surface — one step up the grayscale (no opacity tricks) */
-	--color-secondary-hover: hsl(0 0% var(--gs-7));
+	/* Solid hover surface — one step up (no opacity tricks) */
+	--color-secondary-hover: hsl(28 5% 20%);
+	/* Switch-track / emphasized-border surface */
+	--color-strong: hsl(28 4% 34%);
 	/* Inset/sunken surface for chips sitting on raised panels */
-	--color-sunken: hsl(0 0% var(--gs-2));
+	--color-sunken: hsl(28 8% 7%);
 
 	/* Solid "soft" status surfaces + tinted text for persistent banners */
 	--color-info-soft: hsl(213 24% 15%);
@@ -97,10 +111,10 @@
 	--color-danger-soft: hsl(0 30% 16%);
 	--color-danger-text: hsl(0 70% 78%);
 
-	--color-border: hsl(0 0% var(--gs-border));
-	--color-input: hsl(0 0% var(--gs-input));
-	--color-ring: hsl(0 0% var(--gs-ring));
-	--color-sidebar: hsl(0 0% var(--gs-sidebar));
+	--color-border: hsl(28 4% 22%);
+	--color-input: hsl(28 4% 22%);
+	--color-ring: hsl(348 68% 58%);
+	--color-sidebar: hsl(28 8% 7%);
 
 	--color-chart-1: hsl(0 0% 30%);
 	--color-chart-2: hsl(0 0% 45%);
@@ -1017,8 +1031,8 @@
 	}
 
 	.work-surface {
-		background: #000;
-		color: hsl(0 0% 98%);
+		background: hsl(28 8% 7%);
+		color: hsl(30 12% 92%);
 	}
 
 	.gs-wave-overlay {
@@ -1192,6 +1206,47 @@
 			0 4px 12px rgba(0, 0, 0, 0.12),
 			0 1px 2px rgba(0, 0, 0, 0.08);
 	}
+}
+
+/* ── Radix state entrances (transform + opacity only).
+   Uses the independent `scale` property so fixed-position translate
+   utilities are never clobbered mid-animation. Enter 200ms, exit 130ms. ── */
+@keyframes ds-enter {
+	from {
+		opacity: 0;
+		scale: 0.97;
+	}
+}
+@keyframes ds-exit {
+	to {
+		opacity: 0;
+		scale: 0.97;
+	}
+}
+@keyframes ds-fade-in {
+	from {
+		opacity: 0;
+	}
+}
+@keyframes ds-fade-out {
+	to {
+		opacity: 0;
+	}
+}
+.ds-enter[data-state="open"] {
+	animation: ds-enter 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ds-exit[data-state="closed"] {
+	animation: ds-exit 130ms ease-out;
+}
+.ds-fade-in[data-state="open"] {
+	animation: ds-fade-in 150ms ease-out;
+}
+.ds-fade-out[data-state="closed"] {
+	animation: ds-fade-out 120ms ease-out;
+}
+.ds-mount-enter {
+	animation: ds-enter 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ── Keyframes ── */

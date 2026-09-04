@@ -16,33 +16,38 @@
 
 :root {
   /* ── Surface roles (desktop-ui-color-system) ─────────────────────
-     One-step shifts for stacked layers; never more than 3 distinct
-     elevation levels on screen at once. */
-  --surface-base: hsl(0 0% var(--gs-bg));
-  --surface-raised: hsl(0 0% var(--gs-card));
-  --surface-overlay: hsl(0 0% var(--gs-card));
-  --surface-sunken: hsl(0 0% var(--gs-0));
+     Warm single-source neutrals (proof.html). One-step shifts for
+     stacked layers; never more than 3 distinct elevation levels on
+     screen at once. */
+  --surface-base: hsl(28 6% 9%);
+  --surface-raised: hsl(28 5% 13%);
+  --surface-overlay: hsl(28 5% 16%);
+  --surface-sunken: hsl(28 8% 7%);
 
   /* ── Text roles (desktop-ui-foundations type scale) ───────────── */
-  --text-primary: hsl(0 0% var(--gs-fg));
-  --text-secondary: hsl(0 0% var(--gs-30));
-  --text-tertiary: hsl(0 0% var(--gs-22));
-  --text-on-accent: hsl(0 0% var(--gs-primary-fg));
+  --text-primary: hsl(30 12% 92%);
+  --text-secondary: hsl(30 6% 68%);
+  --text-tertiary: hsl(30 4% 52%);
+  --text-on-accent: hsl(0 0% 98%);
 
   /* ── Borders (hairline vs emphasized) ──────────────────────────── */
-  --border-subtle: hsl(0 0% var(--gs-border));
-  --border-strong: hsl(0 0% var(--gs-8));
+  --border-subtle: hsl(28 4% 22%);
+  --border-strong: hsl(28 4% 34%);
 
   /* ── Accent (flat rose brand hue — never a gradient sweep) ─────── */
-  --accent: hsl(0 0% var(--gs-accent));
-  --accent-muted: hsl(0 0% var(--gs-5));
-  --accent-foreground: hsl(0 0% var(--gs-accent-fg));
+  --accent: hsl(348 68% 58%);
+  --accent-hover: hsl(348 68% 63%);
+  --accent-muted: hsl(348 28% 22%);
+  --accent-foreground: hsl(0 0% 98%);
 
   /* ── Status colors — consistent 4-level severity scale ─────────── */
-  --status-info: hsl(0 0% var(--gs-30));
+  --status-info: hsl(210 65% 52%);
   --status-success: hsl(152 55% 42%);
+  --status-success-soft: hsl(152 24% 16%);
   --status-warning: hsl(38 80% 48%);
+  --status-warning-soft: hsl(38 30% 16%);
   --status-danger: hsl(0 62% 50%);
+  --status-danger-soft: hsl(0 30% 18%);
 
   /* ── Elevation scale (foundations: raised / floating / modal) ────
      Cheap box-shadows; no real-time blur. Surfaces are SOLID — never
@@ -71,7 +76,7 @@
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
   /* ── Focus ring (accessibility floor) ──────────────────────────── */
-  --focus-ring: hsl(0 0% var(--gs-ring));
+  --focus-ring: var(--accent);
 }
 
 /* Press feedback (desktop-ui-motion core pattern) — scale(0.97),
