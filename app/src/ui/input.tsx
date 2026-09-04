@@ -8,10 +8,14 @@ import { cn } from "@/lib/utils/cn";
 export function Input({
 	className,
 	type = "text",
+	ref,
 	...props
-}: React.InputHTMLAttributes<HTMLInputElement>) {
+}: React.InputHTMLAttributes<HTMLInputElement> & {
+	ref?: React.Ref<HTMLInputElement>;
+}) {
 	return (
 		<input
+			ref={ref}
 			type={type}
 			className={cn(
 				"h-9 w-full rounded-sm border border-input bg-sunken px-3 text-sm text-foreground",
@@ -102,7 +106,6 @@ export function SearchInput({
 			</svg>
 			<input
 				type="search"
-				role="searchbox"
 				className={cn(
 					"h-9 w-full rounded-sm border border-input bg-sunken pl-9 text-sm text-foreground",
 					"placeholder:text-muted-foreground/60 transition-colors duration-150",
@@ -113,7 +116,9 @@ export function SearchInput({
 				value={value}
 				defaultValue={value === undefined ? defaultValue : undefined}
 				onChange={(e) => {
-					if (value === undefined) setInner(e.target.value);
+					if (value === undefined) {
+						setInner(e.target.value);
+					}
 					onChange?.(e);
 				}}
 				{...props}
@@ -143,10 +148,14 @@ export function SearchInput({
  */
 export function Textarea({
 	className,
+	ref,
 	...props
-}: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+}: React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
+	ref?: React.Ref<HTMLTextAreaElement>;
+}) {
 	return (
 		<textarea
+			ref={ref}
 			className={cn(
 				"w-full rounded-sm border border-input bg-sunken px-3 py-2 text-sm text-foreground",
 				"placeholder:text-muted-foreground/60 transition-colors duration-150",
