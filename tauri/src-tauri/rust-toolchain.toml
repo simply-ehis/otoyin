@@ -1,0 +1,6 @@
+[toolchain]
+# Pinned so every contributor and CI builds with the same rustc.
+# Prompt 19 (environment reproducibility). If you bump this, rebuild
+# from clean (cargo clean) once and note it in the release notes.
+channel = "1.97.0"
+components = ["rustfmt", "clippy"]

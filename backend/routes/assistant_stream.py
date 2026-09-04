@@ -93,6 +93,9 @@ async def stream_local(
     models which have no native function-calling and limited context.
     """
     backend = get_llm_backend()
+    from ..utils.model_lifecycle import lifecycle_manager
+
+    lifecycle_manager.mark_model_used("gguf_llm")
     n_ctx, gen_tokens = get_assistant_token_settings_for(model_id)
     iterations = 0
 

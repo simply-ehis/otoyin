@@ -362,6 +362,9 @@ async def generate_speech(
         voice_clean=data.voice_clean,
         streaming=data.streaming,
     )
+    from ..utils.model_lifecycle import lifecycle_manager
+
+    lifecycle_manager.mark_model_used(engine)
     enqueue_generation(generation_id, run_generation(ctx))
 
     return generation
@@ -398,6 +401,9 @@ async def retry_generation(generation_id: str, db: Session = Depends(get_db)):
     )
 
     ctx = GenerationContext.from_db(gen, mode="retry")
+    from ..utils.model_lifecycle import lifecycle_manager
+
+    lifecycle_manager.mark_model_used(ctx.engine)
     enqueue_generation(generation_id, run_generation(ctx))
 
     return models.GenerationResponse.model_validate(gen)
@@ -430,6 +436,9 @@ async def regenerate_generation(generation_id: str, db: Session = Depends(get_db
     version_id = str(uuid.uuid4())
 
     ctx = GenerationContext.from_db(gen, mode="regenerate", version_id=version_id)
+    from ..utils.model_lifecycle import lifecycle_manager
+
+    lifecycle_manager.mark_model_used(ctx.engine)
     enqueue_generation(generation_id, run_generation(ctx))
 
     return models.GenerationResponse.model_validate(gen)
@@ -577,6 +586,9 @@ async def stream_speech(
     tts_model = get_tts_backend_for_engine(engine)
     model_size = data.model_size or "default"
 
+    from ..utils.model_lifecycle import lifecycle_manager
+
+    lifecycle_manager.mark_model_used(engine)
     await ensure_model_cached_or_raise(engine, model_size)
     await load_engine_model(engine, model_size)
 

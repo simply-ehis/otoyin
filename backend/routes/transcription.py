@@ -145,6 +145,7 @@ async def transcribe_audio_path(data: TranscriptionPathRequest):
             status_code=400,
             detail=ERR_INVALID_MODEL_SIZE.format(sizes=", ".join(WHISPER_CPP_FILES.keys())),
         )
+    lifecycle_manager.mark_model_used("whisper")
     if not (whisper_model.is_loaded() and whisper_model.model_size == model_size):
         _assert_whisper_entitled(model_size)
         if not whisper_model._is_model_cached(model_size):
@@ -190,6 +191,7 @@ async def export_subtitles_route(data: SubtitleRequest):
             status_code=400,
             detail=ERR_INVALID_MODEL_SIZE.format(sizes=", ".join(WHISPER_CPP_FILES.keys())),
         )
+    lifecycle_manager.mark_model_used("whisper")
     if not (whisper_model.is_loaded() and whisper_model.model_size == model_size):
         _assert_whisper_entitled(model_size)
         if not whisper_model._is_model_cached(model_size):

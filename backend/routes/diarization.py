@@ -146,6 +146,7 @@ async def diarize_audio_path(data: DiarizationPathRequest):
         raise HTTPException(status_code=404, detail=ERR_AUDIO_NOT_FOUND)
 
     whisper_model = transcribe.get_whisper_model()
+    lifecycle_manager.mark_model_used("whisper")
     model_size = _resolve_stt_model(data.model, whisper_model)
     await _check_stt_ready(whisper_model, model_size)
     return await _build_response(whisper_model, str(resolved), data.language, model_size, data.num_speakers)

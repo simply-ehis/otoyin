@@ -324,8 +324,10 @@ async def apply_audio_tags_route(data: AudioTagRequest):
         )
 
     from ...backends import get_tts_backend
+    from ...utils.model_lifecycle import lifecycle_manager
 
     backend = get_tts_backend()
+    lifecycle_manager.mark_model_used(data.engine)
 
     async def tts_fn(text: str, sr: int) -> tuple[np.ndarray, int]:
         voice_prompt = {"preset_voice_id": data.voice} if data.voice else {}

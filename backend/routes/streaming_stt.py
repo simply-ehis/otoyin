@@ -117,6 +117,9 @@ async def _transcribe_buffer(session: StreamingSession) -> str:
     await asyncio.to_thread(sf.write, tmp_path, buf, session.sample_rate)
     try:
         model = transcribe.get_whisper_model()
+        from ..utils.model_lifecycle import lifecycle_manager
+
+        lifecycle_manager.mark_model_used("whisper")
         # Ensure model is entitled & loaded with correct size before transcribing
         from ..backends.configs import get_stt_model_configs
         from ..services.model_registry import is_downloaded

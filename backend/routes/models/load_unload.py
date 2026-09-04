@@ -33,6 +33,9 @@ async def load_model(engine: str | None = None, model_size: str = "default"):
 
     try:
         await load_engine_model(target, model_size)
+        from ...utils.model_lifecycle import lifecycle_manager
+
+        lifecycle_manager.mark_model_used(target)
         return {"message": f"Model {target} ({model_size}) loaded successfully"}
     except Exception as e:
         logger.exception("Failed to load model %s", target)

@@ -31,6 +31,7 @@ async def get_word_timestamps(generation_id: str):
     from .. import config
     from ..backends import get_stt_backend
     from ..database import Generation as DBGeneration, get_db
+    from ..utils.model_lifecycle import lifecycle_manager
 
     db = next(get_db())
     gen = db.query(DBGeneration).filter_by(id=generation_id).first()
@@ -42,6 +43,7 @@ async def get_word_timestamps(generation_id: str):
         raise HTTPException(status_code=404, detail="Audio file not found")
 
     stt = get_stt_backend("faster-whisper")
+    lifecycle_manager.mark_model_used("faster-whisper")
     if not stt.is_loaded():
         # Try to load the default model (tiny.en)
         if not stt._is_model_cached("tiny.en"):
@@ -78,6 +80,7 @@ async def delete_words(generation_id: str, request: DeleteWordsRequest):
     from ..database import Generation as DBGeneration, get_db
     from ..models import Generation as GenModel
     from ..utils.audio import load_audio, save_audio
+    from ..utils.model_lifecycle import lifecycle_manager
 
     db = next(get_db())
     gen = db.query(DBGeneration).filter_by(id=generation_id).first()
@@ -90,6 +93,7 @@ async def delete_words(generation_id: str, request: DeleteWordsRequest):
 
     # Get word timestamps to map indices to time ranges
     stt = get_stt_backend("faster-whisper")
+    lifecycle_manager.mark_model_used("faster-whisper")
     if not stt.is_loaded():
         if not stt._is_model_cached("tiny.en"):
             raise HTTPException(

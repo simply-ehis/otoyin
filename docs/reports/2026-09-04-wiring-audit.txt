@@ -1,0 +1,154 @@
+﻿OpenAPI paths: 422
+HOW TO READ THIS (2026-09-04): the frontend rebuild (03) is mid-flight —
+new screens in features//layouts/ exist but router.tsx still points at the
+old tree. So STRANDED here mostly means "UI not rebuilt yet", NOT "dead
+backend". Re-run scripts/check-wiring.py as screens land; the stranded
+count should fall toward the allowlisted remainder (webhooks/MCP/schema).
+HANDROLLED = works today but bypasses lib/api — move into the client
+layer per 20. ORPHANED = imported nowhere (real). UNWIRED = not in
+router yet (expected until REBUILD_LOG step 2 lands).
+NOTE: route modules that fail to import in this env (see backend
+stderr, e.g. missing sse_starlette/jsonschema) are absent above;
+install backend/requirements.txt fully before treating this as final.
+Stranded endpoints ù no UI caller anywhere (96):
+  STRANDED  /
+  STRANDED  /adr/audio/{take_id}
+  STRANDED  /adr/guide-audio/{session_id}
+  STRANDED  /assistant/chat
+  STRANDED  /assistant/skills
+  STRANDED  /assistant/tool-parity
+  STRANDED  /audio-plan/stats
+  STRANDED  /audio/analyze-loudness
+  STRANDED  /audio/bounce
+  STRANDED  /audio/bounce-preview
+  STRANDED  /audio/duck
+  STRANDED  /audio/emotion-presets
+  STRANDED  /audio/enhance
+  STRANDED  /audio/loudness
+  STRANDED  /audio/noise-reduce
+  STRANDED  /audio/separate
+  STRANDED  /audio/silence-removal
+  STRANDED  /audio/version/{version_id}
+  STRANDED  /audio/voice-clean
+  STRANDED  /audio/{generation_id}
+  STRANDED  /backend/cuda-progress
+  STRANDED  /bridge/export
+  STRANDED  /cache/clear
+  STRANDED  /clipboard
+  STRANDED  /comping/assemble
+  STRANDED  /diarize
+  STRANDED  /diarize/path
+  STRANDED  /dsp/effect
+  STRANDED  /dsp/synth
+  STRANDED  /export/apply-preset
+  STRANDED  /exports/{filename}
+  STRANDED  /files/compact
+  STRANDED  /files/list-supported
+  STRANDED  /files/read
+  STRANDED  /files/read-epub
+  STRANDED  /files/read-pdf
+  STRANDED  /files/transcribe
+  STRANDED  /files/validate
+  STRANDED  /generations/{generation_id}/chunk/{chunk_index}
+  STRANDED  /import/audio-preview
+  STRANDED  /import/video-preview
+  STRANDED  /integration/audio/return
+  STRANDED  /integration/events
+  STRANDED  /integration/project/load
+  STRANDED  /integration/status
+  STRANDED  /integration/timeline/sync
+  STRANDED  /llm/generate
+  STRANDED  /llm/status
+  STRANDED  /marketplace/checkout
+  STRANDED  /marketplace/convert-price
+  STRANDED  /marketplace/pricing
+  STRANDED  /marketplace/pricing/bulk
+  STRANDED  /marketplace/pricing/countries
+  STRANDED  /marketplace/pricing/products
+  STRANDED  /marketplace/pricing/summary
+  STRANDED  /marketplace/pricing/{product_id}
+  STRANDED  /marketplace/pricing/{product_id}/{country_code}
+  STRANDED  /marketplace/product/{product_id}/reviews
+  STRANDED  /marketplace/region
+  STRANDED  /marketplace/tax/jurisdictions
+  STRANDED  /marketplace/tax/preview
+  STRANDED  /marketplace/tax/summary/{country_code}
+  STRANDED  /marketplace/verify
+  STRANDED  /marketplace/wishlist
+  STRANDED  /marketplace/wishlist/{product_id}
+  STRANDED  /mixer/preview
+  STRANDED  /plugins/preview
+  STRANDED  /presets/builtin
+  STRANDED  /presets/export
+  STRANDED  /presets/import
+  STRANDED  /recipe/run
+  STRANDED  /samples/{sample_id}
+  STRANDED  /session/load
+  STRANDED  /session/save
+  STRANDED  /shutdown
+  STRANDED  /spatial/apply-binaural
+  STRANDED  /spatial/apply-convolution
+  STRANDED  /spatial/apply-doppler
+  STRANDED  /spatial/render
+  STRANDED  /speak
+  STRANDED  /timecode/to-seconds
+  STRANDED  /transcribe
+  STRANDED  /transcribe/path
+  STRANDED  /transcription/export-subtitles
+  STRANDED  /tts/engines
+  STRANDED  /tts/status
+  STRANDED  /voice-chat/metrics
+  STRANDED  /voice-chat/sessions
+  STRANDED  /voice-chat/status
+  STRANDED  /voice-convert
+  STRANDED  /watchdog/disable
+  STRANDED  /workflow/execute
+  STRANDED  /workflow/plan
+  STRANDED  /workflow/templates
+  STRANDED  /youtube/file/{task_id}
+  STRANDED  /youtube/tasks/{task_id}
+Hand-rolled callers outside lib/api ù move into client layer (14):
+  HANDROLLED  /dubbing/download/{job_id}
+  HANDROLLED  /effects/preview/{generation_id}
+  HANDROLLED  /instruments/drum
+  HANDROLLED  /instruments/drum-machine
+  HANDROLLED  /instruments/gm
+  HANDROLLED  /instruments/gm-types
+  HANDROLLED  /instruments/noise
+  HANDROLLED  /instruments/piano
+  HANDROLLED  /instruments/synth
+  HANDROLLED  /voice-changer/effects
+  HANDROLLED  /voice-changer/enable
+  HANDROLLED  /voice-changer/set-preset
+  HANDROLLED  /voice-changer/set-profile
+  HANDROLLED  /voice-changer/status
+Imported nowhere (1):
+  ORPHANED  app\src\features\settings\TimecodePage.tsx
+Not referenced by router (27, advisory mid-rebuild):
+  UNWIRED   app\src\features\capture\CapturePill.tsx
+  UNWIRED   app\src\features\capture\ChordPicker.tsx
+  UNWIRED   app\src\features\capture\gates.tsx
+  UNWIRED   app\src\features\settings\AboutPage.tsx
+  UNWIRED   app\src\features\settings\ApiKeysPage.tsx
+  UNWIRED   app\src\features\settings\CapturesPage.tsx
+  UNWIRED   app\src\features\settings\GeneralPage.tsx
+  UNWIRED   app\src\features\settings\GenerationPage.tsx
+  UNWIRED   app\src\features\settings\GpuPage.tsx
+  UNWIRED   app\src\features\settings\LanguageSelect.tsx
+  UNWIRED   app\src\features\settings\LogsPage.tsx
+  UNWIRED   app\src\features\settings\LottieExportPage.tsx
+  UNWIRED   app\src\features\settings\MarketplacePlugins.tsx
+  UNWIRED   app\src\features\settings\MCPPage.tsx
+  UNWIRED   app\src\features\settings\ModelHealthPage.tsx
+  UNWIRED   app\src\features\settings\PluginsPage.tsx
+  UNWIRED   app\src\features\settings\rows.tsx
+  UNWIRED   app\src\features\settings\ScriptingPage.tsx
+  UNWIRED   app\src\features\settings\SettingsLayout.tsx
+  UNWIRED   app\src\features\settings\ShortcutsPage.tsx
+  UNWIRED   app\src\features\settings\SupportPage.tsx
+  UNWIRED   app\src\features\settings\TelemetryPage.tsx
+  UNWIRED   app\src\features\settings\ThemeSelect.tsx
+  UNWIRED   app\src\layouts\AppFrame.tsx
+  UNWIRED   app\src\layouts\banners.tsx
+  UNWIRED   app\src\layouts\Sidebar.tsx
+  UNWIRED   app\src\layouts\TitleBar.tsx
