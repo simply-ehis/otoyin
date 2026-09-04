@@ -7,7 +7,7 @@ import {
 	useUIStore,
 } from "@/stores/uiStore";
 
-/** Thumbnail gradients � pure CSS, no image assets. */
+/** Thumbnail gradients — pure CSS, no image assets. */
 const THUMB_GRADIENTS: Record<string, string> = {
 	di_stefano: "linear-gradient(135deg, hsl(0 0% 3%) 0%, hsl(0 0% 12%) 100%)",
 	stripe:

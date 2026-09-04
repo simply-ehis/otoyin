@@ -220,7 +220,7 @@ export function EffectsView() {
 			<Separator />
 
 			{effectsLoading ? (
-				<LoadingState label="Loading effects…" />
+				<LoadingState label="Loading effectsâ€¦" />
 			) : effectsError ? (
 				<EmptyState
 					variant="error"

@@ -11,7 +11,7 @@ import { usePlatform } from "@/platform/PlatformContext";
 
 /**
  * Tracks macOS Accessibility permission state. Without this permission the
- * global chord can still record, but the synthetic-?V paste silently drops �
+ * global chord can still record, but the synthetic-⌘V paste silently drops —
  * so callers can surface an inline prompt instead of relying on the
  * system-level permission dialog (which only fires once, the first time the
  * app tries to post a keystroke).

@@ -134,7 +134,7 @@ export function NoiseReductionView() {
 				) : (
 					<Volume2 className="h-3.5 w-3.5 mr-1.5" />
 				)}
-				{noiseMut.isPending ? "Processing…" : "Reduce Noise"}
+				{noiseMut.isPending ? "Processingâ€¦" : "Reduce Noise"}
 			</Button>
 
 			{/* Preview */}

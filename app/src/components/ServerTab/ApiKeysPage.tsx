@@ -113,7 +113,7 @@ export function ApiKeysPage() {
 			</div>
 
 			{loading ? (
-				<div className="text-muted-foreground text-sm py-4">Loading�</div>
+				<div className="text-muted-foreground text-sm py-4">Loading…</div>
 			) : (
 				<div className="space-y-6">
 					{grouped.map(({ domain, label, providers: items }) => (

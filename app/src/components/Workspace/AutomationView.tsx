@@ -249,7 +249,7 @@ export function AutomationView() {
 							type="button"
 							key={cue.id}
 							className="h-10 rounded-md border border-border bg-card hover:border-accent/50 hover:bg-accent/10 flex flex-col items-center justify-center transition-colors cursor-pointer active:scale-95"
-							title={`Cue ${cue.id} — ${cue.hotkey}`}
+							title={`Cue ${cue.id} â€” ${cue.hotkey}`}
 							aria-label={`Cue ${cue.id}`}
 							onClick={() => {
 								const cueIndex = parseInt(cue.id, 10) - 1;

@@ -8,7 +8,7 @@ interface AppLoadingScreenProps {
 
 /** Branded loading surface for route and code-split application startup. */
 export function AppLoadingScreen({
-	label = "Loading Otoyin…",
+	label = "Loading Otoyinâ€¦",
 	className,
 }: AppLoadingScreenProps) {
 	return (

@@ -86,7 +86,7 @@ export function ConversationHistoryBrowser({ onClose, onSelect }: Props) {
 			</div>
 
 			{loading ? (
-				<p className="text-xs text-muted-foreground">Loading…</p>
+				<p className="text-xs text-muted-foreground">Loadingâ€¦</p>
 			) : conversations.length === 0 ? (
 				<p className="text-xs text-muted-foreground italic">
 					No voice conversations yet.
@@ -108,7 +108,7 @@ export function ConversationHistoryBrowser({ onClose, onSelect }: Props) {
 								</p>
 								<p className="text-xs text-muted-foreground">
 									{conv.message_count} messages
-									{conv.updated_at && ` · ${formatDate(conv.updated_at)}`}
+									{conv.updated_at && ` Â· ${formatDate(conv.updated_at)}`}
 								</p>
 							</button>
 							<Button

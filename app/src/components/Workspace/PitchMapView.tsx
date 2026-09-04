@@ -121,7 +121,7 @@ export function PitchMapView() {
 						) : (
 							<Music className="size-4" />
 						)}
-						{analyzeMut.isPending ? "…" : "Analyze"}
+						{analyzeMut.isPending ? "â€¦" : "Analyze"}
 					</Button>
 				</div>
 			</div>

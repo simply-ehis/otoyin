@@ -687,11 +687,11 @@ export function DspView() {
 		<div className="h-full flex flex-col">
 			<ScreenHeader
 				title="Synth / DSP"
-				description="Offline synthesis & classical DSP — no AI, no API, fully on-device"
+				description="Offline synthesis & classical DSP â€” no AI, no API, fully on-device"
 				icon={<Cpu className="size-4" />}
 				actions={
 					<span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-						Offline · No AI · No API
+						Offline Â· No AI Â· No API
 					</span>
 				}
 			/>

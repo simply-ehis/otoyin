@@ -10,7 +10,7 @@ import { Slider } from "@/components/ui/slider";
 
 // Per-clip stereo pan popover. Local state drives the slider during a drag so
 // each pointer-move pixel doesn't fire a PATCH; commits on release. Pan range
-// is -1.0 (full left) … 0.0 (center) … 1.0 (full right).
+// is -1.0 (full left) â€¦ 0.0 (center) â€¦ 1.0 (full right).
 export function ClipPanPopover({
 	pan,
 	onChange,
@@ -39,7 +39,7 @@ export function ClipPanPopover({
 					variant="ghost"
 					size="icon"
 					className="size-7"
-					title={`Pan — ${display}`}
+					title={`Pan â€” ${display}`}
 					aria-label="Adjust clip stereo pan"
 				>
 					<SwitchHorizontal className="size-4" />

@@ -39,7 +39,7 @@ function getStdioShimCommand(): string {
 }
 
 /**
- * Settings ? MCP � configure per-agent voice binding and show copy-paste
+ * Settings → MCP — configure per-agent voice binding and show copy-paste
  * install snippets for major MCP clients. Backend runs at /mcp on the
  * existing otoyin server; this page is the agent-onboarding surface.
  */
@@ -183,7 +183,7 @@ export function MCPPage() {
 										</div>
 										<div className="text-xs text-muted-foreground truncate">
 											<code className="text-xs">{b.client_id}</code>
-											{" � "}
+											{" · "}
 											{b.last_seen_at ? (
 												<span
 													title={t("settings.mcp.bindings.lastSeenTitle", {

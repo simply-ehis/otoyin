@@ -111,7 +111,7 @@ export function HistoryRow({
 					)}
 					aria-label={
 						isGenerating
-							? `Generating speech for ${gen.profile_name}…`
+							? `Generating speech for ${gen.profile_name}â€¦`
 							: isFailed
 								? `Generation failed for ${gen.profile_name}`
 								: isCurrentlyPlaying
@@ -183,8 +183,8 @@ export function HistoryRow({
 							{isInProgress ? (
 								<span className="text-accent">
 									{gen.status === "loading_model"
-										? "Loading model…"
-										: "Generating…"}
+										? "Loading modelâ€¦"
+										: "Generatingâ€¦"}
 								</span>
 							) : (
 								formatDate(gen.created_at)

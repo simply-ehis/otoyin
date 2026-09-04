@@ -62,7 +62,7 @@ export function VoiceConverterView() {
 		enabled: engine === "rvc",
 	});
 
-	// Reusing a saved Voice Profile as the reference clip � the same
+	// Reusing a saved Voice Profile as the reference clip — the same
 	// record-once-use-everywhere profiles that already work for TTS cloning.
 	const profilesQuery = useQuery({
 		queryKey: ["voiceProfiles"],
@@ -82,7 +82,7 @@ export function VoiceConverterView() {
 			}),
 	});
 
-	/** Uploads the picked file to the server and stores the real path � a bare
+	/** Uploads the picked file to the server and stores the real path — a bare
 	 * File object's `.name` is just a filename string, never resolvable
 	 * server-side, so this has to actually upload before the backend can use it. */
 	async function pickFile(setter: (p: string) => void, label: string) {
@@ -261,7 +261,7 @@ export function VoiceConverterView() {
 						) : (
 							<Upload className="h-3.5 w-3.5 mr-1.5" />
 						)}
-						{uploadingLabel === "source" ? "Uploading�" : "Select Audio"}
+						{uploadingLabel === "source" ? "Uploading…" : "Select Audio"}
 					</Button>
 					{audioPath && (
 						<Badge variant="secondary" className="text-xs">
@@ -275,7 +275,7 @@ export function VoiceConverterView() {
 				<div className="space-y-2">
 					<Label className="text-xs">Target Voice Pack</Label>
 					{packsQuery.isLoading ? (
-						<LoadingState label="Loading voice packs�" />
+						<LoadingState label="Loading voice packs…" />
 					) : packsQuery.isError ? (
 						<EmptyState
 							variant="error"
@@ -311,7 +311,7 @@ export function VoiceConverterView() {
 			) : (
 				(engine === "seed_vc" || engine === "openvoice") && (
 					<div className="space-y-2">
-						<Label className="text-xs">Reference Voice Clip (1�30s)</Label>
+						<Label className="text-xs">Reference Voice Clip (1–30s)</Label>
 						<div className="flex flex-wrap items-center gap-3">
 							<Button
 								variant="outline"
@@ -329,7 +329,7 @@ export function VoiceConverterView() {
 								) : (
 									<Upload className="h-3.5 w-3.5 mr-1.5" />
 								)}
-								{uploadingLabel === "reference" ? "Uploading�" : "Upload Clip"}
+								{uploadingLabel === "reference" ? "Uploading…" : "Upload Clip"}
 							</Button>
 							<span className="text-xs text-muted-foreground/70">or</span>
 							<Select
@@ -337,7 +337,7 @@ export function VoiceConverterView() {
 								onValueChange={useProfileAsReference}
 							>
 								<SelectTrigger className="h-8 w-[220px] text-xs">
-									<SelectValue placeholder="Use a saved voice profile�" />
+									<SelectValue placeholder="Use a saved voice profile…" />
 								</SelectTrigger>
 								<SelectContent>
 									{(profilesQuery.data ?? []).map((p) => (
@@ -399,7 +399,7 @@ export function VoiceConverterView() {
 						onValueChange={([v]) => setDiffusionSteps(v)}
 					/>
 					<p className="text-xs text-muted-foreground/70">
-						10 = fast, 50�100 = best quality
+						10 = fast, 50–100 = best quality
 					</p>
 				</div>
 			)}

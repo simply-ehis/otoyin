@@ -30,7 +30,7 @@ const MIN_DURATION_SECONDS = 5;
 interface QuickCloneDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	/** Called after clone is complete � receive the new profile id */
+	/** Called after clone is complete — receive the new profile id */
 	onComplete?: (profileId: string) => void;
 }
 
@@ -39,8 +39,8 @@ type Step = "upload" | "naming" | "creating" | "done";
 /**
  * One-click voice clone dialog.
  *
- * Drop an audio file ? auto-create a cloned voice profile ? ready to use.
- * No complex settings, no full-screen form � just upload and go.
+ * Drop an audio file → auto-create a cloned voice profile → ready to use.
+ * No complex settings, no full-screen form — just upload and go.
  */
 export function QuickCloneDialog({
 	open,
@@ -162,7 +162,7 @@ export function QuickCloneDialog({
 				setReferenceText(result.text.trim());
 			}
 		} catch {
-			// Transcription failed � leave field empty for manual entry
+			// Transcription failed — leave field empty for manual entry
 		} finally {
 			setTranscribing(false);
 		}
@@ -295,7 +295,7 @@ export function QuickCloneDialog({
 						<p className="text-sm text-muted-foreground">
 							{t(
 								"quickClone.description",
-								"Upload 5�60 seconds of clear speech to create a voice clone.",
+								"Upload 5–60 seconds of clear speech to create a voice clone.",
 							)}
 						</p>
 
@@ -336,8 +336,7 @@ export function QuickCloneDialog({
 											)}
 								</p>
 								<p className="text-xs text-muted-foreground mt-1">
-									WAV, MP3, OGG, FLAC � {MIN_DURATION_SECONDS}�
-									{MAX_DURATION_SECONDS}s
+									WAV, MP3, OGG, FLAC · {MIN_DURATION_SECONDS}–{MAX_DURATION_SECONDS}s
 								</p>
 							</div>
 						</div>
@@ -390,7 +389,7 @@ export function QuickCloneDialog({
 								</p>
 								<p className="text-xs text-muted-foreground">
 									{audioDuration !== null ? `${audioDuration.toFixed(1)}s` : ""}
-									{profileName && ` � ${profileName}`}
+									{profileName && ` · ${profileName}`}
 								</p>
 							</div>
 						</div>
@@ -469,7 +468,7 @@ export function QuickCloneDialog({
 						<Spinner size="lg" />
 						<div className="text-center space-y-1">
 							<p className="text-sm font-medium">
-								{t("quickClone.creating", "Cloning voice�")}
+								{t("quickClone.creating", "Cloning voice…")}
 							</p>
 							<p className="text-xs text-muted-foreground">
 								{t(

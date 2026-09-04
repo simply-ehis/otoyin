@@ -389,7 +389,7 @@ export function InlineWaveformEditor({
 				</div>
 				{selection && (
 					<span className="text-xs text-muted-foreground ml-2">
-						{formatMs(selection.startMs)} — {formatMs(selection.endMs)} (
+						{formatMs(selection.startMs)} â€” {formatMs(selection.endMs)} (
 						{formatMs(selection.endMs - selection.startMs)})
 					</span>
 				)}

@@ -166,7 +166,7 @@ export function GenerationControlsRow({
 														<span className="shrink-0 text-xs text-muted-foreground/60 tabular-nums">
 															{profile.language}
 															{profile.generation_count > 0 &&
-																` � ${profile.generation_count} gen`}
+																` · ${profile.generation_count} gen`}
 														</span>
 													</span>
 												</SelectItem>
@@ -280,7 +280,7 @@ export function GenerationControlsRow({
 												className="text-xs text-muted-foreground w-7 text-right tabular-nums hover:text-foreground transition-colors"
 												title={
 													isAuto
-														? "Engine default � click to set"
+														? "Engine default — click to set"
 														: "Click to reset to auto"
 												}
 												onClick={() => field.onChange(isAuto ? 0.7 : null)}

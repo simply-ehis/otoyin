@@ -205,7 +205,7 @@ export function MarketplacePlugins() {
 											)}
 										</div>
 										<span className="text-xs text-muted-foreground">
-											{p.developer ?? "unknown"} · v{p.version}
+											{p.developer ?? "unknown"} Â· v{p.version}
 										</span>
 									</div>
 									<div className="flex items-center gap-1 shrink-0">

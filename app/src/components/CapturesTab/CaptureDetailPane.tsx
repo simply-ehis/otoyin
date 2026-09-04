@@ -92,11 +92,11 @@ export function CaptureDetailPane({
 				<span>{formatAbsoluteDate(selected.created_at)}</span>
 				{selected.language && (
 					<>
-						<span className="text-muted-foreground/40">·</span>
+						<span className="text-muted-foreground/40">Â·</span>
 						<span>{selected.language.toUpperCase()}</span>
 					</>
 				)}
-				<span className="text-muted-foreground/40">·</span>
+				<span className="text-muted-foreground/40">Â·</span>
 				<SourceBadge source={selected.source} />
 			</div>
 
@@ -250,7 +250,7 @@ export function CaptureDetailPane({
 					<Button
 						variant="outline"
 						size="sm"
-						title="Copy audio to cross-tab clipboard — paste in Timeline, Mixer, Stories, etc."
+						title="Copy audio to cross-tab clipboard â€” paste in Timeline, Mixer, Stories, etc."
 						aria-label="Copy audio to clipboard"
 						onClick={handleCopyAudio}
 					>

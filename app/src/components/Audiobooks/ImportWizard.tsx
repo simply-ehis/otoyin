@@ -170,7 +170,7 @@ export function ImportWizard({ onImported }: { onImported: () => void }) {
 								{isExpanded && ch.preview && (
 									<div className="mt-1 px-4 text-muted-foreground leading-relaxed">
 										{ch.preview}
-										{(ch.word_count > 200 || ch.preview.length >= 200) && "…"}
+										{(ch.word_count > 200 || ch.preview.length >= 200) && "â€¦"}
 									</div>
 								)}
 							</div>
@@ -189,7 +189,7 @@ export function ImportWizard({ onImported }: { onImported: () => void }) {
 					{busy ? (
 						<span className="flex items-center gap-2">
 							<Spinner className="h-3 w-3" />
-							Importing…
+							Importingâ€¦
 						</span>
 					) : (
 						`Import ${preview.chapters.length} Chapters`
@@ -227,7 +227,7 @@ export function ImportWizard({ onImported }: { onImported: () => void }) {
 			{busy && (
 				<div className="flex items-center gap-2 text-xs text-muted-foreground">
 					<Spinner className="h-3 w-3" />
-					Parsing file…
+					Parsing fileâ€¦
 				</div>
 			)}
 			{error && <div className="text-xs text-destructive">{error}</div>}

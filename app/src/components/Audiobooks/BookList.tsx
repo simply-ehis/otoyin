@@ -67,7 +67,7 @@ export function BookList({
 							<div className="flex-1 min-w-0">
 								<div className="text-sm truncate">{b.title}</div>
 								<div className="text-xs text-muted-foreground truncate">
-									{b.author || "Unknown"} · {b.chapter_count} chapters
+									{b.author || "Unknown"} Â· {b.chapter_count} chapters
 								</div>
 							</div>
 							<button

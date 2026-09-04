@@ -15,7 +15,7 @@ const THEME_IMAGE_IMPORTS: Record<string, () => Promise<{ default: string }>> =
 	};
 
 /**
- * Design system background � per-theme rendering:
+ * Design system background — per-theme rendering:
  * - Plain themes: solid grayscale
  * - di-stefano: spatial gradient + wave + film grain + rose glow
  * - stripe: image bg + scan line
@@ -87,7 +87,7 @@ function AppBackgroundInner() {
 
 	return (
 		<div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-			{/* Background image (special themes) � 0.08 opacity wash, never covers text */}
+			{/* Background image (special themes) — 0.08 opacity wash, never covers text */}
 			{bgImage && (
 				<div
 					className="absolute inset-0 opacity-[0.08]"
@@ -99,7 +99,7 @@ function AppBackgroundInner() {
 					}}
 				/>
 			)}
-			{/* Dim overlay for text contrast � ensures background never washes out foreground */}
+			{/* Dim overlay for text contrast — ensures background never washes out foreground */}
 			{bgImage && <div className="absolute inset-0" />}
 
 			{/* di-stefano spatial gradient */}

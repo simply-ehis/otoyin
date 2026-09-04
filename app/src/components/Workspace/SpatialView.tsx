@@ -122,7 +122,7 @@ export function SpatialView() {
 				url,
 				"spatial-render",
 				null,
-				`Spatial · ${selected.profile_name}`,
+				`Spatial Â· ${selected.profile_name}`,
 			);
 			toast({
 				title: "Spatial render complete",
@@ -199,14 +199,14 @@ export function SpatialView() {
 				disabled={rendering}
 			>
 				{rendering ? (
-					<Spinner label="Rendering…" className="mr-2" />
+					<Spinner label="Renderingâ€¦" className="mr-2" />
 				) : (
 					<PlayIcon className="size-4 mr-2" />
 				)}
 				Apply Spatial Effects
 			</Button>
 			{statusQuery.isFetching && (
-				<Spinner label="Checking engine…" className="text-xs" />
+				<Spinner label="Checking engineâ€¦" className="text-xs" />
 			)}
 		</div>
 	);

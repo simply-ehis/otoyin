@@ -282,7 +282,7 @@ export function PluginsPage() {
 											{plugin.name}
 										</span>
 										<span className="text-xs text-muted-foreground">
-											{plugin.vendor} · {plugin.type}
+											{plugin.vendor} Â· {plugin.type}
 										</span>
 									</div>
 									<div className="flex items-center gap-1 shrink-0">

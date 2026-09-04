@@ -319,7 +319,7 @@ export function MixerView() {
 								<span
 									role="img"
 									className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-amber-400"
-									title="Unsaved changes — Save to name this session"
+									title="Unsaved changes â€” Save to name this session"
 									aria-label="Unsaved changes"
 								/>
 							)}

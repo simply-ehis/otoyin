@@ -52,7 +52,7 @@ export function AdrAlignmentPanel({
 									/>
 								))
 						) : (
-							<Spinner label="Loading waveform…" />
+							<Spinner label="Loading waveformâ€¦" />
 						)}
 					</div>
 					<button
@@ -68,7 +68,7 @@ export function AdrAlignmentPanel({
 			{!hasGuide && session && (
 				<div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300 flex items-center gap-2">
 					<AlertTriangle className="size-3.5 shrink-0" />
-					Guide track required — import a guide before recording takes or
+					Guide track required â€” import a guide before recording takes or
 					aligning. Scoring and auto-select work, but alignment is most
 					meaningful with a guide.
 				</div>

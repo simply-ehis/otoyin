@@ -55,7 +55,7 @@ export function NotificationBell() {
 			setOffers(offersRes);
 			setWhatsNew(whatsNewRes);
 		} catch {
-			// Server not ready � the bell stays quiet.
+			// Server not ready — the bell stays quiet.
 		}
 	}, []);
 
@@ -168,7 +168,7 @@ export function NotificationBell() {
 												{displayName(download.model_name)}
 											</span>
 											<span className="ml-auto text-muted-foreground">
-												downloading�
+												downloading…
 											</span>
 										</li>
 									))}
@@ -273,7 +273,7 @@ export function NotificationBell() {
 										className="size-4 text-green-500"
 										aria-hidden="true"
 									/>
-									All caught up � recommended models are ready.
+									All caught up — recommended models are ready.
 								</div>
 							)
 						)}

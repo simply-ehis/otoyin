@@ -223,7 +223,7 @@ export function Sidebar({ isMacOS }: { isMacOS: boolean }) {
 					</div>
 				</nav>
 
-				{/* Mini-game � tiny access, smaller than a normal tab */}
+				{/* Mini-game — tiny access, smaller than a normal tab */}
 				<div className="border-t border-border/50 mx-2 pt-2 pb-1">
 					<button
 						type="button"

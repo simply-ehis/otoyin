@@ -118,7 +118,7 @@ export function AboutPage() {
 					</FadeIn>
 
 					<FadeIn delay={320}>
-						{/* Placeholder until the landing page ships — swap href when it's live. */}
+						{/* Placeholder until the landing page ships â€” swap href when it's live. */}
 						<button
 							type="button"
 							onClick={(e) => e.preventDefault()}
@@ -128,7 +128,7 @@ export function AboutPage() {
 							<GlobeAltIcon className="h-3.5 w-3.5" aria-hidden="true" />
 							{t("settings.about.website")}
 							<span className="text-muted-foreground/30">
-								— {t("settings.about.comingSoon")}
+								â€” {t("settings.about.comingSoon")}
 							</span>
 						</button>
 					</FadeIn>

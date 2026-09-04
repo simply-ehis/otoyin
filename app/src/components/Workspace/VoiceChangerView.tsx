@@ -128,7 +128,7 @@ export function VoiceChangerView() {
 
 			{/* Reverb mix (capabilities-driven) */}
 			{isLoading ? (
-				<LoadingState label="Loading capabilities…" />
+				<LoadingState label="Loading capabilitiesâ€¦" />
 			) : isError ? (
 				<EmptyState
 					variant="error"
@@ -168,7 +168,7 @@ export function VoiceChangerView() {
 				/>
 				<span className="text-xs text-muted-foreground">
 					{isActive
-						? "Processing — voice changer is active"
+						? "Processing â€” voice changer is active"
 						: "Voice changer is idle"}
 				</span>
 			</div>

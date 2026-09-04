@@ -68,7 +68,7 @@ const statusConfig: Record<
 
 function formatDate(iso: string | null) {
 	if (!iso) {
-		return "ó";
+		return "‚Äî";
 	}
 	return new Date(iso).toLocaleString(undefined, {
 		month: "short",
@@ -218,7 +218,7 @@ export function BatchQueueView() {
 											))}
 											{functions.length === 0 && (
 												<Spinner
-													label="Loading functionsÖ"
+													label="Loading functions‚Ä¶"
 													className="py-2 justify-start"
 												/>
 											)}
@@ -293,7 +293,7 @@ export function BatchQueueView() {
 					title={statusFilter ? `No ${statusFilter} jobs` : "No batch jobs yet"}
 					description={
 						statusFilter
-							? `There are no jobs with the ì${statusFilter}î status.`
+							? `There are no jobs with the ‚Äú${statusFilter}‚Äù status.`
 							: "Create a batch job to process multiple files at once."
 					}
 					action={
@@ -344,7 +344,7 @@ export function BatchQueueView() {
 											</div>
 											<div className="text-xs text-muted-foreground font-mono mt-0.5">
 												{job.id.slice(0, 8)}{" "}
-												{job.func_name && `∑ ${job.func_name}`}
+												{job.func_name && `¬∑ ${job.func_name}`}
 											</div>
 										</td>
 										<td className="py-3 px-2">
@@ -397,12 +397,12 @@ export function BatchQueueView() {
 													title={JSON.stringify(job.result)}
 												>
 													{JSON.stringify(job.result).slice(0, 60)}
-													{JSON.stringify(job.result).length > 60 ? "Ö" : ""}
+													{JSON.stringify(job.result).length > 60 ? "‚Ä¶" : ""}
 												</span>
 											)}
 											{job.status === "pending" || job.status === "running" ? (
 												<span className="text-xs text-muted-foreground">
-													ó
+													‚Äî
 												</span>
 											) : null}
 										</td>
@@ -418,7 +418,7 @@ export function BatchQueueView() {
 												</button>
 											) : (
 												<span className="text-muted-foreground/30 text-xs">
-													ó
+													‚Äî
 												</span>
 											)}
 										</td>

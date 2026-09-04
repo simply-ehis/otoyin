@@ -10,7 +10,7 @@ import { usePlatform } from "@/platform/PlatformContext";
 
 /**
  * Tracks macOS Input Monitoring permission state. Without it, `rdev::listen`
- * sees no key events and the chord engine never fires — but neither does
+ * sees no key events and the chord engine never fires â€” but neither does
  * anything error-out visibly, so we surface an inline prompt next to the
  * hotkey toggle instead of leaving the user wondering why the shortcut is
  * dead.

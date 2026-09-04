@@ -23,7 +23,7 @@ function OfferCard({ offer }: { offer: Offer }) {
 			setCopied(true);
 			setTimeout(() => setCopied(false), 1500);
 		} catch {
-			// Clipboard blocked — no-op
+			// Clipboard blocked â€” no-op
 		}
 	};
 
@@ -101,13 +101,13 @@ export function OffersPage() {
 
 			{isLoading && (
 				<div className="flex items-center gap-2 text-sm text-muted-foreground">
-					<Spinner size="sm" /> Loading offers…
+					<Spinner size="sm" /> Loading offersâ€¦
 				</div>
 			)}
 
 			{!isLoading && (data?.length ?? 0) === 0 && (
 				<div className="rounded-lg border border-border bg-card px-4 py-6 text-sm text-muted-foreground">
-					No active offers right now — check back soon.
+					No active offers right now â€” check back soon.
 				</div>
 			)}
 

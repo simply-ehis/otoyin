@@ -216,7 +216,7 @@ function IdleDownloadButton({
 					className="flex-1 border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
 					disabled
 				>
-					<Key className="size-4 mr-2" />${paidProduct.price_usd} —{" "}
+					<Key className="size-4 mr-2" />${paidProduct.price_usd} â€”{" "}
 					{t("models.actions.purchaseLicense")}
 				</Button>
 			</div>

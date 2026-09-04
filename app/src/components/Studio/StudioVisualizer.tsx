@@ -95,7 +95,7 @@ function StudioVisualizerInner({ className }: { className?: string }) {
 	useEffect(() => {
 		const tick = () => {
 			frameCountRef.current += 1;
-			// Update every 4th frame (~15fps at 60Hz) — smooth enough for a progress bar
+			// Update every 4th frame (~15fps at 60Hz) â€” smooth enough for a progress bar
 			if (frameCountRef.current % 4 === 0) {
 				let p = 0;
 				if (studioPlaying) {

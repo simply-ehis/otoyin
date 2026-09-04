@@ -67,7 +67,7 @@ export function MonitorRecorder({ onRecordComplete }: MonitorRecorderProps) {
 		recorderRef.current = recorder;
 		startTimeRef.current = Date.now();
 		setRecording(true);
-		toast({ title: `Recording from ${source?.label ?? "monitor"}…` });
+		toast({ title: `Recording from ${source?.label ?? "monitor"}â€¦` });
 	}, [stream, source, toast, onRecordComplete]);
 
 	const stopRecording = useCallback(() => {

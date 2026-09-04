@@ -194,7 +194,7 @@ export function CommandPalette({
 						<input
 							ref={inputRef}
 							type="text"
-							placeholder="Type a command or search�"
+							placeholder="Type a command or search…"
 							value={query}
 							onChange={(e) => setQuery(e.target.value)}
 							className="w-full pl-10 pr-4 py-2 bg-background rounded-md border border-input focus:outline-none focus:ring-2 focus:ring-ring"
@@ -235,7 +235,7 @@ export function CommandPalette({
 				<div className="p-2 border-t border-border bg-muted/30 rounded-b-lg">
 					<p className="text-xs text-muted-foreground text-center">
 						<XMarkIcon className="size-3 inline mr-1" />
-						Esc to close � ?? to navigate � Enter to select
+						Esc to close — ↑↓ to navigate — Enter to select
 					</p>
 				</div>
 			</div>

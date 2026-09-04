@@ -37,15 +37,15 @@ type DubStep = "upload" | "preview" | "configure" | "dubbing" | "done";
 
 /**
  * Keyboard shortcuts for the dubbing workflow:
- *  Enter ? advance / start / download (step-dependent)
- *  Escape ? cancel dubbing or reset
+ *  Enter → advance / start / download (step-dependent)
+ *  Escape → cancel dubbing or reset
  */
 export function DubbingTab() {
 	const { toast } = useToast();
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const pollRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
-	// Resolve the default TTS engine from downloaded models � do NOT assume kokoro.
+	// Resolve the default TTS engine from downloaded models — do NOT assume kokoro.
 	const firstEngine = useFirstDownloadedTtsEngine();
 	const { data: modelStatus } = useQuery<ModelStatusListResponse>({
 		queryKey: ["modelStatus"],
@@ -152,7 +152,7 @@ export function DubbingTab() {
 						}
 					}
 				} catch {
-					// polling error � ignore transient failures
+					// polling error — ignore transient failures
 				}
 			}, 2000);
 		},
@@ -268,10 +268,10 @@ export function DubbingTab() {
 
 	const shortcutHint: Record<DubStep, string | null> = {
 		upload: null,
-		preview: "Enter ? Continue",
-		configure: profileId ? "Enter ? Start Dubbing" : null,
-		dubbing: "Esc ? Cancel",
-		done: "Enter ? Download � Esc ? Reset",
+		preview: "Enter → Continue",
+		configure: profileId ? "Enter → Start Dubbing" : null,
+		dubbing: "Esc → Cancel",
+		done: "Enter → Download · Esc → Reset",
 	};
 
 	const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -356,7 +356,7 @@ export function DubbingTab() {
 						<div className="flex items-center justify-between">
 							<h3 className="text-sm font-medium">Transcript Preview</h3>
 							<span className="text-xs text-muted-foreground">
-								{preview.segments.length} segments � {speakerCount} speaker
+								{preview.segments.length} segments · {speakerCount} speaker
 								{speakerCount !== 1 ? "s" : ""} detected
 							</span>
 						</div>

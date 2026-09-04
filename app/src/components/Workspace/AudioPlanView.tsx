@@ -225,7 +225,7 @@ export function AudioPlanView() {
 						<div className="h-20 rounded bg-muted/50 relative overflow-hidden">
 							<div className="absolute inset-0 flex items-center justify-center">
 								<p className="text-xs text-muted-foreground/60">
-									Timeline grid overlay — plan preview
+									Timeline grid overlay â€” plan preview
 								</p>
 							</div>
 							{scenes.map((scene, i) => (

@@ -24,7 +24,7 @@ function ago(a: number | null, b: number | null): string {
 function Gate({ o, l }: { o?: boolean; l: string }) {
 	return (
 		<Badge variant={o ? "secondary" : o === false ? "destructive" : "outline"}>
-			{l}: {o == null ? "…" : o ? "ok" : "fail"}
+			{l}: {o == null ? "â€¦" : o ? "ok" : "fail"}
 		</Badge>
 	);
 }
@@ -151,7 +151,7 @@ export function ModelHealthPage() {
 											{e.gpu_only && (
 												<Badge
 													variant="destructive"
-													title="Requires GPU — disabled on CPU"
+													title="Requires GPU â€” disabled on CPU"
 												>
 													GPU
 												</Badge>

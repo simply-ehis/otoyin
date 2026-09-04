@@ -51,13 +51,13 @@ function ChecklistRow({ icon, title, description, ready, action }: RowProps) {
 
 /**
  * Renders one row per dictation-readiness gate. Each unmet gate gets an
- * inline action — Download for missing models, Open Settings for missing
- * TCC permissions — so the user can resolve everything without leaving
+ * inline action â€” Download for missing models, Open Settings for missing
+ * TCC permissions â€” so the user can resolve everything without leaving
  * Captures.
  *
  * Download-in-progress state is sourced from ``/tasks/active`` (same query
  * the Models page uses) so it survives unmount: navigating away and back
- * still shows "Downloading…" instead of resetting to "Download".
+ * still shows "Downloadingâ€¦" instead of resetting to "Download".
  *
  * The chord stays disarmed until every row is green; this is what stops the
  * "stuck pill" failure mode of pressing the chord with a missing model.
@@ -149,7 +149,7 @@ export function DictationReadinessChecklist({
 			{/* Input Monitoring + Accessibility are macOS-only TCC permissions.
      The Rust stubs return true on Windows/Linux, so rendering these
      rows there would show permanent green checkmarks with copy
-     that talks about macOS — noise. Hide on non-mac. */}
+     that talks about macOS â€” noise. Hide on non-mac. */}
 			{isMacOS && (
 				<ChecklistRow
 					icon={<Keyboard className="h-3.5 w-3.5" />}

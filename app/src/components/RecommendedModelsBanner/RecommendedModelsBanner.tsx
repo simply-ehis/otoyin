@@ -51,7 +51,7 @@ export function RecommendedModelsBanner() {
 		try {
 			localStorage.setItem(DISMISS_KEY, "1");
 		} catch {
-			// localStorage unavailable � dismiss for this session only
+			// localStorage unavailable — dismiss for this session only
 		}
 	}, []);
 

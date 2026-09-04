@@ -148,7 +148,7 @@ function formatElapsed(ms: number): string {
  * Floating pill shown during capture. `state` drives the label, dot animation,
  * bar motion; `elapsedMs` freezes at whatever the caller last passed in
  * (recording advances the timer, transcribing/refining hold the final value).
- * The ``error`` state renders a destructive variant � a clickable pill that
+ * The ``error`` state renders a destructive variant — a clickable pill that
  * copies its message to the clipboard on press and calls ``onDismiss``.
  * Optional ``transcript`` shows live transcription during recording/transcribing.
  * Optional ``confidence`` (0-1) shows confidence indicator for live transcription.
@@ -233,7 +233,7 @@ export function CapturePill({
 		);
 
 	// Completed gets an inset accent stroke (via box-shadow, not Tailwind's
-	// ring � ring utility doesn't compose with arbitrary shadow-[�]) to mark
+	// ring — ring utility doesn't compose with arbitrary shadow-[…]) to mark
 	// the success moment without changing the pill's dimensions.
 	const completedStroke =
 		state === "completed"
@@ -388,7 +388,7 @@ export function CapturePill({
 			try {
 				await navigator.clipboard.writeText(message);
 			} catch {
-				// Clipboard access can be denied in rare webview configs � ignore,
+				// Clipboard access can be denied in rare webview configs — ignore,
 				// we still want the dismiss to land.
 			}
 			onDismiss?.();

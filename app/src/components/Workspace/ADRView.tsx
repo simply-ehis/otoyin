@@ -248,7 +248,7 @@ export function ADRView() {
 				</p>
 				<div className="flex gap-2 items-center">
 					<Input
-						placeholder="Session name…"
+						placeholder="Session nameâ€¦"
 						value={newSessionName}
 						onChange={(e) => setNewSessionName(e.target.value)}
 						className="w-56 h-8 text-xs"
@@ -269,7 +269,7 @@ export function ADRView() {
 					</Button>
 				</div>
 				{sessionsQuery.isLoading ? (
-					<Spinner label="Loading sessions…" />
+					<Spinner label="Loading sessionsâ€¦" />
 				) : sessionsQuery.isError ? (
 					<EmptyState
 						variant="error"
@@ -321,7 +321,7 @@ export function ADRView() {
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
 					<span className="text-sm font-semibold">
-						{session?.name ?? "Loading…"}
+						{session?.name ?? "Loadingâ€¦"}
 					</span>
 					<Badge variant="secondary" className="text-xs">
 						{lines.length} lines
@@ -408,7 +408,7 @@ export function ADRView() {
 			{/* Lines + Takes */}
 			<div className="flex flex-1 gap-4 overflow-hidden">
 				{sessionQuery.isLoading ? (
-					<LoadingState label="Loading session…" className="w-full" />
+					<LoadingState label="Loading sessionâ€¦" className="w-full" />
 				) : sessionQuery.isError ? (
 					<EmptyState
 						variant="error"

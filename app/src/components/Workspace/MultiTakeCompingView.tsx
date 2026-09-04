@@ -373,7 +373,7 @@ export function MultiTakeCompingView() {
 							<span
 								role="img"
 								className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-amber-400"
-								title="Unsaved changes — Save to name this session"
+								title="Unsaved changes â€” Save to name this session"
 								aria-label="Unsaved changes"
 							/>
 						)}
@@ -553,7 +553,7 @@ export function MultiTakeCompingView() {
 									lane.color,
 								)}
 								style={{ left: `${left}%`, width: `${width}%` }}
-								title={`${lane.name} — ${region.label}`}
+								title={`${lane.name} â€” ${region.label}`}
 							/>
 						);
 					})}
@@ -570,7 +570,7 @@ export function MultiTakeCompingView() {
 					aria-label="Play comp"
 				>
 					<Play className="size-3 mr-1" />
-					{compLoading ? "Assembling…" : "Play Comp"}
+					{compLoading ? "Assemblingâ€¦" : "Play Comp"}
 				</Button>
 				<audio ref={audioRef} className="hidden">
 					<track kind="captions" />

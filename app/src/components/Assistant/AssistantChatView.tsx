@@ -75,7 +75,7 @@ export function AssistantChatView({
 						<div>
 							<p className="text-sm font-medium text-foreground">Ask Otoyin</p>
 							<p className="text-xs text-muted-foreground mt-1 max-w-[260px]">
-								Generate speech, apply effects, manage voices — all through
+								Generate speech, apply effects, manage voices â€” all through
 								conversation.
 							</p>
 						</div>
@@ -129,7 +129,7 @@ export function AssistantChatView({
 								<p className="text-xs truncate font-medium">{att.file.name}</p>
 								<p className="text-xs text-muted-foreground">
 									{(att.file.size / 1024).toFixed(1)} KB{" "}
-									{att.uploading && "· Uploading..."}
+									{att.uploading && "Â· Uploading..."}
 								</p>
 							</div>
 							<Button

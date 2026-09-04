@@ -62,7 +62,7 @@ const DEFAULT_SETTINGS: VoiceChatSettingsData = {
 };
 
 export function VoiceChatSettings({ onClose }: { onClose: () => void }) {
-	// Resolve the default TTS engine from downloaded models — do NOT assume kokoro.
+	// Resolve the default TTS engine from downloaded models â€” do NOT assume kokoro.
 	const firstEngine = useFirstDownloadedTtsEngine();
 	const { data: modelStatus } = useQuery<ModelStatusListResponse>({
 		queryKey: ["modelStatus"],
@@ -171,7 +171,7 @@ export function VoiceChatSettings({ onClose }: { onClose: () => void }) {
 
 	if (loading) {
 		return (
-			<div className="p-4 text-xs text-muted-foreground">Loading settings…</div>
+			<div className="p-4 text-xs text-muted-foreground">Loading settingsâ€¦</div>
 		);
 	}
 
@@ -228,7 +228,7 @@ export function VoiceChatSettings({ onClose }: { onClose: () => void }) {
 					onChange={(e) => update("tts_engine", e.target.value)}
 					className="w-full h-8 px-2 rounded border border-border bg-background text-xs"
 				>
-					<option value="">Select engine…</option>
+					<option value="">Select engineâ€¦</option>
 					{ttsEngineOptions.map((e) => (
 						<option key={e.id} value={e.id}>
 							{e.name}
@@ -325,7 +325,7 @@ export function VoiceChatSettings({ onClose }: { onClose: () => void }) {
 					id="vc-system-prompt"
 					value={settings.system_prompt}
 					onChange={(e) => update("system_prompt", e.target.value)}
-					placeholder="You are a helpful voice assistant…"
+					placeholder="You are a helpful voice assistantâ€¦"
 					rows={3}
 					className="w-full px-2 py-1.5 rounded border border-border bg-background text-xs resize-none"
 				/>
@@ -425,7 +425,7 @@ export function VoiceChatSettings({ onClose }: { onClose: () => void }) {
 							onClick={handleKillVc}
 							disabled={vcAction === "killing"}
 						>
-							{vcAction === "killing" ? "Stopping…" : "Stop Service"}
+							{vcAction === "killing" ? "Stoppingâ€¦" : "Stop Service"}
 						</Button>
 					) : (
 						<Button
@@ -434,7 +434,7 @@ export function VoiceChatSettings({ onClose }: { onClose: () => void }) {
 							onClick={handleSpawnVc}
 							disabled={vcAction === "spawning"}
 						>
-							{vcAction === "spawning" ? "Starting…" : "Start Service"}
+							{vcAction === "spawning" ? "Startingâ€¦" : "Start Service"}
 						</Button>
 					)}
 				</div>
@@ -454,7 +454,7 @@ export function VoiceChatSettings({ onClose }: { onClose: () => void }) {
 				onClick={handleSave}
 				disabled={saving}
 			>
-				{saving ? "Saving…" : "Save Settings"}
+				{saving ? "Savingâ€¦" : "Save Settings"}
 			</Button>
 		</div>
 	);

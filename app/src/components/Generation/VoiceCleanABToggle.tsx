@@ -19,9 +19,9 @@ import { WaveformABDiff } from "./WaveformABDiff";
 interface VoiceCleanABToggleProps {
 	/** Server-side audio path (e.g. from HistoryResponse.audio_path) */
 	audioPath: string;
-	/** TTS engine name — used to auto-select the right enhancement preset */
+	/** TTS engine name â€” used to auto-select the right enhancement preset */
 	engine?: string;
-	/** Compact mode — renders inline without a card wrapper */
+	/** Compact mode â€” renders inline without a card wrapper */
 	compact?: boolean;
 	className?: string;
 }
@@ -29,7 +29,7 @@ interface VoiceCleanABToggleProps {
 /**
  * Fetches original + enhanced audio from the voice-clean A/B endpoint,
  * then renders a toggle switch so the user can flip between them
- * with instant playback — no second round-trip.
+ * with instant playback â€” no second round-trip.
  */
 export function VoiceCleanABToggle({
 	audioPath,
@@ -167,7 +167,7 @@ export function VoiceCleanABToggle({
 		};
 	}, []);
 
-	// -- toggle between original ? enhanced --
+	// -- toggle between original â†” enhanced --
 	const [useEnhanced, setUseEnhanced] = useState(true);
 
 	// -- waveform data (decoded once after fetch) --
@@ -200,14 +200,14 @@ export function VoiceCleanABToggle({
 				)}
 			>
 				<Spinner className="size-3" />
-				{t("voiceCleanAB.loading", "Loading comparison…")}
+				{t("voiceCleanAB.loading", "Loading comparisonâ€¦")}
 			</div>
 		) : (
 			<Card className={className}>
 				<CardContent className="flex items-center gap-3 p-4">
 					<Spinner className="size-4" />
 					<span className="text-sm text-muted-foreground">
-						{t("voiceCleanAB.loading", "Loading comparison…")}
+						{t("voiceCleanAB.loading", "Loading comparisonâ€¦")}
 					</span>
 				</CardContent>
 			</Card>
@@ -248,7 +248,7 @@ export function VoiceCleanABToggle({
 				</div>
 			</div>
 
-			{/* Toggle row — Original ? Enhanced */}
+			{/* Toggle row â€” Original â†” Enhanced */}
 			<div className="flex items-center gap-3">
 				<span
 					className={cn(

@@ -104,7 +104,7 @@ export function WaveformABDiff({
 				peaksRef.current = { original: oP, enhanced: eP, diff };
 				setReady(true);
 			} catch {
-				// decoding failed — leave peaks null, canvas shows nothing
+				// decoding failed â€” leave peaks null, canvas shows nothing
 			}
 		};
 

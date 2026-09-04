@@ -176,7 +176,7 @@ export function SettingsLayout() {
 
 	return (
 		<div className="flex h-full min-h-0">
-			{/* Left vertical nav — grouped 7 sections to tame warfront */}
+			{/* Left vertical nav â€” grouped 7 sections to tame warfront */}
 			<nav className="w-52 shrink-0 border-r border-border py-3 px-2 overflow-y-auto">
 				<div className="flex flex-col gap-3">
 					{tabGroups.map((group) => {

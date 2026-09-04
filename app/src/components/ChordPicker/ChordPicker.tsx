@@ -20,7 +20,7 @@ import {
 
 interface ChordPickerProps {
 	open: boolean;
-	/** Title shown in the modal — caller picks "push-to-talk" vs "toggle". */
+	/** Title shown in the modal â€” caller picks "push-to-talk" vs "toggle". */
 	title: string;
 	description?: string;
 	/** The chord currently saved, shown as the starting state. */
@@ -37,7 +37,7 @@ interface ChordPickerProps {
  *
  * Browser limitation: we can only capture keys while otoyin has key
  * focus, so the picker pulls focus to a hidden capture surface inside
- * the dialog. The actual chord runs through the Rust global hook —
+ * the dialog. The actual chord runs through the Rust global hook â€”
  * this picker only writes the configuration the hook reads.
  */
 export function ChordPicker({
@@ -59,7 +59,7 @@ export function ChordPicker({
 	);
 	const captureRef = useRef<HTMLDivElement>(null);
 
-	// Reset every time the modal re-opens — otherwise the previous picker
+	// Reset every time the modal re-opens â€” otherwise the previous picker
 	// session's peak set leaks into the next open and confuses the user.
 	useEffect(() => {
 		if (open) {
@@ -77,7 +77,7 @@ export function ChordPicker({
 	}, [open, initialKeys]);
 
 	const handleKeyDown = useCallback((event: KeyboardEvent) => {
-		// Esc reaches the dialog's onOpenChange and closes the modal — let
+		// Esc reaches the dialog's onOpenChange and closes the modal â€” let
 		// it pass through unmodified.
 		if (event.key === "Escape") {
 			return;
@@ -107,7 +107,7 @@ export function ChordPicker({
 			next.add(canonical);
 			setCaptured((prevCaptured) => {
 				const candidate = sortChordKeys(Array.from(next));
-				// First key in a fresh sequence replaces the peak — otherwise a
+				// First key in a fresh sequence replaces the peak â€” otherwise a
 				// user trying to swap a longer saved chord for a shorter one is
 				// stuck because their candidate never beats the seed length.
 				if (prev.size === 0) {

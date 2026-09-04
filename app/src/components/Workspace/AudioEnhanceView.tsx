@@ -122,11 +122,11 @@ export function AudioEnhanceView() {
 				</Select>
 				<p className="text-xs text-muted-foreground/40">
 					{mode === "auto" &&
-						"Upscale to 48 kHz then denoise — best overall quality"}
+						"Upscale to 48 kHz then denoise â€” best overall quality"}
 					{mode === "lavasr" &&
-						"Neural bandwidth extension — upscales low-quality audio to 48 kHz"}
+						"Neural bandwidth extension â€” upscales low-quality audio to 48 kHz"}
 					{mode === "denoise" &&
-						"DeepFilterNet speech denoising — removes background noise"}
+						"DeepFilterNet speech denoising â€” removes background noise"}
 				</p>
 			</div>
 
@@ -144,7 +144,7 @@ export function AudioEnhanceView() {
 				) : (
 					<Enhance className="h-3.5 w-3.5 mr-1.5" />
 				)}
-				{enhanceMut.isPending ? "Processing…" : "Enhance Audio"}
+				{enhanceMut.isPending ? "Processingâ€¦" : "Enhance Audio"}
 			</Button>
 
 			{/* Preview */}

@@ -25,7 +25,7 @@ export function GenerationPage() {
 	const persistedCrossfadeMs = settings?.crossfade_ms ?? 50;
 	const normalizeAudio = settings?.normalize_audio ?? true;
 	const autoplayOnGenerate = settings?.autoplay_on_generate ?? true;
-	// Slider mirrors persist on commit (pointer-up / keyboard-release) only —
+	// Slider mirrors persist on commit (pointer-up / keyboard-release) only â€”
 	// onValueChange would fire a PATCH for every pointer-move pixel and round-
 	// trip mid-drag failures could leave persisted state out of sync with UI.
 	const [maxChunkChars, setMaxChunkChars] = useState(persistedMaxChunkChars);

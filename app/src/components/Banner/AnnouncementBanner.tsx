@@ -72,7 +72,7 @@ export function AnnouncementBanner() {
 				<Icon className="size-5 shrink-0" aria-hidden="true" />
 				<div className="flex-1 text-sm">
 					<span className="font-semibold">{a.title}</span>
-					<span className="opacity-80"> � {a.message}</span>
+					<span className="opacity-80"> — {a.message}</span>
 				</div>
 				{a.cta && (
 					<button

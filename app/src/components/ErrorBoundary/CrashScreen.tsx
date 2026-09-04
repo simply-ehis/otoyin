@@ -15,7 +15,7 @@ interface CrashScreenProps {
 	originalError?: Error;
 }
 
-/** A waveform that runs normally, then flatlines — the visual for "the signal died". */
+/** A waveform that runs normally, then flatlines â€” the visual for "the signal died". */
 function FlatlinedWaveform() {
 	const bars = [8, 14, 22, 16, 28, 12, 24, 18, 10, 20, 6];
 	return (

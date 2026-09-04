@@ -24,7 +24,7 @@ export function PluginChainPanel({ track }: { track: StudioTrack }) {
 	if (chain.length === 0) {
 		return (
 			<div className="flex items-center justify-center py-2 text-xs text-muted-foreground/40 bg-sunken rounded mb-1">
-				No plugins � add them in the Plugins view
+				No plugins — add them in the Plugins view
 			</div>
 		);
 	}

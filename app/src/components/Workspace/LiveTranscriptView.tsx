@@ -184,7 +184,7 @@ export function LiveTranscriptView() {
 						icon={<Mic />}
 						title={
 							stt.isListening
-								? "Listening…"
+								? "Listeningâ€¦"
 								: "Press Record to start transcribing"
 						}
 						className="mt-8 border-0 bg-transparent"

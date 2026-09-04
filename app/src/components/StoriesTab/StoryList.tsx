@@ -298,7 +298,7 @@ export function StoryList() {
 											{story.description ? (
 												<>
 													<span className="mx-1.5 text-muted-foreground/50">
-														·
+														Â·
 													</span>
 													<span className="text-muted-foreground">
 														{story.description}

@@ -88,7 +88,7 @@ export function SupportPage() {
 			{ticketId && (
 				<div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
 					<CheckCircleIcon className="size-5" />
-					Message received � ticket #{ticketId}. We'll get back to you by email.
+					Message received — ticket #{ticketId}. We'll get back to you by email.
 				</div>
 			)}
 
@@ -137,7 +137,7 @@ export function SupportPage() {
 						onChange={(e) => setMessage(e.target.value)}
 						rows={5}
 						className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 outline-none focus:border-accent"
-						placeholder="Tell us what's going on�"
+						placeholder="Tell us what's going on…"
 					/>
 				</label>
 
@@ -147,7 +147,7 @@ export function SupportPage() {
 					className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
 				>
 					{support.isPending ? <Spinner size="sm" className="mr-1" /> : null}
-					{support.isPending ? "Sending�" : "Send message"}
+					{support.isPending ? "Sending…" : "Send message"}
 				</Button>
 			</form>
 		</div>

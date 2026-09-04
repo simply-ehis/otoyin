@@ -1,5 +1,5 @@
 /**
- * ParalinguisticInput — a contentEditable rich text input that renders
+ * ParalinguisticInput â€” a contentEditable rich text input that renders
  * paralinguistic tags (e.g. [laugh]) as inline badges for engines that
  * declare `paralinguistic_tags` support (zonos, fish_speech, chattts).
  *
@@ -216,7 +216,7 @@ export function ParalinguisticInput({
 		t.label.toLowerCase().includes(menuFilter.toLowerCase()),
 	);
 
-	// -- Sync external value ? editor ------------------------------
+	// -- Sync external value â†’ editor ------------------------------
 	useEffect(() => {
 		const el = editorRef.current;
 		if (!el) {
@@ -366,7 +366,7 @@ export function ParalinguisticInput({
 		emitChange();
 	}, [emitChange]);
 
-	// -- Handle paste — convert [tag] patterns to badges -----------
+	// -- Handle paste â€” convert [tag] patterns to badges -----------
 	const handlePaste = useCallback(
 		(e: React.ClipboardEvent) => {
 			e.preventDefault();
@@ -467,7 +467,7 @@ export function ParalinguisticInput({
 				}}
 			/>
 
-			{/* Autocomplete dropdown — portalled to body, positioned above the caret */}
+			{/* Autocomplete dropdown â€” portalled to body, positioned above the caret */}
 			{showMenu && filteredTags.length > 0
 				? createPortal(
 						<AnimatePresence>

@@ -45,14 +45,14 @@ export function UtteranceList({
 					className="text-xs px-2 py-1 rounded bg-secondary"
 					title="Split this chapter's text into utterances by lines starting with Name:"
 				>
-					{busy ? "Parsing…" : hasScript ? "Re-parse" : "Split by Name:"}
+					{busy ? "Parsingâ€¦" : hasScript ? "Re-parse" : "Split by Name:"}
 				</button>
 				{hasScript && (
 					<button
 						type="button"
 						onClick={clear}
 						className="text-xs px-2 py-1 rounded border"
-						title="Clear utterances — chapter becomes single Narrator block"
+						title="Clear utterances â€” chapter becomes single Narrator block"
 					>
 						Clear
 					</button>

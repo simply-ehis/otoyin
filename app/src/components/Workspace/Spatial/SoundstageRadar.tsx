@@ -37,7 +37,7 @@ export function SoundstageRadar({
 	return (
 		<div className="rounded-lg border border-border bg-card p-3">
 			<p className="text-xs text-muted-foreground/60 mb-2">
-				Soundstage — drag to position
+				Soundstage â€” drag to position
 			</p>
 			<svg
 				ref={svgRef}

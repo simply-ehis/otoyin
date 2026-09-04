@@ -24,13 +24,13 @@ export function WhatsNewPage() {
 			<header className="mb-6">
 				<h1 className="text-2xl font-semibold text-foreground">What's New</h1>
 				<p className="mt-1 text-sm text-muted-foreground">
-					Updates shipped in Otoyin — features, fixes, and model releases.
+					Updates shipped in Otoyin â€” features, fixes, and model releases.
 				</p>
 			</header>
 
 			{isLoading && (
 				<div className="flex items-center gap-2 text-sm text-muted-foreground">
-					<Spinner size="sm" /> Loading release notes…
+					<Spinner size="sm" /> Loading release notesâ€¦
 				</div>
 			)}
 
@@ -51,7 +51,7 @@ export function WhatsNewPage() {
 								{entry.title}
 							</h2>
 							<span className="shrink-0 text-xs text-muted-foreground">
-								v{entry.version} · {entry.date}
+								v{entry.version} Â· {entry.date}
 							</span>
 						</div>
 						<ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted-foreground">

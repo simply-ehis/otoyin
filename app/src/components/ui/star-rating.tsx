@@ -57,7 +57,7 @@ export function StarRating({
 }
 
 /**
- * Compact single-line rating: "?????????? 7/10"
+ * Compact single-line rating: "★★★★★★★☆☆☆ 7/10"
  * Used in the model list row where space is tight.
  */
 export function CompactRating({

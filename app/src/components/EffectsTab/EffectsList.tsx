@@ -65,7 +65,7 @@ export function EffectsList() {
 			<div className="p-4">
 				<Alert
 					variant="destructive"
-					message="Couldn't load effects — is the server running?"
+					message="Couldn't load effects â€” is the server running?"
 					onDismiss={() => window.location.reload()}
 				/>
 			</div>

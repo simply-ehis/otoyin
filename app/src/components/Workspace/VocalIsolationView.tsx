@@ -41,7 +41,7 @@ export function VocalIsolationView() {
 	const [stemUrl, setStemUrl] = useState<string | null>(null);
 	const audioRef = useRef<HTMLAudioElement>(null);
 
-	// Live model state — refetches fast while a download is in flight so the
+	// Live model state â€” refetches fast while a download is in flight so the
 	// UI flips to ready the moment the weights land.
 	const modelStatus = useQuery({
 		queryKey: ["model-status", DEMUCS_MODEL_NAME],
@@ -139,7 +139,7 @@ export function VocalIsolationView() {
 			<ScreenHeader
 				icon={<Isolate className="size-5" />}
 				title="Vocal Isolation"
-				description="Demucs (htdemucs) stem separation — vocals, drums, bass, other"
+				description="Demucs (htdemucs) stem separation â€” vocals, drums, bass, other"
 			/>
 
 			<Separator />
@@ -200,7 +200,7 @@ export function VocalIsolationView() {
 					</SelectContent>
 				</Select>
 				<p className="text-xs text-muted-foreground/40">
-					One stem per run — run again with another stem for the rest. Great for
+					One stem per run â€” run again with another stem for the rest. Great for
 					dubbing (isolate vocals) and podcast cleanup (drop drums/bass).
 				</p>
 			</div>
@@ -219,7 +219,7 @@ export function VocalIsolationView() {
 				) : (
 					<Isolate className="h-3.5 w-3.5 mr-1.5" />
 				)}
-				{busy ? "Separating…" : "Isolate Stem"}
+				{busy ? "Separatingâ€¦" : "Isolate Stem"}
 			</Button>
 
 			{/* Preview */}

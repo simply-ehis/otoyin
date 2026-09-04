@@ -39,7 +39,7 @@ export function ClipVolumePopover({
 					variant="ghost"
 					size="icon"
 					className="size-7"
-					title={`Volume — ${display}%`}
+					title={`Volume â€” ${display}%`}
 					aria-label="Adjust clip volume"
 				>
 					<Icon className="size-4" />

@@ -296,7 +296,7 @@ export function isProfileCompatibleWithEngine(
 	if (voiceType === "cloned") {
 		return CLONING_ENGINES.has(engine);
 	}
-	return true; // designed � future
+	return true; // designed — future
 }
 
 const CAPABILITY_LABELS: Record<keyof EngineCapabilities, string> = {
@@ -338,7 +338,7 @@ const CAPABILITY_HELP: {
 	{
 		key: "supports_editing",
 		title: "Speech editing",
-		body: "Edits existing audio � clone, re-emotion, or rewrite segments in place rather than synthesizing from scratch.",
+		body: "Edits existing audio — clone, re-emotion, or rewrite segments in place rather than synthesizing from scratch.",
 	},
 	{
 		key: "gpu_only",
@@ -386,7 +386,7 @@ export function EngineCapabilitiesChips({ engine }: { engine: string }) {
 					title={caps.supported_tags.join(", ")}
 				>
 					{caps.supported_tags.slice(0, 4).join(" ")}
-					{caps.supported_tags.length > 4 ? " �" : ""}
+					{caps.supported_tags.length > 4 ? " …" : ""}
 				</span>
 			)}
 			<Dialog open={helpOpen} onOpenChange={setHelpOpen}>

@@ -50,7 +50,7 @@ function AudioPlayerInner() {
 	const reset = usePlayerStore((s) => s.reset);
 
 	// Throttle WaveSurfer timeupdate (fires ~60fps) into one store commit
-	// per animation frame � cuts wasted re-renders of ~20 subscribed components.
+	// per animation frame — cuts wasted re-renders of ~20 subscribed components.
 	const throttledSetCurrentTime = useThrottledTimeUpdate(setCurrentTime);
 
 	// Check if profile has assigned channels (for native audio routing)

@@ -201,7 +201,7 @@ export function DiarizationView() {
 				) : (
 					<PlayIcon className="h-3.5 w-3.5 mr-1.5" />
 				)}
-				{diarizeMut.isPending ? "Diarizing…" : "Run Diarization"}
+				{diarizeMut.isPending ? "Diarizingâ€¦" : "Run Diarization"}
 			</Button>
 
 			{/* Result */}
@@ -220,7 +220,7 @@ export function DiarizationView() {
 							</Badge>
 						)}
 						<span className="text-xs text-muted-foreground/60">
-							{result.duration.toFixed(1)}s • {result.segments.length} segments
+							{result.duration.toFixed(1)}s Â· {result.segments.length} segments
 						</span>
 						<Button
 							variant="outline"
@@ -255,7 +255,7 @@ export function DiarizationView() {
 								<div className="flex-1">
 									<p className="text-sm text-foreground">{seg.text}</p>
 									<p className="text-xs font-mono text-muted-foreground/60 mt-0.5">
-										{formatTime(seg.start)} – {formatTime(seg.end)}
+										{formatTime(seg.start)} Â· {formatTime(seg.end)}
 									</p>
 								</div>
 							</div>

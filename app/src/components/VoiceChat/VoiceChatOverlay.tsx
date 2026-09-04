@@ -212,11 +212,11 @@ export function VoiceChatOverlay() {
 						/>
 						<span className="text-xs text-muted-foreground min-w-[50px] tabular-nums">
 							{isSpeaking
-								? "Listening…"
+								? "Listeningâ€¦"
 								: isProcessing
-									? "Thinking…"
+									? "Thinkingâ€¦"
 									: connectionQuality === "degraded"
-										? `Reconnecting (${reconnectAttempts})…`
+										? `Reconnecting (${reconnectAttempts})â€¦`
 										: connectionQuality === "disconnected"
 											? "Disconnected"
 											: "Ready"}
@@ -351,7 +351,7 @@ export function VoiceChatOverlay() {
 								You
 							</span>
 							<p className="text-xs text-muted-foreground italic">
-								{liveTranscript || "Listening…"}
+								{liveTranscript || "Listeningâ€¦"}
 							</p>
 						</div>
 					)}

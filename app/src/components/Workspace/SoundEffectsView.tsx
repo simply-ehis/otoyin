@@ -61,7 +61,7 @@ export function SoundEffectsView() {
 			<ScreenHeader
 				icon={<Wave className="size-5" />}
 				title="Sound Effects"
-				description="Freesound — curated, license-tagged SFX (requires your API key)"
+				description="Freesound â€” curated, license-tagged SFX (requires your API key)"
 			/>
 
 			<Separator />
@@ -90,7 +90,7 @@ export function SoundEffectsView() {
 				</Button>
 			</div>
 
-			{searchQuery.isFetching && <LoadingState label="Searching Freesound…" />}
+			{searchQuery.isFetching && <LoadingState label="Searching Freesoundâ€¦" />}
 
 			{searchQuery.isError && (
 				<EmptyState
@@ -124,7 +124,7 @@ export function SoundEffectsView() {
 										{r.name}
 									</p>
 									<p className="text-xs text-muted-foreground truncate">
-										{r.username} · {r.duration.toFixed(1)}s
+										{r.username} Â· {r.duration.toFixed(1)}s
 									</p>
 									<p className="text-xs text-muted-foreground/70 truncate">
 										{r.license}

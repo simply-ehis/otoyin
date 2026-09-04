@@ -26,7 +26,7 @@ const TOUR_STEPS: TourStep[] = [
 	{
 		id: "welcome",
 		title: "Welcome to otoyin",
-		body: "Your offline AI voice studio. Everything runs on-device � no cloud dependency for core features.",
+		body: "Your offline AI voice studio. Everything runs on-device — no cloud dependency for core features.",
 		Icon: MicrophoneIcon,
 	},
 	{
@@ -50,7 +50,7 @@ const TOUR_STEPS: TourStep[] = [
 	{
 		id: "assistant",
 		title: "AI Assistant",
-		body: "Open the local LLM assistant � it can call 120+ studio tools through voice or text.",
+		body: "Open the local LLM assistant — it can call 120+ studio tools through voice or text.",
 		Icon: CpuChipIcon,
 	},
 	{
