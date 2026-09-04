@@ -87,9 +87,18 @@ async def get_catalog(db: AsyncSession = Depends(get_db)):
         for p in products
     ]
 
-    # Sign the catalog
+    # Sign the FULL response payload (minus sig) so clients verify exactly
+    # what they receive. Canonical form: sort_keys + compact separators,
+    # matching the client-side verifier in backend/services/licensing.py
+    # (verify_license_signature -> _canonical).
+    payload = {
+        "schema_version": 1,
+        "signed_at": now.isoformat(),
+        "currency": "usd",
+        "products": [ProductOut(**pd).model_dump() for pd in product_dicts],
+    }
     canonical = json.dumps(
-        {"schema_version": 1, "currency": "usd", "products": product_dicts},
+        {k: v for k, v in payload.items() if k != "sig"},
         sort_keys=True,
         separators=(",", ":"),
     )
@@ -97,13 +106,7 @@ async def get_catalog(db: AsyncSession = Depends(get_db)):
     sig_bytes = signer._private_key.sign(canonical.encode())
     sig = f"ed25519:{base64.b64encode(sig_bytes).decode()}"
 
-    return CatalogResponse(
-        schema_version=1,
-        signed_at=now.isoformat(),
-        currency="usd",
-        products=[ProductOut(**pd) for pd in product_dicts],
-        sig=sig,
-    )
+    return CatalogResponse(**payload, sig=sig)
 
 
 @router.get("/product/{product_id}", response_model=ProductOut)

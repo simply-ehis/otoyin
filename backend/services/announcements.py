@@ -17,10 +17,19 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import time
+import urllib.request
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+# Optional remote notices source (see marketplace_server/routes/notices.py).
+# When set, refresh_remote_announcements() merges remote items into the
+# bundled content so messages ship without an app release. Offline-first:
+# any failure keeps the bundled content untouched.
+REMOTE_NOTICES_URL = os.environ.get("OTOYIN_NOTICES_URL", "").strip()
+REMOTE_NOTICES_TIMEOUT_S = float(os.environ.get("OTOYIN_NOTICES_TIMEOUT_S", "5"))
 
 _DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
@@ -73,6 +82,55 @@ def get_announcements() -> list[dict]:
 def get_offers() -> list[dict]:
     """Special promotions. ``expires_at`` is ISO date; frontend shows remaining time."""
     return list(_CONTENT.get("offers", []))
+
+
+def refresh_remote_announcements() -> None:
+    """Merge remote notices (``OTOYIN_NOTICES_URL``) into the bundled content.
+
+    Remote items use the frontend ``Announcement`` shape (id, title, message,
+    severity, cta, starts_at, ends_at). Merge rules:
+
+    - Same ``id`` as a bundled announcement -> remote replaces it in place.
+    - New ``id`` -> appended after the bundled list.
+    - Any failure (no network, timeout, malformed payload) -> bundled content
+      is kept untouched and the failure is logged at debug level, so an
+      offline app or a notices outage is completely invisible to the user.
+
+    Called once at app startup from a background task (see backend/app.py).
+    """
+    global _CONTENT
+    if not REMOTE_NOTICES_URL:
+        return
+    try:
+        req = urllib.request.Request(
+            REMOTE_NOTICES_URL,
+            headers={"Accept": "application/json", "User-Agent": "otoyin/0.1"},
+        )
+        with urllib.request.urlopen(req, timeout=REMOTE_NOTICES_TIMEOUT_S) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+        items = payload.get("notices") if isinstance(payload, dict) else payload
+        if not isinstance(items, list):
+            raise ValueError("remote notices payload is not a list")
+        bundled = {a["id"]: a for a in _CONTENT.get("announcements", [])}
+        seen: set[str] = set()
+        for item in items:
+            if not isinstance(item, dict) or not item.get("id"):
+                continue
+            item_id = item["id"]
+            bundled[item_id] = item
+            seen.add(item_id)
+        # Preserve bundled ordering; remote-only items append at the end.
+        merged = [
+            bundled[a["id"]]
+            for a in _CONTENT.get("announcements", [])
+            if a.get("id") not in seen
+        ]
+        merged.extend(bundled[a["id"]] for a in _CONTENT.get("announcements", []) if a.get("id") in seen)
+        merged.extend(item for item in items if item.get("id") not in {a.get("id") for a in merged})
+        _CONTENT = {**_CONTENT, "announcements": merged}
+        logger.info("Merged %d remote notice(s) into announcements", len(items))
+    except Exception:
+        logger.debug("Remote notices fetch failed; keeping bundled content", exc_info=True)
 
 
 def create_support_request(kind: str, subject: str, message: str, email: str | None) -> dict:

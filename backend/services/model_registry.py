@@ -153,6 +153,36 @@ def list_downloads(db: Session | None = None) -> list[ModelDownload]:
             owned.close()
 
 
+def local_status_for(model_name: str, model_size: str | None = None) -> str:
+    """Catalog-facing install state for a product: ``"cached"`` or ``"not_downloaded"``.
+
+    Resolves the real ``model_size`` from the model config when not given
+    (manifest rows record the size, so a bare ``is_downloaded(name)`` query
+    would miss sized models). Bundled models that are physically present get
+    manifest rows via ``reconcile_downloads()`` at startup, so they report
+    ``"cached"`` on real installs; the no-config branch below covers any
+    future non-model product (ships with the app by definition).
+
+    Any DB/init failure falls back to ``"not_downloaded"`` — the safe
+    direction, since it routes the user to the install flow rather than
+    claiming a model is present when it may not be.
+    """
+    from ..backends import get_model_config
+
+    if model_size is None:
+        cfg = get_model_config(model_name)
+        model_size = cfg.model_size if cfg is not None else None
+    try:
+        if is_downloaded(model_name, model_size):
+            return "cached"
+    except Exception:
+        return "not_downloaded"
+    if get_model_config(model_name) is None:
+        # Non-model product — ships with the app (no manifest entry expected).
+        return "cached"
+    return "not_downloaded"
+
+
 def assert_downloaded(model_name: str, model_size: str | None = None, db: Session | None = None) -> None:
     """Raise ModelNotDownloadedError if no manifest row exists for this model."""
     if not is_downloaded(model_name, model_size, db=db):

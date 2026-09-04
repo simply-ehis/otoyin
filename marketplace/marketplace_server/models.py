@@ -57,7 +57,7 @@ class Product(Base):
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(dt.UTC), default=lambda: dt.datetime.now(dt.UTC))
 
-    reviews: Mapped[list["Review"]] = relationship("Review", back_populates="product", cascade="all, delete-orphan")
+    reviews: Mapped[list[Review]] = relationship("Review", back_populates="product", cascade="all, delete-orphan")
 
 
 class Review(Base):
@@ -123,6 +123,31 @@ class License(Base):
 
     order: Mapped[Order] = relationship("Order", back_populates="license")
     product: Mapped[Product] = relationship("Product")
+
+
+class Notice(Base):
+    """A push-style announcement served to installed desktop apps.
+
+    Independently updatable: notices are created via the admin route and
+    polled by the app on launch (no app release required). The response
+    shape matches the frontend ``Announcement`` type in
+    ``app/src/lib/api/types.ts`` so existing banner/bell UI renders it
+    unchanged.
+    """
+
+    __tablename__ = "notices"
+
+    id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    title: Mapped[str] = mapped_column(String(256), default="")
+    message: Mapped[str] = mapped_column(Text)
+    severity: Mapped[str] = mapped_column(String(16), default="info")  # info | success | warning | promo
+    cta_label: Mapped[str] = mapped_column(String(128), default="")
+    cta_to: Mapped[str] = mapped_column(String(256), default="")
+    scope: Mapped[str] = mapped_column(String(32), default="global")  # global | update | promo
+    starts_at: Mapped[dt.datetime | None] = mapped_column(DateTime(dt.UTC), nullable=True)
+    ends_at: Mapped[dt.datetime | None] = mapped_column(DateTime(dt.UTC), nullable=True)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(dt.UTC), default=lambda: dt.datetime.now(dt.UTC))
 
 
 async def init_db():

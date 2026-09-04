@@ -38,12 +38,26 @@ class LicenseVerifyRequest(BaseModel):
     product_id: str
 
 
+def _annotate_local_status(products: list[dict]) -> None:
+    """Add per-product ``local_status`` (cached | not_downloaded) in place.
+
+    Response-only enrichment — the signed catalog document itself is never
+    mutated, so signatures stay valid. See
+    ``services.model_registry.local_status_for`` for the semantics.
+    """
+    from ..services.model_registry import local_status_for
+
+    for product in products:
+        product["local_status"] = local_status_for(product.get("id", ""))
+
+
 @router.get("/marketplace/catalog")
 def get_catalog() -> dict:
     """Return the signed product catalog (prices per docs/PRICING_PLAN.md)."""
     catalog = build_catalog()
     if not verify_catalog(catalog):
         raise HTTPException(status_code=500, detail="Catalog failed self-verification")
+    _annotate_local_status(catalog.get("products", []))
     return catalog
 
 
@@ -303,6 +317,8 @@ async def get_local_catalog(request: Request) -> dict:
     catalog = build_catalog()
     if not verify_catalog(catalog):
         raise HTTPException(status_code=500, detail="Catalog failed self-verification")
+
+    _annotate_local_status(catalog.get("products", []))
 
     # Add local prices to each product
     products = catalog.get("products", [])

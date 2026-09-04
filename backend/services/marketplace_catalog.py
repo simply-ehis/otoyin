@@ -15,9 +15,24 @@ price < $3.  NC-licensed engines ship free and flagged.
 from __future__ import annotations
 
 import datetime
+import json
+import logging
+import os
+import time
+import urllib.request
 from typing import Any
 
 from .licensing import sign_license, verify_license_signature
+
+logger = logging.getLogger(__name__)
+
+# Optional remote catalog source (07 Part B). When ``OTOYIN_CATALOG_URL`` is
+# set, ``refresh_remote_catalog()`` fetches the signed catalog from the
+# marketplace service and swaps the bundled ``PRODUCTS`` on success.
+# Offline-first: any failure keeps the bundled catalog untouched.
+REMOTE_CATALOG_URL = os.environ.get("OTOYIN_CATALOG_URL", "").strip()
+REMOTE_CATALOG_TIMEOUT_S = float(os.environ.get("OTOYIN_CATALOG_TIMEOUT_S", "8"))
+REMOTE_REFRESH_INTERVAL_S = float(os.environ.get("OTOYIN_CATALOG_REFRESH_S", str(24 * 60 * 60)))
 
 # Product registry. `id` matches the download pipeline `model_name` for
 # model products. `paid` drives the license gate.
@@ -391,6 +406,72 @@ def build_catalog() -> dict:
 def verify_catalog(catalog: dict) -> bool:
     """Verify the catalog signature (tamper/downgrade protection)."""
     return verify_license_signature(catalog)
+
+
+# ── Remote catalog (07 Part B) ───────────────────────────────────────────
+
+_LAST_REMOTE_REFRESH: float = 0.0
+_REFRESHING = False
+
+
+def refresh_remote_catalog() -> bool:
+    """Fetch + verify the signed remote catalog; swap ``PRODUCTS`` on success.
+
+    Trust boundary: the fetched document must verify against the embedded
+    marketplace public key (``licensing.verify_license_signature``). The
+    marketplace service signs the full response payload (minus ``sig``) with
+    its private key — see ``marketplace_server/routes/catalog.py``.
+
+    Offline-first: any failure (no network, timeout, bad signature, malformed
+    shape) keeps the bundled catalog untouched and logs at debug level.
+    Returns ``True`` when the catalog was swapped. Never raises.
+    """
+    global _LAST_REMOTE_REFRESH, _REFRESHING, _PRODUCT_INDEX
+    if not REMOTE_CATALOG_URL:
+        return False
+    if _REFRESHING:
+        return False
+    _REFRESHING = True
+    try:
+        req = urllib.request.Request(
+            REMOTE_CATALOG_URL,
+            headers={"Accept": "application/json", "User-Agent": "otoyin/0.1"},
+        )
+        with urllib.request.urlopen(req, timeout=REMOTE_CATALOG_TIMEOUT_S) as resp:
+            catalog = json.loads(resp.read().decode("utf-8"))
+        if not isinstance(catalog, dict):
+            raise ValueError("remote catalog is not an object")
+        if not verify_catalog(catalog):
+            logger.warning(
+                "Remote catalog failed signature verification — keeping bundled catalog"
+            )
+            return False
+        products = catalog.get("products")
+        if not isinstance(products, list) or not products:
+            raise ValueError("remote catalog has no products list")
+        for product in products:
+            if not isinstance(product, dict) or not product.get("id"):
+                raise ValueError("remote catalog contains a malformed product")
+        # Swap in place so existing references to PRODUCTS see the update.
+        PRODUCTS[:] = products
+        _PRODUCT_INDEX = {p["id"]: p for p in products}
+        _LAST_REMOTE_REFRESH = time.monotonic()
+        logger.info(
+            "Swapped bundled catalog with remote catalog (%d products)", len(products)
+        )
+        return True
+    except Exception:
+        logger.debug("Remote catalog fetch failed; keeping bundled catalog", exc_info=True)
+        return False
+    finally:
+        _REFRESHING = False
+
+
+def remote_catalog_stale(age_s: float = REMOTE_REFRESH_INTERVAL_S) -> bool:
+    """True when a configured remote catalog hasn't refreshed within ``age_s``."""
+    return bool(REMOTE_CATALOG_URL) and (
+        time.monotonic() - _LAST_REMOTE_REFRESH
+    ) > age_s
 
 
 # ── Reviews (in-memory, production: use DB) ────────────────────────────

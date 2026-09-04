@@ -566,6 +566,37 @@ async def _run_startup(application: FastAPI) -> None:
         _signal_ready()
 
     create_background_task(_bg_register_engines_and_signal_ready())
+
+    # Best-effort merge of remote notices (push-style announcements) into the
+    # bundled content. Offline-first: any failure is silent (see
+    # services/announcements.py refresh_remote_announcements).
+    async def _bg_refresh_remote_notices() -> None:
+        try:
+            from .services.announcements import refresh_remote_announcements
+
+            await asyncio.to_thread(refresh_remote_announcements)
+        except Exception:
+            logger.debug("Remote notices refresh failed", exc_info=True)
+
+    create_background_task(_bg_refresh_remote_notices())
+
+    # Remote signed catalog (07 Part B): fetch at startup, then refresh on an
+    # interval (default 24h). Offline-first — refresh_remote_catalog() keeps
+    # the bundled catalog on any failure and never raises.
+    async def _bg_refresh_remote_catalog() -> None:
+        from .services.marketplace_catalog import (
+            REMOTE_REFRESH_INTERVAL_S,
+            refresh_remote_catalog,
+        )
+
+        while True:
+            try:
+                await asyncio.to_thread(refresh_remote_catalog)
+            except Exception:
+                logger.debug("Remote catalog refresh failed", exc_info=True)
+            await asyncio.sleep(REMOTE_REFRESH_INTERVAL_S)
+
+    create_background_task(_bg_refresh_remote_catalog())
     try:
         progress_manager = get_progress_manager()
         progress_manager._set_main_loop(asyncio.get_running_loop())

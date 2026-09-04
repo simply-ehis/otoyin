@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     payproglobal_api_key: str = ""
     payproglobal_webhook_secret: str = ""
 
+    # Admin API (notices, catalog management) — Bearer token for /v1/admin/*
+    admin_key: str = ""
+
     # App settings
     app_url_scheme: str = "otoyin"  # Deep link scheme for redirect after payment
     catalog_cache_ttl_seconds: int = 300  # 5 min

@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .models import init_db
-from .routes import catalog, checkout, webhook
+from .routes import catalog, checkout, notices, webhook
 from .signing import get_signer
 
 
@@ -37,6 +37,7 @@ app.add_middleware(
 app.include_router(catalog.router)
 app.include_router(checkout.router)
 app.include_router(webhook.router)
+app.include_router(notices.router)
 
 
 @app.get("/health")
