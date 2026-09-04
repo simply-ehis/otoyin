@@ -23,7 +23,7 @@ const LABEL_CLASSES = {
 const STAR_POSITIONS = [1, 2, 3, 4, 5] as const;
 
 /**
- * Display a 1–10 quality rating as filled/empty stars within a category.
+ * Display a 1â€“10 quality rating as filled/empty stars within a category.
  * Scores are rendered as stars out of 10 (each star = 1 point).
  */
 export function StarRating({

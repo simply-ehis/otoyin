@@ -326,7 +326,7 @@ const OffersPage = lazy(() =>
 	})),
 );
 const StorePage = lazy(() =>
-	import("@/components/Store/StorePage").then((m) => ({
+	import("@/features/store/StorePage").then((m) => ({
 		default: m.StorePage,
 	})),
 );

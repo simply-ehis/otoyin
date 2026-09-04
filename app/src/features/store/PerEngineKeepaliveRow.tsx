@@ -1,9 +1,10 @@
 import { useMemo } from "react";
-import { Toggle } from "@/components/ui/toggle";
 import type { ModelStatus } from "@/lib/api/types";
 import { showStudioErrorToast } from "@/lib/errors";
 import { usePerformanceSettings } from "@/lib/hooks/useSettings";
+import { Toggle } from "@/ui/toggle";
 
+/** Per-engine keepalive overrides for downloaded large models (>500 MB). */
 export function PerEngineKeepaliveRow({
 	models,
 }: {
@@ -42,7 +43,7 @@ export function PerEngineKeepaliveRow({
 	return (
 		<section className="rounded-lg border bg-card p-3 space-y-2">
 			<div>
-				<h3 className="text-xs font-semibold">Keepalive — large models</h3>
+				<h3 className="text-xs font-semibold">Keepalive â€” large models</h3>
 				<p className="text-xs text-muted-foreground">
 					Keep heavy engines resident and skip idle unload. Overrides global
 					Performance Mode.
@@ -59,14 +60,14 @@ export function PerEngineKeepaliveRow({
 							<span className="min-w-0 flex-1">
 								<span className="text-xs font-medium">{engine}</span>
 								<span className="ml-2 text-xs text-muted-foreground">
-									{m.display_name} · {m.size_mb?.toFixed(0)} MB
+									{m.display_name} â€” {m.size_mb?.toFixed(0)} MB
 								</span>
 							</span>
 							<Toggle
-								checked={effective}
-								label={`Keep ${engine} loaded`}
-								onCheckedChange={(checked: boolean) => {
-									const next = { ...overrides, [engine]: checked };
+								pressed={effective}
+								aria-label={`Keep ${engine} loaded`}
+								onPressedChange={(pressed: boolean) => {
+									const next = { ...overrides, [engine]: pressed };
 									type MutOpts = { onError?: (err: unknown) => void };
 									(
 										updatePerf as unknown as (
@@ -78,7 +79,9 @@ export function PerEngineKeepaliveRow({
 										{ onError: (err: unknown) => showStudioErrorToast(err) },
 									);
 								}}
-							/>
+							>
+								Keep loaded
+							</Toggle>
 						</div>
 					);
 				})}

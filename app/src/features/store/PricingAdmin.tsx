@@ -13,10 +13,11 @@ import {
 } from "@heroicons/react/24/outline";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/Spinner";
 import { showStudioErrorToast } from "@/lib/errors";
 import { marketplaceClient } from "@/lib/marketplace";
+import { Button } from "@/ui/button";
+import { Spinner } from "@/ui/primitives";
+import { COUNTRIES } from "./pricingCountries";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -34,49 +35,6 @@ interface PricingSummary {
 	products: string[];
 	countries: string[];
 }
-
-// ── Country codes for dropdown ─────────────────────────────────────────
-
-const COUNTRIES: Record<string, string> = {
-	US: "United States",
-	GB: "United Kingdom",
-	NG: "Nigeria",
-	DE: "Germany",
-	FR: "France",
-	ES: "Spain",
-	It: "Italy",
-	NL: "Netherlands",
-	AU: "Australia",
-	Ca: "Canada",
-	IN: "India",
-	BR: "Brazil",
-	JP: "Japan",
-	KR: "South Korea",
-	ZA: "South Africa",
-	KE: "Kenya",
-	GH: "Ghana",
-	SG: "Singapore",
-	AE: "UAE",
-	SA: "Saudi Arabia",
-	CH: "Switzerland",
-	SE: "Sweden",
-	NO: "Norway",
-	DK: "Denmark",
-	PL: "Poland",
-	TR: "Turkey",
-	MX: "Mexico",
-	AR: "Argentina",
-	CO: "Colombia",
-	CL: "Chile",
-	PH: "Philippines",
-	ID: "Indonesia",
-	MY: "Malaysia",
-	TH: "Thailand",
-	VN: "Vietnam",
-	PK: "Pakistan",
-	BD: "Bangladesh",
-	EG: "Egypt",
-};
 
 // ── Main Component ─────────────────────────────────────────────────────
 
@@ -258,15 +216,11 @@ export function PricingAdmin() {
 						}}
 						disabled={pricesQuery.isFetching}
 					>
-						<ArrowPathIcon className="size-4 mr-1.5" />
+						<ArrowPathIcon className="size-4" />
 						Refresh
 					</Button>
-					<Button
-						size="sm"
-						onClick={() => setShowAddForm(!showAddForm)}
-						className="bg-emerald-600 hover:bg-emerald-700 text-white"
-					>
-						<PlusIcon className="size-4 mr-1.5" />
+					<Button size="sm" onClick={() => setShowAddForm(!showAddForm)}>
+						<PlusIcon className="size-4" />
 						Add Price
 					</Button>
 				</div>
@@ -275,11 +229,11 @@ export function PricingAdmin() {
 			{/* Summary cards */}
 			{summary && (
 				<div className="grid grid-cols-3 gap-4">
-					<div className="rounded-lg border bg-muted/30 p-3">
+					<div className="rounded-lg border bg-secondary/30 p-3">
 						<div className="text-xs text-muted-foreground">Total Overrides</div>
 						<div className="text-2xl font-bold">{summary.total_overrides}</div>
 					</div>
-					<div className="rounded-lg border bg-muted/30 p-3">
+					<div className="rounded-lg border bg-secondary/30 p-3">
 						<div className="text-xs text-muted-foreground">
 							Products with Overrides
 						</div>
@@ -287,7 +241,7 @@ export function PricingAdmin() {
 							{summary.products_with_overrides}
 						</div>
 					</div>
-					<div className="rounded-lg border bg-muted/30 p-3">
+					<div className="rounded-lg border bg-secondary/30 p-3">
 						<div className="text-xs text-muted-foreground">
 							Countries with Overrides
 						</div>
@@ -300,7 +254,7 @@ export function PricingAdmin() {
 
 			{/* Add form */}
 			{showAddForm && (
-				<div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+				<div className="space-y-3 rounded-lg border bg-secondary/30 p-4">
 					<h3 className="text-sm font-medium">Add Region Price</h3>
 					<div className="grid grid-cols-4 gap-3">
 						<div>
@@ -313,7 +267,7 @@ export function PricingAdmin() {
 							<select
 								value={newProductId}
 								onChange={(e) => setNewProductId(e.target.value)}
-								className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+								className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
 							>
 								<option value="">Select product...</option>
 								{products
@@ -335,7 +289,7 @@ export function PricingAdmin() {
 							<select
 								value={newCountry}
 								onChange={(e) => setNewCountry(e.target.value)}
-								className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+								className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
 							>
 								{Object.entries(COUNTRIES).map(([code, name]) => (
 									<option key={code} value={code}>
@@ -359,7 +313,7 @@ export function PricingAdmin() {
 								placeholder="0.00"
 								min="0"
 								step="0.01"
-								className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+								className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
 							/>
 						</div>
 						<div>
@@ -374,7 +328,7 @@ export function PricingAdmin() {
 								value={newNote}
 								onChange={(e) => setNewNote(e.target.value)}
 								placeholder="Optional note"
-								className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+								className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
 							/>
 						</div>
 					</div>
@@ -383,12 +337,11 @@ export function PricingAdmin() {
 							size="sm"
 							onClick={() => void handleAdd()}
 							disabled={setPriceMutation.isPending}
-							className="bg-emerald-600 hover:bg-emerald-700 text-white"
 						>
 							{setPriceMutation.isPending ? (
-								<Spinner size="xs" className="mr-1.5" />
+								<Spinner size="xs" />
 							) : (
-								<CurrencyDollarIcon className="size-4 mr-1.5" />
+								<CurrencyDollarIcon className="size-4" />
 							)}
 							Save
 						</Button>
@@ -404,23 +357,22 @@ export function PricingAdmin() {
 			)}
 
 			{/* Prices table */}
-			<div className="rounded-lg border overflow-hidden">
+			<div className="overflow-hidden rounded-lg border">
 				<table className="w-full text-sm">
 					<thead>
-						<tr className="bg-muted/50 border-b">
-							<th className="text-left px-4 py-2 font-medium">Product</th>
-							<th className="text-left px-4 py-2 font-medium">Country</th>
-							<th className="text-right px-4 py-2 font-medium">Price (USD)</th>
-							<th className="text-left px-4 py-2 font-medium">Note</th>
-							<th className="text-right px-4 py-2 font-medium">Actions</th>
+						<tr className="border-b bg-secondary/50">
+							<th className="px-4 py-2 text-left font-medium">Product</th>
+							<th className="px-4 py-2 text-left font-medium">Country</th>
+							<th className="px-4 py-2 text-right font-medium">Price (USD)</th>
+							<th className="px-4 py-2 text-left font-medium">Note</th>
+							<th className="px-4 py-2 text-right font-medium">Actions</th>
 						</tr>
 					</thead>
 					<tbody>
 						{pricesQuery.isFetching && prices.length === 0 ? (
 							<tr>
 								<td colSpan={5} className="px-4 py-8 text-center">
-									<Spinner size="sm" className="mr-2" />
-									Loading...
+									<Spinner size="sm" /> Loading...
 								</td>
 							</tr>
 						) : prices.length === 0 ? (
@@ -460,7 +412,7 @@ export function PricingAdmin() {
 													type="number"
 													value={editPrice}
 													onChange={(e) => setEditPrice(e.target.value)}
-													className="w-24 rounded border bg-background px-2 py-1 text-right text-sm"
+													className="w-24 rounded border border-border bg-background px-2 py-1 text-right text-sm"
 													min="0"
 													step="0.01"
 												/>
@@ -470,13 +422,13 @@ export function PricingAdmin() {
 												</span>
 											)}
 										</td>
-										<td className="px-4 py-2 text-muted-foreground text-xs">
+										<td className="px-4 py-2 text-xs text-muted-foreground">
 											{isEditing ? (
 												<input
 													type="text"
 													value={editNote}
 													onChange={(e) => setEditNote(e.target.value)}
-													className="w-full rounded border bg-background px-2 py-1 text-sm"
+													className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
 													placeholder="Note"
 												/>
 											) : (
@@ -485,7 +437,7 @@ export function PricingAdmin() {
 										</td>
 										<td className="px-4 py-2 text-right">
 											{isEditing ? (
-												<div className="flex gap-1 justify-end">
+												<div className="flex justify-end gap-1">
 													<Button
 														size="sm"
 														onClick={() => void handleSave(price)}
@@ -502,7 +454,7 @@ export function PricingAdmin() {
 													</Button>
 												</div>
 											) : (
-												<div className="flex gap-1 justify-end">
+												<div className="flex justify-end gap-1">
 													<Button
 														size="sm"
 														variant="ghost"

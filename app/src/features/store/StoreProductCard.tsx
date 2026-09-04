@@ -1,5 +1,6 @@
 import {
 	ArrowDownTrayIcon,
+	BoltIcon,
 	CheckBadgeIcon,
 	HeartIcon,
 	KeyIcon,
@@ -8,14 +9,16 @@ import {
 	XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
-import { Progress } from "@/components/ui/progress";
-import { Spinner } from "@/components/ui/Spinner";
 import type {
 	ActiveDownloadTask,
 	MarketplaceProduct,
 	ModelStatus,
 } from "@/lib/api/types";
 import { cn } from "@/lib/utils/cn";
+import { Button } from "@/ui/button";
+import { Card } from "@/ui/card";
+import { Spinner } from "@/ui/primitives";
+import { Progress } from "@/ui/progress";
 import { StarRating } from "./StarRating";
 import {
 	CATEGORY_ACCENT,
@@ -34,6 +37,9 @@ interface Props {
 	localStatus?: "cached" | "not_downloaded";
 	isDownloading: boolean;
 	downloadTask?: ActiveDownloadTask;
+	/** One-step Activate for cached models: loads the engine (apiClient.loadModel). */
+	activating?: boolean;
+	onActivate?: (id: string) => void;
 	onDetail: (p: MarketplaceProduct) => void;
 	onQuickDownload?: (id: string) => void;
 	onCancel?: (id: string) => void;
@@ -43,6 +49,11 @@ interface Props {
 	onToggleWishlist?: (id: string) => void;
 }
 
+/** Chip tones for the three per-product states + price/free. */
+const chipClass = cn(
+	"shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold border",
+);
+
 export function StoreProductCard({
 	product,
 	model,
@@ -51,6 +62,8 @@ export function StoreProductCard({
 	localStatus,
 	isDownloading,
 	downloadTask,
+	activating,
+	onActivate,
 	onDetail,
 	onQuickDownload,
 	onCancel,
@@ -70,21 +83,21 @@ export function StoreProductCard({
 	const accent = CATEGORY_ACCENT[product.category] ?? CATEGORY_ACCENT.extras;
 
 	return (
-		<div
+		<Card
 			className={cn(
-				"panel group relative flex flex-col overflow-hidden transition-all card-hover",
+				"group relative flex flex-col overflow-hidden p-0",
 				cached
-					? "border-emerald-500/30 shadow-[0_0_0_1px_rgba(16,185,129,0.08)]"
+					? "border-success/40"
 					: ownedNotInstalled
-						? "border-sky-500/30 shadow-[0_0_0_1px_rgba(56,189,248,0.1)]"
-						: "border-border hover:border-accent/20",
-				isDownloading && "border-amber-500/30",
+						? "border-accent/40"
+						: "border-border hover:border-accent/30",
+				isDownloading && "border-warning/40",
 			)}
 		>
-			{/* subtle gradient header */}
 			<div className={cn("h-1 w-full bg-gradient-to-r", accent)} />
 
-			{/* biome-ignore lint/a11y/useSemanticElements: outer card must be div to allow nested wishlist button (valid HTML) */}
+			{/* biome-ignore lint/a11y/useSemanticElements: outer card body must be a
+			    div to allow the nested wishlist button (valid HTML, keyboard operable) */}
 			<div
 				role="button"
 				tabIndex={0}
@@ -95,100 +108,114 @@ export function StoreProductCard({
 						onDetail(product);
 					}
 				}}
-				className="flex flex-col gap-3 p-4 text-left flex-1 cursor-pointer"
+				className="flex flex-1 cursor-pointer flex-col gap-3 p-4 text-left"
 			>
 				<div className="flex items-start justify-between gap-2">
-					<h3 className="font-semibold text-sm leading-tight text-foreground line-clamp-2 flex-1 min-w-0">
+					<h3 className="min-w-0 flex-1 truncate text-sm font-semibold leading-tight text-foreground">
 						{product.name}
 					</h3>
-					<button
+					<Button
 						type="button"
+						variant="ghost"
+						size="icon-sm"
 						onClick={(e) => {
 							e.stopPropagation();
 							onToggleWishlist?.(product.id);
 						}}
 						aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
 						title={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
-						className="shrink-0 size-7 rounded-full border flex items-center justify-center transition-colors hover:bg-muted"
+						className="shrink-0 rounded-full border border-border"
 					>
 						{wishlisted ? (
-							<HeartSolid className="size-4 text-pink-500" />
+							<HeartSolid className="size-4 text-accent" />
 						) : (
 							<HeartIcon className="size-4 text-muted-foreground" />
 						)}
-					</button>
+					</Button>
 					{cached ? (
-						<span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-success-soft px-2 py-0.5 text-xs font-semibold text-success-text border border-emerald-500/25">
-							<CheckBadgeIcon className="h-3 w-3" /> Installed
+						<span
+							className={cn(
+								chipClass,
+								"bg-success-soft text-success-text border-success/40",
+							)}
+						>
+							<CheckBadgeIcon className="size-3" /> Installed
 						</span>
 					) : ownedNotInstalled ? (
-						<span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-info-soft px-2 py-0.5 text-xs font-semibold text-info-text border border-sky-500/30">
-							<KeyIcon className="h-3 w-3" /> Owned
+						<span
+							className={cn(
+								chipClass,
+								"bg-info-soft text-info-text border-accent/30",
+							)}
+						>
+							<KeyIcon className="size-3" /> Owned
 						</span>
 					) : product.paid ? (
-						<span className="shrink-0 rounded-full bg-warning-soft px-3 py-0.5 text-xs font-bold text-warning-text border border-amber-500/25">
+						<span
+							className={cn(
+								chipClass,
+								"bg-warning-soft text-warning-text border-warning/40",
+							)}
+						>
 							${product.price_usd}
 						</span>
 					) : (
-						<span className="shrink-0 rounded-full bg-success-soft px-3 py-0.5 text-xs font-semibold text-success-text border border-emerald-500/25">
+						<span
+							className={cn(
+								chipClass,
+								"bg-success-soft text-success-text border-success/40",
+							)}
+						>
 							Free
 						</span>
 					)}
 				</div>
-				<p className="text-xs leading-relaxed text-muted-foreground line-clamp-3 min-h-[3.2em]">
+
+				<p className="min-h-[3.2em] text-xs leading-relaxed text-muted-foreground line-clamp-3">
 					{description}
-				</p>{" "}
+				</p>
 				{product.special_offer && !cached && (
-					<span className="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-fuchsia-500/15 px-2 py-0.5 text-xs font-semibold text-fuchsia-300 border border-fuchsia-500/20">
-						<SparklesIcon className="h-3 w-3" /> Special
+					<span className="inline-flex w-fit items-center gap-1 rounded-full border border-accent/20 bg-secondary px-2 py-0.5 text-xs font-semibold text-accent">
+						<SparklesIcon className="size-3" /> Special
 					</span>
 				)}
+
 				{/* meta chips + rating */}
-				<div className="flex flex-wrap items-center gap-2 mt-1">
-					<span className="inline-flex items-center rounded-full bg-muted/60 px-2 py-0.5 text-xs font-medium text-muted-foreground capitalize border border-border/60">
+				<div className="mt-1 flex flex-wrap items-center gap-2">
+					<span className="inline-flex items-center rounded-full border border-border bg-secondary px-2 py-0.5 text-xs font-medium capitalize text-muted-foreground">
 						{product.category}
 					</span>
 					{product.quality_score != null && (
 						<StarRating score={product.quality_score} size="xs" />
 					)}
 					{sizeLabel && (
-						<span className="text-xs text-muted-foreground/80">
-							{sizeLabel}
-						</span>
+						<span className="text-xs text-muted-foreground">{sizeLabel}</span>
 					)}
 					{chips.map((c) => (
 						<span
 							key={c.label}
 							className={cn(
-								"rounded-full px-1.5 py-0.5 text-xs font-medium border",
-								c.tone === "violet" &&
-									"bg-accent/10 text-accent border-accent/20",
-								c.tone === "amber" &&
-									"bg-amber-500/10 text-amber-400 border-amber-500/20",
-								c.tone === "cyan" &&
-									"bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
-								c.tone === "fuchsia" &&
-									"bg-accent/10 text-accent border-accent/20",
-								c.tone === "zinc" &&
-									"bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
-								c.tone === "blue" &&
-									"bg-blue-500/10 text-blue-400 border-blue-500/20",
-								c.tone === "teal" &&
-									"bg-teal-500/10 text-teal-400 border-teal-500/20",
-								c.tone === "red" &&
-									"bg-red-500/10 text-red-400 border-red-500/20",
-								c.tone === "emerald" &&
-									"bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+								"rounded-full border border-border bg-secondary px-1.5 py-0.5 text-xs font-medium",
+								c.tone === "violet" && "text-accent border-accent/20",
+								c.tone === "amber" && "text-warning border-warning/20",
+								c.tone === "cyan" && "text-sky-500 border-sky-500/20",
+								c.tone === "fuchsia" && "text-accent border-accent/20",
+								c.tone === "blue" && "text-blue-500 border-blue-500/20",
+								c.tone === "teal" && "text-teal-500 border-teal-500/20",
+								c.tone === "red" && "text-destructive border-destructive/20",
+								c.tone === "emerald" && "text-success border-success/20",
+								c.tone === "zinc" && "text-muted-foreground",
 							)}
 						>
 							{c.label}
 						</span>
 					))}
 				</div>
+
 				{isDownloading && downloadTask && (
-					<div className="mt-2 space-y-1 w-full">
+					<div className="mt-2 w-full space-y-1">
 						<Progress value={downloadTask.progress ?? 0} className="h-1.5" />
-						<div className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+						<div className="flex items-center gap-1 text-xs text-warning-text">
 							<Spinner size="xs" />
 							<span className="truncate">
 								{downloadTask.filename ?? "Downloading…"}{" "}
@@ -201,55 +228,72 @@ export function StoreProductCard({
 				)}
 			</div>
 
-			{/* footer action bar — only place to buy/download/delete */}
-			<div className="flex items-center gap-2 px-3 py-3 border-t bg-muted/20">
+			{/* footer action bar — the only place to activate/buy/download/delete */}
+			<div className="flex items-center gap-2 border-t border-border bg-secondary/40 px-3 py-3">
 				{cached ? (
 					<>
-						<span className="text-xs font-medium text-emerald-600 dark:text-success-text flex-1">
-							✓ Ready to use
-						</span>
-						<button
+						<Button
+							size="sm"
+							disabled={activating}
+							onClick={(e) => {
+								e.stopPropagation();
+								onActivate?.(product.id);
+							}}
+							title="Load this engine now — one click, ready to generate"
+							className="flex-1"
+						>
+							{activating ? (
+								<Spinner size="xs" />
+							) : (
+								<BoltIcon className="size-3.5" />
+							)}
+							{activating ? "Activating…" : "Activate"}
+						</Button>
+						<Button
 							type="button"
+							variant="ghost"
+							size="icon-sm"
 							onClick={(e) => {
 								e.stopPropagation();
 								onDelete?.(product.id);
 							}}
 							title="Delete model — frees disk space"
 							aria-label={`Delete ${product.name}`}
-							className="inline-flex items-center justify-center size-7 rounded-md border border-border bg-card hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive text-muted-foreground transition-colors"
+							className="text-muted-foreground hover:text-destructive"
 						>
 							<TrashIcon className="size-3.5" />
-						</button>
-						<button
+						</Button>
+						<Button
 							type="button"
+							variant="ghost"
+							size="sm"
 							onClick={() => onDetail(product)}
-							className="text-xs font-medium text-muted-foreground hover:text-foreground px-2"
+							className="px-2"
 						>
 							Manage
-						</button>
+						</Button>
 					</>
 				) : isDownloading ? (
 					<>
-						<span className="text-xs text-amber-600 dark:text-warning-text flex-1">
+						<span className="flex-1 text-xs text-warning-text">
 							Downloading…
 						</span>
-						<button
+						<Button
 							type="button"
+							variant="secondary"
+							size="sm"
 							onClick={(e) => {
 								e.stopPropagation();
 								onCancel?.(product.id);
 							}}
-							title="Cancel download"
-							aria-label="Cancel download"
-							className="inline-flex items-center gap-1 rounded-md bg-muted px-3 py-1 text-xs font-medium hover:bg-muted/80"
 						>
 							<XMarkIcon className="size-3" /> Cancel
-						</button>
+						</Button>
 					</>
 				) : ownedNotInstalled ? (
 					<>
-						<button
-							type="button"
+						<Button
+							size="sm"
 							disabled={busy}
 							onClick={(e) => {
 								e.stopPropagation();
@@ -260,45 +304,47 @@ export function StoreProductCard({
 								}
 							}}
 							title="You own this model — download it to use on this device"
-							className="flex-1 inline-flex items-center justify-center gap-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50"
+							className="flex-1"
 						>
 							{busy ? (
-								<Spinner size="xs" className="text-white" />
+								<Spinner size="xs" />
 							) : (
 								<ArrowDownTrayIcon className="size-3.5" />
 							)}
 							{busy ? "Starting…" : "Install"}
-						</button>
-						<button
+						</Button>
+						<Button
 							type="button"
+							variant="ghost"
+							size="sm"
 							onClick={() => onDetail(product)}
-							className="text-xs text-muted-foreground hover:text-foreground px-1"
 						>
 							Details
-						</button>
+						</Button>
 					</>
 				) : product.paid && !owned ? (
 					<>
-						<button
-							type="button"
+						<Button
+							size="sm"
 							disabled={busy}
 							onClick={() => onDetail(product)}
-							className="flex-1 inline-flex items-center justify-center gap-1 rounded-md bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50"
+							className="flex-1"
 						>
 							Buy ${product.price_usd}
-						</button>
-						<button
+						</Button>
+						<Button
 							type="button"
+							variant="ghost"
+							size="sm"
 							onClick={() => onDetail(product)}
-							className="text-xs text-muted-foreground hover:text-foreground px-1"
 						>
 							Details
-						</button>
+						</Button>
 					</>
 				) : (
 					<>
-						<button
-							type="button"
+						<Button
+							size="sm"
 							disabled={busy}
 							onClick={(e) => {
 								e.stopPropagation();
@@ -308,25 +354,26 @@ export function StoreProductCard({
 									onDetail(product);
 								}
 							}}
-							className="flex-1 inline-flex items-center justify-center gap-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50"
+							className="flex-1"
 						>
 							{busy ? (
-								<Spinner size="xs" className="text-white" />
+								<Spinner size="xs" />
 							) : (
 								<ArrowDownTrayIcon className="size-3.5" />
 							)}
 							{busy ? "Starting…" : "Download"}
-						</button>
-						<button
+						</Button>
+						<Button
 							type="button"
+							variant="ghost"
+							size="sm"
 							onClick={() => onDetail(product)}
-							className="text-xs text-muted-foreground hover:text-foreground px-1"
 						>
 							Details
-						</button>
+						</Button>
 					</>
 				)}
 			</div>
-		</div>
+		</Card>
 	);
 }
