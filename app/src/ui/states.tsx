@@ -1,7 +1,6 @@
 import type * as React from "react";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "./button";
-import { Spinner } from "./primitives";
 
 /**
  * Canonical content panel: discrete unit on the base surface.

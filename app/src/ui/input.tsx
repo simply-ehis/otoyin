@@ -1,4 +1,4 @@
-import type * as React from "react";
+import * as React from "react";
 import { cn } from "@/lib/utils/cn";
 
 /**
@@ -74,11 +74,18 @@ export function SearchInput({
 	className,
 	shortcut,
 	onClear,
+	value,
+	defaultValue,
+	onChange,
 	...props
 }: React.InputHTMLAttributes<HTMLInputElement> & {
 	shortcut?: string;
 	onClear?: () => void;
 }) {
+	// Uncontrolled mode (defaultValue) still shows the clear button: track
+	// the typed text locally when no controlled `value` is provided.
+	const [inner, setInner] = React.useState(defaultValue ?? "");
+	const shownValue = value ?? inner;
 	return (
 		<div className={cn("relative", className)}>
 			<svg
@@ -101,11 +108,17 @@ export function SearchInput({
 					"placeholder:text-muted-foreground/60 transition-colors duration-150",
 					"focus:outline-none focus:border-ring focus:ring-1 focus:ring-ring",
 					"[&::-webkit-search-cancel-button]:hidden",
-					onClear && props.value ? "pr-16" : shortcut ? "pr-14" : "pr-3",
+					onClear && shownValue ? "pr-16" : shortcut ? "pr-14" : "pr-3",
 				)}
+				value={value}
+				defaultValue={value === undefined ? defaultValue : undefined}
+				onChange={(e) => {
+					if (value === undefined) setInner(e.target.value);
+					onChange?.(e);
+				}}
 				{...props}
 			/>
-			{onClear && props.value ? (
+			{onClear && shownValue ? (
 				<button
 					type="button"
 					onClick={onClear}

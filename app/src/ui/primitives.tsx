@@ -121,7 +121,7 @@ export function Spinner({
 	size = "md",
 	className,
 }: {
-	size?: "xs" | "sm" | "md";
+	size?: "xs" | "sm" | "md" | "lg";
 	className?: string;
 }) {
 	return (
@@ -133,6 +133,7 @@ export function Spinner({
 				size === "xs" && "size-3",
 				size === "sm" && "size-4",
 				size === "md" && "size-5",
+				size === "lg" && "size-6",
 				className,
 			)}
 		/>

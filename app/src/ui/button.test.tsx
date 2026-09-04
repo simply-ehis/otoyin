@@ -25,7 +25,9 @@ describe("Button", () => {
 		["destructive", "bg-destructive"],
 	] as const)("renders the %s variant distinctly", (variant, cls) => {
 		render(<Button variant={variant}>{variant}</Button>);
-		expect(screen.getByRole("button", { name: variant }).className).toContain(cls);
+		expect(screen.getByRole("button", { name: variant }).className).toContain(
+			cls,
+		);
 	});
 
 	it("activates via keyboard (Enter) like a native button", async () => {

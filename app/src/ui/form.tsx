@@ -47,8 +47,7 @@ export function FormControl({ ...props }: React.HTMLAttributes<HTMLDivElement>) 
 	return <div id={`${id}-control`} {...props} />;
 }
 
-export function FormMessage({ className }: { className?: string }) {
-	const { name } = useContext(FormFieldContext);
+export function FormMessage({ className }: { className?: string }) {	const { name } = useContext(FormFieldContext);
 	const { getFieldState, formState } = useFormContext();
 	const error = getFieldState(name as FieldPath<FieldValues>, formState).error;
 	if (!error?.message) {
@@ -85,5 +84,18 @@ export function FormActions({
 }: React.HTMLAttributes<HTMLDivElement>) {
 	return (
 		<div className={cn("flex items-center justify-end gap-2 pt-1", className)} {...props} />
+	);
+}
+
+/** Field label inside FormItem grids. Pairs with FormMessage below. */
+export function FormLabel({
+	className,
+	...props
+}: React.LabelHTMLAttributes<HTMLLabelElement>) {
+	return (
+		<label
+			className={cn("text-xs font-medium text-muted-foreground", className)}
+			{...props}
+		/>
 	);
 }

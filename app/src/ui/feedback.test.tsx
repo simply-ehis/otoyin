@@ -21,13 +21,19 @@ describe("Banner", () => {
 
 	it("renders danger tone as an assertive alert", () => {
 		render(<Banner tone="danger">Render failed — disk full</Banner>);
-		expect(screen.getByRole("alert")).toHaveTextContent("Render failed — disk full");
+		expect(screen.getByRole("alert")).toHaveTextContent(
+			"Render failed — disk full",
+		);
 	});
 
 	it("dismisses via a labeled, keyboard-reachable button", async () => {
 		const user = userEvent.setup();
 		const onDismiss = vi.fn();
-		render(<Banner tone="warning" onDismiss={onDismiss}>Voice pack expiring</Banner>);
+		render(
+			<Banner tone="warning" onDismiss={onDismiss}>
+				Voice pack expiring
+			</Banner>,
+		);
 		const dismiss = screen.getByRole("button", { name: "Dismiss" });
 		dismiss.focus();
 		expect(dismiss).toHaveFocus();
@@ -50,7 +56,11 @@ describe("EmptyState", () => {
 			<EmptyState
 				title="No voice profiles yet"
 				body="Clone a voice to get started"
-				action={<button type="button" onClick={onAdd}>New profile</button>}
+				action={
+					<button type="button" onClick={onAdd}>
+						New profile
+					</button>
+				}
 			/>,
 		);
 		expect(screen.getByText("No voice profiles yet")).toBeInTheDocument();
@@ -74,7 +84,11 @@ describe("ErrorState", () => {
 		const user = userEvent.setup();
 		const onRetry = vi.fn();
 		render(
-			<ErrorState title="Couldn't load voices" body="Check the server and retry" onRetry={onRetry} />,
+			<ErrorState
+				title="Couldn't load voices"
+				body="Check the server and retry"
+				onRetry={onRetry}
+			/>,
 		);
 		expect(screen.getByRole("alert")).toHaveTextContent("Couldn't load voices");
 		await user.click(screen.getByRole("button", { name: "Retry" }));

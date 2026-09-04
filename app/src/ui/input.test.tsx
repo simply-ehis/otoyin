@@ -56,12 +56,24 @@ describe("SearchInput", () => {
 		const user = userEvent.setup();
 		const onClear = vi.fn();
 		const { rerender } = render(
-			<SearchInput aria-label="Search voices" value="" onChange={() => {}} onClear={onClear} />,
+			<SearchInput
+				aria-label="Search voices"
+				value=""
+				onChange={() => {}}
+				onClear={onClear}
+			/>,
 		);
-		expect(screen.queryByRole("button", { name: "Clear search" })).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Clear search" }),
+		).not.toBeInTheDocument();
 
 		rerender(
-			<SearchInput aria-label="Search voices" value="ada" onChange={() => {}} onClear={onClear} />,
+			<SearchInput
+				aria-label="Search voices"
+				value="ada"
+				onChange={() => {}}
+				onClear={onClear}
+			/>,
 		);
 		const clear = screen.getByRole("button", { name: "Clear search" });
 		await user.click(clear);
@@ -70,7 +82,9 @@ describe("SearchInput", () => {
 
 	it("exposes the searchbox role for screen readers", () => {
 		render(<SearchInput aria-label="Search models" />);
-		expect(screen.getByRole("searchbox", { name: "Search models" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("searchbox", { name: "Search models" }),
+		).toBeInTheDocument();
 	});
 });
 
