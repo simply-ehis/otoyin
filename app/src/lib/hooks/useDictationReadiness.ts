@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { useAccessibilityPermission } from "@/components/AccessibilityGate/AccessibilityGate";
-import { useInputMonitoringPermission } from "@/components/InputMonitoringGate/InputMonitoringGate";
+import {
+	useAccessibilityPermission,
+	useInputMonitoringPermission,
+} from "@/features/capture/gates";
 import { apiClient } from "@/lib/api/client";
 import type { ModelReadiness } from "@/lib/api/types";
 import { usePlatform } from "@/platform/PlatformContext";

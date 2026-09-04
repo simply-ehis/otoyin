@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { emit as tauriEmit } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PillState } from "@/components/CapturePill/CapturePill";
+import type { PillState } from "@/features/capture/CapturePill";
 import { apiClient } from "@/lib/api/client";
 import type {
 	CaptureListResponse,
