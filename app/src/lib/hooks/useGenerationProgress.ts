@@ -32,6 +32,10 @@ const MAX_SSE_RETRIES = 3;
 const SSE_RETRY_BASE_MS = 2000;
 const CHUNK_FETCH_RETRIES = 3;
 const CHUNK_FETCH_DELAY_MS = 500;
+// S1: fallback poll after SSE exhaustion — terminal state via REST instead
+// of dropping the generation and its story link. 120 × 3s ≈ 6 min backstop.
+const FALLBACK_POLL_INTERVAL_MS = 3000;
+const FALLBACK_POLL_MAX_ATTEMPTS = 120;
 
 /**
  * Fetch a chunk URL with retry for slow disk writes.
@@ -97,6 +101,8 @@ export function useGenerationProgress() {
 	// Track active EventSource instances and retry counts
 	const eventSourcesRef = useRef<Map<string, EventSource>>(new Map());
 	const retryCountsRef = useRef<Map<string, number>>(new Map());
+	// S1: cancellation flags for fallback polls (swept id / unmount)
+	const fallbackCancelRef = useRef<Map<string, boolean>>(new Map());
 
 	// Streaming playback state — per generation ID
 	const chunkQueueRef = useRef<Map<string, string[]>>(new Map());
@@ -114,17 +120,162 @@ export function useGenerationProgress() {
 	// Unmount-only cleanup
 	useEffect(() => {
 		const sources = eventSourcesRef.current;
+		const cancels = fallbackCancelRef.current;
 		return () => {
 			for (const source of sources.values()) {
 				source.close();
 			}
 			sources.clear();
+			for (const id of cancels.keys()) {
+				cancels.set(id, true);
+			}
 		};
 	}, []);
 
 	useEffect(() => {
 		const currentSources = eventSourcesRef.current;
 		const retryCounts = retryCountsRef.current;
+		const fallbackCancels = fallbackCancelRef.current;
+
+		const cleanupStreamState = (id: string) => {
+			chunkQueueRef.current.delete(id);
+			chunkPlayingRef.current.delete(id);
+			delete currentChunkIdxRef.current[id];
+			finalAudioReadyRef.current.delete(id);
+		};
+
+		// ── Shared terminal handlers (SSE events + fallback poll) ──
+		const finishCompleted = (
+			id: string,
+			data: { duration?: number; source?: string },
+		) => {
+			const source = currentSources.get(id);
+			source?.close();
+			currentSources.delete(id);
+			retryCounts.delete(id);
+			fallbackCancels.set(id, true);
+			removePendingGeneration(id);
+			cleanupStreamState(id);
+
+			// Refetch history
+			queryClient.refetchQueries({ queryKey: ["history"] });
+
+			// Story addition
+			const storyId = removePendingStoryAdd(id);
+			if (storyId) {
+				apiClient
+					.addStoryItem(storyId, { generation_id: id })
+					.then(() => {
+						queryClient.invalidateQueries({ queryKey: ["stories"] });
+						queryClient.invalidateQueries({
+							queryKey: ["stories", storyId],
+						});
+						toast({
+							title: "Added to story",
+							description: data.duration
+								? `Audio generated (${data.duration.toFixed(2)}s) and added to story`
+								: "Audio generated and added to story",
+						});
+					})
+					.catch(() => {
+						toast({
+							title: "Generation complete",
+							description: "Audio generated but failed to add to story",
+							variant: "destructive",
+						});
+					});
+			}
+
+			// Switch to fully-assembled audio for seamless playback
+			const isAgentSpeak = data.source
+				? AGENT_SOURCES.has(data.source)
+				: false;
+			if (autoplayRef.current && !isAgentSpeak) {
+				const genAudioUrl = apiClient.getAudioUrl(id);
+				// If we were streaming, seamlessly switch to the final version.
+				// If not streaming, start fresh playback.
+				if (chunkPlayingRef.current.get(id)) {
+					// Seamless switch: the player already has audio loaded;
+					// update the URL so the next play cycle uses the assembled version.
+					setAudioWithAutoPlay(genAudioUrl, id, "", "");
+				} else if (!isPlayingRef.current) {
+					setAudioWithAutoPlay(genAudioUrl, id, "", "");
+				}
+			}
+		};
+
+		const finishFailed = (
+			id: string,
+			opts: { notFound: boolean; error?: string },
+		) => {
+			const source = currentSources.get(id);
+			source?.close();
+			currentSources.delete(id);
+			retryCounts.delete(id);
+			fallbackCancels.set(id, true);
+			removePendingGeneration(id);
+			removePendingStoryAdd(id);
+			cleanupStreamState(id);
+
+			queryClient.refetchQueries({ queryKey: ["history"] });
+
+			toast({
+				title: opts.notFound ? "Generation not found" : "Generation failed",
+				description: opts.error || "An error occurred during generation",
+				variant: "destructive",
+			});
+		};
+
+		// S1: after SSE exhaustion, watch the terminal state via REST so a
+		// completed generation (and its story link) is not silently dropped.
+		const pollForTerminalState = async (id: string) => {
+			for (
+				let attempt = 0;
+				attempt < FALLBACK_POLL_MAX_ATTEMPTS;
+				attempt++
+			) {
+				if (fallbackCancels.get(id) || !pendingIds.has(id)) {
+					return;
+				}
+				try {
+					const gen = await apiClient.getGeneration(id);
+					if (gen.status === "completed") {
+						finishCompleted(id, {
+							duration: gen.duration ?? undefined,
+						});
+						return;
+					}
+					if (gen.status === "failed") {
+						finishFailed(id, { notFound: false, error: gen.error });
+						return;
+					}
+				} catch (err) {
+					if (err instanceof Error && err.message.includes("404")) {
+						finishFailed(id, { notFound: true });
+						return;
+					}
+					// Transient — keep polling
+				}
+				await new Promise((r) =>
+					setTimeout(r, FALLBACK_POLL_INTERVAL_MS),
+				);
+			}
+			// Backstop: still no terminal state — drop, but say so plainly.
+			if (!pendingIds.has(id)) {
+				return;
+			}
+			retryCounts.delete(id);
+			removePendingGeneration(id);
+			removePendingStoryAdd(id);
+			cleanupStreamState(id);
+			queryClient.refetchQueries({ queryKey: ["history"] });
+			toast({
+				title: "Still generating",
+				description:
+					"Live updates are unavailable and the result is not back yet. It will appear in history when ready.",
+				variant: "destructive",
+			});
+		};
 
 		// Close SSE connections for IDs no longer pending
 		for (const [id, source] of currentSources.entries()) {
@@ -132,10 +283,8 @@ export function useGenerationProgress() {
 				source.close();
 				currentSources.delete(id);
 				retryCounts.delete(id);
-				chunkQueueRef.current.delete(id);
-				chunkPlayingRef.current.delete(id);
-				delete currentChunkIdxRef.current[id];
-				finalAudioReadyRef.current.delete(id);
+				fallbackCancels.set(id, true);
+				cleanupStreamState(id);
 			}
 		}
 
@@ -150,7 +299,16 @@ export function useGenerationProgress() {
 			try {
 				source = new EventSource(url);
 			} catch {
+				// S3: stream never opened (wrong host, blocked URL) — say so
+				// instead of vanishing silently.
 				removePendingGeneration(id);
+				queryClient.refetchQueries({ queryKey: ["history"] });
+				toast({
+					title: "Connection failed",
+					description:
+						"Could not open a status stream. Check the server address in Settings.",
+					variant: "destructive",
+				});
 				continue;
 			}
 
@@ -248,86 +406,18 @@ export function useGenerationProgress() {
 
 					// ── Generation completed ────────────────────────────────
 					if (data.status === "completed") {
-						source.close();
-						currentSources.delete(id);
-						retryCounts.delete(id);
-						removePendingGeneration(id);
-
-						// Clean up streaming state
-						chunkQueueRef.current.delete(id);
-						chunkPlayingRef.current.delete(id);
-						delete currentChunkIdxRef.current[id];
-						finalAudioReadyRef.current.delete(id);
-
-						// Refetch history
-						queryClient.refetchQueries({ queryKey: ["history"] });
-
-						// Story addition
-						const storyId = removePendingStoryAdd(id);
-						if (storyId) {
-							apiClient
-								.addStoryItem(storyId, { generation_id: id })
-								.then(() => {
-									queryClient.invalidateQueries({ queryKey: ["stories"] });
-									queryClient.invalidateQueries({
-										queryKey: ["stories", storyId],
-									});
-									toast({
-										title: "Added to story",
-										description: data.duration
-											? `Audio generated (${data.duration.toFixed(2)}s) and added to story`
-											: "Audio generated and added to story",
-									});
-								})
-								.catch(() => {
-									toast({
-										title: "Generation complete",
-										description: "Audio generated but failed to add to story",
-										variant: "destructive",
-									});
-								});
-						}
-
-						// Switch to fully-assembled audio for seamless playback
-						const isAgentSpeak = data.source
-							? AGENT_SOURCES.has(data.source)
-							: false;
-						if (autoplayRef.current && !isAgentSpeak) {
-							const genAudioUrl = apiClient.getAudioUrl(id);
-							// If we were streaming, seamlessly switch to the final version.
-							// If not streaming, start fresh playback.
-							if (chunkPlayingRef.current.get(id)) {
-								// Seamless switch: the player already has audio loaded;
-								// update the URL so the next play cycle uses the assembled version.
-								setAudioWithAutoPlay(genAudioUrl, id, "", "");
-							} else if (!isPlayingRef.current) {
-								setAudioWithAutoPlay(genAudioUrl, id, "", "");
-							}
-						}
+						finishCompleted(id, {
+							duration: data.duration,
+							source: data.source,
+						});
 						return;
 					}
 
 					// ── Failed / not found ──────────────────────────────────
 					if (data.status === "failed" || data.status === "not_found") {
-						source.close();
-						currentSources.delete(id);
-						retryCounts.delete(id);
-						removePendingGeneration(id);
-						removePendingStoryAdd(id);
-						chunkQueueRef.current.delete(id);
-						chunkPlayingRef.current.delete(id);
-						delete currentChunkIdxRef.current[id];
-						finalAudioReadyRef.current.delete(id);
-
-						queryClient.refetchQueries({ queryKey: ["history"] });
-
-						toast({
-							title:
-								data.status === "not_found"
-									? "Generation not found"
-									: "Generation failed",
-							description: data.error || "An error occurred during generation",
-							variant: "destructive",
+						finishFailed(id, {
+							notFound: data.status === "not_found",
+							error: data.error,
 						});
 					}
 					// loading_model / generating → no action needed
@@ -354,19 +444,16 @@ export function useGenerationProgress() {
 				}, delay);
 			} else {
 					retryCounts.delete(id);
-					removePendingGeneration(id);
-					removePendingStoryAdd(id);
-					chunkQueueRef.current.delete(id);
-					chunkPlayingRef.current.delete(id);
-					delete currentChunkIdxRef.current[id];
-					finalAudioReadyRef.current.delete(id);
+					// S1: keep the pending generation and its story link —
+					// watch the terminal state via REST instead of dropping it.
 					queryClient.refetchQueries({ queryKey: ["history"] });
 					toast({
 						title: "Connection lost",
 						description:
-							"Lost real-time status for a generation after multiple retries. The history list has been refreshed.",
+							"Live updates dropped after multiple retries. Watching via history instead.",
 						variant: "destructive",
 					});
+					void pollForTerminalState(id);
 				}
 			};
 

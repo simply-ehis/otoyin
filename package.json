@@ -10,13 +10,11 @@
 	],
 	"scripts": {
 		"dev": "cd tauri && npm run tauri dev",
-		"dev:web": "cd web && npm run dev",
 		"dev:landing": "cd landing && npm run dev",
 		"dev:server": "uvicorn backend.main:app --reload --port 17493",
 		"setup": "node scripts/setup-dev.js",
 		"build:server": "bash scripts/build-server.sh",
 		"download:models": "python -m backend.scripts.download_required_models",
-		"build:web": "cd web && npm run build",
 		"build:landing": "cd landing && npm run build",
 		"lint": "biome lint .",
 		"lint:fix": "biome lint --write .",
@@ -34,7 +32,8 @@
 		"@types/react": "^19.2.18",
 		"@types/react-dom": "^19.2.4",
 		"react": "^19.2.8",
-		"react-dom": "^19.2.8"
+		"react-dom": "^19.2.8",
+		"zod": "^3.25.76"
 	},
 	"overrides": {
 		"@types/react-dom": "^19.2.4"

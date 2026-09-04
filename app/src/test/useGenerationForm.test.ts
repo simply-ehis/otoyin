@@ -37,6 +37,7 @@ function createWrapper() {
 	const queryClient = new QueryClient({
 		defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
 	});
+	currentClient = queryClient;
 	return function Wrapper({ children }: { children: React.ReactNode }) {
 		return createElement(
 			QueryClientProvider,
@@ -44,6 +45,24 @@ function createWrapper() {
 			children,
 		);
 	};
+}
+
+// The hook resolves the default engine from the ["modelStatus"] query
+// cache (never a hardcoded engine). Tests that submit successfully must
+// seed a downloaded kokoro; no-engine tests leave the cache empty.
+let currentClient: QueryClient | null = null;
+function seedKokoroDownloaded() {
+	currentClient?.setQueryData(["modelStatus"], {
+		models: [
+			{
+				model_name: "kokoro-onnx",
+				engine: "kokoro",
+				category: "tts",
+				downloaded: true,
+				entitled: true,
+			},
+		],
+	});
 }
 
 describe("useGenerationForm", () => {
@@ -63,10 +82,12 @@ describe("useGenerationForm", () => {
 			pendingGenerationIds: new Set(),
 			isGenerating: false,
 		});
+		currentClient = null;
 	});
 
 	it("returns form with default values", () => {
 		const wrapper = createWrapper();
+		seedKokoroDownloaded();
 		const { result } = renderHook(() => useGenerationForm(), { wrapper });
 
 		expect(result.current.form).toBeDefined();
@@ -180,6 +201,7 @@ describe("useGenerationForm", () => {
 		} as never);
 
 		const wrapper = createWrapper();
+		seedKokoroDownloaded();
 		const { result } = renderHook(() => useGenerationForm(), { wrapper });
 
 		await act(async () => {
@@ -204,6 +226,7 @@ describe("useGenerationForm", () => {
 		} as never);
 
 		const wrapper = createWrapper();
+		seedKokoroDownloaded();
 		const { result } = renderHook(() => useGenerationForm(), { wrapper });
 
 		await act(async () => {
@@ -229,6 +252,7 @@ describe("useGenerationForm", () => {
 		} as never);
 
 		const wrapper = createWrapper();
+		seedKokoroDownloaded();
 		const { result } = renderHook(() => useGenerationForm(), { wrapper });
 
 		await act(async () => {
@@ -253,6 +277,7 @@ describe("useGenerationForm", () => {
 
 		const onSuccess = vi.fn();
 		const wrapper = createWrapper();
+		seedKokoroDownloaded();
 		const { result } = renderHook(() => useGenerationForm({ onSuccess }), {
 			wrapper,
 		});
@@ -277,6 +302,7 @@ describe("useGenerationForm", () => {
 		);
 
 		const wrapper = createWrapper();
+		seedKokoroDownloaded();
 		const { result } = renderHook(() => useGenerationForm(), { wrapper });
 
 		await act(async () => {
@@ -302,6 +328,7 @@ describe("useGenerationForm", () => {
 		} as never);
 
 		const wrapper = createWrapper();
+		seedKokoroDownloaded();
 		const { result } = renderHook(() => useGenerationForm(), { wrapper });
 
 		await act(async () => {
@@ -329,6 +356,7 @@ describe("useGenerationForm", () => {
 			{ type: "normalize", enabled: true, params: {} } as never,
 		];
 		const wrapper = createWrapper();
+		seedKokoroDownloaded();
 		const { result } = renderHook(
 			() => useGenerationForm({ getEffectsChain: () => mockEffects }),
 			{ wrapper },

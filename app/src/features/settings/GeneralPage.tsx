@@ -10,19 +10,20 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Trans, useTranslation } from "react-i18next";
 import * as z from "zod";
-import { Button } from "@/ui/button";
-import { Field, Input } from "@/ui/input";
-import { Progress } from "@/ui/progress";
-import { Spinner } from "@/ui/primitives";
-import { Switch } from "@/ui/controls";
-import { useToast } from "@/ui/use-toast";
 import { useAutoUpdater } from "@/hooks/useAutoUpdater";
 import { showStudioErrorToast } from "@/lib/errors";
 import { useServerHealth } from "@/lib/hooks/useServer";
 import { usePerformanceSettings } from "@/lib/hooks/useSettings";
 import { debug } from "@/lib/utils/debug";
 import { usePlatform } from "@/platform/PlatformContext";
-import { useServerStore } from "@/stores/serverStore";
+import { isRemoteModeMisconfigured, useServerStore } from "@/stores/serverStore";
+import { Banner } from "@/ui/banner";
+import { Button } from "@/ui/button";
+import { Switch } from "@/ui/controls";
+import { Field, Input } from "@/ui/input";
+import { Spinner } from "@/ui/primitives";
+import { Progress } from "@/ui/progress";
+import { useToast } from "@/ui/use-toast";
 import { LanguageSelect } from "./LanguageSelect";
 import { SettingRow, SettingSection } from "./rows";
 import { ThemeSelect } from "./ThemeSelect";
@@ -217,6 +218,9 @@ export function GeneralPage() {
 							}}
 						/>
 					</SettingRow>
+				) : null}
+				{isRemoteModeMisconfigured(mode, serverUrl) ? (
+					<Banner tone="warning">{t("settings.general.networkAccess.needsUrl")}</Banner>
 				) : null}
 
 				<SettingRow

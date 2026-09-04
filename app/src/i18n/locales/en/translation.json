@@ -853,7 +853,8 @@
 				"description": "Makes the server accessible from other devices on your network. Restart the app after changing.",
 				"updatedTitle": "Setting updated",
 				"enabled": "Network access enabled. Restart the app to apply.",
-				"disabled": "Network access disabled. Restart the app to apply."
+				"disabled": "Network access disabled. Restart the app to apply.",
+				"needsUrl": "Remote mode is on but the server address is still local. Enter your server address above."
 			},
 			"connection": {
 				"connecting": "Connecting",

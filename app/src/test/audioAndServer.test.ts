@@ -1,8 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { createAudioUrl, formatAudioDuration } from "@/lib/utils/audio";
 import {
 	isLoopbackServerUrl,
 	isLoopbackTWENTYLABSServerUrl,
+	isRemoteModeMisconfigured,
+	useServerStore,
 } from "@/stores/serverStore";
 
 describe("createAudioUrl", () => {
@@ -69,14 +71,12 @@ describe("isLoopbackServerUrl", () => {
 		expect(isLoopbackServerUrl("http://::1:17493")).toBe(false);
 	});
 
-	it("rejects wrong port", () => {
-		expect(isLoopbackServerUrl("http://localhost:8080")).toBe(false);
+	it("accepts loopback on any port (custom local backends are local)", () => {
+		expect(isLoopbackServerUrl("http://localhost:8080")).toBe(true);
 	});
 
 	it("rejects remote host", () => {
-		expect(isLoopbackServerUrl("https://api.example.com:17493")).toBe(
-			false,
-		);
+		expect(isLoopbackServerUrl("https://api.example.com:17493")).toBe(false);
 	});
 
 	it("rejects malformed URLs", () => {
@@ -88,4 +88,58 @@ describe("isLoopbackServerUrl", () => {
 	});
 
 	it("legacy alias matches the renamed helper", () => {
-		expect(isLoopbackTWENTYLABSServerUrl
+		expect(isLoopbackTWENTYLABSServerUrl).toBe(isLoopbackServerUrl);
+		expect(isLoopbackTWENTYLABSServerUrl("http://localhost:17493")).toBe(true);
+	});
+});
+
+describe("serverStore remote mode (F1–F4)", () => {
+	beforeEach(() => {
+		useServerStore.setState({
+			serverUrl: "http://127.0.0.1:17493",
+			mode: "local",
+			lastRemoteUrl: null,
+		});
+	});
+
+	it("setting a LAN URL flips mode to remote and remembers it", () => {
+		useServerStore.getState().setServerUrl("http://192.168.1.10:17493");
+		const s = useServerStore.getState();
+		expect(s.mode).toBe("remote");
+		expect(s.lastRemoteUrl).toBe("http://192.168.1.10:17493");
+	});
+
+	it("setting a loopback URL flips mode back to local", () => {
+		useServerStore.setState({
+			serverUrl: "http://192.168.1.10:17493",
+			mode: "remote",
+			lastRemoteUrl: "http://192.168.1.10:17493",
+		});
+		useServerStore.getState().setServerUrl("http://127.0.0.1:17493");
+		expect(useServerStore.getState().mode).toBe("local");
+	});
+
+	it("switching to remote restores the last remote URL", () => {
+		useServerStore.setState({
+			serverUrl: "http://127.0.0.1:17493",
+			mode: "local",
+			lastRemoteUrl: "http://192.168.1.10:17493",
+		});
+		useServerStore.getState().setMode("remote");
+		expect(useServerStore.getState().serverUrl).toBe(
+			"http://192.168.1.10:17493",
+		);
+	});
+
+	it("flags remote mode on a loopback URL as misconfigured", () => {
+		expect(isRemoteModeMisconfigured("remote", "http://127.0.0.1:17493")).toBe(
+			true,
+		);
+		expect(
+			isRemoteModeMisconfigured("remote", "http://192.168.1.10:17493"),
+		).toBe(false);
+		expect(isRemoteModeMisconfigured("local", "http://127.0.0.1:17493")).toBe(
+			false,
+		);
+	});
+});

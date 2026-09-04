@@ -146,6 +146,27 @@ see 06.)
 - **02 remainder** — cargo package name stays `labs21` + Tauri id
   `com.21labs.app` per RENAME_LOG's deferred build-coordination slice.
 
+## Fix-everything pass (2026-09-04, user-directed)
+
+- **useGenerationForm ×13 green.** The hook resolves engines from the
+  `["modelStatus"]` query cache; tests never seeded it. Seeded a downloaded
+  kokoro in the 7 submitting tests (no-engine tests stay unseeded).
+- **Zod systemic fixed (all TS2345 ZodObject/ZodEffects gone).** Root cause:
+  hoisted `@hookform/resolvers` resolved `zod` to root `zod@4.5.4`
+  (via docs' fumadocs) while app code uses nested `zod@3.25.76`. Fix:
+  root `package.json` now depends on `zod ^3.25.76` directly, so the
+  hoisted copy is v3 and docs keeps a nested v4. No schema code touched.
+- **Remaining: 70 errors, all outside my lanes** (raw list:
+  `docs/reports/2026-09-04-typecheck-triage.txt`). ~40 are mechanical
+  unused imports, ~30 semantic (undeclared names, missing exports,
+  redeclared `designEngine`, wrong route literals) — concentrated in the
+  parallel slices' **uncommitted** feature files. Bulk-editing those now
+  would collide with in-flight work for zero green payoff (CI stays red
+  until the semantic ones are resolved by the author anyway). Left for
+  the slice owner; the per-slice typecheck gate (CI `frontend-typecheck`)
+  already flags them.
+- **`ui/form.tsx`**: removed one unused import (canonical lib, stable file).
+
 ## Pre-existing failures (not mine, do not "fix" blindly)
 
 - `test_generation_context.py::...test_from_db_handles_none_fields`
