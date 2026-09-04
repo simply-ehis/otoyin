@@ -1,0 +1,13 @@
+{
+  "identifier": "default",
+  "description": "Default capability for the main window — core + dialog/fs/shell/process/updater plugin access",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "dialog:default",
+    "fs:default",
+    "process:default",
+    "shell:default",
+    "updater:default"
+  ]
+}

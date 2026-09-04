@@ -4,17 +4,17 @@
   "version": "0.1.0",
   "identifier": "com.21labs.app",
   "build": {
-    "beforeDevCommand": "bun run dev",
-    "beforeBuildCommand": "bun run build",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist",
     "devUrl": "http://localhost:21132"
   },
   "bundle": {
     "active": true,
     "targets": "all",
-    "createUpdaterArtifacts": false,
+    "createUpdaterArtifacts": true,
     "resources": {
-      "binaries/21labs-server/": "21labs-server/"
+      "binaries/otoyin-server/": "otoyin-server/"
     },
     "windows": {
       "nsis": {
@@ -68,6 +68,12 @@
   "plugins": {
     "shell": {
       "open": "^(https?|tauri):.*"
+    },
+    "updater": {
+      "endpoints": [
+        "https://github.com/21-labs/21-labs/releases/latest/download/latest.json"
+      ],
+      "pubkey": "jMxgDJGUeOfS62+WZhrVK2Vo0j5UkOnS1w9QhoP7KX4="
     }
   }
 }

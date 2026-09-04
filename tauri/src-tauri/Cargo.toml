@@ -1,7 +1,7 @@
 [package]
 name = "labs21"
 version = "0.1.0"
-description = "otoyin — AI Audio Studio"
+description = "Otoyin — AI Audio Studio"
 authors = ["otoyin"]
 license = "MIT"
 edition = "2021"
@@ -25,8 +25,6 @@ base64 = "0.22"
 cpal = "0.15"
 symphonia = { version = "0.5", features = ["all"] }
 scopeguard = "1.2.0"
-labs21-shared-audio = { path = "labs21-shared-audio" }
-labs21-core = { path = "labs21-core" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 screencapturekit = { version = "1", features = ["async"] }
@@ -51,6 +49,7 @@ webkit2gtk = "2.0"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-process = "2.0"
+tauri-plugin-updater = "2"
 # Observe-only global keyboard tap. Covers macOS, Windows, and Linux
 # (evdev) with left/right modifier fidelity, which is the hard
 # requirement the chord engine needs. keytap is our own crate
