@@ -18,7 +18,8 @@
     },
     "windows": {
       "nsis": {
-        "displayLanguageSelector": false,
+        "displayLanguageSelector": true,
+        "languages": ["English", "German", "Spanish", "French", "PortugueseBR", "Korean"],
         "installerIcon": "icons/icon.ico",
         "headerImage": "icons/128x128.png",
         "sidebarImage": "icons/128x128.png",
@@ -26,7 +27,7 @@
         "compression": "lzma"
       },
       "wix": {
-        "language": "en-US"
+        "language": ["en-US", "de-DE", "es-ES", "fr-FR", "pt-BR", "ko-KR"]
       }
     },
     "icon": [

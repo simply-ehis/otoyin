@@ -1,14 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Merged automatically with the Tauri-generated Info.plist (Tauri looks for
+  an Info.plist next to tauri.conf.json).
+-->
 <plist version="1.0">
 <dict>
 	<key>CFBundleIconFile</key>
-	<string>Di Stefano</string>
+	<string>Otoyin</string>
 	<key>CFBundleIconName</key>
-	<string>Di Stefano</string>
+	<string>Otoyin</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Di Stefano needs microphone access to record voice samples for voice cloning.</string>
+	<string>Otoyin needs microphone access to record voice samples for voice cloning.</string>
 	<key>NSScreenCaptureUsageDescription</key>
-	<string>Di Stefano needs screen capture access to record system audio for voice samples.</string>
+	<string>Otoyin needs screen capture access to record system audio for voice samples.</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ja</string>
+		<string>zh-Hans</string>
+		<string>zh-Hant</string>
+		<string>es</string>
+		<string>fr</string>
+		<string>de</string>
+		<string>pt-BR</string>
+		<string>ko</string>
+	</array>
 </dict>
 </plist>

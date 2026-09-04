@@ -75,6 +75,20 @@ jobs:
       # Informational until the rebuild lands: exits 0, log shows drift.
       - run: python scripts/check-wiring.py
 
+  i18n-parity:
+    name: "i18n: locale key parity (advisory until backlog is clear)"
+    runs-on: ubuntu-latest
+    # Advisory while ja/zh-CN/zh-TW carry the 123-key backlog (see
+    # docs/reports/2026-09-04-i18n-backlog.md). Flip off continue-on-error
+    # and add --strict once translators close it.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python scripts/check-i18n-parity.py
+
   security-audit:
     name: "Dependencies: vulnerability audit (prompt 16)"
     runs-on: ubuntu-latest
@@ -158,6 +172,19 @@ jobs:
         run: python -X utf8 -m backend.scripts.check_placeholders
       - name: Assistant tools check
         run: python -X utf8 -m backend.scripts.check_assistant_tools
+
+  encoding-check:
+    name: "Encoding: no invalid UTF-8 or U+FFFD (mojibake gate)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # Fails when any tracked text file holds raw cp1252 bytes (invalid
+      # UTF-8) or U+FFFD replacement chars — the archive-restore corruption
+      # signature. Binary files (NUL bytes) are exempt.
+      - run: python scripts/check-encoding.py
 
   # ── Rust ──────────────────────────────────────────────────────────────
   rust-check:
