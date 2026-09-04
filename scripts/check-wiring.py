@@ -44,11 +44,15 @@ def normalize_pattern(text: str) -> list[str]:
     return [s for s in segs if s]
 
 
-def segments_match(open_segs: list[str], lit_segs: list[str]) -> bool:
+def segments_match(open_segs: list[str], lit_segs: list[str], full: bool = False) -> bool:
     # Literal matches when every literal segment equals the OpenAPI segment
     # or is a wildcard, for all literal segments (clients often compose
     # `${base}/subpath` across statements — prefix match is the signal).
+    # full=True requires equal length (for hand-rolled detection, so a
+    # frontend ROUTE like "/voice-changer" can't match "/voice-changer/x").
     if len(lit_segs) > len(open_segs):
+        return False
+    if full and len(lit_segs) != len(open_segs):
         return False
     return all(l == "*" or l == o for l, o in zip(lit_segs, open_segs))
 
@@ -106,7 +110,7 @@ def find_stranded() -> tuple[list[str], list[str]]:
         open_segs = normalize_pattern(path)
         if any(segments_match(open_segs, lit) for lit in canonical):
             continue
-        if any(segments_match(open_segs, lit) for lit in hand):
+        if any(segments_match(open_segs, lit, full=True) for lit in hand):
             handrolled_only.append(path)
         else:
             stranded.append(path)

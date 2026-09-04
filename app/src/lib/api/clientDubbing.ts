@@ -65,16 +65,17 @@ export class DubbingMethods extends ContentMethods {
 	}
 
 	async downloadDubbedVideo(job_id: string): Promise<Blob> {
-		const resp = await fetch(`${this.getBaseUrl()}/dubbing/download/${job_id}`, {
-			method: "GET",
-			headers: {
-				Accept: "video/mp4",
+		const res = await this.fetchWithAuth(
+			`/dubbing/download/${job_id}`,
+			{
+				method: "GET",
+				headers: {
+					Accept: "video/mp4",
+				},
 			},
-		});
-		if (!resp.ok) {
-			throw new Error(`Failed to download dubbed video: ${resp.statusText}`);
-		}
-		return resp.blob();
+			600_000,
+		);
+		return res.blob();
 	}
 
 	async previewDub(params: {

@@ -766,16 +766,15 @@ export class StoriesAMethods extends ChannelsMethods {
 		duration?: number;
 		velocity?: number;
 	}): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/instruments/piano`;
-		const response = await fetch(url, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(data),
-		});
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`);
-		}
-		return response.blob();
+		const res = await this.fetchWithAuth(
+			"/instruments/piano",
+			{
+				method: "POST",
+				body: JSON.stringify(data),
+			},
+			120_000,
+		);
+		return res.blob();
 	}
 
 	async playDrumPad(data: {
@@ -783,16 +782,15 @@ export class StoriesAMethods extends ChannelsMethods {
 		duration?: number;
 		velocity?: number;
 	}): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/instruments/drum`;
-		const response = await fetch(url, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(data),
-		});
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`);
-		}
-		return response.blob();
+		const res = await this.fetchWithAuth(
+			"/instruments/drum",
+			{
+				method: "POST",
+				body: JSON.stringify(data),
+			},
+			120_000,
+		);
+		return res.blob();
 	}
 
 	async playSynthNote(data: {
@@ -801,16 +799,15 @@ export class StoriesAMethods extends ChannelsMethods {
 		waveform?: string;
 		velocity?: number;
 	}): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/instruments/synth`;
-		const response = await fetch(url, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(data),
-		});
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`);
-		}
-		return response.blob();
+		const res = await this.fetchWithAuth(
+			"/instruments/synth",
+			{
+				method: "POST",
+				body: JSON.stringify(data),
+			},
+			120_000,
+		);
+		return res.blob();
 	}
 
 	async generateNoise(data: {
@@ -818,16 +815,15 @@ export class StoriesAMethods extends ChannelsMethods {
 		duration?: number;
 		amplitude?: number;
 	}): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/instruments/noise`;
-		const response = await fetch(url, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(data),
-		});
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`);
-		}
-		return response.blob();
+		const res = await this.fetchWithAuth(
+			"/instruments/noise",
+			{
+				method: "POST",
+				body: JSON.stringify(data),
+			},
+			120_000,
+		);
+		return res.blob();
 	}
 
 	async listNoiseTypes(): Promise<
@@ -844,21 +840,24 @@ export class StoriesAMethods extends ChannelsMethods {
 		);
 	}
 
+	async listGMTypes(): Promise<{ note: string }> {
+		return this.request<{ note: string }>("/instruments/gm-types");
+	}
+
 	async playGMInstrument(data: {
 		program: number;
 		note?: number;
 		duration?: number;
 		velocity?: number;
 	}): Promise<Blob> {
-		const res = await fetch(`${this.getBaseUrl()}/instruments/gm`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(data),
-		});
-		if (!res.ok) {
-			const detail = await res.text().catch(() => res.statusText);
-			throw new Error(detail || `HTTP ${res.status}`);
-		}
+		const res = await this.fetchWithAuth(
+			"/instruments/gm",
+			{
+				method: "POST",
+				body: JSON.stringify(data),
+			},
+			120_000,
+		);
 		return res.blob();
 	}
 
@@ -868,15 +867,14 @@ export class StoriesAMethods extends ChannelsMethods {
 		bars?: number;
 		velocity?: number;
 	}): Promise<Blob> {
-		const res = await fetch(`${this.getBaseUrl()}/instruments/drum-machine`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(data),
-		});
-		if (!res.ok) {
-			const detail = await res.text().catch(() => res.statusText);
-			throw new Error(detail || `HTTP ${res.status}`);
-		}
+		const res = await this.fetchWithAuth(
+			"/instruments/drum-machine",
+			{
+				method: "POST",
+				body: JSON.stringify(data),
+			},
+			120_000,
+		);
 		return res.blob();
 	}
 

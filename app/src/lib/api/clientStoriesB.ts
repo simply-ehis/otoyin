@@ -101,26 +101,15 @@ export class StoriesBMethods extends StoriesAMethods {
 		generationId: string,
 		effectsChain: EffectConfig[],
 	): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/effects/preview/${generationId}`;
-		const response = await fetch(url, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ effects_chain: effectsChain }),
-		});
-
-		if (!response.ok) {
-			const error = await response.json().catch(() => ({
-				detail: response.statusText,
-			}));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-
-		return response.blob();
+		const res = await this.fetchWithAuth(
+			`/effects/preview/${generationId}`,
+			{
+				method: "POST",
+				body: JSON.stringify({ effects_chain: effectsChain }),
+			},
+			120_000,
+		);
+		return res.blob();
 	}
 
 	// --- Phase 2: Standalone Project ---
