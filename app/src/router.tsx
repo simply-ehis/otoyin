@@ -13,6 +13,7 @@ import { ServerStatusBanner } from "@/components/Banner/ServerStatusBanner";
 import { ErrorBoundary } from "@/components/ErrorBoundary/ErrorBoundary";
 import { RecommendedModelsBanner } from "@/components/RecommendedModelsBanner/RecommendedModelsBanner";
 import { AppLoadingScreen } from "@/components/ui/AppLoadingScreen";
+import { AutoUpdateFlow } from "@/features/settings/AutoUpdateFlow";
 import { Toaster } from "@/components/ui/toaster";
 
 const MiniGame = lazy(() =>
@@ -448,6 +449,7 @@ function RootLayout() {
 			<Suspense>
 				<MiniGame />
 			</Suspense>
+			<AutoUpdateFlow />
 			<Toaster />
 		</AppFrame>
 	);
