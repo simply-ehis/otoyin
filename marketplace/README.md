@@ -27,6 +27,8 @@
 - `POST /v1/checkout` · `GET /v1/webhook/license/{order_ref}` — Paddle checkout + license
 - `GET /v1/notices` — push-style announcements polled by the app on launch
   (offline-first; see `docs/knowledge/77-notifications.md`)
+- Privacy: public policy at `/privacy` (`web/src/app/privacy/page.tsx`);
+  export/deletion runbook in `PRIVACY.md`.
 - `POST /v1/notices/admin` — create/update a notice (Bearer `MARKETPLACE_ADMIN_KEY`)
 - `GET /v1/catalog/offers` · reviews · wishlist
 

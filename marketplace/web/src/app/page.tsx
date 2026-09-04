@@ -5,7 +5,7 @@ import { CategoryGrid, DEFAULT_CATEGORIES } from '@/components/home/CategoryGrid
 import { FeaturedProducts } from '@/components/home/FeaturedProducts';
 
 export const metadata: Metadata = {
-  title: '21labs Marketplace - AI Models for Voice, Music & Transcription',
+  title: 'Otoyin Marketplace - AI Models for Voice, Music & Transcription',
   description: 'Buy, download, and manage AI models for voice, music, and transcription. All models run locally, offline.',
 };
 

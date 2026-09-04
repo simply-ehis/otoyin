@@ -1,16 +1,13 @@
-﻿OpenAPI paths: 422
-HOW TO READ THIS (2026-09-04): the frontend rebuild (03) is mid-flight —
-new screens in features//layouts/ exist but router.tsx still points at the
-old tree. So STRANDED here mostly means "UI not rebuilt yet", NOT "dead
-backend". Re-run scripts/check-wiring.py as screens land; the stranded
-count should fall toward the allowlisted remainder (webhooks/MCP/schema).
-HANDROLLED = works today but bypasses lib/api — move into the client
-layer per 20. ORPHANED = imported nowhere (real). UNWIRED = not in
-router yet (expected until REBUILD_LOG step 2 lands).
-NOTE: route modules that fail to import in this env (see backend
-stderr, e.g. missing sse_starlette/jsonschema) are absent above;
-install backend/requirements.txt fully before treating this as final.
-Stranded endpoints ù no UI caller anywhere (96):
+﻿OpenAPI paths: 428
+HOW TO READ THIS: the frontend rebuild (03) is mid-flight ù new
+screens exist but router.tsx still points at the old tree. STRANDED
+mostly means 'UI not rebuilt yet', NOT 'dead backend'. Re-run as
+screens land; the stranded count should fall toward the allowlisted
+remainder (webhooks/MCP/schema). HANDROLLED = works today but
+bypasses lib/api ù move into the client layer per prompt 20.
+ORPHANED = imported nowhere (real). UNWIRED = not in router yet
+(expected until REBUILD_LOG step 2 lands).
+Stranded endpoints ù no UI caller anywhere (93):
   STRANDED  /
   STRANDED  /adr/audio/{take_id}
   STRANDED  /adr/guide-audio/{session_id}
@@ -40,6 +37,7 @@ Stranded endpoints ù no UI caller anywhere (96):
   STRANDED  /diarize/path
   STRANDED  /dsp/effect
   STRANDED  /dsp/synth
+  STRANDED  /events/speak
   STRANDED  /export/apply-preset
   STRANDED  /exports/{filename}
   STRANDED  /files/compact
@@ -59,7 +57,6 @@ Stranded endpoints ù no UI caller anywhere (96):
   STRANDED  /integration/timeline/sync
   STRANDED  /llm/generate
   STRANDED  /llm/status
-  STRANDED  /marketplace/checkout
   STRANDED  /marketplace/convert-price
   STRANDED  /marketplace/pricing
   STRANDED  /marketplace/pricing/bulk
@@ -70,9 +67,6 @@ Stranded endpoints ù no UI caller anywhere (96):
   STRANDED  /marketplace/pricing/{product_id}/{country_code}
   STRANDED  /marketplace/product/{product_id}/reviews
   STRANDED  /marketplace/region
-  STRANDED  /marketplace/tax/jurisdictions
-  STRANDED  /marketplace/tax/preview
-  STRANDED  /marketplace/tax/summary/{country_code}
   STRANDED  /marketplace/verify
   STRANDED  /marketplace/wishlist
   STRANDED  /marketplace/wishlist/{product_id}
@@ -122,14 +116,40 @@ Hand-rolled callers outside lib/api ù move into client layer (14):
   HANDROLLED  /voice-changer/set-preset
   HANDROLLED  /voice-changer/set-profile
   HANDROLLED  /voice-changer/status
-Imported nowhere (1):
+Imported nowhere (2):
+  ORPHANED  app\src\features\generate\GeneratePage.tsx
   ORPHANED  app\src\features\settings\TimecodePage.tsx
-Not referenced by router (27, advisory mid-rebuild):
+Not referenced by router (89, advisory mid-rebuild):
+  UNWIRED   app\src\features\audiobooks\AudiobooksTab.tsx
+  UNWIRED   app\src\features\audiobooks\BookDetail.tsx
+  UNWIRED   app\src\features\audiobooks\BookList.tsx
+  UNWIRED   app\src\features\audiobooks\ChapterList.tsx
+  UNWIRED   app\src\features\audiobooks\ConvertPanel.tsx
+  UNWIRED   app\src\features\audiobooks\ImportWizard.tsx
+  UNWIRED   app\src\features\audiobooks\VoiceCastPanel.tsx
   UNWIRED   app\src\features\capture\CapturePill.tsx
   UNWIRED   app\src\features\capture\ChordPicker.tsx
   UNWIRED   app\src\features\capture\gates.tsx
+  UNWIRED   app\src\features\captures\ActionBar.tsx
+  UNWIRED   app\src\features\captures\CapturesTab.tsx
+  UNWIRED   app\src\features\captures\DetailPane.tsx
+  UNWIRED   app\src\features\captures\EmptyState.tsx
+  UNWIRED   app\src\features\captures\InlinePlayer.tsx
+  UNWIRED   app\src\features\captures\ListPane.tsx
+  UNWIRED   app\src\features\captures\ReadinessChecklist.tsx
+  UNWIRED   app\src\features\captures\shared.tsx
+  UNWIRED   app\src\features\dubbing\DubbingTab.tsx
+  UNWIRED   app\src\features\effects\ChainEditor.tsx
+  UNWIRED   app\src\features\effects\EffectsTab.tsx
+  UNWIRED   app\src\features\effects\PresetDetail.tsx
+  UNWIRED   app\src\features\generate\Composer.tsx
+  UNWIRED   app\src\features\generate\GettingStarted.tsx
+  UNWIRED   app\src\features\generate\HistoryList.tsx
+  UNWIRED   app\src\features\generate\VoicePicker.tsx
+  UNWIRED   app\src\features\library\LibraryTab.tsx
   UNWIRED   app\src\features\settings\AboutPage.tsx
   UNWIRED   app\src\features\settings\ApiKeysPage.tsx
+  UNWIRED   app\src\features\settings\AutoUpdateFlow.tsx
   UNWIRED   app\src\features\settings\CapturesPage.tsx
   UNWIRED   app\src\features\settings\GeneralPage.tsx
   UNWIRED   app\src\features\settings\GenerationPage.tsx
@@ -148,6 +168,43 @@ Not referenced by router (27, advisory mid-rebuild):
   UNWIRED   app\src\features\settings\SupportPage.tsx
   UNWIRED   app\src\features\settings\TelemetryPage.tsx
   UNWIRED   app\src\features\settings\ThemeSelect.tsx
+  UNWIRED   app\src\features\store\BrowseStates.tsx
+  UNWIRED   app\src\features\store\LicensesView.tsx
+  UNWIRED   app\src\features\store\OffersBanner.tsx
+  UNWIRED   app\src\features\store\PerEngineKeepaliveRow.tsx
+  UNWIRED   app\src\features\store\PricingAdmin.tsx
+  UNWIRED   app\src\features\store\ProductActions.tsx
+  UNWIRED   app\src\features\store\ProductGrid.tsx
+  UNWIRED   app\src\features\store\ProductReviews.tsx
+  UNWIRED   app\src\features\store\ProductSpecs.tsx
+  UNWIRED   app\src\features\store\SimilarProducts.tsx
+  UNWIRED   app\src\features\store\StarRating.tsx
+  UNWIRED   app\src\features\store\StoreDetailModal.tsx
+  UNWIRED   app\src\features\store\StoreFilters.tsx
+  UNWIRED   app\src\features\store\StoreHero.tsx
+  UNWIRED   app\src\features\store\StorePage.tsx
+  UNWIRED   app\src\features\store\StoreProductCard.tsx
+  UNWIRED   app\src\features\stories\StoriesTab.tsx
+  UNWIRED   app\src\features\stories\StoryChatItem.tsx
+  UNWIRED   app\src\features\stories\StoryContent.tsx
+  UNWIRED   app\src\features\stories\StoryList.tsx
+  UNWIRED   app\src\features\voices\InfoColumn.tsx
+  UNWIRED   app\src\features\voices\ProfileCard.tsx
+  UNWIRED   app\src\features\voices\ProfileForm.tsx
+  UNWIRED   app\src\features\voices\QuickCloneDialog.tsx
+  UNWIRED   app\src\features\voices\ReferenceVoicesBrowser.tsx
+  UNWIRED   app\src\features\voices\SampleList.tsx
+  UNWIRED   app\src\features\voices\samples.tsx
+  UNWIRED   app\src\features\voices\SampleUpload.tsx
+  UNWIRED   app\src\features\voices\SourceColumn.tsx
+  UNWIRED   app\src\features\voices\VoiceDesignPanel.tsx
+  UNWIRED   app\src\features\voices\VoiceInspector.tsx
+  UNWIRED   app\src\features\voices\VoicesTab.tsx
+  UNWIRED   app\src\features\workspace\ImportModal.tsx
+  UNWIRED   app\src\features\workspace\nav.tsx
+  UNWIRED   app\src\features\workspace\TimelineView.tsx
+  UNWIRED   app\src\features\workspace\WorkspaceLanding.tsx
+  UNWIRED   app\src\features\workspace\WorkspaceLayout.tsx
   UNWIRED   app\src\layouts\AppFrame.tsx
   UNWIRED   app\src\layouts\banners.tsx
   UNWIRED   app\src\layouts\Sidebar.tsx

@@ -1,6 +1,6 @@
 # Deployment & Setup
 
-**Updated:** 2026-09-03 (redesign pass — post-rebrand env names, npm-only toolchain, notices backend added).
+**Updated:** 2026-09-04 (Paddle cutover — Stripe/PayProGlobal removed, lockfile committed, CI on `npm ci`).
 
 Three deployable units, documented separately:
 
@@ -23,12 +23,22 @@ just build             # server binary + Tauri app
 - Frontend source lives in `app/src` (shell + shared lib) and `tauri/src`
   (Tauri entry); the Tauri webview builds the `tauri/` workspace, which
   aliases `@` → `app/src`.
-- The Python backend is bundled as a Tauri sidecar (`tauri/src-tauri/tauri.conf.json`
-  → `resources: binaries/21labs-server/`).
-- **Updater: NOT YET FUNCTIONAL** — see `docs/reports/2026-09-03-updater-audit.md`.
-  `@tauri-apps/plugin-updater` is a dependency but the Rust plugin, endpoint,
-  signing key, and `createUpdaterArtifacts` are all unconfigured. Until then,
-  releases ship as installer artifacts only.
+- The Python backend is bundled with the app (`tauri/src-tauri/tauri.conf.json`
+  → `resources: binaries/otoyin-server/`); the tag-gated `tauri-build` CI
+  job builds it per-platform (`scripts/build-server.sh` → `backend/build_binary.py`
+  PyInstaller onedir) and stages it before `cargo tauri build`, so installers
+  ship with a working backend.
+- **Updater: wired end-to-end** (see `docs/reports/2026-09-03-updater-audit.md`):
+  `tauri-plugin-updater` is registered in the Rust shell, `tauri.conf.json`
+  points at the GitHub Releases static manifest
+  (`21-labs/21-labs/releases/latest/download/latest.json`) with an Ed25519
+  pubkey, `createUpdaterArtifacts: true`, and the tag workflow signs every
+  build (`TAURI_SIGNING_PRIVATE_KEY` secret) and uploads `latest.json`.
+  **Before the first public release:** regenerate the signing key with
+  `tauri signer generate` (our bootstrap pair lives at
+  `tauri/src-tauri/.tauri-updater.key` — gitignored — and must be kept only in
+  CI secrets), paste the new pubkey into `tauri.conf.json`, and adopt a semver
+  scheme.
 - Rebrand note: bundle identifier is still `com.21labs.app` (user-invisible);
   renaming it must be sequenced with the first updater release (breaks update
   matching for installed copies).
@@ -57,8 +67,9 @@ See `marketplace/README.md` for full setup. Short version:
 
 - Postgres (Neon) for products/orders/licenses/**notices**.
 - Env: `MARKETPLACE_DATABASE_URL`, `MARKETPLACE_LICENSE_PRIVATE_KEY`
-  (base64 Ed25519), payment credentials (currently PayProGlobal — **provider
-  migration pending**, see `docs/reports/2026-09-03-payments-migration-plan.md`),
+  (base64 Ed25519), `MARKETPLACE_PADDLE_API_KEY` (+ `MARKETPLACE_PADDLE_SANDBOX`,
+  `MARKETPLACE_PADDLE_WEBHOOK_SECRET`, `MARKETPLACE_PADDLE_PRICE_MAP` —
+  sandbox defaults ON, see `marketplace/README.md` and `PADDLE_TESTING.md`),
   `MARKETPLACE_ADMIN_KEY` (Bearer token for `POST /v1/notices/admin` and
   future admin routes).
 - Serves: `/v1/catalog`, `/v1/checkout`, `/v1/webhook/*`, `/v1/notices`.
@@ -97,7 +108,10 @@ Source of truth: `backend/config.py` (`_env(new, old, default)` helper),
 |---|---|---|
 | `MARKETPLACE_DATABASE_URL` | Yes | Neon connection string |
 | `MARKETPLACE_LICENSE_PRIVATE_KEY` | Yes | base64 Ed25519 private key |
-| `MARKETPLACE_PAYPROGLOBAL_*` | Yes* | PayProGlobal credentials (until provider migration lands) |
+| `MARKETPLACE_PADDLE_API_KEY` | Yes* | Paddle API key (*sandbox key OK while testing; dev-mode fulfills free without it) |
+| `MARKETPLACE_PADDLE_SANDBOX` | No | `true` (default) — set `false` in prod only |
+| `MARKETPLACE_PADDLE_WEBHOOK_SECRET` | Yes* | Per-destination secret (`pdl_ntfset_...`); webhooks 401 without a match |
+| `MARKETPLACE_PADDLE_PRICE_MAP` | Yes* | JSON product_id → Paddle `pri_...` (paid products 500 without an entry) |
 | `MARKETPLACE_ADMIN_KEY` | No | Bearer token for `/v1/admin/*` routes (notices) |
 
 ## Local dev (end-to-end, npm only)
@@ -112,13 +126,18 @@ just dev-web           # backend + browser variant (app workspace)
 No bun, no pnpm anywhere in the instructions. If you see one in a doc, it's
 stale — report it.
 
-## Migration note (what moved where, 2026-09-03)
+## Migration note (what moved where)
 
+- **2026-09-04 — Payments (Paddle cutover):** PayProGlobal (`marketplace_server`
+  checkout/webhook) and the in-repo Stripe stack (`backend/services/checkout.py`,
+  `tax.py`, Stripe test files/docs, `/marketplace/checkout|webhook/stripe|
+  license/{ref}|tax/*` routes) are gone. Paddle Billing is the single Merchant
+  of Record — tax is calculated by Paddle, not locally. UI contract unchanged
+  (`POST /v1/checkout`, `GET /v1/webhook/license/{ref}`). Seller-side setup
+  (prices, destination secret, Payoneer payout) is dashboard work — see
+  `PADDLE_TESTING.md` go-live checklist.
 - **Package manager:** bun/pnpm → npm (root workspaces). CI uses
-  `setup-node@v4` + `npm install`; tighten to `npm ci` once the root
-  `package-lock.json` is generated on a networked machine (it is gitignored
-  today — see `.gitignore` `package-lock.json`; that ignore should be removed
-  when the lockfile lands).
+  `setup-node@v4` + `npm ci` against the committed root `package-lock.json`.
 - **Env names:** `TWENTYLABS_*` → `OTOYIN_*` (backward-compat shims in
   `backend/main.py`, `backend/config.py`, MCP shim). Legacy names keep working.
 - **Frontend shell:** `app/` is the browser variant + shared source; `tauri/`
@@ -127,7 +146,9 @@ stale — report it.
 - **Notices/notifications:** new — notices live in the marketplace service,
   merged by the main backend at startup (`OTOYIN_NOTICES_URL`), surfaced by the
   existing banner/bell UI.
-- **Payments:** live path is PayProGlobal via the marketplace service; the
-  in-repo Stripe path in the main backend is legacy/unused by the shipped
-  frontend. Provider migration decision pending (see 10 report).
-- **Updater:** not functional yet (see 09 report).
+- **Payments:** single path — Paddle via the marketplace service (see the
+  2026-09-04 entry above). No in-repo payment code remains in the main backend.
+- **Updater:** functional wiring only — the JS flow + Rust plugin + endpoints
+  + artifacts are in place; the desktop binary still needs the missing Rust
+  engine commands (`start_server`, audio capture/playback) and a first signed
+  release to exercise it (see 09 report).

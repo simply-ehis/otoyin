@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm install --ignore-scripts
+      - run: npm ci --ignore-scripts
       - run: npm run lint --workspace=@otoyin/app
 
   frontend-typecheck:
@@ -33,7 +33,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm install --ignore-scripts
+      - run: npm ci --ignore-scripts
       - run: npm run typecheck --workspace=@otoyin/app
 
   frontend-test:
@@ -45,7 +45,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm install --ignore-scripts
+      - run: npm ci --ignore-scripts
       - run: npm run test --workspace=@otoyin/app
 
   frontend-test-floor:
@@ -87,7 +87,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: npm install --ignore-scripts --package-lock-only
+      - run: npm ci --ignore-scripts
       - run: npm audit --audit-level=high
       - run: pip install pip-audit
       - run: pip-audit -r backend/requirements.txt
@@ -101,7 +101,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm install --ignore-scripts
+      - run: npm ci --ignore-scripts
       - run: npm run build --workspace=@otoyin/app
 
   # ── Backend ───────────────────────────────────────────────────────────
@@ -177,3 +177,4 @@ jobs:
       - run: cargo check
       - run: cargo clippy -- -D warnings
       - run: cargo test
+
