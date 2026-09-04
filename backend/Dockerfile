@@ -34,9 +34,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT:-17493}/health')" || exit 1
 
 # ── Environment defaults (overridden by Railway) ───────────────────────
-ENV TWENTYLABS_HOST=0.0.0.0 \
-    TWENTYLABS_PORT=17493 \
-    STRIPE_DEV_MODE=1
+ENV OTOYIN_HOST=0.0.0.0 \
+    OTOYIN_PORT=17493
 
 EXPOSE 17493
 

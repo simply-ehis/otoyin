@@ -1,15 +1,15 @@
-"""Checkout API — initiates payment sessions with PayProGlobal."""
+"""Checkout API — initiates Paddle Billing payment sessions."""
 
 from __future__ import annotations
 
 import uuid
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from .. import paddle
 from ..config import settings
 from ..models import Order, Product, async_session
 
@@ -36,13 +36,17 @@ async def get_db():
 
 @router.post("", response_model=CheckoutResponse)
 async def create_checkout(req: CheckoutRequest, db: AsyncSession = Depends(get_db)):
-    """Create a checkout session and return the PayProGlobal payment URL.
+    """Create a Paddle transaction and return its checkout URL.
 
     Flow:
     1. Client calls POST /v1/checkout with product_id + device_id
-    2. Server creates an Order row and a PayProGlobal checkout session
+    2. Server creates an Order row and a Paddle transaction
     3. Server returns the checkout_url — client opens it in system browser
-    4. User pays → PayProGlobal calls our webhook → server signs license
+    4. User pays → Paddle calls our webhook → server signs license
+
+    Dev mode (no ``MARKETPLACE_PADDLE_API_KEY``): the order is fulfilled
+    immediately and the checkout URL deep-links back into the app, so the
+    full buy → poll → install loop works with no provider account.
     """
     # Verify product exists and is paid
     result = await db.execute(select(Product).where(Product.id == req.product_id))
@@ -66,48 +70,51 @@ async def create_checkout(req: CheckoutRequest, db: AsyncSession = Depends(get_d
         email=req.email,
         status="pending",
         amount_usd=product.price_usd,
+        payment_provider="paddle",
     )
     db.add(order)
     await db.commit()
     await db.refresh(order)
 
-    # Create PayProGlobal checkout session
-    checkout_url = await _create_payproglobal_session(order, product)
+    if not paddle.is_configured():
+        from .webhook import fulfill_order
 
+        await fulfill_order(order, db, provider_txn_id="dev")
+        return CheckoutResponse(
+            order_ref=order_ref,
+            checkout_url=f"{settings.app_url_scheme}://payment/success?ref={order_ref}",
+            product_id=req.product_id,
+            amount_usd=product.price_usd,
+        )
+
+    price_id = paddle.price_id_for(req.product_id)
+    if not price_id:
+        raise HTTPException(
+            500,
+            detail={
+                "code": "price_not_configured",
+                "message": (
+                    f"Product '{req.product_id}' has no Paddle price — create it in the "
+                    "Paddle dashboard and set MARKETPLACE_PADDLE_PRICE_MAP."
+                ),
+            },
+        )
+    try:
+        txn = await paddle.create_transaction(
+            order_ref=order_ref,
+            product_id=req.product_id,
+            device_id=req.device_id,
+            email=req.email,
+            price_id=price_id,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(502, detail={"code": "provider_error", "message": str(exc)}) from exc
+
+    order.payment_session_id = txn["transaction_id"]
+    await db.commit()
     return CheckoutResponse(
         order_ref=order_ref,
-        checkout_url=checkout_url,
+        checkout_url=txn["checkout_url"],
         product_id=req.product_id,
         amount_usd=product.price_usd,
     )
-
-
-async def _create_payproglobal_session(order: Order, product: Product) -> str:
-    """Create a checkout session with PayProGlobal and return the payment URL.
-
-    PayProGlobal API: https://docs.payproglobal.com/
-    """
-    if not settings.payproglobal_shop_id or not settings.payproglobal_api_key:
-        # Dev mode — return a mock checkout URL
-        return f"https://checkout.payproglobal.com/dev?order={order.order_ref}"
-
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(
-            "https://api.payproglobal.com/v1/orders",
-            auth=(settings.payproglobal_shop_id, settings.payproglobal_api_key),
-            json={
-                "reference": order.order_ref,
-                "currency": "USD",
-                "amount": int(order.amount_usd * 100),  # cents
-                "email": order.email,
-                "product_name": product.name,
-                "return_url": f"{settings.app_url_scheme}://payment/success?ref={order.order_ref}",
-                "cancel_url": f"{settings.app_url_scheme}://payment/cancel?ref={order.order_ref}",
-                "webhook_url": "https://marketplace.21labs.app/v1/webhook",
-            },
-            timeout=15,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        order.payment_session_id = data.get("id", "")
-        return data.get("checkout_url", f"https://checkout.payproglobal.com/{order.order_ref}")

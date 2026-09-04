@@ -7,9 +7,28 @@
 3. Set environment variables in Vercel:
    - `MARKETPLACE_DATABASE_URL` = your Neon connection string
    - `MARKETPLACE_LICENSE_PRIVATE_KEY` = base64-encoded Ed25519 private key
-   - `MARKETPLACE_PAYPROGLOBAL_SHOP_ID` = PayProGlobal shop ID
-   - `MARKETPLACE_PAYPROGLOBAL_API_KEY` = PayProGlobal API key
-   - `MARKETPLACE_PAYPROGLOBAL_WEBHOOK_SECRET` = PayProGlobal webhook secret
+   - `MARKETPLACE_PADDLE_API_KEY` = Paddle API key (sandbox key for staging)
+   - `MARKETPLACE_PADDLE_WEBHOOK_SECRET` = per-destination secret (`pdl_ntfset_...`)
+   - `MARKETPLACE_PADDLE_SANDBOX` = `false` in prod, `true` anywhere else
+   - `MARKETPLACE_PADDLE_PRICE_MAP` = JSON, e.g. `{"qwen3-tts": "pri_01j..."}` (one Paddle price per paid product)
+   - `MARKETPLACE_ADMIN_KEY` = Bearer token for `/v1/admin/*` routes (e.g. `POST /v1/notices/admin`)
+
+> **Payment provider:** Paddle Billing (Merchant of Record — tax/VAT handled
+> by Paddle, not here). Sandbox is the default (`MARKETPLACE_PADDLE_SANDBOX`
+> stays `true` until prod), so a misconfigured deploy can never charge.
+> Every paid catalog product needs a Paddle price or checkout returns
+> `price_not_configured`. Seller-payout setup (Payoneer for Nigerian sellers)
+> happens in the Paddle dashboard, not in code — see `PADDLE_TESTING.md`.
+
+## Endpoints
+
+- `GET /v1/catalog` — signed product catalog (the desktop app merges this
+  remotely; see prompt 07 plan)
+- `POST /v1/checkout` · `GET /v1/webhook/license/{order_ref}` — Paddle checkout + license
+- `GET /v1/notices` — push-style announcements polled by the app on launch
+  (offline-first; see `docs/knowledge/77-notifications.md`)
+- `POST /v1/notices/admin` — create/update a notice (Bearer `MARKETPLACE_ADMIN_KEY`)
+- `GET /v1/catalog/offers` · reviews · wishlist
 
 ## Deploy
 

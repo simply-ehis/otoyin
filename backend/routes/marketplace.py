@@ -8,6 +8,7 @@ local — no network required.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -61,6 +62,24 @@ def get_catalog() -> dict:
     return catalog
 
 
+@router.post("/marketplace/catalog/refresh")
+async def refresh_catalog() -> dict:
+    """Nudge a stale-gated remote-catalog refresh (Store-open trigger).
+
+    The Store calls this when it opens so newly published models appear
+    without an app restart. It is cheap when fresh: the fetch runs in a
+    worker thread only when ``refresh_remote_catalog_if_stale`` decides the
+    last successful refresh is older than ``OTOYIN_CATALOG_REFRESH_S``
+    (default 24h) — otherwise it returns immediately with no network I/O.
+    Returns ``refreshed`` so the caller can refetch the catalog when new
+    products actually arrived.
+    """
+    from ..services.marketplace_catalog import refresh_remote_catalog_if_stale
+
+    refreshed = await asyncio.to_thread(refresh_remote_catalog_if_stale)
+    return {"refreshed": refreshed}
+
+
 @router.get("/marketplace/entitlements")
 def get_entitlements(db: Session = Depends(get_db)) -> dict:
     """List all entitlements currently granted by installed licenses."""
@@ -110,76 +129,12 @@ def verify_product(request: LicenseVerifyRequest, db: Session = Depends(get_db))
     return {"product_id": request.product_id, "licensed": licensed, "known": True}
 
 
-# ── Stripe Checkout ────────────────────────────────────────────────────
-
-
-class CheckoutRequest(BaseModel):
-    product_id: str
-    device_id: str
-    email: str = ""
-    currency: str | None = None  # override region currency
-
-
-@router.post("/marketplace/checkout")
-async def create_checkout(request: CheckoutRequest, req: Request) -> dict:
-    """Create a Stripe Checkout Session and return the payment URL."""
-    from ..services.checkout import (
-        STRIPE_DEV_MODE,
-        create_checkout_session,
-        is_stripe_configured,
-    )
-
-    if not STRIPE_DEV_MODE and not is_stripe_configured():
-        raise HTTPException(
-            status_code=501,
-            detail={
-                "message": "Stripe is not configured. Set STRIPE_SECRET_KEY.",
-                "code": "stripe_not_configured",
-            },
-        )
-
-    product = get_product(request.product_id)
-    if product is None:
-        raise HTTPException(status_code=404, detail={"message": "Product not found"})
-    if not product.get("paid", False):
-        raise HTTPException(status_code=400, detail={"message": "Product is free"})
-
-    price_usd = product.get("price_usd", 0)
-    if price_usd <= 0:
-        raise HTTPException(status_code=400, detail={"message": "Invalid price"})
-
-    try:
-        result = await create_checkout_session(
-            product_id=request.product_id,
-            device_id=request.device_id,
-            email=request.email,
-            price_usd=price_usd,
-            currency=request.currency or "usd",
-        )
-        return result
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail={"message": str(e)}) from e
-
-
-@router.post("/marketplace/webhook/stripe")
-async def stripe_webhook(request: Request) -> dict:
-    """Handle Stripe webhook for payment fulfillment."""
-    from ..services.checkout import handle_webhook
-
-    payload = await request.body()
-    sig_header = request.headers.get("stripe-signature", "")
-    return await handle_webhook(payload, sig_header)
-
-
-@router.get("/marketplace/license/{order_ref}")
-async def poll_license(order_ref: str) -> dict:
-    """Poll for a signed license after checkout."""
-    from ..services.checkout import poll_license as _poll
-
-    license_data = await _poll(order_ref)
-    if license_data is None:
-        raise HTTPException(status_code=402, detail={"message": "Payment pending"})
-    return license_data
+# ── Payments live in the standalone marketplace service ──────────────
+# Checkout + fulfillment moved to marketplace/marketplace_server (Paddle
+# Billing). This backend keeps offline licensing only (install/verify).
+# The old Stripe checkout/webhook/poll endpoints and local tax preview
+# were removed 2026-09-04 — Paddle is the Merchant of Record, so tax is
+# calculated by Paddle at checkout, not here.
 
 
 # ── Region & Currency ──────────────────────────────────────────────────
@@ -205,43 +160,6 @@ async def convert_price(request: ConvertPriceRequest) -> dict:
     from ..services.currency import convert_price as _convert
 
     return await _convert(request.amount_usd, request.currency)
-
-
-# ── Tax Calculation ─────────────────────────────────────────────────
-
-
-class TaxPreviewRequest(BaseModel):
-    amount_usd: float
-    country_code: str
-    product_id: str = ""
-
-
-@router.post("/marketplace/tax/preview")
-async def tax_preview(request: TaxPreviewRequest) -> dict:
-    """Preview tax calculation for a product before checkout.
-
-    Returns tax amount, rate, and total. Used by the frontend to show
-    the customer what tax they'll pay before they commit to checkout.
-    """
-    from ..services.tax import calculate_tax_locally
-
-    return calculate_tax_locally(request.amount_usd, request.country_code)
-
-
-@router.get("/marketplace/tax/jurisdictions")
-def tax_jurisdictions() -> dict:
-    """List all supported tax jurisdictions with their rates."""
-    from ..services.tax import get_all_tax_jurisdictions
-
-    return {"jurisdictions": get_all_tax_jurisdictions()}
-
-
-@router.get("/marketplace/tax/summary/{country_code}")
-def tax_summary(country_code: str) -> dict:
-    """Get tax summary for a specific country."""
-    from ..services.tax import get_tax_summary
-
-    return get_tax_summary(country_code)
 
 
 # ── Reviews ────────────────────────────────────────────────────────

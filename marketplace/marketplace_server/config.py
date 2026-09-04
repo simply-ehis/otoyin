@@ -24,10 +24,14 @@ class Settings(BaseSettings):
     license_private_key: str = ""
     license_public_key: str = ""
 
-    # PayProGlobal
-    payproglobal_shop_id: str = ""
-    payproglobal_api_key: str = ""
-    payproglobal_webhook_secret: str = ""
+    # Paddle Billing (Merchant of Record). Sandbox defaults ON so a
+    # misconfigured deploy can never take a live charge.
+    paddle_api_key: str = ""
+    paddle_webhook_secret: str = ""  # per-notification-destination secret (pdl_ntfset_...)
+    paddle_sandbox: bool = True
+    # product_id -> Paddle price_id (pri_...), created in the Paddle dashboard.
+    # A paid product with no entry here returns 500 misconfigured at checkout.
+    paddle_price_map: dict[str, str] = {}
 
     # Admin API (notices, catalog management) — Bearer token for /v1/admin/*
     admin_key: str = ""

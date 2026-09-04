@@ -1,7 +1,7 @@
 [project]
 name = "marketplace-server"
 version = "0.1.0"
-description = "21labs marketplace server — catalog, checkout, license signing"
+description = "Otoyin marketplace server — catalog, checkout, license signing"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115.0",

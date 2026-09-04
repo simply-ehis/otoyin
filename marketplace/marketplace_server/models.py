@@ -98,7 +98,7 @@ class Order(Base):
     email: Mapped[str] = mapped_column(String(256), default="")
     status: Mapped[str] = mapped_column(String(32), default="pending")
     amount_usd: Mapped[float] = mapped_column(Float)
-    payment_provider: Mapped[str] = mapped_column(String(64), default="payproglobal")
+    payment_provider: Mapped[str] = mapped_column(String(64), default="paddle")
     payment_session_id: Mapped[str] = mapped_column(String(256), default="")
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(dt.UTC), default=lambda: dt.datetime.now(dt.UTC))
     paid_at: Mapped[dt.datetime | None] = mapped_column(DateTime(dt.UTC), nullable=True)
