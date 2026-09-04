@@ -77,6 +77,16 @@ export function Form({
 	);
 }
 
+/** Hint text under a field (not an error). */
+export function FormDescription({
+	className,
+	...props
+}: React.HTMLAttributes<HTMLParagraphElement>) {
+	return (
+		<p className={cn("text-xs text-muted-foreground", className)} {...props} />
+	);
+}
+
 /** Button row at the foot of a form: primary action right-aligned. */
 export function FormActions({
 	className,
@@ -88,8 +98,7 @@ export function FormActions({
 }
 
 /** Field label inside FormItem grids. Pairs with FormMessage below. */
-export function FormLabel({
-	className,
+export function FormLabel({	className,
 	...props
 }: React.LabelHTMLAttributes<HTMLLabelElement>) {
 	return (
