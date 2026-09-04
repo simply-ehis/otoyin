@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/ui/use-toast";
 import { usePlatform } from "@/platform/PlatformContext";
 
 /**

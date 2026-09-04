@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/ui/use-toast";
 import { registerFileSource } from "@/lib/audio/sources";
 import {
 	ERR_DESC_PLAYBACK_FAILED,

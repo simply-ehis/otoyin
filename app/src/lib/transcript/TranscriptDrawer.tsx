@@ -1,13 +1,13 @@
 import { TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/ui/button";
 import {
 	Drawer,
 	DrawerContent,
 	DrawerDescription,
 	DrawerHeader,
 	DrawerTitle,
-} from "@/components/ui/drawer";
+} from "@/ui/drawer";
 import { TranscriptEditor } from "./TranscriptEditor";
 import { useTranscriptEditor } from "./useTranscriptEditor";
 

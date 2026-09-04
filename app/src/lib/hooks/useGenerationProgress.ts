@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/ui/use-toast";
 import { apiClient } from "@/lib/api/client";
 import { useGenerationSettings } from "@/lib/hooks/useSettings";
 import { useGenerationStore } from "@/stores/generationStore";

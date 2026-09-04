@@ -36,11 +36,28 @@ function getRetryAfterMs(response: Response, fallbackSec = 2): number {
 
 async function handleErrorResponse(response: Response): Promise<never> {
 	if (response.status === 503) {
-		const retryAfter = getRetryAfterMs(response, 2);
-		const retrySec = Math.ceil(retryAfter / 1000);
 		// Server returns 503 + Retry-After while initializing (ReadinessMiddleware)
 		const detail = (await response.json().catch(() => ({}))) as { detail?: unknown };
 		const rawDetail = detail?.detail;
+		if (rawDetail && typeof rawDetail === "object") {
+			// Circuit breaker: engine cooling down after repeated failures.
+			// retry_after_seconds is minutes-long — never auto-retry this.
+			const obj = rawDetail as { code?: unknown; retry_after_seconds?: unknown; message?: unknown };
+			if (obj.code === "engine_circuit_open") {
+				const waitSec = typeof obj.retry_after_seconds === "number" ? obj.retry_after_seconds : 300;
+				const err = new Error(
+					typeof obj.message === "string" && obj.message.length > 0
+						? obj.message
+						: `Model temporarily unavailable — retry in about ${waitSec}s`,
+				) as Error & { status?: number; retryAfterMs?: number; circuitOpen?: boolean };
+				err.status = 503;
+				err.retryAfterMs = waitSec * 1000;
+				err.circuitOpen = true;
+				throw err;
+			}
+		}
+		const retryAfter = getRetryAfterMs(response, 2);
+		const retrySec = Math.ceil(retryAfter / 1000);
 		const msg =
 			typeof rawDetail === "string" && rawDetail.toLowerCase().includes("initializing")
 				? `Server is initializing — retry in ${retrySec}s`
@@ -168,6 +185,15 @@ export class ApiClientCore {
 			try {
 				const response = await this.doFetch(url, options, timeoutMs);
 				if (response.status === 503 && attempt < maxRetries) {
+					// Circuit-open 503s carry a minutes-long cooldown — retrying is pointless.
+					const isCircuitOpen = await response
+						.clone()
+						.json()
+						.then(
+							(body) => (body as { detail?: { code?: string } })?.detail?.code === "engine_circuit_open",
+							() => false,
+						);
+					if (isCircuitOpen) return response;
 					const waitMs = getRetryAfterMs(response, 2);
 					console.warn(`[api] ${url} → 503 initializing, retry ${attempt + 1}/${maxRetries} in ${waitMs}ms`);
 					await sleep(waitMs);

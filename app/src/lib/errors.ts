@@ -1,4 +1,4 @@
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/ui/use-toast";
 
 export type ErrorSeverity = "critical" | "warning" | "info";
 
@@ -87,6 +87,14 @@ const ERROR_MAP: Record<string, StudioError> = {
 		title: "Generation Glitch",
 		message:
 			"The neural engine stuttered during generation. Hit retry — sometimes it needs a second take.",
+		severity: "warning",
+		retryable: true,
+	},
+	ENGINE_CIRCUIT_OPEN: {
+		code: "ENGINE_CIRCUIT_OPEN",
+		title: "Engine Cooling Down",
+		message:
+			"The model tripped its safety breaker after repeated failures. Give it a few minutes, then retry — hammering retry won't bring it back sooner.",
 		severity: "warning",
 		retryable: true,
 	},
@@ -263,6 +271,10 @@ export function inferStudioError(error: unknown): StudioError {
 	}
 	if (/network|fetch|connection|ECONNREFUSED|signal.*lost/i.test(msg)) {
 		return ERROR_MAP.SIGNAL_LOST;
+	}
+	if (/temporarily unavailable|engine_circuit_open|cooling down/i.test(msg)) {
+		// Circuit-breaker 503 carries the engine name + retry seconds — keep the server text.
+		return { ...ERROR_MAP.ENGINE_CIRCUIT_OPEN, message: msg };
 	}
 	if (/model.*(not|failed|load)|llm.*offline|brain.*not.*loaded/i.test(msg)) {
 		return ERROR_MAP.LLM_OFFLINE;

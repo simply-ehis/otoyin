@@ -1,9 +1,65 @@
+import {
+	Controller,
+	type ControllerProps,
+	type FieldPath,
+	type FieldValues,
+	FormProvider,
+	useFormContext,
+} from "react-hook-form";
 import { useForm } from "react-hook-form";
+import { createContext, useContext, useId } from "react";
 import type * as React from "react";
 import { cn } from "@/lib/utils/cn";
 
 export { useForm };
 export type { UseFormReturn, FieldValues } from "react-hook-form";
+export { FormProvider } from "react-hook-form";
+
+/** react-hook-form field bridge: wires Controller state to item + message. */
+export function FormField<
+	TFieldValues extends FieldValues = FieldValues,
+	TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+>(props: ControllerProps<TFieldValues, TName>) {
+	return (
+		<FormFieldContext.Provider value={{ name: props.name }}>
+			<Controller {...props} />
+		</FormFieldContext.Provider>
+	);
+}
+
+const FormFieldContext = createContext<{ name: string }>({ name: "" });
+const FormItemContext = createContext<{ id: string }>({ id: "" });
+
+export function FormItem({
+	className,
+	...props
+}: React.HTMLAttributes<HTMLDivElement>) {
+	const id = useId();
+	return (
+		<FormItemContext.Provider value={{ id }}>
+			<div className={cn("flex flex-col gap-1", className)} {...props} />
+		</FormItemContext.Provider>
+	);
+}
+
+export function FormControl({ ...props }: React.HTMLAttributes<HTMLDivElement>) {
+	const { id } = useContext(FormItemContext);
+	return <div id={`${id}-control`} {...props} />;
+}
+
+export function FormMessage({ className }: { className?: string }) {
+	const { name } = useContext(FormFieldContext);
+	const { getFieldState, formState } = useFormContext();
+	const error = getFieldState(name as FieldPath<FieldValues>, formState).error;
+	if (!error?.message) {
+		return null;
+	}
+	return (
+		<p role="alert" className={cn("text-xs text-destructive", className)}>
+			{String(error.message)}
+		</p>
+	);
+}
 
 /**
  * Canonical form shell: validates on submit, first invalid field

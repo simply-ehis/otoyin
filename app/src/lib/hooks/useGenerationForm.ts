@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/ui/use-toast";
 import { apiClient } from "@/lib/api/client";
 import type { EffectConfig, ModelStatusListResponse } from "@/lib/api/types";
 import { MODEL_NAME_MAP } from "@/lib/constants/engines";

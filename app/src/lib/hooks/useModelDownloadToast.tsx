@@ -3,10 +3,10 @@ import {
 	XCircleIcon as XCircle,
 } from "@heroicons/react/24/outline";
 import { useCallback, useEffect, useRef } from "react";
-import { Progress } from "@/components/ui/progress";
-import { Spinner } from "@/components/ui/Spinner";
-import type { Toast } from "@/components/ui/use-toast";
-import { useToast } from "@/components/ui/use-toast";
+import { Progress } from "@/ui/progress";
+import { Spinner } from "@/ui/primitives";
+import type { Toast } from "@/ui/use-toast";
+import { useToast } from "@/ui/use-toast";
 import type { ModelProgress } from "@/lib/api/types";
 import { showStudioErrorToast } from "@/lib/errors";
 import { useServerStore } from "@/stores/serverStore";
