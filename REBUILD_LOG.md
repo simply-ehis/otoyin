@@ -56,4 +56,52 @@ Staying on React. Old tree is behavior-reference only; nothing new copies its JS
 
 ## Screens landed
 
-(none yet)
+- Slice 1 (`dad769d`): tokens face, `ui/` canonical library + vitest proof,
+  `layouts/` shell (TitleBar, Sidebar, banners, AppFrame with theme-sync fix).
+- Slice 2 (uncommitted): `features/settings/*` (About, ApiKeys, Captures, General,
+  Generation, Gpu, Language, Logs, LottieExport, MCP, MarketplacePlugins,
+  ModelHealth, Plugins, Scripting, Shortcuts, Support, Telemetry, Theme, Timecode,
+  rows) + `features/voices/*` (VoicesTab, ProfileCard, QuickCloneDialog,
+  ReferenceVoicesBrowser, SampleList, SampleUpload, VoiceInspector, samples).
+- Slice 3 (uncommitted): **Store / marketplace** — `features/store/` (18 files):
+  `StorePage` (browse / My Licenses / Pricing Admin views) composed from
+  `StoreFilters`, `BrowseStates`, `StoreHero`, `OffersBanner`, `ProductGrid`,
+  `PerEngineKeepaliveRow`, `LicensesView`, `PricingAdmin` (+ `pricingCountries`);
+  `StoreProductCard` renders the three per-product states — **cached** (success
+  chip + one-step **Activate** via `loadModel(engine)`), **owned-not-installed**
+  (info chip + Install), **needs-download** (price/Free + Buy/Download) — driven
+  by backend `local_status` + entitlements + live model-status (single
+  `[modelStatus]` query key); `StoreDetailModal` split into `ProductSpecs`,
+  `ProductActions` (activate/redeem/checkout/download/delete), `ProductReviews`,
+  `SimilarProducts`; helpers ported to `storeUtils` (MODEL_DESCRIPTIONS,
+  filter/sort, download maps). Router repointed `/store` → `@/features/store`;
+  `app/src/components/Store/` **deleted** (replaced). Verified: tsc clean for
+  the feature, biome lint+format clean, ui vitest proof green, wiring guard
+  passes for store.
+- Slice 2 (`8133fc5`): full settings feature (16 pages + layout + rows +
+  theme/language selects) and capture primitives (gates, ChordPicker,
+  CapturePill). `lib` gate/pill imports repointed to new paths.
+- Slice 3 (`4006763`): generate feature (page, voice picker, composer with
+  tags/instruct/engine/temp/effects/clean/cancel, virtualized history with
+  retry/favorite/export/import/delete, starter checklist). `ui/form` RHF
+  bridge. Note: this commit also carries the parallel agent's
+  `clientCore.ts` circuit-breaker client surfacing (complements the audit
+  503 gate — friendly error, no auto-retry on cooldowns).
+- Slice 4 (`15bf85b`): voices feature A (tab, cards, inspector, samples,
+  quick clone, reference library) + effects chain editor + ui extras.
+- Slice 5 (`b215ac9`): captures feature (tab, list, action bar, detail,
+  readiness checklist, inline player, tag adder replacing prompt()).
+- Slice 6 (`47b4c2d`): library tab. Voices files also landed via `15bf85b`.
+- Slice 7 (`aafcbbc`): voice create/edit form (clone/preset/design sources,
+  draft persistence, rollback-on-sample-failure) + design panel.
+- Slice 8 (`00713dd`): effects tab (preset lists, detail editor with
+  audition/save-as/delete, generation picker).
+- Slice 9 (`483d361`): dubbing wizard (upload, preview, config, progress,
+  download, keyboard flow).
+- Slice 10 (`dfbedb4`): stories (library rail, sortable content with
+  playback highlight, add/import/paste/export, docked composer).
+  Deferred to studio phase: track-level item editing (trim/gain/fades),
+  full multitrack timeline, AB compare, automation lanes.
+- Slice 11 (`0f6a62c`): audiobooks (import wizard, rail, detail, cast,
+  chapters, conversion). Also carries parallel-track marketplace catalog
+  backend + docs from the other agent.
