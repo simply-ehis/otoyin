@@ -894,6 +894,9 @@ export interface MarketplaceProduct {
 	offer_discount_pct?: number;
 	baseline_usd?: number;
 	discount_pct?: number;
+	/** Install state annotated by GET /marketplace/catalog (and /local):
+	 *  "cached" (one-step activate) or "not_downloaded" (route to install). */
+	local_status?: "cached" | "not_downloaded";
 }
 
 export interface Catalog {

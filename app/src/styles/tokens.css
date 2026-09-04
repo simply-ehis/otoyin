@@ -1,0 +1,107 @@
+/* ══════════════════════════════════════════════════════════════════
+   OTOYIN DESIGN TOKENS — canonical semantic layer
+   Source of truth: awesome-desktop-design.skills (desktop-ui-foundations,
+   color-system, motion, spacing-sizing). Imported by index.css AFTER the
+   grayscale/theme primitives so these aliases compose on top of them.
+
+   Design direction (desktop-ui-style-direction):
+   register = organic / creative (audio studio), warm single-source light
+   (Caravaggio) as the brand motif. Neutrals should read warm, not cold
+   gray; the accent is the flat rose brand hue, used sparingly (60-30-10).
+
+   Everything below maps to existing --gs-* / --color-* variables where
+   possible so zero components break; NEW tokens (text roles, status
+   colors, elevation, motion) are additive.
+   ══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Surface roles (desktop-ui-color-system) ─────────────────────
+     One-step shifts for stacked layers; never more than 3 distinct
+     elevation levels on screen at once. */
+  --surface-base: hsl(0 0% var(--gs-bg));
+  --surface-raised: hsl(0 0% var(--gs-card));
+  --surface-overlay: hsl(0 0% var(--gs-card));
+  --surface-sunken: hsl(0 0% var(--gs-0));
+
+  /* ── Text roles (desktop-ui-foundations type scale) ───────────── */
+  --text-primary: hsl(0 0% var(--gs-fg));
+  --text-secondary: hsl(0 0% var(--gs-30));
+  --text-tertiary: hsl(0 0% var(--gs-22));
+  --text-on-accent: hsl(0 0% var(--gs-primary-fg));
+
+  /* ── Borders (hairline vs emphasized) ──────────────────────────── */
+  --border-subtle: hsl(0 0% var(--gs-border));
+  --border-strong: hsl(0 0% var(--gs-8));
+
+  /* ── Accent (flat rose brand hue — never a gradient sweep) ─────── */
+  --accent: hsl(0 0% var(--gs-accent));
+  --accent-muted: hsl(0 0% var(--gs-5));
+  --accent-foreground: hsl(0 0% var(--gs-accent-fg));
+
+  /* ── Status colors — consistent 4-level severity scale ─────────── */
+  --status-info: hsl(0 0% var(--gs-30));
+  --status-success: hsl(152 55% 42%);
+  --status-warning: hsl(38 80% 48%);
+  --status-danger: hsl(0 62% 50%);
+
+  /* ── Elevation scale (foundations: raised / floating / modal) ────
+     Cheap box-shadows; no real-time blur. Surfaces are SOLID — never
+     translucent fills for panels/cards. */
+  --elevation-raised:
+    0 1px 2px rgba(0, 0, 0, 0.08);
+  --elevation-floating:
+    0 4px 12px rgba(0, 0, 0, 0.16), 0 1px 2px rgba(0, 0, 0, 0.1);
+  --elevation-modal:
+    0 12px 32px rgba(0, 0, 0, 0.32), 0 2px 6px rgba(0, 0, 0, 0.18);
+
+  /* ── Radius scale (exactly 3 steps — sm 4 / md 8 / lg 12) ─────── */
+  --radius-sm: 0.25rem; /* inputs, small controls */
+  --radius-md: 0.5rem; /* buttons, cards */
+  --radius-lg: 0.75rem; /* modals, large panels */
+
+  /* ── Motion tokens (desktop-ui-motion) ───────────────────────────
+     Enter 150-250ms ease-out; exit FASTER than enter (100-180ms);
+     hover/color shifts 100-150ms; functional UI under 300ms.
+     Animate transform + opacity ONLY. */
+  --motion-fast: 120ms;
+  --motion-base: 200ms;
+  --motion-slow: 300ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* ── Focus ring (accessibility floor) ──────────────────────────── */
+  --focus-ring: hsl(0 0% var(--gs-ring));
+}
+
+/* Press feedback (desktop-ui-motion core pattern) — scale(0.97),
+   150ms ease-out, transform only. */
+.pressable {
+  transition:
+    transform var(--motion-fast) var(--ease-out),
+    background-color var(--motion-fast) var(--ease-standard);
+}
+.pressable:active {
+  transform: scale(0.97);
+}
+
+/* Origin-aware entrances: never scale from 0 (teleport). */
+.enter-anchored {
+  transform: scale(0.95);
+  opacity: 0;
+  transition:
+    transform var(--motion-base) var(--ease-out),
+    opacity var(--motion-base) var(--ease-out);
+}
+.enter-anchored.is-entered {
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* Solid-surface card/panel (replaces translucent bg-*/NN fills). */
+.surface-raised-solid {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elevation-raised);
+}
