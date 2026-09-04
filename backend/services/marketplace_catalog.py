@@ -33,6 +33,11 @@ logger = logging.getLogger(__name__)
 REMOTE_CATALOG_URL = os.environ.get("OTOYIN_CATALOG_URL", "").strip()
 REMOTE_CATALOG_TIMEOUT_S = float(os.environ.get("OTOYIN_CATALOG_TIMEOUT_S", "8"))
 REMOTE_REFRESH_INTERVAL_S = float(os.environ.get("OTOYIN_CATALOG_REFRESH_S", str(24 * 60 * 60)))
+# Background poll tick: how often the startup task checks staleness. The fetch
+# itself only runs when remote_catalog_stale() is true (i.e. the last success is
+# older than REMOTE_REFRESH_INTERVAL_S, or it never happened / last failed), so
+# this is a cheap no-op most ticks and bounds failure retries to once per tick.
+REMOTE_CATALOG_POLL_S = float(os.environ.get("OTOYIN_CATALOG_POLL_S", "3600"))
 
 # Product registry. `id` matches the download pipeline `model_name` for
 # model products. `paid` drives the license gate.
@@ -472,6 +477,21 @@ def remote_catalog_stale(age_s: float = REMOTE_REFRESH_INTERVAL_S) -> bool:
     return bool(REMOTE_CATALOG_URL) and (
         time.monotonic() - _LAST_REMOTE_REFRESH
     ) > age_s
+
+
+def refresh_remote_catalog_if_stale() -> bool:
+    """Refresh the remote catalog only when stale (background-poll entry).
+
+    Cheap when fresh: no network, no lock, ``False`` immediately. Fetches via
+    ``refresh_remote_catalog()`` only when ``remote_catalog_stale()`` says the
+    last successful refresh is older than ``REMOTE_REFRESH_INTERVAL_S`` — or
+    never happened / last failed, since the timestamp only advances on success,
+    so a failure is retried on the next poll tick rather than after a full
+    interval. Returns ``True`` when a fresh catalog was swapped in.
+    """
+    if not remote_catalog_stale():
+        return False
+    return refresh_remote_catalog()
 
 
 # ── Reviews (in-memory, production: use DB) ────────────────────────────

@@ -580,21 +580,24 @@ async def _run_startup(application: FastAPI) -> None:
 
     create_background_task(_bg_refresh_remote_notices())
 
-    # Remote signed catalog (07 Part B): fetch at startup, then refresh on an
-    # interval (default 24h). Offline-first — refresh_remote_catalog() keeps
+    # Remote signed catalog (07 Part B): poll on a short tick (default 1h) and
+    # fetch only when stale (remote_catalog_stale) — the first tick runs
+    # immediately so startup still refreshes, failures retry next tick instead
+    # of after a full interval, and successful refreshes are spaced by
+    # REMOTE_REFRESH_INTERVAL_S (default 24h). Offline-first: the wrapper keeps
     # the bundled catalog on any failure and never raises.
     async def _bg_refresh_remote_catalog() -> None:
         from .services.marketplace_catalog import (
-            REMOTE_REFRESH_INTERVAL_S,
-            refresh_remote_catalog,
+            REMOTE_CATALOG_POLL_S,
+            refresh_remote_catalog_if_stale,
         )
 
         while True:
             try:
-                await asyncio.to_thread(refresh_remote_catalog)
+                await asyncio.to_thread(refresh_remote_catalog_if_stale)
             except Exception:
                 logger.debug("Remote catalog refresh failed", exc_info=True)
-            await asyncio.sleep(REMOTE_REFRESH_INTERVAL_S)
+            await asyncio.sleep(REMOTE_CATALOG_POLL_S)
 
     create_background_task(_bg_refresh_remote_catalog())
     try:

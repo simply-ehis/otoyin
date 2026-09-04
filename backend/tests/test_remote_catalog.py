@@ -8,6 +8,7 @@ the client's embedded public key verifies against. No network, no DB.
 from __future__ import annotations
 
 import json
+import time
 
 import pytest
 
@@ -165,3 +166,43 @@ def test_remote_catalog_stale(mc, monkeypatch):
     )
     assert mc.refresh_remote_catalog() is True
     assert mc.remote_catalog_stale(age_s=3600) is False  # just refreshed
+
+
+def test_refresh_if_stale_is_a_noop_when_fresh(mc, monkeypatch):
+    """Stale-gated poll: a recently refreshed catalog is not re-fetched."""
+    monkeypatch.setattr(mc, "REMOTE_CATALOG_URL", "https://marketplace.test/v1/catalog")
+    monkeypatch.setattr(mc, "_LAST_REMOTE_REFRESH", time.monotonic())
+    calls: list[int] = []
+    monkeypatch.setattr(
+        mc, "refresh_remote_catalog", lambda: calls.append(1) or True
+    )
+
+    assert mc.refresh_remote_catalog_if_stale() is False
+    assert calls == []  # no fetch when fresh
+
+
+def test_refresh_if_stale_fetches_when_stale(mc, monkeypatch):
+    """Stale-gated poll: an expired refresh is retried on the next tick."""
+    monkeypatch.setattr(mc, "REMOTE_CATALOG_URL", "https://marketplace.test/v1/catalog")
+    # Backdate by ~28h (> default 24h threshold) — deterministic regardless of
+    # host uptime, since time.monotonic() is boot-relative.
+    monkeypatch.setattr(mc, "_LAST_REMOTE_REFRESH", time.monotonic() - 100_000)
+    calls: list[int] = []
+    monkeypatch.setattr(
+        mc, "refresh_remote_catalog", lambda: calls.append(1) or True
+    )
+
+    assert mc.refresh_remote_catalog_if_stale() is True
+    assert calls == [1]
+
+
+def test_refresh_if_stale_noop_when_url_unset(mc, monkeypatch):
+    """No configured URL: the poll wrapper is a network-free no-op."""
+    monkeypatch.setattr(mc, "REMOTE_CATALOG_URL", "")
+    calls: list[int] = []
+    monkeypatch.setattr(
+        mc, "refresh_remote_catalog", lambda: calls.append(1) or True
+    )
+
+    assert mc.refresh_remote_catalog_if_stale() is False
+    assert calls == []

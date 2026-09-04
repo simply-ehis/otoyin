@@ -79,7 +79,8 @@ See `marketplace/README.md` for full setup. Short version:
 | `OTOYIN_NOTICES_TIMEOUT_S` | No | `5` | Notices fetch timeout |
 | `OTOYIN_CATALOG_URL` | No | (disabled) | Remote signed catalog endpoint (`GET /v1/catalog` on the marketplace service); when unset the bundled catalog is used |
 | `OTOYIN_CATALOG_TIMEOUT_S` | No | `8` | Catalog fetch timeout |
-| `OTOYIN_CATALOG_REFRESH_S` | No | `86400` | Remote catalog refresh interval in seconds (24h) |
+| `OTOYIN_CATALOG_REFRESH_S` | No | `86400` | Staleness threshold — refresh when the last successful fetch is older than this (24h) |
+| `OTOYIN_CATALOG_POLL_S` | No | `3600` | Background poll tick — checks staleness hourly; fetches only when stale (bounded retry on failure) |
 | `OTOYIN_CLIENT_ID` | No | - | MCP shim client id |
 | `LICENSE_SIGNING_KEY` | No | dev default | HMAC/Ed25519 key for license signing |
 | `FREESOUND_API_KEY` | No | - | Freesound v2 token |

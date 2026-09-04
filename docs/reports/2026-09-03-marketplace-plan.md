@@ -121,7 +121,11 @@ and the public `marketplace/web` feel like one product:
 
 Plan complete. Part B phases 1-2 (**remote signed catalog fetch + verify +
 offline fallback**) are **implemented and tested** (see status note in Part B);
-06 `local_status` is implemented and tested.
+the runtime path is also live: a startup background task polls hourly
+(`OTOYIN_CATALOG_POLL_S`) and refreshes only when the last successful fetch is
+stale (`remote_catalog_stale`, threshold `OTOYIN_CATALOG_REFRESH_S`, default
+24h), so signed catalog updates propagate without an app restart and failed
+fetches retry on the next tick. 06 `local_status` is implemented and tested.
 
 Part C's **per-item state row is now implemented** on the in-app Store
 (`StoreProductCard` + `StoreDetailModal`): products render **owned** (solid
