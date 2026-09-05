@@ -147,7 +147,6 @@ see 06.)
   `com.21labs.app` per RENAME_LOG's deferred build-coordination slice.
 
 ## Fix-everything pass (2026-09-04, user-directed)
-
 - **useGenerationForm ×13 green.** The hook resolves engines from the
   `["modelStatus"]` query cache; tests never seeded it. Seeded a downloaded
   kokoro in the 7 submitting tests (no-engine tests stay unseeded).
@@ -190,3 +189,26 @@ endpoints and 27 unwired pages are that session's backlog, tracked by
 - S1/S4: SSE fallback polling + keepalive alignment.
 - 14: `ui/` primitives need render + interaction tests (zero today).
 - 20: OpenAPI-vs-client drift script (scripted this pass).
+
+## Status update 2026-09-05 (later sessions supersede the proposal list above)
+
+- F1–F4 serverStore rework: DONE (no origin-derived URLs, mode follows URL, remote restore + hint).
+- S1/S4: DONE (REST fallback poll keeps story links; keepalive 15s; S3 audible).
+- 14 ui floor: DONE — 26/26 canonical primitives tested, CI gate blocking.
+- Paddle cutover + Stripe deletion + donations + regional display pricing: DONE.
+- Story portability (.dstf.zip) + backup docs: DONE. Crash reporting pipeline: DONE.
+- i18n: 9 locales registered; ja/zh 123-key backlog; 5 mirrors await human review.
+- Pre-existing failures then open (test_from_db, useGenerationForm) have since been fixed; remaining typecheck tail lives in in-flight slice files (see triage report).
+
+### For the IMPACT_MAP owner (map left untouched — parallel rewrite in flight)
+
+Structural deltas to fold in when convenient:
+
+- **Payments are Paddle-only.** `marketplace_server/paddle.py` (transactions,
+- **Crash reporting (opt-in, no SaaS).** Backend `services/crash_reports.py`
+- **i18n: 9 locales.** `app/src/i18n/index.ts` registers
+- **Story portability.** `export_story_to_zip`/`import_story_from_zip` in
+- **Reliability.** `mark_model_used()` at every inference start;
+- **Regional pricing (display-only).** `app/src/lib/regionCurrency.ts`
+- **Test gates (CI).** Blocking: ui component floor
+- **Deps.** Root `zod ^3.25.76` pin (fixes hoisted-v4 resolver mismatch);
