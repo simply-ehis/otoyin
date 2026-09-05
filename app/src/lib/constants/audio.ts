@@ -69,6 +69,12 @@ export const RECORDING_MIME_TYPE_FALLBACK = "audio/webm";
 /** Alternative high-quality MIME type (WAV) for direct recording when supported. */
 export const RECORDING_MIME_TYPE_WAV = "audio/wav";
 
+/** WebKit (pre-18.4 Safari, old WKWebView) records MP4/AAC only — without
+ * these the chain falls through to a mislabeled default. Order matters:
+ * Opus first where supported, MP4 where it is the only option. */
+export const RECORDING_MIME_TYPE_MP4 = "audio/mp4;codecs=mp4a.40.2";
+export const RECORDING_MIME_TYPE_MP4_PLAIN = "audio/mp4";
+
 /** Recording timeslice (ms) — 0 = single blob on stop (avoids WebKit header bug). */
 export const RECORDING_TIMESLICE_MS = 0;
 

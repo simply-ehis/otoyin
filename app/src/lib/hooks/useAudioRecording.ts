@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	RECORDING_MIME_TYPE,
 	RECORDING_MIME_TYPE_FALLBACK,
+	RECORDING_MIME_TYPE_MP4,
+	RECORDING_MIME_TYPE_MP4_PLAIN,
 	RECORDING_MIME_TYPE_WAV,
 	RECORDING_TIMESLICE_MS,
 } from "@/lib/constants/audio";
@@ -86,14 +88,22 @@ export function useAudioRecording({
 
 			streamRef.current = stream;
 
-			// Build MIME type preference chain: WAV first if requested, then WebM/Opus, then fallback
+			// Build MIME type preference chain: WAV first if requested, then WebM/Opus,
+			// then WebKit MP4/AAC, then plain fallbacks. Never assume opus exists.
 			const mimeTypeChain = preferWav
 				? [
 						RECORDING_MIME_TYPE_WAV,
 						RECORDING_MIME_TYPE,
 						RECORDING_MIME_TYPE_FALLBACK,
+						RECORDING_MIME_TYPE_MP4,
+						RECORDING_MIME_TYPE_MP4_PLAIN,
 					]
-				: [RECORDING_MIME_TYPE, RECORDING_MIME_TYPE_FALLBACK];
+				: [
+						RECORDING_MIME_TYPE,
+						RECORDING_MIME_TYPE_FALLBACK,
+						RECORDING_MIME_TYPE_MP4,
+						RECORDING_MIME_TYPE_MP4_PLAIN,
+					];
 
 			let options: MediaRecorderOptions = { mimeType: mimeTypeChain[0] };
 
@@ -128,8 +138,12 @@ export function useAudioRecording({
 					? (Date.now() - startTimeRef.current) / 1000
 					: undefined;
 
+				// Tag the blob with what the recorder ACTUALLY produced
+				// (recorder.mimeType), not what we requested — on WebKit the
+				// browser may normalize to MP4 even when our chain matched.
 				const recordedBlob = new Blob(chunksRef.current, {
-					type: options.mimeType ?? "audio/webm",
+					type:
+						mediaRecorder.mimeType || options.mimeType || "audio/webm",
 				});
 
 				// Stop all tracks now that we have the data

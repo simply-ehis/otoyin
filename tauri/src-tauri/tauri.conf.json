@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Otoyin Studio",
   "version": "0.1.0",
-  "identifier": "com.21labs.app",
+  "identifier": "com.otoyin.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
@@ -46,7 +46,7 @@
   "app": {
     "macOSPrivateApi": true,
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost http://localhost:*; font-src 'self' data:",
+      "csp": "default-src 'self' blob: data: media:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob: data: media:; connect-src 'self' ipc: http://ipc.localhost http://localhost:*; font-src 'self' data:",
       "capabilities": ["default"]
     },
     "windows": [
@@ -72,9 +72,9 @@
     },
     "updater": {
       "endpoints": [
-        "https://github.com/21-labs/21-labs/releases/latest/download/latest.json"
+        "https://github.com/anomalyco/otoyin/releases/latest/download/latest.json"
       ],
-      "pubkey": "jMxgDJGUeOfS62+WZhrVK2Vo0j5UkOnS1w9QhoP7KX4="
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDNFNzlBNjRDQzFDODc5NTEKUldSUmVjakJUS1o1UHJzbW9YN3hNOUFXMndQUHE0eTc4NWpOVmpheU5FT0Y4QldRdGU2NkV1eE0K"
     }
   }
 }
