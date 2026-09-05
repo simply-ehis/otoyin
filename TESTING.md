@@ -71,6 +71,28 @@ just test-models --only kokoro
 bin/e2e.ps1 -Only kokoro
 ```
 
+### Cross-layer e2e (API + browser)
+
+```powershell
+# API flows over real HTTP (story export/import, dev buy→install,
+# crash toggle→report→clear) — no inference, no network:
+python -m pytest backend/tests/test_e2e_flows.py -q
+
+# Browser critical paths (Playwright, chromium; backend-independent,
+# API mocked at the page level):
+cd app && npx playwright test
+# or: npm run test:e2e --workspace=@otoyin/app
+```
+
+- `backend/tests/test_e2e_flows.py` — real TestClients, temp DBs, wired
+  Ed25519 keys so marketplace-signed licenses verify in the backend.
+- `app/e2e/smoke.spec.ts` — all 31 routes boot with no page exception
+  (this already caught a real bug: the `/api` vite proxy swallowed the
+  `/api-keys` route; fixed by anchoring to `^/api/`).
+- `app/e2e/store.spec.ts`, `app/e2e/settings.spec.ts` — storefront and
+  settings against mocked API responses.
+- CI runs the browser suite in `frontend-e2e` (chromium + trace on failure).
+
 ## Pre-commit Hook
 
 `.githooks/pre-commit` runs on `git commit` (installed by `just setup` or `npm run setup`):

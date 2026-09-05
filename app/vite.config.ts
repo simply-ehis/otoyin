@@ -16,7 +16,9 @@ export default defineConfig({
 		port: 21132,
 		strictPort: false,
 		proxy: {
-			"/api": {
+			// NOTE: anchored so the /api-keys SETTINGS ROUTE is not
+			// swallowed by the API proxy (prefix "/api" also matches it).
+			"^/api/": {
 				target: "http://127.0.0.1:17493",
 				changeOrigin: true,
 				rewrite: (path) => {
