@@ -48,9 +48,12 @@ export interface CheckoutResponse {
 	checkout_url: string;
 	product_id: string;
 	amount_usd: number;
-	tax_amount: number;
-	total_usd: number;
-	tax_included: boolean;
+	// Legacy Stripe-era fields (automatic_tax quotes). Paddle computes tax
+	// on its own checkout page, so the backend omits these — kept optional
+	// so old callers still compile.
+	tax_amount?: number;
+	total_usd?: number;
+	tax_included?: boolean;
 }
 
 export interface RegionResponse {

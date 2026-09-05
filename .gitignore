@@ -1,7 +1,6 @@
 # Dependencies
 node_modules/
 bun.lockb
-package-lock.json
 __pycache__/
 *.py[cod]
 *$py.class
@@ -11,6 +10,8 @@ venv/
 env/
 ENV/
 *.prompt
+# Local dev/test databases (SQLite defaults; prod uses Neon)
+marketplace/*.db
 # Build outputs
 dist/
 build/
@@ -60,10 +61,10 @@ logs/
 # Generated files
 app/openapi.json
 tauri/src-tauri/binaries/*
+tauri/src-tauri/.tauri-updater.key
 tauri/src-tauri/gen/Assets.car
 tauri/src-tauri/gen/di-stefano.icns
 tauri/src-tauri/gen/partial.plist
-tauri/src-tauri/.tauri-updater.key
 tauri/src-tauri/gen/21labs.icns
 tauri/src-tauri/gen/schemas/
 

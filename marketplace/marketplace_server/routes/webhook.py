@@ -107,6 +107,10 @@ async def handle_webhook(request: Request, db: AsyncSession = Depends(get_db)):
 
     if event_type == "adjustment.created" and (data.get("action") or "") == "refund":
         order = await _find_order(db, (data.get("custom_data") or {}).get("order_ref", ""), "")
+        if order is None and data.get("transaction_id"):
+            # Adjustments don't always echo custom_data — fall back to the
+            # original transaction link.
+            order = await _find_order(db, "", data["transaction_id"])
         if order is not None:
             order.status = "refunded"
             await db.commit()

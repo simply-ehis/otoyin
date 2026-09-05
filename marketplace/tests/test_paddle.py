@@ -187,6 +187,36 @@ async def test_webhook_ignores_unknown_events(client, monkeypatch):
     assert resp.json()["status"] == "ignored"
 
 
+async def test_refund_reached_via_transaction_id(client, monkeypatch):
+    """adjustment.created without custom_data still revokes via transaction link."""
+    monkeypatch.setattr(settings, "paddle_api_key", "key")
+    monkeypatch.setattr(settings, "paddle_webhook_secret", "whsec_test")
+    await _seed_product()
+    order_ref = f"otoyin_{uuid.uuid4().hex[:16]}"
+    async with async_session() as db:
+        db.add(
+            Order(
+                order_ref=order_ref,
+                product_id="test-voice",
+                device_id="dev-9",
+                status="paid",
+                amount_usd=19.0,
+                payment_provider="paddle",
+                payment_session_id="txn_test_999",
+            )
+        )
+        await db.commit()
+    payload = {
+        "event_type": "adjustment.created",
+        "data": {"id": "adj_1", "action": "refund", "transaction_id": "txn_test_999"},
+    }
+    raw = json.dumps(payload).encode()
+    resp = await client.post("/v1/webhook", content=raw, headers=_sig_headers(raw, "whsec_test"))
+    assert resp.status_code == 200, resp.text
+    lic = await client.get(f"/v1/webhook/license/{order_ref}")
+    assert lic.status_code == 402
+
+
 async def test_license_pending_is_402(client, monkeypatch):
     monkeypatch.setattr(settings, "paddle_api_key", "key")
     monkeypatch.setattr(settings, "paddle_price_map", {"test-voice": "pri_test"})

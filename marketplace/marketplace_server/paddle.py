@@ -70,11 +70,15 @@ async def create_transaction(
                 },
                 json={
                     "items": [{"price_id": price_id, "quantity": 1}],
-                    **({"customer": {"email": email}} if email else {}),
+                    # No customer_id/address: the transaction is created as
+                    # `draft` and Paddle collects customer details at checkout.
+                    # The API takes no inline customer object — email travels
+                    # in custom_data and our own order row instead.
                     "custom_data": {
                         "order_ref": order_ref,
                         "product_id": product_id,
                         "device_id": device_id,
+                        "email": email,
                     },
                     "collection_mode": "automatic",
                 },
