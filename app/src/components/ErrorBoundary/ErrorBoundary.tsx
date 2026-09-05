@@ -1,4 +1,5 @@
 ﻿import { Component, type ErrorInfo, type ReactNode } from "react";
+import { reportCrashToBackend } from "@/lib/crashReporting";
 import type { StudioError } from "@/lib/errors";
 import { inferStudioError } from "@/lib/errors";
 import { CrashScreen } from "./CrashScreen";
@@ -30,6 +31,9 @@ export class ErrorBoundary extends Component<
 	componentDidCatch(error: Error, info: ErrorInfo): void {
 		console.error("[ErrorBoundary]", error, info.componentStack);
 		this.props.onError?.(error, info);
+		// Opt-in crash report: stored locally only unless the user enabled
+		// reporting in Settings; redacted here and again server-side.
+		reportCrashToBackend(error, info);
 	}
 
 	private handleRetry = (): void => {

@@ -1,4 +1,5 @@
-import { ApiClientCore, formatErrorDetail } from "./clientCore";
+import { formatErrorDetail } from "./clientCore";
+import { CrashesMethods } from "./clientCrashes";
 import type {
 	EffectConfig,
 	HealthCheckResponse,
@@ -11,7 +12,7 @@ import type {
 	VoiceProfileResponse,
 } from "./types";
 
-export class ProfilesMethods extends ApiClientCore {
+export class ProfilesMethods extends CrashesMethods {
 	async getHealth(): Promise<HealthResponse> {
 		return this.request<HealthResponse>("/health");
 	}

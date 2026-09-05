@@ -150,6 +150,26 @@ class Notice(Base):
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(dt.UTC), default=lambda: dt.datetime.now(dt.UTC))
 
 
+class CrashReport(Base):
+    """An opt-in crash report forwarded by an installed desktop app.
+
+    Senders redact emails, API keys, and home paths before sending, and the
+    payload is stored verbatim — never parsed for anything but display.
+    Read access is admin-only (Bearer MARKETPLACE_ADMIN_KEY).
+    """
+
+    __tablename__ = "crash_reports"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    report_id: Mapped[str] = mapped_column(String(64), index=True, default="")
+    layer: Mapped[str] = mapped_column(String(16), default="")  # backend | frontend | rust
+    kind: Mapped[str] = mapped_column(String(128), default="")
+    message: Mapped[str] = mapped_column(Text, default="")
+    stack: Mapped[str] = mapped_column(Text, default="")
+    context: Mapped[str] = mapped_column(Text, default="{}")  # JSON, already scrubbed by sender
+    received_at: Mapped[dt.datetime] = mapped_column(DateTime(dt.UTC), default=lambda: dt.datetime.now(dt.UTC))
+
+
 async def init_db():
     """Create all tables."""
     async with engine.begin() as conn:

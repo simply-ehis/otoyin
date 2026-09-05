@@ -41,6 +41,12 @@ const SECTIONS: { heading: string; body: string[] }[] = [
     ],
   },
   {
+    heading: 'Crash reports (opt-in, off by default)',
+    body: [
+      'If you enable crash reports in Settings → Contact & support, the app records backend exceptions, frontend errors, and Rust panics in a redacted form: emails, API keys, and OS usernames in file paths are stripped before anything is stored. Reports stay on your machine unless remote forwarding is configured, in which case they are sent to our own marketplace service — never to a third-party analytics company. You can view counts, clear the local log, or turn reporting off at any time from the same screen.',
+    ],
+  },
+  {
     heading: 'Your rights — export and deletion',
     body: [
       'Email privacy@otoyin.app from the address you bought with and tell us whether you want a copy of your data or deletion. We reply within 30 days. Deletion removes your orders, licenses, reviews, and wishlist entries from our database; note that already-issued offline licenses on your own machines stop verifying once removed server-side only when the app next checks in.',

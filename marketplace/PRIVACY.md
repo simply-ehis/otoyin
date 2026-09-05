@@ -17,6 +17,7 @@ The public-facing policy lives at `marketplace/web/src/app/privacy/page.tsx`
 | `reviews` | `device_id`, comment text | Product reviews |
 | `wishlists` | `device_id` | Saved items |
 | `products`, `notices` | none | Catalog content |
+| `crash_reports` | scrubbed stack traces (no emails/keys/paths by construction) | Bug fixing; admin-read-only |
 
 Payment card/bank data: held by **Paddle** (Merchant of Record), never in
 our DB. Audio/voices/projects: on-device only, never uploaded.

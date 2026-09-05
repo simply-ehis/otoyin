@@ -1,13 +1,14 @@
 import { CheckCircleIcon, EnvelopeIcon } from "@heroicons/react/24/outline";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { apiClient } from "@/lib/api/client";
+import type { SupportCategory } from "@/lib/api/types";
+import { showStudioErrorToast } from "@/lib/errors";
+import { useSupportRequest } from "@/lib/hooks/useContent";
+import { Banner } from "@/ui/banner";
 import { Button } from "@/ui/button";
 import { Field, Input, Textarea } from "@/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { ScreenHeader } from "@/ui/states";
-import { Banner } from "@/ui/banner";
-import type { SupportCategory } from "@/lib/api/types";
-import { showStudioErrorToast } from "@/lib/errors";
-import { useSupportRequest } from "@/lib/hooks/useContent";
 
 const CATEGORIES: { value: SupportCategory; label: string }[] = [
 	{ value: "bug", label: "Bug report" },
@@ -144,6 +145,83 @@ export function SupportPage() {
 					</Button>
 				</div>
 			</form>
+			<CrashDiagnostics />
 		</div>
+	);
+}
+
+/**
+ * Diagnostics & crash reports: the opt-in toggle (separate from usage
+ * telemetry), local counts, and a clear button. Reports stay on-device
+ * unless forwarding is configured; nothing here sends anything directly.
+ */
+function CrashDiagnostics() {
+	const [status, setStatus] = useState<{
+		enabled: boolean;
+		reports_stored_total: number;
+		reports_forwarded_total: number;
+	} | null>(null);
+	const [busy, setBusy] = useState(false);
+
+	useEffect(() => {
+		apiClient
+			.getCrashStatus()
+			.then((s) => setStatus(s))
+			.catch(() => setStatus(null));
+	}, []);
+
+	const toggle = async (next: boolean) => {
+		setBusy(true);
+		try {
+			setStatus(await apiClient.toggleCrashReporting(next));
+		} catch (err: unknown) {
+			showStudioErrorToast(err);
+		} finally {
+			setBusy(false);
+		}
+	};
+
+	const clear = async () => {
+		setBusy(true);
+		try {
+			await apiClient.clearCrashReports();
+			setStatus(await apiClient.getCrashStatus());
+		} catch (err: unknown) {
+			showStudioErrorToast(err);
+		} finally {
+			setBusy(false);
+		}
+	};
+
+	return (
+		<section aria-label="Diagnostics and crash reports" className="mt-10">
+			<ScreenHeader
+				title="Diagnostics"
+				description="Crash reports help fix bugs. Off by default, separate from usage telemetry. Reports are redacted before they are stored."
+			/>
+			<div className="mt-4 flex flex-wrap items-center gap-3">
+				<Button
+					variant={status?.enabled ? "destructive" : "default"}
+					size="sm"
+					disabled={busy || status === null}
+					onClick={() => void toggle(!(status?.enabled ?? false))}
+				>
+					{status?.enabled ? "Disable crash reports" : "Enable crash reports"}
+				</Button>
+				<Button
+					variant="outline"
+					size="sm"
+					disabled={busy || status === null}
+					onClick={() => void clear()}
+				>
+					Clear local reports
+				</Button>
+				<output className="text-xs text-muted-foreground">
+					{status === null
+						? "Loading status…"
+						: `${status.reports_stored_total} stored locally · ${status.reports_forwarded_total} forwarded`}
+				</output>
+			</div>
+		</section>
 	);
 }
