@@ -51,9 +51,6 @@ jobs:
   frontend-test-floor:
     name: "Frontend: canonical component test floor (prompt 14)"
     runs-on: ubuntu-latest
-    # Advisory until the rebuild closes the gap (16 ui/ components still
-    # untested as of 2026-09-04). Flip to blocking when the floor is met.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
