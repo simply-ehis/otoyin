@@ -11,8 +11,8 @@ import { apiClient } from "./api/client";
 // In production, use the actual marketplace URL
 const isDev = import.meta.env.DEV;
 const MARKETPLACE_URL = isDev ? "/api" : "https://marketplace.21labs.app";
-const LICENSE_POLL_INTERVAL_MS = 3_000;
-const LICENSE_POLL_MAX_ATTEMPTS = 20; // 1 min total polling
+const LICENSE_POLL_INTERVAL_MS = 5_000;
+const LICENSE_POLL_MAX_ATTEMPTS = 60; // 5 min total — covers 3-D Secure/bank redirects
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -141,31 +141,44 @@ class MarketplaceClient {
 		return resp.json();
 	}
 
-	/** Poll for license after checkout. Returns the signed license when ready. */
+	/** Poll for license after checkout. Returns the signed license when ready.
+	 *
+	 * Re-callable with the same orderRef: the backend keeps paid orders
+	 * queryable indefinitely, so a timed-out poll can simply start over —
+	 * no new checkout needed.
+	 */
 	async pollForLicense(orderRef: string): Promise<Record<string, unknown>> {
+		const last = LICENSE_POLL_MAX_ATTEMPTS - 1;
 		for (let i = 0; i < LICENSE_POLL_MAX_ATTEMPTS; i++) {
 			await new Promise((r) => setTimeout(r, LICENSE_POLL_INTERVAL_MS));
+			let resp: Response;
 			try {
-				const resp = await fetch(
+				resp = await fetch(
 					`${this.baseUrl}/v1/webhook/license/${orderRef}`,
 					{
 						signal: AbortSignal.timeout(10_000),
 					},
 				);
-				if (resp.ok) {
-					return resp.json();
-				}
-				// 402 = not paid yet, keep polling
-				if (resp.status !== 402) {
-					throw new Error(`License fetch failed: ${resp.status}`);
-				}
 			} catch (e) {
-				if (i === LICENSE_POLL_MAX_ATTEMPTS - 1) {
+				// Network error — retry while attempts remain.
+				if (i === last) {
 					throw e;
 				}
+				continue;
 			}
+			if (resp.ok) {
+				return resp.json();
+			}
+			if (resp.status === 402 || resp.status >= 500) {
+				// Not paid yet, or transient server error — keep polling.
+				continue;
+			}
+			// Other 4xx: permanent (unknown order, bad request) — fail fast.
+			throw new Error(`License fetch failed: ${resp.status}`);
 		}
-		throw new Error("License not available after timeout — check your email");
+		throw new Error(
+			"Payment not confirmed yet — your order is still open, finish paying in the browser and use Check again.",
+		);
 	}
 
 	// ── License install ────────────────────────────────────────────

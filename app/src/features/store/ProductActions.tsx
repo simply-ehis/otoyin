@@ -64,6 +64,9 @@ export function ProductActions({
 	const [installing, setInstalling] = useState(false);
 	const [confirmDelete, setConfirmDelete] = useState(false);
 	const [checkingOut, setCheckingOut] = useState(false);
+	// A checkout whose poll timed out: the backend order stays queryable,
+	// so the user can re-check the same order instead of paying again.
+	const [pendingOrderRef, setPendingOrderRef] = useState<string | null>(null);
 
 	const handleDownload = async () => {
 		setBusy(true);
@@ -108,6 +111,18 @@ export function ProductActions({
 	};
 
 	// ── Checkout: open system browser → poll for license → auto-install ──
+	const pollAndInstall = async (orderRef: string) => {
+		// Poll for license (user completes payment in browser)
+		const license = await marketplaceClient.pollForLicense(orderRef);
+		// Auto-install the license
+		await marketplaceClient.installLicense(license);
+		await queryClient.invalidateQueries({
+			queryKey: ["marketplace", "entitlements"],
+		});
+		await queryClient.invalidateQueries({ queryKey: ["modelStatus"] });
+		setPendingOrderRef(null);
+	};
+
 	const handleCheckout = async () => {
 		setCheckingOut(true);
 		try {
@@ -117,18 +132,24 @@ export function ProductActions({
 				deviceId,
 				"",
 			);
-			// Open PayProGlobal checkout in system browser
+			// Open Paddle checkout in system browser
 			await openExternalUrl(checkout.checkout_url);
-			// Poll for license (user completes payment in browser)
-			const license = await marketplaceClient.pollForLicense(
-				checkout.order_ref,
-			);
-			// Auto-install the license
-			await marketplaceClient.installLicense(license);
-			await queryClient.invalidateQueries({
-				queryKey: ["marketplace", "entitlements"],
-			});
-			await queryClient.invalidateQueries({ queryKey: ["modelStatus"] });
+			setPendingOrderRef(checkout.order_ref);
+			await pollAndInstall(checkout.order_ref);
+		} catch (err) {
+			showStudioErrorToast(err);
+		} finally {
+			setCheckingOut(false);
+		}
+	};
+
+	const handleRecheck = async () => {
+		if (!pendingOrderRef) {
+			return;
+		}
+		setCheckingOut(true);
+		try {
+			await pollAndInstall(pendingOrderRef);
 		} catch (err) {
 			showStudioErrorToast(err);
 		} finally {
@@ -241,7 +262,8 @@ export function ProductActions({
 						</Button>
 					</div>
 					<p className="text-xs text-muted-foreground">
-						Need a license? Buy below — you'll get a JSON file to paste here.
+						Buying installs the license automatically. Paste one here only
+						if support sent you license JSON directly.
 					</p>
 				</div>
 			) : isDownloading ? (
@@ -290,6 +312,29 @@ export function ProductActions({
 							`Buy $${product.price_usd} — Get license`
 						)}
 					</Button>
+					{pendingOrderRef ? (
+						<>
+							<Button
+								size="sm"
+								variant="outline"
+								className="w-full"
+								onClick={handleRecheck}
+								disabled={checkingOut}
+							>
+								{checkingOut ? (
+									<>
+										<Spinner size="xs" /> Checking…
+									</>
+								) : (
+									"Check again — I already paid"
+								)}
+							</Button>
+							<p className="text-xs text-muted-foreground">
+								Paid but landed back here? Your order is still open —
+								checking again picks up the license, no new payment.
+							</p>
+						</>
+					) : null}
 				</div>
 			) : (
 				<div className="space-y-2">
