@@ -954,22 +954,43 @@ export class StoriesAMethods extends ChannelsMethods {
 	}
 
 	async exportStoryAudio(storyId: string): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/stories/${storyId}/export-audio`;
-		const response = await fetch(url);
+		const res = await this.fetchWithAuth(
+			`/stories/${storyId}/export-audio`,
+			{ method: "GET" },
+			120_000,
+		);
+		return res.blob();
+	}
 
-		if (!response.ok) {
-			const error = await response.json().catch(() => ({
-				detail: response.statusText,
-			}));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
+	async exportStory(storyId: string): Promise<{ blob: Blob; filename: string }> {
+		const res = await this.fetchWithAuth(
+			`/stories/${storyId}/export`,
+			{ method: "GET" },
+			120_000,
+		);
+		const blob = await res.blob();
+		const disposition = res.headers.get("Content-Disposition") ?? "";
+		const match = /filename="([^"]+)"/.exec(disposition);
+		return { blob, filename: match?.[1] ?? `story-${storyId}.dstf.zip` };
+	}
 
-		return response.blob();
+	async importStory(file: File): Promise<{
+		id: string;
+		name: string;
+		items: number;
+		generations: number;
+		profiles_reused: number;
+		profiles_imported: number;
+		message: string;
+	}> {
+		const formData = new FormData();
+		formData.append("file", file);
+		const res = await this.fetchWithAuth(
+			"/stories/import",
+			{ method: "POST", body: formData },
+			600_000,
+		);
+		return res.json();
 	}
 
 	async dspCapabilities(): Promise<{

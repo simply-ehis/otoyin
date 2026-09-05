@@ -2,21 +2,24 @@
 
 import io
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
-from .. import database, models
+from .. import config, database, models
 from ..database import get_db
 from ..errors import (
     ERR_EMPTY_STORY,
+    ERR_EXPORT_FAILED,
+    ERR_FILE_TOO_LARGE_MB,
+    ERR_IMPORT_FAILED,
     ERR_INVALID_REQUEST,
     ERR_INVALID_TIMECODE,
     ERR_STORY_EXPORT_FAILED,
     ERR_STORY_ITEM_NOT_FOUND,
     ERR_STORY_NOT_FOUND,
 )
-from ..services import stories
+from ..services import export_import, stories
 from ..utils.http import safe_content_disposition
 
 router = APIRouter()
@@ -320,3 +323,59 @@ async def export_story_audio(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=ERR_STORY_EXPORT_FAILED) from e
+
+
+@router.get("/stories/{story_id}/export")
+async def export_story_archive(
+    story_id: str,
+    db: Session = Depends(get_db),
+):
+    """Export a story as a portable .dstf.zip archive.
+
+    Self-contained: story record + items + generations + versions + audio
+    + embedded voice profiles. Reimport with POST /stories/import.
+    """
+    story = db.query(database.Story).filter_by(id=story_id).first()
+    if not story:
+        raise HTTPException(status_code=404, detail=ERR_STORY_NOT_FOUND)
+
+    try:
+        zip_bytes = export_import.export_story_to_zip(story_id, db)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=ERR_EXPORT_FAILED) from e
+
+    safe_name = "".join(c for c in story.name if c.isalnum() or c in (" ", "-", "_")).strip()
+    if not safe_name:
+        safe_name = "story"
+    filename = f"story-{safe_name}.dstf.zip"
+
+    return StreamingResponse(
+        io.BytesIO(zip_bytes),
+        media_type="application/zip",
+        headers={"Content-Disposition": safe_content_disposition("attachment", filename)},
+    )
+
+
+@router.post("/stories/import")
+async def import_story_archive(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    """Import a story from a .dstf.zip archive.
+
+    Every record gets a new local ID (no collisions); voice profiles match
+    by name first and only then import the embedded copy.
+    """
+    content = await file.read()
+
+    if len(content) > config.HISTORY_IMPORT_MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail=ERR_FILE_TOO_LARGE_MB)
+
+    try:
+        return await export_import.import_story_from_zip(content, db)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=ERR_IMPORT_FAILED) from e

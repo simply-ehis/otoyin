@@ -1,8 +1,9 @@
 """
-Voice profile export/import module.
+Voice profile / generation / story export/import module.
 
-Handles exporting profiles to ZIP archives and importing them back.
-Also handles exporting individual generations.
+Handles exporting profiles, generations, and stories to ZIP archives and
+importing them back. Archives use the ``.dstf.zip`` family and share the
+zip-bomb limits and traversal-safe filename rules below.
 """
 
 from __future__ import annotations
@@ -21,6 +22,8 @@ from ..database import (
     Generation as DBGeneration,
     GenerationVersion as DBGenerationVersion,
     ProfileSample as DBProfileSample,
+    Story as DBStory,
+    StoryItem as DBStoryItem,
     VoiceProfile as DBVoiceProfile,
 )
 from ..models import VoiceProfileCreate, VoiceProfileResponse
@@ -519,3 +522,467 @@ async def import_generation_from_zip(file_bytes: bytes, db: Session) -> dict:
         if isinstance(e, ValueError):
             raise
         raise ValueError(f"Error importing generation: {e!s}") from e
+
+
+# ── Story export / import ─────────────────────────────────────────────
+#
+# Scope decision (deliberate, not accidental): story archives are
+# SELF-CONTAINED. Referenced voice profiles are embedded inline (record +
+# samples + avatar) so a story renders on a machine that has never seen
+# that voice — a name reference alone would strand the project. Cost: bigger
+# archives when voices are large; accepted, audio dominates anyway.
+#
+# Import regenerates every ID (new uuids) so archives never collide with
+# the target machine. Profiles match by name first (reuse) and only then
+# import the embedded copy, so re-importing the same story doesn't clone
+# voices each time.
+
+
+def _assert_safe_archive_audio(path: str) -> str:
+    """Validate an audio member path inside a story archive.
+
+    Returns the path unchanged. Only ``audio/`` and ``profiles/`` prefixes
+    with plain ``.wav`` basenames are allowed — rejects traversal,
+    absolute paths, and separators outright.
+    """
+    if not path.startswith(("audio/", "profiles/")):
+        raise ValueError(f"Archive path outside audio/profiles: {path}")
+    name = path.rsplit("/", 1)[-1]
+    if not name.endswith(".wav") or Path(name).name != name or ".." in Path(path).parts:
+        raise ValueError(f"Invalid archive audio path: {path}")
+    return path
+
+
+def _check_story_zip_bounds(zip_file: zipfile.ZipFile) -> list[str]:
+    """Shared zip-bomb limits for story archives. Returns the namelist."""
+    namelist = zip_file.namelist()
+    if "manifest.json" not in namelist:
+        raise ValueError("ZIP archive missing manifest.json")
+    infos = zip_file.infolist()
+    if len(infos) > MAX_ZIP_MEMBERS:
+        raise ValueError(f"ZIP has too many entries ({len(infos)} > {MAX_ZIP_MEMBERS})")
+    total_uncompressed = sum(i.file_size for i in infos)
+    if total_uncompressed > MAX_ZIP_UNCOMPRESSED:
+        raise ValueError(
+            f"ZIP expands to {total_uncompressed // (1024 * 1024)} MB "
+            f"(limit {MAX_ZIP_UNCOMPRESSED // (1024 * 1024)} MB)"
+        )
+    return namelist
+
+
+def export_story_to_zip(story_id: str, db: Session) -> bytes:
+    """Export a story (items + generations + versions + voices) to a ZIP.
+
+    Voice profiles referenced by the story's generations are embedded
+    inline so the archive is fully self-contained. Audio files that are
+    missing on disk are skipped with a warning; the export fails only
+    when the story would contain zero audio files at all.
+    """
+    import uuid as _uuid
+
+    story = db.query(DBStory).filter_by(id=story_id).first()
+    if not story:
+        raise ValueError(f"Story {story_id} not found")
+
+    items = (
+        db.query(DBStoryItem).filter_by(story_id=story_id).order_by(DBStoryItem.track, DBStoryItem.start_time_ms).all()
+    )
+
+    generation_ids = sorted({i.generation_id for i in items})
+    generations = (
+        {g.id: g for g in db.query(DBGeneration).filter(DBGeneration.id.in_(generation_ids)).all()}
+        if generation_ids
+        else {}
+    )
+    missing_gens = [gid for gid in generation_ids if gid not in generations]
+    if missing_gens:
+        raise ValueError(f"Story references missing generations: {', '.join(missing_gens[:3])}")
+
+    versions_by_gen: dict[str, list] = {}
+    for g in generations.values():
+        versions_by_gen[g.id] = (
+            db.query(DBGenerationVersion).filter_by(generation_id=g.id).order_by(DBGenerationVersion.created_at).all()
+        )
+
+    profile_ids = sorted({g.profile_id for g in generations.values() if g.profile_id})
+    profiles = (
+        {p.id: p for p in db.query(DBVoiceProfile).filter(DBVoiceProfile.id.in_(profile_ids)).all()}
+        if profile_ids
+        else {}
+    )
+    missing_profiles = [pid for pid in profile_ids if pid not in profiles]
+    if missing_profiles:
+        raise ValueError(f"Story references missing voice profiles: {', '.join(missing_profiles[:3])}")
+
+    zip_buffer = io.BytesIO()
+    audio_included = 0
+
+    def _add_audio(db_path: str | None, arc_name: str) -> str | None:
+        """Resolve + write one audio file. Returns arc name or None if skipped."""
+        nonlocal audio_included
+        if not db_path:
+            return None
+        resolved = config.resolve_storage_path(db_path)
+        if resolved is None or not resolved.exists():
+            logger.warning("Skipping missing audio file in story export: %s", db_path)
+            return None
+        zip_file.write(resolved, arc_name)
+        audio_included += 1
+        return arc_name
+
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        manifest_versions: dict[str, dict] = {}
+        for gen_id, gen in generations.items():
+            for v in versions_by_gen.get(gen_id, []):
+                arc = f"audio/{gen_id}-{v.id}.wav"
+                stored = _add_audio(v.audio_path, arc)
+                effects_chain = None
+                if v.effects_chain:
+                    try:
+                        effects_chain = json.loads(v.effects_chain)
+                    except (json.JSONDecodeError, TypeError):
+                        effects_chain = None
+                manifest_versions[v.id] = {
+                    "generation": gen_id,
+                    "label": v.label,
+                    "is_default": bool(v.is_default),
+                    "effects_chain": effects_chain,
+                    "audio": stored,
+                }
+            main_arc = f"audio/{gen_id}.wav"
+            main_stored = _add_audio(gen.audio_path, main_arc)
+            if main_stored is None and not manifest_versions:
+                logger.warning("Generation %s has no audio on disk", gen_id)
+
+        manifest_profiles: dict[str, dict] = {}
+        for prof_id, prof in profiles.items():
+            samples = db.query(DBProfileSample).filter_by(profile_id=prof_id).all()
+            sample_entries = []
+            avatar_arc = None
+            if prof.avatar_path:
+                avatar_path = config.resolve_storage_path(prof.avatar_path)
+                if avatar_path is not None and avatar_path.exists():
+                    avatar_arc = f"profiles/{prof_id}/avatar{avatar_path.suffix}"
+                    zip_file.write(avatar_path, avatar_arc)
+            for sample in samples:
+                sample_path = config.resolve_storage_path(sample.audio_path)
+                if sample_path is None or not sample_path.exists():
+                    logger.warning("Skipping missing sample in story export: %s", sample.audio_path)
+                    continue
+                sample_arc = f"profiles/{prof_id}/samples/{sample_path.name}"
+                zip_file.write(sample_path, sample_arc)
+                sample_entries.append({"file": sample_arc, "reference_text": sample.reference_text})
+                audio_included += 1
+            voice_attributes = None
+            if prof.voice_attributes:
+                try:
+                    voice_attributes = json.loads(prof.voice_attributes)
+                except (json.JSONDecodeError, TypeError):
+                    voice_attributes = None
+            manifest_profiles[prof_id] = {
+                "name": prof.name,
+                "description": prof.description,
+                "language": prof.language,
+                "voice_type": prof.voice_type or "cloned",
+                "preset_engine": prof.preset_engine,
+                "preset_voice_id": prof.preset_voice_id,
+                "design_prompt": prof.design_prompt,
+                "voice_attributes": voice_attributes,
+                "default_engine": prof.default_engine,
+                "personality": prof.personality,
+                "effects_chain": prof.effects_chain,
+                "avatar": avatar_arc,
+                "samples": sample_entries,
+            }
+
+        manifest_generations: dict[str, dict] = {}
+        for gen_id, gen in generations.items():
+            manifest_generations[gen_id] = {
+                "profile": gen.profile_id,
+                "text": gen.text,
+                "language": gen.language,
+                "engine": gen.engine,
+                "model_size": gen.model_size,
+                "seed": gen.seed,
+                "temperature": gen.temperature,
+                "instruct": gen.instruct,
+                "duration": gen.duration,
+                "source": gen.source,
+                "use_cloud": bool(gen.use_cloud),
+                "voice_clean": bool(gen.voice_clean),
+                "audio": f"audio/{gen_id}.wav",
+                "versions": [v.id for v in versions_by_gen.get(gen_id, [])],
+            }
+
+        manifest_items = [
+            {
+                "generation": i.generation_id,
+                "version": i.version_id,
+                "track": i.track,
+                "start_time_ms": i.start_time_ms,
+                "trim_start_ms": i.trim_start_ms,
+                "trim_end_ms": i.trim_end_ms,
+                "volume": i.volume,
+                "fade_in_ms": i.fade_in_ms,
+                "fade_out_ms": i.fade_out_ms,
+                "gain_db": i.gain_db,
+                "pan": i.pan,
+            }
+            for i in items
+        ]
+
+        manifest = {
+            "version": "1.0",
+            "export_id": f"story-{_uuid.uuid4().hex[:8]}",
+            "story": {"name": story.name, "description": story.description},
+            "items": manifest_items,
+            "generations": manifest_generations,
+            "versions": manifest_versions,
+            "profiles": manifest_profiles,
+        }
+        zip_file.writestr("manifest.json", json.dumps(manifest, indent=2))
+
+    if audio_included == 0:
+        raise ValueError(f"Story {story_id} has no audio files on disk to export")
+
+    zip_buffer.seek(0)
+    return zip_buffer.read()
+
+
+async def import_story_from_zip(file_bytes: bytes, db: Session) -> dict:
+    """Import a story archive: new IDs everywhere, voices matched by name.
+
+    Returns ``{"id", "name", "items", "generations", "profiles_reused",
+    "profiles_imported"}``. Raises ValueError on any invalid archive.
+    """
+    import shutil
+    import tempfile
+    import uuid as _uuid
+    from datetime import datetime
+
+    from ..models import VoiceProfileCreate
+
+    zip_buffer = io.BytesIO(file_bytes)
+
+    try:
+        with zipfile.ZipFile(zip_buffer, "r") as zip_file:
+            namelist = _check_story_zip_bounds(zip_file)
+
+            try:
+                manifest_data = json.loads(zip_file.read("manifest.json"))
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Invalid JSON in archive: {e}") from e
+            if manifest_data.get("version") not in ("1.0", 1):
+                raise ValueError("Unsupported story archive version")
+            if "story" not in manifest_data or not isinstance(manifest_data["story"], dict):
+                raise ValueError("Invalid manifest.json: missing story")
+
+            story_data = manifest_data["story"]
+            items_data = manifest_data.get("items", [])
+            generations_data = manifest_data.get("generations", {})
+            versions_data = manifest_data.get("versions", {})
+            profiles_data = manifest_data.get("profiles", {})
+            if not isinstance(items_data, list) or not items_data:
+                raise ValueError("Story archive has no items")
+
+            # Every referenced audio member must exist and be traversal-safe.
+            referenced_audio: set[str] = set()
+            for gen in generations_data.values():
+                if gen.get("audio"):
+                    referenced_audio.add(gen["audio"])
+            for ver in versions_data.values():
+                if ver.get("audio"):
+                    referenced_audio.add(ver["audio"])
+            for prof in profiles_data.values():
+                if prof.get("avatar"):
+                    referenced_audio.add(prof["avatar"])
+                for sample in prof.get("samples", []):
+                    referenced_audio.add(sample["file"])
+            archive_set = set(namelist)
+            for arc in referenced_audio:
+                _assert_safe_archive_audio(arc)
+                if arc not in archive_set:
+                    raise ValueError(f"Archive manifest references missing file: {arc}")
+
+            # ── Profiles: reuse by name, else import embedded copy ──
+            profile_id_map: dict[str, str] = {}
+            profiles_reused = 0
+            profiles_imported = 0
+            for prof_key, prof in profiles_data.items():
+                existing = db.query(DBVoiceProfile).filter_by(name=prof.get("name", "")).first()
+                if existing:
+                    profile_id_map[prof_key] = existing.id
+                    profiles_reused += 1
+                    continue
+                unique_name = _get_unique_profile_name(prof.get("name") or "Imported Voice", db)
+                voice_attributes = prof.get("voice_attributes")
+                if isinstance(voice_attributes, str):
+                    try:
+                        voice_attributes = json.loads(voice_attributes)
+                    except (json.JSONDecodeError, TypeError):
+                        voice_attributes = None
+                new_profile = await create_profile(
+                    VoiceProfileCreate(
+                        name=unique_name,
+                        description=prof.get("description"),
+                        language=prof.get("language") or "en",
+                        voice_type=prof.get("voice_type") or "cloned",
+                        preset_engine=prof.get("preset_engine"),
+                        preset_voice_id=prof.get("preset_voice_id"),
+                        design_prompt=prof.get("design_prompt"),
+                        voice_attributes=voice_attributes,
+                        default_engine=prof.get("default_engine"),
+                        personality=prof.get("personality"),
+                    ),
+                    db,
+                )
+                if prof.get("effects_chain"):
+                    db.query(DBVoiceProfile).filter_by(id=new_profile.id).update(
+                        {"effects_chain": prof["effects_chain"]}
+                    )
+                    db.commit()
+                # Samples (cloned voices). Preset/designed voices have none.
+                for sample in prof.get("samples", []):
+                    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                        tmp.write(zip_file.read(sample["file"]))
+                        tmp_path = tmp.name
+                    try:
+                        await add_profile_sample(new_profile.id, tmp_path, sample.get("reference_text", ""), db)
+                    finally:
+                        Path(tmp_path).unlink(missing_ok=True)
+                # Avatar (non-fatal, mirrors import_profile_from_zip).
+                if prof.get("avatar"):
+                    try:
+                        with tempfile.NamedTemporaryFile(suffix=Path(prof["avatar"]).suffix, delete=False) as tmp:
+                            tmp.write(zip_file.read(prof["avatar"]))
+                            tmp_path = tmp.name
+                        try:
+                            from .profiles import upload_avatar
+
+                            await upload_avatar(new_profile.id, tmp_path, db)
+                        finally:
+                            Path(tmp_path).unlink(missing_ok=True)
+                    except Exception:
+                        logger.debug("Story avatar import failed (non-fatal)", exc_info=True)
+                profile_id_map[prof_key] = new_profile.id
+                profiles_imported += 1
+
+            # ── Generations + versions (new IDs, audio restored) ──
+            generations_dir = config.get_generations_dir()
+            generations_dir.mkdir(parents=True, exist_ok=True)
+            generation_id_map: dict[str, str] = {}
+            version_id_map: dict[str, str] = {}
+            for gen_key, gen in generations_data.items():
+                if gen.get("profile") not in profile_id_map:
+                    raise ValueError(f"Generation references unknown profile: {gen.get('profile')}")
+                new_gen_id = str(_uuid.uuid4())
+                with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                    tmp.write(zip_file.read(gen["audio"]))
+                    tmp_path = tmp.name
+                try:
+                    audio_dest = generations_dir / f"{new_gen_id}.wav"
+                    shutil.copy(tmp_path, audio_dest)
+                finally:
+                    Path(tmp_path).unlink(missing_ok=True)
+                db.add(
+                    DBGeneration(
+                        id=new_gen_id,
+                        profile_id=profile_id_map[gen["profile"]],
+                        text=gen.get("text", ""),
+                        language=gen.get("language") or "en",
+                        audio_path=config.to_storage_path(audio_dest),
+                        duration=gen.get("duration"),
+                        seed=gen.get("seed"),
+                        instruct=gen.get("instruct"),
+                        engine=gen.get("engine") or "",
+                        model_size=gen.get("model_size"),
+                        temperature=gen.get("temperature"),
+                        source=gen.get("source") or "manual",
+                        use_cloud=bool(gen.get("use_cloud")),
+                        voice_clean=bool(gen.get("voice_clean")),
+                        created_at=datetime.now(UTC),
+                    )
+                )
+                generation_id_map[gen_key] = new_gen_id
+                for ver_key in gen.get("versions", []):
+                    ver = versions_data.get(ver_key)
+                    if ver is None:
+                        raise ValueError(f"Generation references unknown version: {ver_key}")
+                    new_ver_id = str(_uuid.uuid4())
+                    effects_chain = ver.get("effects_chain")
+                    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                        if ver.get("audio"):
+                            tmp.write(zip_file.read(ver["audio"]))
+                        tmp_path = tmp.name
+                    try:
+                        ver_dest = generations_dir / f"{new_ver_id}.wav"
+                        shutil.copy(tmp_path, ver_dest)
+                    finally:
+                        Path(tmp_path).unlink(missing_ok=True)
+                    db.add(
+                        DBGenerationVersion(
+                            id=new_ver_id,
+                            generation_id=new_gen_id,
+                            label=ver.get("label") or "take",
+                            audio_path=config.to_storage_path(ver_dest),
+                            effects_chain=json.dumps(effects_chain) if effects_chain is not None else None,
+                            is_default=bool(ver.get("is_default")),
+                        )
+                    )
+                    version_id_map[ver_key] = new_ver_id
+            db.commit()
+
+            # ── Story + items (remapped IDs) ──
+            new_story_id = str(_uuid.uuid4())
+            db.add(
+                DBStory(
+                    id=new_story_id,
+                    name=story_data.get("name") or "Imported Story",
+                    description=story_data.get("description"),
+                    created_at=datetime.now(UTC),
+                    updated_at=datetime.now(UTC),
+                )
+            )
+            item_count = 0
+            for item in items_data:
+                if item.get("generation") not in generation_id_map:
+                    raise ValueError(f"Item references unknown generation: {item.get('generation')}")
+                version_ref = item.get("version")
+                if version_ref is not None and version_ref not in version_id_map:
+                    raise ValueError(f"Item references unknown version: {version_ref}")
+                db.add(
+                    DBStoryItem(
+                        id=str(_uuid.uuid4()),
+                        story_id=new_story_id,
+                        generation_id=generation_id_map[item["generation"]],
+                        version_id=version_id_map.get(version_ref) if version_ref else None,
+                        start_time_ms=int(item.get("start_time_ms") or 0),
+                        track=int(item.get("track") or 0),
+                        trim_start_ms=int(item.get("trim_start_ms") or 0),
+                        trim_end_ms=int(item.get("trim_end_ms") or 0),
+                        volume=float(item.get("volume", 1.0)),
+                        fade_in_ms=int(item.get("fade_in_ms") or 0),
+                        fade_out_ms=int(item.get("fade_out_ms") or 0),
+                        gain_db=float(item.get("gain_db") or 0.0),
+                        pan=float(item.get("pan") or 0.0),
+                    )
+                )
+                item_count += 1
+            db.commit()
+
+            return {
+                "id": new_story_id,
+                "name": story_data.get("name") or "Imported Story",
+                "items": item_count,
+                "generations": len(generation_id_map),
+                "profiles_reused": profiles_reused,
+                "profiles_imported": profiles_imported,
+                "message": f"Story imported successfully ({item_count} items, {len(generation_id_map)} clips)",
+            }
+
+    except zipfile.BadZipFile as exc:
+        raise ValueError("Invalid ZIP file") from exc
+    except Exception as e:
+        if isinstance(e, ValueError):
+            raise
+        raise ValueError(f"Error importing story: {e!s}") from e

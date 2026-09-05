@@ -1,6 +1,6 @@
 # Deployment & Setup
 
-**Updated:** 2026-09-04 (Paddle cutover — Stripe/PayProGlobal removed, lockfile committed, CI on `npm ci`).
+**Updated:** 2026-09-04 (crash reporting — first-party opt-in pipeline, no SaaS; Paddle cutover; lockfile committed, CI on `npm ci`).
 
 Three deployable units, documented separately:
 
@@ -88,6 +88,8 @@ See `marketplace/README.md` for full setup. Short version:
 | `OTOYIN_LOG_FORMAT` | No | - | Log format override |
 | `OTOYIN_NOTICES_URL` | No | (disabled) | Remote notices endpoint (`GET /v1/notices` on the marketplace service) |
 | `OTOYIN_NOTICES_TIMEOUT_S` | No | `5` | Notices fetch timeout |
+| `OTOYIN_CRASH_URL` | No | (disabled) | Crash-report forward target (`POST /v1/crashes` on the marketplace service); local log works regardless |
+| `OTOYIN_CRASH_TIMEOUT_S` | No | `5` | Crash forward timeout |
 | `OTOYIN_CATALOG_URL` | No | (disabled) | Remote signed catalog endpoint (`GET /v1/catalog` on the marketplace service); when unset the bundled catalog is used |
 | `OTOYIN_CATALOG_TIMEOUT_S` | No | `8` | Catalog fetch timeout |
 | `OTOYIN_CATALOG_REFRESH_S` | No | `86400` | Staleness threshold — refresh when the last successful fetch is older than this (24h) |
@@ -125,6 +127,28 @@ just dev-web           # backend + browser variant (app workspace)
 
 No bun, no pnpm anywhere in the instructions. If you see one in a doc, it's
 stale — report it.
+
+## Backup (whole data directory + database)
+
+Two supported paths — pick per need:
+
+- **Single story, portable archive (UI: Stories → `···` → Export
+  (.dstf.zip), header Import button):** `GET /stories/{id}/export`
+  bundles the story record, items, generations, versions, audio files, and
+  embedded voice profiles (self-contained by design). `POST
+  /stories/import` restores with fresh IDs (no collisions); voices match
+  by name first, then import the embedded copy. Use this to move work
+  between machines.
+- **Peace-of-mind full backup (manual):** stop the app, then copy these
+  together — they are only consistent as a pair:
+  - the data directory (`data/` next to the backend by default;
+    `backend/config.py:get_data_dir()` is authoritative) — audio,
+    profiles, generations, and the `21labs.db` SQLite file inside it;
+  - `OTOYIN_MODELS_DIR` too if set (model weights live outside `data/`
+    when overridden; otherwise they are cache-redownloadable, not precious).
+  - Restore = put both back in the same locations before starting the app.
+  - Never restore the DB without its data dir (audio paths dangle) or
+    vice versa (records point nowhere).
 
 ## Migration note (what moved where)
 
