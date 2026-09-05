@@ -25,6 +25,7 @@
 - `GET /v1/catalog` — signed product catalog (the desktop app merges this
   remotely; see prompt 07 plan)
 - `POST /v1/checkout` · `GET /v1/webhook/license/{order_ref}` — Paddle checkout + license
+- `POST /v1/checkout/donate` — custom-amount donations ($1–$10,000, non-catalog Paddle pricing, no license minted)
 - `POST /v1/crashes` · `GET /v1/crashes/admin` (Bearer `MARKETPLACE_ADMIN_KEY`) — opt-in crash ingest
 - `GET /v1/notices` — push-style announcements polled by the app on launch
   (offline-first; see `docs/knowledge/77-notifications.md`)

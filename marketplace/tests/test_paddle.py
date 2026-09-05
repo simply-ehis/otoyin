@@ -14,7 +14,7 @@ import uuid
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 
 from marketplace_server import paddle
 from marketplace_server.app import app
@@ -215,6 +215,89 @@ async def test_refund_reached_via_transaction_id(client, monkeypatch):
     assert resp.status_code == 200, resp.text
     lic = await client.get(f"/v1/webhook/license/{order_ref}")
     assert lic.status_code == 402
+
+
+async def test_donate_dev_fulfills_without_license(client, monkeypatch):
+    monkeypatch.setattr(settings, "paddle_api_key", "")
+    resp = await client.post(
+        "/v1/checkout/donate",
+        json={"device_id": "dev-1", "email": "", "amount_usd": 25},
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["donation"] is True
+    assert body["amount_usd"] == 25.0
+    assert body["order_ref"].startswith("otoyin_")
+
+    lic = await client.get(f"/v1/webhook/license/{body['order_ref']}")
+    assert lic.status_code == 200, lic.text
+    assert lic.json()["donated"] is True
+    # No license row minted for a donation.
+    async with async_session() as db:
+        from marketplace_server.models import License
+
+        assert (await db.execute(select(License))).scalars().all() == []
+
+
+async def test_donate_rejects_bad_amounts(client, monkeypatch):
+    monkeypatch.setattr(settings, "paddle_api_key", "")
+    for bad in (0, -5, 0.5, 10000.01):
+        resp = await client.post(
+            "/v1/checkout/donate",
+            json={"device_id": "d", "email": "", "amount_usd": bad},
+        )
+        assert resp.status_code == 400, bad
+        assert resp.json()["detail"]["code"] == "bad_amount"
+
+
+async def test_donate_pending_is_402(client, monkeypatch):
+    monkeypatch.setattr(settings, "paddle_api_key", "key")
+    order_ref = f"otoyin_{uuid.uuid4().hex[:16]}"
+    async with async_session() as db:
+        db.add(
+            Order(
+                order_ref=order_ref,
+                product_id="donation",
+                device_id="d",
+                status="pending",
+                amount_usd=10.0,
+                payment_provider="paddle",
+            )
+        )
+        await db.commit()
+    lic = await client.get(f"/v1/webhook/license/{order_ref}")
+    assert lic.status_code == 402
+
+
+async def test_webhook_fulfills_donation_without_license(client, monkeypatch):
+    monkeypatch.setattr(settings, "paddle_api_key", "key")
+    monkeypatch.setattr(settings, "paddle_webhook_secret", "whsec_test")
+    order_ref = f"otoyin_{uuid.uuid4().hex[:16]}"
+    async with async_session() as db:
+        db.add(
+            Order(
+                order_ref=order_ref,
+                product_id="donation",
+                device_id="dev-2",
+                status="pending",
+                amount_usd=10.0,
+                payment_provider="paddle",
+            )
+        )
+        await db.commit()
+    payload = {
+        "event_type": "transaction.completed",
+        "data": {
+            "id": "txn_donate_1",
+            "custom_data": {"order_ref": order_ref, "product_id": "donation", "device_id": "dev-2"},
+        },
+    }
+    raw = json.dumps(payload).encode()
+    resp = await client.post("/v1/webhook", content=raw, headers=_sig_headers(raw, "whsec_test"))
+    assert resp.status_code == 200, resp.text
+    lic = await client.get(f"/v1/webhook/license/{order_ref}")
+    assert lic.status_code == 200
+    assert lic.json() == {"donated": True, "order_ref": order_ref, "amount_usd": 10.0}
 
 
 async def test_license_pending_is_402(client, monkeypatch):

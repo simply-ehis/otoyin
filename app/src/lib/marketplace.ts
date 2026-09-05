@@ -145,7 +145,8 @@ class MarketplaceClient {
 	 *
 	 * Re-callable with the same orderRef: the backend keeps paid orders
 	 * queryable indefinitely, so a timed-out poll can simply start over —
-	 * no new checkout needed.
+	 * no new checkout needed. For donations the resolved payload carries
+	 * `{donated: true}` instead of a license.
 	 */
 	async pollForLicense(orderRef: string): Promise<Record<string, unknown>> {
 		const last = LICENSE_POLL_MAX_ATTEMPTS - 1;
@@ -186,6 +187,36 @@ class MarketplaceClient {
 	/** Install a signed license into the local backend via existing IPC. */
 	async installLicense(signedLicense: Record<string, unknown>): Promise<void> {
 		await apiClient.installLicense(signedLicense);
+	}
+
+	// ── Donations ────────────────────────────────────────────────
+
+	/** Start a custom-amount donation. No catalog product, no license. */
+	async createDonation(
+		amountUsd: number,
+		deviceId: string,
+		email: string,
+	): Promise<{
+		order_ref: string;
+		checkout_url: string;
+		amount_usd: number;
+		donation: boolean;
+	}> {
+		const resp = await fetch(`${this.baseUrl}/v1/checkout/donate`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				device_id: deviceId,
+				email,
+				amount_usd: amountUsd,
+			}),
+			signal: AbortSignal.timeout(10_000),
+		});
+		if (!resp.ok) {
+			const err = await resp.json().catch(() => ({}));
+			throw new Error(err.detail?.message || `Donation failed: ${resp.status}`);
+		}
+		return resp.json();
 	}
 
 	// ── Region & Currency ──────────────────────────────────

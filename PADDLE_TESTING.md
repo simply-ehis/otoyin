@@ -34,7 +34,6 @@ multiple `h1` accepted (secret rotation).
 
 With `MARKETPLACE_PADDLE_API_KEY` unset, `POST /v1/checkout` fulfills
 immediately and returns an `otoyin://payment/success` URL:
-
 ```bash
 python -m marketplace_server.seed
 python -m uvicorn marketplace_server.app:app --port 8420
@@ -44,6 +43,14 @@ curl -X POST localhost:8420/v1/checkout \
 # → {"order_ref":"otoyin_...","checkout_url":"otoyin://...","..."}
 curl localhost:8420/v1/webhook/license/otoyin_...
 # → signed license JSON (install via the app's Models tab)
+
+# Donations (no catalog product, no license — $1–$10,000):
+curl -X POST localhost:8420/v1/checkout/donate \
+  -H 'Content-Type: application/json' \
+  -d '{"device_id":"dev-1","email":"","amount_usd":25}'
+# → {"order_ref":"otoyin_...","checkout_url":"otoyin://...","donation":true,...}
+curl localhost:8420/v1/webhook/license/otoyin_...
+# → {"donated":true,"order_ref":"otoyin_...","amount_usd":25.0}
 ```
 
 ## 3. Sandbox loop (provider account, no real money)

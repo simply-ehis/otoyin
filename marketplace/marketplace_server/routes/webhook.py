@@ -26,7 +26,12 @@ async def get_db():
 
 
 async def fulfill_order(order: Order, db: AsyncSession, provider_txn_id: str) -> dict:
-    """Mark an order paid, sign its license, store it. Idempotent."""
+    """Mark an order paid, sign its license, store it. Idempotent.
+
+    Donations (``product_id == "donation"``) are recorded as paid with NO
+    license row — there is nothing to entitle. Callers distinguish via the
+    license-fetch endpoint, which answers donations separately.
+    """
     if order.status == "paid":
         return {"status": "ok", "message": "Already processed"}
 
@@ -34,6 +39,11 @@ async def fulfill_order(order: Order, db: AsyncSession, provider_txn_id: str) ->
     order.paid_at = dt.datetime.now(dt.UTC)
     if provider_txn_id and provider_txn_id != "dev":
         order.payment_session_id = provider_txn_id
+
+    if order.product_id == "donation":  # cf. checkout.DONATION_PRODUCT_ID (kept literal: checkout imports this module)
+        await db.commit()
+        logger.info("Donation recorded for order %s ($%.2f)", order.order_ref, order.amount_usd)
+        return {"status": "ok", "order_ref": order.order_ref, "donated": True}
 
     product_result = await db.execute(select(Product).where(Product.id == order.product_id))
     product = product_result.scalar_one_or_none()
@@ -146,6 +156,11 @@ async def get_license(order_ref: str, db: AsyncSession = Depends(get_db)):
         raise HTTPException(404, detail={"code": "order_not_found", "message": f"Order '{order_ref}' not found"})
     if order.status != "paid":
         raise HTTPException(402, detail={"code": "not_paid", "message": f"Order '{order_ref}' has not been paid yet"})
+
+    if order.product_id == "donation":
+        # Donations mint no license — confirm the gift so pollers can
+        # show a thank-you instead of polling forever.
+        return {"donated": True, "order_ref": order.order_ref, "amount_usd": order.amount_usd}
 
     license_result = await db.execute(select(License).where(License.order_id == order.id))
     license_record = license_result.scalar_one_or_none()

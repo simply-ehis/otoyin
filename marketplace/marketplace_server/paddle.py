@@ -95,6 +95,68 @@ async def create_transaction(
     return {"transaction_id": data["id"], "checkout_url": checkout_url}
 
 
+async def create_donation_transaction(
+    *,
+    order_ref: str,
+    device_id: str,
+    email: str,
+    amount_cents: int,
+) -> dict:
+    """Create a custom-amount donation transaction (no catalog price needed).
+
+    Uses a non-catalog price + product inline, so donations need zero
+    dashboard setup. Returns ``{"transaction_id", "checkout_url"}`` like
+    :func:`create_transaction`. Raises ``RuntimeError`` on provider failure.
+    """
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.post(
+                f"{base_url()}/transactions",
+                headers={
+                    "Authorization": f"Bearer {settings.paddle_api_key}",
+                    "Content-Type": "application/json",
+                    "Paddle-Version": "1",
+                },
+                json={
+                    "items": [
+                        {
+                            "quantity": 1,
+                            "price": {
+                                "description": "One-time donation to Otoyin",
+                                "name": "Otoyin Donation",
+                                "billing_cycle": None,
+                                "trial_period": None,
+                                "tax_mode": "standard",
+                                "unit_price": {"amount": str(amount_cents), "currency_code": "USD"},
+                            },
+                            "product": {
+                                "name": "Otoyin Donation",
+                                "description": "Voluntary contribution to Otoyin development.",
+                                "tax_category": "standard",
+                            },
+                        }
+                    ],
+                    "custom_data": {
+                        "order_ref": order_ref,
+                        "product_id": "donation",
+                        "device_id": device_id,
+                        "email": email,
+                    },
+                    "collection_mode": "automatic",
+                },
+                timeout=15,
+            )
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            logger.error("Paddle donation creation failed for %s: %s", order_ref, exc)
+            raise RuntimeError(f"Paddle donation failed: {exc}") from exc
+    data = resp.json().get("data", {})
+    checkout_url = (data.get("checkout") or {}).get("url", "")
+    if not data.get("id") or not checkout_url:
+        raise RuntimeError(f"Paddle donation response missing id/checkout url: {data!r:.200}")
+    return {"transaction_id": data["id"], "checkout_url": checkout_url}
+
+
 def verify_signature(raw_body: bytes, header: str) -> bool:
     """Verify a ``Paddle-Signature: ts=...;h1=...[;h1=...]`` header.
 
