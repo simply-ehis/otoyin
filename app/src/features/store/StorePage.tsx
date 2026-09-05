@@ -9,6 +9,7 @@ import { Button } from "@/ui/button";
 import { PageTabs } from "@/ui/tabs";
 import { useToast } from "@/ui/use-toast";
 import { BrowseStates } from "./BrowseStates";
+import { DonateCard } from "./DonateCard";
 import { LicensesView } from "./LicensesView";
 import { OffersBanner } from "./OffersBanner";
 import { PerEngineKeepaliveRow } from "./PerEngineKeepaliveRow";
@@ -342,6 +343,8 @@ export function StorePage() {
 				</PageTabs>
 
 				<OffersBanner offers={offersQ.data ?? []} onOpen={setDetailProduct} />
+
+				<DonateCard />
 
 				{storeView === "pricing" ? (
 					<PricingAdmin />
