@@ -14,6 +14,7 @@ const ROUTES = [
 	"/effects",
 	"/models",
 	"/store",
+	"/help",
 	"/settings",
 	"/generation",
 	"/mcp",

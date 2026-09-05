@@ -15,6 +15,7 @@ import { RecommendedModelsBanner } from "@/components/RecommendedModelsBanner/Re
 import { AppLoadingScreen } from "@/components/ui/AppLoadingScreen";
 import { AutoUpdateFlow } from "@/features/settings/AutoUpdateFlow";
 import { Toaster } from "@/components/ui/toaster";
+import { TabIntroMount } from "@/features/onboarding/TabIntro";
 
 const MiniGame = lazy(() =>
 	import("@/components/MiniGame/MiniGame").then((m) => ({
@@ -264,6 +265,11 @@ const ShortcutsPage = lazy(() =>
 	import("@/components/Shortcuts/ShortcutsPage").then((m) => ({
 		default: m.ShortcutsPage,
 	})),
+const HelpPage = lazy(() =>
+	import("@/features/help/HelpPage").then((m) => ({
+		default: m.HelpPage,
+	})),
+);
 );
 const TimecodeDisplay = lazy(() =>
 	import("@/components/TimecodeDisplay/TimecodeDisplay").then((m) => ({
@@ -415,6 +421,7 @@ function RootLayout() {
 					<RecommendedModelsBanner />
 					<AnnouncementBanner />
 					<ServerStatusBanner />
+					<TabIntroMount />
 					<div className="container mx-auto px-8 max-w-[1800px] h-full overflow-hidden flex flex-col">
 						<Suspense fallback={<AppLoadingScreen />}>
 							<ErrorBoundary>
@@ -585,6 +592,12 @@ const settingsShortcutsRoute = createRoute({
 	getParentRoute: () => settingsRoute,
 	path: "/shortcuts",
 	component: ShortcutsPage,
+
+const helpRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/help",
+	component: HelpPage,
+});
 });
 
 const settingsTimecodeRoute = createRoute({
@@ -930,6 +943,7 @@ const routeTree = rootRoute.addChildren([
 	voiceConverterRoute,
 	soundEffectsRoute,
 	audioStudioRoute,
+	helpRoute,
 	settingsRoute.addChildren([
 		settingsGeneralRoute,
 		settingsGenerationRoute,
