@@ -5,9 +5,10 @@ import {
 	XMarkIcon,
 } from "@heroicons/react/24/outline";
 import type { MarketplaceProduct, ModelStatus } from "@/lib/api/types";
+import { useRegionCurrency } from "@/lib/regionCurrency";
 import { Button } from "@/ui/button";
 import { DialogDescription, DialogHeader, DialogTitle } from "@/ui/dialog";
-import { formatSize } from "./storeUtils";
+import { formatPrice, formatSize } from "./storeUtils";
 
 interface Props {
 	product: MarketplaceProduct;
@@ -32,6 +33,7 @@ export function ProductSpecs({
 	ownedNotInstalled,
 	onClose,
 }: Props) {
+	const fx = useRegionCurrency();
 	return (
 		<div className="relative border-b px-6 pb-4 pt-6">
 			<Button
@@ -56,7 +58,7 @@ export function ProductSpecs({
 			<div className="mt-3 flex flex-wrap items-center gap-2">
 				{product.paid ? (
 					<span className="rounded-full border border-warning/40 bg-warning-soft px-3 py-1 text-xs font-bold text-warning-text">
-						${product.price_usd}
+						{formatPrice(product, fx)}
 					</span>
 				) : (
 					<span className="rounded-full border border-success/40 bg-success-soft px-3 py-1 text-xs font-semibold text-success-text">

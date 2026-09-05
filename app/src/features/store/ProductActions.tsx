@@ -19,9 +19,10 @@ import {
 	marketplaceClient,
 	openExternalUrl,
 } from "@/lib/marketplace";
+import { convertUsd, formatMoney, useRegionCurrency } from "@/lib/regionCurrency";
 import { Button } from "@/ui/button";
 import { Spinner } from "@/ui/primitives";
-import { formatSize } from "./storeUtils";
+import { formatPrice, formatSize } from "./storeUtils";
 
 interface Props {
 	product: MarketplaceProduct;
@@ -58,6 +59,7 @@ export function ProductActions({
 	onDone,
 }: Props) {
 	const queryClient = useQueryClient();
+	const fx = useRegionCurrency();
 	const [busy, setBusy] = useState(false);
 	const [licenseText, setLicenseText] = useState("");
 	const [showLicense, setShowLicense] = useState(false);
@@ -294,8 +296,15 @@ export function ProductActions({
 					</p>
 					{taxPreviewQ.data && taxPreviewQ.data.tax_amount > 0 && (
 						<p className="text-xs text-muted-foreground">
-							+ {taxPreviewQ.data.tax_name} ({taxPreviewQ.data.tax_rate}%) = $
-							{taxPreviewQ.data.total.toFixed(2)} total
+							+ {taxPreviewQ.data.tax_name} ({taxPreviewQ.data.tax_rate}%) ={" "}
+							{fx.currency === "USD"
+								? `$${taxPreviewQ.data.total.toFixed(2)}`
+								: formatMoney(
+										convertUsd(taxPreviewQ.data.total, fx.rate),
+										fx.currency,
+										fx.locale,
+									)}{" "}
+							total (est. — Paddle finalizes at checkout)
 						</p>
 					)}
 					<Button
@@ -309,7 +318,7 @@ export function ProductActions({
 								<Spinner size="xs" /> Processing…
 							</>
 						) : (
-							`Buy $${product.price_usd} — Get license`
+							`Buy ${formatPrice(product, fx)} — Get license`
 						)}
 					</Button>
 					{pendingOrderRef ? (

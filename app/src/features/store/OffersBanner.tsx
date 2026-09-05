@@ -1,4 +1,5 @@
 import type { MarketplaceProduct } from "@/lib/api/types";
+import { convertUsd, formatMoney, useRegionCurrency } from "@/lib/regionCurrency";
 
 interface Props {
 	offers: MarketplaceProduct[];
@@ -7,6 +8,11 @@ interface Props {
 
 /** Special-offers strip: one banner slot per active offer, opens the detail. */
 export function OffersBanner({ offers, onOpen }: Props) {
+	const fx = useRegionCurrency();
+	const localPrice = (usd: number) =>
+		fx.currency === "USD"
+			? `$${usd}`
+			: formatMoney(convertUsd(usd, fx.rate), fx.currency, fx.locale);
 	if (offers.length === 0) {
 		return null;
 	}
@@ -29,9 +35,9 @@ export function OffersBanner({ offers, onOpen }: Props) {
 							</span>
 						</div>
 						<div className="truncate text-xs text-muted-foreground">
-							Limited-time ${offer.price_usd}
+							Limited-time {localPrice(offer.price_usd)}
 							{offer.baseline_usd
-								? ` — was $${offer.baseline_usd} (${offer.discount_pct}% off)`
+								? ` — was ${localPrice(offer.baseline_usd)} (${offer.discount_pct}% off)`
 								: ""}
 							{offer.note ? ` — ${offer.note}` : ""}
 						</div>

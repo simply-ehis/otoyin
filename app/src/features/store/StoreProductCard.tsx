@@ -14,6 +14,7 @@ import type {
 	MarketplaceProduct,
 	ModelStatus,
 } from "@/lib/api/types";
+import { useRegionCurrency } from "@/lib/regionCurrency";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/ui/button";
 import { Card } from "@/ui/card";
@@ -22,6 +23,7 @@ import { Progress } from "@/ui/progress";
 import { StarRating } from "./StarRating";
 import {
 	CATEGORY_ACCENT,
+	formatPrice,
 	formatSize,
 	getCapabilityChips,
 	getDisplayDescription,
@@ -75,6 +77,9 @@ export function StoreProductCard({
 	// Disk truth: the catalog annotation and/or the live model-status signal
 	// (both read the same manifest — they never contradict each other).
 	const cached = installed || localStatus === "cached";
+	// Display currency: browser locale → FX (USD fallback offline).
+	const fx = useRegionCurrency();
+	const priceLabel = formatPrice(product, fx);
 	// Owned (licensed) but not on this device yet — one-step install.
 	const ownedNotInstalled = owned && !cached;
 	const description = getDisplayDescription(product, model);
@@ -94,7 +99,7 @@ export function StoreProductCard({
 				isDownloading && "border-warning/40",
 			)}
 		>
-			<div className={cn("h-1 w-full bg-gradient-to-r", accent)} />
+			<div className={cn("w-full border-t-[3px]", accent)} />
 
 			{/* biome-ignore lint/a11y/useSemanticElements: outer card body must be a
 			    div to allow the nested wishlist button (valid HTML, keyboard operable) */}
@@ -157,7 +162,7 @@ export function StoreProductCard({
 								"bg-warning-soft text-warning-text border-warning/40",
 							)}
 						>
-							${product.price_usd}
+							{priceLabel}
 						</span>
 					) : (
 						<span
@@ -330,7 +335,7 @@ export function StoreProductCard({
 							onClick={() => onDetail(product)}
 							className="flex-1"
 						>
-							Buy ${product.price_usd}
+							Buy {priceLabel}
 						</Button>
 						<Button
 							type="button"

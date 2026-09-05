@@ -12,6 +12,7 @@ import type {
 	MarketplaceProduct,
 	ModelStatus,
 } from "@/lib/api/types";
+import { convertUsd, formatMoney } from "@/lib/regionCurrency";
 
 export const CATEGORIES = [
 	{ id: "all", label: "All", icon: Squares2X2Icon },
@@ -48,15 +49,16 @@ export const CATEGORY_LABELS: Record<string, string> = {
 	extras: "Extras",
 };
 
+/** Category hue identity — 3px top edge bar (hueLine pattern), solid card surface. */
 export const CATEGORY_ACCENT: Record<string, string> = {
-	tts: "from-accent/10 via-accent/5 to-transparent",
-	stt: "from-emerald-500/10 via-teal-500/5 to-transparent",
-	llm: "from-amber-500/10 via-orange-500/5 to-transparent",
-	vc: "from-cyan-500/10 via-blue-500/5 to-transparent",
-	music: "from-accent/10 via-accent/5 to-transparent",
-	translation: "from-sky-500/10 via-indigo-500/5 to-transparent",
-	extras: "from-zinc-500/10 via-neutral-500/5 to-transparent",
-	sfx: "from-zinc-500/10 via-neutral-500/5 to-transparent",
+	tts: "border-t-[3px] border-accent",
+	stt: "border-t-[3px] border-emerald-400",
+	llm: "border-t-[3px] border-amber-400",
+	vc: "border-t-[3px] border-cyan-400",
+	music: "border-t-[3px] border-accent",
+	translation: "border-t-[3px] border-sky-400",
+	extras: "border-t-[3px] border-muted-foreground",
+	sfx: "border-t-[3px] border-muted-foreground",
 };
 
 /** Rich per-model descriptions (ported from the old ServerSettings tree). */
@@ -230,11 +232,18 @@ export function getCapabilityChips(
 	return chips;
 }
 
-export function formatPrice(product: MarketplaceProduct): string {
+export function formatPrice(
+	product: MarketplaceProduct,
+	fx?: { currency: string; rate: number; locale: string },
+): string {
 	if (!product.paid) {
 		return "Free";
 	}
-	return `$${product.price_usd}`;
+	// No FX (offline/unknown locale) or USD: legacy plain-dollar display.
+	if (!fx || fx.currency === "USD" || !(fx.rate > 0)) {
+		return `$${product.price_usd}`;
+	}
+	return formatMoney(convertUsd(product.price_usd, fx.rate), fx.currency, fx.locale);
 }
 
 export function priceTone(

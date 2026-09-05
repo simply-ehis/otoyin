@@ -1,5 +1,7 @@
 import type { MarketplaceProduct } from "@/lib/api/types";
+import { useRegionCurrency } from "@/lib/regionCurrency";
 import { StarRating } from "./StarRating";
+import { formatPrice } from "./storeUtils";
 
 interface Props {
 	category: string;
@@ -13,6 +15,7 @@ export function SimilarProducts({
 	products,
 	onProductChange,
 }: Props) {
+	const fx = useRegionCurrency();
 	if (products.length === 0) {
 		return null;
 	}
@@ -36,7 +39,7 @@ export function SimilarProducts({
 								</span>
 								{sp.paid ? (
 									<span className="text-xs font-semibold text-warning-text">
-										${sp.price_usd}
+										{formatPrice(sp, fx)}
 									</span>
 								) : (
 									<span className="text-xs font-medium text-success-text">
