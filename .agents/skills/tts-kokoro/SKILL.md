@@ -65,7 +65,7 @@ POST /speak
 
 ## Pitfalls / Gotchas
 - **No zero-shot cloning.** Kokoro cannot clone from arbitrary reference audio — only
-  preset blending + custom `.pt` packs. For a real clone use `../tts-fish-speech/SKILL.md`,
+  preset blending + custom `.pt` packs. For a real clone use `../tts-qwen/SKILL.md` (Fish Speech removed: CC-BY-NC weights),
   or see `../engine-atlas/SKILL.md` for CLONING_ENGINES.
 - **Long-text hang (fixed):** KPipeline only splits on `\n`; a long paragraph fed whole to
   misaki G2P could stall forever. The backend pre-splits at 250 chars and bounds each chunk

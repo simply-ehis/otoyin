@@ -106,8 +106,10 @@ pid_placeholders=$!
 pid_import=$!
 
 # [6] Encoding: no invalid UTF-8 bytes or U+FFFD in staged text files
+#     (timeout generous: I/O-bound, and large rebuild commits stage 400+ files
+#     while nine other checks run in parallel — 30s caused timing false-positives)
 (
-  cd "$root" && timeout 30 $PY -X utf8 scripts/check-encoding.py --staged 2>&1 | tail -15
+  cd "$root" && timeout 120 $PY -X utf8 scripts/check-encoding.py --staged 2>&1 | tail -15
   echo $? > "$tmpdir/mojibake.rc"
 ) > "$tmpdir/mojibake.log" 2>&1 &
 pid_mojibake=$!

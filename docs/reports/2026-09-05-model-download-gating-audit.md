@@ -56,3 +56,9 @@ assumed:
 - Re-run this grep after any new backend lands: `hf_hub_download`,
   `snapshot_download`, `from_pretrained` under `backend/backends/` —
   then classify ctor vs load vs explicit-download as above.
+- Do NOT add manifest guards to engine factories (verified 2026-09-05):
+  tests, capability listings, and tools call factories directly, and
+  every backend already refuses uncached loads — factory gating would
+  break those callers while adding nothing. Entitlement stays at routes
+  + the TTS chokepoint. This paragraph exists so nobody re-adds factory
+  guards in a future pass.

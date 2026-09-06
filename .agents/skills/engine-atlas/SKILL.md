@@ -21,15 +21,15 @@ languages, clone flags), `backend/backends/registry.py` (factory), and GROUNDING
 - See [agent-operating-guide](../agent-operating-guide/SKILL.md) for the loop.
 - See [mcp-tool-reference](../mcp-tool-reference/SKILL.md) for tool signatures.
 
-## TTS engines (15)
+## TTS engines (12 — fish_speech/chattts/f5_tts removed, see rows)
 | engine | model(s) | size MB | langs | clone | best use | known limits |
 |--------|----------|---------|-------|-------|----------|--------------|
 | kokoro | Kokoro-82M / ONNX | 350 / 340 | 8 (en,es,fr,hi,it,pt,ja,zh) | NO (preset blend + .pt packs only) | fast CPU batch narration | long text must be chunked (250 chars) + 120s/chunk timeout; no zero-shot clone |
-| fish_speech | Fish Speech S1-mini (0.5B) | 2000 | 13 | gen-time zero-shot (CLONING_ENGINES) | reference-style voice | |
+| ~~fish_speech~~ | REMOVED 2026-09-05 (CC-BY-NC-SA weights) | — | — | — | use zonos or qwen3_tts | |
 | zonos | Zyphra Zonos v0.1 | 2000 | 5 (en,ja,zh,fr,de) | clone + emotion (CLONING_ENGINES) | clone + emotion control | |
-| styletts2 | StyleTTS2 LibriTTS / ONNX | 400 / 440 | 1 (en) | clone (CLONING_ENGINES) | fast English clone | CC-BY-NC weights |
-| chattts | ChatTTS | 400 | 2 (en,zh) | no | conversational | CC-BY-NC weights |
-| f5_tts | F5-TTS Small / ONNX | 600 / 700 | 2 (en,zh) | gen-time clone (CLONING_ENGINES) | zero-shot clone | CC-BY-NC weights |
+| styletts2 | StyleTTS2 LibriTTS / ONNX | 400 / 440 | 1 (en) | clone (CLONING_ENGINES) | fast English clone | ⚠ atlas notes CC-BY-NC weights yet catalog sells it $5 — license re-verification open |
+| ~~chattts~~ | REMOVED 2026-09-05 (CC-BY-NC weights) | — | — | — | conversational → use zonos | |
+| ~~f5_tts~~ | REMOVED 2026-09-05 (CC-BY-NC weights) | — | — | — | zero-shot clone → use zonos or qwen3_tts | |
 | pocket_tts | Pocket-TTS / ONNX | 200 | 6 (en,fr,de,pt,it,es) | clone (CLONING_ENGINES) | tiny CPU clone | |
 | parler_tts | Parler-TTS Mini | 880 | 1 (en) | text-described voice | prompt-describable voice | en only |
 | moss_tts_nano | MOSS-TTS-Nano (ONNX) | 763 | 20 | gen-time zero-shot (NOT in CLONING_ENGINES) | multilingual zero-shot clone | ONNX-only; no torch fallback |
@@ -79,9 +79,9 @@ languages, clone flags), `backend/backends/registry.py` (factory), and GROUNDING
 ## ENGINE FALLBACK MATRIX
 | situation | pick |
 |-----------|------|
-| default quality | Kokoro (default engine), Fish Speech for higher quality |
-| want a real-voice clone | cloned profile (CLONING_ENGINES) → fish_speech, zonos, styletts2, f5_tts, pocket_tts; gen-time reference → moss_tts_nano, neutts_2e, qwen3_tts |
-| multilingual needed | Fish Speech (13), MOSS-TTS-Nano (20), Qwen3-TTS (10) |
+| default quality | Kokoro (default engine), Zonos for higher quality |
+| want a real-voice clone | cloned profile (CLONING_ENGINES) → zonos, styletts2, pocket_tts; gen-time reference → moss_tts_nano, neutts_2e, qwen3_tts |
+| multilingual needed | Qwen3-TTS (10), MOSS-TTS-Nano (20) |
 | tiny CPU / offline | Pocket-TTS (200 MB), KittenTTS (80 MB), Kokoro (350 MB) |
 | non-verbal sounds | Bark Small (subprocess, GGUF) |
 | one-shot SFX | Stable Audio Open |
@@ -96,11 +96,11 @@ languages, clone flags), `backend/backends/registry.py` (factory), and GROUNDING
 - **4 STT engines** (not 1). Parakeet and Qwen3-ASR are newer additions.
 - **3 VC engines** (RVC, Seed-VC, OpenVoice). Seed-VC requires GPU.
 - Kokoro has NO zero-shot cloning — only preset blending ("af_bella,af_sky") + custom `.pt` packs.
-- **Two distinct cloning paths.** Profile-layer `CLONING_ENGINES = {fish_speech, zonos,
-  styletts2, f5_tts, pocket_tts}` (services/profiles.py) is the ONLY
+- **Two distinct cloning paths.** Profile-layer `CLONING_ENGINES = {zonos,
+  styletts2, pocket_tts, ...}` (services/profiles.py) is the ONLY
   set usable via `voice_type:"cloned"`. `neutts`, `neutts_2e`, `moss_tts_nano`, and `qwen3_tts` clone at
   generation time — for engines OUTSIDE the set, pass `engine` directly in `POST /generate`,
-  never as a cloned profile. Kokoro, ChatTTS, Parler, KittenTTS, Orpheus, Bark cannot clone.
+  never as a cloned profile. Kokoro, Parler, KittenTTS, Orpheus, Bark cannot clone.
 - Missing model → HTTP 400 "not downloaded yet", not a 500.
 
 ## Cross-links
