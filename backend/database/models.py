@@ -926,3 +926,23 @@ class SongDraft(Base):
     draft_json = Column(JSON, nullable=False, default=dict)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+
+
+class LauncherSession(Base):
+    """Clip-launcher session (tracks, clips, scene slots), ported from Resonant.
+
+    Stores the full session grid state as JSON blobs so multiple Tauri
+    windows can share the same project via the backend.
+    """
+
+    __tablename__ = "launcher_sessions"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String, nullable=False, default="Untitled session")
+    bpm = Column(Float, nullable=False, default=120.0)
+    master_volume = Column(Float, nullable=False, default=0.84)
+    tracks_json = Column(JSON, nullable=False, default=list)
+    clips_json = Column(JSON, nullable=False, default=dict)
+    num_scenes = Column(Integer, nullable=False, default=4)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))

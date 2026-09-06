@@ -441,6 +441,9 @@ export interface ModelStatus {
 	hf_repo_id?: string; // HuggingFace repository ID
 	downloaded: boolean;
 	entitled?: boolean; // true when a manifest row exists (downloaded via the Models tab)
+	// true when files are on disk (or loaded) but the manifest has no row yet —
+	// the Store must not offer a download for a model that can already generate.
+	manifest_backfill_pending?: boolean;
 	downloading: boolean; // True if download in progress
 	size_mb?: number;
 	loaded: boolean;
@@ -1039,4 +1042,79 @@ export interface MarketplacePlugin {
 	external_command: string | null;
 	permissions: string[];
 	install_path: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Launcher session types (ported from Resonant)
+// ---------------------------------------------------------------------------
+
+export interface LauncherTrackPayload {
+	id: string;
+	name: string;
+	kind: string;
+	color: string;
+	volume: number;
+	pan: number;
+	mute: boolean;
+	solo: boolean;
+	sessionSlots: Array<string | null>;
+}
+
+export interface LauncherClipPayload {
+	id: string;
+	type: string;
+	name: string;
+	color: string;
+	lengthBeats: number;
+	// Audio clip fields (optional for MIDI clips)
+	sampleRate?: number;
+	channels?: number;
+	frames?: number;
+	audioPath?: string;
+	waveformPeaks?: number[];
+	trimStart?: number;
+	trimEnd?: number;
+	gain?: number;
+	volumeAutomation?: number[];
+	// MIDI clip fields
+	notes?: Array<{
+		id: string;
+		step: number;
+		pitch: number;
+		velocity: number;
+		durationSteps: number;
+	}>;
+}
+
+export interface LauncherSessionPayload {
+	name: string;
+	bpm: number;
+	masterVolume: number;
+	tracks: LauncherTrackPayload[];
+	clips: Record<string, LauncherClipPayload>;
+	numScenes: number;
+}
+
+export interface LauncherSessionCreate {
+	name: string;
+	session: LauncherSessionPayload;
+}
+
+export interface LauncherSessionResponse {
+	id: string;
+	name: string;
+	session: LauncherSessionPayload;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface LauncherCaptureRequest {
+	activeClips?: Record<string, string | null> | null;
+}
+
+export interface LauncherCaptureResponse {
+	audioPath: string;
+	filename: string;
+	durationS: number;
+	sampleRate: number;
 }

@@ -117,6 +117,11 @@ const SongwriterTab = lazy(() =>
 		default: m.SongwriterTab,
 	})),
 );
+const LauncherTab = lazy(() =>
+	import("@/features/launcher/LauncherTab").then((m) => ({
+		default: m.LauncherTab,
+	})),
+);
 const AudiobooksTab = lazy(() =>
 	import("@/features/audiobooks/AudiobooksTab").then((m) => ({
 		default: m.AudiobooksTab,
@@ -507,6 +512,13 @@ const songwriterRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/songwriter",
 	component: SongwriterTab,
+});
+
+// Launcher route
+const launcherRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/launcher",
+	component: LauncherTab,
 });
 
 // Audiobooks route
@@ -911,6 +923,7 @@ const routeTree = rootRoute.addChildren([
 	indexRoute,
 	storiesRoute,
 	songwriterRoute,
+	launcherRoute,
 	audiobooksRoute,
 	capturesRoute,
 	voicesRoute,

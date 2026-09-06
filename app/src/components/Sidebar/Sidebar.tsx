@@ -12,6 +12,7 @@ import {
 	PlayCircleIcon as PlayCircle,
 	PuzzlePieceIcon as PuzzlePiece,
 	RectangleStackIcon as RectangleStack,
+	Squares2X2Icon as Squares,
 	CogIcon as Settings,
 	ShoppingBagIcon as ShoppingBag,
 	SignalIcon as Signal,
@@ -45,6 +46,7 @@ const NAV_GROUPS: { items: NavItem[] }[] = [
 		items: [
 			{ path: "/stories", label: "sidebar.stories", icon: BookOpen },
 			{ path: "/songwriter", label: "sidebar.songwriter", icon: PenLine },
+			{ path: "/launcher", label: "sidebar.launcher", icon: Squares },
 			{
 				path: "/audiobooks",
 				label: "sidebar.audiobooks",

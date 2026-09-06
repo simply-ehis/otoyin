@@ -1,5 +1,5 @@
-import { AudiobooksMethods } from "./clientAudiobooks";
+import { ClientLauncherMethods } from "./clientLauncher";
 
-export class ApiClient extends AudiobooksMethods {}
+export class ApiClient extends ClientLauncherMethods {}
 
 export const apiClient = new ApiClient();

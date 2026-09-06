@@ -4,6 +4,7 @@
 		"audioStudio": "Audio Studio",
 		"stories": "Stories",
 		"songwriter": "Songwriter",
+		"launcher": "Launcher",
 		"audiobooks": "Audiobooks",
 		"voices": "Voices",
 		"captures": "Captures",
@@ -1449,6 +1450,17 @@
 	"podcast": {
 		"conversation": {
 			"noEngines": "No TTS engine installed. Download a text-to-speech engine to build a conversation."
+		}
+	},
+	"launcher": {
+		"title": "Clip Launcher",
+		"description": "Trigger clips across tracks in real time. Launch scenes or individual clips.",
+		"tracks": "tracks",
+		"capture": "Capture",
+		"toast": {
+			"saved": "Session saved",
+			"noSession": "Save the session first",
+			"captured": "Captured to library"
 		}
 	}
 }
