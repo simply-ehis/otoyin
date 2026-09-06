@@ -204,6 +204,13 @@ def create_app() -> FastAPI:
 
     application.add_middleware(ReadinessMiddleware)
 
+    # Crash capture: observes unhandled exceptions into the opt-in crash
+    # log and re-raises, so error responses are unchanged. Outermost so it
+    # also sees failures from the middleware above.
+    from .routes.crashes import CrashCaptureMiddleware
+
+    application.add_middleware(CrashCaptureMiddleware)
+
     from .backends.base import ModelNotCachedError
 
     @application.exception_handler(ModelNotCachedError)
@@ -535,6 +542,7 @@ async def _run_startup(application: FastAPI) -> None:
 
         try:
             from .backends.stable_audio_backend import stable_audio_backend
+
             lifecycle_manager.register(
                 "stable_audio",
                 stable_audio_backend.is_loaded,
@@ -549,6 +557,7 @@ async def _run_startup(application: FastAPI) -> None:
         # requested.
         try:
             from .services.deepfilter_onnx import _is_session_loaded, unload_deepfilter
+
             lifecycle_manager.register("deepfilter", _is_session_loaded, unload_deepfilter)
         except Exception:
             logger.debug("DeepFilter not registered (no model available)")

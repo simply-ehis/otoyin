@@ -89,8 +89,8 @@ def find_binary() -> Path | None:
     is_win = platform.system() == "Windows"
     exe = ".exe" if is_win else ""
     candidates = [
-        DIST_DIR / "21labs-server-cuda" / f"21labs-server-cuda{exe}",
-        DIST_DIR / f"21labs-server{exe}",
+        DIST_DIR / "otoyin-server-cuda" / f"otoyin-server-cuda{exe}",
+        DIST_DIR / f"otoyin-server{exe}",
     ]
     for c in candidates:
         if c.exists() and c.is_file():
@@ -428,7 +428,7 @@ def write_reports(
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="otoyin E2E model generation test")
-    p.add_argument("--binary", type=Path, help="Path to 21labs-server binary (overrides auto-detect)")
+    p.add_argument("--binary", type=Path, help="Path to otoyin-server binary (overrides auto-detect)")
     p.add_argument("--skip-build", action="store_true", help="Error if binary missing instead of building")
     p.add_argument(
         "--reference-wav",

@@ -35,7 +35,6 @@ class AudioEffectsChain:
     def apply_chain(self, audio: np.ndarray, sample_rate: int, chain: list[EffectConfig]) -> np.ndarray:
         """Apply a chain of effects to audio."""
         processed = audio.copy()
-        audio_history = []
 
         for effect in chain:
             if not effect.enabled:
@@ -44,7 +43,6 @@ class AudioEffectsChain:
             try:
                 if effect.effect_type in self.effects:
                     processed = self.effects[effect.effect_type](processed, sample_rate, effect.params)
-                    audio_history.append(processed.copy())
                 else:
                     logger.warning(f"Unknown effect type: {effect.effect_type}")
             except Exception as e:

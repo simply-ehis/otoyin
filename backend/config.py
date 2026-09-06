@@ -26,6 +26,7 @@ def _env(new_name: str, old_name: str, default: str = "") -> str:
     """Read ``OTOYIN_*`` with fallback to the legacy ``TWENTYLABS_*`` name."""
     return os.environ.get(new_name) or os.environ.get(old_name, default)
 
+
 _DEFAULT_HOST = "127.0.0.1"
 _DEFAULT_PORT = 17493
 DEFAULT_TTS_ENGINE = ""
@@ -34,10 +35,14 @@ DEFAULT_STT_ENGINE = "whisper"
 DEFAULT_LLM_ENGINE = "gguf_llm"
 
 # Configurable limits (env-overridable)
-PROFILE_SAMPLE_MAX_FILE_SIZE = int(_env("OTOYIN_PROFILE_SAMPLE_MAX_MB", "TWENTYLABS_PROFILE_SAMPLE_MAX_MB", "50")) * 1024 * 1024
+PROFILE_SAMPLE_MAX_FILE_SIZE = (
+    int(_env("OTOYIN_PROFILE_SAMPLE_MAX_MB", "TWENTYLABS_PROFILE_SAMPLE_MAX_MB", "50")) * 1024 * 1024
+)
 IMPORT_AUDIO_MAX_BYTES = int(_env("OTOYIN_IMPORT_MAX_MB", "TWENTYLABS_IMPORT_MAX_MB", "200")) * 1024 * 1024
 PROFILE_MAX_FILE_SIZE = int(_env("OTOYIN_PROFILE_MAX_MB", "TWENTYLABS_PROFILE_MAX_MB", "100")) * 1024 * 1024
-HISTORY_IMPORT_MAX_FILE_SIZE = int(_env("OTOYIN_HISTORY_IMPORT_MAX_MB", "TWENTYLABS_HISTORY_IMPORT_MAX_MB", "50")) * 1024 * 1024
+HISTORY_IMPORT_MAX_FILE_SIZE = (
+    int(_env("OTOYIN_HISTORY_IMPORT_MAX_MB", "TWENTYLABS_HISTORY_IMPORT_MAX_MB", "50")) * 1024 * 1024
+)
 IMAGE_MAX_FILE_SIZE = int(_env("OTOYIN_IMAGE_MAX_MB", "TWENTYLABS_IMAGE_MAX_MB", "5")) * 1024 * 1024
 
 

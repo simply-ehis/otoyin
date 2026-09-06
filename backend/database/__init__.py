@@ -34,6 +34,7 @@ from .models import (
     ProfileSample,
     Project,
     Story,
+    StoryEditSnapshot,
     StoryItem,
     VoiceProfile,
 )
@@ -69,6 +70,7 @@ __all__ = [
     "Project",
     "SessionLocal",
     "Story",
+    "StoryEditSnapshot",
     "StoryItem",
     "VoiceProfile",
     "_db_path",

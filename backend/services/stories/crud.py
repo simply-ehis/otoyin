@@ -26,6 +26,7 @@ from ...models import (
     StoryResponse,
 )
 from .helpers import _build_item_detail, _resolve_profile_name
+from .history import push_undo
 
 
 async def create_story(
@@ -154,6 +155,7 @@ async def add_item_to_story(
     if existing:
         return _build_item_detail(existing, generation, _resolve_profile_name(db, generation), db)
 
+    push_undo(db, story_id)
     track = data.track if data.track is not None else 0
 
     if data.start_time_ms is not None:
@@ -212,6 +214,7 @@ async def move_story_item(
     if not generation:
         return None
 
+    push_undo(db, story_id)
     item.start_time_ms = data.start_time_ms
     item.track = data.track
 
@@ -235,6 +238,7 @@ async def remove_item_from_story(
     if not item:
         return False
 
+    push_undo(db, story_id)
     db.delete(item)
 
     story = db.query(DBStory).filter_by(id=story_id).first()

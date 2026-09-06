@@ -176,6 +176,9 @@ def _migrate_story_items(engine, inspector, tables: set[str]) -> None:
     columns = _get_columns(inspector, "story_items")
     if "pan" not in columns:
         _add_column(engine, "story_items", "pan REAL NOT NULL DEFAULT 0.0", "pan")
+    columns = _get_columns(inspector, "story_items")
+    if "speed" not in columns:
+        _add_column(engine, "story_items", "speed FLOAT NOT NULL DEFAULT 1.0", "speed")
 
 
 def _migrate_profiles(engine, inspector, tables: set[str]) -> None:

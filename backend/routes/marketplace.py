@@ -63,21 +63,28 @@ def get_catalog() -> dict:
 
 
 @router.post("/marketplace/catalog/refresh")
-async def refresh_catalog() -> dict:
-    """Nudge a stale-gated remote-catalog refresh (Store-open trigger).
+async def refresh_catalog(force: bool = False) -> dict:
+    """Nudge a remote-catalog refresh; ``force=true`` bypasses the stale gate.
 
     The Store calls this when it opens so newly published models appear
     without an app restart. It is cheap when fresh: the fetch runs in a
     worker thread only when ``refresh_remote_catalog_if_stale`` decides the
     last successful refresh is older than ``OTOYIN_CATALOG_REFRESH_S``
     (default 24h) — otherwise it returns immediately with no network I/O.
+    The manual "Check for updates" action in the Store hero sends
+    ``force=true`` to fetch regardless of staleness; still offline-first,
+    so a missing ``OTOYIN_CATALOG_URL`` or any failure keeps the bundled
+    catalog and reports ``refreshed: false``.
+
     Returns ``refreshed`` so the caller can refetch the catalog when new
-    products actually arrived.
+    products actually arrived, plus ``reason`` (``None`` on success,
+    otherwise ``fresh`` | ``no_url`` | ``failed``) so the Store can surface
+    genuine fetch failures with a subtle hint instead of failing silently.
     """
     from ..services.marketplace_catalog import refresh_remote_catalog_if_stale
 
-    refreshed = await asyncio.to_thread(refresh_remote_catalog_if_stale)
-    return {"refreshed": refreshed}
+    code = await asyncio.to_thread(refresh_remote_catalog_if_stale, force)
+    return {"refreshed": code == "refreshed", "reason": None if code == "refreshed" else code}
 
 
 @router.get("/marketplace/entitlements")

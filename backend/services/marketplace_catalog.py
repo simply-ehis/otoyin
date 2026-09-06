@@ -9,7 +9,8 @@ rejected at load time. Model-product ``id`` values match the
 
 Pricing rule (docs/PRICING_PLAN.md): only models are paid; the app,
 instruments, and every procedural item stay free.  Free tier = equation
-price < $3.  NC-licensed engines ship free and flagged.
+price < $3.  NC-licensed engines are NOT shipped (removed 2026-09-05 —
+non-commercial weights cannot be distributed through a paid marketplace).
 """
 
 from __future__ import annotations
@@ -131,16 +132,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "price_usd": 0,
         "paid": False,
         "quality_score": 4,
-    },
-    # --- NC-licensed TTS (free + flagged — never sold) ---
-    {
-        "id": "fish-speech-s1-mini",
-        "name": "Fish Speech S1-mini",
-        "category": "tts",
-        "price_usd": 0,
-        "paid": False,
-        "quality_score": 9,
-        "note": "CC-BY-NC-SA — free, cannot be sold. 500 MB, zero-shot clone, 13 languages.",
     },
     # --- Paid Fish Audio S2 Pro (GGUF, 4.56B Dual-AR, s2.cpp) — user anchor $80 overrides $91 equation ---
     {
@@ -352,24 +343,6 @@ PRODUCTS: list[dict[str, Any]] = [
     },
     # --- Catalog gaps (G7): missing Store cards for downloadable configs ---
     {
-        "id": "chattts",
-        "name": "ChatTTS",
-        "category": "tts",
-        "price_usd": 0,
-        "paid": False,
-        "quality_score": 7,
-        "note": "CC-BY-NC — free, cannot be sold. 400 MB, 10 [laugh] tags, needs trim.",
-    },
-    {
-        "id": "f5-tts-onnx",
-        "name": "F5-TTS",
-        "category": "tts",
-        "price_usd": 0,
-        "paid": False,
-        "quality_score": 7,
-        "note": "CC-BY-NC weights — free, cannot be sold. 700 MB, torch-free via ONNX.",
-    },
-    {
         "id": "whisper-large-v3",
         "name": "Whisper Large-v3",
         "category": "stt",
@@ -419,7 +392,7 @@ _LAST_REMOTE_REFRESH: float = 0.0
 _REFRESHING = False
 
 
-def refresh_remote_catalog() -> bool:
+def refresh_remote_catalog() -> str:
     """Fetch + verify the signed remote catalog; swap ``PRODUCTS`` on success.
 
     Trust boundary: the fetched document must verify against the embedded
@@ -429,13 +402,19 @@ def refresh_remote_catalog() -> bool:
 
     Offline-first: any failure (no network, timeout, bad signature, malformed
     shape) keeps the bundled catalog untouched and logs at debug level.
-    Returns ``True`` when the catalog was swapped. Never raises.
+    Returns a result code so callers can distinguish the outcome:
+
+    - ``"refreshed"`` — a verified remote catalog was swapped in
+    - ``"no_url"`` — no ``OTOYIN_CATALOG_URL`` configured (offline by design)
+    - ``"failed"`` — fetch/verify/shape failure (bundled catalog kept)
+
+    Never raises.
     """
     global _LAST_REMOTE_REFRESH, _REFRESHING, _PRODUCT_INDEX
     if not REMOTE_CATALOG_URL:
-        return False
+        return "no_url"
     if _REFRESHING:
-        return False
+        return "failed"
     _REFRESHING = True
     try:
         req = urllib.request.Request(
@@ -447,10 +426,8 @@ def refresh_remote_catalog() -> bool:
         if not isinstance(catalog, dict):
             raise ValueError("remote catalog is not an object")
         if not verify_catalog(catalog):
-            logger.warning(
-                "Remote catalog failed signature verification — keeping bundled catalog"
-            )
-            return False
+            logger.warning("Remote catalog failed signature verification — keeping bundled catalog")
+            return "failed"
         products = catalog.get("products")
         if not isinstance(products, list) or not products:
             raise ValueError("remote catalog has no products list")
@@ -461,36 +438,38 @@ def refresh_remote_catalog() -> bool:
         PRODUCTS[:] = products
         _PRODUCT_INDEX = {p["id"]: p for p in products}
         _LAST_REMOTE_REFRESH = time.monotonic()
-        logger.info(
-            "Swapped bundled catalog with remote catalog (%d products)", len(products)
-        )
-        return True
+        logger.info("Swapped bundled catalog with remote catalog (%d products)", len(products))
+        return "refreshed"
     except Exception:
         logger.debug("Remote catalog fetch failed; keeping bundled catalog", exc_info=True)
-        return False
+        return "failed"
     finally:
         _REFRESHING = False
 
 
 def remote_catalog_stale(age_s: float = REMOTE_REFRESH_INTERVAL_S) -> bool:
     """True when a configured remote catalog hasn't refreshed within ``age_s``."""
-    return bool(REMOTE_CATALOG_URL) and (
-        time.monotonic() - _LAST_REMOTE_REFRESH
-    ) > age_s
+    return bool(REMOTE_CATALOG_URL) and (time.monotonic() - _LAST_REMOTE_REFRESH) > age_s
 
 
-def refresh_remote_catalog_if_stale() -> bool:
-    """Refresh the remote catalog only when stale (background-poll entry).
+def refresh_remote_catalog_if_stale(force: bool = False) -> str:
+    """Refresh the remote catalog when stale — or immediately when forced.
 
-    Cheap when fresh: no network, no lock, ``False`` immediately. Fetches via
+    Cheap when fresh: no network, no lock, ``"fresh"`` immediately. Fetches via
     ``refresh_remote_catalog()`` only when ``remote_catalog_stale()`` says the
     last successful refresh is older than ``REMOTE_REFRESH_INTERVAL_S`` — or
     never happened / last failed, since the timestamp only advances on success,
     so a failure is retried on the next poll tick rather than after a full
-    interval. Returns ``True`` when a fresh catalog was swapped in.
+    interval. ``force=True`` (the manual "Check for updates" action) skips the
+    staleness gate so the user can pull newly published products on demand;
+    still offline-first — no configured ``OTOYIN_CATALOG_URL`` stays a no-op
+    and any fetch failure keeps the bundled catalog untouched.
+    Returns a result code: ``"refreshed"`` when a fresh catalog was swapped
+    in, ``"fresh"`` when the stale gate skipped the fetch, ``"no_url"`` when
+    no remote is configured, or ``"failed"`` when the fetch/verify failed.
     """
-    if not remote_catalog_stale():
-        return False
+    if not force and not remote_catalog_stale():
+        return "fresh"
     return refresh_remote_catalog()
 
 

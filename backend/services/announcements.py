@@ -120,11 +120,7 @@ def refresh_remote_announcements() -> None:
             bundled[item_id] = item
             seen.add(item_id)
         # Preserve bundled ordering; remote-only items append at the end.
-        merged = [
-            bundled[a["id"]]
-            for a in _CONTENT.get("announcements", [])
-            if a.get("id") not in seen
-        ]
+        merged = [bundled[a["id"]] for a in _CONTENT.get("announcements", []) if a.get("id") not in seen]
         merged.extend(bundled[a["id"]] for a in _CONTENT.get("announcements", []) if a.get("id") in seen)
         merged.extend(item for item in items if item.get("id") not in {a.get("id") for a in merged})
         _CONTENT = {**_CONTENT, "announcements": merged}

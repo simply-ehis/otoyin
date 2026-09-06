@@ -529,8 +529,10 @@ async def get_generation_status(generation_id: str, db: Session = Depends(get_db
 
             while True:
                 try:
-                    payload = await asyncio.wait_for(queue.get(), timeout=30)
+                    payload = await asyncio.wait_for(queue.get(), timeout=15)
                 except TimeoutError:
+                    # S4: 15s (not 30s) so reverse proxies with short idle
+                    # timeouts don't reap the stream; matches /events/speak.
                     yield ": keepalive\n\n"
                     continue
 

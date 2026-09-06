@@ -1,5 +1,5 @@
 """
-Server-side user settings â€” singleton rows persisted in SQLite so every
+Server-side user settings — singleton rows persisted in SQLite so every
 client window, API consumer, and headless flow reads the same preferences.
 
 Two domains live here: capture/refine defaults and long-form generation
@@ -53,7 +53,7 @@ def _apply_patch(row: Any, patch: dict[str, Any]) -> None:
     """Apply a partial update to a settings row.
 
     Values explicitly set to ``None`` are honored only for columns where the
-    schema allows it â€” clearing ``default_playback_voice_id`` works, but a
+    schema allows it — clearing ``default_playback_voice_id`` works, but a
     ``None`` for a non-nullable field is dropped rather than crashing the
     request. Unknown keys are ignored.
     """

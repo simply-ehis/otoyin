@@ -300,12 +300,18 @@ async def health():
         vram_pressure = None
 
     # ── Model state (per-request) ──
-    tts_model = tts.get_tts_model()
+    # A missing TTS engine is a normal fresh-install state, not a 500:
+    # report "no model" and let the frontend route to the Store instead.
+    try:
+        tts_model = tts.get_tts_model()
+    except Exception as e:
+        logger.debug("No TTS engine installed yet: %s", e)
+        tts_model = None
 
     model_loaded = False
     model_size = None
     try:
-        if tts_model.is_loaded():
+        if tts_model is not None and tts_model.is_loaded():
             model_loaded = True
             model_size = getattr(tts_model, "_current_model_size", None)
             if not model_size:

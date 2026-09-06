@@ -52,7 +52,7 @@ if getattr(sys, "frozen", False):
 if "--version" in sys.argv:
     from backend import __version__
 
-    print(f"21-labs-server {__version__}")
+    print(f"otoyin-server {__version__}")
     sys.exit(0)
 
 
@@ -66,7 +66,7 @@ logger = logging.getLogger(__name__)
 
 # Log startup immediately to confirm binary execution
 logger.info("=" * 60)
-logger.info("21-labs-server starting up...")
+logger.info("otoyin-server starting up...")
 logger.info(f"Python version: {sys.version}")
 logger.info(f"Executable: {sys.executable}")
 logger.info(f"Arguments: {sys.argv}")
@@ -279,7 +279,7 @@ if __name__ == "__main__":
             parser.error("--parent-pid must be a positive integer")
 
         # Detect backend variant from binary name
-        # 21-labs-server-cuda → sets twentylabs_BACKEND_VARIANT=cuda
+        # otoyin-server-cuda → sets TWENTYLABS_BACKEND_VARIANT=cuda
         binary_name = os.path.basename(sys.executable).lower()
         if "cuda" in binary_name:
             os.environ["TWENTYLABS_BACKEND_VARIANT"] = "cuda"

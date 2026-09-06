@@ -804,6 +804,7 @@ class StoryItemDetail(BaseModel):
     fade_out_ms: int = 0
     gain_db: float = 0.0
     pan: float = 0.0
+    speed: float = 1.0
     generation_created_at: datetime
     # Versions available for this generation
     versions: list["GenerationVersionResponse"] | None = None
@@ -913,6 +914,47 @@ class StoryItemNormalize(BaseModel):
     """Request model for normalizing a story item to a target LUFS level."""
 
     target_lufs: float = Field(default=-14.0, ge=-30.0, le=0.0)
+
+
+class StoryItemMerge(BaseModel):
+    """Request model for merging two adjacent story items into one."""
+
+    first_item_id: str
+    second_item_id: str
+
+
+class StoryItemSpeed(BaseModel):
+    """Request model for non-destructive per-item playback speed.
+
+    ``1.0`` is original speed; ``> 1`` plays faster (shorter), ``< 1``
+    slower (longer), applied at mix time with constant pitch.
+    """
+
+    speed: float = Field(..., ge=0.25, le=4.0)
+
+
+class StoryMatchLoudness(BaseModel):
+    """Request model for matching every item in a story to one loudness."""
+
+    target_lufs: float = Field(default=-16.0, ge=-30.0, le=0.0)
+
+
+class StoryItemCrossfade(BaseModel):
+    """Request model for an overlap crossfade into the next item.
+
+    Sets this item's fade-out, the next item's fade-in, and overlaps the
+    next item's start by ``duration_ms`` so they blend instead of abutting.
+    """
+
+    next_item_id: str
+    duration_ms: int = Field(..., ge=50, le=10000)
+
+
+class StoryItemMoveToStory(BaseModel):
+    """Request model for moving (or copying) an item into another story."""
+
+    target_story_id: str
+    as_copy: bool = False
 
 
 class EffectConfig(BaseModel):

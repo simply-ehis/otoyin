@@ -25,6 +25,7 @@ from .helpers import (
     _load_clip_audio,
     _resolve_profile_name,
 )
+from .history import push_undo
 
 
 async def export_story_audio(
@@ -132,6 +133,7 @@ async def normalize_story_item(
     rms = np.sqrt(np.mean(audio**2))
     if rms <= 0.0:
         return None
+    push_undo(db, story_id)
     # Normalize to the requested integrated loudness (treated as an RMS/dBFS target),
     # matching the rest of the codebase's RMS-based normalize_audio helper.
     target_rms = 10.0 ** (data.target_lufs / 20.0)
@@ -167,6 +169,7 @@ async def reverse_story_item(
     if audio_path is None or not audio_path.exists():
         return None
     audio, sample_rate = load_audio(str(audio_path))
+    push_undo(db, story_id)
     reversed_audio = audio[::-1].copy()
     new_path = config.get_generations_dir() / f"{generation.id}_reversed_{uuid.uuid4().hex[:8]}.wav"
     save_audio(reversed_audio, str(new_path), sample_rate)
@@ -196,6 +199,7 @@ async def remove_silence_from_story_item(
     if audio_path is None or not audio_path.exists():
         return None
     audio, sample_rate = load_audio(str(audio_path))
+    push_undo(db, story_id)
     threshold = 0.01
     frame_size = int(0.02 * sample_rate)
     is_speech = []

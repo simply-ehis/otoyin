@@ -4,7 +4,7 @@ Unit tests for ``patch_transformers_mistral_regex``.
 Verifies that our wrapper around
 ``transformers.PreTrainedTokenizerBase._patch_mistral_regex`` catches
 exceptions from the unconditional ``huggingface_hub.model_info()`` lookup
-and returns the tokenizer unchanged â€” matching the success-path behavior
+and returns the tokenizer unchanged — matching the success-path behavior
 for non-Mistral repos (transformers 4.57.3, ``tokenization_utils_base.py:2503``).
 
 NOTE: These tests mutate ``transformers.PreTrainedTokenizerBase`` globally;

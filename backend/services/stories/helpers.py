@@ -58,6 +58,7 @@ def _build_item_detail(
         fade_out_ms=getattr(item, "fade_out_ms", 0),
         gain_db=getattr(item, "gain_db", 0.0),
         pan=getattr(item, "pan", 0.0),
+        speed=getattr(item, "speed", 1.0) or 1.0,
         generation_created_at=generation.created_at,
         versions=versions,
         active_version_id=active_version_id,
@@ -171,6 +172,19 @@ def _load_clip_audio(item: DBStoryItem, generation: DBGeneration, db: Session, s
         volume = float(getattr(item, "volume", 1.0) or 1.0)
         if volume != 1.0:
             trimmed_audio = trimmed_audio * volume
+
+        # Non-destructive speed: constant-pitch stretch at mix time so the
+        # timeline, export, and merge all hear the same duration.
+        speed = float(getattr(item, "speed", 1.0) or 1.0)
+        if speed != 1.0:
+            from ..effects import apply_time_stretch
+
+            trimmed_audio = apply_time_stretch(
+                np.asarray(trimmed_audio, dtype=np.float32),
+                sample_rate,
+                {"factor": 1.0 / speed},
+            )
+            effective_duration_ms = int(effective_duration_ms / speed)
 
         return trimmed_audio, effective_duration_ms
     except Exception as e:

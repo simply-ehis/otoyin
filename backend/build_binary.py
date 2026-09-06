@@ -61,11 +61,11 @@ def build_server(cuda=False):
 
     Args:
         cuda: If True, build with CUDA support and name the binary
-              21labs-server-cuda instead of 21labs-server.
+              otoyin-server-cuda instead of otoyin-server.
     """
     backend_dir = Path(__file__).parent
 
-    binary_name = "21labs-server-cuda" if cuda else "21labs-server"
+    binary_name = "otoyin-server-cuda" if cuda else "otoyin-server"
 
     # PyInstaller arguments
     # All builds use --onedir (directory of files, not a single .exe).
@@ -449,7 +449,7 @@ def build_shim():
     """Build the 21labs-mcp stdio shim as a tiny standalone binary.
 
     This is the bridge for MCP clients that only speak stdio — it proxies
-    JSON-RPC to the main 21labs-server's /mcp endpoint. Keep it small: no
+    JSON-RPC to the main otoyin-server's /mcp endpoint. Keep it small: no
     torch, no ML deps, just httpx + asyncio.
     """
     backend_dir = Path(__file__).parent
@@ -530,7 +530,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--cuda",
         action="store_true",
-        help="Build CUDA-enabled binary (21labs-server-cuda)",
+        help="Build CUDA-enabled binary (otoyin-server-cuda)",
     )
     parser.add_argument(
         "--shim",

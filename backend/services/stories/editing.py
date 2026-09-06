@@ -28,6 +28,7 @@ from ...models import (
     StoryItemVolumeUpdate,
 )
 from .helpers import _build_item_detail, _resolve_profile_name
+from .history import push_undo
 
 
 async def trim_story_item(
@@ -49,6 +50,7 @@ async def trim_story_item(
     if data.trim_start_ms + data.trim_end_ms >= max_duration_ms:
         return None
 
+    push_undo(db, story_id)
     item.trim_start_ms = data.trim_start_ms
     item.trim_end_ms = data.trim_end_ms
 
@@ -76,6 +78,7 @@ async def update_story_item_volume(
     if not generation:
         return None
 
+    push_undo(db, story_id)
     item.volume = data.volume
 
     story = db.query(DBStory).filter_by(id=story_id).first()
@@ -113,6 +116,7 @@ async def split_story_item(
 
     absolute_split_ms = current_trim_start + data.split_time_ms
 
+    push_undo(db, story_id)
     item.trim_end_ms = original_duration_ms - absolute_split_ms
     # Cap the original clip's fade-out so it cannot exceed the new (shorter) effective duration.
     new_effective_ms = data.split_time_ms
@@ -171,6 +175,7 @@ async def duplicate_story_item(
     original_duration_ms = int(generation.duration * 1000)
     effective_duration_ms = original_duration_ms - current_trim_start - current_trim_end
 
+    push_undo(db, story_id)
     new_item = DBStoryItem(
         id=str(uuid.uuid4()),
         story_id=story_id,
@@ -212,6 +217,9 @@ async def update_story_item_times(
     for update in data.updates:
         if update.generation_id not in item_map:
             return False
+
+    push_undo(db, story_id)
+    for update in data.updates:
         item_map[update.generation_id].start_time_ms = update.start_time_ms
 
     story.updated_at = datetime.now(UTC)
@@ -243,6 +251,7 @@ async def reorder_story_items(
     if set(generation_ids) != set(item_map.keys()):
         return None
 
+    push_undo(db, story_id)
     current_time_ms = 0
     updated_items = []
 
@@ -253,6 +262,9 @@ async def reorder_story_items(
         trim_start_ms = getattr(item, "trim_start_ms", 0)
         trim_end_ms = getattr(item, "trim_end_ms", 0)
         effective_duration_ms = original_duration_ms - trim_start_ms - trim_end_ms
+        speed = float(getattr(item, "speed", 1.0) or 1.0)
+        if speed != 1.0:
+            effective_duration_ms = int(effective_duration_ms / speed)
 
         item.start_time_ms = current_time_ms
         current_time_ms += max(0, effective_duration_ms) + gap_ms
@@ -286,6 +298,7 @@ async def set_story_item_version(
         if not version:
             return None
 
+    push_undo(db, story_id)
     item.version_id = data.version_id
 
     story = db.query(DBStory).filter_by(id=story_id).first()
@@ -311,6 +324,7 @@ async def set_story_item_fade(
     generation = db.query(DBGeneration).filter_by(id=item.generation_id).first()
     if not generation:
         return None
+    push_undo(db, story_id)
     item.fade_in_ms = data.fade_in_ms
     item.fade_out_ms = data.fade_out_ms
     story = db.query(DBStory).filter_by(id=story_id).first()
@@ -334,6 +348,7 @@ async def set_story_item_gain(
     generation = db.query(DBGeneration).filter_by(id=item.generation_id).first()
     if not generation:
         return None
+    push_undo(db, story_id)
     item.gain_db = data.gain_db
     story = db.query(DBStory).filter_by(id=story_id).first()
     if story:
@@ -356,6 +371,7 @@ async def set_story_item_pan(
     generation = db.query(DBGeneration).filter_by(id=item.generation_id).first()
     if not generation:
         return None
+    push_undo(db, story_id)
     item.pan = max(-1.0, min(1.0, float(data.pan)))
     story = db.query(DBStory).filter_by(id=story_id).first()
     if story:

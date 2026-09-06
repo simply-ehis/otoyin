@@ -1,8 +1,7 @@
 """
 CUDA backend download, assembly, and verification.
 
-Downloads two archives from GitHub Releases:
-   1. Server core (21labs-server-cuda.tar.gz) — the exe + non-NVIDIA deps,
+Downloads two archives from GitHub Releases:    1. Server core (otoyin-server-cuda.tar.gz) — the exe + non-NVIDIA deps,
      versioned with the app.
   2. CUDA libs (cuda-libs-{version}.tar.gz) — NVIDIA runtime libraries,
      versioned independently (only redownloaded on CUDA toolkit bump).
@@ -58,8 +57,8 @@ def get_cuda_dir() -> Path:
 def get_cuda_exe_name() -> str:
     """Platform-specific CUDA executable filename."""
     if sys.platform == "win32":
-        return "21labs-server-cuda.exe"
-    return "21labs-server-cuda"
+        return "otoyin-server-cuda.exe"
+    return "otoyin-server-cuda"
 
 
 def get_cuda_binary_path() -> Path | None:
@@ -282,7 +281,7 @@ async def _download_cuda_binary_locked(version: str | None = None):
     )
 
     base_url = f"{GITHUB_RELEASES_URL}/{version}"
-    server_archive = "21labs-server-cuda.tar.gz"
+    server_archive = "otoyin-server-cuda.tar.gz"
     libs_archive = f"cuda-libs-{CUDA_LIBS_VERSION}.tar.gz"
 
     try:
@@ -364,9 +363,9 @@ def get_cuda_binary_version() -> str | None:
             timeout=30,
             cwd=str(cuda_path.parent),  # Run from the onedir directory
         )
-        # Output format: "21labs-server X.Y.Z"
+        # Output format: "otoyin-server X.Y.Z"
         for line in result.stdout.strip().splitlines():
-            if "21labs-server" in line:
+            if "otoyin-server" in line:
                 return line.split()[-1]
     except Exception as e:
         logger.warning(f"Could not get CUDA binary version: {e}")

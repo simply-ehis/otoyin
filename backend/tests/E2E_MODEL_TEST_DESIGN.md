@@ -37,10 +37,10 @@ Search order — **first hit wins**:
 
 | Platform | Path | Build type |
 |----------|------|------------|
-| macOS    | `backend/dist/21-labs-server-cuda/21-labs-server-cuda` | onedir (CUDA, rarely on Mac) |
-| macOS    | `backend/dist/21-labs-server`                          | onefile (CPU) |
-| Windows  | `backend\dist\21-labs-server-cuda\21-labs-server-cuda.exe` | onedir (CUDA) |
-| Windows  | `backend\dist\21-labs-server.exe`                      | onefile (CPU) |
+| macOS    | `backend/dist/otoyin-server-cuda/otoyin-server-cuda` | onedir (CUDA, rarely on Mac) |
+| macOS    | `backend/dist/otoyin-server`                          | onedir (CPU) |
+| Windows  | `backend\dist\otoyin-server-cuda\otoyin-server-cuda.exe` | onedir (CUDA) |
+| Windows  | `backend\dist\otoyin-server.exe`                      | onedir (CPU) |
 
 If none exist, run `python backend/build_binary.py` and wait for it to finish (can take 5-20 min). Fail with a clear error if the build itself fails. `--skip-build` flag forces "error out if no binary" instead of building.
 
@@ -102,7 +102,7 @@ On timeout: cancel the SSE stream, mark the row `timeout`, and continue to the n
 ```json
 {
   "platform": "darwin-arm64",
-  "binary": "/abs/path/21-labs-server",
+  "binary": "/abs/path/otoyin-server",
   "binary_size_mb": 612,
   "started_at": "2026-04-16T12:34:56Z",
   "finished_at": "...",

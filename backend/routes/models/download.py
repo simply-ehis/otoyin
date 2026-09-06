@@ -77,9 +77,9 @@ def _friendly_download_error(e: Exception) -> str:
     msg = str(e)
     low = msg.lower()
     if "401" in msg or "403" in msg or "gated" in low:
-        return f"Repo is gated or private â€” sign in to HuggingFace first. ({msg})"
+        return f"Repo is gated or private — sign in to HuggingFace first. ({msg})"
     if any(k in low for k in ("connection", "network", "timed out", "timeout", "resolve", "unreachable")):
-        return f"Couldn't reach HuggingFace â€” check the network and retry. ({msg})"
+        return f"Couldn't reach HuggingFace — check the network and retry. ({msg})"
     if any(k in low for k in ("no space left", "disk full", "errno 28", "not enough space")):
         return f"Disk ran out of room for this model. ({msg})"
     return msg
@@ -336,7 +336,7 @@ async def trigger_model_download(request: models.ModelDownloadRequest, db: Sessi
     Downloads the model files via ``snapshot_download`` without loading
     the model into memory.  Progress is reported via the task and progress
     managers so the frontend can track it.  Paid models require a valid
-    installed license (docs/MARKETPLACE_PLAN.md Â§3).
+    installed license (docs/MARKETPLACE_PLAN.md §3).
     """
     from ...backends import get_model_config
 

@@ -21,7 +21,7 @@ src = ["."]
 
 # Files/dirs to skip entirely.
 extend-exclude = [
-    "21-labs-server.spec",
+    "otoyin-server.spec",
     "build_binary.py",
 ]
 
@@ -139,3 +139,7 @@ docstring-code-format = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+addopts = '-m "not e2e"'
+markers = [
+    "e2e: end-to-end tests that boot real processes (fake marketplace + backend subprocess); opt in with -m e2e",
+]

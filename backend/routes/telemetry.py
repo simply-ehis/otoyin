@@ -5,6 +5,7 @@ telemetry preference (disabled by default). All data is anonymous and
 aggregated; no PII is stored.
 """
 
+import contextlib
 import logging
 
 from fastapi import APIRouter, HTTPException, Query
@@ -76,13 +77,10 @@ async def get_telemetry_summary(since: str | None = None):
         try:
             from datetime import datetime as _dt
 
-            since_dt = _dt.fromisoformat(since)
             active = set()
             for ev in filtered["events"]:
-                try:
+                with contextlib.suppress(Exception):
                     active.add(_dt.fromisoformat(ev.get("timestamp", "")).date().isoformat())
-                except Exception:
-                    pass
             active_days = len(active)
         except Exception:
             active_days = summary.get("active_days", 0)

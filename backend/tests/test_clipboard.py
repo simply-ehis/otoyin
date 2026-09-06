@@ -87,3 +87,41 @@ def test_delete_clears_slot():
     c.put("/clipboard", json={"kind": "sample", "entity_id": "abc"})
     assert c.delete("/clipboard").status_code == 204
     assert c.get("/clipboard").status_code == 404
+
+
+def test_history_records_copies_newest_first():
+    c = _client()
+    c.put("/clipboard", json={"kind": "sample", "entity_id": "first"})
+    c.put("/clipboard", json={"kind": "capture", "entity_id": "second"})
+
+    body = c.get("/clipboard/history").json()
+    assert [e["entity_id"] for e in body] == ["second", "first"]
+    assert body[0]["kind"] == "capture"
+    assert "id" in body[0]
+
+
+def test_history_pruned_to_twenty():
+    c = _client()
+    for i in range(25):
+        c.put("/clipboard", json={"kind": "sample", "entity_id": f"clip-{i}"})
+
+    body = c.get("/clipboard/history").json()
+    assert len(body) == 20
+    assert body[0]["entity_id"] == "clip-24"
+    assert body[-1]["entity_id"] == "clip-5"
+
+
+def test_history_delete_entry():
+    c = _client()
+    c.put("/clipboard", json={"kind": "sample", "entity_id": "gone"})
+    entry_id = c.get("/clipboard/history").json()[0]["id"]
+
+    assert c.delete(f"/clipboard/history/{entry_id}").status_code == 204
+    assert c.get("/clipboard/history").json() == []
+    # Deleting history does not clear the live slot.
+    assert c.get("/clipboard").status_code == 200
+
+
+def test_history_delete_unknown_returns_404():
+    c = _client()
+    assert c.delete("/clipboard/history/nope").status_code == 404

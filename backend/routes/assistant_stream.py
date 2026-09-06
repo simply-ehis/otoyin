@@ -43,13 +43,20 @@ from .assistant_tools.tool_call_middleware import (
 )
 
 # Inlined from small_model_harness (broken external package)
-_THINKING_MODEL_PATTERNS = ("qwen3", "deepseek-r1", "deepseek-r2", "r1-distill", "o1", "o3")
+_THINKING_MODEL_PATTERNS = ("qwen3", "deepseek-r1", "deepseek-r2", "r1-distill", "o1", "o3", "planner")
+# Explicitly non-reasoning families (mostly TTS/STT): everything else
+# defaults to thinking, which is the safe direction for grammar selection.
+_NON_THINKING_MODEL_PATTERNS = ("chatterbox", "piper", "whisper", "bark")
 
 
 def _is_thinking_model(model_id: str) -> bool:
     """Return True if *model_id* refers to a reasoning/thinking model."""
     mid = model_id.lower()
-    return any(p in mid for p in _THINKING_MODEL_PATTERNS)
+    if any(p in mid for p in _NON_THINKING_MODEL_PATTERNS):
+        return False
+    if any(p in mid for p in _THINKING_MODEL_PATTERNS):
+        return True
+    return True
 
 
 def _split_thinking(text: str) -> tuple[str, str]:

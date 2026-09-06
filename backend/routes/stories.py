@@ -294,6 +294,105 @@ async def set_story_item_version(
     return item
 
 
+@router.post("/stories/{story_id}/items/merge", response_model=models.StoryItemDetail)
+async def merge_story_items(
+    story_id: str,
+    data: models.StoryItemMerge,
+    db: Session = Depends(get_db),
+):
+    """Render two items into one (first keeps position; second is removed)."""
+    item = await stories.merge_story_items(story_id, data, db)
+    if item is None:
+        raise HTTPException(status_code=404, detail=ERR_STORY_ITEM_NOT_FOUND)
+    return item
+
+
+@router.put("/stories/{story_id}/items/{item_id}/speed", response_model=models.StoryItemDetail)
+async def set_story_item_speed(
+    story_id: str,
+    item_id: str,
+    data: models.StoryItemSpeed,
+    db: Session = Depends(get_db),
+):
+    """Set non-destructive playback speed (0.25–4.0, constant pitch at mix)."""
+    item = await stories.set_story_item_speed(story_id, item_id, data, db)
+    if item is None:
+        raise HTTPException(status_code=404, detail=ERR_STORY_ITEM_NOT_FOUND)
+    return item
+
+
+@router.post("/stories/{story_id}/match-loudness", response_model=list[models.StoryItemDetail])
+async def match_story_loudness(
+    story_id: str,
+    data: models.StoryMatchLoudness,
+    db: Session = Depends(get_db),
+):
+    """Pin every item's gain so all clips hit one loudness target."""
+    items = await stories.match_story_loudness(story_id, data, db)
+    if items is None:
+        raise HTTPException(status_code=404, detail=ERR_STORY_NOT_FOUND)
+    return items
+
+
+@router.post("/stories/{story_id}/items/{item_id}/crossfade", response_model=list[models.StoryItemDetail])
+async def crossfade_story_items(
+    story_id: str,
+    item_id: str,
+    data: models.StoryItemCrossfade,
+    db: Session = Depends(get_db),
+):
+    """Overlap the next item with complementary fades (blend, don't abut)."""
+    items = await stories.crossfade_story_items(story_id, item_id, data, db)
+    if items is None:
+        raise HTTPException(status_code=404, detail=ERR_STORY_ITEM_NOT_FOUND)
+    return items
+
+
+@router.post("/stories/{story_id}/items/{item_id}/move-to-story", response_model=models.StoryItemDetail)
+async def move_item_to_story(
+    story_id: str,
+    item_id: str,
+    data: models.StoryItemMoveToStory,
+    db: Session = Depends(get_db),
+):
+    """Move (or copy) an item into another story, appended at the end."""
+    item = await stories.move_item_to_story(story_id, item_id, data, db)
+    if item is None:
+        raise HTTPException(status_code=404, detail=ERR_STORY_ITEM_NOT_FOUND)
+    return item
+
+
+@router.get("/stories/{story_id}/history-depth")
+async def story_history_depth(
+    story_id: str,
+    db: Session = Depends(get_db),
+):
+    """Undo/redo stack sizes (drives button disabled states)."""
+    return stories.history_depth(db, story_id)
+
+
+@router.post("/stories/{story_id}/undo")
+async def undo_story_edit(
+    story_id: str,
+    db: Session = Depends(get_db),
+):
+    """Rewind one edit step."""
+    if not stories.undo(db, story_id):
+        raise HTTPException(status_code=400, detail=ERR_INVALID_REQUEST)
+    return {"message": "Undone"}
+
+
+@router.post("/stories/{story_id}/redo")
+async def redo_story_edit(
+    story_id: str,
+    db: Session = Depends(get_db),
+):
+    """Re-apply one undone edit step."""
+    if not stories.redo(db, story_id):
+        raise HTTPException(status_code=400, detail=ERR_INVALID_REQUEST)
+    return {"message": "Redone"}
+
+
 @router.get("/stories/{story_id}/export-audio")
 async def export_story_audio(
     story_id: str,

@@ -97,11 +97,9 @@ def test_refresh_swaps_products_on_success(mc, monkeypatch):
     """A valid signed remote catalog replaces the bundled PRODUCTS."""
     monkeypatch.setattr(mc, "REMOTE_CATALOG_URL", "https://marketplace.test/v1/catalog")
     payload = json.dumps(_signed_catalog(_remote_products())).encode()
-    monkeypatch.setattr(
-        mc.urllib.request, "urlopen", lambda *a, **k: _FakeResp(payload)
-    )
+    monkeypatch.setattr(mc.urllib.request, "urlopen", lambda *a, **k: _FakeResp(payload))
 
-    assert mc.refresh_remote_catalog() is True
+    assert mc.refresh_remote_catalog() == "refreshed"
     assert [p["id"] for p in mc.PRODUCTS] == ["remote-engine-alpha"]
     assert mc.get_product("remote-engine-alpha")["name"] == "Remote Engine Alpha"
     assert mc.get_product("kokoro-onnx") is None  # bundled ids are gone
@@ -117,7 +115,7 @@ def test_refresh_keeps_bundled_on_network_failure(mc, monkeypatch):
 
     monkeypatch.setattr(mc.urllib.request, "urlopen", _boom)
 
-    assert mc.refresh_remote_catalog() is False
+    assert mc.refresh_remote_catalog() == "failed"
     assert [p["id"] for p in mc.PRODUCTS] == bundled_ids
 
 
@@ -139,7 +137,7 @@ def test_refresh_rejects_bad_signature(mc, monkeypatch):
         lambda *a, **k: _FakeResp(json.dumps(unsigned).encode()),
     )
 
-    assert mc.refresh_remote_catalog() is False
+    assert mc.refresh_remote_catalog() == "failed"
     assert [p["id"] for p in mc.PRODUCTS] == bundled_ids
 
 
@@ -152,7 +150,7 @@ def test_refresh_disabled_when_url_unset(mc, monkeypatch):
 
     monkeypatch.setattr(mc.urllib.request, "urlopen", _should_not_be_called)
 
-    assert mc.refresh_remote_catalog() is False
+    assert mc.refresh_remote_catalog() == "no_url"
 
 
 def test_remote_catalog_stale(mc, monkeypatch):
@@ -161,10 +159,8 @@ def test_remote_catalog_stale(mc, monkeypatch):
     assert mc.remote_catalog_stale(age_s=1) is True  # never refreshed
 
     payload = json.dumps(_signed_catalog(_remote_products())).encode()
-    monkeypatch.setattr(
-        mc.urllib.request, "urlopen", lambda *a, **k: _FakeResp(payload)
-    )
-    assert mc.refresh_remote_catalog() is True
+    monkeypatch.setattr(mc.urllib.request, "urlopen", lambda *a, **k: _FakeResp(payload))
+    assert mc.refresh_remote_catalog() == "refreshed"
     assert mc.remote_catalog_stale(age_s=3600) is False  # just refreshed
 
 
@@ -173,11 +169,9 @@ def test_refresh_if_stale_is_a_noop_when_fresh(mc, monkeypatch):
     monkeypatch.setattr(mc, "REMOTE_CATALOG_URL", "https://marketplace.test/v1/catalog")
     monkeypatch.setattr(mc, "_LAST_REMOTE_REFRESH", time.monotonic())
     calls: list[int] = []
-    monkeypatch.setattr(
-        mc, "refresh_remote_catalog", lambda: calls.append(1) or True
-    )
+    monkeypatch.setattr(mc, "refresh_remote_catalog", lambda: calls.append(1) or "refreshed")
 
-    assert mc.refresh_remote_catalog_if_stale() is False
+    assert mc.refresh_remote_catalog_if_stale() == "fresh"
     assert calls == []  # no fetch when fresh
 
 
@@ -188,11 +182,9 @@ def test_refresh_if_stale_fetches_when_stale(mc, monkeypatch):
     # host uptime, since time.monotonic() is boot-relative.
     monkeypatch.setattr(mc, "_LAST_REMOTE_REFRESH", time.monotonic() - 100_000)
     calls: list[int] = []
-    monkeypatch.setattr(
-        mc, "refresh_remote_catalog", lambda: calls.append(1) or True
-    )
+    monkeypatch.setattr(mc, "refresh_remote_catalog", lambda: calls.append(1) or "refreshed")
 
-    assert mc.refresh_remote_catalog_if_stale() is True
+    assert mc.refresh_remote_catalog_if_stale() == "refreshed"
     assert calls == [1]
 
 
@@ -200,9 +192,116 @@ def test_refresh_if_stale_noop_when_url_unset(mc, monkeypatch):
     """No configured URL: the poll wrapper is a network-free no-op."""
     monkeypatch.setattr(mc, "REMOTE_CATALOG_URL", "")
     calls: list[int] = []
-    monkeypatch.setattr(
-        mc, "refresh_remote_catalog", lambda: calls.append(1) or True
-    )
+    monkeypatch.setattr(mc, "refresh_remote_catalog", lambda: calls.append(1) or "refreshed")
 
-    assert mc.refresh_remote_catalog_if_stale() is False
+    assert mc.refresh_remote_catalog_if_stale() == "fresh"
     assert calls == []
+
+
+def test_refresh_if_stale_force_bypasses_freshness(mc, monkeypatch):
+    """Manual check: force=True fetches even when the catalog is fresh."""
+    monkeypatch.setattr(mc, "REMOTE_CATALOG_URL", "https://marketplace.test/v1/catalog")
+    monkeypatch.setattr(mc, "_LAST_REMOTE_REFRESH", time.monotonic())
+    calls: list[int] = []
+    monkeypatch.setattr(mc, "refresh_remote_catalog", lambda: calls.append(1) or "refreshed")
+
+    assert mc.refresh_remote_catalog_if_stale(force=True) == "refreshed"
+    assert calls == [1]
+
+
+def test_refresh_if_stale_force_noop_when_url_unset(mc, monkeypatch):
+    """Manual check without a configured URL stays offline (no network)."""
+    monkeypatch.setattr(mc, "REMOTE_CATALOG_URL", "")
+
+    def _should_not_be_called(*a, **k):
+        raise AssertionError("urlopen must not be called when URL is unset")
+
+    monkeypatch.setattr(mc.urllib.request, "urlopen", _should_not_be_called)
+
+    assert mc.refresh_remote_catalog_if_stale(force=True) == "no_url"
+
+
+class TestCatalogRefreshRoute:
+    """POST /marketplace/catalog/refresh — the Store-open nudge."""
+
+    @pytest.fixture
+    def client(self):
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+
+        from backend.routes.marketplace import router
+
+        app = FastAPI()
+        app.include_router(router)
+        return TestClient(app)
+
+    def test_refresh_route_returns_refreshed_when_stale(self, client, mc, monkeypatch):
+        """Stale (backdated >24h): the route performs the swap and reports it."""
+        monkeypatch.setattr(mc, "REMOTE_CATALOG_URL", "https://marketplace.test/v1/catalog")
+        monkeypatch.setattr(mc, "_LAST_REMOTE_REFRESH", time.monotonic() - 100_000)
+        calls: list[int] = []
+        monkeypatch.setattr(mc, "refresh_remote_catalog", lambda: calls.append(1) or "refreshed")
+
+        resp = client.post("/marketplace/catalog/refresh")
+        assert resp.status_code == 200
+        assert resp.json() == {"refreshed": True, "reason": None}
+        assert calls == [1]
+
+    def test_refresh_route_is_noop_when_fresh(self, client, mc, monkeypatch):
+        """Fresh: the route returns without any fetch (cheap on every open)."""
+        monkeypatch.setattr(mc, "REMOTE_CATALOG_URL", "https://marketplace.test/v1/catalog")
+        monkeypatch.setattr(mc, "_LAST_REMOTE_REFRESH", time.monotonic())
+        calls: list[int] = []
+        monkeypatch.setattr(mc, "refresh_remote_catalog", lambda: calls.append(1) or "refreshed")
+
+        resp = client.post("/marketplace/catalog/refresh")
+        assert resp.status_code == 200
+        assert resp.json() == {"refreshed": False, "reason": "fresh"}
+        assert calls == []
+
+    def test_refresh_route_noop_when_url_unset(self, client, mc, monkeypatch):
+        """No configured URL: the nudge never touches the network."""
+        monkeypatch.setattr(mc, "REMOTE_CATALOG_URL", "")
+        calls: list[int] = []
+        monkeypatch.setattr(mc, "refresh_remote_catalog", lambda: calls.append(1) or "refreshed")
+
+        resp = client.post("/marketplace/catalog/refresh")
+        assert resp.status_code == 200
+        assert resp.json() == {"refreshed": False, "reason": "fresh"}
+        assert calls == []
+
+    def test_refresh_route_force_fetches_when_fresh(self, client, mc, monkeypatch):
+        """force=true bypasses the stale gate (manual Check for updates)."""
+        monkeypatch.setattr(mc, "REMOTE_CATALOG_URL", "https://marketplace.test/v1/catalog")
+        monkeypatch.setattr(mc, "_LAST_REMOTE_REFRESH", time.monotonic())
+        calls: list[int] = []
+        monkeypatch.setattr(mc, "refresh_remote_catalog", lambda: calls.append(1) or "refreshed")
+
+        resp = client.post("/marketplace/catalog/refresh?force=true")
+        assert resp.status_code == 200
+        assert resp.json() == {"refreshed": True, "reason": None}
+        assert calls == [1]
+
+    def test_refresh_route_without_force_still_gated(self, client, mc, monkeypatch):
+        """Default (no force) keeps the cheap stale-gated behavior."""
+        monkeypatch.setattr(mc, "REMOTE_CATALOG_URL", "https://marketplace.test/v1/catalog")
+        monkeypatch.setattr(mc, "_LAST_REMOTE_REFRESH", time.monotonic())
+        calls: list[int] = []
+        monkeypatch.setattr(mc, "refresh_remote_catalog", lambda: calls.append(1) or "refreshed")
+
+        resp = client.post("/marketplace/catalog/refresh")
+        assert resp.status_code == 200
+        assert resp.json() == {"refreshed": False, "reason": "fresh"}
+        assert calls == []
+
+    def test_refresh_route_reports_fetch_failure(self, client, mc, monkeypatch):
+        """A failed fetch surfaces as reason="failed" so the Store can hint."""
+        monkeypatch.setattr(mc, "REMOTE_CATALOG_URL", "https://marketplace.test/v1/catalog")
+        monkeypatch.setattr(mc, "_LAST_REMOTE_REFRESH", time.monotonic() - 100_000)
+        calls: list[int] = []
+        monkeypatch.setattr(mc, "refresh_remote_catalog", lambda: calls.append(1) or "failed")
+
+        resp = client.post("/marketplace/catalog/refresh")
+        assert resp.status_code == 200
+        assert resp.json() == {"refreshed": False, "reason": "failed"}
+        assert calls == [1]
