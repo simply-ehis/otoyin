@@ -269,7 +269,7 @@ async def capture_launcher_session(
     output_path = config.get_exports_dir() / output_filename
     await asyncio.to_thread(save_audio, mixed, output_path, sr)
 
-    storage_path = str(output_path.relative_to(config.get_storage_dir()))
+    storage_path = str(output_path.relative_to(config.get_data_dir()))
     return models.LauncherCaptureResponse(
         audio_path=storage_path,
         filename=output_filename,

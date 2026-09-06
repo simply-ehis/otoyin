@@ -122,6 +122,11 @@ const LauncherTab = lazy(() =>
 		default: m.LauncherTab,
 	})),
 );
+const InstrumentLibraryTab = lazy(() =>
+	import("@/features/instruments/InstrumentLibrary").then((m) => ({
+		default: m.InstrumentLibrary,
+	})),
+);
 const AudiobooksTab = lazy(() =>
 	import("@/features/audiobooks/AudiobooksTab").then((m) => ({
 		default: m.AudiobooksTab,
@@ -521,6 +526,13 @@ const launcherRoute = createRoute({
 	component: LauncherTab,
 });
 
+// Instruments route
+const instrumentsRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/instruments",
+	component: InstrumentLibraryTab,
+});
+
 // Audiobooks route
 const audiobooksRoute = createRoute({
 	getParentRoute: () => rootRoute,
@@ -710,12 +722,6 @@ const effectsRouteWs = createRoute({
 const studioRoute = createRoute({
 	getParentRoute: () => workspaceRoute,
 	path: "/studio",
-	component: StudioView,
-});
-
-const instrumentsRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/instruments",
 	component: StudioView,
 });
 
@@ -924,6 +930,7 @@ const routeTree = rootRoute.addChildren([
 	storiesRoute,
 	songwriterRoute,
 	launcherRoute,
+	instrumentsRoute,
 	audiobooksRoute,
 	capturesRoute,
 	voicesRoute,

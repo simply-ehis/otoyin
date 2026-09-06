@@ -46,8 +46,9 @@ const NAV_GROUPS: { items: NavItem[] }[] = [
 		items: [
 			{ path: "/stories", label: "sidebar.stories", icon: BookOpen },
 			{ path: "/songwriter", label: "sidebar.songwriter", icon: PenLine },
-			{ path: "/launcher", label: "sidebar.launcher", icon: Squares },
-			{
+		{ path: "/launcher", label: "sidebar.launcher", icon: Squares },
+		{ path: "/instruments", label: "sidebar.instruments", icon: Music },
+		{
 				path: "/audiobooks",
 				label: "sidebar.audiobooks",
 				icon: RectangleStack,

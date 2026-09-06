@@ -170,7 +170,7 @@ async def delete_words(generation_id: str, request: DeleteWordsRequest):
 
     # Save as new generation (non-destructive)
     new_generation_id = str(uuid.uuid4())
-    storage_dir = config.get_storage_dir() / "generations"
+    storage_dir = config.get_generations_dir()
     storage_dir.mkdir(parents=True, exist_ok=True)
     new_audio_path = storage_dir / f"{new_generation_id}.wav"
 
@@ -182,7 +182,7 @@ async def delete_words(generation_id: str, request: DeleteWordsRequest):
         id=new_generation_id,
         user_id=gen.user_id,
         text=gen.text,  # keep original text for reference
-        audio_path=str(new_audio_path.relative_to(config.get_storage_dir())),
+        audio_path=str(new_audio_path.relative_to(config.get_data_dir())),
         engine=gen.engine,
         voice_id=gen.voice_id,
         language=gen.language,
@@ -195,6 +195,6 @@ async def delete_words(generation_id: str, request: DeleteWordsRequest):
 
     return DeleteWordsResponse(
         new_generation_id=new_generation_id,
-        new_audio_path=str(new_audio_path.relative_to(config.get_storage_dir())),
+        new_audio_path=str(new_audio_path.relative_to(config.get_data_dir())),
         new_duration=new_duration,
     )

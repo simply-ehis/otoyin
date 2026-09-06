@@ -1462,5 +1462,12 @@
 			"noSession": "Save the session first",
 			"captured": "Captured to library"
 		}
+	},
+	"instruments": {
+		"title": "Instrument Library",
+		"description": "Install SoundFont packs (SF2/SF3), SFZ instruments, or audio samples for use in the launcher and studio.",
+		"import": "Import Instrument",
+		"uploading": "Uploading…",
+		"empty": "No instrument packs installed. Import a SoundFont (SF2/SF3), SFZ, or audio file to get started."
 	}
 }

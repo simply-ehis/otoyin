@@ -946,3 +946,22 @@ class LauncherSession(Base):
     num_scenes = Column(Integer, nullable=False, default=4)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+
+
+class InstrumentPack(Base):
+    """Installed instrument pack (SF2, SFZ, WebAudioFont presets, samples).
+
+    The binary payload lives on disk under ``data/instruments/<id>/``; this
+    row stores metadata and a JSON manifest of contained instruments.
+    """
+
+    __tablename__ = "instrument_packs"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String, nullable=False)
+    version = Column(String, nullable=False, default="1.0.0")
+    format = Column(String, nullable=False, default="soundfont")
+    bytes = Column(Integer, nullable=False, default=0)
+    source = Column(String, nullable=True)
+    instruments_json = Column(JSON, nullable=False, default=list)
+    installed_at = Column(DateTime, default=lambda: datetime.now(UTC))

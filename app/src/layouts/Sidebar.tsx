@@ -60,6 +60,11 @@ const NAV_GROUPS: { items: NavItem[] }[] = [
 			label: "sidebar.launcher",
 			icon: Squares2X2Icon,
 		},
+		{
+			path: "/instruments",
+			label: "sidebar.instruments",
+			icon: MusicalNoteIcon,
+		},
 			{
 				path: "/audiobooks",
 				label: "sidebar.audiobooks",

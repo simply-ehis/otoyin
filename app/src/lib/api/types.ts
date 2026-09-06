@@ -1118,3 +1118,38 @@ export interface LauncherCaptureResponse {
 	durationS: number;
 	sampleRate: number;
 }
+
+export interface InstrumentPackInstrument {
+	id: string;
+	name: string;
+	family: string;
+	variant?: string;
+	program: number;
+	bankMSB: number;
+	bankLSB: number;
+	percussion: boolean;
+	format: string;
+}
+
+export interface InstrumentPackCreate {
+	name: string;
+	version?: string;
+	format?: string;
+	source?: string;
+}
+
+export interface InstrumentPackResponse {
+	id: string;
+	name: string;
+	version: string;
+	format: string;
+	bytes: number;
+	source?: string;
+	instruments: InstrumentPackInstrument[];
+	installedAt: string;
+}
+
+export interface InstrumentUploadResponse {
+	pack: InstrumentPackResponse;
+	instrumentCount: number;
+}
