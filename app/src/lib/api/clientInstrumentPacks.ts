@@ -48,4 +48,12 @@ export class ClientInstrumentPackMethods extends ClientLauncherMethods {
 		);
 		if (!response.ok) throw new Error("Failed to delete instrument pack");
 	}
+
+	async getInstrumentPackFile(packId: string): Promise<ArrayBuffer> {
+		const response = await this.fetchWithAuth(
+			`/instrument-packs/${packId}/file`,
+		);
+		if (!response.ok) throw new Error("Failed to download instrument file");
+		return response.arrayBuffer();
+	}
 }

@@ -10,6 +10,7 @@ import uuid
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from .. import config, models
@@ -111,6 +112,7 @@ async def upload_instrument_pack(
         json.dump(manifest, f)
 
     row = DBInstrumentPack(
+        id=pack_id,
         name=name or os.path.splitext(filename)[0],
         version="1.0.0",
         format=fmt,
@@ -190,6 +192,30 @@ async def get_instrument_pack(
     if row is None:
         raise HTTPException(status_code=404, detail=ERR_INVALID_REQUEST)
     return _to_response(row)
+
+
+@router.get("/instrument-packs/{pack_id}/file")
+async def get_instrument_pack_file(
+    pack_id: str, db: Session = Depends(get_db)
+):
+    """Download the raw instrument file (SF2/SF3/SFZ/etc.) for a pack."""
+    row = db.query(DBInstrumentPack).filter_by(id=pack_id).first()
+    if row is None:
+        raise HTTPException(status_code=404, detail=ERR_INVALID_REQUEST)
+    pack_dir = os.path.join(_instruments_dir(), pack_id)
+    if not os.path.isdir(pack_dir):
+        raise HTTPException(status_code=404, detail="Pack files missing")
+    for f in os.listdir(pack_dir):
+        if f == "manifest.json":
+            continue
+        ext = os.path.splitext(f)[1].lower()
+        if ext in (".sf2", ".sf3", ".sfz", ".wav", ".ogg", ".mp3", ".flac", ".m4a"):
+            return FileResponse(
+                os.path.join(pack_dir, f),
+                media_type="application/octet-stream",
+                filename=f,
+            )
+    raise HTTPException(status_code=404, detail="No instrument file found")
 
 
 @router.delete("/instrument-packs/{pack_id}", status_code=204)

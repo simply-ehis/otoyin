@@ -87,3 +87,23 @@ def test_delete_removes_pack():
     assert res2.status_code == 204
     res3 = client.get(f"/instrument-packs/{pack_id}")
     assert res3.status_code == 404
+
+
+def test_download_pack_file():
+    client = _client()
+    wav_content = b"RIFF" + b"\x00" * 100
+    res = client.post(
+        "/instrument-packs/upload",
+        files={"file": ("snare.wav", io.BytesIO(wav_content), "audio/wav")},
+        data={"name": "Snare"},
+    )
+    pack_id = res.json()["pack"]["id"]
+    res2 = client.get(f"/instrument-packs/{pack_id}/file")
+    assert res2.status_code == 200
+    assert res2.content == wav_content
+
+
+def test_download_nonexistent_returns_404():
+    client = _client()
+    res = client.get("/instrument-packs/nonexistent/file")
+    assert res.status_code == 404
