@@ -224,7 +224,7 @@ export function NotificationBell() {
 											<div className="min-w-0 flex-1">
 												<p className="truncate font-medium">{offer.title}</p>
 												{offer.discount_label && (
-													<p className="text-xs text-emerald-400">
+													<p className="text-xs text-success-text">
 														{offer.discount_label}
 													</p>
 												)}
@@ -274,7 +274,7 @@ export function NotificationBell() {
 							activeDownloads.length === 0 && (
 								<div className="flex items-center gap-2 text-xs text-muted-foreground py-1">
 									<CheckCircleIcon
-										className="size-4 text-green-500"
+										className="size-4 text-success-text"
 										aria-hidden="true"
 									/>
 									All caught up — recommended models are ready.

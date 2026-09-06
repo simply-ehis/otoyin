@@ -127,7 +127,7 @@ export function ReferenceVoicesBrowser() {
 					manifest_count?: number;
 				}
 			)?.pack_downloaded === false && (
-				<div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950 border border-amber-200 rounded p-2">
+				<div className="text-xs text-warning-text bg-warning-soft border border-warning/40 rounded p-2">
 					Reference pack not downloaded —{" "}
 					{(data as unknown as { manifest_count?: number })?.manifest_count ??
 						0}{" "}

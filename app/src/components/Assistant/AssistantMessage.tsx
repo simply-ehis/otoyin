@@ -261,7 +261,7 @@ function ToolResultBubble({ msg }: { msg: Msg }) {
 
 	return (
 		<div className="flex flex-col gap-1">
-			<div className="flex items-center gap-2 text-xs text-green-500/80 hover:text-green-500 transition-colors">
+			<div className="flex items-center gap-2 text-xs text-success-text/80 hover:text-success-text transition-colors">
 				<Wrench className="size-3" />
 				{open ? (
 					<ChevronDown className="size-3" />

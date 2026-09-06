@@ -39,9 +39,7 @@ def _to_response(row: DBInstrumentPack) -> models.InstrumentPackResponse:
         format=row.format or "soundfont",
         bytes=row.bytes or 0,
         source=row.source,
-        instruments=[
-            models.InstrumentPackInstrument(**i) for i in instruments_raw
-        ],
+        instruments=[models.InstrumentPackInstrument(**i) for i in instruments_raw],
         installed_at=row.installed_at or datetime.now(UTC),
     )
 
@@ -52,11 +50,7 @@ def _to_response(row: DBInstrumentPack) -> models.InstrumentPackResponse:
 )
 async def list_instrument_packs(db: Session = Depends(get_db)):
     """List installed instrument packs, newest first."""
-    rows = (
-        db.query(DBInstrumentPack)
-        .order_by(DBInstrumentPack.installed_at.desc())
-        .all()
-    )
+    rows = db.query(DBInstrumentPack).order_by(DBInstrumentPack.installed_at.desc()).all()
     return [_to_response(row) for row in rows]
 
 
@@ -131,9 +125,7 @@ async def upload_instrument_pack(
     )
 
 
-def _index_instruments(
-    path: str, fmt: str, pack_id: str
-) -> list[dict]:
+def _index_instruments(path: str, fmt: str, pack_id: str) -> list[dict]:
     """Best-effort instrument indexing from an uploaded file."""
     instruments: list[dict] = []
     basename = os.path.splitext(os.path.basename(path))[0]
@@ -184,9 +176,7 @@ def _index_instruments(
     "/instrument-packs/{pack_id}",
     response_model=models.InstrumentPackResponse,
 )
-async def get_instrument_pack(
-    pack_id: str, db: Session = Depends(get_db)
-):
+async def get_instrument_pack(pack_id: str, db: Session = Depends(get_db)):
     """Get one instrument pack."""
     row = db.query(DBInstrumentPack).filter_by(id=pack_id).first()
     if row is None:
@@ -195,9 +185,7 @@ async def get_instrument_pack(
 
 
 @router.get("/instrument-packs/{pack_id}/file")
-async def get_instrument_pack_file(
-    pack_id: str, db: Session = Depends(get_db)
-):
+async def get_instrument_pack_file(pack_id: str, db: Session = Depends(get_db)):
     """Download the raw instrument file (SF2/SF3/SFZ/etc.) for a pack."""
     row = db.query(DBInstrumentPack).filter_by(id=pack_id).first()
     if row is None:
@@ -219,9 +207,7 @@ async def get_instrument_pack_file(
 
 
 @router.delete("/instrument-packs/{pack_id}", status_code=204)
-async def delete_instrument_pack(
-    pack_id: str, db: Session = Depends(get_db)
-):
+async def delete_instrument_pack(pack_id: str, db: Session = Depends(get_db)):
     """Remove an instrument pack and its files."""
     row = db.query(DBInstrumentPack).filter_by(id=pack_id).first()
     if row is None:

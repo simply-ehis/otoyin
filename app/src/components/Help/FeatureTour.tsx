@@ -177,7 +177,7 @@ export function FeatureTour({
 						{current.id === "models" && (
 							<div className="mt-4">
 								{hasTtsEngine ? (
-									<p className="text-xs text-emerald-500">
+									<p className="text-xs text-success-text">
 										? You have a TTS engine ready.
 									</p>
 								) : (

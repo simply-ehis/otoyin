@@ -145,15 +145,6 @@ PRODUCTS: list[dict[str, Any]] = [
     },
     # --- Paid ONNX TTS (equation: params_b x $20) ---
     {
-        "id": "styletts2-onnx",
-        "name": "StyleTTS2",
-        "category": "tts",
-        "price_usd": 5,
-        "paid": True,
-        "quality_score": 6,
-        "note": "263M params → $5. Same voices as StyleTTS2, torch-free via ONNX Runtime.",
-    },
-    {
         "id": "pocket-tts-onnx",
         "name": "Pocket-TTS",
         "category": "tts",

@@ -154,8 +154,6 @@ def build_server(cuda=False):
             "--hidden-import",
             "backend.backends.zonos_backend",
             "--hidden-import",
-            "backend.backends.styletts2_backend",
-            "--hidden-import",
             "backend.backends.pocket_tts_backend",
             "--hidden-import",
             "backend.backends.parler_tts_backend",

@@ -119,7 +119,7 @@ export function VUMeter({
 				<div
 					className={cn(
 						"absolute inset-y-0 rounded-full transition-all duration-75 ease-out",
-						isLoud ? "bg-red-500" : "bg-accent",
+						isLoud ? "bg-destructive" : "bg-accent",
 					)}
 					style={{ width: `${barWidth}%` }}
 				/>
@@ -299,7 +299,7 @@ export function CapturePill({
 						>
 							{line}
 							{isFinal && (
-								<span className="ml-1.5 text-xs text-green-500">?</span>
+								<span className="ml-1.5 text-xs text-success-text">✓</span>
 							)}
 						</span>
 					))}

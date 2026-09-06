@@ -42,7 +42,7 @@ export function StarRating({
 		clamped >= 8
 			? "text-amber-400"
 			: clamped >= 6
-				? "text-amber-300"
+				? "text-amber-400/70"
 				: clamped >= 4
 					? "text-muted-foreground"
 					: "text-muted-foreground/50";

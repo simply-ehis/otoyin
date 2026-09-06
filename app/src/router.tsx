@@ -941,7 +941,6 @@ const routeTree = rootRoute.addChildren([
 	offersRoute,
 	libraryRoute,
 	storeRoute,
-	instrumentsRoute,
 	workspaceRoute.addChildren([
 		workspaceIndexRoute,
 		timelineRoute,

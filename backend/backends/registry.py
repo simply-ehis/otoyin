@@ -82,11 +82,6 @@ ENGINE_REGISTRY: list[_TTSBackendEntry] = [
         torch_module=".kokoro_backend", torch_class="KokoroTTSBackend",
     ),
     _TTSBackendEntry(
-        engine="styletts2",
-        onnx_module=".styletts2_onnx_backend", onnx_class="StyleTTS2OnnxBackend",
-        torch_module=".styletts2_backend", torch_class="StyleTTS2Backend",
-    ),
-    _TTSBackendEntry(
         engine="pocket_tts",
         onnx_module=".pocket_tts_onnx_backend", onnx_class="PocketTTSOnnxBackend",
         torch_module=".pocket_tts_backend", torch_class="PocketTTSBackend",
@@ -126,7 +121,7 @@ def _resolve_tts_backend(entry: _TTSBackendEntry) -> TTSBackend:
     """Generic TTS backend resolver driven by a table entry.
 
     Handles the four patterns:
-    1. ONNX-preferred with torch fallback (kokoro, styletts2, pocket_tts)
+    1. ONNX-preferred with torch fallback (kokoro, pocket_tts)
     2. ONNX-only, no torch fallback (moss_tts_nano, kitten_tts)
     3. Simple torch-only (zonos, parler_tts)
     4. Singleton import (neutts, neutts_2e, orpheus)

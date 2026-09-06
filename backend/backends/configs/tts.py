@@ -203,33 +203,6 @@ def _get_tts_configs() -> list[ModelConfig]:
             ],
             languages=["en", "ja", "zh", "fr", "de"],
         ),
-        # --- StyleTTS2: fast, 150M, clone (weights CC-BY-NC) -----------
-        ModelConfig(
-            model_name="styletts2",
-            display_name="StyleTTS2 (LibriTTS)",
-            engine="styletts2",
-            hf_repo_id="yl4579/StyleTTS2-LibriTTS",
-            size_mb=400,
-            clone_voice=True,
-            languages=["en"],
-            needs_trim=True,
-            quality_score=6,
-            category="tts",
-        ),
-        # --- StyleTTS2 ONNX: torch-free, 5 ONNX components ---
-        ModelConfig(
-            model_name="styletts2-onnx",
-            display_name="StyleTTS2",
-            engine="styletts2",
-            hf_repo_id="DDATT/StyleTTS2-ONNX-Cpp",
-            size_mb=440,
-            clone_voice=True,
-            languages=["en"],
-            needs_trim=True,
-            quality_score=6,
-            category="tts",
-            quant="int8",
-        ),
         # --- Pocket-TTS: 100M, CPU, clone + presets, CC-BY-4.0 -----
         ModelConfig(
             model_name="pocket-tts",

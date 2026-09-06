@@ -108,7 +108,6 @@ class ModelConfig:
 
         elif self.engine in {
             "kokoro",
-            "styletts2",
             "pocket_tts",
             "parler_tts",
             "kitten_tts",
@@ -369,7 +368,6 @@ TTS_ENGINES = {
     "kokoro": "Kokoro 82M",
     "fish_speech_s2": "Fish Audio S2 Pro (GGUF)",
     "zonos": "Zyphra Zonos",
-    "styletts2": "StyleTTS2",
     "pocket_tts": "Pocket-TTS",
     "parler_tts": "Parler-TTS Mini",
     "moss_tts_nano": "MOSS-TTS-Nano",

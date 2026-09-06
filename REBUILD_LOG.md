@@ -33,6 +33,9 @@ keeping it invited future restores that would reintroduce corruption the
 gates now prevent. The git history (commit `630b6f9` and earlier) retains
 the pre-repair lineage; the archive itself was never tracked.
 
+Recovery map (which `git show` command yields pre- vs post-repair text):
+`docs/knowledge/78-component-lineage.md`.
+
 ## Step 0 inventory (2026-09-04)
 
 - `app/src`: 285 tsx (275 in `components/`, 10 in `lib/` + `hooks/` + `test/`)

@@ -1079,9 +1079,7 @@ class LauncherSessionResponse(BaseModel):
 class LauncherCaptureRequest(BaseModel):
     """Request to capture (bounce) a launcher session to audio."""
 
-    active_clips: dict[str, str | None] | None = Field(
-        default=None, alias="activeClips"
-    )
+    active_clips: dict[str, str | None] | None = Field(default=None, alias="activeClips")
 
 
 class LauncherCaptureResponse(BaseModel):

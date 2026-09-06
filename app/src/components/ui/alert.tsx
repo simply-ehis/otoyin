@@ -20,12 +20,10 @@ export function Alert({
 		"flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium";
 	const variantStyles = {
 		destructive:
-			"bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300 border border-red-200 dark:border-red-800",
-		warning:
-			"bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800",
-		info: "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800",
-		success:
-			"bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 border border-green-200 dark:border-green-800",
+			"border border-destructive/40 bg-danger-soft text-danger-text",
+		warning: "border border-warning/40 bg-warning-soft text-warning-text",
+		info: "border border-info/40 bg-info-soft text-info-text",
+		success: "border border-success/40 bg-success-soft text-success-text",
 	};
 
 	const content = children ?? message;

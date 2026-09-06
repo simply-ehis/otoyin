@@ -398,7 +398,7 @@ export const AssistantSettings = memo(function AssistantSettings({
 							</Button>
 						</div>
 						{keyValid === true && (
-							<span className="text-xs text-green-500">Valid</span>
+							<span className="text-xs text-success-text">Valid</span>
 						)}
 						{keyValid === false && (
 							<span className="text-xs text-destructive">Invalid key</span>
@@ -594,7 +594,7 @@ export const AssistantSettings = memo(function AssistantSettings({
 					</div>
 				</div>
 				{overridePastDefault && (
-					<p className="text-xs text-amber-500">
+					<p className="text-xs text-warning-text">
 						Warning: you are forcing the context above the RAM-safe default (
 						{ramDefault?.toLocaleString()} tokens). This uses more memory and
 						may stall or crash on low-RAM machines — your call.

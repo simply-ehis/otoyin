@@ -236,3 +236,73 @@ def reconcile_downloads() -> int:
         return added
     finally:
         db.close()
+
+
+# How often /models/status may re-run the cached-model backfill. The check is
+# one cheap SQL query ("does the manifest have any rows at all?") per window;
+# the reconcile body itself only does disk I/O when drift is detected.
+_RECONCILE_INTERVAL_SEC = 60.0
+_reconcile_last_attempt: float | None = None
+
+
+def reconcile_cached_backfill(min_interval_sec: float = _RECONCILE_INTERVAL_SEC) -> int:
+    """Self-heal manifest↔disk drift regardless of manifest state.
+
+    ``reconcile_downloads()`` only backfills when the manifest is *completely*
+    empty — that misses the gap where files land on disk while rows already
+    exist: a bundled model on a fresh install whose first-run seed raced the
+    HF cache, an importer pulling weights in behind the app's back, a
+    cancel/complete race skipping the completion-path write. Result: the
+    Store shows "needs download" for a model that can already generate.
+
+    This heals exactly that drift: for every model config physically present
+    on disk but missing a manifest row, upsert the row (same idempotent
+    upsert the download-completion path uses). Unlike the empty-manifest
+    backfill it runs on any manifest state, so a non-empty manifest never
+    blocks healing.
+
+    TTL-gated (default 60s) because callers are hot paths (/models/status);
+    the gate is one SQL query per window and only arms when a scan found
+    nothing to heal — a healing attempt leaves it disarmed so the next read
+    can confirm the healed state immediately.
+    """
+    global _reconcile_last_attempt
+    import time
+
+    now = time.monotonic()
+    if _reconcile_last_attempt is not None and (now - _reconcile_last_attempt) < min_interval_sec:
+        return 0
+
+    from ..backends import get_all_model_configs
+    from ..utils.model_status import is_model_downloaded
+
+    factory = _session_factory()
+    if factory is None:
+        logger.warning("Cached-model backfill skipped: database not initialized")
+        return 0
+    db = factory()
+    added = 0
+    try:
+        for cfg in get_all_model_configs():
+            try:
+                present = is_model_downloaded(cfg.model_name)
+            except Exception:
+                logger.debug("Download check failed for model", exc_info=True)
+                continue
+            if not present:
+                continue
+            if is_downloaded(cfg.model_name, cfg.model_size, db=db):
+                continue  # row exists — not drift
+            record_download(db, cfg.model_name, cfg.model_size, cfg.engine, cfg.hf_repo_id, None, None)
+            added += 1
+        if added:
+            db.commit()
+            logger.info("Cached-model backfill added %d manifest row(s)", added)
+        else:
+            # Nothing drifted: arm the TTL so hot callers stop rescanning.
+            # A healing attempt stays disarmed — the next read must be able
+            # to confirm the healed state without waiting out the window.
+            _reconcile_last_attempt = now
+        return added
+    finally:
+        db.close()

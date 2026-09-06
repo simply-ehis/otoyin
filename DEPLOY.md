@@ -1,6 +1,6 @@
 # Deployment & Setup
 
-**Updated:** 2026-09-04 (crash reporting — first-party opt-in pipeline, no SaaS; Paddle cutover; lockfile committed, CI on `npm ci`).
+**Updated:** 2026-09-06 (release signing-key lifecycle documented; 2026-09-04: crash reporting — first-party opt-in pipeline, no SaaS; Paddle cutover; lockfile committed, CI on `npm ci`).
 
 Three deployable units, documented separately:
 
@@ -30,18 +30,99 @@ just build             # server binary + Tauri app
   ship with a working backend.
 - **Updater: wired end-to-end** (see `docs/reports/2026-09-03-updater-audit.md`):
   `tauri-plugin-updater` is registered in the Rust shell, `tauri.conf.json`
-  points at the GitHub Releases static manifest
-  (`21-labs/21-labs/releases/latest/download/latest.json`) with an Ed25519
+  points at the GitHub Releases static manifest with an Ed25519
   pubkey, `createUpdaterArtifacts: true`, and the tag workflow signs every
   build (`TAURI_SIGNING_PRIVATE_KEY` secret) and uploads `latest.json`.
-  **Before the first public release:** regenerate the signing key with
-  `tauri signer generate` (our bootstrap pair lives at
-  `tauri/src-tauri/.tauri-updater.key` — gitignored — and must be kept only in
-  CI secrets), paste the new pubkey into `tauri.conf.json`, and adopt a semver
-  scheme.
+  Signing-key custody, rotation, and compromise recovery: see
+  **Release signing-key lifecycle** below.
 - Rebrand note: bundle identifier is still `com.21labs.app` (user-invisible);
   renaming it must be sequenced with the first updater release (breaks update
   matching for installed copies).
+
+### Release signing-key lifecycle
+
+The updater's trust anchor is the Ed25519 public key in
+`tauri/src-tauri/tauri.conf.json` (`plugins.updater.pubkey`); every installer
+is signed at build time with the matching private key. Installed apps embed
+the pubkey they were built with and refuse updates whose signature doesn't
+verify against it — that constraint drives everything below.
+
+**Custody rules**
+
+- Private key: `tauri/src-tauri/.tauri-updater.key` — gitignored
+  (`.gitignore:64`), **never committed** (untracked, absent from all git
+  history — verified). It exists in exactly two places: the release
+  manager's machine and the `TAURI_SIGNING_PRIVATE_KEY` GitHub secret.
+- The `.key.pub` file is also untracked. The pubkey that ships is the one
+  embedded in `tauri.conf.json` — that tracked field is the source of truth.
+- The bootstrap pair is password-encrypted (`rsign encrypted secret key`,
+  empty password — usable non-interactively). Before the first public
+  release, regenerate it (below). If you set a real password, CI also needs
+  a `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` secret — build.yml passes no
+  password today, and an encrypted key without one hangs the signing step.
+- Never pass the key on a command line in scripts or workflows; env var or
+  `TAURI_SIGNING_PRIVATE_KEY_PATH` only.
+
+**Generation**
+
+```bash
+cd tauri
+npx tauri signer generate -w src-tauri/.tauri-updater.key  # writes .key + .key.pub
+gh secret set TAURI_SIGNING_PRIVATE_KEY < src-tauri/.tauri-updater.key
+# then paste the one-line base64 from .key.pub into tauri.conf.json
+# plugins.updater.pubkey (that field takes the file's base64 box verbatim)
+```
+
+Verify before tagging a release:
+
+```bash
+# signs without prompting, using exactly the env vars CI uses:
+TAURI_SIGNING_PRIVATE_KEY_PATH=src-tauri/.tauri-updater.key \
+TAURI_SIGNING_PRIVATE_KEY_PASSWORD="" npx tauri signer sign /tmp/dummy.bin
+# manifest generator finds installer + .sig for at least one leg (rc 0):
+# (needs GITHUB_REPOSITORY / GITHUB_REF_NAME set, run from the repo root)
+python .github/scripts/build_update_manifest.py <artifact-dir>
+```
+
+(End-to-end harness: fake update server + `tauri dev --config` override
+re-pointing `plugins.updater.endpoints` — see the updater audit report.)
+
+**Rotation (installed base exists)** — two-release crossover. Changing the
+signing key in one hop strands every existing install: release N signed with
+the new key is rejected by apps still holding the old pubkey.
+
+1. **Release N** — paste the NEW pubkey into `tauri.conf.json`; CI still
+   signs with the OLD secret. Old installs accept N (old-key signature), and
+   N's installed copies now trust the new key.
+2. **Release N+1** — swap the GitHub secret to the NEW private key before
+   tagging. N installs accept N+1 (new-key signature verifies against the
+   new pubkey N carries).
+
+Announce step 1 via the notices banner so the installed base actually lands
+on N before N+1 ships — anyone who skips N is stranded at it.
+
+**Pre-first-release rotation (current state)**: zero installed base, so it's
+one step — generate the new pair, update `tauri.conf.json` pubkey and the
+GitHub secret together, adopt semver. Nothing to strand.
+
+**Compromise recovery**
+
+If the private key (or the GitHub secret) is exposed or even suspected:
+
+1. Treat every existing install as burned — their updaters trust the
+   compromised key, and no manifest you publish can re-secure them. A
+   password on the key only slows offline cracking; treat it as compromised
+   regardless.
+2. Generate a fresh pair immediately; update `tauri.conf.json` pubkey and
+   the CI secret in the same next release (that release reaches only the
+   installs made after it — see rotation above).
+3. Broadcast a forced-migration notice: `POST /v1/notices/admin` (surfaces
+   via the AnnouncementBanner) and a GitHub release note instructing users
+   to manually download and reinstall the new build.
+4. Audit the exposure window: GitHub releases API for unexpected assets or
+   a tampered `latest.json`, CI run logs for unexplained signing jobs.
+5. Re-sign nothing retroactively. Installers signed while the key was safe
+   remain valid artifacts; only the update channel is burned.
 
 ## 2. Main backend (local, optional Railway)
 

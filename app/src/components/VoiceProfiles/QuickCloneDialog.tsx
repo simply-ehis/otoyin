@@ -343,7 +343,7 @@ export function QuickCloneDialog({
 						</div>
 
 						{isTooShort && (
-							<div className="flex items-center gap-2 text-xs text-amber-500">
+							<div className="flex items-center gap-2 text-xs text-warning-text">
 								<ExclamationTriangleIcon className="size-3.5" />
 								{t(
 									"quickClone.tooShort",
@@ -484,7 +484,7 @@ export function QuickCloneDialog({
 				{/* -- Step: Done -- */}
 				{step === "done" && (
 					<div className="p-6 flex flex-col items-center gap-4 animate-slide-up">
-						<CheckCircleIcon className="size-12 text-emerald-500" />
+						<CheckCircleIcon className="size-12 text-success-text" />
 						<div className="text-center space-y-1">
 							<p className="text-sm font-medium">
 								{t("quickClone.doneTitle", "Voice cloned!")}

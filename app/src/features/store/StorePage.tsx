@@ -543,6 +543,14 @@ export function StorePage() {
 								});
 							}}
 							onRetry={() => catalog.refetch()}
+							onRetryDownloads={() => {
+								// Re-trigger every failed download via the same mutation
+								// the card's Download button uses — its onSuccess/onError
+								// already maintain the hint and refresh the queries.
+								for (const id of errored.keys()) {
+									downloadMut.mutate(id);
+								}
+							}}
 							onClearFilters={() => {
 								setSearch("");
 								setShowFilter("all");

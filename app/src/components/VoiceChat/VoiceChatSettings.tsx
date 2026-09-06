@@ -338,7 +338,7 @@ export function VoiceChatSettings({ onClose }: { onClose: () => void }) {
 					onClick={() => update("enable_tools", !settings.enable_tools)}
 					className={cn(
 						"h-5 w-9 rounded-full transition-colors relative",
-						settings.enable_tools ? "bg-green-500" : "bg-muted",
+						settings.enable_tools ? "bg-success" : "bg-muted",
 					)}
 				>
 					<span
@@ -383,7 +383,7 @@ export function VoiceChatSettings({ onClose }: { onClose: () => void }) {
 						}
 						className={cn(
 							"h-5 w-9 rounded-full transition-colors relative",
-							settings.voice_changer_enabled ? "bg-green-500" : "bg-muted",
+							settings.voice_changer_enabled ? "bg-success" : "bg-muted",
 						)}
 					>
 						<span

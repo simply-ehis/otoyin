@@ -90,9 +90,9 @@ export function InputMonitoringNotice({ enabled }: { enabled: boolean }) {
 	}
 
 	return (
-		<div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-3">
+		<div className="mt-3 rounded-lg border border-warning/40 bg-warning-soft px-3.5 py-3">
 			<div className="flex items-start gap-3">
-				<AlertTriangle className="size-4 shrink-0 mt-0.5 text-amber-500" />
+				<AlertTriangle className="size-4 shrink-0 mt-0.5 text-warning" />
 				<div className="flex-1 min-w-0 space-y-1">
 					<p className="text-sm font-medium text-foreground">
 						{t("captures.permissions.inputMonitoring.title")}
@@ -120,7 +120,7 @@ export function InputMonitoringNotice({ enabled }: { enabled: boolean }) {
 						</Button>
 					</div>
 					{stillMissing && !checking && (
-						<p className="text-xs text-amber-600 dark:text-amber-400 pt-1">
+						<p className="text-xs text-warning-text pt-1">
 							{t("captures.permissions.inputMonitoring.stillMissing")}
 						</p>
 					)}

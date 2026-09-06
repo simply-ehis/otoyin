@@ -6,6 +6,7 @@ import {
 import type { ActiveDownloadTask } from "@/lib/api/types";
 import { Button } from "@/ui/button";
 import { Skeleton } from "@/ui/primitives";
+import { HintBanner } from "./HintBanner";
 
 interface Props {
 	errored: Map<string, ActiveDownloadTask>;
@@ -17,6 +18,8 @@ interface Props {
 	activeCategory: string;
 	onClearErrors: () => void;
 	onRetry: () => void;
+	/** Re-trigger every failed download (renders the hint's Retry action). */
+	onRetryDownloads?: () => void;
 	onClearFilters: () => void;
 }
 
@@ -34,31 +37,22 @@ export function BrowseStates({
 	activeCategory,
 	onClearErrors,
 	onRetry,
+	onRetryDownloads,
 	onClearFilters,
 }: Props) {
 	return (
 		<>
-			{/* Problems banner (if any) */}
+			{/* Failed-downloads hint — same dismissible HintBanner pattern as
+			    every other Store error hint (refresh, download start), plus a
+			    one-step Retry so the user doesn't hunt for the card. */}
 			{errored.size > 0 && (
-				<div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning-soft px-3 py-3">
-					<ExclamationTriangleIcon className="mt-0.5 size-4 shrink-0 text-warning-text" />
-					<div className="min-w-0 flex-1">
-						<div className="text-xs font-semibold text-warning-text">
-							{errored.size} download{errored.size > 1 ? "s" : ""} failed
-						</div>
-						<div className="truncate text-xs text-muted-foreground">
-							{Array.from(errored.keys()).join(", ")}
-						</div>
-					</div>
-					<Button
-						size="sm"
-						variant="ghost"
-						className="h-7 text-xs"
-						onClick={onClearErrors}
-					>
-						Clear
-					</Button>
-				</div>
+				<HintBanner
+					message={`${errored.size} download${errored.size > 1 ? "s" : ""} failed: ${Array.from(errored.keys()).join(", ")}`}
+					onDismiss={onClearErrors}
+					actionLabel="Retry"
+					onAction={onRetryDownloads}
+					actionTitle="Re-trigger the failed downloads"
+				/>
 			)}
 
 			{/* Loading skeletons */}

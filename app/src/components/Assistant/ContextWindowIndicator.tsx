@@ -37,10 +37,10 @@ export function ContextWindowIndicator({
 	// Ring color: green < 60%, yellow < 80%, red >= 80%
 	const ringColor =
 		pressure >= 0.8
-			? "text-red-500"
+			? "text-danger-text"
 			: pressure >= 0.6
-				? "text-amber-500"
-				: "text-emerald-500";
+				? "text-warning-text"
+				: "text-success-text";
 	const ringBg =
 		pressure >= 0.8
 			? "stroke-red-500/30"
@@ -114,10 +114,10 @@ export function ContextWindowIndicator({
 					<div
 						className={`h-full rounded-full transition-all duration-300 ${
 							pressure >= 0.8
-								? "bg-red-500"
+								? "bg-destructive"
 								: pressure >= 0.6
-									? "bg-amber-500"
-									: "bg-emerald-500"
+									? "bg-warning"
+									: "bg-success"
 						}`}
 						style={{ width: `${Math.min(pressure * 100, 100)}%` }}
 					/>
@@ -132,7 +132,7 @@ export function ContextWindowIndicator({
 				</div>
 				<div className="h-1.5 bg-muted rounded-full overflow-hidden">
 					<div
-						className="h-full bg-blue-500 rounded-full transition-all duration-300"
+						className="h-full bg-info rounded-full transition-all duration-300"
 						style={{ width: `${budgetPct * 100}%` }}
 					/>
 				</div>
@@ -142,20 +142,22 @@ export function ContextWindowIndicator({
 			<div className="flex items-center justify-between pt-1 border-t border-border">
 				<div className="flex items-center gap-3 text-muted-foreground">
 					<span>Tools: {harnessState.total_tool_calls}</span>
-					<span className="text-emerald-500">
+					<span className="text-success-text">
 						✓{harnessState.successful_calls}
 					</span>
 					{harnessState.failed_calls > 0 && (
-						<span className="text-red-500">✗{harnessState.failed_calls}</span>
+						<span className="text-danger-text">
+							✗{harnessState.failed_calls}
+						</span>
 					)}
 				</div>
 				<span
 					className={`font-medium ${
 						successRate >= 0.8
-							? "text-emerald-500"
+							? "text-success-text"
 							: successRate >= 0.5
-								? "text-amber-500"
-								: "text-red-500"
+								? "text-warning-text"
+								: "text-danger-text"
 					}`}
 				>
 					{Math.round(successRate * 100)}%

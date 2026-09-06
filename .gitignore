@@ -161,3 +161,6 @@ app/vite.config.d.ts
 /archive/
 checkpoints/
 checkpoints/needle2.pkl
+
+# Nested reference repo (separate clone, not part of this project)
+awesome-desktop-design.skills/

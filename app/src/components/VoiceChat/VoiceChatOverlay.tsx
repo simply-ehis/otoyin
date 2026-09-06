@@ -201,13 +201,13 @@ export function VoiceChatOverlay() {
 								"h-1.5 w-1.5 rounded-full shrink-0",
 								connectionQuality === "good"
 									? isSpeaking
-										? "bg-green-500 animate-pulse"
+										? "bg-success animate-pulse"
 										: isProcessing
-											? "bg-yellow-500 animate-pulse"
-											: "bg-green-500"
+											? "bg-warning animate-pulse"
+											: "bg-success"
 									: connectionQuality === "degraded"
-										? "bg-yellow-500 animate-pulse"
-										: "bg-red-500",
+										? "bg-warning animate-pulse"
+										: "bg-destructive",
 							)}
 						/>
 						<span className="text-xs text-muted-foreground min-w-[50px] tabular-nums">
@@ -319,7 +319,7 @@ export function VoiceChatOverlay() {
 					<div className="flex gap-2">
 						<Button
 							size="sm"
-							className="h-7 flex-1 text-xs bg-green-600 hover:bg-green-700 text-white"
+							className="h-7 flex-1 text-xs bg-success hover:bg-success/90 text-success-foreground"
 							onClick={confirmTool}
 						>
 							<Check className="size-3 mr-1" />

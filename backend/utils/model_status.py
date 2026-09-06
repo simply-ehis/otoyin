@@ -92,7 +92,6 @@ _ENGINE_WEIGHTS: dict[str, int] = {
     "neutts": 40,
     "neutts_2e": 40,
     "orpheus": 40,
-    "styletts2": 60,
     "zonos": 60,
     "parler_tts": 60,
 }

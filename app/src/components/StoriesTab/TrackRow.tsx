@@ -94,7 +94,7 @@ export function TrackRow({
 				className={cn(
 					"border-b flex-1 pointer-events-none",
 					index % 2 === 0 ? "bg-background" : "bg-sunken",
-					isMuted && "bg-yellow-500/5",
+					isMuted && "bg-sunken",
 				)}
 			/>
 		</div>

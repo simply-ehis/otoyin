@@ -64,6 +64,7 @@ const mockedApi = {
 	getModelsCacheDir: vi.mocked(apiClient.getModelsCacheDir),
 	getLicenses: vi.mocked(apiClient.getLicenses),
 	getMarketplaceOffers: vi.mocked(apiClient.getMarketplaceOffers),
+	triggerModelDownload: vi.mocked(apiClient.triggerModelDownload),
 };
 const mockedWishlist = vi.mocked(marketplaceClient.fetchWishlist);
 
@@ -117,6 +118,155 @@ beforeEach(() => {
 	mockedApi.getLicenses.mockResolvedValue({ licenses: [] });
 	mockedApi.getMarketplaceOffers.mockResolvedValue([]);
 	mockedWishlist.mockResolvedValue({ product_ids: [] });
+});
+
+describe("StorePage end-to-end wiring", () => {
+	// Four products covering every card state through a different signal:
+	//  - kokoro: installed via /models/status `downloaded` (no local_status
+	//    in the catalog — exercises the live model-status path)
+	//  - pocket-tts-free: free, needs download -> "Free" chip
+	//  - neutts-air: paid but entitled via entitlements -> "Owned" chip
+	//  - whisper-tiny: paid, not owned -> price chip, needs download
+	const kokoro: MarketplaceProduct = {
+		id: "kokoro-onnx",
+		name: "Kokoro 82M",
+		category: "tts",
+		description: "Default otoyin voice",
+		price_usd: 0,
+		paid: false,
+		note: "",
+		special_offer: false,
+		offer_discount_pct: 0,
+		quality_score: 8,
+	};
+	const pocket: MarketplaceProduct = {
+		...kokoro,
+		id: "pocket-tts-free",
+		name: "Pocket TTS",
+		quality_score: 5,
+	};
+	const neutts: MarketplaceProduct = {
+		...kokoro,
+		id: "neutts-air",
+		name: "NeuTTS Air",
+		price_usd: 9,
+		paid: true,
+		quality_score: 7,
+	};
+	const whisper: MarketplaceProduct = {
+		...kokoro,
+		id: "whisper-tiny",
+		name: "Whisper Tiny",
+		category: "stt",
+		price_usd: 3,
+		paid: true,
+		quality_score: 6,
+	};
+
+	function wireCatalog() {
+		mockedApi.getCatalog.mockResolvedValue({
+			...catalog,
+			products: [kokoro, pocket, neutts, whisper],
+		});
+		mockedApi.getModelStatus.mockResolvedValue({
+			models: [
+				{
+					model_name: "kokoro-onnx",
+					display_name: "Kokoro 82M",
+					downloaded: true,
+					downloading: false,
+					loaded: false,
+				},
+				{
+					model_name: "whisper-tiny",
+					display_name: "Whisper Tiny",
+					downloaded: false,
+					downloading: false,
+					loaded: false,
+				},
+			],
+		});
+		mockedApi.getEntitlements.mockResolvedValue({
+			entitlements: ["models:neutts-air"],
+		});
+	}
+
+	it("renders hero counts, per-product state chips, and the failure hint from the mocked queries", async () => {
+		wireCatalog();
+		// Refresh fails: the hint must coexist with a fully wired grid + hero.
+		mockedApi.refreshCatalog.mockResolvedValue({
+			refreshed: false,
+			reason: "failed",
+		});
+
+		renderPage();
+
+		// Hero aggregates from the catalog + model-status queries.
+		expect(await screen.findByText(/4 models/)).toBeInTheDocument();
+		expect(screen.getByText(/2 free, 2 one-time paid/)).toBeInTheDocument();
+		expect(screen.getByText(/1 installed on this device/)).toBeInTheDocument();
+		// Cache-dir query wired into the hero.
+		expect(screen.getByText("C:/models")).toBeInTheDocument();
+
+		// Grid renders every state chip from the right signal.
+		expect(screen.getAllByText("Installed").length).toBeGreaterThan(0); // kokoro: model-status downloaded
+		expect(screen.getAllByText("Owned").length).toBeGreaterThan(0); // neutts: entitlements
+		expect(screen.getAllByText("Free").length).toBeGreaterThan(0); // pocket: free, not installed
+		expect(screen.getAllByText("$3").length).toBeGreaterThan(0); // whisper: paid, not owned
+
+		// The refresh-failure hint renders alongside the wired grid.
+		expect(screen.getByText(HINT_FRAGMENT)).toBeInTheDocument();
+	});
+
+	it("orders the grid installed/owned-first, free-before-paid", async () => {
+		wireCatalog();
+		mockedApi.refreshCatalog.mockResolvedValue({
+			refreshed: false,
+			reason: "failed",
+		});
+
+		renderPage();
+		await screen.findByText("C:/models");
+
+		// Default sort contract: installed||owned group first (free before
+		// paid inside it: kokoro q8 > neutts q7), then the rest (pocket
+		// before whisper).
+		const order = ["Kokoro 82M", "NeuTTS Air", "Pocket TTS", "Whisper Tiny"];
+		const elements = order
+			.map((n) => screen.getAllByText(n)[0])
+			.filter((el): el is HTMLElement => el !== undefined);
+		expect(elements).toHaveLength(order.length);
+		for (let i = 0; i < elements.length - 1; i++) {
+			expect(
+				elements[i].compareDocumentPosition(elements[i + 1]) &
+					Node.DOCUMENT_POSITION_FOLLOWING,
+			).toBeTruthy();
+		}
+	});
+
+	it("narrows the grid via search while hero counts stay catalog-wide", async () => {
+		wireCatalog();
+		mockedApi.refreshCatalog.mockResolvedValue({
+			refreshed: false,
+			reason: "failed",
+		});
+
+		const user = userEvent.setup();
+		renderPage();
+		await screen.findByText("C:/models");
+
+		await user.type(
+			screen.getByRole("textbox", { name: "Search models" }),
+			"whisper",
+		);
+
+		await waitFor(() =>
+			expect(screen.queryByText("Kokoro 82M")).not.toBeInTheDocument(),
+		);
+		expect(screen.getAllByText("Whisper Tiny").length).toBeGreaterThan(0);
+		// Hero still describes the whole catalog, not the filtered view.
+		expect(screen.getByText(/4 models/)).toBeInTheDocument();
+	});
 });
 
 describe("StorePage refresh-failure hint", () => {
@@ -185,5 +335,104 @@ describe("StorePage refresh-failure hint", () => {
 		renderPage();
 
 		expect(await screen.findByText(HINT_FRAGMENT)).toBeInTheDocument();
+	});
+});
+
+describe("StorePage failed-download hint + retry", () => {
+	/** Wire one catalog product and a matching errored download task. */
+	function wireFailedDownload() {
+		mockedApi.getCatalog.mockResolvedValue({
+			...catalog,
+			products: [product],
+		});
+		mockedApi.getActiveTasks.mockResolvedValue({
+			downloads: [
+				{
+					model_name: "kokoro-onnx",
+					status: "error",
+					started_at: "2026-09-06T00:00:00Z",
+					error: "disk full",
+				},
+			],
+			generations: [],
+		});
+	}
+
+	it("surfaces failed downloads in the hint banner with a Retry action", async () => {
+		wireFailedDownload();
+		mockedApi.triggerModelDownload.mockResolvedValue({ message: "ok" });
+
+		renderPage();
+
+		// The failure hint appears with the model name in the message.
+		expect(
+			await screen.findByText(/1 download failed: kokoro-onnx/),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Retry" }),
+		).toBeInTheDocument();
+	});
+
+	it("Retry re-triggers the failed download through the download mutation", async () => {
+		wireFailedDownload();
+		mockedApi.triggerModelDownload.mockResolvedValue({ message: "ok" });
+		// A real successful retry clears/restarts the task: first fetch reports
+		// the errored task, the post-retry refetch reports it gone.
+		mockedApi.getActiveTasks
+			.mockResolvedValueOnce({
+				downloads: [
+					{
+						model_name: "kokoro-onnx",
+						status: "error",
+						started_at: "2026-09-06T00:00:00Z",
+						error: "disk full",
+					},
+				],
+				generations: [],
+			})
+			.mockResolvedValue({ downloads: [], generations: [] });
+
+		const user = userEvent.setup();
+		renderPage();
+		await screen.findByText(/1 download failed: kokoro-onnx/);
+
+		await user.click(screen.getByRole("button", { name: "Retry" }));
+
+		await waitFor(() =>
+			expect(mockedApi.triggerModelDownload).toHaveBeenCalledWith(
+				"kokoro-onnx",
+			),
+		);
+		// The mutation's success path refreshes the task list; the errored
+		// task is gone, so the hint clears (next-success contract).
+		await waitFor(() =>
+			expect(
+				screen.queryByText(/1 download failed: kokoro-onnx/),
+			).not.toBeInTheDocument(),
+		);
+	});
+
+	it("Retry keeps the hint and re-arms it when the re-trigger fails again", async () => {
+		wireFailedDownload();
+		mockedApi.triggerModelDownload.mockRejectedValue(
+			new Error("still no disk space"),
+		);
+
+		const user = userEvent.setup();
+		renderPage();
+		await screen.findByText(/1 download failed: kokoro-onnx/);
+
+		await user.click(screen.getByRole("button", { name: "Retry" }));
+
+		// Failure path re-sets the download-start hint (still non-blocking).
+		await waitFor(() =>
+			expect(
+				screen.getByText(/couldn't be started.*still no disk space/is),
+			).toBeInTheDocument(),
+		);
+		// And the failed-task hint survives beside it.
+		expect(
+			screen.getByText(/1 download failed: kokoro-onnx/),
+			).toBeInTheDocument();
 	});
 });

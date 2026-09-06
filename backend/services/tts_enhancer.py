@@ -39,8 +39,6 @@ ENGINE_PRESETS: dict[str, str] = {
     "moss-tts-nano": "light",
     "pocket-tts": "light",
     # Medium: balanced correction
-    "styletts2": "medium",
-    "styletts2-onnx": "medium",
     "neutts-air": "medium",
     # Heavy: most synthetic artifacts
     "parler-tts-mini": "heavy",

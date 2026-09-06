@@ -15,7 +15,11 @@ import { ProductReviews } from "./ProductReviews";
 import { ProductSpecs } from "./ProductSpecs";
 import { SimilarProducts } from "./SimilarProducts";
 import { StarRating } from "./StarRating";
-import { getCapabilityChips, getDisplayDescription } from "./storeUtils";
+import {
+	compareQualityDesc,
+	getCapabilityChips,
+	getDisplayDescription,
+} from "./storeUtils";
 
 interface Props {
 	product: MarketplaceProduct | null;
@@ -81,7 +85,7 @@ export const StoreDetailModal = memo(function StoreDetailModal({
 		}
 		return products
 			.filter((p) => p.category === product.category && p.id !== product.id)
-			.sort((a, b) => (b.quality_score ?? 0) - (a.quality_score ?? 0))
+			.sort(compareQualityDesc)
 			.slice(0, 3);
 	}, [product, products]);
 

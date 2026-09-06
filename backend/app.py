@@ -450,11 +450,13 @@ async def _run_startup(application: FastAPI) -> None:
     async def _bg_checks() -> None:
         # Seed the download manifest from the HF cache on first launch so bundled
         # installs are entitled without forcing a re-download. No-op after the
-        # first row exists.
+        # first row exists. The drift backfill (below) heals the residual gap:
+        # files landing while rows already exist.
         try:
-            from .services.model_registry import reconcile_downloads
+            from .services.model_registry import reconcile_cached_backfill, reconcile_downloads
 
             reconcile_downloads()
+            reconcile_cached_backfill(min_interval_sec=0.0)
         except Exception as e:
             logger.warning("Model manifest reconciliation failed: %s", e)
 

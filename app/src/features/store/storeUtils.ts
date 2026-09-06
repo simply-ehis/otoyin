@@ -258,6 +258,27 @@ export function priceTone(
 	return "amber";
 }
 
+/**
+ * Canonical quality-descending comparator — the single source of truth for
+ * "better products first" ordering (buildFilteredProducts' quality mode,
+ * similar-products rails, any future ranking surface).
+ *
+ * Deterministic: name is the tie-break, so equal-quality products render in
+ * stable order regardless of catalog input ordering (an unstable sort here
+ * made the similar-products rail flicker between renders).
+ */
+export function compareQualityDesc(
+	a: Pick<MarketplaceProduct, "name" | "quality_score">,
+	b: Pick<MarketplaceProduct, "name" | "quality_score">,
+): number {
+	const aQ = a.quality_score ?? 0;
+	const bQ = b.quality_score ?? 0;
+	if (aQ !== bQ) {
+		return bQ - aQ;
+	}
+	return a.name.localeCompare(b.name);
+}
+
 export type SortMode =
 	| "default"
 	| "quality"

@@ -67,7 +67,9 @@ export function TrackMeter({ analyser }: { analyser: AnalyserNode | null }) {
 		>
 			<div
 				ref={barRef}
-				className="absolute bottom-0 w-full rounded-full transition-[height] duration-75"
+				// No CSS transition here on purpose: this bar is written every
+				// animation frame, and a transition would lag the meter behind.
+				className="absolute bottom-0 w-full rounded-full"
 				style={{
 					height: "0%",
 					background:

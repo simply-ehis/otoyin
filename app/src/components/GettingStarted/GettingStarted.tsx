@@ -113,7 +113,7 @@ export function GettingStarted() {
 								<p
 									className={cn(
 										"text-sm font-medium leading-tight",
-										step.done && "text-emerald-500",
+										step.done && "text-success-text",
 									)}
 								>
 									{step.title}

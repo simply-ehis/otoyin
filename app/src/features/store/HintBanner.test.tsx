@@ -38,4 +38,55 @@ describe("HintBanner", () => {
 		expect(dismiss).toHaveAttribute("title", "Dismiss");
 		expect(dismiss).toHaveAttribute("aria-label", "Dismiss");
 	});
+
+	it("renders no action button by default", () => {
+		render(<HintBanner message="x" onDismiss={() => {}} />);
+		expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+	});
+
+	it("renders the optional action and calls onAction (not onDismiss)", async () => {
+		const user = userEvent.setup();
+		const onAction = vi.fn();
+		const onDismiss = vi.fn();
+		render(
+			<HintBanner
+				message="2 downloads failed"
+				onDismiss={onDismiss}
+				actionLabel="Retry"
+				onAction={onAction}
+				actionTitle="Re-trigger the failed downloads"
+			/>,
+		);
+		await user.click(screen.getByRole("button", { name: "Retry" }));
+		expect(onAction).toHaveBeenCalledTimes(1);
+		expect(onDismiss).not.toHaveBeenCalled();
+	});
+
+	it("action tooltip falls back to the label when actionTitle is omitted", () => {
+		render(
+			<HintBanner
+				message="x"
+				onDismiss={() => {}}
+				actionLabel="Retry"
+				onAction={() => {}}
+			/>,
+		);
+		expect(screen.getByRole("button", { name: "Retry" })).toHaveAttribute(
+			"title",
+			"Retry",
+		);
+	});
+
+	it("renders the action as icon-only when actionLabel is missing", () => {
+		// Guard against a props bug where onAction alone renders a bare button.
+		render(
+			<HintBanner
+				message="x"
+				onDismiss={() => {}}
+				onAction={() => {}}
+				actionTitle="orphan"
+			/>,
+		);
+		expect(screen.queryByTitle("orphan")).toBeNull();
+	});
 });

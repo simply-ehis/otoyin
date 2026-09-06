@@ -16,6 +16,7 @@
     "resources": {
       "binaries/otoyin-server/": "otoyin-server/"
     },
+    "externalBin": ["binaries/otoyin-server/otoyin-server"],
     "windows": {
       "nsis": {
         "displayLanguageSelector": true,

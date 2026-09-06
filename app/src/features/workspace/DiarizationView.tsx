@@ -23,16 +23,11 @@ import {
 import { LoadingState, ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
 import { UploadField } from "./UploadField";
+import { hueText } from "./hueIdentity";
 
 // Hue lives in the text only — solid surfaces everywhere (design tokens).
-const SPEAKER_TEXT = [
-	"text-sky-400",
-	"text-amber-400",
-	"text-emerald-400",
-	"text-fuchsia-400",
-	"text-rose-400",
-	"text-cyan-400",
-];
+// Canonical hue-identity slots from hueIdentity.ts (the documented pattern).
+const SPEAKER_TEXT = Array.from({ length: 6 }, (_, i) => hueText(i));
 
 function speakerText(speaker: string): string {
 	const idx = Number.parseInt(speaker.replace("SPEAKER_", ""), 10) || 0;

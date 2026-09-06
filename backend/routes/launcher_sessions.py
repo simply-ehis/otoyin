@@ -50,20 +50,12 @@ def _to_response(row: DBLauncherSession) -> models.LauncherSessionResponse:
 )
 async def list_launcher_sessions(db: Session = Depends(get_db)):
     """List launcher sessions, newest first."""
-    rows = (
-        db.query(DBLauncherSession)
-        .order_by(DBLauncherSession.updated_at.desc())
-        .all()
-    )
+    rows = db.query(DBLauncherSession).order_by(DBLauncherSession.updated_at.desc()).all()
     return [_to_response(row) for row in rows]
 
 
-@router.post(
-    "/launcher/sessions", response_model=models.LauncherSessionResponse
-)
-async def create_launcher_session(
-    data: models.LauncherSessionCreate, db: Session = Depends(get_db)
-):
+@router.post("/launcher/sessions", response_model=models.LauncherSessionResponse)
+async def create_launcher_session(data: models.LauncherSessionCreate, db: Session = Depends(get_db)):
     """Create a launcher session."""
     payload = data.session
     row = DBLauncherSession(
@@ -71,9 +63,7 @@ async def create_launcher_session(
         bpm=payload.bpm,
         master_volume=payload.master_volume,
         tracks_json=[t.model_dump(by_alias=True) for t in payload.tracks],
-        clips_json={
-            k: v.model_dump(by_alias=True) for k, v in payload.clips.items()
-        },
+        clips_json={k: v.model_dump(by_alias=True) for k, v in payload.clips.items()},
         num_scenes=payload.num_scenes,
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
@@ -88,9 +78,7 @@ async def create_launcher_session(
     "/launcher/sessions/{session_id}",
     response_model=models.LauncherSessionResponse,
 )
-async def get_launcher_session(
-    session_id: str, db: Session = Depends(get_db)
-):
+async def get_launcher_session(session_id: str, db: Session = Depends(get_db)):
     """Get one launcher session."""
     row = db.query(DBLauncherSession).filter_by(id=session_id).first()
     if row is None:
@@ -116,9 +104,7 @@ async def update_launcher_session(
     row.bpm = payload.bpm
     row.master_volume = payload.master_volume
     row.tracks_json = [t.model_dump(by_alias=True) for t in payload.tracks]
-    row.clips_json = {
-        k: v.model_dump(by_alias=True) for k, v in payload.clips.items()
-    }
+    row.clips_json = {k: v.model_dump(by_alias=True) for k, v in payload.clips.items()}
     row.num_scenes = payload.num_scenes
     row.updated_at = datetime.now(UTC)
     db.commit()
@@ -127,9 +113,7 @@ async def update_launcher_session(
 
 
 @router.delete("/launcher/sessions/{session_id}", status_code=204)
-async def delete_launcher_session(
-    session_id: str, db: Session = Depends(get_db)
-):
+async def delete_launcher_session(session_id: str, db: Session = Depends(get_db)):
     """Delete a launcher session."""
     row = db.query(DBLauncherSession).filter_by(id=session_id).first()
     if row is None:
@@ -253,17 +237,12 @@ async def capture_launcher_session(
         bpm=row.bpm or 120.0,
         master_volume=row.master_volume or 0.84,
         tracks=[models.LauncherTrackPayload(**t) for t in (row.tracks_json or [])],
-        clips={
-            k: models.LauncherClipPayload(**v)
-            for k, v in (row.clips_json or {}).items()
-        },
+        clips={k: models.LauncherClipPayload(**v) for k, v in (row.clips_json or {}).items()},
         num_scenes=row.num_scenes or 4,
     )
 
     active_clips = data.active_clips if data else None
-    mixed, sr = await asyncio.to_thread(
-        _bounce_launcher_session, payload, active_clips
-    )
+    mixed, sr = await asyncio.to_thread(_bounce_launcher_session, payload, active_clips)
 
     output_filename = f"launcher_capture_{uuid.uuid4().hex[:12]}.wav"
     output_path = config.get_exports_dir() / output_filename
