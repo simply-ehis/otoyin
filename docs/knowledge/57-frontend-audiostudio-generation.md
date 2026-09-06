@@ -1,9 +1,9 @@
 # Frontend: AudioStudio DAW + Generation
 
 PURPOSE: How the in-app DAW (AudioStudio) and the TTS generation box work on the client.
-OWNS: components/AudioStudio/* (store + audioStudio/* DSP), components/Generation/* (compose box + hooks), components/VoicesTab/*.
+OWNS: features/audioStudio/* (store + audioStudio/* DSP), components/Generation/* (compose box + hooks), components/VoicesTab/*.
 READ-WHEN: Touching the DAW, effects chain, generation submit, profile sync, or waveform/MIDI rendering.
-KEY-FILES: components/AudioStudio/AudioStudioStore.ts, components/AudioStudio/audioStudio/buildEffectChain.ts, components/AudioStudio/audioStudio/useSessionManager.ts, components/AudioStudio/audioStudio/useOfflineExport.ts, components/AudioStudio/TransportControls.tsx, components/Generation/useGenerationActions.ts, components/Generation/useProfileSync.ts
+KEY-FILES: features/audioStudio/AudioStudioStore.ts, features/audioStudio/buildEffectChain.ts, features/audioStudio/useSessionManager.ts, features/audioStudio/useOfflineExport.ts, features/audioStudio/TransportControls.tsx, components/Generation/useGenerationActions.ts, components/Generation/useProfileSync.ts
 INVARIANTS: AudioStudio is a zustand store with snapshot-based undo/redo. Effects chain is resolved AT SUBMIT TIME from the live React-Query cache (not React state) so profile presets are never dropped on a slow preset query. Profile-sync is gated on profile ID (not object identity) to avoid clobbering manual engine/preset choices on refetch.
 GOTCHAS: The frontend buildEffectChain (true parallel wet/dry reverb/delay) DIVERGES from the backend AudioEffectsChain (single-tap approximations) — see docs/knowledge/54-audio-effects-processing.md #1. Two `audioBufferToWav` implementations exist (lib/utils/audio.ts + AudioStudio/audioStudio/audioBufferToWav.ts) with different contracts.
 UPDATED: 2026-07-19
@@ -44,4 +44,4 @@ UPDATED: 2026-07-19
 - **MCP Tools:** `21labs.session_save`, `21labs.session_load`, `21labs.export_reaper_project`
 - **REST Endpoints:** `POST /audio-studio/sessions`, `GET /audio-studio/sessions`, `GET /audio-studio/sessions/{id}`, `PUT /audio-studio/sessions/{id}`, `DELETE /audio-studio/sessions/{id}`, `POST /audio-studio/sessions/{id}/autosave-snapshot`, `GET /audio-studio/sessions/{id}/autosave-snapshots`, `POST /audio-studio/sessions/{id}/undo-autosave`, `POST /audio-studio/sessions/{id}/promote`, `POST /audio-studio/sessions/{id}/export-reaper`
 - **Key Backend Files:** `backend/routes/audio_studio.py`, `backend/routes/_session_store.py`
-- **Key Frontend Files:** `app/src/components/AudioStudio/AudioStudio.tsx`, `app/src/components/AudioStudio/audioStudio/StudioToolbar.tsx`, `app/src/components/AudioStudio/TransportControls.tsx`, `app/src/stores/AudioStudio/AudioStudioStore.ts`
+- **Key Frontend Files:** `app/src/features/audioStudio/AudioStudio.tsx`, `app/src/features/audioStudio/StudioToolbar.tsx`, `app/src/features/audioStudio/TransportControls.tsx`, `app/src/stores/AudioStudio/AudioStudioStore.ts`

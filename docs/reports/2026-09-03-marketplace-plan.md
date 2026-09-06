@@ -125,7 +125,10 @@ the runtime path is also live: a startup background task polls hourly
 (`OTOYIN_CATALOG_POLL_S`) and refreshes only when the last successful fetch is
 stale (`remote_catalog_stale`, threshold `OTOYIN_CATALOG_REFRESH_S`, default
 24h), so signed catalog updates propagate without an app restart and failed
-fetches retry on the next tick. 06 `local_status` is implemented and tested.
+fetches retry on the next tick. The Store also nudges a stale-gated refresh on
+every open (`POST /marketplace/catalog/refresh` → refetch when products
+changed), so newly published models appear on the next Store visit. 06
+`local_status` is implemented and tested.
 
 Part C's **per-item state row is now implemented** on the in-app Store
 (`StoreProductCard` + `StoreDetailModal`): products render **owned** (solid

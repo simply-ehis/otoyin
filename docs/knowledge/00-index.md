@@ -185,7 +185,7 @@ Every knowledge doc should have an `## Agent Callable` section with exact MCP to
 | `/captures` | `CapturesTab` | `app/src/components/CapturesTab/CapturesTab.tsx` |
 | `/effects` | `EffectsTab` | `app/src/components/EffectsTab/EffectsTab.tsx` |
 | `/models` | `ModelsTab` | `app/src/components/ModelsTab/ModelsTab.tsx` |
-| `/audio-studio` | `AudioStudio` | `app/src/components/AudioStudio/AudioStudio.tsx` |
+| `/audio-studio` | `AudioStudio` | `app/src/features/audioStudio/AudioStudio.tsx` |
 | `/voice-changer` | `VoiceChangerView` | `app/src/components/Workspace/VoiceChangerView.tsx` |
 | `/voice-converter` | `VoiceConverterView` | `app/src/components/Workspace/VoiceConverterView.tsx` |
 | `/sounds` | `SoundEffectsView` | `app/src/components/Workspace/SoundEffectsView.tsx` |

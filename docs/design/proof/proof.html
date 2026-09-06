@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Otoyin Design System — Proof of Direction</title>
+<style>
+  /* ══════════════════════════════════════════════════════════════
+     OTOYIN DESIGN TOKENS (proof mirror of app/src/styles/tokens.css)
+     Direction: organic/creative audio studio, warm single-source light
+     (Caravaggio), flat rose accent. Solid surfaces only.
+     ══════════════════════════════════════════════════════════════ */
+  :root {
+    /* Warm-neutral surfaces (proposed delta from cold gray) */
+    --surface-base: hsl(28 6% 9%);
+    --surface-raised: hsl(28 5% 13%);
+    --surface-overlay: hsl(28 5% 16%);
+    --surface-sunken: hsl(28 8% 7%);
+
+    --text-primary: hsl(30 12% 92%);
+    --text-secondary: hsl(30 6% 68%);
+    --text-tertiary: hsl(30 4% 52%);
+
+    --border-subtle: hsl(28 4% 22%);
+    --border-strong: hsl(28 4% 34%);
+
+    --accent: hsl(348 68% 58%);            /* flat rose — never gradient */
+    --accent-hover: hsl(348 68% 63%);
+    --accent-muted: hsl(348 28% 22%);
+    --accent-foreground: hsl(0 0% 98%);
+
+    --info: hsl(210 65% 52%);
+    --info-soft: hsl(213 24% 15%);
+    --info-text: hsl(210 60% 80%);
+    --success: hsl(152 55% 42%);
+    --success-soft: hsl(152 24% 15%);
+    --success-text: hsl(152 55% 75%);
+    --warning: hsl(38 80% 48%);
+    --warning-soft: hsl(38 30% 15%);
+    --warning-text: hsl(38 85% 78%);
+    --danger: hsl(0 62% 50%);
+    --danger-soft: hsl(0 30% 16%);
+    --danger-text: hsl(0 70% 78%);
+
+    /* Mirrors app/src/styles/tokens.css 1:1 — cheap shadows on solid
+       surfaces; elevation is shift + hairline + shadow, never blur. */
+    --elevation-raised: 0 1px 2px rgba(0, 0, 0, 0.08);
+    --elevation-floating: 0 4px 12px rgba(0, 0, 0, 0.16), 0 1px 2px rgba(0, 0, 0, 0.1);
+    --elevation-modal: 0 12px 32px rgba(0, 0, 0, 0.32), 0 2px 6px rgba(0, 0, 0, 0.18);
+
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+
+    --motion-fast: 120ms;
+    --motion-base: 200ms;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+    --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+    --space-6: 24px; --space-8: 32px; --space-12: 48px; --space-16: 64px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--surface-base);
+    color: var(--text-primary);
+    font-family: "Geist", "Inter", "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    padding: var(--space-12) var(--space-16);
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+
+  /* ── Type scale (4 roles, real contrast) ── */
+  h1 { font-size: 28px; font-weight: 650; letter-spacing: -0.02em; }
+  h2 { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); }
+  .display { font-size: 32px; font-weight: 650; letter-spacing: -0.03em; }
+  .body { color: var(--text-secondary); }
+  .caption { font-size: 12px; color: var(--text-tertiary); letter-spacing: 0.02em; }
+
+  /* ── Layout scaffolding ── */
+  .section { margin-top: var(--space-12); }
+  .section-head { display: flex; align-items: baseline; gap: var(--space-3); margin-bottom: var(--space-6); }
+  .section-head .rule { flex: 1; height: 1px; background: var(--border-subtle); }
+  .grid { display: grid; gap: var(--space-6); }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 800px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+
+  /* ── Surfaces (solid, one-step shifts, hairline borders) ── */
+  .panel {
+    background: var(--surface-raised);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--elevation-raised);
+    padding: var(--space-6);
+  }
+  .panel-flat {
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+  }
+  .demo-row { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: center; }
+
+  /* ── Buttons (3 hierarchy levels, 3 sizes) ── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+    font: inherit; font-weight: 500; font-size: 14px;
+    border-radius: var(--radius-md);
+    padding: 0 var(--space-4); height: 36px;
+    border: 1px solid transparent; cursor: pointer;
+    transition: transform var(--motion-fast) var(--ease-out),
+                background-color var(--motion-fast) ease,
+                border-color var(--motion-fast) ease;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn-sm { height: 28px; font-size: 12px; padding: 0 var(--space-3); }
+  .btn-lg { height: 44px; font-size: 15px; padding: 0 var(--space-6); }
+
+  .btn-primary { background: var(--accent); color: var(--accent-foreground); }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-secondary { background: var(--surface-raised); color: var(--text-primary); border-color: var(--border-strong); }
+  .btn-secondary:hover { background: hsl(28 5% 17%); }
+  .btn-ghost { background: transparent; color: var(--text-secondary); }
+  .btn-ghost:hover { background: hsl(28 5% 15%); color: var(--text-primary); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover { filter: brightness(1.1); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-icon { width: 36px; padding: 0; position: relative; }
+  .btn-icon svg { width: 18px; height: 18px; }
+
+  /* Tooltip (anchored, delayed, origin-aware) */
+  .tooltip-wrap { position: relative; }
+  .tooltip {
+    position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%) scale(0.95);
+    background: var(--surface-overlay); color: var(--text-primary);
+    border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);
+    padding: 4px 8px; font-size: 12px; white-space: nowrap; pointer-events: none;
+    opacity: 0; transition: opacity var(--motion-base) ease, transform var(--motion-base) var(--ease-out);
+    box-shadow: var(--elevation-floating);
+  }
+  .tooltip-wrap:hover .tooltip { opacity: 1; transform: translateX(-50%) scale(1); }
+  .tooltip kbd { font-family: inherit; background: var(--surface-sunken); padding: 0 4px; border-radius: 3px; border: 1px solid var(--border-subtle); }
+
+  /* ── Inputs (persistent labels, not placeholders) ── */
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+  .input {
+    font: inherit; font-size: 14px; color: var(--text-primary);
+    background: var(--surface-sunken);
+    border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);
+    padding: 0 var(--space-3); height: 36px; width: 100%;
+    transition: border-color var(--motion-fast) ease;
+  }
+  .input::placeholder { color: var(--text-tertiary); }
+  .input:focus { outline: none; border-color: var(--accent); }
+  .input.has-error { border-color: var(--danger); }
+  .input:disabled { opacity: 0.5; cursor: not-allowed; }
+  .field-error { font-size: 12px; color: var(--danger); }
+  .search { position: relative; }
+  .search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-tertiary); }
+  .search .input { padding-left: 34px; }
+  .search .kbd-badge {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    font-size: 11px; color: var(--text-tertiary); border: 1px solid var(--border-subtle);
+    border-radius: 3px; padding: 1px 5px; background: var(--surface-raised);
+  }
+
+  /* ── Toggles / switches / segmented ── */
+  .switch { width: 40px; height: 22px; border-radius: 11px; background: var(--border-strong); border: none; cursor: pointer; position: relative; transition: background var(--motion-fast) ease; }
+  .switch[aria-checked="true"] { background: var(--accent); }
+  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform var(--motion-base) var(--ease-out); }
+  .switch[aria-checked="true"]::after { transform: translateX(18px); }
+
+  .segmented { display: inline-flex; background: var(--surface-sunken); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 3px; gap: 2px; }
+  .segmented button { font: inherit; font-size: 13px; color: var(--text-secondary); background: transparent; border: none; border-radius: calc(var(--radius-md) - 2px); padding: 4px 12px; cursor: pointer; transition: background var(--motion-fast) ease, color var(--motion-fast) ease; }
+  .segmented button[aria-pressed="true"] { background: var(--surface-raised); color: var(--text-primary); box-shadow: var(--elevation-raised); }
+
+  .check { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .check input { accent-color: var(--accent); width: 16px; height: 16px; }
+
+  /* ── Feedback vehicles ── */
+  .banner {
+    display: flex; align-items: center; gap: var(--space-3);
+    padding: 10px var(--space-4); border-radius: var(--radius-md);
+    border: 1px solid; font-size: 13px;
+  }
+  .banner.info { background: var(--surface-raised); border-color: var(--border-strong); color: var(--text-secondary); }
+  .banner.success { background: var(--success-soft); border-color: hsl(152 55% 42% / 0.4); color: var(--success-text); }
+  .banner.warning { background: var(--warning-soft); border-color: hsl(38 80% 48% / 0.4); color: var(--warning-text); }
+  .banner.danger { background: var(--danger-soft); border-color: hsl(0 62% 50% / 0.4); color: var(--danger-text); }
+  .banner .banner-icon { flex-shrink: 0; }
+  .banner .close { margin-left: auto; background: transparent; border: none; color: inherit; opacity: 0.7; cursor: pointer; width: 22px; height: 22px; border-radius: var(--radius-sm); display: grid; place-items: center; }
+  .banner .close:hover { opacity: 1; background: hsl(0 0% 0% / 0.15); }
+
+  .toast {
+    display: flex; align-items: flex-start; gap: var(--space-3);
+    width: 360px; max-width: 100%;
+    background: var(--surface-overlay); border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md); box-shadow: var(--elevation-floating);
+    padding: var(--space-4);
+  }
+  .toast .t-title { font-weight: 550; font-size: 13px; }
+  .toast .t-body { font-size: 12.5px; color: var(--text-secondary); margin-top: 2px; }
+  .toast .check-circle { color: var(--success); flex-shrink: 0; margin-top: 1px; }
+
+  /* Empty state */
+  .empty {
+    display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+    border: 1px dashed var(--border-strong); border-radius: var(--radius-md);
+    padding: var(--space-8) var(--space-6); background: transparent;
+  }
+  .empty .icon-chip {
+    width: 36px; height: 36px; border-radius: var(--radius-md);
+    background: var(--surface-raised); border: 1px solid var(--border-subtle);
+    display: grid; place-items: center; color: var(--accent); margin-bottom: 4px;
+  }
+  .empty .icon-chip svg { width: 18px; height: 18px; }
+  .empty p:first-of-type { font-weight: 500; }
+  .empty p:last-of-type { color: var(--text-tertiary); font-size: 13px; max-width: 260px; }
+
+  /* Status pills */
+  .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid; }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .pill.ready { color: var(--success-text); border-color: hsl(152 55% 42% / 0.45); background: var(--success-soft); }
+  .pill.ready .dot { background: var(--success); }
+  .pill.owned { color: var(--info-text); border-color: hsl(210 65% 52% / 0.45); background: var(--info-soft); }
+  .pill.owned .dot { background: var(--info); }
+  .pill.loading { color: var(--text-secondary); border-color: var(--border-strong); background: var(--surface-raised); }
+  .pill.loading .dot { background: var(--text-tertiary); animation: blink 1.2s ease infinite; }
+  .pill.idle { color: var(--text-tertiary); border-color: var(--border-subtle); background: transparent; }
+  .pill.idle .dot { background: var(--text-tertiary); }
+  .pill.breaker { color: var(--warning-text); border-color: hsl(38 80% 48% / 0.45); background: var(--warning-soft); }
+  .pill.breaker .dot { background: var(--warning); }
+  .pill.error { color: var(--danger-text); border-color: hsl(0 62% 50% / 0.45); background: var(--danger-soft); }
+  .pill.error .dot { background: var(--danger); }
+  @keyframes blink { 50% { opacity: 0.35; } }
+
+  /* Swatches */
+  .swatch { display: flex; flex-direction: column; gap: 8px; }
+  .swatch .chip { height: 44px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); }
+  .swatch .name { font-size: 12.5px; }
+  .swatch .hex { font-size: 11px; color: var(--text-tertiary); font-family: "Geist Mono", "Consolas", monospace; }
+
+  /* Compliance note */
+  .checklist { list-style: none; display: grid; gap: 8px; }
+  .checklist li { display: flex; gap: 10px; color: var(--text-secondary); font-size: 13px; }
+  .checklist .tick { color: var(--success); font-weight: 700; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+  <!-- ── Header ─────────────────────────────────────────────────── -->
+  <div class="section-head" style="margin-bottom: var(--space-4);">
+    <span class="display">Otoyin</span>
+    <span class="caption">design system · proof of direction · warm single-source light</span>
+  </div>
+  <p class="body" style="max-width: 640px;">
+    A real audio studio, not a generic AI-app template. Solid surfaces, one flat
+    rose accent, warm neutrals, three-step radius scale, and motion that
+    communicates <em>where something went</em> — nothing floats, nothing blurs.
+  </p>
+
+  <!-- ── Color system ───────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-head"><h2>Color system — semantic roles</h2><span class="rule"></span></div>
+    <div class="grid grid-4">
+      <div class="swatch"><div class="chip" style="background: var(--surface-base)"></div><div class="name">surface-base</div><div class="hex">hsl(28 6% 9%)</div></div>
+      <div class="swatch"><div class="chip" style="background: var(--surface-raised)"></div><div class="name">surface-raised</div><div class="hex">hsl(28 5% 13%)</div></div>
+      <div class="swatch"><div class="chip" style="background: var(--surface-overlay)"></div><div class="name">surface-overlay</div><div class="hex">hsl(28 5% 16%)</div></div>
+      <div class="swatch"><div class="chip" style="background: var(--surface-sunken)"></div><div class="name">surface-sunken</div><div class="hex">hsl(28 8% 7%)</div></div>
+      <div class="swatch"><div class="chip" style="background: var(--accent)"></div><div class="name">accent (rose)</div><div class="hex">hsl(348 68% 58%)</div></div>
+      <div class="swatch"><div class="chip" style="background: var(--accent-muted)"></div><div class="name">accent-muted</div><div class="hex">hsl(348 28% 22%)</div></div>
+      <div class="swatch"><div class="chip" style="background: var(--success)"></div><div class="name">success</div><div class="hex">hsl(152 55% 42%)</div></div>
+      <div class="swatch"><div class="chip" style="background: var(--warning)"></div><div class="name">warning</div><div class="hex">hsl(38 80% 48%)</div></div>
+      <div class="swatch"><div class="chip" style="background: var(--danger)"></div><div class="name">danger</div><div class="hex">hsl(0 62% 50%)</div></div>
+      <div class="swatch"><div class="chip" style="background: var(--border-subtle)"></div><div class="name">border-subtle</div><div class="hex">hsl(28 4% 22%)</div></div>
+      <div class="swatch"><div class="chip" style="background: var(--text-primary); border: 1px solid var(--border-strong)"></div><div class="name">text-primary</div><div class="hex">hsl(30 12% 92%)</div></div>
+      <div class="swatch"><div class="chip" style="background: var(--text-secondary)"></div><div class="name">text-secondary</div><div class="hex">hsl(30 6% 68%)</div></div>
+      <div class="swatch"><div class="chip" style="background: var(--success-soft)"></div><div class="name">success-soft</div><div class="hex">hsl(152 24% 15%)</div></div>
+      <div class="swatch"><div class="chip" style="background: var(--warning-soft)"></div><div class="name">warning-soft</div><div class="hex">hsl(38 30% 15%)</div></div>
+      <div class="swatch"><div class="chip" style="background: var(--danger-soft)"></div><div class="name">danger-soft</div><div class="hex">hsl(0 30% 16%)</div></div>
+      <div class="swatch"><div class="chip" style="background: var(--info-soft)"></div><div class="name">info-soft</div><div class="hex">hsl(213 24% 15%)</div></div>
+      <div class="swatch"><div class="chip" style="background: var(--info)"></div><div class="name">info</div><div class="hex">hsl(210 65% 52%)</div></div>
+      <div class="swatch"><div class="chip" style="background: var(--info-text)"></div><div class="name">info-text</div><div class="hex">hsl(210 60% 80%)</div></div>
+    </div>
+    <p class="caption" style="margin-top: var(--space-4);">60% base · 30% raised/text · 10% accent. Status colors reserved for state. No purple gradient, no AI-purple trap. Single dark-first face (warm neutrals); the image-backed special themes (stripe, coastal-light, mesh-dark) overlay the same solid surfaces — there is no separate light token set.</p>
+  </div>
+
+  <!-- ── Buttons ────────────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-head"><h2>Buttons — one primary per view</h2><span class="rule"></span></div>
+    <div class="panel">
+      <div class="demo-row">
+        <button class="btn btn-primary">Generate</button>
+        <button class="btn btn-secondary">Save preset</button>
+        <button class="btn btn-ghost">Cancel</button>
+        <button class="btn btn-danger">Delete</button>
+        <button class="btn btn-primary" disabled>Disabled</button>
+      </div>
+      <div class="demo-row" style="margin-top: var(--space-4);">
+        <button class="btn btn-sm btn-primary">Small</button>
+        <button class="btn btn-primary">Default</button>
+        <button class="btn btn-lg btn-primary">Large</button>
+        <div class="tooltip-wrap">
+          <button class="btn btn-icon btn-secondary" aria-label="New session">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+          <span class="tooltip">New session <kbd>Ctrl+N</kbd></span>
+        </div>
+        <div class="tooltip-wrap">
+          <button class="btn btn-icon btn-ghost" aria-label="Delete">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M9 7V5h6v2m-8 0 1 13h8l1-13"/></svg>
+          </button>
+          <span class="tooltip">Delete track</span>
+        </div>
+      </div>
+      <p class="caption" style="margin-top: var(--space-4);">
+        Filled / outlined / ghost hierarchy · press feedback scale(0.97) · focus ring on keyboard ·
+        icon-only buttons carry tooltips + accessible names · disabled = opacity + cursor.
+      </p>
+    </div>
+  </div>
+
+  <!-- ── Inputs ─────────────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-head"><h2>Inputs — labels, not placeholders</h2><span class="rule"></span></div>
+    <div class="grid grid-2">
+      <div class="panel">
+        <div class="field">
+          <label for="demo-name">Server address</label>
+          <input id="demo-name" class="input" placeholder="e.g. 127.0.0.1:17493" value="127.0.0.1:17493" />
+        </div>
+        <div class="field" style="margin-top: var(--space-4);">
+          <label for="demo-err">Engine name</label>
+          <input id="demo-err" class="input has-error" value="invalid_engine_xyz" />
+          <span class="field-error">That engine isn't in the catalog. Supported: kokoro, kitten-tts, …</span>
+        </div>
+        <div class="field" style="margin-top: var(--space-4);">
+          <label for="demo-dis">Model path</label>
+          <input id="demo-dis" class="input" disabled value="models/gguf/planner-2b-q4.gguf" />
+        </div>
+      </div>
+      <div class="panel">
+        <div class="field">
+          <label for="demo-search">Search sounds</label>
+          <div class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input id="demo-search" class="input" placeholder="kick, room tone, riser…" />
+            <span class="kbd-badge">Ctrl K</span>
+          </div>
+        </div>
+        <div style="margin-top: var(--space-4); display: flex; align-items: center; gap: var(--space-6); flex-wrap: wrap;">
+          <label class="check"><input type="checkbox" checked /> Auto-duck</label>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="caption">Keep engine loaded</span>
+            <button class="switch" role="switch" aria-checked="true" aria-label="Keep engine loaded"></button>
+          </div>
+        </div>
+        <div class="segmented" style="margin-top: var(--space-4);" role="group" aria-label="View mode">
+          <button aria-pressed="true">List</button>
+          <button aria-pressed="false">Grid</button>
+          <button aria-pressed="false">Timeline</button>
+        </div>
+        <p class="caption" style="margin-top: var(--space-4);">Validate on blur, not per keystroke · switch slides (transform only) · search debounced + shortcut hint.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Model state pills (prompt 06 surfacing) ────────────────── -->
+  <div class="section">
+    <div class="section-head"><h2>Model state — visible, not mysterious</h2><span class="rule"></span></div>
+    <div class="panel">
+      <div class="demo-row">
+        <span class="pill ready"><span class="dot"></span>Kokoro · ready</span>
+        <span class="pill loading"><span class="dot"></span>Whisper small · loading</span>
+        <span class="pill idle"><span class="dot"></span>RVC · idle-unloaded</span>
+        <span class="pill breaker"><span class="dot"></span>StyleTTS2 · retry in 4 min</span>
+        <span class="pill error"><span class="dot"></span>Demucs · download failed</span>
+      </div>
+      <div class="demo-row" style="margin-top: var(--space-3);">
+        <span class="pill owned"><span class="dot"></span>Whisper large · owned</span>
+        <span class="pill ready"><span class="dot"></span>Kokoro · installed</span>
+        <span class="pill idle"><span class="dot"></span>Bark · needs download</span>
+      </div>
+      <p class="caption" style="margin-top: var(--space-4);">
+        The circuit breaker and idle-unload now have a UI: “idle-unloaded” explains the 5-min
+        silence, “retry in N min” explains the 503 — no more perceived flakiness.
+        Store state chips (07 Part C) use the same solid soft+text roles: owned = info,
+        installed = success, needs download = neutral idle.
+      </p>
+    </div>
+  </div>
+
+  <!-- ── Feedback vehicles ──────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-head"><h2>Feedback — right vehicle per stakes</h2><span class="rule"></span></div>
+    <div class="grid grid-2">
+      <div style="display:flex; flex-direction:column; gap: var(--space-3);">
+        <div class="banner warning">
+          <svg class="banner-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="color: var(--warning-text)"><path d="M12 9v5m0 3h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+          <span>Model not downloaded yet — grab it from the Store, then activate.</span>
+          <button class="close" aria-label="Dismiss">✕</button>
+        </div>
+        <div class="banner success">
+          <svg class="banner-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="color: var(--success-text)"><path d="M5 12.5 10 17 19 7"/></svg>
+          <span>License verified — this model is yours, offline, forever.</span>
+        </div>
+        <div class="banner danger">
+          <svg class="banner-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="color: var(--danger-text)"><circle cx="12" cy="12" r="9"/><path d="M12 8v5m0 3h.01"/></svg>
+          <span>Couldn't reach the sync server. Retrying automatically.</span>
+        </div>
+        <div class="banner info">
+          <svg class="banner-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="color: var(--info-text)"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5m0-3h.01"/></svg>
+          <span>Update v0.2.1 available — download &amp; restart to apply.</span>
+          <button class="close" aria-label="Dismiss">✕</button>
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap: var(--space-4);">
+        <div class="toast">
+          <svg class="check-circle" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12.5 10 17 19 7"/></svg>
+          <div>
+            <div class="t-title">Export complete</div>
+            <div class="t-body">12 tracks bounced to <b>otoyin-session-mix.wav</b> · 48kHz/24-bit</div>
+          </div>
+        </div>
+        <div class="panel" style="box-shadow: var(--elevation-modal); border-radius: var(--radius-lg);">
+          <h2 style="font-size:15px;">Delete 3 captures?</h2>
+          <p class="body" style="margin-top: 6px; font-size: 13px;">This permanently removes these captures from your library. This can't be undone.</p>
+          <div class="demo-row" style="margin-top: var(--space-4);">
+            <button class="btn btn-danger">Delete 3 captures</button>
+            <button class="btn btn-ghost">Cancel</button>
+          </div>
+          <p class="caption" style="margin-top: var(--space-3);">Consequence stated · destructive is non-default · capped width, centered.</p>
+        </div>
+        <div class="empty">
+          <div class="icon-chip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M6.3 6.3l2 2m7.4 7.4 2 2M17.7 6.3l-2 2m-7.4 7.4-2 2"/></svg>
+          </div>
+          <p>No generations yet</p>
+          <p>Your audio captures will appear here. Generate your first voice line to get started.</p>
+          <button class="btn btn-secondary" style="margin-top: 6px;">Generate first capture</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Surfaces & motion ──────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-head"><h2>Surfaces &amp; motion</h2><span class="rule"></span></div>
+    <div class="grid grid-3">
+      <div class="panel-flat"><div class="name">flat section</div><div class="caption" style="margin-top:4px;">Most content is flat — cards are reserved for discrete units.</div></div>
+      <div class="panel"><div class="name">raised card</div><div class="caption" style="margin-top:4px;">One step up + hairline + tight shadow.</div></div>
+      <div class="panel" style="box-shadow: var(--elevation-floating); border-radius: var(--radius-lg);"><div class="name">overlay (floating)</div><div class="caption" style="margin-top:4px;">Menus, popovers, tooltips — larger soft shadow, still solid.</div></div>
+    </div>
+    <p class="caption" style="margin-top: var(--space-4);">
+      Elevation via surface shift + border + cheap shadow — never blur · max 3 levels on screen ·
+      entrance starts at scale(0.95)+opacity, never scale(0) · exit faster than enter · transform/opacity only.
+    </p>
+  </div>
+
+  <!-- ── Anti-AI-slop checklist ─────────────────────────────────── -->
+  <div class="section">
+    <div class="section-head"><h2>Anti-AI-slop compliance</h2><span class="rule"></span></div>
+    <div class="panel">
+      <ul class="checklist">
+        <li><span class="tick">✓</span> No purple-pink gradient — flat rose accent, one place at a time (60-30-10)</li>
+        <li><span class="tick">✓</span> No glassmorphism — every surface solid; blur reserved for nothing</li>
+        <li><span class="tick">✓</span> No floating pills/toolbars — context UI anchored; toasts are transient confirmations only</li>
+        <li><span class="tick">✓</span> No Lucide — heroicons-only (project invariant), consistent stroke weight</li>
+        <li><span class="tick">✓</span> Button hierarchy (one primary), press feedback, keyboard focus rings</li>
+        <li><span class="tick">✓</span> Empty + error + loading + success states designed, not defaulted</li>
+        <li><span class="tick">✓</span> Labels not placeholders; validation on blur; translation headroom in labels</li>
+        <li><span class="tick">✓</span> 4-role type scale; 4/8/12 radius; 4px spacing scale; motion &lt;300ms, reduced-motion honored</li>
+      </ul>
+    </div>
+  </div>
+
+</body>
+</html>

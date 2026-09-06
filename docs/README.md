@@ -5,13 +5,12 @@
 ## Quick Start
 
 ```bash
-bun install          # Install dependencies
-bun run setup        # Download models / sidecar binaries
-bun run dev          # Launch Tauri dev app (backend auto-starts in prod)
-bun run dev:web      # Launch web version only
-bun run dev:server   # Start Python backend separately (port 17493)
-bun run lint         # Biome lint
-bun run typecheck    # TypeScript check
+npm install          # Install dependencies
+npm run setup        # Download models / sidecar binaries
+npm run dev          # Launch Tauri dev app (backend auto-starts in prod)
+npm run dev:server   # Start Python backend separately (port 17493)
+npm run lint         # Biome lint
+npm run typecheck    # TypeScript check
 ```
 
 ## Active Docs

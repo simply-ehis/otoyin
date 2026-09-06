@@ -5,13 +5,13 @@ We welcome contributions. This project is in active development.
 ## Development setup
 
 1. Clone the repository
-2. Install dependencies: `bun install`
+2. Install dependencies: `npm install`
 3. Set up Python venv: `just setup-python` (or manually: `python -m venv backend/venv` + `pip install -r backend/requirements.txt`)
 4. Start dev server: `just dev` (backend + Tauri) or `just dev-web` (browser only)
 
 ## Code style
 
-- **Frontend:** Biome for lint/format. Run `bun run check` in `app/`.
+- **Frontend:** Biome for lint/format. Run `npm run check` in `app/`.
 - **Backend:** Ruff for lint/format. Run `ruff check backend/` and `ruff format backend/`.
 - **TypeScript:** `tsc --noEmit` must pass in both `app/` and `web/`.
 - Keep files under 500 lines, functions under 100 lines.

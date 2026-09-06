@@ -55,7 +55,7 @@ ensureDir(path.resolve(REPO_ROOT, 'tauri', 'src-tauri', 'icons'));
 
 // Create placeholder sidecar binaries for development
 console.log('\n  Creating dev placeholder sidecar binaries...');
-createPlaceholder('21labs-server');
+createPlaceholder('otoyin-server');
 createPlaceholder('21labs-mcp');
 
 // Install git hooks so the pre-commit gate is active on every clone

@@ -40,6 +40,6 @@ After generating + processing clips, finish with `run_recipe` for a broadcast-gr
 - **MCP Tools:** `21labs.run_recipe`, `21labs.export_reaper_project`
 - **REST Endpoints:** `POST /recipe/run`, `POST /audio-studio/sessions/{id}/export-reaper`
 - **Key Backend Files:** `backend/services/recipe_runner.py`, `backend/services/daw_export.py`, `backend/routes/recipe.py`, `backend/routes/audio_studio.py`
-- **Key Frontend Files:** `app/src/components/AudioStudio/AudioStudio.tsx`
+- **Key Frontend Files:** `app/src/features/audioStudio/AudioStudio.tsx`
 
 UPDATED: 2026-07-15

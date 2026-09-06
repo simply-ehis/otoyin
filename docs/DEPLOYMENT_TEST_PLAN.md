@@ -13,7 +13,7 @@ UPDATED: 2026-07-19
 ## Prerequisites
 - Fresh install or clean cache (`~/.cache/TWENTYLABS/` cleared)
 - Backend running: `python -m uvicorn backend.main:app --host 127.0.0.1 --port 17493`
-- Frontend running: `cd app && bun dev` or Tauri desktop build
+- Frontend running: `cd tauri && npm run dev` or Tauri desktop build
 - No other audio apps holding exclusive device access
 
 ---

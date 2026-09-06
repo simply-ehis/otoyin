@@ -22,7 +22,7 @@ otoyin is a multi-platform desktop application for professional audio post-produ
 
 ## Requirements
 
-- Node.js 18+ (or Bun >= 1.0.0)
+- Node.js 18+
 - Python 3.11+ (3.12+ preferred)
 - Rust (for Tauri builds)
 - Windows: Visual Studio 2022 Build Tools
@@ -32,7 +32,7 @@ otoyin is a multi-platform desktop application for professional audio post-produ
 
 | Command | Description |
 |---------|-------------|
-| `bun install` | Install JS dependencies |
+| `npm install` | Install JS dependencies |
 | `just setup-python` | Create venv + install Python deps |
 | `just dev` | Run backend + Tauri desktop |
 | `just dev-web` | Run backend + web app |

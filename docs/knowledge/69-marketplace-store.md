@@ -6,7 +6,7 @@
 > KEY-FILES: backend/routes/store.py (REST), backend/services/marketplace_catalog.py (catalog), backend/services/model_registry.py (download/entitlements)
 > INVARIANTS: free models download without license check; paid models require signed entitlement; catalog is bundled, then refreshed from the remote marketplace service (signature-verified, offline-first)
 > GOTCHAS: remote refresh never breaks the app — on network failure/tamper the bundled catalog stays; a startup background task polls hourly and fetches only when stale (24h threshold, `OTOYIN_CATALOG_POLL_S`/`OTOYIN_CATALOG_REFRESH_S`), so failures retry next tick instead of after a full interval
-> UPDATED: 2026-09-04
+> UPDATED: 2026-09-05
 
 ## Overview
 
@@ -22,11 +22,25 @@ a short tick (`OTOYIN_CATALOG_POLL_S`, default 1h) and fetches
 (`remote_catalog_stale`, threshold `OTOYIN_CATALOG_REFRESH_S`, default 24h) — so
 the first tick refreshes at startup, catalog updates propagate without an app
 restart, and a failed fetch is retried on the next tick rather than after a full
-interval. The response verifies against the embedded Ed25519 public key before
-swapping the in-memory `PRODUCTS`; any failure (offline, bad signature, timeout)
-keeps the bundled catalog and logs silently — offline-first. Signed catalog
-documents are never mutated: `local_status` is annotated *after* verification.
-See `backend/services/marketplace_catalog.py::refresh_remote_catalog_if_stale`.
+interval. The Store additionally nudges a refresh when it opens
+(`POST /marketplace/catalog/refresh`), so newly published models appear on the
+next Store visit — the nudge is stale-gated too, so it is a network-free no-op
+whenever the catalog is already fresh. A manual "Check for updates" button in
+the Store hero sends `POST /marketplace/catalog/refresh?force=true`, which
+bypasses the stale gate entirely so the user can pull newly published models on
+demand (still offline-first: no `OTOYIN_CATALOG_URL` or any fetch failure keeps
+the bundled catalog and reports `refreshed: false`). The refresh response now
+carries a `reason` code explaining a no-op — `"fresh"` (gate not yet tripped),
+`"no_url"` (no `OTOYIN_CATALOG_URL` configured), or `"failed"` (fetch/verify
+error). A `"failed"` result is surfaced in the Store as a subtle dismissible
+hint (never a toast) instead of failing silently, and clears automatically on
+the next successful swap. The response verifies
+against the embedded Ed25519 public key before swapping the in-memory
+`PRODUCTS`; any failure (offline, bad signature, timeout) keeps the bundled
+catalog and logs silently — offline-first. Signed catalog documents are never
+mutated: `local_status` is annotated *after* verification.
+See `backend/services/marketplace_catalog.py::refresh_remote_catalog_if_stale`
+(`force=True` skips `remote_catalog_stale`).
 
 ## Store categories
 

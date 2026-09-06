@@ -9,7 +9,7 @@
 non-blocking for the build.
 
 **Backend:** Python/FastAPI server on port **17493**. Bundled as a Tauri sidecar for
-production; in dev run `bun run dev:server` separately. The same uvicorn process also
+production; in dev run `npm run dev:server` separately. The same uvicorn process also
 serves the MCP server at `/mcp` (Streamable HTTP) for agent control.
 
 **Offline / Cross-platform:** Every model runs on-device. STT uses **whisper.cpp**

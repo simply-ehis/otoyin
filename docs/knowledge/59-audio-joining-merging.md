@@ -1,9 +1,9 @@
 # Audio Joining / Merging / Frequency Tuning
 
 PURPOSE: Every path in otoyin that COMBINES multiple audio sources into one — timeline mixing, DAW bounce, recipe concat, conversation layering, and the frequency/mastering tools applied during merge.
-OWNS: services/mixer.py (numpy mix engine), services/mastering.py (compressor/limiter/LUFS/stereo), services/recipe_runner.py (crossfade concat + duck), services/effects_chain.py (eq/compressor/spectral), routes/mixer.py (story→mix), components/AudioStudio/AudioStudio.tsx (Web Audio real-time graph), components/AudioStudio/audioStudio/renderMidiToBuffer.ts.
+OWNS: services/mixer.py (numpy mix engine), services/mastering.py (compressor/limiter/LUFS/stereo), services/recipe_runner.py (crossfade concat + duck), services/effects_chain.py (eq/compressor/spectral), routes/mixer.py (story→mix), features/audioStudio/AudioStudio.tsx (Web Audio real-time graph), features/audioStudio/renderMidiToBuffer.ts.
 READ-WHEN: Touching multi-track mixing, bounce/export, crossfade, ducking, EQ, mastering, or "how do two clips become one".
-KEY-FILES: services/mixer.py, services/mastering.py, services/recipe_runner.py, components/AudioStudio/AudioStudio.tsx
+KEY-FILES: services/mixer.py, services/mastering.py, services/recipe_runner.py, features/audioStudio/AudioStudio.tsx
 INVARIANTS: Two distinct merge engines exist — (A) OFFLINE numpy (backend: mixer.py, recipe_runner.py, story export) and (B) REAL-TIME Web Audio graph (frontend AudioStudio). They use DIFFERENT math (see GOTCHAS). All merges are sample-accurate by index; clips placed at start_sample = start_time_ms/1000*sr. Final stage is always a peak/clip guard or LUFS normalize.
 GOTCHAS: Backend mixer.py hard-codes sample_rate=48000 (routes/mixer.py:36) then OVERWRITES it with the first track's sr — inconsistent. Stereo panning is equal-power (sqrt). The backend reverb/delay (effects_chain) are single-tap approximations vs the frontend parallel wet/dry (see 54/57).
 UPDATED: 2026-07-19 (fixes applied)

@@ -1,6 +1,6 @@
 ---
 PURPOSE: Cross-tab audio bus + Video Preview tab. Route any playing tab's audio as a live monitor/backing source in another tab; preview video with its audio on the shared WebAudio bus and extract the audio to Audio Studio. Record from any bus source directly into an AudioStudio track.
-OWNS: app/src/lib/audio/audioBus.ts, app/src/lib/audio/sources.ts, app/src/components/AudioStudio/MonitorPicker.tsx, app/src/components/AudioStudio/MonitorRecorder.tsx, app/src/components/AudioStudio/TransportBar.tsx, app/src/components/Workspace/VideoPreviewView.tsx, app/src/lib/hooks/useMonitorStream.ts, backend/routes/extended_import.py (video-preview, audio-preview), app/src/lib/hooks/useAudioPlayer.ts (voiceover bus registration).
+OWNS: app/src/lib/audio/audioBus.ts, app/src/lib/audio/sources.ts, app/src/features/audioStudio/MonitorPicker.tsx, app/src/features/audioStudio/MonitorRecorder.tsx, app/src/features/audioStudio/TransportBar.tsx, app/src/components/Workspace/VideoPreviewView.tsx, app/src/lib/hooks/useMonitorStream.ts, backend/routes/extended_import.py (video-preview, audio-preview), app/src/lib/hooks/useAudioPlayer.ts (voiceover bus registration).
 READ-WHEN: You touch cross-tab audio routing, the live monitor picker, the video tab, or the shared AudioContext bus.
 KEY-FILES:
   - audioBus.ts — zustand store: registry of named AudioSource (each = GainNode + outputNode on the shared AudioContext), monitor selection, per-source volume/mute.

@@ -249,15 +249,15 @@ build-server: _ensure-venv
     & "{{ python }}" backend/build_binary.py; \
     if ($LASTEXITCODE -ne 0) { throw "build_binary.py failed with exit code $LASTEXITCODE" }; \
     New-Item -ItemType Directory -Path "{{ tauri_dir }}/src-tauri/binaries" -Force | Out-Null; \
-    Copy-Item "backend/dist/21labs-server" "{{ tauri_dir }}/src-tauri/binaries/21labs-server" -Recurse -Force; \
-    Write-Host "Copied server bundle: 21labs-server/"
+    Copy-Item "backend/dist/otoyin-server" "{{ tauri_dir }}/src-tauri/binaries/otoyin-server" -Recurse -Force; \
+    Write-Host "Copied server bundle: otoyin-server/"
 
 [unix]
 build-server: _ensure-venv
     PATH="{{ venv_bin }}:$PATH" ./scripts/build-server.sh
     mkdir -p {{ tauri_dir }}/src-tauri/binaries
-    cp -r backend/dist/21labs-server {{ tauri_dir }}/src-tauri/binaries/21labs-server
-    @echo "Copied server bundle: 21labs-server/"
+    cp -r backend/dist/otoyin-server {{ tauri_dir }}/src-tauri/binaries/otoyin-server
+    @echo "Copied server bundle: otoyin-server/"
 
 # Build MCP shim binary (tiny stdio↔HTTP proxy, no ML deps)
 [unix]
@@ -285,10 +285,10 @@ build-server-cuda: _ensure-venv
     $env:PATH = "{{ venv_bin }};$env:PATH"; \
     & "{{ python }}" backend/build_binary.py --cuda; \
     if ($LASTEXITCODE -ne 0) { throw "build_binary.py --cuda failed with exit code $LASTEXITCODE" }; \
-    $dest = "$env:APPDATA/sh.21labs.app/backends/cuda"; \
+    $dest = "$env:APPDATA/sh.otoyin.app/backends/cuda"; \
     if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }; \
     New-Item -ItemType Directory -Path $dest -Force | Out-Null; \
-    Copy-Item "backend/dist/21labs-server-cuda/*" $dest -Recurse -Force; \
+    Copy-Item "backend/dist/otoyin-server-cuda/*" $dest -Recurse -Force; \
     Write-Host "Copied CUDA backend to $dest"
 
 # Build everything locally: CPU server + CUDA server + installable Tauri app
@@ -316,7 +316,7 @@ build-web:
 # ─── Code Quality ────────────────────────────────────────────────────
 
 # Run all checks (JS + Python lint + format) — ruff equiv: just check
-check: check-js check-python check-placeholders
+check: check-js check-python check-placeholders check-encoding
 
 # Full verification gate (lint + typecheck + format + tests) — use this after every feature phase
 verify:
@@ -354,6 +354,10 @@ check-python: _ensure-venv
 # Zero placeholders (TODO/FIXME/HACK) — mirrors bin/check.ps1 + pre-commit
 check-placeholders: _ensure-venv
     {{ python }} -X utf8 -m backend.scripts.check_placeholders
+
+# Encoding: no invalid UTF-8 bytes or U+FFFD (mojibake gate) — mirrors bin/check.ps1 + pre-commit
+check-encoding: _ensure-venv
+    {{ python }} -X utf8 scripts/check-encoding.py
 
 # Lint with Biome (JS) + ruff (Python)
 lint: _ensure-venv

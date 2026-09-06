@@ -1,0 +1,149 @@
+[
+  {
+    "path": "app/src/i18n/locales/ja/translation.json",
+    "line": 201,
+    "category": "cjk",
+    "excerpt": "\"confirmDelete\": \"このチャンネルを削除しますか?\",",
+    "reason": "ASCII '?' deliberately mirrors the English source's own '?' at the same keys; authored in the localization pass, not degradation"
+  },
+  {
+    "path": "app/src/i18n/locales/ja/translation.json",
+    "line": 375,
+    "category": "cjk",
+    "excerpt": "\"description\": \"このオーディオサンプルを本当に削除しますか? この操作は元に戻せません。\",",
+    "reason": "ASCII '?' mirrors en source; localization authorship, not degradation"
+  },
+  {
+    "path": "app/src/i18n/locales/ja/translation.json",
+    "line": 413,
+    "category": "cjk",
+    "excerpt": "\"body\": \"「{{name}}」を本当に削除しますか? この操作は元に戻せません。\",",
+    "reason": "ASCII '?' mirrors en source; localization authorship, not degradation"
+  },
+  {
+    "path": "app/src/i18n/locales/ja/translation.json",
+    "line": 589,
+    "category": "cjk",
+    "excerpt": "\"title\": \"本当に削除しますか?\",",
+    "reason": "ASCII '?' mirrors en source; localization authorship, not degradation"
+  },
+  {
+    "path": "app/src/i18n/locales/ja/translation.json",
+    "line": 659,
+    "category": "cjk",
+    "excerpt": "\"body\": \"「{{name}}」のこの生成を本当に削除しますか? この操作は元に戻せません。\",",
+    "reason": "ASCII '?' mirrors en source; localization authorship, not degradation"
+  },
+  {
+    "path": "app/src/i18n/locales/ja/translation.json",
+    "line": 1242,
+    "category": "cjk",
+    "excerpt": "\"body\": \"<strong>{{name}}</strong> を本当に削除しますか?\",",
+    "reason": "ASCII '?' mirrors en source; localization authorship, not degradation"
+  },
+  {
+    "path": "app/src/i18n/locales/ja/translation.json",
+    "line": 1247,
+    "category": "cjk",
+    "excerpt": "\"title\": \"モデルを新しい場所に移動しますか?\",",
+    "reason": "ASCII '?' mirrors en source; localization authorship, not degradation"
+  },
+  {
+    "path": "app/src/i18n/locales/zh-CN/translation.json",
+    "line": 201,
+    "category": "cjk",
+    "excerpt": "\"confirmDelete\": \"删除此通道?\",",
+    "reason": "ASCII '?' mirrors en source; localization authorship, not degradation"
+  },
+  {
+    "path": "app/src/i18n/locales/zh-CN/translation.json",
+    "line": 375,
+    "category": "cjk",
+    "excerpt": "\"description\": \"确定要删除此音频样本吗?此操作不可撤销。\",",
+    "reason": "ASCII '?' mirrors en source; localization authorship, not degradation"
+  },
+  {
+    "path": "app/src/i18n/locales/zh-CN/translation.json",
+    "line": 413,
+    "category": "cjk",
+    "excerpt": "\"body\": \"确定要删除 \\\"{{name}}\\\" 吗?此操作不可撤销。\",",
+    "reason": "ASCII '?' mirrors en source; localization authorship, not degradation"
+  },
+  {
+    "path": "app/src/i18n/locales/zh-CN/translation.json",
+    "line": 589,
+    "category": "cjk",
+    "excerpt": "\"title\": \"确定吗?\",",
+    "reason": "ASCII '?' mirrors en source; localization authorship, not degradation"
+  },
+  {
+    "path": "app/src/i18n/locales/zh-CN/translation.json",
+    "line": 659,
+    "category": "cjk",
+    "excerpt": "\"body\": \"确定要删除来自 \\\"{{name}}\\\" 的这次生成吗?此操作不可撤销。\",",
+    "reason": "ASCII '?' mirrors en source; localization authorship, not degradation"
+  },
+  {
+    "path": "app/src/i18n/locales/zh-CN/translation.json",
+    "line": 1242,
+    "category": "cjk",
+    "excerpt": "\"body\": \"确定要删除 <strong>{{name}}</strong> 吗?\",",
+    "reason": "ASCII '?' mirrors en source; localization authorship, not degradation"
+  },
+  {
+    "path": "app/src/i18n/locales/zh-CN/translation.json",
+    "line": 1247,
+    "category": "cjk",
+    "excerpt": "\"title\": \"移动模型到新位置?\",",
+    "reason": "ASCII '?' mirrors en source; localization authorship, not degradation"
+  },
+  {
+    "path": "app/src/i18n/locales/zh-TW/translation.json",
+    "line": 201,
+    "category": "cjk",
+    "excerpt": "\"confirmDelete\": \"刪除此通道?\",",
+    "reason": "ASCII '?' mirrors en source; localization authorship, not degradation"
+  },
+  {
+    "path": "app/src/i18n/locales/zh-TW/translation.json",
+    "line": 375,
+    "category": "cjk",
+    "excerpt": "\"description\": \"確定要刪除此音訊樣本嗎?此操作無法復原。\",",
+    "reason": "ASCII '?' mirrors en source; localization authorship, not degradation"
+  },
+  {
+    "path": "app/src/i18n/locales/zh-TW/translation.json",
+    "line": 413,
+    "category": "cjk",
+    "excerpt": "\"body\": \"確定要刪除 \\\"{{name}}\\\" 嗎?此操作無法復原。\",",
+    "reason": "ASCII '?' mirrors en source; localization authorship, not degradation"
+  },
+  {
+    "path": "app/src/i18n/locales/zh-TW/translation.json",
+    "line": 589,
+    "category": "cjk",
+    "excerpt": "\"title\": \"確定嗎?\",",
+    "reason": "ASCII '?' mirrors en source; localization authorship, not degradation"
+  },
+  {
+    "path": "app/src/i18n/locales/zh-TW/translation.json",
+    "line": 659,
+    "category": "cjk",
+    "excerpt": "\"body\": \"確定要刪除來自 \\\"{{name}}\\\" 的這次生成嗎?此操作無法復原。\",",
+    "reason": "ASCII '?' mirrors en source; localization authorship, not degradation"
+  },
+  {
+    "path": "app/src/i18n/locales/zh-TW/translation.json",
+    "line": 1242,
+    "category": "cjk",
+    "excerpt": "\"body\": \"確定要刪除 <strong>{{name}}</strong> 嗎?\",",
+    "reason": "ASCII '?' mirrors en source; localization authorship, not degradation"
+  },
+  {
+    "path": "app/src/i18n/locales/zh-TW/translation.json",
+    "line": 1247,
+    "category": "cjk",
+    "excerpt": "\"title\": \"將模型移動到新位置?\",",
+    "reason": "ASCII '?' mirrors en source; localization authorship, not degradation"
+  }
+]

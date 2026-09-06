@@ -114,9 +114,9 @@ To verify: `git config --get core.hooksPath` should print `.githooks`
 ## Lint Commands (manual)
 
 ```powershell
-bunx biome lint app/src
-bunx biome format app/src
-cd app && bun run typecheck
+npx biome lint app/src
+npx biome format app/src
+cd app && npm run typecheck
 ruff check backend
 ruff format --check backend
 python -X utf8 -m scripts.check_async_blocking backend/routes
