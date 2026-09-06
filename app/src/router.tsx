@@ -14,8 +14,8 @@ import { ErrorBoundary } from "@/components/ErrorBoundary/ErrorBoundary";
 import { RecommendedModelsBanner } from "@/components/RecommendedModelsBanner/RecommendedModelsBanner";
 import { AppLoadingScreen } from "@/components/ui/AppLoadingScreen";
 import { Toaster } from "@/components/ui/toaster";
-import { AutoUpdateFlow } from "@/features/settings/AutoUpdateFlow";
 import { TabIntroMount } from "@/features/onboarding/TabIntro";
+import { AutoUpdateFlow } from "@/features/settings/AutoUpdateFlow";
 
 const MiniGame = lazy(() =>
 	import("@/features/game/GameModal").then((m) => ({
@@ -110,6 +110,11 @@ const SettingsLayout = lazy(() =>
 const StoriesTab = lazy(() =>
 	import("@/features/stories/StoriesTab").then((m) => ({
 		default: m.StoriesTab,
+	})),
+);
+const SongwriterTab = lazy(() =>
+	import("@/features/songwriter/SongwriterTab").then((m) => ({
+		default: m.SongwriterTab,
 	})),
 );
 const AudiobooksTab = lazy(() =>
@@ -495,6 +500,13 @@ const storiesRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/stories",
 	component: StoriesTab,
+});
+
+// Songwriter route (song DNA + lyrics craft, ported from Resonant)
+const songwriterRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/songwriter",
+	component: SongwriterTab,
 });
 
 // Audiobooks route
@@ -898,6 +910,7 @@ const serverRedirectRoute = createRoute({
 const routeTree = rootRoute.addChildren([
 	indexRoute,
 	storiesRoute,
+	songwriterRoute,
 	audiobooksRoute,
 	capturesRoute,
 	voicesRoute,

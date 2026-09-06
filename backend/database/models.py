@@ -908,3 +908,21 @@ class CustomSkill(Base):
     enabled = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+
+
+class SongDraft(Base):
+    """A songwriter-studio draft (song DNA + lyrics), ported from Resonant.
+
+    The draft body mirrors Resonant's SongwritingDraft (language, title,
+    idea, hook, pointOfView, tense, mood, genre, audience, imagery,
+    stylePrompt, lyrics) so briefs and analyses stay compatible.
+    """
+
+    __tablename__ = "song_drafts"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    title = Column(String, nullable=False, default="")
+    language = Column(String, nullable=False, default="en")
+    draft_json = Column(JSON, nullable=False, default=dict)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))

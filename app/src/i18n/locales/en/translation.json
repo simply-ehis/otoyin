@@ -3,6 +3,7 @@
 		"generate": "Generate",
 		"audioStudio": "Audio Studio",
 		"stories": "Stories",
+		"songwriter": "Songwriter",
 		"audiobooks": "Audiobooks",
 		"voices": "Voices",
 		"captures": "Captures",
@@ -39,6 +40,7 @@
 	"nav": {
 		"generate": "Generate",
 		"stories": "Stories",
+		"songwriter": "Songwriter",
 		"captures": "Captures",
 		"voices": "Voices",
 		"effects": "Effects",

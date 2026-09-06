@@ -8,6 +8,7 @@ import {
 	LanguageIcon as Language,
 	MicrophoneIcon as Mic,
 	MusicalNoteIcon as Music,
+	PencilSquareIcon as PenLine,
 	PlayCircleIcon as PlayCircle,
 	PuzzlePieceIcon as PuzzlePiece,
 	RectangleStackIcon as RectangleStack,
@@ -43,6 +44,7 @@ const NAV_GROUPS: { items: NavItem[] }[] = [
 	{
 		items: [
 			{ path: "/stories", label: "sidebar.stories", icon: BookOpen },
+			{ path: "/songwriter", label: "sidebar.songwriter", icon: PenLine },
 			{
 				path: "/audiobooks",
 				label: "sidebar.audiobooks",

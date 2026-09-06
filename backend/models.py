@@ -957,6 +957,46 @@ class StoryItemMoveToStory(BaseModel):
     as_copy: bool = False
 
 
+class SongDraftPayload(BaseModel):
+    """Songwriter draft body (mirrors Resonant's SongwritingDraft)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    language: str = "en"
+    title: str = ""
+    idea: str = ""
+    hook: str = ""
+    point_of_view: str = Field(default="first-person", alias="pointOfView")
+    tense: str = "present"
+    mood: str = ""
+    genre: str = ""
+    audience: str = ""
+    imagery: str = ""
+    style_prompt: str = Field(default="", alias="stylePrompt")
+    lyrics: str = ""
+
+
+class SongDraftCreate(BaseModel):
+    """Request model for creating/updating a songwriter draft."""
+
+    title: str = Field(default="", max_length=200)
+    language: str = Field(default="en", max_length=16)
+    draft: SongDraftPayload = Field(default_factory=SongDraftPayload)
+
+
+class SongDraftResponse(BaseModel):
+    """Response model for a songwriter draft."""
+
+    id: str
+    title: str
+    language: str
+    draft: SongDraftPayload
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class EffectConfig(BaseModel):
     """A single effect in an effects chain."""
 

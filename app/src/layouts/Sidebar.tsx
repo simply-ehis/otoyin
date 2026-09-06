@@ -9,6 +9,7 @@ import {
 	LanguageIcon,
 	MicrophoneIcon,
 	MusicalNoteIcon,
+	PencilSquareIcon,
 	PlayCircleIcon,
 	PuzzlePieceIcon,
 	RectangleStackIcon,
@@ -48,6 +49,11 @@ const NAV_GROUPS: { items: NavItem[] }[] = [
 	{
 		items: [
 			{ path: "/stories", label: "sidebar.stories", icon: BookOpenIcon },
+			{
+				path: "/songwriter",
+				label: "sidebar.songwriter",
+				icon: PencilSquareIcon,
+			},
 			{
 				path: "/audiobooks",
 				label: "sidebar.audiobooks",

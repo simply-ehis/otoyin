@@ -647,6 +647,37 @@ export interface StoryHistoryDepth {
 	redo: number;
 }
 
+export interface SongDraftCreate {
+	title: string;
+	language: string;
+	draft: SongwritingDraftBody;
+}
+
+export interface SongDraftResponse {
+	id: string;
+	title: string;
+	language: string;
+	draft: SongwritingDraftBody;
+	created_at: string;
+	updated_at: string;
+}
+
+/** Songwriter draft body (camelCase, mirrors Resonant's SongwritingDraft). */
+export interface SongwritingDraftBody {
+	language: string;
+	title: string;
+	idea: string;
+	hook: string;
+	pointOfView: string;
+	tense: string;
+	mood: string;
+	genre: string;
+	audience: string;
+	imagery: string;
+	stylePrompt: string;
+	lyrics: string;
+}
+
 // Effects
 
 export interface EffectPresetResponse {
