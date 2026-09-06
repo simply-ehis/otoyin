@@ -438,7 +438,7 @@ def build_server(cuda=False):
 
 
 def build_shim():
-    """Build the 21labs-mcp stdio shim as a tiny standalone binary.
+    """Build the otoyin-mcp stdio shim as a tiny standalone binary.
 
     This is the bridge for MCP clients that only speak stdio — it proxies
     JSON-RPC to the main otoyin-server's /mcp endpoint. Keep it small: no
@@ -450,7 +450,7 @@ def build_shim():
         "mcp_shim/__main__.py",
         "--onefile",
         "--name",
-        "21labs-mcp",
+        "otoyin-mcp",
         # Stdio-only — no console hiding needed on Windows since the parent
         # MCP client is spawning this as a child process and wants stdio.
         "--hidden-import",
@@ -514,7 +514,7 @@ def build_shim():
 
     os.chdir(backend_dir)
     PyInstaller.__main__.run(args)
-    logger.info("Shim built: %s", backend_dir / "dist" / "21labs-mcp")
+    logger.info("Shim built: %s", backend_dir / "dist" / "otoyin-mcp")
 
 
 if __name__ == "__main__":
@@ -527,7 +527,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--shim",
         action="store_true",
-        help="Build the 21labs-mcp stdio shim binary instead of the server",
+        help="Build the otoyin-mcp stdio shim binary instead of the server",
     )
     cli_args = parser.parse_args()
     if cli_args.shim:

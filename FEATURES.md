@@ -206,7 +206,9 @@ synth engines · 6 content recipes.
 
 - **VST3/AU hosting** — scanning + metadata works; loading/processing external
   binaries is not implemented (metadata-only).
-- **Updater** — Tauri updater scaffolding exists; not wired to a release channel.
+- **Updater** — wired end-to-end in-tree (endpoints, signing, artifacts, E2E-verified
+  against a faked update server); awaiting the first signed tagged release to
+  serve real updates. See `docs/reports/2026-09-03-updater-audit.md`.
 
 ## Getting help
 

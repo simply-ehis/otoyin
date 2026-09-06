@@ -2,12 +2,15 @@
 
 **Date:** 2026-09-03
 **Prompt:** `otoyin-redesign-prompts/09-updater-hardening.md`
-**Verdict (updated 2026-09-04):** the update channel is now **wired end-to-end**
+**Verdict (updated 2026-09-06):** the update channel is now **wired end-to-end**
 (Rust plugin + shell, endpoints, pubkey, updater artifacts, CI signing +
 `latest.json` release manifest) — but **unreleased**: no signed release has been
 cut yet. The Rust engine commands (§5) are now **implemented** and compile clean
-on the Windows host; remaining verification is per-OS runtime testing on a real
-artifact (see §5).
+on the Windows host. **2026-09-06 E2E (faked server, real dev build):** detect →
+signature-verified download → install guard all verified through the live plugin
+(the fake's non-installer stub is correctly rejected *after* signature
+verification). Remaining: install of a real signed installer + the toast-click
+UI path on a real artifact (see §5).
 
 ## 1. What exists (and is good)
 
@@ -15,7 +18,7 @@ artifact (see §5).
 - `tauri/src/platform/updater.ts` — `PlatformUpdater` wrapper over `@tauri-apps/plugin-updater` (`check()`, download, relaunch via `@tauri-apps/plugin-process`); clean status object (`UpdateStatus`) with `downloadedBytes/totalBytes/downloadProgress/error`.
 - `@tauri-apps/plugin-updater` is a `tauri/package.json` dependency.
 
-## 2. What's missing (the channel is dead in the current tree)
+## 2. What was missing (fixed 2026-09-04; channel now live in the tree)
 
 | Check | Finding |
 |---|---|

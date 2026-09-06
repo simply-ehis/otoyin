@@ -34,8 +34,8 @@ fn main() {
     // Compile macOS Liquid Glass icon
     #[cfg(target_os = "macos")]
     {
-        // 21labs.icon is in tauri/assets/21labs.icon (one level up from src-tauri)
-        let icon_source = format!("{}/../assets/21labs.icon", project_root);
+        // otoyin.icon is in tauri/assets/otoyin.icon (one level up from src-tauri)
+        let icon_source = format!("{}/../assets/otoyin.icon", project_root);
 
         if std::path::Path::new(&icon_source).exists() {
             println!("cargo:rerun-if-changed={}", icon_source);
@@ -53,7 +53,7 @@ fn main() {
                     "--output-partial-info-plist",
                     &partial_plist,
                     "--app-icon",
-                    "21labs",
+                    "otoyin",
                     "--include-all-app-icons",
                     "--target-device",
                     "mac",
@@ -81,12 +81,12 @@ fn main() {
                 }
             }
 
-            // Generate 21labs.icns from the source PNG via sips + iconutil
-            let icns_path = format!("{}/21labs.icns", gen_dir);
+            // Generate otoyin.icns from the source PNG via sips + iconutil
+            let icns_path = format!("{}/otoyin.icns", gen_dir);
             if !std::path::Path::new(&icns_path).exists() {
-                let source_png = format!("{}/Assets/21labs.png", icon_source);
+                let source_png = format!("{}/Assets/otoyin.png", icon_source);
                 if std::path::Path::new(&source_png).exists() {
-                    let iconset_dir = format!("{}/21labs.iconset", gen_dir);
+                    let iconset_dir = format!("{}/otoyin.iconset", gen_dir);
                     std::fs::create_dir_all(&iconset_dir).ok();
 
                     let sizes: &[(u32, &str)] = &[
@@ -131,7 +131,7 @@ fn main() {
 
                     match iconutil_output {
                         Ok(out) if out.status.success() => {
-                            println!("Generated 21labs.icns");
+                            println!("Generated otoyin.icns");
                         }
                         Ok(out) => {
                             eprintln!("iconutil failed: {}", String::from_utf8_lossy(&out.stderr));
@@ -157,7 +157,7 @@ fn main() {
     // On non-macOS these are always stubs. On macOS, actool may not produce
     // Assets.car if the Xcode version doesn't support the .icon format.
     {
-        let required = ["Assets.car", "21labs.icns", "partial.plist"];
+        let required = ["Assets.car", "otoyin.icns", "partial.plist"];
         for name in required {
             let path = format!("{}/{}", gen_dir, name);
             if !std::path::Path::new(&path).exists() {

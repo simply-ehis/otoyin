@@ -9,17 +9,17 @@
 |---|---|---|---|---|
 | 01-audit-bugs-and-connection-reliability | IN PROGRESS | unit 4/6 | 2026-09-05 | findings docs exist; pkg-mgr + payments + Rust-BUG verified PASS; i18n/test-isolation/conn-verdicts need re-check (see log) |
 | 02-rebrand-to-otoyin | DONE (with documented exceptions) | 7/7 | 2026-09-05 | env fallback, alias, title, order_ref, MCP, skills-count PASS; batch-grep remainder = intentional wire-protocol names per RENAME_LOG; bundle-id/spec/URLs left for versioned migration |
-| 03-full-frontend-rebuild | IN PROGRESS | unit 4/8 | 2026-09-05 | Step0+arch+tokens+shell done; 225 old components remain; 8 translucency hits left (3 are overlay scrims, exempt); bun→npm DONE |
-| 04-design-system-and-redesign | IN PROGRESS | unit 3/5 | 2026-09-05 | tokens file exists; canonical ui/ (34 files) + tests exist; translucency 58→8; notification + feature-audit units pending verify |
+| 03-full-frontend-rebuild | IN PROGRESS | unit 4/8 | 2026-09-06 | Step0+arch+tokens+shell done; screens landing into features/ (store, launcher, audioStudio partial); translucency hits zero after 06 pass; bun→npm DONE |
+| 04-design-system-and-redesign | IN PROGRESS | unit 3/5 | 2026-09-06 | tokens file exists; canonical ui/ (34 files) + tests exist; translucency 58→0 + raw-palette text & border/ring sweeps done, rules codified in DESIGN_SYSTEM.md; notification + feature-audit units pending verify |
 | 05-audio-studio-page-redesign | NOT STARTED | unit 0/5 | 2026-09-05 | flagship still on old tree; blocked behind 03/04 per build order — correct, not a slip |
-| 06-model-lifecycle-optimization | IN PROGRESS | unit 1/4 | 2026-09-05 | mark_model_used callers present (15+ sites); `cached`/`local_status` field MISSING from catalog schema — real gap |
+| 06-model-lifecycle-optimization | IN PROGRESS | unit 2/4 | 2026-09-06 | mark_model_used callers present (15+ sites); `cached`/`local_status` implemented + tested (catalog annotation, Store states, manifest-backfill reconciliation) — was the unit-1 real gap |
 | 07-marketplace-redesign-and-backend | IN PROGRESS | unit 2/4 | 2026-09-05 | remote catalog fetch exists (marketplace.ts → /v1/catalog); notices.py + privacy page exist; gating audit + admin e2e pending |
 | 08-notifications-backend | IN PROGRESS | unit 3/4 | 2026-09-05 | announcements.py has remote-merge (OTOYIN_NOTICES_URL) + notices.py exists; e2e push + offline-silence need explicit test log |
-| 09-updater-hardening | IN PROGRESS | unit 2/4 | 2026-09-05 | pubkey + endpoints + TAURI_SIGNING_PRIVATE_KEY in CI confirmed; failure-surface + rebrand-identifier path need walkthrough log |
+| 09-updater-hardening | IN PROGRESS | unit 2/4 | 2026-09-06 | pubkey + endpoints + CI signing confirmed; plugin-level E2E vs faked server (detect→verified download→install guard) — walkthrough log for failure-surface + toast-click UI path still needed |
 | 10-payments-migration | DONE (code) / BLOCKED (business) | 4/5 | 2026-09-05 | Paddle checkout+webhook+sig-verify in code; legacy Stripe deleted; sandbox-purchase + payout-signup need human (money decision) |
 | 11-help-onboarding-skills-exposure | NOT STARTED | unit 0/4 | 2026-09-05 | help.py exists; no verification pass run yet |
 | 12-deployment-and-setup | DONE | 4/4 | 2026-09-05 | DEPLOY.md updated 2026-09-04 (npm-only, 3 services, migration note); env table present |
-| 14-testing-strategy-for-rebuild | IN PROGRESS | unit 2/4 | 2026-09-05 | ui floor LIVE-PASS (26 comps); backend 129 files; NO e2e dir (real gap); vitest/full-suite runs timed out in-tooling, need real run |
+| 14-testing-strategy-for-rebuild | IN PROGRESS | unit 2/4 | 2026-09-06 | ui floor LIVE-PASS (26 comps); backend 129 files; full vitest run 477/477 green (2026-09-06, ~209s — pre-commit budget note); NO e2e dir (real gap) |
 | 15-accessibility | NOT STARTED | unit 0/5 | 2026-09-05 | no a11y pass logged against new ui/ library yet |
 | 16-security-and-secrets-hardening | IN PROGRESS | unit 1/5 | 2026-09-05 | Paddle webhook verify exists in code; MCP trust model + admin-auth attack tests + dep-scan gate not yet demonstrated |
 | 17-release-signing-and-notarization | BLOCKED | unit 2/4 | 2026-09-05 | updater signing key wired in CI; macOS notarization + Windows Authenticode need paid certs/human account decision |

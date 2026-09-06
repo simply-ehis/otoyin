@@ -211,7 +211,7 @@ def resolve_storage_path(path: str | Path | None) -> Path | None:
 
 def get_db_path() -> Path:
     """Get database file path."""
-    return _data_dir / "21labs.db"
+    return _data_dir / "otoyin.db"
 
 
 def get_profiles_dir() -> Path:

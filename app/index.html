@@ -9,7 +9,7 @@
       (() => {
         try {
           let theme = 'system';
-          const raw = localStorage.getItem('21-labs-ui');
+          const raw = localStorage.getItem('otoyin-ui') || localStorage.getItem('21-labs-ui');
           let parsed;
           if (raw) {
             parsed = JSON.parse(raw);

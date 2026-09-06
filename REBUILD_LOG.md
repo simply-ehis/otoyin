@@ -41,8 +41,9 @@ Recovery map (which `git show` command yields pre- vs post-repair text):
 - `app/src`: 285 tsx (275 in `components/`, 10 in `lib/` + `hooks/` + `test/`)
 - `tauri/`: 1 tsx (`tauri/src/main.tsx` — thin entry, no component tree)
 - Entry floor intact: `App.tsx`, `main.tsx`, `router.tsx` (962 lines, ~70 component imports)
-- Behavior reference: `archive/frontend-components/` (342 files, committed) — read for
-  behavior/functionality only, never copy JSX per 03.
+- Behavior reference: ~~`archive/frontend-components/`~~ **deleted 2026-09-05** — behavior now
+  recovered from git history per `docs/knowledge/78-component-lineage.md`
+  (`git show <sha>:<path>`); read for behavior/functionality only, never copy JSX per 03.
 - Backend untouched: source of truth for routes; `docs/FEATURES.md` + 
   `backend/data/app_features.json` define the capability surface.
 - Superseded: the 16-file translucency tweak pass on the old tree (reskin, not rebuild —

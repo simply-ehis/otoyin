@@ -264,8 +264,8 @@ build-server: _ensure-venv
 build-mcp-shim: _ensure-venv
     PATH="{{ venv_bin }}:$PATH" python backend/build_binary.py --shim
     mkdir -p {{ tauri_dir }}/src-tauri/binaries
-    cp backend/dist/21labs-mcp {{ tauri_dir }}/src-tauri/binaries/21labs-mcp-$(rustc --print host-tuple)
-    @echo "Copied sidecar: 21labs-mcp-$(rustc --print host-tuple)"
+    cp backend/dist/otoyin-mcp {{ tauri_dir }}/src-tauri/binaries/otoyin-mcp-$(rustc --print host-tuple)
+    @echo "Copied sidecar: otoyin-mcp-$(rustc --print host-tuple)"
 
 [windows]
 build-mcp-shim: _ensure-venv
@@ -275,8 +275,8 @@ build-mcp-shim: _ensure-venv
     if ($LASTEXITCODE -ne 0) { throw "build_binary.py --shim failed with exit code $LASTEXITCODE" }; \
     $triple = (rustc --print host-tuple); \
     New-Item -ItemType Directory -Path "{{ tauri_dir }}/src-tauri/binaries" -Force | Out-Null; \
-    Copy-Item "backend/dist/21labs-mcp.exe" "{{ tauri_dir }}/src-tauri/binaries/21labs-mcp-$triple.exe" -Force; \
-    Write-Host "Copied sidecar: 21labs-mcp-$triple.exe"
+    Copy-Item "backend/dist/otoyin-mcp.exe" "{{ tauri_dir }}/src-tauri/binaries/otoyin-mcp-$triple.exe" -Force; \
+    Write-Host "Copied sidecar: otoyin-mcp-$triple.exe"
 
 # Build CUDA server binary and place in app data dir for local testing
 [windows]
@@ -433,12 +433,12 @@ db-init: _ensure-venv
 # Reset database (delete + reinit)
 [unix]
 db-reset:
-    rm -f {{ backend_dir }}/data/21labs.db
+    rm -f {{ backend_dir }}/data/otoyin.db
     just db-init
 
 [windows]
 db-reset:
-    if (Test-Path "{{ backend_dir }}/data/21labs.db") { Remove-Item -Force "{{ backend_dir }}/data/21labs.db" }
+    if (Test-Path "{{ backend_dir }}/data/otoyin.db") { Remove-Item -Force "{{ backend_dir }}/data/otoyin.db" }
     just db-init
 
 # ─── Utilities ────────────────────────────────────────────────────────
@@ -475,28 +475,28 @@ logs:
 # Build Rust-native core (Tier 3) — no Python, 8MB vs 1.2GB
 [unix]
 build-core:
-    cargo build -p labs21-core --manifest-path {{ tauri_dir }}/src-tauri/Cargo.toml
-    @echo "Rust core built: {{ tauri_dir }}/src-tauri/target/debug/labs21-core"
+    cargo build -p otoyin-core --manifest-path {{ tauri_dir }}/src-tauri/Cargo.toml
+    @echo "Rust core built: {{ tauri_dir }}/src-tauri/target/debug/otoyin-core"
 
 [windows]
 build-core:
-    cargo build -p labs21-core; \
-    Write-Host "Rust core built: {{ tauri_dir }}/src-tauri/target/debug/labs21-core.exe (8MB vs 1.2GB Python)"
+    cargo build -p otoyin-core; \
+    Write-Host "Rust core built: {{ tauri_dir }}/src-tauri/target/debug/otoyin-core.exe (8MB vs 1.2GB Python)"
 
 # Run Rust core standalone (no Tauri, no Python)
 [unix]
 run-core:
-    cargo run -p labs21-core -- --port 17494
+    cargo run -p otoyin-core -- --port 17494
 
 [windows]
 run-core:
-    $env:TWENTYLABS_USE_RUST_CORE="1"; cargo run -p labs21-core -- --port 17494
+    $env:TWENTYLABS_USE_RUST_CORE="1"; cargo run -p otoyin-core -- --port 17494
 
 # Clean build artifacts
 [unix]
 clean:
     rm -rf {{ tauri_dir }}/src-tauri/target/release
-    rm -rf {{ tauri_dir }}/src-tauri/labs21-core/target
+    rm -rf {{ tauri_dir }}/src-tauri/otoyin-core/target
     rm -rf {{ backend_dir }}/dist
     rm -rf {{ backend_dir }}/build
     rm -rf {{ web_dir }}/dist
@@ -505,7 +505,7 @@ clean:
 [windows]
 clean:
     if (Test-Path "{{ tauri_dir }}/src-tauri/target/release") { Remove-Item -Recurse -Force "{{ tauri_dir }}/src-tauri/target/release" }
-    if (Test-Path "{{ tauri_dir }}/src-tauri/labs21-core/target") { Remove-Item -Recurse -Force "{{ tauri_dir }}/src-tauri/labs21-core/target" }
+    if (Test-Path "{{ tauri_dir }}/src-tauri/otoyin-core/target") { Remove-Item -Recurse -Force "{{ tauri_dir }}/src-tauri/otoyin-core/target" }
     if (Test-Path "{{ backend_dir }}/dist") { Remove-Item -Recurse -Force "{{ backend_dir }}/dist" }
     if (Test-Path "{{ backend_dir }}/build") { Remove-Item -Recurse -Force "{{ backend_dir }}/build" }
     if (Test-Path "{{ web_dir }}/dist") { Remove-Item -Recurse -Force "{{ web_dir }}/dist" }
@@ -554,10 +554,10 @@ _ensure-venv:
 _ensure-venv:
     if (-not (Test-Path "{{ venv }}")) { Write-Host "Python venv not found. Run: just setup"; exit 1 }
 
-# Build a self-signed reference .21labs plugin bundle for dev/CI
-# (writes build/reference-plugin.21labs; prints the developer public key).
+# Build a self-signed reference .otoyin plugin bundle for dev/CI
+# (writes build/reference-plugin.otoyin; prints the developer public key).
 plugin-bundle: _ensure-venv
-    {{ python }} -m backend.scripts.build_plugin_bundle --sample --out build/reference-plugin.21labs
+    {{ python }} -m backend.scripts.build_plugin_bundle --sample --out build/reference-plugin.otoyin
 
 # Ensure Tauri dev sidecar placeholder exists
 [private]

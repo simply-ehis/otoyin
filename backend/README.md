@@ -111,7 +111,7 @@ curl http://localhost:17493/generate/{id}/status
 
 ```
 {data_dir}/
-  21labs.db           # SQLite database
+  otoyin.db           # SQLite database
   profiles/{id}/          # Voice samples per profile
   generations/            # Generated audio files
   cache/                  # Voice prompt cache (memory + disk)

@@ -69,7 +69,7 @@ fn resolve_binary(app: &AppHandle) -> Option<PathBuf> {
             v.push(resource);
         }
         if let Ok(exe) = std::env::current_exe() {
-            // .../src-tauri/target/<profile>/labs21[.exe] -> .../src-tauri
+            // .../src-tauri/target/<profile>/otoyin[.exe] -> .../src-tauri
             let src_tauri = exe.parent()?.parent()?.parent()?;
             v.push(
                 src_tauri

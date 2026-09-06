@@ -35,9 +35,7 @@ just build             # server binary + Tauri app
   build (`TAURI_SIGNING_PRIVATE_KEY` secret) and uploads `latest.json`.
   Signing-key custody, rotation, and compromise recovery: see
   **Release signing-key lifecycle** below.
-- Rebrand note: bundle identifier is still `com.21labs.app` (user-invisible);
-  renaming it must be sequenced with the first updater release (breaks update
-  matching for installed copies).
+- Rebrand complete: bundle identifier is `com.otoyin.app` (renamed from `com.21labs.app`).
 
 ### Release signing-key lifecycle
 
@@ -224,7 +222,7 @@ Two supported paths — pick per need:
   together — they are only consistent as a pair:
   - the data directory (`data/` next to the backend by default;
     `backend/config.py:get_data_dir()` is authoritative) — audio,
-    profiles, generations, and the `21labs.db` SQLite file inside it;
+    profiles, generations, and the `otoyin.db` SQLite file inside it;
   - `OTOYIN_MODELS_DIR` too if set (model weights live outside `data/`
     when overridden; otherwise they are cache-redownloadable, not precious).
   - Restore = put both back in the same locations before starting the app.
