@@ -120,6 +120,6 @@ export function MonitorPicker({
 function cnRow(active: boolean) {
 	return [
 		"flex items-center gap-2 rounded px-2 py-1 text-left flex-1",
-		active ? "bg-rose-500/10 ring-1 ring-rose-500/40" : "hover:bg-muted",
+		active ? "bg-accent-muted ring-1 ring-accent/40" : "hover:bg-muted",
 	].join(" ");
 }

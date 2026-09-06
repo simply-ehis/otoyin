@@ -1,6 +1,9 @@
 /**
  * Instrument playback engine, ported from Resonant (© 2026 Calesthio, AGPL-3.0-only).
  * prepareInstrument, scheduleSamplerNote (live WebAudio), renderSoundFontNote (offline).
+ *
+ * Performance: SoundFontSynthCache keeps one SpessaSynthProcessor alive per
+ * SoundFont data blob, avoiding the 100-500ms cost of reloading the bank per note.
  */
 import { chooseZone } from "./chooseZone";
 import type { InstrumentRef, ResolvedInstrument, SampleZone } from "./types";

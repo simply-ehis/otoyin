@@ -403,7 +403,7 @@ export function CapturePill({
 					"inline-flex items-center gap-3 px-4 h-10 rounded-full",
 					"bg-card border border-destructive/40 shadow-lg text-destructive hover:bg-secondary",
 					"max-w-[380px] transition-colors",
-					"focus:outline-none focus:ring-2 focus:ring-red-400/50",
+					"focus:outline-none focus:ring-2 focus:ring-destructive/50",
 					className,
 				)}
 			>

@@ -11,6 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { hueLine } from "@/features/workspace/hueIdentity";
 import { apiClient } from "@/lib/api/client";
 import { showStudioErrorToast } from "@/lib/errors";
 import { Button } from "@/ui/button";
@@ -32,15 +33,6 @@ import {
 	useLauncherSessions,
 	useUpdateLauncherSession,
 } from "./useLauncherSessions";
-
-const SCENE_COLORS = [
-	"bg-sky-500/20 border-sky-500/40",
-	"bg-emerald-500/20 border-emerald-500/40",
-	"bg-amber-500/20 border-amber-500/40",
-	"bg-rose-500/20 border-rose-500/40",
-	"bg-violet-500/20 border-violet-500/40",
-	"bg-cyan-500/20 border-cyan-500/40",
-];
 
 function createDefaultSession(name: string): LauncherSession {
 	const now = new Date().toISOString();
@@ -477,12 +469,11 @@ function SceneRow({
 	onLaunchScene: (scene: number) => void;
 	onLaunchClip: (trackId: string, clipId: string | null) => void;
 }) {
-	const colorClass = SCENE_COLORS[scene % SCENE_COLORS.length];
 	return (
 		<>
 			<button
 				type="button"
-				className={`flex items-center justify-center gap-1 border-b border-border px-2 py-2 text-xs font-medium transition-colors hover:bg-accent ${colorClass}`}
+				className={`flex items-center justify-center gap-1 border-b px-2 py-2 text-xs font-medium transition-colors hover:bg-accent ${hueLine(scene)}`}
 				onClick={() => onLaunchScene(scene)}
 			>
 				<PlayIcon className="size-3" aria-hidden="true" />
