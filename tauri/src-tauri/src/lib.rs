@@ -1,27 +1,177 @@
-/// Tauri shell for otoyin — thin desktop container.
+/// otoyin desktop shell.
 ///
-/// The heavy lifting (Python backend sidecar, audio engine commands) is wired
-/// in a separate task; this entry keeps the shell minimal and compiling:
-/// window, dialog/fs/shell/process plugins, and the auto-updater plugin so the
-/// JS update flow (`@tauri-apps/plugin-updater` via `tauri/src/platform/updater.ts`)
-/// has a registered counterpart on the Rust side.
+/// Thin Tauri container around the studio UI. On desktop it:
+/// - registers dialog/fs/process/shell/updater plugins,
+/// - auto-launches the bundled Python backend (or adopts one already
+///   running, e.g. `just dev`) so the window opens against a live server,
+/// - exposes the server-lifecycle and system-audio commands the frontend
+///   platform layer invokes, and
+/// - coordinates window close with the renderer (stop the backend unless the
+///   user chose "keep running after close").
+mod audio;
+#[cfg(target_os = "macos")]
+mod audio_mac;
+#[cfg(windows)]
+mod audio_win;
+mod server;
+
+use std::sync::atomic::Ordering;
+use tauri::{Emitter, Listener, Manager, WindowEvent};
+
+/// Shared application state handed to commands via `tauri::State`.
+#[derive(Default)]
+pub(crate) struct AppState {
+    pub server: server::ServerState,
+    pub audio: audio::AudioState,
+}
+
+/// Crash log cap: rotate instead of growing without bound.
+const CRASH_LOG_MAX_BYTES: u64 = 256 * 1024;
+
+fn install_panic_hook(app: &tauri::AppHandle) {
+    // Rust panics are otherwise invisible on user machines: persist them to
+    // `crashes.log` in the app-data dir so users can attach them to bug
+    // reports (Settings → Contact & support). No network, no new crates.
+    let log_path = app
+        .path()
+        .app_data_dir()
+        .map(|dir| dir.join("crashes.log"))
+        .unwrap_or_else(|_| std::env::temp_dir().join("otoyin-crashes.log"));
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        // Keep default behavior (stderr) AND persist to file.
+        default_hook(info);
+        let result: Result<(), String> = (|| {
+            if let Some(parent) = log_path.parent() {
+                std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+            }
+            if std::fs::metadata(&log_path).map(|m| m.len()).unwrap_or(0) > CRASH_LOG_MAX_BYTES {
+                let rotated = log_path.with_extension("log.1");
+                let _ = std::fs::remove_file(&rotated);
+                std::fs::rename(&log_path, &rotated).map_err(|e| e.to_string())?;
+            }
+            use std::io::Write;
+            let mut file = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(&log_path)
+                .map_err(|e| e.to_string())?;
+            writeln!(file, "--- panic at {:?} ---\n{}", std::time::SystemTime::now(), info)
+                .map_err(|e| e.to_string())?;
+            Ok(())
+        })();
+        if let Err(e) = result {
+            eprintln!("crash log write failed: {}", e);
+        }
+    }));
+}
+
+fn register_window_close_handling(app: &tauri::AppHandle) {
+    // The renderer owns the decision: it stops the backend first (unless
+    // keep-running) and only then emits `window-close-allowed`.
+    let handle = app.clone();
+    let _ = app.listen_any("window-close-allowed", move |_| {
+        let app = handle.clone();
+        tauri::async_runtime::spawn(async move {
+            let state = app.state::<AppState>();
+            // Fallback kill in case the renderer did not stop it first.
+            if !state.server.keep_running.load(Ordering::SeqCst) {
+                server::stop_if_ours(&state);
+            }
+            state
+                .server
+                .close_in_progress
+                .store(false, Ordering::SeqCst);
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.destroy();
+            }
+        });
+    });
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .invoke_handler(tauri::generate_handler![
+            server::start_server,
+            server::stop_server,
+            server::restart_server,
+            server::set_keep_server_running,
+            audio::is_system_audio_supported,
+            audio::start_system_audio_capture,
+            audio::stop_system_audio_capture,
+            audio::list_audio_output_devices,
+            audio::list_mic_input_devices,
+            audio::start_mic_capture,
+            audio::stop_mic_capture,
+            audio::play_audio_to_devices,
+            audio::stop_audio_playback,
+        ])
         .setup(|app| {
+            app.manage(AppState::default());
+            install_panic_hook(app.handle());
             #[cfg(desktop)]
             {
-                // Endpoints + pubkey come from `plugins.updater` in tauri.conf.json.
-                app.handle()
-                    .plugin(tauri_plugin_updater::Builder::new().build())
-                    .expect("failed to register updater plugin");
+                register_window_close_handling(app.handle());
+
+                // Start the bundled backend before the UI begins polling
+                // /health. Non-fatal: in dev the backend is usually already
+                // running (adopted), and without a bundled binary we stay
+                // silent and let the UI health banner guide the user.
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    let _ = server::ensure_started(&handle, None).await;
+                });
             }
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let state = window.state::<AppState>();
+                let already = state.server.close_in_progress.swap(true, Ordering::SeqCst);
+                if !already {
+                    // Ask the renderer whether the backend should be kept
+                    // running; it answers with `window-close-allowed`.
+                    let _ = window.emit("window-close-requested", ());
+                    // Fallback: never let a silent renderer strand the user
+                    // on a window that cannot close.
+                    let handle = window.app_handle().clone();
+                    tauri::async_runtime::spawn(async move {
+                        tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+                        let state = handle.state::<AppState>();
+                        if state.server.close_in_progress.load(Ordering::SeqCst) {
+                            if !state.server.keep_running.load(Ordering::SeqCst) {
+                                server::stop_if_ours(&state);
+                            }
+                            state
+                                .server
+                                .close_in_progress
+                                .store(false, Ordering::SeqCst);
+                            if let Some(win) = handle.get_webview_window("main") {
+                                let _ = win.destroy();
+                            }
+                        }
+                    });
+                }
+            }
+        })
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(|app_handle, event| {
+        // Any exit path (Cmd+Q, crash, window close) must not strand the
+        // backend unless the user asked for keep-running.
+        if let tauri::RunEvent::Exit = event {
+            let state = app_handle.state::<AppState>();
+            if !state.server.keep_running.load(Ordering::SeqCst) {
+                server::stop_if_ours(&state);
+            }
+        }
+    });
 }

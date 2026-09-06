@@ -31,6 +31,10 @@ jobs:
           retention-days: 7
 
   # ── Tauri release builds (on tag) ────────────────────────────────────
+  # Builds the Python backend (backend/build_binary.py → otoyin-server onedir),
+  # stages it into tauri/src-tauri/binaries/otoyin-server (registered as a
+  # bundle.resources dir), then builds the shell so the installer ships with a
+  # real backend — not an empty shell.
   tauri-build:
     name: "Tauri: ${{ matrix.platform }} build"
     runs-on: ${{ matrix.platform }}
@@ -45,6 +49,16 @@ jobs:
             target: x86_64-unknown-linux-gnu
           - platform: macos-latest
             target: aarch64-apple-darwin
+          # macOS Intel — native x86_64 runner (macos-13); PyInstaller cannot
+          # cross-compile the Python backend, so this needs an Intel runner,
+          # not a --target flag on the arm64 one.
+          - platform: macos-13
+            target: x86_64-apple-darwin
+          # ── ARM64 legs (GitHub public-preview ARM runners — org opt-in) ──
+          # - platform: windows-11-arm
+          #   target: aarch64-pc-windows-msvc
+          # - platform: ubuntu-24.04-arm
+          #   target: aarch64-unknown-linux-gnu
     steps:
       - uses: actions/checkout@v4
 
@@ -52,6 +66,23 @@ jobs:
         with:
           node-version: 20
           cache: npm
+
+      # Linux system deps — Tauri v2 needs webkit2gtk 4.1 (README lists it as a
+      # prereq; the runner image does not preinstall it).
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libssl-dev \
+            libxdo-dev \
+            build-essential \
+            curl \
+            wget \
+            file
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -67,24 +98,59 @@ jobs:
       - name: Build frontend
         run: npm run build --workspace=@otoyin/app
 
+      # ── Python backend: venv + deps + frozen server binary ────────────
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      # CPU-only torch first: PyPI's default linux/windows wheels bundle CUDA
+      # (~2.5 GB) and would bloat the frozen server, which is CPU-only. PEP 440
+      # local versions (2.5.1+cpu) satisfy the ==2.5.1 pins in requirements.txt,
+      # so pip will not reinstall the CUDA build afterwards.
+      - name: Install CPU-only PyTorch
+        if: runner.os != 'macOS'
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch==2.5.1 torchaudio==2.5.1 \
+            --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install backend build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r backend/requirements.txt pyinstaller
+
+      - name: Build backend server (otoyin-server)
+        run: |
+          bash scripts/build-server.sh
+          ls -la tauri/src-tauri/binaries/otoyin-server/ | head -5
+        env:
+          PYTHON: python
+
       - name: Install Tauri CLI
         run: cargo install tauri-cli
 
       - name: Build Tauri app
         working-directory: tauri
         run: cargo tauri build --target ${{ matrix.target }}
+        env:
+          # Required since bundle.createUpdaterArtifacts is true: signs every
+          # installer and emits the .sig files the updater manifest needs.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: tauri-${{ matrix.platform }}
+          name: tauri-${{ matrix.target }}
           path: |
             tauri/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.exe
             tauri/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.msi
             tauri/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.deb
             tauri/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.AppImage
             tauri/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.dmg
-            tauri/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.app
+            tauri/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.tar.gz
+            tauri/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.sig
           retention-days: 30
 
   # ── Release (on tag) ─────────────────────────────────────────────────
@@ -102,8 +168,32 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: tauri-*
-          merge-multiple: true
           path: artifacts/
+
+      # Keep per-leg folders (each uploaded as tauri-<target>) and flatten them
+      # into artifacts/ with a <triple>- filename prefix. Two macOS legs both
+      # produce "<product>.app.tar.gz"; the prefix keeps release assets unique
+      # and lets build_update_manifest.py map each platform to its installer.
+      - name: Prefix artifacts with target triple
+        shell: bash
+        run: |
+          shopt -s nullglob
+          for dir in artifacts/tauri-*; do
+            triple="${dir#artifacts/tauri-}"
+            for f in "$dir"/*; do
+              [ -f "$f" ] || continue
+              mv "$f" "artifacts/${triple}-$(basename "$f")"
+            done
+            rm -rf "$dir"
+          done
+          echo "Flattened artifacts:"
+          ls -1 artifacts/
+
+      - name: Build updater manifest (latest.json)
+        run: python .github/scripts/build_update_manifest.py artifacts
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
 
       - name: Create release
         uses: softprops/action-gh-release@v2

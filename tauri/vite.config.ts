@@ -29,10 +29,24 @@ export default defineConfig({
     outDir: 'dist',
     rollupOptions: {
       output: {
+        // Same code-splitting map as app/vite.config.ts so both shells ship
+        // identical chunking. Page-chunk rules match app/src paths via the
+        // '@' alias. Module ids are absolute; `src/components/...` matches
+        // the app tree in both workspaces.
         manualChunks(id) {
-          if (id.includes('@tanstack/react-query') || id.includes('@tanstack/query-core')) {
-            return 'vendor-tanstack';
-          }
+          if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/')) return 'vendor-react';
+          if (id.includes('@tanstack/react-query') || id.includes('@tanstack/react-router') || id.includes('@tanstack/query-core')) return 'vendor-tanstack';
+          if (id.includes('framer-motion') || id.includes('node_modules/motion')) return 'vendor-ui';
+          if (id.includes('@radix-ui')) return 'vendor-radix';
+          if (id.includes('@dnd-kit')) return 'vendor-dnd';
+          if (id.includes('zustand')) return 'vendor-state';
+          if (id.includes('react-hook-form') || id.includes('@hookform/resolvers') || id.includes('zod')) return 'vendor-forms';
+          if (id.includes('react-markdown') || id.includes('remark-')) return 'vendor-markdown';
+          if (id.includes('react-syntax-highlighter')) return 'vendor-syntax';
+          if (id.includes('wavesurfer')) return 'vendor-wavesurfer';
+          if (id.includes('src/components/Store')) return 'page-store';
+          if (id.includes('src/components/AudioStudio')) return 'page-audio-studio';
+          if (id.includes('src/components/Workspace')) return 'page-workspace';
         },
       },
     },
