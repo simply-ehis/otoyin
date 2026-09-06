@@ -1,12 +1,18 @@
 /**
  * Studio instrument preview — 2-octave piano keyboard + drum pads with
- * client-side playback via the instrument engine. Ported from Resonant's
- * audition concept (click-to-preview) but expanded with velocity control,
- * instrument picker from loaded packs, and computer keyboard mapping.
+ * client-side playback via the instrument engine.
+ *
+ * Optimizations vs v1:
+ * - SoundFont ArrayBuffer cached by pack ID (no re-fetch on remount)
+ * - SpessaSynthProcessor cached per SoundFont (no 100-500ms reload per note)
+ * - Stable useEffect deps (ref-based instrument selection)
+ * - Computer keyboard mapping + copy/paste patterns
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import type { InstrumentPackInstrument } from "@/lib/api/types";
+import { showStudioErrorToast } from "@/lib/errors";
+import { Button } from "@/ui/button";
 import { Label } from "@/ui/primitives";
 import {
 	Select,
@@ -74,9 +80,60 @@ const DRUM_MAP: Record<string, string> = {
 	e: "Hi-Hat",
 	r: "Clap",
 };
+const DRUM_MIDI: Record<string, number> = {
+	Kick: 36,
+	Snare: 38,
+	"Hi-Hat": 42,
+	Clap: 39,
+	Tom: 45,
+	Rim: 37,
+	Crash: 49,
+	Ride: 51,
+	Shaker: 70,
+	Tambourine: 54,
+	Cowbell: 56,
+	Claves: 75,
+	Conga: 64,
+	Bongo: 60,
+	Triangle: 81,
+	Splash: 55,
+};
+const DRUM_PADS = [
+	"Kick",
+	"Snare",
+	"Hi-Hat",
+	"Clap",
+	"Tom",
+	"Rim",
+	"Crash",
+	"Ride",
+	"Shaker",
+	"Tambourine",
+	"Cowbell",
+	"Claves",
+	"Conga",
+	"Bongo",
+	"Triangle",
+	"Splash",
+];
 
 function noteName(midi: number) {
 	return `${NOTE_NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`;
+}
+
+// ─── SoundFont data cache (module-level) ─────────────────────────────────────
+// Avoids re-fetching the same SoundFont ArrayBuffer from the server on remount.
+
+const sfDataCache = new Map<string, ArrayBuffer>();
+
+async function fetchSoundFontData(packId: string): Promise<ArrayBuffer> {
+	const cached = sfDataCache.get(packId);
+	if (cached) {
+		return cached;
+	}
+	const data = await apiClient.getInstrumentPackFile(packId);
+	sfDataCache.set(packId, data);
+	return data;
 }
 
 // ─── Hook: shared AudioContext ───────────────────────────────────────────────
@@ -165,51 +222,7 @@ function PianoKey({
 	);
 }
 
-// ─── Drum Pad component ──────────────────────────────────────────────────────
-
-function DrumPad({
-	label,
-	onTrigger,
-	isPending,
-}: {
-	label: string;
-	onTrigger: () => void;
-	isPending: boolean;
-}) {
-	return (
-		<button
-			type="button"
-			className="h-10 rounded-md border border-border bg-card text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground active:scale-95"
-			disabled={isPending}
-			title={`Play ${label}`}
-			aria-label={`Play ${label}`}
-			onClick={onTrigger}
-		>
-			{label}
-		</button>
-	);
-}
-
 // ─── Main component ──────────────────────────────────────────────────────────
-
-const DRUM_PADS = [
-	"Kick",
-	"Snare",
-	"Hi-Hat",
-	"Clap",
-	"Tom",
-	"Rim",
-	"Crash",
-	"Ride",
-	"Shaker",
-	"Tambourine",
-	"Cowbell",
-	"Claves",
-	"Conga",
-	"Bongo",
-	"Triangle",
-	"Splash",
-];
 
 export function InstrumentPreview() {
 	const getCtx = useSharedAudioContext();
@@ -221,6 +234,13 @@ export function InstrumentPreview() {
 	const [prepared, setPrepared] = useState<PreparedInstrument | null>(null);
 	const [activeKeys, setActiveKeys] = useState<Set<number>>(new Set());
 	const preparingRef = useRef(false);
+	const fileInputRef = useRef<HTMLInputElement>(null);
+
+	// Refs for stable effect deps (avoid re-triggering preparation)
+	const selectedInstRef = useRef(selectedInstrument);
+	selectedInstRef.current = selectedInstrument;
+	const selectedPackRef = useRef(selectedPackId);
+	selectedPackRef.current = selectedPackId;
 
 	// Flatten instruments from all packs
 	const allInstruments = useMemo(() => {
@@ -239,9 +259,11 @@ export function InstrumentPreview() {
 		return instruments;
 	}, [packs]);
 
-	// Prepare instrument when selection changes
+	// Prepare instrument when selection changes (ref-stable deps)
 	useEffect(() => {
-		if (!selectedInstrument || selectedPackId === "builtin") {
+		const inst = selectedInstRef.current;
+		const packId = selectedPackRef.current;
+		if (!inst || packId === "builtin") {
 			setPrepared(null);
 			return;
 		}
@@ -250,7 +272,7 @@ export function InstrumentPreview() {
 		}
 		preparingRef.current = true;
 
-		const pack = (packs ?? []).find((p) => p.id === selectedPackId);
+		const pack = (packs ?? []).find((p) => p.id === packId);
 		if (!pack) {
 			preparingRef.current = false;
 			return;
@@ -260,30 +282,30 @@ export function InstrumentPreview() {
 		(async () => {
 			try {
 				const ctx = getCtx();
-				const resolved = {
-					instrument: {
-						id: selectedInstrument.id,
-						name: selectedInstrument.name,
-						format: "soundfont" as const,
-						program: selectedInstrument.program,
-						bankMSB: selectedInstrument.bankMSB,
-						bankLSB: selectedInstrument.bankLSB,
-						percussion: selectedInstrument.percussion,
-						packId: pack.id,
-						family: selectedInstrument.family,
-						installed: true,
-					},
-					data: await apiClient.getInstrumentPackFile(pack.id),
-				};
+				const data = await fetchSoundFontData(pack.id);
 				if (cancelled) {
 					return;
 				}
+				const resolved = {
+					instrument: {
+						id: inst.id,
+						name: inst.name,
+						format: "soundfont" as const,
+						program: inst.program,
+						bankMSB: inst.bankMSB,
+						bankLSB: inst.bankLSB,
+						percussion: inst.percussion,
+						packId: pack.id,
+						family: inst.family,
+						installed: true,
+					},
+					data,
+				};
 				const prepared_ = await prepareInstrument(ctx, resolved);
 				if (!cancelled) {
 					setPrepared(prepared_);
 				}
 			} catch {
-				// Instrument pack file not available — fall back to builtin
 				if (!cancelled) {
 					setSelectedPackId("builtin");
 				}
@@ -295,7 +317,7 @@ export function InstrumentPreview() {
 		return () => {
 			cancelled = true;
 		};
-	}, [selectedInstrument, selectedPackId, packs, getCtx]);
+	}, [packs, getCtx]);
 
 	// ─── Note playback ──────────────────────────────────────────────────────
 
@@ -316,7 +338,6 @@ export function InstrumentPreview() {
 					0.3,
 				);
 			} else if (prepared?.kind === "soundfont") {
-				// SoundFont offline render → play
 				renderSoundFontNote(
 					prepared.data,
 					prepared.instrument,
@@ -331,7 +352,6 @@ export function InstrumentPreview() {
 					source.start();
 				});
 			} else {
-				// Builtin: server-side piano
 				apiClient
 					.playPianoNote({ note: midi, duration: 1.0, velocity })
 					.then((blob) => {
@@ -339,7 +359,8 @@ export function InstrumentPreview() {
 						const audio = new Audio(url);
 						audio.onended = () => URL.revokeObjectURL(url);
 						audio.play();
-					});
+					})
+					.catch(showStudioErrorToast);
 			}
 		},
 		[prepared, velocity, getCtx],
@@ -357,50 +378,29 @@ export function InstrumentPreview() {
 
 	const playDrum = useCallback(
 		(drumType: string) => {
-			if (selectedPackId !== "builtin") {
-				// Use SoundFont percussion channel
+			if (selectedPackId !== "builtin" && prepared?.kind === "soundfont") {
 				const ctx = getCtx();
-				if (prepared?.kind === "soundfont") {
-					const percInstrument: InstrumentRef = {
-						...prepared.instrument,
-						percussion: true,
-						bankMSB: 0,
-						bankLSB: 0,
-						program: 0,
-					};
-					const drumNote =
-						{
-							Kick: 36,
-							Snare: 38,
-							"Hi-Hat": 42,
-							Clap: 39,
-							Tom: 45,
-							Rim: 37,
-							Crash: 49,
-							Ride: 51,
-							Shaker: 70,
-							Tambourine: 54,
-							Cowbell: 56,
-							Claves: 75,
-							Conga: 64,
-							Bongo: 60,
-							Triangle: 81,
-							Splash: 55,
-						}[drumType] ?? 36;
-					renderSoundFontNote(
-						prepared.data,
-						percInstrument,
-						drumNote,
-						0.5,
-						ctx.sampleRate,
-					).then((rendered) => {
-						const buffer = audioBufferFromChannels(ctx, rendered);
-						const source = ctx.createBufferSource();
-						source.buffer = buffer;
-						source.connect(ctx.destination);
-						source.start();
-					});
-				}
+				const percInstrument: InstrumentRef = {
+					...prepared.instrument,
+					percussion: true,
+					bankMSB: 0,
+					bankLSB: 0,
+					program: 0,
+				};
+				const drumNote = DRUM_MIDI[drumType] ?? 36;
+				renderSoundFontNote(
+					prepared.data,
+					percInstrument,
+					drumNote,
+					0.5,
+					ctx.sampleRate,
+				).then((rendered) => {
+					const buffer = audioBufferFromChannels(ctx, rendered);
+					const source = ctx.createBufferSource();
+					source.buffer = buffer;
+					source.connect(ctx.destination);
+					source.start();
+				});
 			} else {
 				apiClient
 					.playDrumPad({ drum_type: drumType, duration: 0.5, velocity })
@@ -409,11 +409,47 @@ export function InstrumentPreview() {
 						const audio = new Audio(url);
 						audio.onended = () => URL.revokeObjectURL(url);
 						audio.play();
-					});
+					})
+					.catch(showStudioErrorToast);
 			}
 		},
 		[selectedPackId, prepared, velocity, getCtx],
 	);
+
+	// ─── Copy / paste note patterns ─────────────────────────────────────────
+
+	const copyActiveNotes = useCallback(() => {
+		const notes = Array.from(activeKeys)
+			.sort((a, b) => a - b)
+			.map((midi) => ({ midi, name: noteName(midi), velocity }));
+		const pattern = {
+			instrument: selectedInstrument?.name ?? "builtin",
+			packId: selectedPackId,
+			velocity,
+			notes,
+		};
+		navigator.clipboard
+			.writeText(JSON.stringify(pattern, null, 2))
+			.catch(showStudioErrorToast);
+	}, [activeKeys, velocity, selectedInstrument, selectedPackId]);
+
+	const pasteAndPlay = useCallback(async () => {
+		try {
+			const text = await navigator.clipboard.readText();
+			const pattern = JSON.parse(text) as {
+				notes?: Array<{ midi: number }>;
+			};
+			if (pattern.notes) {
+				for (const note of pattern.notes) {
+					playNote(note.midi);
+					await new Promise((r) => setTimeout(r, 80));
+					stopNote(note.midi);
+				}
+			}
+		} catch {
+			// Clipboard read failed — ignore
+		}
+	}, [playNote, stopNote]);
 
 	// ─── Computer keyboard mapping ──────────────────────────────────────────
 
@@ -460,9 +496,41 @@ export function InstrumentPreview() {
 		};
 	}, [playNote, stopNote, playDrum]);
 
+	// ─── Import handler ─────────────────────────────────────────────────────
+
+	const handleImport = useCallback(
+		async (e: React.ChangeEvent<HTMLInputElement>) => {
+			const file = e.target.files?.[0];
+			if (!file) {
+				return;
+			}
+			try {
+				await apiClient.uploadInstrumentPack(
+					file,
+					file.name.replace(/\.[^.]+$/, ""),
+				);
+			} catch (err: unknown) {
+				showStudioErrorToast(err);
+			} finally {
+				if (fileInputRef.current) {
+					fileInputRef.current.value = "";
+				}
+			}
+		},
+		[],
+	);
+
 	return (
 		<div className="space-y-4">
-			{/* Instrument picker + velocity */}
+			<input
+				ref={fileInputRef}
+				type="file"
+				accept=".sf2,.sf3,.sfz,.wav,.ogg,.mp3,.flac,.m4a"
+				className="hidden"
+				onChange={handleImport}
+			/>
+
+			{/* Instrument picker + velocity + actions */}
 			<div className="flex flex-wrap items-center gap-3">
 				<div className="flex items-center gap-2">
 					<Label htmlFor="inst-select" className="text-xs">
@@ -530,6 +598,42 @@ export function InstrumentPreview() {
 						{Math.round(velocity * 127)}
 					</span>
 				</div>
+				<div className="flex items-center gap-1">
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						className="h-7 px-2 text-xs"
+						title="Import instrument pack"
+						aria-label="Import instrument pack"
+						onClick={() => fileInputRef.current?.click()}
+					>
+						Import
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						className="h-7 px-2 text-xs"
+						disabled={activeKeys.size === 0}
+						title="Copy active notes to clipboard"
+						aria-label="Copy active notes"
+						onClick={copyActiveNotes}
+					>
+						Copy
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						className="h-7 px-2 text-xs"
+						title="Paste and play note pattern"
+						aria-label="Paste and play notes"
+						onClick={pasteAndPlay}
+					>
+						Paste
+					</Button>
+				</div>
 			</div>
 
 			{/* Piano keyboard */}
@@ -549,7 +653,6 @@ export function InstrumentPreview() {
 					if (midi === -1) {
 						return null;
 					}
-					// Position black keys between their neighboring white keys
 					const whiteIndex =
 						i < 2
 							? i
@@ -580,20 +683,42 @@ export function InstrumentPreview() {
 				})}
 			</div>
 			<p className="text-[10px] text-muted-foreground">
-				Keyboard: Z-M = C4-B4, Q/E = C5-E5 · Drums: 1-4 / Q-R
+				Keyboard: Z-M = C4-B4, Q/E = C5-E5 · Drums: 1-4 / Q-R · Copy/Paste =
+				note patterns
 			</p>
 
 			{/* Drum pads */}
 			<div className="grid grid-cols-4 gap-2">
 				{DRUM_PADS.map((pad) => (
-					<DrumPad
+					<DrumPadComponent
 						key={pad}
 						label={pad}
 						onTrigger={() => playDrum(pad.toLowerCase())}
-						isPending={false}
 					/>
 				))}
 			</div>
 		</div>
+	);
+}
+
+// ─── Drum Pad component ──────────────────────────────────────────────────────
+
+function DrumPadComponent({
+	label,
+	onTrigger,
+}: {
+	label: string;
+	onTrigger: () => void;
+}) {
+	return (
+		<button
+			type="button"
+			className="h-10 rounded-md border border-border bg-card text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground active:scale-95"
+			title={`Play ${label}`}
+			aria-label={`Play ${label}`}
+			onClick={onTrigger}
+		>
+			{label}
+		</button>
 	);
 }

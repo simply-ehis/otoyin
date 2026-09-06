@@ -129,6 +129,68 @@ function exactArrayBuffer(value: ArrayBuffer) {
 	return value.slice(0);
 }
 
+// ─── SoundFont synth cache ───────────────────────────────────────────────────
+// Keeps one SpessaSynthProcessor alive per SoundFont data blob. Avoids the
+// 100-500ms cost of reloading the entire bank for every note trigger.
+
+interface CachedSynth {
+	synth: InstanceType<
+		Awaited<typeof import("spessasynth_core")>["SpessaSynthProcessor"]
+	>;
+	sampleRate: number;
+	ready: Promise<void>;
+}
+
+const synthCache = new Map<string, CachedSynth>();
+
+function cacheKey(data: ArrayBuffer, sampleRate: number) {
+	return `${data.byteLength}:${sampleRate}`;
+}
+
+async function getOrCreateSynth(
+	data: ArrayBuffer,
+	sampleRate: number,
+): Promise<CachedSynth> {
+	const key = cacheKey(data, sampleRate);
+	const existing = synthCache.get(key);
+	if (existing) {
+		return existing;
+	}
+
+	const { SoundBankLoader, SpessaSynthProcessor } = await import(
+		"spessasynth_core"
+	);
+	const soundBank = SoundBankLoader.fromArrayBuffer(exactArrayBuffer(data));
+	const synth = new SpessaSynthProcessor(sampleRate, {
+		eventsEnabled: false,
+	});
+	synth.soundBankManager.addSoundBank(soundBank, "otoyin");
+	const ready = synth.processorInitialized.then(() => {
+		synth.setSystemParameter("autoAllocateVoices", true);
+	});
+
+	const entry: CachedSynth = { synth, sampleRate, ready };
+	synthCache.set(key, entry);
+	return entry;
+}
+
+export function invalidateSynthCache(data?: ArrayBuffer) {
+	if (!data) {
+		for (const entry of synthCache.values()) {
+			entry.synth.destroySynthProcessor();
+		}
+		synthCache.clear();
+		return;
+	}
+	const key = `${data.byteLength}`;
+	for (const [k, entry] of synthCache) {
+		if (k.startsWith(key)) {
+			entry.synth.destroySynthProcessor();
+			synthCache.delete(k);
+		}
+	}
+}
+
 export async function renderSoundFontNote(
 	data: ArrayBuffer,
 	instrument: InstrumentRef,
@@ -136,15 +198,12 @@ export async function renderSoundFontNote(
 	durationSeconds: number,
 	sampleRate: number,
 ) {
-	const { MIDIControllers, SoundBankLoader, SpessaSynthProcessor } =
-		await import("spessasynth_core");
-	const soundBank = SoundBankLoader.fromArrayBuffer(exactArrayBuffer(data));
-	const synth = new SpessaSynthProcessor(sampleRate, {
-		eventsEnabled: false,
-	});
-	synth.soundBankManager.addSoundBank(soundBank, "otoyin");
-	await synth.processorInitialized;
-	synth.setSystemParameter("autoAllocateVoices", true);
+	const { MIDIControllers } = await import("spessasynth_core");
+	const cached = await getOrCreateSynth(data, sampleRate);
+	await cached.ready;
+	const synth = cached.synth;
+
+	// Configure channel
 	const channel = instrument.percussion ? 9 : 0;
 	synth.midiChannels[channel].setDrums(!!instrument.percussion);
 	synth.controllerChange(
@@ -158,6 +217,8 @@ export async function renderSoundFontNote(
 		instrument.bankLSB ?? 0,
 	);
 	synth.programChange(channel, instrument.program ?? 0);
+
+	// Render note
 	synth.noteOn(channel, pitch, 127);
 	const tail = instrument.percussion ? 1.2 : 1.8;
 	const frames = Math.ceil((durationSeconds + tail) * sampleRate);
@@ -176,7 +237,6 @@ export async function renderSoundFontNote(
 		synth.process(left, right, offset, count);
 		offset += count;
 	}
-	synth.destroySynthProcessor();
 	return { left, right, sampleRate };
 }
 
