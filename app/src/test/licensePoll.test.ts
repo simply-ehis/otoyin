@@ -63,7 +63,12 @@ describe("pollForLicense recovery", () => {
 			vi.fn().mockResolvedValue(jsonResponse(404, { detail: "gone" })),
 		);
 		const pending = marketplaceClient.pollForLicense("otoyin_nope");
+		// Attach the rejection assertion synchronously so the rejection is
+		// handled even if it settles before the clock advance below.
+		const assertion = expect(pending).rejects.toThrow(
+			"License fetch failed: 404",
+		);
 		await vi.advanceTimersByTimeAsync(5000);
-		await expect(pending).rejects.toThrow("License fetch failed: 404");
+		await assertion;
 	});
 });

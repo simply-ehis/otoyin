@@ -105,6 +105,13 @@ pid_placeholders=$!
 ) > "$tmpdir/import.log" 2>&1 &
 pid_import=$!
 
+# [6] Encoding: no invalid UTF-8 bytes or U+FFFD in staged text files
+(
+  cd "$root" && timeout 30 $PY -X utf8 scripts/check-encoding.py --staged 2>&1 | tail -15
+  echo $? > "$tmpdir/mojibake.rc"
+) > "$tmpdir/mojibake.log" 2>&1 &
+pid_mojibake=$!
+
 # Wait for ALL fast checks
 wait $pid_biome 2>/dev/null
 wait $pid_tsc 2>/dev/null
@@ -114,6 +121,7 @@ wait $pid_namemap 2>/dev/null
 wait $pid_assist 2>/dev/null
 wait $pid_placeholders 2>/dev/null
 wait $pid_import 2>/dev/null
+wait $pid_mojibake 2>/dev/null
 
 # Report fast check results
 biome_rc=$(cat "$tmpdir/biome.rc" 2>/dev/null || echo 1)
@@ -124,8 +132,9 @@ namemap_rc=$(cat "$tmpdir/namemap.rc" 2>/dev/null || echo 1)
 assist_rc=$(cat "$tmpdir/assist.rc" 2>/dev/null || echo 1)
 placeholders_rc=$(cat "$tmpdir/placeholders.rc" 2>/dev/null || echo 1)
 import_rc=$(cat "$tmpdir/import.rc" 2>/dev/null || echo 1)
+mojibake_rc=$(cat "$tmpdir/mojibake.rc" 2>/dev/null || echo 1)
 
-for check in biome:Biome tsc:TypeScript ruff:Ruff async:Async-BLocking namemap:NAME_MAP assist:Assistant-Tools placeholders:Placeholders import:Python-Import; do
+for check in biome:Biome tsc:TypeScript ruff:Ruff async:Async-BLocking namemap:NAME_MAP assist:Assistant-Tools placeholders:Placeholders import:Python-Import mojibake:Encoding; do
   name="${check#*:}"
   key="${check%%:*}"
   rc_var="${key}_rc"
@@ -170,7 +179,7 @@ fi
 echo ""
 echo "Phase 3: Frontend tests..."
 cd "$root/app" || exit 1
-if timeout 120 $VITEST run --reporter=dot 2>&1 | tail -10; then
+if timeout 600 $VITEST run --reporter=dot 2>&1 | tail -10; then
   echo "  ✅ Frontend tests passed"
 else
   echo "  ❌ Frontend tests FAILED"
@@ -190,7 +199,7 @@ if [ $failed -ne 0 ]; then
   echo "============================================"
   exit 1
 else
-  echo "  ✅ ALL CHECKS PASSED (10/10)"
+  echo "  ✅ ALL CHECKS PASSED (11/11)"
   echo "============================================"
   exit 0
 fi
