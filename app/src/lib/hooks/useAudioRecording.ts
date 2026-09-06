@@ -7,6 +7,11 @@ import {
 	RECORDING_MIME_TYPE_WAV,
 	RECORDING_TIMESLICE_MS,
 } from "@/lib/constants/audio";
+import {
+	isNativeMicAvailable,
+	startNativeMicCapture,
+	stopNativeMicCapture,
+} from "@/lib/audio/nativeMic";
 import { usePlatform } from "@/platform/PlatformContext";
 
 interface UseAudioRecordingOptions {
@@ -32,13 +37,101 @@ export function useAudioRecording({
 	const timerRef = useRef<number | null>(null);
 	const startTimeRef = useRef<number | null>(null);
 	const cancelledRef = useRef<boolean>(false);
+	// True while a NATIVE (Rust sidecar) capture owns the session instead
+	// of MediaRecorder. stop/cancel must route to the matching backend.
+	const nativeRef = useRef<boolean>(false);
+
+	// Shared recording clock for both capture paths. onLimit fires once
+	// when the caller opted into a max duration (voice-clone samplers pass
+	// 29s; dictation passes none and runs until stopped).
+	const startClock = useCallback(
+		(onLimit: () => void) => {
+			startTimeRef.current = Date.now();
+			timerRef.current = window.setInterval(() => {
+				if (!startTimeRef.current) {
+					return;
+				}
+				const elapsed = (Date.now() - startTimeRef.current) / 1000;
+				setDuration(elapsed);
+				if (
+					maxDurationSeconds !== undefined &&
+					elapsed >= maxDurationSeconds
+				) {
+					onLimit();
+				}
+			}, 100);
+		},
+		[maxDurationSeconds],
+	);
+
+	const stopRecording = useCallback(() => {
+		if (nativeRef.current) {
+			// Native path: stop the sidecar capture, deliver 16 kHz mono WAV.
+			nativeRef.current = false;
+			setIsRecording(false);
+			if (timerRef.current !== null) {
+				clearInterval(timerRef.current);
+				timerRef.current = null;
+			}
+			const durationSecs = startTimeRef.current
+				? (Date.now() - startTimeRef.current) / 1000
+				: undefined;
+			void stopNativeMicCapture().then(
+				(blob) => {
+					if (!cancelledRef.current) {
+						onRecordingComplete?.(blob, durationSecs);
+					}
+				},
+				(err: unknown) => {
+					setError(
+						err instanceof Error ? err.message : "Microphone capture failed",
+					);
+					onRecordingError?.();
+				},
+			);
+			return;
+		}
+		if (mediaRecorderRef.current && isRecording) {
+			mediaRecorderRef.current.stop();
+			setIsRecording(false);
+
+			if (timerRef.current !== null) {
+				clearInterval(timerRef.current);
+				timerRef.current = null;
+			}
+		}
+	}, [isRecording, onRecordingComplete, onRecordingError]);
 
 	const startRecording = useCallback(async () => {
 		try {
 			setError(null);
 			chunksRef.current = [];
 			cancelledRef.current = false;
+			nativeRef.current = false;
 			setDuration(0);
+
+			// Native sidecar first (Tauri only): cpal mic capture works on
+			// all three OSs where webview getUserMedia is fragile or broken.
+			// Any failure falls through to the webview path below.
+			if (platform.metadata.isTauri) {
+				try {
+					if (await isNativeMicAvailable()) {
+						await startNativeMicCapture(null);
+						nativeRef.current = true;
+						setIsRecording(true);
+						startClock(() => {
+							void stopRecording();
+						});
+						return;
+					}
+				} catch (nativeError) {
+					nativeRef.current = false;
+					console.warn(
+						"[recording] native mic unavailable, trying webview:",
+						nativeError,
+					);
+				}
+			}
 
 			// Check if getUserMedia is available
 			// In Tauri, navigator.mediaDevices might not be available immediately
@@ -187,36 +280,19 @@ export function useAudioRecording({
 			// exactly one dataavailable on stop() with a valid container.
 			mediaRecorder.start(RECORDING_TIMESLICE_MS);
 			setIsRecording(true);
-			startTimeRef.current = Date.now();
-
-			// Start timer
-			timerRef.current = window.setInterval(() => {
-				if (startTimeRef.current) {
-					const elapsed = (Date.now() - startTimeRef.current) / 1000;
-					setDuration(elapsed);
-
-					// Auto-stop at max duration when the caller opts in — dictation
-					// sessions pass undefined and run until the user releases the
-					// chord or hits stop; voice-clone sample recorders pass 29s to
-					// keep reference clips short.
-					if (
-						maxDurationSeconds !== undefined &&
-						elapsed >= maxDurationSeconds
-					) {
-						if (
-							mediaRecorderRef.current &&
-							mediaRecorderRef.current.state !== "inactive"
-						) {
-							mediaRecorderRef.current.stop();
-							setIsRecording(false);
-							if (timerRef.current !== null) {
-								clearInterval(timerRef.current);
-								timerRef.current = null;
-							}
-						}
+			startClock(() => {
+				if (
+					mediaRecorderRef.current &&
+					mediaRecorderRef.current.state !== "inactive"
+				) {
+					mediaRecorderRef.current.stop();
+					setIsRecording(false);
+					if (timerRef.current !== null) {
+						clearInterval(timerRef.current);
+						timerRef.current = null;
 					}
 				}
-			}, 100);
+			});
 		} catch (err) {
 			const errorMessage =
 				err instanceof Error
@@ -226,28 +302,23 @@ export function useAudioRecording({
 			setIsRecording(false);
 		}
 	}, [
-		maxDurationSeconds,
 		onRecordingComplete,
 		onRecordingError,
 		preferWav,
 		platform.metadata.isTauri,
+		startClock,
+		stopRecording,
 	]);
 
-	const stopRecording = useCallback(() => {
-		if (mediaRecorderRef.current && isRecording) {
-			mediaRecorderRef.current.stop();
-			setIsRecording(false);
-
-			if (timerRef.current !== null) {
-				clearInterval(timerRef.current);
-				timerRef.current = null;
-			}
-		}
-	}, [isRecording]);
-
 	const cancelRecording = useCallback(() => {
-		if (mediaRecorderRef.current) {
-			cancelledRef.current = true; // Must be set before stop() triggers onstop
+		cancelledRef.current = true;
+		if (nativeRef.current) {
+			// Discard the sidecar capture; ignore the resulting blob.
+			nativeRef.current = false;
+			setIsRecording(false);
+			setDuration(0);
+			void stopNativeMicCapture().catch(() => {});
+		} else if (mediaRecorderRef.current) {
 			chunksRef.current = [];
 			mediaRecorderRef.current.stop();
 			setIsRecording(false);
@@ -275,6 +346,11 @@ export function useAudioRecording({
 			streamRef.current?.getTracks().forEach((track) => {
 				track.stop();
 			});
+			if (nativeRef.current) {
+				// Don't strand a sidecar capture; discard without callback.
+				nativeRef.current = false;
+				void stopNativeMicCapture().catch(() => {});
+			}
 		};
 	}, []);
 
