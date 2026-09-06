@@ -10,8 +10,23 @@ import {
 	XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { StarIcon as StarSolid } from "@heroicons/react/24/solid";
-import { useMutation, useQueryClient } from "@tanstack/react-query";import { useVirtualizer } from "@tanstack/react-virtual";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useRef, useState } from "react";
+import { apiClient } from "@/lib/api/client";
+import type { HistoryResponse } from "@/lib/api/types";
+import { showStudioErrorToast } from "@/lib/errors";
+import {
+	useClearFailedGenerations,
+	useDeleteGeneration,
+	useExportGeneration,
+	useExportGenerationAudio,
+	useHistory,
+	useImportGeneration,
+} from "@/lib/hooks/useHistory";
+import { cn } from "@/lib/utils/cn";
+import { formatDate, formatDuration } from "@/lib/utils/format";
+import { usePlayerStore } from "@/stores/playerStore";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -30,20 +45,6 @@ import {
 } from "@/ui/dropdown-menu";
 import { EmptyState, LoadingState } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
-import { apiClient } from "@/lib/api/client";
-import type { HistoryResponse } from "@/lib/api/types";
-import { formatDate, formatDuration } from "@/lib/utils/format";
-import { cn } from "@/lib/utils/cn";
-import {
-	useClearFailedGenerations,
-	useDeleteGeneration,
-	useExportGeneration,
-	useExportGenerationAudio,
-	useHistory,
-	useImportGeneration,
-} from "@/lib/hooks/useHistory";
-import { showStudioErrorToast } from "@/lib/errors";
-import { usePlayerStore } from "@/stores/playerStore";
 
 const PAGE_SIZE = 20;
 
@@ -58,13 +59,15 @@ export function HistoryList() {
 	const [page, setPage] = useState(0);
 	const [items, setItems] = useState<HistoryResponse[]>([]);
 	const [total, setTotal] = useState(0);
-	const [deleteTarget, setDeleteTarget] = useState<HistoryResponse | null>(null);
+	const [deleteTarget, setDeleteTarget] = useState<HistoryResponse | null>(
+		null,
+	);
 	const [clearFailedOpen, setClearFailedOpen] = useState(false);
 	const [importOpen, setImportOpen] = useState(false);
 	const [importFile, setImportFile] = useState<File | null>(null);
 	const fileRef = useRef<HTMLInputElement>(null);
 	const scrollRef = useRef<HTMLDivElement>(null);
-	const loadMoreRef = useRef<HTMLDivElement>(null);
+	const loadMoreRef = useRef<HTMLOutputElement>(null);
 
 	const { data, isLoading, isFetching } = useHistory({
 		limit: PAGE_SIZE,
@@ -72,8 +75,6 @@ export function HistoryList() {
 	});
 	const deleteMut = useDeleteGeneration();
 	const clearFailedMut = useClearFailedGenerations();
-	const exportAudio = useExportGenerationAudio();
-	const exportZip = useExportGeneration();
 	const importMut = useImportGeneration();
 	const cancelMut = useMutation({
 		mutationFn: (id: string) => apiClient.cancelGeneration(id),
@@ -84,7 +85,8 @@ export function HistoryList() {
 		onError: (e: unknown) =>
 			toast({
 				title: "Cancel failed",
-				description: e instanceof Error ? e.message : "Could not cancel generation",
+				description:
+					e instanceof Error ? e.message : "Could not cancel generation",
 				variant: "destructive",
 			}),
 	});
@@ -177,7 +179,10 @@ export function HistoryList() {
 				/>
 			) : (
 				<div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto pb-4">
-					<div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
+					<div
+						className="relative w-full"
+						style={{ height: virtualizer.getTotalSize() }}
+					>
 						{virtualizer.getVirtualItems().map((row) => {
 							const gen = items[row.index];
 							return gen ? (
@@ -193,9 +198,18 @@ export function HistoryList() {
 						})}
 					</div>
 					{items.length < total ? (
-						<div ref={loadMoreRef} className="flex items-center justify-center py-4" role="status" aria-label="Loading more">
-							{isFetching ? <span className="size-5 animate-spin rounded-full border-2 border-current border-t-transparent text-muted-foreground" aria-hidden="true" /> : null}
-						</div>
+						<output
+							ref={loadMoreRef}
+							className="flex items-center justify-center py-4"
+							aria-label="Loading more"
+						>
+							{isFetching ? (
+								<span
+									className="size-5 animate-spin rounded-full border-2 border-current border-t-transparent text-muted-foreground"
+									aria-hidden="true"
+								/>
+							) : null}
+						</output>
 					) : items.length > 0 ? (
 						<p className="py-4 text-center text-xs text-muted-foreground">
 							You have reached the end
@@ -216,11 +230,15 @@ export function HistoryList() {
 				}}
 			/>
 
-			<AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+			<AlertDialog
+				open={!!deleteTarget}
+				onOpenChange={(open) => !open && setDeleteTarget(null)}
+			>
 				<AlertDialogContent>
 					<AlertDialogTitle>Delete generation?</AlertDialogTitle>
 					<AlertDialogDescription>
-						This permanently removes this generation and its audio. This cannot be undone.
+						This permanently removes this generation and its audio. This cannot
+						be undone.
 					</AlertDialogDescription>
 					<AlertDialogFooter>
 						<AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -369,7 +387,11 @@ function HistoryRow({
 						onClick={pending ? () => onCancel(gen.id) : play}
 						disabled={failed || (pending && cancelPending)}
 						title={pending ? "Cancel generation" : playing ? "Pause" : "Play"}
-						aria-label={pending ? `Cancel generation for ${gen.profile_name}` : `${playing ? "Pause" : "Play"} sample from ${gen.profile_name}`}
+						aria-label={
+							pending
+								? `Cancel generation for ${gen.profile_name}`
+								: `${playing ? "Pause" : "Play"} sample from ${gen.profile_name}`
+						}
 						className="grid size-9 shrink-0 place-items-center rounded-md bg-secondary text-foreground transition-colors hover:bg-secondary-hover disabled:opacity-40"
 					>
 						{pending ? (
@@ -387,9 +409,12 @@ function HistoryRow({
 						aria-label={`Sample from ${gen.profile_name}, ${formatDuration(gen.duration ?? 0)}, ${formatDate(gen.created_at)}${playing ? ". Playing." : ". Press Enter to play."}`}
 						className="min-w-0 flex-1 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default"
 					>
-						<p className="truncate text-sm font-medium text-foreground">{gen.text}</p>
+						<p className="truncate text-sm font-medium text-foreground">
+							{gen.text}
+						</p>
 						<p className="mt-0.5 truncate text-xs text-muted-foreground">
-							{gen.profile_name} · {formatEngine(gen.engine)} · {formatDuration(gen.duration ?? 0)} · {formatDate(gen.created_at)}
+							{gen.profile_name} · {formatEngine(gen.engine)} ·{" "}
+							{formatDuration(gen.duration ?? 0)} · {formatDate(gen.created_at)}
 							{failed && gen.error ? ` · ${gen.error}` : ""}
 							{pending ? " · generating…" : ""}
 						</p>
@@ -402,7 +427,9 @@ function HistoryRow({
 						onClick={() => toggleFavorite.mutate()}
 						className={cn(
 							"grid size-7 shrink-0 place-items-center rounded-sm transition-colors",
-							gen.is_favorited ? "text-accent" : "text-muted-foreground/50 hover:text-foreground",
+							gen.is_favorited
+								? "text-accent"
+								: "text-muted-foreground/50 hover:text-foreground",
 						)}
 					>
 						{gen.is_favorited ? (

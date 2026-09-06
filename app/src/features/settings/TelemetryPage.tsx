@@ -10,10 +10,11 @@ import {
 	SignalSlashIcon,
 } from "@heroicons/react/24/outline";
 import { useCallback, useEffect, useState } from "react";
-import { Badge } from "@/ui/primitives";
+import { apiClient } from "@/lib/api/client";
 import { Button } from "@/ui/button";
 import { Card, CardBody, CardTitle } from "@/ui/card";
 import { CodeConsole } from "@/ui/code-console";
+import { Badge } from "@/ui/primitives";
 import {
 	Select,
 	SelectContent,
@@ -22,7 +23,6 @@ import {
 	SelectValue,
 } from "@/ui/select";
 import { EmptyState, ErrorState, ScreenHeader } from "@/ui/states";
-import { apiClient } from "@/lib/api/client";
 
 interface TelemetryEvent {
 	name: string;
@@ -177,7 +177,10 @@ export function TelemetryPage() {
 	if (enabled === null) {
 		return (
 			<div className="flex max-w-3xl items-center gap-3">
-				<span aria-hidden="true" className="size-3 animate-pulse rounded-full bg-muted-foreground/40" />
+				<span
+					aria-hidden="true"
+					className="size-3 animate-pulse rounded-full bg-strong"
+				/>
 				<h1 className="text-xl font-semibold text-foreground">Telemetry</h1>
 				<Badge tone="neutral">Loading</Badge>
 			</div>
@@ -191,7 +194,12 @@ export function TelemetryPage() {
 				description="Anonymous on-device usage data. Nothing leaves your machine."
 				actions={
 					<>
-						<Button variant="outline" size="sm" onClick={() => void load()} disabled={!enabled || loading}>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => void load()}
+							disabled={!enabled || loading}
+						>
 							<ArrowPathIcon
 								className={loading ? "mr-1 size-4 animate-spin" : "mr-1 size-4"}
 								aria-hidden="true"
@@ -222,9 +230,15 @@ export function TelemetryPage() {
 			<p className="flex items-center gap-2 text-sm text-muted-foreground">
 				<span
 					aria-hidden="true"
-					className={enabled ? "size-2.5 rounded-full bg-success" : "size-2.5 rounded-full bg-muted-foreground/40"}
+					className={
+						enabled
+							? "size-2.5 rounded-full bg-success"
+							: "size-2.5 rounded-full bg-strong"
+					}
 				/>
-				<Badge tone={enabled ? "success" : "neutral"}>{enabled ? "Active" : "Disabled"}</Badge>
+				<Badge tone={enabled ? "success" : "neutral"}>
+					{enabled ? "Active" : "Disabled"}
+				</Badge>
 			</p>
 
 			{!enabled ? (
@@ -235,12 +249,21 @@ export function TelemetryPage() {
 				/>
 			) : null}
 
-			{error ? <ErrorState title="Could not load telemetry" body={error} onRetry={() => void load()} /> : null}
+			{error ? (
+				<ErrorState
+					title="Could not load telemetry"
+					body={error}
+					onRetry={() => void load()}
+				/>
+			) : null}
 
 			{enabled ? (
 				<>
 					<div className="flex items-center gap-2">
-						<FunnelIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+						<FunnelIcon
+							className="size-4 text-muted-foreground"
+							aria-hidden="true"
+						/>
 						<Select value={range} onValueChange={setRange}>
 							<SelectTrigger className="w-[180px]" aria-label="Time range">
 								<SelectValue />
@@ -268,8 +291,16 @@ export function TelemetryPage() {
 					</div>
 
 					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-						<StatCard title="Total events" value={formatNumber(summary?.total_events ?? 0)} icon={<BoltIcon className="size-4" />} />
-						<StatCard title="Active days" value={summary?.active_days ?? 0} icon={<ClockIcon className="size-4" />} />
+						<StatCard
+							title="Total events"
+							value={formatNumber(summary?.total_events ?? 0)}
+							icon={<BoltIcon className="size-4" />}
+						/>
+						<StatCard
+							title="Active days"
+							value={summary?.active_days ?? 0}
+							icon={<ClockIcon className="size-4" />}
+						/>
 						<StatCard
 							title="Event types"
 							value={Object.keys(summary?.event_counts ?? {}).length}
@@ -279,13 +310,19 @@ export function TelemetryPage() {
 							title="Most frequent"
 							value={topEvents[0]?.name ?? "—"}
 							icon={<BoltIcon className="size-4" />}
-							description={topEvents[0] ? `${formatNumber(topEvents[0].count)} events` : undefined}
+							description={
+								topEvents[0]
+									? `${formatNumber(topEvents[0].count)} events`
+									: undefined
+							}
 						/>
 					</div>
 
 					{timeline.length > 0 ? (
 						<Card>
-							<CardTitle className="text-sm font-medium">Event volume</CardTitle>
+							<CardTitle className="text-sm font-medium">
+								Event volume
+							</CardTitle>
 							<CardBody className="mt-3">
 								<TimelineChart data={timeline} />
 							</CardBody>
@@ -297,7 +334,9 @@ export function TelemetryPage() {
 							<CardTitle className="text-sm font-medium">Top events</CardTitle>
 							<CardBody className="mt-3">
 								{topEvents.length === 0 ? (
-									<p className="py-4 text-center text-sm text-muted-foreground">No data yet.</p>
+									<p className="py-4 text-center text-sm text-muted-foreground">
+										No data yet.
+									</p>
 								) : (
 									<ul className="flex flex-col gap-3">
 										{topEvents.map((ev) => {
@@ -305,15 +344,22 @@ export function TelemetryPage() {
 											return (
 												<li key={ev.name} className="flex flex-col gap-1">
 													<p className="flex items-center justify-between text-sm">
-														<span className="font-mono text-xs text-foreground">{ev.name}</span>
+														<span className="font-mono text-xs text-foreground">
+															{ev.name}
+														</span>
 														<span className="tabular-nums text-muted-foreground">
 															{formatNumber(ev.count)}
 														</span>
 													</p>
-													<div className="h-1.5 overflow-hidden rounded-full bg-sunken" role="presentation">
+													<div
+														className="h-1.5 overflow-hidden rounded-full bg-sunken"
+														role="presentation"
+													>
 														<div
 															className="h-full rounded-full bg-primary"
-															style={{ width: `${Math.round((ev.count / max) * 100)}%` }}
+															style={{
+																width: `${Math.round((ev.count / max) * 100)}%`,
+															}}
 														/>
 													</div>
 												</li>
@@ -324,7 +370,9 @@ export function TelemetryPage() {
 							</CardBody>
 						</Card>
 						<Card className="lg:col-span-2">
-							<CardTitle className="text-sm font-medium">Recent events</CardTitle>
+							<CardTitle className="text-sm font-medium">
+								Recent events
+							</CardTitle>
 							<CardBody className="mt-3">
 								<EventLog events={events} />
 							</CardBody>
@@ -353,15 +401,23 @@ function StatCard({
 				{title}
 				<span aria-hidden="true">{icon}</span>
 			</p>
-			<p className="mt-1 truncate text-2xl font-semibold tabular-nums text-foreground">{value}</p>
-			{description ? <p className="mt-1 text-xs text-muted-foreground">{description}</p> : null}
+			<p className="mt-1 truncate text-2xl font-semibold tabular-nums text-foreground">
+				{value}
+			</p>
+			{description ? (
+				<p className="mt-1 text-xs text-muted-foreground">{description}</p>
+			) : null}
 		</Card>
 	);
 }
 
 function TimelineChart({ data }: { data: TimelineBucket[] }) {
 	if (data.length === 0) {
-		return <p className="py-8 text-center text-sm text-muted-foreground">No timeline data.</p>;
+		return (
+			<p className="py-8 text-center text-sm text-muted-foreground">
+				No timeline data.
+			</p>
+		);
 	}
 	const max = Math.max(...data.map((d) => d.count), 1);
 	return (
@@ -407,7 +463,11 @@ const EVENT_TONES: Record<string, "success" | "danger" | "neutral"> = {
 function EventLog({ events }: { events: TelemetryEvent[] }) {
 	const [expanded, setExpanded] = useState<number | null>(null);
 	if (events.length === 0) {
-		return <p className="py-8 text-center text-sm text-muted-foreground">No events recorded yet.</p>;
+		return (
+			<p className="py-8 text-center text-sm text-muted-foreground">
+				No events recorded yet.
+			</p>
+		);
 	}
 	return (
 		<ul className="max-h-[500px] divide-y divide-border overflow-y-auto rounded-sm border border-border">
@@ -424,14 +484,22 @@ function EventLog({ events }: { events: TelemetryEvent[] }) {
 						>
 							{keys.length > 0 ? (
 								open ? (
-									<ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+									<ChevronDownIcon
+										className="size-4 shrink-0 text-muted-foreground"
+										aria-hidden="true"
+									/>
 								) : (
-									<ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+									<ChevronRightIcon
+										className="size-4 shrink-0 text-muted-foreground"
+										aria-hidden="true"
+									/>
 								)
 							) : (
 								<span className="w-4 shrink-0" aria-hidden="true" />
 							)}
-							<Badge tone={EVENT_TONES[event.name] ?? "neutral"}>{event.name}</Badge>
+							<Badge tone={EVENT_TONES[event.name] ?? "neutral"}>
+								{event.name}
+							</Badge>
 							<span className="flex-1 truncate text-xs text-muted-foreground">
 								{new Date(event.timestamp).toLocaleString()}
 							</span>

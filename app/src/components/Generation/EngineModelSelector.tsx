@@ -375,14 +375,14 @@ export function EngineCapabilitiesChips({ engine }: { engine: string }) {
 			{active.map((f) => (
 				<span
 					key={f}
-					className="rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent-foreground/80"
+					className="rounded-full border border-accent/30 bg-accent-muted px-2 py-0.5 text-xs font-medium text-accent-foreground/80"
 				>
 					{CAPABILITY_LABELS[f]}
 				</span>
 			))}
 			{caps.supported_tags.length > 0 && (
 				<span
-					className="rounded-full border border-border bg-muted/40 px-2 py-0.5 text-xs text-muted-foreground"
+					className="rounded-full border border-border bg-secondary px-2 py-0.5 text-xs text-muted-foreground"
 					title={caps.supported_tags.join(", ")}
 				>
 					{caps.supported_tags.slice(0, 4).join(" ")}
@@ -412,7 +412,7 @@ export function EngineCapabilitiesChips({ engine }: { engine: string }) {
 								<dt
 									className={
 										caps[key]
-											? "shrink-0 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent-foreground/80"
+											? "shrink-0 rounded-full border border-accent/30 bg-accent-muted px-2 py-0.5 text-xs font-medium text-accent-foreground/80"
 											: "shrink-0 rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground line-through"
 									}
 								>

@@ -6,7 +6,12 @@ import {
 } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Badge } from "@/ui/primitives";
+import type { VoiceProfileResponse } from "@/lib/api/types";
+import { ENGINE_DISPLAY_NAMES } from "@/lib/constants/engines";
+import { useDeleteProfile, useExportProfile } from "@/lib/hooks/useProfiles";
+import { usePerformanceSettings } from "@/lib/hooks/useSettings";
+import { cn } from "@/lib/utils/cn";
+import { useUIStore } from "@/stores/uiStore";
 import { Button } from "@/ui/button";
 import { Card, CardBody } from "@/ui/card";
 import {
@@ -16,12 +21,7 @@ import {
 	DialogFooter,
 	DialogTitle,
 } from "@/ui/dialog";
-import type { VoiceProfileResponse } from "@/lib/api/types";
-import { ENGINE_DISPLAY_NAMES } from "@/lib/constants/engines";
-import { useDeleteProfile, useExportProfile } from "@/lib/hooks/useProfiles";
-import { usePerformanceSettings } from "@/lib/hooks/useSettings";
-import { cn } from "@/lib/utils/cn";
-import { useUIStore } from "@/stores/uiStore";
+import { Badge } from "@/ui/primitives";
 
 /**
  * Voice profile card: select (with engine-compatibility dimming), edit,
@@ -45,12 +45,12 @@ export function ProfileCard({
 	const setSelectedId = useUIStore((s) => s.setSelectedProfileId);
 	const { settings: perf } = usePerformanceSettings();
 	const perfMode = perf?.performance_mode ?? false;
-	const selected = selectedProfileId === profile.id;
+	const selected = selectedId === profile.id;
 
 	const select = () => {
 		if (disabled && selected) {
-			setSelectedProfileId(null);
-			window.setTimeout(() => setSelectedProfileId(profile.id), 0);
+			setSelectedId(null);
+			window.setTimeout(() => setSelectedId(profile.id), 0);
 			return;
 		}
 		setSelectedId(selected ? null : profile.id);
@@ -62,10 +62,15 @@ export function ProfileCard({
 				role="button"
 				tabIndex={0}
 				aria-pressed={selected}
-				aria-label={t(selected ? "profiles.card.selectLabelSelected" : "profiles.card.selectLabel", {
-					name: profile.name,
-					language: profile.language,
-				})}
+				aria-label={t(
+					selected
+						? "profiles.card.selectLabelSelected"
+						: "profiles.card.selectLabel",
+					{
+						name: profile.name,
+						language: profile.language,
+					},
+				)}
 				onClick={select}
 				onKeyDown={(e) => {
 					if (e.target instanceof HTMLElement && e.target.closest("button")) {
@@ -78,7 +83,8 @@ export function ProfileCard({
 				}}
 				className={cn(
 					"flex h-[120px] cursor-pointer flex-col p-2 transition-shadow",
-					!perfMode && "[content-visibility:auto] [contain-intrinsic-size:120px]",
+					!perfMode &&
+						"[content-visibility:auto] [contain-intrinsic-size:120px]",
 					disabled ? "opacity-40 hover:opacity-60" : "hover:shadow-md",
 					selected && !disabled && "border-accent shadow-md",
 				)}
@@ -93,14 +99,18 @@ export function ProfileCard({
 					<Badge tone="neutral">{profile.language}</Badge>
 					{profile.voice_type === "preset" ? (
 						<Badge tone="neutral">
-							{ENGINE_DISPLAY_NAMES[profile.preset_engine ?? ""] ?? profile.preset_engine}
+							{ENGINE_DISPLAY_NAMES[profile.preset_engine ?? ""] ??
+								profile.preset_engine}
 						</Badge>
 					) : null}
 					{profile.voice_type === "designed" ? (
 						<Badge tone="neutral">{t("profiles.card.designed")}</Badge>
 					) : null}
 					{profile.effects_chain && profile.effects_chain.length > 0 ? (
-						<SparklesIcon className="size-3 fill-accent text-accent" aria-label="Has effects" />
+						<SparklesIcon
+							className="size-3 fill-accent text-accent"
+							aria-label="Has effects"
+						/>
 					) : null}
 				</p>
 				<CardBody className="mt-auto flex items-end justify-end gap-0.5 p-0">
@@ -165,7 +175,9 @@ export function ProfileCard({
 								setConfirmDelete(false);
 							}}
 						>
-							{deleteProfile.isPending ? t("profiles.deleteDialog.deleting") : t("common.delete")}
+							{deleteProfile.isPending
+								? t("profiles.deleteDialog.deleting")
+								: t("common.delete")}
 						</Button>
 					</DialogFooter>
 				</DialogContent>

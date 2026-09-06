@@ -316,7 +316,7 @@ export function QuickCloneDialog({
 							className={cn(
 								"flex flex-col items-center justify-center gap-3 p-8 rounded-lg border-2 border-dashed cursor-pointer transition-colors",
 								dragOver
-									? "border-accent bg-accent/5"
+									? "border-accent bg-accent-muted"
 									: "border-muted-foreground/25 hover:border-muted-foreground/50 hover:bg-muted/30",
 							)}
 						>
@@ -336,7 +336,8 @@ export function QuickCloneDialog({
 											)}
 								</p>
 								<p className="text-xs text-muted-foreground mt-1">
-									WAV, MP3, OGG, FLAC · {MIN_DURATION_SECONDS}–{MAX_DURATION_SECONDS}s
+									WAV, MP3, OGG, FLAC · {MIN_DURATION_SECONDS}–
+									{MAX_DURATION_SECONDS}s
 								</p>
 							</div>
 						</div>
@@ -365,7 +366,7 @@ export function QuickCloneDialog({
 				{step === "naming" && (
 					<div className="p-6 space-y-4 animate-slide-up">
 						{/* Audio preview with play/pause */}
-						<div className="flex items-center gap-3 p-3 rounded-md bg-muted/50">
+						<div className="flex items-center gap-3 p-3 rounded-md bg-secondary">
 							<Button
 								variant="ghost"
 								size="icon"

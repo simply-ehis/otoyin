@@ -1,9 +1,4 @@
 import {
-	arrayMove,
-	SortableContext,
-	verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import {
 	closestCenter,
 	DndContext,
 	type DragEndEvent,
@@ -12,21 +7,21 @@ import {
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import {
+	arrayMove,
+	SortableContext,
+	sortableKeyboardCoordinates,
+	verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import {
+	ArrowDownTrayIcon,
+	ArrowUpTrayIcon,
 	ClipboardDocumentIcon,
 	MusicalNoteIcon,
 	PlusIcon,
-	ArrowDownTrayIcon,
-	ArrowUpTrayIcon,
 } from "@heroicons/react/24/outline";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/ui/button";
-import { SearchInput } from "@/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover";
-import { EmptyState, LoadingState } from "@/ui/states";
-import { useToast } from "@/ui/use-toast";
 import { apiClient } from "@/lib/api/client";
 import { getClip } from "@/lib/clip";
 import { useHistory } from "@/lib/hooks/useHistory";
@@ -40,6 +35,11 @@ import {
 import { useStoryPlayback } from "@/lib/hooks/useStoryPlayback";
 import { useGenerationStore } from "@/stores/generationStore";
 import { useStoryStore } from "@/stores/storyStore";
+import { Button } from "@/ui/button";
+import { SearchInput } from "@/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover";
+import { EmptyState, LoadingState } from "@/ui/states";
+import { useToast } from "@/ui/use-toast";
 import { SortableStoryChatItem } from "./StoryChatItem";
 
 /**
@@ -56,7 +56,9 @@ export function StoryContent() {
 	const reorderItems = useReorderStoryItems();
 	const exportAudio = useExportStoryAudio();
 	const addItem = useAddStoryItem();
-	const addPendingGeneration = useGenerationStore((s) => s.addPendingGeneration);
+	const addPendingGeneration = useGenerationStore(
+		(s) => s.addPendingGeneration,
+	);
 	const pendingCount = useGenerationStore((s) => s.pendingGenerationIds.size);
 	const importRef = useRef<HTMLInputElement>(null);
 	const dragDepth = useRef(0);
@@ -70,12 +72,13 @@ export function StoryContent() {
 	const isPlaying = useStoryStore((s) => s.isPlaying);
 	const currentTimeMs = useStoryStore((s) => s.currentTimeMs);
 	const playbackStoryId = useStoryStore((s) => s.playbackStoryId);
-	const trackConfigs = useStoryStore((s) => s.trackConfigs);
 	useStoryPlayback(story?.items);
 
 	const sensors = useSensors(
 		useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-		useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+		useSensor(KeyboardSensor, {
+			coordinateGetter: sortableKeyboardCoordinates,
+		}),
 	);
 
 	const sorted = useMemo(() => {
@@ -95,7 +98,8 @@ export function StoryContent() {
 			(gen) =>
 				gen.status === "completed" &&
 				!inStory.has(gen.id) &&
-				(gen.text.toLowerCase().includes(q) || gen.profile_name.toLowerCase().includes(q)),
+				(gen.text.toLowerCase().includes(q) ||
+					gen.profile_name.toLowerCase().includes(q)),
 		);
 	}, [historyData, story, search]);
 
@@ -139,7 +143,10 @@ export function StoryContent() {
 			setImporting(true);
 			try {
 				const generation = await apiClient.importAudio(file);
-				await addItem.mutateAsync({ storyId: story.id, data: { generation_id: generation.id } });
+				await addItem.mutateAsync({
+					storyId: story.id,
+					data: { generation_id: generation.id },
+				});
 				setAddOpen(false);
 			} catch (error: unknown) {
 				toast({
@@ -165,7 +172,11 @@ export function StoryContent() {
 				{
 					onSuccess: () => setAddOpen(false),
 					onError: (error) =>
-						toast({ title: t("storyContent.toast.pasteFailed"), description: error.message, variant: "destructive" }),
+						toast({
+							title: t("storyContent.toast.pasteFailed"),
+							description: error.message,
+							variant: "destructive",
+						}),
 				},
 			);
 		} catch (error: unknown) {
@@ -242,7 +253,9 @@ export function StoryContent() {
 						{story.name}
 					</h2>
 					{story.description ? (
-						<p className="mt-1 text-sm text-muted-foreground">{story.description}</p>
+						<p className="mt-1 text-sm text-muted-foreground">
+							{story.description}
+						</p>
 					) : null}
 				</div>
 				<span className="flex shrink-0 items-center gap-2">
@@ -252,7 +265,10 @@ export function StoryContent() {
 						</span>
 					) : null}
 					<Button variant="outline" size="sm" onClick={pasteClip}>
-						<ClipboardDocumentIcon className="mr-1.5 size-4" aria-hidden="true" />
+						<ClipboardDocumentIcon
+							className="mr-1.5 size-4"
+							aria-hidden="true"
+						/>
 						{t("storyContent.pasteClip")}
 					</Button>
 					<Popover open={addOpen} onOpenChange={setAddOpen}>
@@ -279,14 +295,21 @@ export function StoryContent() {
 									disabled={importing}
 									onClick={() => importRef.current?.click()}
 								>
-									<ArrowUpTrayIcon className="mr-1.5 size-4" aria-hidden="true" />
-									{importing ? t("storyContent.importing") : t("storyContent.importAudio")}
+									<ArrowUpTrayIcon
+										className="mr-1.5 size-4"
+										aria-hidden="true"
+									/>
+									{importing
+										? t("storyContent.importing")
+										: t("storyContent.importAudio")}
 								</Button>
 							</div>
 							<ul className="max-h-60 overflow-y-auto">
 								{available.length === 0 ? (
 									<li className="p-4 text-center text-sm text-muted-foreground">
-										{search ? t("storyContent.searchNoMatches") : t("storyContent.searchNoAvailable")}
+										{search
+											? t("storyContent.searchNoMatches")
+											: t("storyContent.searchNoAvailable")}
 									</li>
 								) : (
 									available.map((gen) => (
@@ -295,7 +318,10 @@ export function StoryContent() {
 												type="button"
 												onClick={() =>
 													addItem.mutate(
-														{ storyId: story.id, data: { generation_id: gen.id } },
+														{
+															storyId: story.id,
+															data: { generation_id: gen.id },
+														},
 														{
 															onSuccess: () => {
 																setAddOpen(false);
@@ -312,9 +338,13 @@ export function StoryContent() {
 												}
 												className="w-full border-b border-border px-3 py-2 text-left transition-colors last:border-b-0 hover:bg-secondary"
 											>
-												<p className="text-sm font-medium text-foreground">{gen.profile_name}</p>
+												<p className="text-sm font-medium text-foreground">
+													{gen.profile_name}
+												</p>
 												<p className="truncate text-xs text-muted-foreground">
-													{gen.text.length > 50 ? `${gen.text.slice(0, 50)}…` : gen.text}
+													{gen.text.length > 50
+														? `${gen.text.slice(0, 50)}…`
+														: gen.text}
 												</p>
 											</button>
 										</li>
@@ -332,7 +362,10 @@ export function StoryContent() {
 							onClick={() =>
 								exportAudio.mutate(
 									{ storyId: story.id, storyName: story.name },
-									{ onError: (error) => fail(t("storyContent.toast.exportFailed"))(error) },
+									{
+										onError: (error) =>
+											fail(t("storyContent.toast.exportFailed"))(error),
+									},
 								)
 							}
 						>
@@ -358,13 +391,16 @@ export function StoryContent() {
 							if (!over || active.id === over.id) {
 								return;
 							}
-							const from = sorted.findIndex((i) => i.generation_id === active.id);
+							const from = sorted.findIndex(
+								(i) => i.generation_id === active.id,
+							);
 							const to = sorted.findIndex((i) => i.generation_id === over.id);
 							if (from === -1 || to === -1) {
 								return;
 							}
-							const { arrayMove } = require("@dnd-kit/sortable") as typeof import("@dnd-kit/sortable");
-							const order = arrayMove(sorted, from, to).map((i) => i.generation_id);
+							const order = arrayMove(sorted, from, to).map(
+								(i) => i.generation_id,
+							);
 							reorderItems.mutate(
 								{ storyId: story.id, data: { generation_ids: order } },
 								{
@@ -407,11 +443,16 @@ export function StoryContent() {
 											: () => {
 													apiClient
 														.regenerateGeneration(item.generation_id)
-														.then(() => addPendingGeneration(item.generation_id))
+														.then(() =>
+															addPendingGeneration(item.generation_id),
+														)
 														.catch((error: unknown) =>
 															toast({
 																title: t("storyContent.toast.regenerateFailed"),
-																description: error instanceof Error ? error.message : String(error),
+																description:
+																	error instanceof Error
+																		? error.message
+																		: String(error),
 																variant: "destructive",
 															}),
 														);

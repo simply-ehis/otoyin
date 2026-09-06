@@ -3,12 +3,12 @@ import {
 	ArrowPathIcon as RefreshCw,
 } from "@heroicons/react/24/outline";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Progress } from "@/components/ui/progress";
-import { ToastAction } from "@/components/ui/toast";
-import { useToast } from "@/components/ui/use-toast";
 import { showStudioErrorToast } from "@/lib/errors";
 import { usePlatform } from "@/platform/PlatformContext";
 import type { UpdateStatus } from "@/platform/types";
+import { Progress } from "@/ui/progress";
+import { ToastAction } from "@/ui/toast";
+import { useToast } from "@/ui/use-toast";
 
 // Re-export UpdateStatus for backwards compatibility
 export type { UpdateStatus };

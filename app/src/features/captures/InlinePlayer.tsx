@@ -1,9 +1,9 @@
 import { PauseIcon, PlayIcon } from "@heroicons/react/24/outline";
 import { useEffect, useRef, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
+import { debug } from "@/lib/utils/debug";
 import { Button } from "@/ui/button";
 import { Spinner } from "@/ui/primitives";
-import { debug } from "@/lib/utils/debug";
 
 function formatMs(ms?: number | null): string {
 	if (!ms || ms < 0) {
@@ -109,7 +109,9 @@ export function InlinePlayer({
 	}, [audioUrl]);
 
 	const shownMs =
-		total > 0 ? Math.round((playing || seconds > 0 ? seconds : total) * 1000) : (fallbackMs ?? 0);
+		total > 0
+			? Math.round((playing || seconds > 0 ? seconds : total) * 1000)
+			: (fallbackMs ?? 0);
 
 	return (
 		<div className={className}>
@@ -140,7 +142,10 @@ export function InlinePlayer({
 					) : playing ? (
 						<PauseIcon className="size-4 fill-current" aria-hidden="true" />
 					) : (
-						<PlayIcon className="ml-0.5 size-4 fill-current" aria-hidden="true" />
+						<PlayIcon
+							className="ml-0.5 size-4 fill-current"
+							aria-hidden="true"
+						/>
 					)}
 				</Button>
 				<div ref={waveRef} className="h-10 min-w-0 flex-1 select-none" />

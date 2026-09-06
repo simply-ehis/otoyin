@@ -11,7 +11,10 @@ export function Table({
 }: React.TableHTMLAttributes<HTMLTableElement>) {
 	return (
 		<div className="w-full overflow-x-auto rounded-md border border-border">
-			<table className={cn("w-full border-collapse text-sm", className)} {...props} />
+			<table
+				className={cn("w-full border-collapse text-sm", className)}
+				{...props}
+			/>
 		</div>
 	);
 }
@@ -27,7 +30,9 @@ export function TableBody({
 	className,
 	...props
 }: React.HTMLAttributes<HTMLTableSectionElement>) {
-	return <tbody className={cn("[&_tr:last-child]:border-0", className)} {...props} />;
+	return (
+		<tbody className={cn("[&_tr:last-child]:border-0", className)} {...props} />
+	);
 }
 
 export function TableRow({

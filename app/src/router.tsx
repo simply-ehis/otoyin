@@ -13,18 +13,18 @@ import { ServerStatusBanner } from "@/components/Banner/ServerStatusBanner";
 import { ErrorBoundary } from "@/components/ErrorBoundary/ErrorBoundary";
 import { RecommendedModelsBanner } from "@/components/RecommendedModelsBanner/RecommendedModelsBanner";
 import { AppLoadingScreen } from "@/components/ui/AppLoadingScreen";
-import { AutoUpdateFlow } from "@/features/settings/AutoUpdateFlow";
 import { Toaster } from "@/components/ui/toaster";
+import { AutoUpdateFlow } from "@/features/settings/AutoUpdateFlow";
 import { TabIntroMount } from "@/features/onboarding/TabIntro";
 
 const MiniGame = lazy(() =>
-	import("@/components/MiniGame/MiniGame").then((m) => ({
-		default: m.MiniGame,
+	import("@/features/game/GameModal").then((m) => ({
+		default: m.GameModal,
 	})),
 );
 const GenerationGameNudge = lazy(() =>
-	import("@/components/MiniGame/MiniGame").then((m) => ({
-		default: m.GenerationGameNudge,
+	import("@/features/game/GameNudge").then((m) => ({
+		default: m.GameNudge,
 	})),
 );
 
@@ -48,83 +48,77 @@ const Sidebar = lazy(() =>
 
 // Lazy-loaded page components for code splitting
 const CapturesTab = lazy(() =>
-	import("@/components/CapturesTab/CapturesTab").then((m) => ({
+	import("@/features/captures/CapturesTab").then((m) => ({
 		default: m.CapturesTab,
 	})),
 );
 const EffectsTab = lazy(() =>
-	import("@/components/EffectsTab/EffectsTab").then((m) => ({
+	import("@/features/effects/EffectsTab").then((m) => ({
 		default: m.EffectsTab,
 	})),
 );
 const MainEditor = lazy(() =>
-	import("@/components/MainEditor/MainEditor").then((m) => ({
-		default: m.MainEditor,
+	import("@/features/generate/GeneratePage").then((m) => ({
+		default: m.GeneratePage,
 	})),
 );
-const _ModelsTab = lazy(() =>
-	import("@/components/ModelsTab/ModelsTab").then((m) => ({
-		default: m.ModelsTab,
-	})),
-);
-void _ModelsTab;
 const AudioStudio = lazy(() =>
-	import("@/components/AudioStudio/AudioStudio").then((m) => ({
+	import("@/features/audioStudio/AudioStudio").then((m) => ({
 		default: m.AudioStudio,
 	})),
 );
 const AboutPage = lazy(() =>
-	import("@/components/ServerTab/AboutPage").then((m) => ({
+	import("@/features/settings/AboutPage").then((m) => ({
 		default: m.AboutPage,
 	})),
 );
 const CapturesPage = lazy(() =>
-	import("@/components/ServerTab/CapturesPage").then((m) => ({
+	import("@/features/settings/CapturesPage").then((m) => ({
 		default: m.CapturesPage,
 	})),
 );
 const GeneralPage = lazy(() =>
-	import("@/components/ServerTab/GeneralPage").then((m) => ({
+	import("@/features/settings/GeneralPage").then((m) => ({
 		default: m.GeneralPage,
 	})),
 );
 const GenerationPage = lazy(() =>
-	import("@/components/ServerTab/GenerationPage").then((m) => ({
+	import("@/features/settings/GenerationPage").then((m) => ({
 		default: m.GenerationPage,
 	})),
 );
 const GpuPage = lazy(() =>
-	import("@/components/ServerTab/GpuPage").then((m) => ({
+	import("@/features/settings/GpuPage").then((m) => ({
 		default: m.GpuPage,
 	})),
 );
 const LogsPage = lazy(() =>
-	import("@/components/ServerTab/LogsPage").then((m) => ({
+	import("@/features/settings/LogsPage").then((m) => ({
 		default: m.LogsPage,
 	})),
 );
 const MCPPage = lazy(() =>
-	import("@/components/ServerTab/MCPPage").then((m) => ({
+	import("@/features/settings/MCPPage").then((m) => ({
 		default: m.MCPPage,
 	})),
 );
 const SettingsLayout = lazy(() =>
-	import("@/components/ServerTab/ServerTab").then((m) => ({
+	import("@/features/settings/SettingsLayout").then((m) => ({
 		default: m.SettingsLayout,
 	})),
 );
 const StoriesTab = lazy(() =>
-	import("@/components/StoriesTab/StoriesTab").then((m) => ({
+	import("@/features/stories/StoriesTab").then((m) => ({
 		default: m.StoriesTab,
 	})),
 );
 const AudiobooksTab = lazy(() =>
-	import("@/components/Audiobooks/AudiobooksTab").then((m) => ({
+	import("@/features/audiobooks/AudiobooksTab").then((m) => ({
 		default: m.AudiobooksTab,
 	})),
 );
 const VoicesTab = lazy(() =>
-	import("@/components/VoicesTab/VoicesTab").then((m) => ({
+	import("@/features/voices/VoicesTab").then((m) => ({
 		default: m.VoicesTab,
 	})),
 );
@@ -144,191 +138,193 @@ const WorkspaceLanding = lazy(() =>
 	})),
 );
 const PitchMapView = lazy(() =>
-	import("@/components/Workspace/PitchMapView").then((m) => ({
+	import("@/features/workspace/PitchMapView").then((m) => ({
 		default: m.PitchMapView,
 	})),
 );
 const MixerView = lazy(() =>
-	import("@/components/Workspace/MixerView").then((m) => ({
+	import("@/features/workspace/MixerView").then((m) => ({
 		default: m.MixerView,
 	})),
 );
 const EffectsView = lazy(() =>
-	import("@/components/Workspace/EffectsView").then((m) => ({
-		default: m.EffectsView,
+	import("@/features/effects/EffectsTab").then((m) => ({
+		default: m.EffectsTab,
 	})),
 );
 const StudioView = lazy(() =>
-	import("@/components/Workspace/StudioView").then((m) => ({
+	import("@/features/workspace/StudioView").then((m) => ({
 		default: m.StudioView,
 	})),
 );
 const DspView = lazy(() =>
-	import("@/components/Workspace/DspView").then((m) => ({
+	import("@/features/workspace/DspView").then((m) => ({
 		default: m.DspView,
 	})),
 );
 const ADRView = lazy(() =>
-	import("@/components/Workspace/ADRView").then((m) => ({
+	import("@/features/workspace/adr/ADRView").then((m) => ({
 		default: m.ADRView,
 	})),
 );
 const AudioPlanView = lazy(() =>
-	import("@/components/Workspace/AudioPlanView").then((m) => ({
+	import("@/features/workspace/AudioPlanView").then((m) => ({
 		default: m.AudioPlanView,
 	})),
 );
 const BatchQueueView = lazy(() =>
-	import("@/components/Workspace/BatchQueueView").then((m) => ({
+	import("@/features/workspace/BatchQueueView").then((m) => ({
 		default: m.BatchQueueView,
 	})),
 );
 const VoiceChangerView = lazy(() =>
-	import("@/components/Workspace/VoiceChangerView").then((m) => ({
+	import("@/features/workspace/VoiceChangerView").then((m) => ({
 		default: m.VoiceChangerView,
 	})),
 );
 const NoiseReductionView = lazy(() =>
-	import("@/components/Workspace/NoiseReductionView").then((m) => ({
+	import("@/features/workspace/NoiseReductionView").then((m) => ({
 		default: m.NoiseReductionView,
 	})),
 );
 const ConversationView = lazy(() =>
-	import("@/components/Workspace/ConversationView").then((m) => ({
+	import("@/features/workspace/ConversationView").then((m) => ({
 		default: m.ConversationView,
 	})),
 );
 const PlatformExportView = lazy(() =>
-	import("@/components/Workspace/PlatformExportView").then((m) => ({
+	import("@/features/workspace/PlatformExportView").then((m) => ({
 		default: m.PlatformExportView,
 	})),
 );
-const TranscriptEditView = lazy(
-	() => import("@/components/Workspace/TranscriptEditView"),
+const TranscriptEditView = lazy(() =>
+	import("@/features/workspace/TranscriptEditView").then((m) => ({
+		default: m.TranscriptEditView,
+	})),
 );
 const SpatialView = lazy(() =>
-	import("@/components/Workspace/SpatialView").then((m) => ({
+	import("@/features/workspace/SpatialView").then((m) => ({
 		default: m.SpatialView,
 	})),
 );
 const VoiceConverterView = lazy(() =>
-	import("@/components/Workspace/VoiceConverterView").then((m) => ({
+	import("@/features/workspace/VoiceConverterView").then((m) => ({
 		default: m.VoiceConverterView,
 	})),
 );
 const SoundEffectsView = lazy(() =>
-	import("@/components/Workspace/SoundEffectsView").then((m) => ({
+	import("@/features/workspace/SoundEffectsView").then((m) => ({
 		default: m.SoundEffectsView,
 	})),
 );
 const AudioEnhanceView = lazy(() =>
-	import("@/components/Workspace/AudioEnhanceView").then((m) => ({
+	import("@/features/workspace/AudioEnhanceView").then((m) => ({
 		default: m.AudioEnhanceView,
 	})),
 );
 const VocalIsolationView = lazy(() =>
-	import("@/components/Workspace/VocalIsolationView").then((m) => ({
+	import("@/features/workspace/VocalIsolationView").then((m) => ({
 		default: m.VocalIsolationView,
 	})),
 );
 const AutomationView = lazy(() =>
-	import("@/components/Workspace/AutomationView").then((m) => ({
+	import("@/features/workspace/AutomationView").then((m) => ({
 		default: m.AutomationView,
 	})),
 );
 const MultiTakeCompingView = lazy(() =>
-	import("@/components/Workspace/MultiTakeCompingView").then((m) => ({
+	import("@/features/workspace/MultiTakeCompingView").then((m) => ({
 		default: m.MultiTakeCompingView,
 	})),
 );
 const LiveTranscriptView = lazy(() =>
-	import("@/components/Workspace/LiveTranscriptView").then((m) => ({
+	import("@/features/workspace/LiveTranscriptView").then((m) => ({
 		default: m.LiveTranscriptView,
 	})),
 );
 const DiarizationView = lazy(() =>
-	import("@/components/Workspace/DiarizationView").then((m) => ({
+	import("@/features/workspace/DiarizationView").then((m) => ({
 		default: m.DiarizationView,
 	})),
 );
 const StandaloneProjectPage = lazy(() =>
-	import("@/components/StandaloneProject/StandaloneProjectPage").then((m) => ({
+	import("@/features/content/StandaloneProjectPage").then((m) => ({
 		default: m.StandaloneProjectPage,
 	})),
 );
 const CommunityPresetsPage = lazy(() =>
-	import("@/components/CommunityPresets/CommunityPresetsPage").then((m) => ({
+	import("@/features/content/CommunityPresetsPage").then((m) => ({
 		default: m.CommunityPresetsPage,
 	})),
 );
 const ShortcutsPage = lazy(() =>
-	import("@/components/Shortcuts/ShortcutsPage").then((m) => ({
+	import("@/features/settings/ShortcutsPage").then((m) => ({
 		default: m.ShortcutsPage,
 	})),
+);
 const HelpPage = lazy(() =>
 	import("@/features/help/HelpPage").then((m) => ({
 		default: m.HelpPage,
 	})),
 );
-);
 const TimecodeDisplay = lazy(() =>
-	import("@/components/TimecodeDisplay/TimecodeDisplay").then((m) => ({
+	import("@/features/settings/TimecodePage").then((m) => ({
 		default: m.TimecodeDisplay,
 	})),
 );
 const SpectrogramView = lazy(() =>
-	import("@/components/Spectrogram/SpectrogramView").then((m) => ({
+	import("@/features/workspace/SpectrogramView").then((m) => ({
 		default: m.SpectrogramView,
 	})),
 );
 const ScriptingPage = lazy(() =>
-	import("@/components/Scripting/ScriptingPage").then((m) => ({
+	import("@/features/settings/ScriptingPage").then((m) => ({
 		default: m.ScriptingPage,
 	})),
 );
 const PluginsPage = lazy(() =>
-	import("@/components/Plugins/PluginsPage").then((m) => ({
+	import("@/features/settings/PluginsPage").then((m) => ({
 		default: m.PluginsPage,
 	})),
 );
 const LottieExportPage = lazy(() =>
-	import("@/components/LottieExport/LottieExportPage").then((m) => ({
+	import("@/features/settings/LottieExportPage").then((m) => ({
 		default: m.LottieExportPage,
 	})),
 );
 const TelemetryPage = lazy(() =>
-	import("@/components/Telemetry/TelemetryPage").then((m) => ({
+	import("@/features/settings/TelemetryPage").then((m) => ({
 		default: m.TelemetryPage,
 	})),
 );
 const ApiKeysPage = lazy(() =>
-	import("@/components/ServerTab/ApiKeysPage").then((m) => ({
+	import("@/features/settings/ApiKeysPage").then((m) => ({
 		default: m.ApiKeysPage,
 	})),
 );
 const VideoPreviewView = lazy(() =>
-	import("@/components/Workspace/VideoPreviewView").then((m) => ({
+	import("@/features/workspace/VideoPreviewView").then((m) => ({
 		default: m.VideoPreviewView,
 	})),
 );
 const YouTubeDownloadView = lazy(() =>
-	import("@/components/Workspace/YouTubeDownloadView").then((m) => ({
+	import("@/features/workspace/YouTubeDownloadView").then((m) => ({
 		default: m.YouTubeDownloadView,
 	})),
 );
 
 const DubbingTab = lazy(() =>
-	import("@/components/DubbingTab/DubbingTab").then((m) => ({
+	import("@/features/dubbing/DubbingTab").then((m) => ({
 		default: m.DubbingTab,
 	})),
 );
 const WhatsNewPage = lazy(() =>
-	import("@/components/WhatsNew/WhatsNewPage").then((m) => ({
+	import("@/features/content/WhatsNewPage").then((m) => ({
 		default: m.WhatsNewPage,
 	})),
 );
 const OffersPage = lazy(() =>
-	import("@/components/Offers/OffersPage").then((m) => ({
+	import("@/features/content/OffersPage").then((m) => ({
 		default: m.OffersPage,
 	})),
 );
@@ -338,17 +334,17 @@ const StorePage = lazy(() =>
 	})),
 );
 const LibraryTab = lazy(() =>
-	import("@/components/Library/LibraryTab").then((m) => ({
+	import("@/features/library/LibraryTab").then((m) => ({
 		default: m.LibraryTab,
 	})),
 );
 const SupportPage = lazy(() =>
-	import("@/components/ServerTab/SupportPage").then((m) => ({
+	import("@/features/settings/SupportPage").then((m) => ({
 		default: m.SupportPage,
 	})),
 );
 const ModelHealthPage = lazy(() =>
-	import("@/components/ServerTab/ModelHealthPage").then((m) => ({
+	import("@/features/settings/ModelHealthPage").then((m) => ({
 		default: m.ModelHealthPage,
 	})),
 );
@@ -413,7 +409,7 @@ function RootLayout() {
 	return (
 		<AppFrame>
 			<div className="flex flex-1 min-h-0 overflow-hidden">
-				<Suspense fallback={<div className="w-16 bg-muted/30 shrink-0" />}>
+				<Suspense fallback={<div className="w-16 bg-secondary shrink-0" />}>
 					<Sidebar isMacOS={isMacOS} />
 				</Suspense>
 
@@ -592,12 +588,12 @@ const settingsShortcutsRoute = createRoute({
 	getParentRoute: () => settingsRoute,
 	path: "/shortcuts",
 	component: ShortcutsPage,
+});
 
 const helpRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/help",
 	component: HelpPage,
-});
 });
 
 const settingsTimecodeRoute = createRoute({

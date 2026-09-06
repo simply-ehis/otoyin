@@ -9,11 +9,17 @@ import {
 } from "@heroicons/react/24/outline";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { Badge } from "@/ui/primitives";
+import { ClipboardPanel } from "@/features/clipboard/ClipboardPanel";
+import { apiClient } from "@/lib/api/client";
+import { copyClip } from "@/lib/clip";
+import { showStudioErrorToast } from "@/lib/errors";
+import { formatDuration, formatEngineName } from "@/lib/utils/format";
+import { usePlayerStore } from "@/stores/playerStore";
+import { Banner } from "@/ui/banner";
 import { Button } from "@/ui/button";
 import { Checkbox } from "@/ui/controls";
-import { SearchInput } from "@/ui/input";
-import { Input } from "@/ui/input";
+import { Input, SearchInput } from "@/ui/input";
+import { Badge, Separator } from "@/ui/primitives";
 import {
 	Select,
 	SelectContent,
@@ -21,14 +27,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/ui/select";
-import { Separator } from "@/ui/primitives";
-import { Banner } from "@/ui/banner";
-import { EmptyState, ScreenHeader, LoadingState } from "@/ui/states";
-import { apiClient } from "@/lib/api/client";
-import { copyClip } from "@/lib/clip";
-import { showStudioErrorToast } from "@/lib/errors";
-import { formatDuration, formatEngineName } from "@/lib/utils/format";
-import { usePlayerStore } from "@/stores/playerStore";
+import { EmptyState, LoadingState, ScreenHeader } from "@/ui/states";
 
 const KINDS = [
 	{ value: "_all", label: "All kinds" },
@@ -59,6 +58,7 @@ export function LibraryTab() {
 	const [sort, setSort] = useState("newest");
 	const [selected, setSelected] = useState<Set<string>>(new Set());
 	const [tagInput, setTagInput] = useState("");
+	const [showClips, setShowClips] = useState(false);
 	const tagInputRef = useRef<HTMLInputElement>(null);
 
 	const libraryQuery = useQuery({
@@ -105,6 +105,31 @@ export function LibraryTab() {
 		onError: (e: unknown) => showStudioErrorToast(e),
 	});
 
+	const batchCopy = useMutation({
+		mutationFn: async () => {
+			const targets = (libraryQuery.data?.items ?? []).filter((it) =>
+				selected.has(it.id),
+			);
+			for (const it of targets) {
+				await copyClip({
+					kind: it.kind as never,
+					id: it.id,
+					audioUrl: it.audio_url ?? "",
+					name: it.title,
+					durationMs: it.duration_ms ?? 0,
+				});
+			}
+			return targets.length;
+		},
+		onSuccess: (count) => {
+			void qc.invalidateQueries({ queryKey: ["clipboard-history"] });
+			void qc.invalidateQueries({ queryKey: ["clipboard-live"] });
+			setSelected(new Set());
+			setShowClips(count > 1);
+		},
+		onError: (e: unknown) => showStudioErrorToast(e),
+	});
+
 	const batchTag = useMutation({
 		mutationFn: async () => {
 			if (!tagInput.trim()) {
@@ -114,7 +139,10 @@ export function LibraryTab() {
 				libraryQuery.data?.items
 					.filter((it) => selected.has(it.id))
 					.map((it) => ({ kind: it.kind, id: it.id })) ?? [];
-			return apiClient.batchTag(items, { tag_name: tagInput.trim(), action: "add" });
+			return apiClient.batchTag(items, {
+				tag_name: tagInput.trim(),
+				action: "add",
+			});
 		},
 		onSuccess: () => {
 			void qc.invalidateQueries({ queryKey: ["library"] });
@@ -128,7 +156,9 @@ export function LibraryTab() {
 		if (!audioUrl) {
 			return;
 		}
-		const resolved = apiClient.getLibraryAudioUrl({ audio_url: audioUrl } as never);
+		const resolved = apiClient.getLibraryAudioUrl({
+			audio_url: audioUrl,
+		} as never);
 		usePlayerStore.getState().setAudioWithAutoPlay(resolved, id, null, id);
 	};
 
@@ -145,14 +175,30 @@ export function LibraryTab() {
 			<ScreenHeader
 				title="Library"
 				description="Every generation, capture, and sample. Search, tag, and batch-manage."
+				actions={
+					<Button
+						type="button"
+						size="sm"
+						variant={showClips ? "default" : "outline"}
+						onClick={() => setShowClips((v) => !v)}
+						title="Show copied clips — everything on the clipboard lives here"
+						aria-label="Toggle clips library"
+						aria-pressed={showClips}
+					>
+						<ClipboardDocumentIcon className="size-4" aria-hidden="true" />
+						Clips
+					</Button>
+				}
 			/>
+			{showClips ? <ClipboardPanel /> : null}
 			{libraryQuery.error ? (
 				<Banner
 					tone="danger"
 					onDismiss={() => void libraryQuery.refetch()}
 					dismissLabel="Retry loading"
 				>
-					Couldn&apos;t load the library — is the server running? Dismiss to retry.
+					Couldn&apos;t load the library — is the server running? Dismiss to
+					retry.
 				</Banner>
 			) : null}
 			<Separator />
@@ -208,7 +254,9 @@ export function LibraryTab() {
 
 			{selected.size > 0 ? (
 				<div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-card p-2 text-sm">
-					<span className="text-muted-foreground">{selected.size} selected</span>
+					<span className="text-muted-foreground">
+						{selected.size} selected
+					</span>
 					<Button
 						size="sm"
 						variant="outline"
@@ -239,7 +287,24 @@ export function LibraryTab() {
 							Tag
 						</Button>
 					</span>
-					<Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
+					<Button
+						size="sm"
+						variant="outline"
+						onClick={() => batchCopy.mutate()}
+						disabled={batchCopy.isPending}
+						loading={batchCopy.isPending}
+					>
+						<ClipboardDocumentIcon
+							className="mr-1 size-3.5"
+							aria-hidden="true"
+						/>
+						Copy{selected.size > 1 ? ` ${selected.size}` : ""}
+					</Button>
+					<Button
+						size="sm"
+						variant="ghost"
+						onClick={() => setSelected(new Set())}
+					>
 						Clear
 					</Button>
 				</div>
@@ -251,7 +316,11 @@ export function LibraryTab() {
 				) : items.length === 0 ? (
 					<EmptyState
 						icon={<ArchiveBoxIcon aria-hidden="true" />}
-						title={total === 0 ? "Your library is empty" : "No audio found for this filter"}
+						title={
+							total === 0
+								? "Your library is empty"
+								: "No audio found for this filter"
+						}
 						body={
 							total === 0
 								? "Generate, record, or import audio to fill it."
@@ -261,7 +330,10 @@ export function LibraryTab() {
 				) : (
 					<ul className="divide-y divide-border">
 						{items.map((it) => (
-							<li key={`${it.kind}:${it.id}`} className="flex items-center gap-3 p-3 transition-colors hover:bg-secondary">
+							<li
+								key={`${it.kind}:${it.id}`}
+								className="flex items-center gap-3 p-3 transition-colors hover:bg-secondary"
+							>
 								<Checkbox
 									label={`Select ${it.title}`}
 									checked={selected.has(it.id)}
@@ -270,7 +342,9 @@ export function LibraryTab() {
 								<button
 									type="button"
 									title={it.audio_url ? `Play ${it.title}` : "No audio"}
-									aria-label={it.audio_url ? `Play ${it.title}` : `${it.title} (no audio)`}
+									aria-label={
+										it.audio_url ? `Play ${it.title}` : `${it.title} (no audio)`
+									}
 									disabled={!it.audio_url}
 									onClick={() => play(it.audio_url, it.id)}
 									className="grid size-7 shrink-0 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-secondary-hover hover:text-foreground disabled:opacity-40"
@@ -278,15 +352,23 @@ export function LibraryTab() {
 									<PlayIcon className="size-3.5" aria-hidden="true" />
 								</button>
 								<div className="min-w-0 flex-1">
-									<p className="truncate text-sm font-medium text-foreground">{it.title}</p>
+									<p className="truncate text-sm font-medium text-foreground">
+										{it.title}
+									</p>
 									<p className="flex items-center gap-2 text-xs text-muted-foreground">
 										<Badge tone="neutral">{it.kind}</Badge>
-										{it.engine ? <span>{formatEngineName(it.engine)}</span> : null}
+										{it.engine ? (
+											<span>{formatEngineName(it.engine)}</span>
+										) : null}
 										{it.duration_ms != null ? (
-											<span className="tabular-nums">{formatDuration((it.duration_ms ?? 0) / 1000)}</span>
+											<span className="tabular-nums">
+												{formatDuration((it.duration_ms ?? 0) / 1000)}
+											</span>
 										) : null}
 										{it.created_at ? (
-											<span>{new Date(it.created_at).toLocaleDateString()}</span>
+											<span>
+												{new Date(it.created_at).toLocaleDateString()}
+											</span>
 										) : null}
 									</p>
 									{it.tags.length > 0 ? (
@@ -322,7 +404,10 @@ export function LibraryTab() {
 										}}
 										className="grid size-7 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-secondary-hover hover:text-foreground"
 									>
-										<ClipboardDocumentIcon className="size-3.5" aria-hidden="true" />
+										<ClipboardDocumentIcon
+											className="size-3.5"
+											aria-hidden="true"
+										/>
 									</button>
 									{it.audio_url ? (
 										<a
@@ -332,7 +417,10 @@ export function LibraryTab() {
 											aria-label={`Download ${it.title}`}
 											className="grid size-7 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-secondary-hover hover:text-foreground"
 										>
-											<ArrowDownTrayIcon className="size-3.5" aria-hidden="true" />
+											<ArrowDownTrayIcon
+												className="size-3.5"
+												aria-hidden="true"
+											/>
 										</a>
 									) : null}
 									<button

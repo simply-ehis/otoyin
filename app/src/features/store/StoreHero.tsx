@@ -1,5 +1,6 @@
 import {
 	ArrowPathIcon,
+	CloudArrowDownIcon,
 	FolderOpenIcon,
 	ShoppingBagIcon,
 } from "@heroicons/react/24/outline";
@@ -14,6 +15,8 @@ interface Props {
 	cacheDirPath: string | undefined;
 	wishlistSize: number;
 	wishlistOnly: boolean;
+	checkingUpdates: boolean;
+	onCheckUpdates: () => void;
 	onRefresh: () => void;
 	onToggleWishlistOnly: () => void;
 }
@@ -28,18 +31,21 @@ export function StoreHero({
 	cacheDirPath,
 	wishlistSize,
 	wishlistOnly,
+	checkingUpdates,
+	onCheckUpdates,
 	onRefresh,
 	onToggleWishlistOnly,
 }: Props) {
 	return (
 		<header className="relative overflow-hidden rounded-xl border bg-card p-5">
 			<div
-				className="pointer-events-none absolute -right-20 -top-20 size-64 rounded-full bg-accent/10 blur-3xl"
+				className="pointer-events-none absolute -right-20 -top-20 size-64 rounded-full bg-accent opacity-[0.08] blur-3xl"
 				aria-hidden
 			/>
 			<div className="relative flex flex-wrap items-start justify-between gap-4">
 				<div className="flex gap-3">
-					<div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-accent/20 bg-accent/15">
+					{" "}
+					<div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-accent/20 bg-accent-muted">
 						<ShoppingBagIcon className="size-6 text-accent" />
 					</div>
 					<div>
@@ -64,6 +70,20 @@ export function StoreHero({
 					</div>
 				</div>
 				<div className="flex flex-wrap gap-2">
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={onCheckUpdates}
+						disabled={checkingUpdates}
+						title="Fetch the latest catalog from the marketplace service"
+					>
+						{checkingUpdates ? (
+							<ArrowPathIcon className="size-4 animate-spin" />
+						) : (
+							<CloudArrowDownIcon className="size-4" />
+						)}
+						{checkingUpdates ? "Checking…" : "Check for updates"}
+					</Button>
 					<Button variant="outline" size="sm" onClick={onRefresh}>
 						<ArrowPathIcon className="size-4" />
 						Refresh

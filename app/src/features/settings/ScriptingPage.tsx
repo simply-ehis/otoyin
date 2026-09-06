@@ -4,6 +4,9 @@ import {
 	PlayIcon,
 } from "@heroicons/react/24/outline";
 import { useEffect, useState } from "react";
+import { apiClient } from "@/lib/api/client";
+import { cn } from "@/lib/utils/cn";
+import { debug } from "@/lib/utils/debug";
 import { Button } from "@/ui/button";
 import { Card, CardBody, CardTitle } from "@/ui/card";
 import { CodeConsole } from "@/ui/code-console";
@@ -18,9 +21,6 @@ import {
 } from "@/ui/select";
 import { EmptyState, LoadingState, ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
-import { apiClient } from "@/lib/api/client";
-import { debug } from "@/lib/utils/debug";
-import { cn } from "@/lib/utils/cn";
 
 interface ScriptFunction {
 	name: string;
@@ -83,7 +83,11 @@ export function ScriptingPage() {
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : "Execution failed";
 			setResult(msg);
-			toast({ title: "Script error", description: msg, variant: "destructive" });
+			toast({
+				title: "Script error",
+				description: msg,
+				variant: "destructive",
+			});
 		} finally {
 			setExecuting(false);
 		}
@@ -139,7 +143,10 @@ export function ScriptingPage() {
 							<CardBody className="mt-3 flex flex-col gap-4">
 								<Field label="Function" htmlFor="script-func">
 									<Select value={selected} onValueChange={setSelected}>
-										<SelectTrigger id="script-func" aria-label="Scripting function">
+										<SelectTrigger
+											id="script-func"
+											aria-label="Scripting function"
+										>
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
@@ -161,7 +168,11 @@ export function ScriptingPage() {
 										))}
 									</ul>
 								) : null}
-								<Field label="Arguments (JSON)" htmlFor="script-args" error={argsError ?? undefined}>
+								<Field
+									label="Arguments (JSON)"
+									htmlFor="script-args"
+									error={argsError ?? undefined}
+								>
 									<Textarea
 										id="script-args"
 										value={argsJson}
@@ -172,8 +183,15 @@ export function ScriptingPage() {
 									/>
 								</Field>
 								<div>
-									<Button onClick={run} disabled={executing || !selected} loading={executing}>
-										<PlayIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+									<Button
+										onClick={run}
+										disabled={executing || !selected}
+										loading={executing}
+									>
+										<PlayIcon
+											className="mr-1.5 h-3.5 w-3.5"
+											aria-hidden="true"
+										/>
 										{executing ? "Executing…" : "Run"}
 									</Button>
 								</div>
@@ -184,7 +202,10 @@ export function ScriptingPage() {
 					{result !== null ? (
 						<Card>
 							<CardTitle className="flex items-center gap-2 text-sm">
-								<CommandLineIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+								<CommandLineIcon
+									className="size-4 text-muted-foreground"
+									aria-hidden="true"
+								/>
 								Result
 							</CardTitle>
 							<CardBody className="mt-3">

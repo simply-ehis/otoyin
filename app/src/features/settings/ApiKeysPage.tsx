@@ -6,6 +6,12 @@ import {
 } from "@heroicons/react/24/outline";
 import { useCallback, useEffect, useState } from "react";
 import {
+	type ModelProvider,
+	modelProvidersClient,
+} from "@/lib/api/clientProviders";
+import { showStudioErrorToast } from "@/lib/errors";
+import { logger } from "@/lib/utils/debug";
+import {
 	AlertDialog,
 	AlertDialogAction,
 	AlertDialogCancel,
@@ -14,13 +20,10 @@ import {
 	AlertDialogFooter,
 	AlertDialogTitle,
 } from "@/ui/alert-dialog";
-import { Badge } from "@/ui/primitives";
 import { Button } from "@/ui/button";
 import { Field, Input } from "@/ui/input";
+import { Badge } from "@/ui/primitives";
 import { EmptyState, LoadingState, ScreenHeader } from "@/ui/states";
-import { type ModelProvider, modelProvidersClient } from "@/lib/api/clientProviders";
-import { logger } from "@/lib/utils/debug";
-import { showStudioErrorToast } from "@/lib/errors";
 
 const DOMAIN_LABELS: Record<string, string> = {
 	llm: "LLM (Chat/Assistant)",
@@ -116,13 +119,18 @@ export function ApiKeysPage() {
 			) : (
 				<div className="flex flex-col gap-4">
 					{grouped.map(({ domain, label, providers: items }) => (
-						<section key={domain} className="rounded-md border border-border p-4">
+						<section
+							key={domain}
+							className="rounded-md border border-border p-4"
+						>
 							<div className="mb-2 flex items-center justify-between">
 								<h3 className="text-sm font-medium text-foreground">{label}</h3>
 								<Button
 									variant="ghost"
 									size="sm"
-									onClick={() => setAddingDomain(addingDomain === domain ? null : domain)}
+									onClick={() =>
+										setAddingDomain(addingDomain === domain ? null : domain)
+									}
 								>
 									<PlusIcon className="h-3.5 w-3.5" aria-hidden="true" />
 									Add
@@ -140,11 +148,16 @@ export function ApiKeysPage() {
 									key={p.id}
 									className="mb-2 flex items-center gap-3 rounded-sm bg-secondary px-3 py-2"
 								>
-									<KeyIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+									<KeyIcon
+										className="size-4 shrink-0 text-muted-foreground"
+										aria-hidden="true"
+									/>
 									<div className="min-w-0 flex-1">
 										<p className="flex items-center gap-2 truncate text-sm font-medium text-foreground">
 											{p.name}
-											{p.is_default ? <Badge tone="accent">default</Badge> : null}
+											{p.is_default ? (
+												<Badge tone="accent">default</Badge>
+											) : null}
 										</p>
 										<p className="truncate text-xs text-muted-foreground/70">
 											{p.base_url}
@@ -162,7 +175,10 @@ export function ApiKeysPage() {
 												title="Set as default"
 												aria-label={`Set ${p.name} as default`}
 											>
-												<CheckCircleIcon className="size-4" aria-hidden="true" />
+												<CheckCircleIcon
+													className="size-4"
+													aria-hidden="true"
+												/>
 											</Button>
 										) : null}
 										<Button
@@ -185,7 +201,9 @@ export function ApiKeysPage() {
 										<Input
 											id={`prov-name-${domain}`}
 											value={form.name}
-											onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+											onChange={(e) =>
+												setForm((f) => ({ ...f, name: e.target.value }))
+											}
 											placeholder="Name (e.g. OpenAI, Groq)"
 										/>
 									</Field>
@@ -193,7 +211,9 @@ export function ApiKeysPage() {
 										<Input
 											id={`prov-url-${domain}`}
 											value={form.base_url}
-											onChange={(e) => setForm((f) => ({ ...f, base_url: e.target.value }))}
+											onChange={(e) =>
+												setForm((f) => ({ ...f, base_url: e.target.value }))
+											}
 											placeholder="Base URL (e.g. https://api.openai.com/v1)"
 											inputMode="url"
 										/>
@@ -203,21 +223,32 @@ export function ApiKeysPage() {
 											id={`prov-key-${domain}`}
 											type="password"
 											value={form.api_key}
-											onChange={(e) => setForm((f) => ({ ...f, api_key: e.target.value }))}
+											onChange={(e) =>
+												setForm((f) => ({ ...f, api_key: e.target.value }))
+											}
 											placeholder="API key"
 											autoComplete="off"
 										/>
 									</Field>
-									<Field label="Model ID (optional)" htmlFor={`prov-model-${domain}`}>
+									<Field
+										label="Model ID (optional)"
+										htmlFor={`prov-model-${domain}`}
+									>
 										<Input
 											id={`prov-model-${domain}`}
 											value={form.model}
-											onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))}
+											onChange={(e) =>
+												setForm((f) => ({ ...f, model: e.target.value }))
+											}
 											placeholder="Model ID (optional)"
 										/>
 									</Field>
 									<div className="flex gap-2">
-										<Button size="sm" onClick={() => create(domain)} disabled={!form.base_url.trim()}>
+										<Button
+											size="sm"
+											onClick={() => create(domain)}
+											disabled={!form.base_url.trim()}
+										>
 											Save
 										</Button>
 										<Button
@@ -245,12 +276,15 @@ export function ApiKeysPage() {
 				</div>
 			)}
 
-			<AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+			<AlertDialog
+				open={!!deleteTarget}
+				onOpenChange={(open) => !open && setDeleteTarget(null)}
+			>
 				<AlertDialogContent>
 					<AlertDialogTitle>Delete provider?</AlertDialogTitle>
 					<AlertDialogDescription>
-						This removes the {deleteTarget?.name} provider and its stored API key.
-						Models configured with this provider will stop working.
+						This removes the {deleteTarget?.name} provider and its stored API
+						key. Models configured with this provider will stop working.
 					</AlertDialogDescription>
 					<AlertDialogFooter>
 						<AlertDialogCancel>Cancel</AlertDialogCancel>

@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { UseFormReturn } from "react-hook-form";
+import { apiClient } from "@/lib/api/client";
+import type { VoiceAttributes } from "@/lib/api/types";
 import {
 	FormControl,
 	FormField,
@@ -7,6 +9,7 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/ui/form";
+import { Textarea } from "@/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -14,9 +17,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/ui/select";
-import { Textarea } from "@/ui/input";
-import { apiClient } from "@/lib/api/client";
-import type { VoiceAttributes } from "@/lib/api/types";
 
 const GENDER_OPTIONS = [
 	{ value: "female", label: "Female" },
@@ -102,7 +102,10 @@ const PACING_OPTIONS = [
 	{ value: "fast", label: "Fast" },
 ] as const;
 
-const ATTRIBUTE_OPTIONS: Record<string, readonly { value: string; label: string }[]> = {
+const ATTRIBUTE_OPTIONS: Record<
+	string,
+	readonly { value: string; label: string }[]
+> = {
 	gender: GENDER_OPTIONS,
 	age: AGE_OPTIONS,
 	accent: ACCENT_OPTIONS,
@@ -187,7 +190,9 @@ export function VoiceDesignPanel({
 						{current.label}
 					</span>
 					<span className="text-xs text-muted-foreground/70">
-						{current.design_mode === "text_description" ? "Text-described design" : "Voice design"}
+						{current.design_mode === "text_description"
+							? "Text-described design"
+							: "Voice design"}
 					</span>
 				</p>
 			) : null}
@@ -204,7 +209,9 @@ export function VoiceDesignPanel({
 						name={`voiceAttributes.${attr}` as never}
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel className="text-xs">{ATTRIBUTE_LABELS[attr] ?? attr}</FormLabel>
+								<FormLabel className="text-xs">
+									{ATTRIBUTE_LABELS[attr] ?? attr}
+								</FormLabel>
 								{current?.attributes_help?.[attr] ? (
 									<p className="-mb-1 mt-1 text-xs text-muted-foreground/70">
 										{current.attributes_help[attr]}
@@ -213,16 +220,28 @@ export function VoiceDesignPanel({
 								<Select
 									value={(field.value as string) ?? ""}
 									onValueChange={(v) => {
-										const attrs = (form.getValues("voiceAttributes" as never) as VoiceAttributes) ?? {};
-										form.setValue("voiceAttributes" as never, { ...attrs, [attr]: v } as never);
+										const attrs =
+											(form.getValues(
+												"voiceAttributes" as never,
+											) as VoiceAttributes) ?? {};
+										form.setValue(
+											"voiceAttributes" as never,
+											{ ...attrs, [attr]: v } as never,
+										);
 									}}
 								>
 									<FormControl>
 										<SelectTrigger className="h-8 text-xs">
-											<SelectValue placeholder={`Any ${(ATTRIBUTE_LABELS[attr] ?? attr).toLowerCase()}`} />
+											<SelectValue
+												placeholder={`Any ${(ATTRIBUTE_LABELS[attr] ?? attr).toLowerCase()}`}
+											/>
 										</SelectTrigger>
 									</FormControl>
-									<SelectContent className={options.length > 10 ? "max-h-[240px]" : undefined}>
+									<SelectContent
+										className={
+											options.length > 10 ? "max-h-[240px]" : undefined
+										}
+									>
 										{options.map((o) => (
 											<SelectItem key={o.value} value={o.value}>
 												{o.label}
@@ -243,7 +262,8 @@ export function VoiceDesignPanel({
 				render={({ field }) => (
 					<FormItem>
 						<FormLabel className="text-xs">
-							Additional notes <span className="text-muted-foreground/60">(optional)</span>
+							Additional notes{" "}
+							<span className="text-muted-foreground/60">(optional)</span>
 						</FormLabel>
 						<FormControl>
 							<Textarea
@@ -270,18 +290,32 @@ function ComposedPreview({
 	form: UseFormReturn<DesignFormValues & Record<string, unknown>>;
 	supported: string[];
 }) {
-	const attrs = (form.watch("voiceAttributes" as never) as VoiceAttributes) ?? {};
-	const extra = (form.watch("voiceDescription" as never) as string) ?? "";
-	const pick = (key: string, options: readonly { value: string; label: string }[]) =>
-		options.find((o) => o.value === (attrs as Record<string, unknown>)[key])?.label;
+	const attrs =
+		(form.watch("voiceAttributes" as never) as unknown as VoiceAttributes) ??
+		{};
+	const extra =
+		(form.watch("voiceDescription" as never) as unknown as string) ?? "";
+	const pick = (
+		key: string,
+		options: readonly { value: string; label: string }[],
+	) =>
+		options.find((o) => o.value === (attrs as Record<string, unknown>)[key])
+			?.label;
 
-	if (!Object.values(attrs).some(Boolean) && !extra.trim()) {
+	if (
+		!Object.values(attrs as Record<string, unknown>).some(Boolean) &&
+		!extra.trim()
+	) {
 		return null;
 	}
 	const parts: string[] = [];
-	const gender = supported.includes("gender") ? pick("gender", GENDER_OPTIONS) : undefined;
+	const gender = supported.includes("gender")
+		? pick("gender", GENDER_OPTIONS)
+		: undefined;
 	const age = supported.includes("age") ? pick("age", AGE_OPTIONS) : undefined;
-	const accent = supported.includes("accent") ? pick("accent", ACCENT_OPTIONS) : undefined;
+	const accent = supported.includes("accent")
+		? pick("accent", ACCENT_OPTIONS)
+		: undefined;
 	if (gender) {
 		parts.push(gender.toLowerCase());
 	}
@@ -316,7 +350,9 @@ function ComposedPreview({
 	}
 	return (
 		<div className="rounded-sm border border-dashed border-strong bg-secondary px-3 py-2">
-			<p className="mb-1 text-xs text-muted-foreground/70">Composed description:</p>
+			<p className="mb-1 text-xs text-muted-foreground/70">
+				Composed description:
+			</p>
 			<p className="text-xs italic text-foreground/90">{description}</p>
 		</div>
 	);

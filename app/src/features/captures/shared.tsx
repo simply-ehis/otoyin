@@ -4,6 +4,8 @@ import {
 	MusicalNoteIcon,
 } from "@heroicons/react/24/outline";
 import { useTranslation } from "react-i18next";
+import type { CaptureSource } from "@/lib/api/types";
+import { displayLabelForKey, modifierSideHint } from "@/lib/utils/keyCodes";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -14,8 +16,6 @@ import {
 	AlertDialogTitle,
 } from "@/ui/alert-dialog";
 import { Badge } from "@/ui/primitives";
-import type { CaptureSource } from "@/lib/api/types";
-import { displayLabelForKey, modifierSideHint } from "@/lib/utils/keyCodes";
 
 /** Capture age in m:ss. */
 export function formatDurationMs(ms?: number | null): string {
@@ -30,7 +30,11 @@ export function formatDurationMs(ms?: number | null): string {
 export function SourceBadge({ source }: { source: CaptureSource }) {
 	const { t } = useTranslation();
 	const Icon =
-		source === "dictation" ? MicrophoneIcon : source === "recording" ? EllipsisHorizontalCircleIcon : MusicalNoteIcon;
+		source === "dictation"
+			? MicrophoneIcon
+			: source === "recording"
+				? EllipsisHorizontalCircleIcon
+				: MusicalNoteIcon;
 	const label =
 		source === "dictation"
 			? t("captures.source.dictation")
@@ -95,7 +99,9 @@ export function DeleteCaptureDialog({
 				<AlertDialogFooter>
 					<AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
 					<AlertDialogAction onClick={onConfirm} disabled={deleting}>
-						{deleting ? t("captures.deleteDialog.deleting") : t("common.delete")}
+						{deleting
+							? t("captures.deleteDialog.deleting")
+							: t("common.delete")}
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>

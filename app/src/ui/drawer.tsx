@@ -1,5 +1,5 @@
-import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import type * as React from "react";
 import { cn } from "@/lib/utils/cn";
 
@@ -67,7 +67,10 @@ export function DrawerHeader({
 }: React.HTMLAttributes<HTMLDivElement>) {
 	return (
 		<div
-			className={cn("flex flex-col gap-1 border-b border-border p-4 pr-12", className)}
+			className={cn(
+				"flex flex-col gap-1 border-b border-border p-4 pr-12",
+				className,
+			)}
 			{...props}
 		/>
 	);
@@ -106,7 +109,10 @@ export function DrawerFooter({
 }: React.HTMLAttributes<HTMLDivElement>) {
 	return (
 		<div
-			className={cn("flex items-center gap-2 border-t border-border p-4", className)}
+			className={cn(
+				"flex items-center gap-2 border-t border-border p-4",
+				className,
+			)}
 			{...props}
 		/>
 	);

@@ -719,15 +719,21 @@ export interface SessionResponse {
 	updated_at: string;
 }
 
-export interface AutomationParameters {
-	points: number[][];
-	curves: string[];
-	default_curve: string;
+export interface AutomationParameterDef {
+	name: string;
+	min: number;
+	max: number;
+	default: number;
 }
 
-export interface CrossfadeCurves {
-	curves: Record<string, number[]>;
+export type AutomationParameters = Record<string, AutomationParameterDef>;
+
+export interface CrossfadeCurveDef {
+	name: string;
+	description: string;
 }
+
+export type CrossfadeCurves = Record<string, CrossfadeCurveDef>;
 
 export interface ConversationPresets {
 	presets: Record<string, unknown>;
@@ -906,6 +912,15 @@ export interface Catalog {
 	products: MarketplaceProduct[];
 	sig?: string;
 	offline_fallback?: boolean;
+}
+
+/** Result of POST /marketplace/catalog/refresh — reason explains a no-op
+ *  ("fresh" stale-gate skip, "no_url" remote unconfigured) and surfaces
+ *  genuine failures ("failed") so the Store can hint instead of staying
+ *  silent. Null when the catalog was refreshed. */
+export interface CatalogRefreshResult {
+	refreshed: boolean;
+	reason: "fresh" | "no_url" | "failed" | null;
 }
 
 export interface EntitlementResponse {

@@ -113,7 +113,9 @@ export function EmptyState({
 			) : null}
 			<p className="text-sm font-medium text-foreground">{title}</p>
 			{body ? (
-				<p className="max-w-[260px] text-[13px] text-muted-foreground">{body}</p>
+				<p className="max-w-[260px] text-[13px] text-muted-foreground">
+					{body}
+				</p>
 			) : null}
 			{action ? <div className="mt-1.5">{action}</div> : null}
 		</div>
@@ -131,20 +133,19 @@ export function LoadingState({
 	className?: string;
 }) {
 	return (
-		<div
-			role="status"
-			aria-label={label}
-			className={cn("flex flex-col gap-2", className)}
-		>
-			{Array.from({ length: lines }, (_, i) => (
-				<div
-					key={i}
-					aria-hidden="true"
-					className="h-4 animate-pulse rounded-sm bg-secondary"
-					style={{ width: `${100 - i * 13}%` }}
-				/>
-			))}
-		</div>
+		<output aria-label={label} className={cn("flex flex-col gap-2", className)}>
+			{Array.from({ length: lines }, (_, i) => {
+				const width = 100 - i * 13;
+				return (
+					<div
+						key={width}
+						aria-hidden="true"
+						className="h-4 animate-pulse rounded-sm bg-secondary"
+						style={{ width: `${width}%` }}
+					/>
+				);
+			})}
+		</output>
 	);
 }
 

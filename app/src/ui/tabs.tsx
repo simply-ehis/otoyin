@@ -10,10 +10,7 @@ export function Tabs(props: TabsPrimitive.TabsProps) {
 	return <TabsPrimitive.Root {...props} />;
 }
 
-export function TabsList({
-	className,
-	...props
-}: TabsPrimitive.TabsListProps) {
+export function TabsList({ className, ...props }: TabsPrimitive.TabsListProps) {
 	return (
 		<TabsPrimitive.List
 			className={cn(
@@ -68,12 +65,14 @@ export function PageTabs({
 	className?: string;
 }) {
 	return (
-		<div
-			role="navigation"
+		<nav
 			aria-label="Sections"
-			className={cn("flex items-center gap-0.5 overflow-x-auto pb-1", className)}
+			className={cn(
+				"flex items-center gap-0.5 overflow-x-auto pb-1",
+				className,
+			)}
 		>
 			{children}
-		</div>
+		</nav>
 	);
 }

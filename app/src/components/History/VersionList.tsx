@@ -63,7 +63,7 @@ export function VersionList({
 								)}
 								<span className="flex-1" />
 								{v.is_default && (
-									<span className="text-xs bg-accent/15 text-accent px-1.5 py-0.5 rounded-full">
+									<span className="text-xs bg-accent-muted text-accent px-1.5 py-0.5 rounded-full">
 										active
 									</span>
 								)}

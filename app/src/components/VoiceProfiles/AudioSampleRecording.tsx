@@ -118,7 +118,7 @@ export function AudioSampleRecording({
 					)}
 
 					{isRecording && (
-						<div className="relative flex flex-col items-center justify-center gap-4 p-4 border-2 border-accent rounded-lg bg-accent/5 min-h-[180px] overflow-hidden">
+						<div className="relative flex flex-col items-center justify-center gap-4 p-4 border-2 border-accent rounded-lg bg-accent-muted min-h-[180px] overflow-hidden">
 							{showWaveform && audioStream && (
 								<MemoizedWaveform audioStream={audioStream} />
 							)}
@@ -149,7 +149,7 @@ export function AudioSampleRecording({
 					)}
 
 					{file && !isRecording && (
-						<div className="flex flex-col items-center justify-center gap-4 p-4 border-2 border-primary rounded-lg bg-primary/5 min-h-[180px]">
+						<div className="flex flex-col items-center justify-center gap-4 p-4 border-2 border-primary rounded-lg bg-accent-muted min-h-[180px]">
 							<div className="flex items-center gap-2">
 								<Mic className="size-5 text-primary" />
 								<span className="font-medium">

@@ -1,14 +1,14 @@
 import { PlusIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Badge } from "@/ui/primitives";
-import { Button } from "@/ui/button";
-import { EmptyState, ErrorState, ScreenHeader } from "@/ui/states";
-import { Spinner } from "@/ui/primitives";
+import { RecordTakeButton } from "@/features/capture/RecordTakeButton";
 import { apiClient } from "@/lib/api/client";
 import type { EffectPresetResponse } from "@/lib/api/types";
 import { cn } from "@/lib/utils/cn";
 import { useEffectsStore } from "@/stores/effectsStore";
+import { Button } from "@/ui/button";
+import { Badge, Spinner } from "@/ui/primitives";
+import { EmptyState, ErrorState, ScreenHeader } from "@/ui/states";
 import { PresetDetail } from "./PresetDetail";
 
 function PresetCard({
@@ -22,7 +22,9 @@ function PresetCard({
 }) {
 	const { t } = useTranslation();
 	const name = preset.is_builtin
-		? t(`effects.builtinPresets.${preset.name}.name`, { defaultValue: preset.name })
+		? t(`effects.builtinPresets.${preset.name}.name`, {
+				defaultValue: preset.name,
+			})
 		: preset.name;
 	const description = preset.is_builtin
 		? t(`effects.builtinPresets.${preset.name}.description`, {
@@ -37,16 +39,25 @@ function PresetCard({
 			className={cn(
 				"w-full rounded-md border p-3 text-left transition-colors",
 				"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-				selected ? "border-accent bg-secondary" : "border-border bg-card hover:border-strong",
+				selected
+					? "border-accent bg-secondary"
+					: "border-border bg-card hover:border-strong",
 			)}
 		>
 			<p className="flex items-center gap-2">
 				<SparklesIcon
-					className={cn("size-4 shrink-0", selected ? "text-accent" : "text-muted-foreground")}
+					className={cn(
+						"size-4 shrink-0",
+						selected ? "text-accent" : "text-muted-foreground",
+					)}
 					aria-hidden="true"
 				/>
-				<span className="truncate text-sm font-medium text-foreground">{name}</span>
-				{preset.is_builtin ? <Badge tone="neutral">{t("effects.badge.builtin")}</Badge> : null}
+				<span className="truncate text-sm font-medium text-foreground">
+					{name}
+				</span>
+				{preset.is_builtin ? (
+					<Badge tone="neutral">{t("effects.badge.builtin")}</Badge>
+				) : null}
 			</p>
 			<p className="mt-1 line-clamp-1 pl-6 text-xs text-muted-foreground">
 				{description || t("effects.noDescription")}
@@ -79,7 +90,12 @@ export function EffectsTab() {
 	const creating = useEffectsStore((s) => s.isCreatingNew);
 	const setCreating = useEffectsStore((s) => s.setIsCreatingNew);
 
-	const { data: presets, isLoading, error, refetch } = useQuery({
+	const {
+		data: presets,
+		isLoading,
+		error,
+		refetch,
+	} = useQuery({
 		queryKey: ["effect-presets"],
 		queryFn: () => apiClient.listEffectPresets(),
 		staleTime: 30_000,
@@ -94,16 +110,24 @@ export function EffectsTab() {
 				title={t("effects.title")}
 				description="Stack, tune, and preview mastering chains."
 				actions={
-					<Button
-						size="sm"
-						onClick={() => {
-							setCreating(true);
-							setWorkingChain([]);
-						}}
-					>
-						<PlusIcon className="mr-1.5 size-4" aria-hidden="true" />
-						{t("effects.newPreset")}
-					</Button>
+					<div className="flex items-center gap-2">
+						<RecordTakeButton
+							filenameBase="effects-test-take"
+							label={t("effects.recordSample", {
+								defaultValue: "Record a test sample",
+							})}
+						/>
+						<Button
+							size="sm"
+							onClick={() => {
+								setCreating(true);
+								setWorkingChain([]);
+							}}
+						>
+							<PlusIcon className="mr-1.5 size-4" aria-hidden="true" />
+							{t("effects.newPreset")}
+						</Button>
+					</div>
 				}
 			/>
 			{error ? (
@@ -116,9 +140,12 @@ export function EffectsTab() {
 			<div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
 				<div className="flex w-full max-w-[360px] shrink-0 flex-col gap-4 overflow-y-auto">
 					{isLoading ? (
-						<p className="flex items-center justify-center py-12" role="status" aria-label="Loading presets">
+						<output
+							className="flex items-center justify-center py-12"
+							aria-label="Loading presets"
+						>
 							<Spinner size="md" />
-						</p>
+						</output>
 					) : (
 						<>
 							{builtIn.length > 0 ? (
@@ -170,7 +197,10 @@ export function EffectsTab() {
 									</h3>
 									<div className="rounded-md border-2 border-accent/40 bg-secondary p-3">
 										<p className="flex items-center gap-2 text-sm font-medium text-foreground">
-											<SparklesIcon className="size-4 text-accent" aria-hidden="true" />
+											<SparklesIcon
+												className="size-4 text-accent"
+												aria-hidden="true"
+											/>
 											{t("effects.unsaved.title")}
 										</p>
 										<p className="mt-1 text-xs text-muted-foreground">
@@ -180,7 +210,10 @@ export function EffectsTab() {
 								</section>
 							) : null}
 							{builtIn.length === 0 && custom.length === 0 && !creating ? (
-								<EmptyState title="No presets yet" body="Create your first effect chain." />
+								<EmptyState
+									title="No presets yet"
+									body="Create your first effect chain."
+								/>
 							) : null}
 						</>
 					)}

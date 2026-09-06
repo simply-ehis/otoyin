@@ -4,37 +4,36 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import * as z from "zod";
-import { Button } from "@/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogTitle,
-} from "@/ui/dialog";
-import { FormProvider } from "@/ui/form";
-import { useToast } from "@/ui/use-toast";
 import { apiClient } from "@/lib/api/client";
 import type { VoiceAttributes, VoiceType } from "@/lib/api/types";
 import { LANGUAGE_CODES, type LanguageCode } from "@/lib/constants/languages";
-import { debug } from "@/lib/utils/debug";
-import { formatAudioDuration, getAudioDuration } from "@/lib/utils/audio";
 import { showStudioErrorToast } from "@/lib/errors";
+import { useAudioPlayer } from "@/lib/hooks/useAudioPlayer";
+import { useAudioRecording } from "@/lib/hooks/useAudioRecording";
 import {
 	useAddSample,
 	useCreateProfile,
-	useDeleteAvatar,
 	useDeleteProfile,
 	useProfile,
-	useTranscription,
 	useUpdateProfile,
 	useUploadAvatar,
 } from "@/lib/hooks/useProfiles";
-import { useAudioPlayer } from "@/lib/hooks/useAudioPlayer";
-import { useAudioRecording } from "@/lib/hooks/useAudioRecording";
 import { useSystemAudioCapture } from "@/lib/hooks/useSystemAudioCapture";
+import { useTranscription } from "@/lib/hooks/useTranscription";
+import { getAudioDuration } from "@/lib/utils/audio";
+import { debug } from "@/lib/utils/debug";
 import { type ProfileFormDraft, useUIStore } from "@/stores/uiStore";
-import { SampleList } from "./SampleList";
+import { Button } from "@/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/ui/dialog";
+import { FormProvider } from "@/ui/form";
+import { useToast } from "@/ui/use-toast";
 import { InfoColumn } from "./InfoColumn";
-import { SourceColumn, type SampleMode, type VoiceSource } from "./SourceColumn";
+import { SampleList } from "./SampleList";
+import {
+	type SampleMode,
+	SourceColumn,
+	type VoiceSource,
+} from "./SourceColumn";
 
 const MAX_SECONDS = 30;
 
@@ -52,8 +51,12 @@ const schema = z
 	})
 	.refine(
 		(data) =>
-			!data.sampleFile || (data.referenceText && data.referenceText.trim().length > 0),
-		{ message: "Reference text is required with a sample.", path: ["referenceText"] },
+			!data.sampleFile ||
+			(data.referenceText && data.referenceText.trim().length > 0),
+		{
+			message: "Reference text is required with a sample.",
+			path: ["referenceText"],
+		},
 	);
 
 type Values = z.infer<typeof schema>;
@@ -97,7 +100,12 @@ export function ProfileForm() {
 
 	const form = useForm<Values>({
 		resolver: zodResolver(schema),
-		defaultValues: { name: "", description: "", language: "en", personality: "" },
+		defaultValues: {
+			name: "",
+			description: "",
+			language: "en",
+			personality: "",
+		},
 	});
 
 	const [source, setSource] = useState<VoiceSource>("clone");
@@ -106,18 +114,18 @@ export function ProfileForm() {
 	const [presetIds, setPresetIds] = useState<Set<string>>(new Set());
 	const [designEngine, setDesignEngine] = useState("parler_tts");
 	const [defaultEngine, setDefaultEngine] = useState("");
-	const [chain, setChain] = useState<import("@/lib/api/types").EffectConfig[]>([]);
+	const [chain, setChain] = useState<import("@/lib/api/types").EffectConfig[]>(
+		[],
+	);
 	const [chainDirty, setChainDirty] = useState(false);
 	const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 	const [audioSeconds, setAudioSeconds] = useState<number | null>(null);
-	const [validating, setValidating] = useState(false);
 
 	const createProfile = useCreateProfile();
 	const updateProfile = useUpdateProfile();
 	const deleteProfile = useDeleteProfile();
 	const addSample = useAddSample();
 	const uploadAvatar = useUploadAvatar();
-	const deleteAvatar = useDeleteAvatar();
 	const transcribe = useTranscription();
 	const { isPlaying, playPause, cleanup: cleanupAudio } = useAudioPlayer();
 
@@ -133,7 +141,9 @@ export function ProfileForm() {
 		onRecordingComplete: (blob) => {
 			form.setValue(
 				"sampleFile",
-				new File([blob], `recording-${Date.now()}.webm`, { type: blob.type || "audio/webm" }),
+				new File([blob], `recording-${Date.now()}.webm`, {
+					type: blob.type || "audio/webm",
+				}),
 				{ shouldValidate: true },
 			);
 		},
@@ -151,7 +161,9 @@ export function ProfileForm() {
 		onRecordingComplete: (blob) => {
 			form.setValue(
 				"sampleFile",
-				new File([blob], `system-audio-${Date.now()}.wav`, { type: blob.type || "audio/wav" }),
+				new File([blob], `system-audio-${Date.now()}.wav`, {
+					type: blob.type || "audio/wav",
+				}),
 				{ shouldValidate: true },
 			);
 		},
@@ -196,21 +208,31 @@ export function ProfileForm() {
 				try {
 					form.setValue(
 						"sampleFile",
-						base64ToFile(draft.sampleFileData, draft.sampleFileName, draft.sampleFileType || "audio/wav"),
+						base64ToFile(
+							draft.sampleFileData,
+							draft.sampleFileName,
+							draft.sampleFileType || "audio/wav",
+						),
 					);
 				} catch {
-					debug.log("ProfileForm: draft file unreadable, continuing without it");
+					debug.log(
+						"ProfileForm: draft file unreadable, continuing without it",
+					);
 				}
 			}
 		} else {
-			form.reset({ name: "", description: "", language: "en", personality: "" });
+			form.reset({
+				name: "",
+				description: "",
+				language: "en",
+				personality: "",
+			});
 			setChain([]);
 			setChainDirty(false);
 			setDefaultEngine("");
 		}
 		setAvatarPreview(null);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [open, editingId]);
+	}, [open, editing, draft, form.reset, form.setValue]);
 
 	// Validate sample duration when the file changes.
 	const sampleFile = form.watch("sampleFile");
@@ -220,7 +242,6 @@ export function ProfileForm() {
 			return;
 		}
 		let cancelled = false;
-		setValidating(true);
 		getAudioDuration(sampleFile)
 			.then((seconds) => {
 				if (!cancelled) {
@@ -234,7 +255,6 @@ export function ProfileForm() {
 			})
 			.finally(() => {
 				if (!cancelled) {
-					setValidating(false);
 				}
 			});
 		return () => {
@@ -256,8 +276,12 @@ export function ProfileForm() {
 				continue;
 			}
 			const structured =
-				((m as unknown as { structured_preset_voices?: unknown[] }).structured_preset_voices?.length ?? 0) > 0;
-			if (((m.preset_voices?.length ?? 0) > 0 || structured) && !seen.has(engine)) {
+				((m as unknown as { structured_preset_voices?: unknown[] })
+					.structured_preset_voices?.length ?? 0) > 0;
+			if (
+				((m.preset_voices?.length ?? 0) > 0 || structured) &&
+				!seen.has(engine)
+			) {
 				seen.set(engine, m.display_name || engine);
 			}
 		}
@@ -352,7 +376,9 @@ export function ProfileForm() {
 						description: data.description,
 						language: data.language,
 						default_engine: defaultEngine || undefined,
-						personality: data.personality?.trim() ? data.personality.trim() : undefined,
+						personality: data.personality?.trim()
+							? data.personality.trim()
+							: undefined,
 						...(editing?.voice_type === "designed"
 							? {
 									design_prompt: data.voiceDescription?.trim() || undefined,
@@ -363,7 +389,10 @@ export function ProfileForm() {
 				});
 				if (data.avatarFile) {
 					try {
-						await uploadAvatar.mutateAsync({ profileId: editingId, file: data.avatarFile });
+						await uploadAvatar.mutateAsync({
+							profileId: editingId,
+							file: data.avatarFile,
+						});
 					} catch (avatarError: unknown) {
 						toast({
 							title: t("profileForm.toast.avatarUploadFailed"),
@@ -395,7 +424,9 @@ export function ProfileForm() {
 				}
 				toast({
 					title: t("profileForm.toast.voiceUpdated"),
-					description: t("profileForm.toast.voiceUpdatedDescription", { name: data.name }),
+					description: t("profileForm.toast.voiceUpdatedDescription", {
+						name: data.name,
+					}),
 				});
 			} else if (source === "builtin") {
 				const first = [...presetIds][0];
@@ -415,22 +446,32 @@ export function ProfileForm() {
 					preset_engine: presetEngine,
 					preset_voice_id: [...presetIds].join(","),
 					default_engine: presetEngine,
-					personality: data.personality?.trim() ? data.personality.trim() : undefined,
+					personality: data.personality?.trim()
+						? data.personality.trim()
+						: undefined,
 				});
 				if (data.avatarFile) {
 					try {
-						await uploadAvatar.mutateAsync({ profileId: profile.id, file: data.avatarFile });
+						await uploadAvatar.mutateAsync({
+							profileId: profile.id,
+							file: data.avatarFile,
+						});
 					} catch {
 						// Avatar is best-effort; the profile itself exists.
 					}
 				}
 				toast({
 					title: t("profileForm.toast.profileCreated"),
-					description: t("profileForm.toast.profileCreatedBuiltin", { name: data.name }),
+					description: t("profileForm.toast.profileCreatedBuiltin", {
+						name: data.name,
+					}),
 				});
 			} else if (source === "design") {
 				const attrs = data.voiceAttributes ?? {};
-				if (!Object.values(attrs).some(Boolean) && !data.voiceDescription?.trim()) {
+				if (
+					!Object.values(attrs).some(Boolean) &&
+					!data.voiceDescription?.trim()
+				) {
 					toast({
 						title: t("profileForm.toast.noVoiceDescription"),
 						description: t("profileForm.toast.noVoiceDescriptionDescription"),
@@ -446,18 +487,25 @@ export function ProfileForm() {
 					design_prompt: data.voiceDescription?.trim() || undefined,
 					voice_attributes: data.voiceAttributes,
 					default_engine: designEngine || undefined,
-					personality: data.personality?.trim() ? data.personality.trim() : undefined,
+					personality: data.personality?.trim()
+						? data.personality.trim()
+						: undefined,
 				});
 				if (data.avatarFile) {
 					try {
-						await uploadAvatar.mutateAsync({ profileId: profile.id, file: data.avatarFile });
+						await uploadAvatar.mutateAsync({
+							profileId: profile.id,
+							file: data.avatarFile,
+						});
 					} catch {
 						// Best-effort as above.
 					}
 				}
 				toast({
 					title: t("profileForm.toast.profileCreated"),
-					description: t("profileForm.toast.profileCreatedDesign", { name: data.name }),
+					description: t("profileForm.toast.profileCreatedDesign", {
+						name: data.name,
+					}),
 				});
 			} else {
 				const file = form.getValues("sampleFile");
@@ -481,7 +529,9 @@ export function ProfileForm() {
 					description: data.description,
 					language: data.language,
 					default_engine: defaultEngine || undefined,
-					personality: data.personality?.trim() ? data.personality.trim() : undefined,
+					personality: data.personality?.trim()
+						? data.personality.trim()
+						: undefined,
 				});
 				try {
 					await addSample.mutateAsync({
@@ -491,14 +541,19 @@ export function ProfileForm() {
 					});
 					if (data.avatarFile) {
 						try {
-							await uploadAvatar.mutateAsync({ profileId: profile.id, file: data.avatarFile });
+							await uploadAvatar.mutateAsync({
+								profileId: profile.id,
+								file: data.avatarFile,
+							});
 						} catch {
 							// Best-effort as above.
 						}
 					}
 					toast({
 						title: t("profileForm.toast.profileCreated"),
-						description: t("profileForm.toast.profileCreatedSample", { name: data.name }),
+						description: t("profileForm.toast.profileCreatedSample", {
+							name: data.name,
+						}),
 					});
 				} catch (sampleError: unknown) {
 					let rolledBack = false;
@@ -521,7 +576,9 @@ export function ProfileForm() {
 							(sampleError instanceof Error
 								? sampleError.message
 								: t("profileForm.toast.sampleFailedDescription")) +
-							(rolledBack ? ` ${t("profileForm.toast.profileRolledBack")}` : ""),
+							(rolledBack
+								? ` ${t("profileForm.toast.profileRolledBack")}`
+								: ""),
 						variant: "destructive",
 					});
 					throw new Error("sample-failed");
@@ -537,14 +594,17 @@ export function ProfileForm() {
 			}
 			toast({
 				title: t("common.error"),
-				description: error instanceof Error ? error.message : t("profileForm.toast.saveFailed"),
+				description:
+					error instanceof Error
+						? error.message
+						: t("profileForm.toast.saveFailed"),
 				variant: "destructive",
 			});
 		}
 	};
 
-	const busy = createProfile.isPending || updateProfile.isPending || addSample.isPending;
-	const [designEngine, setDesignEngine] = useState("parler_tts");
+	const busy =
+		createProfile.isPending || updateProfile.isPending || addSample.isPending;
 
 	return (
 		<Dialog open={open} onOpenChange={close}>
@@ -560,7 +620,10 @@ export function ProfileForm() {
 					) : null}
 				</DialogTitle>
 				<FormProvider {...form}>
-					<form onSubmit={form.handleSubmit(submit)} className="mt-2 grid grid-cols-1 gap-6 md:grid-cols-2">
+					<form
+						onSubmit={form.handleSubmit(submit)}
+						className="mt-2 grid grid-cols-1 gap-6 md:grid-cols-2"
+					>
 						<div className="min-w-0">
 							{creating ? (
 								<SourceColumn
@@ -607,7 +670,6 @@ export function ProfileForm() {
 									}}
 									isPlaying={isPlaying}
 									isTranscribing={transcribe.isPending}
-									isValidating={validating}
 									audioSeconds={audioSeconds}
 									maxSeconds={MAX_SECONDS}
 								/>
@@ -628,7 +690,6 @@ export function ProfileForm() {
 								editingId={editingId}
 								editingAvatarPath={editing?.avatar_path}
 								source={source}
-								creating={creating}
 								defaultEngine={defaultEngine}
 								onDefaultEngine={setDefaultEngine}
 								showEffects={!!editingId}
@@ -646,17 +707,28 @@ export function ProfileForm() {
 									variant="ghost"
 									onClick={() => {
 										setDraft(null);
-										form.reset({ name: "", description: "", language: "en", personality: "" });
+										form.reset({
+											name: "",
+											description: "",
+											language: "en",
+											personality: "",
+										});
 									}}
 								>
 									{t("profileForm.discardDraft", "Discard draft")}
 								</Button>
 							) : null}
-							<Button type="button" variant="ghost" onClick={() => close(false)}>
+							<Button
+								type="button"
+								variant="ghost"
+								onClick={() => close(false)}
+							>
 								{t("common.cancel")}
 							</Button>
 							<Button type="submit" disabled={busy} loading={busy}>
-								{editingId ? t("profileForm.actions.saveChanges") : t("profileForm.actions.create")}
+								{editingId
+									? t("profileForm.actions.saveChanges")
+									: t("profileForm.actions.create")}
 							</Button>
 						</div>
 					</form>
@@ -668,11 +740,14 @@ export function ProfileForm() {
 
 function PresetSummary({ profileId }: { profileId: string | null }) {
 	const { data: profile } = useProfile(profileId ?? "");
-	const ids = profile?.preset_voice_id?.split(",").map((v: string) => v.trim()) ?? [];
+	const ids =
+		profile?.preset_voice_id?.split(",").map((v: string) => v.trim()) ?? [];
 	return (
 		<div className="flex flex-col gap-3 pt-4">
 			<div className="rounded-sm border border-border bg-card p-4">
-				<p className="text-xs uppercase tracking-wider text-muted-foreground">Preset voices</p>
+				<p className="text-xs uppercase tracking-wider text-muted-foreground">
+					Preset voices
+				</p>
 				<p className="mt-1 text-lg font-semibold text-foreground">
 					{ids.length <= 3 ? ids.join(" + ") : `${ids.length} voices blended`}
 				</p>
@@ -683,7 +758,8 @@ function PresetSummary({ profileId }: { profileId: string | null }) {
 				</p>
 			</div>
 			<p className="text-xs leading-relaxed text-muted-foreground">
-				Builtin presets cannot change their voice. Rename, describe, and tune effects from the other column.
+				Builtin presets cannot change their voice. Rename, describe, and tune
+				effects from the other column.
 			</p>
 		</div>
 	);

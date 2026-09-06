@@ -45,7 +45,7 @@ export function GenerateButton({
 					type="button"
 					variant="ghost"
 					size="icon"
-					className="size-10 rounded-full bg-destructive/80 hover:bg-destructive text-destructive-foreground shadow-lg hover:shadow-destructive/50 transition-colors transition-shadow duration-200"
+					className="size-10 rounded-full bg-destructive hover:brightness-110 text-destructive-foreground transition-[filter] duration-200"
 					aria-label="Cancel generation"
 					title="Cancel generation"
 					disabled={isCancelling}

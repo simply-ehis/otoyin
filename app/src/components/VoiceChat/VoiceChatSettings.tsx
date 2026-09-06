@@ -361,7 +361,7 @@ export function VoiceChatSettings({ onClose }: { onClose: () => void }) {
 						className={cn(
 							"text-xs px-1.5 py-0.5 rounded",
 							vcStatus.running
-								? "bg-green-500/20 text-green-400"
+								? "bg-success-soft text-success"
 								: "bg-muted text-muted-foreground",
 						)}
 					>
@@ -370,8 +370,8 @@ export function VoiceChatSettings({ onClose }: { onClose: () => void }) {
 				</div>
 
 				<p className="text-xs text-muted-foreground/60">
-					Real-time voice converter for calls/streaming. Chain: mic ? denoise ?
-					transcribe ? TTS ? enhance.
+					Real-time voice converter for calls/streaming. Chain: mic → denoise →
+					transcribe → TTS → enhance.
 				</p>
 
 				{/* Enable toggle */}

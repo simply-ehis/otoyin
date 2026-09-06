@@ -8,16 +8,15 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Badge } from "@/ui/primitives";
-import { Button } from "@/ui/button";
-import { Progress } from "@/ui/progress";
-import { Spinner } from "@/ui/primitives";
-import { ScreenHeader } from "@/ui/states";
 import { apiClient } from "@/lib/api/client";
 import type { CudaDownloadProgress, HealthResponse } from "@/lib/api/types";
 import { useServerHealth } from "@/lib/hooks/useServer";
 import { usePlatform } from "@/platform/PlatformContext";
 import { useServerStore } from "@/stores/serverStore";
+import { Button } from "@/ui/button";
+import { Badge, Spinner } from "@/ui/primitives";
+import { Progress } from "@/ui/progress";
+import { ScreenHeader } from "@/ui/states";
 import { SettingRow, SettingSection } from "./rows";
 
 type RestartPhase = "idle" | "stopping" | "waiting" | "ready";
@@ -45,7 +44,10 @@ function GpuInfoCard({ health }: { health: HealthResponse }) {
 	const { t } = useTranslation();
 	const hasGpu = health.gpu_available && health.gpu_type;
 	const gpuName = hasGpu
-		? health.gpu_type?.replace(/^(CUDA|ROCm|MPS|Metal|XPU|DirectML)\s*\((.+)\)$/, "$2") ||
+		? health.gpu_type?.replace(
+				/^(CUDA|ROCm|MPS|Metal|XPU|DirectML)\s*\((.+)\)$/,
+				"$2",
+			) ||
 			health.gpu_type ||
 			""
 		: null;
@@ -57,7 +59,10 @@ function GpuInfoCard({ health }: { health: HealthResponse }) {
 				{hasGpu ? (
 					<GpuIcon className="size-5 shrink-0 text-accent" />
 				) : (
-					<CpuChipIcon className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+					<CpuChipIcon
+						className="size-5 shrink-0 text-muted-foreground"
+						aria-hidden="true"
+					/>
 				)}
 				<div className="min-w-0 flex-1">
 					<p className="text-sm font-medium text-foreground">
@@ -69,14 +74,28 @@ function GpuInfoCard({ health }: { health: HealthResponse }) {
 								<span>{backend}</span>
 								{health.backend_variant && health.backend_variant !== "cpu" ? (
 									<>
-										<span aria-hidden="true" className="text-muted-foreground/50">|</span>
+										<span
+											aria-hidden="true"
+											className="text-muted-foreground/50"
+										>
+											|
+										</span>
 										<span className="uppercase">{health.backend_variant}</span>
 									</>
 								) : null}
 								{health.vram_used_mb != null && health.vram_used_mb > 0 ? (
 									<>
-										<span aria-hidden="true" className="text-muted-foreground/50">|</span>
-										<span>{t("settings.gpu.vramUsed", { mb: health.vram_used_mb.toFixed(0) })}</span>
+										<span
+											aria-hidden="true"
+											className="text-muted-foreground/50"
+										>
+											|
+										</span>
+										<span>
+											{t("settings.gpu.vramUsed", {
+												mb: health.vram_used_mb.toFixed(0),
+											})}
+										</span>
 									</>
 								) : null}
 							</>
@@ -85,7 +104,9 @@ function GpuInfoCard({ health }: { health: HealthResponse }) {
 						)}
 					</p>
 				</div>
-				{hasGpu ? <Badge tone="success">{t("settings.gpu.active")}</Badge> : null}
+				{hasGpu ? (
+					<Badge tone="success">{t("settings.gpu.active")}</Badge>
+				) : null}
 			</div>
 		</div>
 	);
@@ -123,7 +144,8 @@ export function GpuPage() {
 	const { data: cudaStatus, refetch: refetchCuda } = useQuery({
 		queryKey: ["cuda-status", serverUrl],
 		queryFn: () => apiClient.getCudaStatus(),
-		refetchInterval: (query) => (query.state.status === "pending" ? false : 10000),
+		refetchInterval: (query) =>
+			query.state.status === "pending" ? false : 10000,
 		retry: 1,
 		enabled: !!health,
 	});
@@ -156,7 +178,9 @@ export function GpuPage() {
 					void refetchCuda();
 				} else if (data.status === "error") {
 					source.close();
-					setError(data.error || tRef.current("settings.gpu.errors.downloadFailed"));
+					setError(
+						data.error || tRef.current("settings.gpu.errors.downloadFailed"),
+					);
 					setProgress(null);
 					void refetchCuda();
 				}
@@ -208,7 +232,10 @@ export function GpuPage() {
 		return null;
 	}
 	const hasNativeGpu =
-		health.gpu_available && !isCuda && health.gpu_type && !health.gpu_type.includes("CUDA");
+		health.gpu_available &&
+		!isCuda &&
+		health.gpu_type &&
+		!health.gpu_type.includes("CUDA");
 
 	return (
 		<div className="flex max-w-3xl flex-col gap-6">
@@ -223,7 +250,11 @@ export function GpuPage() {
 					{cudaDownloading && progress ? (
 						<SettingRow title={t("settings.gpu.cuda.downloading")}>
 							<div className="flex flex-col gap-1.5">
-								<Progress value={progress.progress} label="CUDA download progress" className="h-2" />
+								<Progress
+									value={progress.progress}
+									label="CUDA download progress"
+									className="h-2"
+								/>
 								<p className="flex items-center justify-between text-xs text-muted-foreground">
 									<span>
 										{progress.filename ||
@@ -257,7 +288,10 @@ export function GpuPage() {
 					{error ? (
 						<SettingRow title={t("common.error")}>
 							<p className="flex items-center gap-2 text-sm text-destructive">
-								<ExclamationCircleIcon className="size-4 shrink-0" aria-hidden="true" />
+								<ExclamationCircleIcon
+									className="size-4 shrink-0"
+									aria-hidden="true"
+								/>
 								{error}
 							</p>
 						</SettingRow>
@@ -290,7 +324,10 @@ export function GpuPage() {
 													});
 											}}
 										>
-											<ArrowDownTrayIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+											<ArrowDownTrayIcon
+												className="mr-1.5 h-3.5 w-3.5"
+												aria-hidden="true"
+											/>
 											{t("settings.gpu.download.button")}
 										</Button>
 									}
@@ -305,18 +342,21 @@ export function GpuPage() {
 											size="sm"
 											onClick={() => {
 												setError(null);
-												restartWithPolling(t("settings.gpu.errors.restartFailed")).catch(
-													(e: unknown) => {
-														setError(
-															e instanceof Error
-																? e.message
-																: t("settings.gpu.errors.restartFailed"),
-														);
-													},
-												);
+												restartWithPolling(
+													t("settings.gpu.errors.restartFailed"),
+												).catch((e: unknown) => {
+													setError(
+														e instanceof Error
+															? e.message
+															: t("settings.gpu.errors.restartFailed"),
+													);
+												});
 											}}
 										>
-											<ArrowUturnRightIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+											<ArrowUturnRightIcon
+												className="mr-1.5 h-3.5 w-3.5"
+												aria-hidden="true"
+											/>
 											{t("settings.gpu.switchToCuda.button")}
 										</Button>
 									}
@@ -335,7 +375,11 @@ export function GpuPage() {
 												setPhase("stopping");
 												apiClient
 													.deleteCudaBackend()
-													.then(() => restartWithPolling(t("settings.gpu.errors.switchCpu")))
+													.then(() =>
+														restartWithPolling(
+															t("settings.gpu.errors.switchCpu"),
+														),
+													)
 													.catch((e: unknown) => {
 														setError(
 															e instanceof Error
@@ -346,7 +390,10 @@ export function GpuPage() {
 													});
 											}}
 										>
-											<ArrowUturnRightIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+											<ArrowUturnRightIcon
+												className="mr-1.5 h-3.5 w-3.5"
+												aria-hidden="true"
+											/>
 											{t("settings.gpu.switchToCpu.button")}
 										</Button>
 									}
@@ -375,7 +422,10 @@ export function GpuPage() {
 													});
 											}}
 										>
-											<TrashIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+											<TrashIcon
+												className="mr-1.5 h-3.5 w-3.5"
+												aria-hidden="true"
+											/>
 											{t("settings.gpu.remove.button")}
 										</Button>
 									}

@@ -43,7 +43,7 @@ export function ProductReviews({
 	const license = (product as unknown as { license?: string }).license;
 
 	return (
-		<div className="rounded-lg border bg-secondary/30 p-3">
+		<div className="rounded-lg border bg-secondary p-3">
 			{/* aggregate rating */}
 			<div className="flex items-center gap-2">
 				{avgRating ? (

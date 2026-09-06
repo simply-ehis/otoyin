@@ -71,18 +71,44 @@ export const CAPABILITY_LABELS: Record<string, string> = {
 };
 
 export const CAPABILITY_HELP: { key: string; title: string; body: string }[] = [
-	{ key: "clone_voice", title: "Voice cloning", body: "Learns a target voice from a short reference clip and reproduces it on new text." },
-	{ key: "emotion_control", title: "Emotion / instruct control", body: "Accepts an additive instruction (tone, mood, pacing) layered on top of the main text." },
-	{ key: "paralinguistic_tags", title: "Paralinguistic tags", body: "Inline [tag] markers like [laugh] or [sigh] inside the text shape delivery." },
-	{ key: "voice_design", title: "Voice design", body: "Generates a voice from a text description instead of a reference clip." },
-	{ key: "supports_editing", title: "Speech editing", body: "Edits existing audio in place rather than synthesizing from scratch." },
-	{ key: "gpu_only", title: "GPU only", body: "Requires an NVIDIA CUDA GPU. Unavailable on CPU-only machines." },
+	{
+		key: "clone_voice",
+		title: "Voice cloning",
+		body: "Learns a target voice from a short reference clip and reproduces it on new text.",
+	},
+	{
+		key: "emotion_control",
+		title: "Emotion / instruct control",
+		body: "Accepts an additive instruction (tone, mood, pacing) layered on top of the main text.",
+	},
+	{
+		key: "paralinguistic_tags",
+		title: "Paralinguistic tags",
+		body: "Inline [tag] markers like [laugh] or [sigh] inside the text shape delivery.",
+	},
+	{
+		key: "voice_design",
+		title: "Voice design",
+		body: "Generates a voice from a text description instead of a reference clip.",
+	},
+	{
+		key: "supports_editing",
+		title: "Speech editing",
+		body: "Edits existing audio in place rather than synthesizing from scratch.",
+	},
+	{
+		key: "gpu_only",
+		title: "GPU only",
+		body: "Requires an NVIDIA CUDA GPU. Unavailable on CPU-only machines.",
+	},
 ];
 
 /** Live capability map from the model-status cache (no extra fetch). */
 export function useEngineCapabilities(): Record<string, EngineCapabilities> {
 	const queryClient = useQueryClient();
-	const data = queryClient.getQueryData<ModelStatusListResponse>(["modelStatus"]);
+	const data = queryClient.getQueryData<ModelStatusListResponse>([
+		"modelStatus",
+	]);
 	const map: Record<string, EngineCapabilities> = {};
 	for (const m of data?.models ?? []) {
 		const key = m.engine ?? m.model_name;
@@ -118,13 +144,21 @@ export function isProfileCompatibleWithEngine(
 }
 
 /** Downloaded TTS engines, optionally filtered by profile compatibility. */
-export function useDownloadedEngines(profile?: VoiceProfileResponse | null): Set<string> {
+export function useDownloadedEngines(
+	profile?: VoiceProfileResponse | null,
+): Set<string> {
 	const queryClient = useQueryClient();
-	const data = queryClient.getQueryData<ModelStatusListResponse>(["modelStatus"]);
+	const data = queryClient.getQueryData<ModelStatusListResponse>([
+		"modelStatus",
+	]);
 	return new Set(
 		(data?.models ?? [])
 			.filter((m) => m.downloaded && m.category === "tts" && m.engine)
-			.filter((m) => !profile || isProfileCompatibleWithEngine(profile, m.engine as string))
+			.filter(
+				(m) =>
+					!profile ||
+					isProfileCompatibleWithEngine(profile, m.engine as string),
+			)
 			.map((m) => m.engine as string),
 	);
 }
@@ -135,7 +169,9 @@ export function selectableEngines(
 ): EngineOption[] {
 	let opts = [...ENGINE_OPTIONS];
 	if (profile) {
-		opts = opts.filter((opt) => isProfileCompatibleWithEngine(profile, opt.engine));
+		opts = opts.filter((opt) =>
+			isProfileCompatibleWithEngine(profile, opt.engine),
+		);
 	}
 	if (downloaded) {
 		opts = opts.filter((opt) => downloaded.has(opt.engine));
@@ -150,7 +186,9 @@ export function installableEngines(
 ): EngineOption[] {
 	let opts = [...ENGINE_OPTIONS].filter((opt) => opt.engine !== "cloud");
 	if (profile) {
-		opts = opts.filter((opt) => isProfileCompatibleWithEngine(profile, opt.engine));
+		opts = opts.filter((opt) =>
+			isProfileCompatibleWithEngine(profile, opt.engine),
+		);
 	}
 	if (downloaded) {
 		opts = opts.filter((opt) => !downloaded.has(opt.engine));
@@ -172,6 +210,8 @@ export function applyEngineSelection(
 	}
 	const available = getLanguageOptionsForEngine(value);
 	if (!available.some((l) => l.value === currentLanguage)) {
-		setLanguage((available[0]?.value ?? "en") as GenerationFormValues["language"]);
+		setLanguage(
+			(available[0]?.value ?? "en") as GenerationFormValues["language"],
+		);
 	}
 }

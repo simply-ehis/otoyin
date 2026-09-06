@@ -12,8 +12,15 @@ import {
 	TagIcon,
 	TrashIcon,
 } from "@heroicons/react/24/outline";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { PillAudioBars } from "@/features/capture/CapturePill";
+import { apiClient } from "@/lib/api/client";
+import type { CaptureResponse, VoiceProfileResponse } from "@/lib/api/types";
+import { showStudioErrorToast } from "@/lib/errors";
+import type { UseCaptureRecordingSessionResult } from "@/lib/hooks/useCaptureRecordingSession";
+import { cn } from "@/lib/utils/cn";
+import { formatAbsoluteDate } from "@/lib/utils/format";
 import { Button } from "@/ui/button";
 import {
 	DropdownMenu,
@@ -23,13 +30,6 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/ui/dropdown-menu";
-import { apiClient } from "@/lib/api/client";
-import type { CaptureResponse, VoiceProfileResponse } from "@/lib/api/types";
-import type { UseCaptureRecordingSessionResult } from "@/lib/hooks/useCaptureRecordingSession";
-import { showStudioErrorToast } from "@/lib/errors";
-import { cn } from "@/lib/utils/cn";
-import { formatAbsoluteDate } from "@/lib/utils/format";
-import { PillAudioBars } from "@/features/capture/CapturePill";
 import { InlinePlayer } from "./InlinePlayer";
 import { SourceBadge } from "./shared";
 
@@ -40,6 +40,12 @@ function TagAdder({ captureId }: { captureId: string }) {
 	const [open, setOpen] = useState(false);
 	const [name, setName] = useState("");
 	const [saving, setSaving] = useState(false);
+	const inputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		if (open) {
+			inputRef.current?.focus();
+		}
+	}, [open]);
 	if (!open) {
 		return (
 			<Button
@@ -75,17 +81,27 @@ function TagAdder({ captureId }: { captureId: string }) {
 			}}
 		>
 			<input
+				ref={inputRef}
 				value={name}
 				onChange={(e) => setName(e.target.value)}
 				placeholder="Tag name"
 				aria-label="Tag name"
-				autoFocus
 				className="h-8 w-32 rounded-sm border border-input bg-sunken px-2 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-ring focus:outline-none"
 			/>
-			<Button type="submit" size="sm" disabled={!name.trim() || saving} loading={saving}>
+			<Button
+				type="submit"
+				size="sm"
+				disabled={!name.trim() || saving}
+				loading={saving}
+			>
 				Add
 			</Button>
-			<Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
+			<Button
+				type="button"
+				variant="ghost"
+				size="sm"
+				onClick={() => setOpen(false)}
+			>
 				Cancel
 			</Button>
 		</form>
@@ -145,11 +161,15 @@ export function DetailPane({
 				{formatAbsoluteDate(capture.created_at)}
 				{capture.language ? (
 					<>
-						<span aria-hidden="true" className="text-muted-foreground/50">·</span>
+						<span aria-hidden="true" className="text-muted-foreground/50">
+							·
+						</span>
 						<span>{capture.language.toUpperCase()}</span>
 					</>
 				) : null}
-				<span aria-hidden="true" className="text-muted-foreground/50">·</span>
+				<span aria-hidden="true" className="text-muted-foreground/50">
+					·
+				</span>
 				<SourceBadge source={capture.source} />
 			</p>
 
@@ -161,11 +181,8 @@ export function DetailPane({
 			</div>
 
 			<div className="mb-3 flex items-center gap-3">
-				<div
-					role="group"
-					aria-label="Transcript version"
-					className="inline-flex rounded-md border border-border bg-sunken p-0.5"
-				>
+				<fieldset className="inline-flex rounded-md border border-border bg-sunken p-0.5">
+					<legend className="sr-only">Transcript version</legend>
 					<button
 						type="button"
 						onClick={() => onShowRefined(true)}
@@ -173,10 +190,15 @@ export function DetailPane({
 						aria-pressed={showingRefined}
 						className={cn(
 							"rounded-[6px] px-3 py-1 text-xs font-medium transition-colors disabled:opacity-40",
-							showingRefined ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+							showingRefined
+								? "bg-card text-foreground shadow-sm"
+								: "text-muted-foreground hover:text-foreground",
 						)}
 					>
-						<SparklesIcon className="mr-1 inline size-3 -translate-y-px" aria-hidden="true" />
+						<SparklesIcon
+							className="mr-1 inline size-3 -translate-y-px"
+							aria-hidden="true"
+						/>
 						{t("captures.transcript.refined")}
 					</button>
 					<button
@@ -185,17 +207,24 @@ export function DetailPane({
 						aria-pressed={!showingRefined}
 						className={cn(
 							"rounded-[6px] px-3 py-1 text-xs font-medium transition-colors",
-							!showingRefined ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+							!showingRefined
+								? "bg-card text-foreground shadow-sm"
+								: "text-muted-foreground hover:text-foreground",
 						)}
 					>
-						<CaptionsIcon className="mr-1 inline size-3 -translate-y-px" aria-hidden="true" />
+						<CaptionsIcon
+							className="mr-1 inline size-3 -translate-y-px"
+							aria-hidden="true"
+						/>
 						{t("captures.transcript.raw")}
 					</button>
-				</div>
+				</fieldset>
 				<span className="flex-1" />
 				<span className="text-xs text-muted-foreground">
 					{showingRefined
-						? t("captures.transcript.refinedHint", { model: capture.llm_model ?? llmModel })
+						? t("captures.transcript.refinedHint", {
+								model: capture.llm_model ?? llmModel,
+							})
 						: capture.stt_model
 							? t("captures.transcript.rawHint", { model: capture.stt_model })
 							: null}
@@ -208,7 +237,11 @@ export function DetailPane({
 					defaultValue={showingRefined ? refined : capture.transcript_raw}
 					readOnly
 					rows={12}
-					aria-label={showingRefined ? t("captures.transcript.refined") : t("captures.transcript.raw")}
+					aria-label={
+						showingRefined
+							? t("captures.transcript.refined")
+							: t("captures.transcript.raw")
+					}
 					className="min-h-[260px] w-full resize-y rounded-md border-0 bg-transparent p-6 text-[15px] leading-relaxed text-foreground focus:outline-none"
 				/>
 			</div>
@@ -251,22 +284,36 @@ export function DetailPane({
 								title={t("captures.actions.playAsDropdownLabel")}
 								disabled={!profiles || profiles.length === 0}
 							>
-								<CaptionsIcon className="h-3.5 w-3.5 opacity-70" aria-hidden="true" />
+								<CaptionsIcon
+									className="h-3.5 w-3.5 opacity-70"
+									aria-hidden="true"
+								/>
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="start" className="w-64">
-							<DropdownMenuLabel>{t("captures.actions.playAsDropdownLabel")}</DropdownMenuLabel>
+							<DropdownMenuLabel>
+								{t("captures.actions.playAsDropdownLabel")}
+							</DropdownMenuLabel>
 							<DropdownMenuSeparator />
 							{profiles?.map((v) => (
-								<DropdownMenuItem key={v.id} onClick={() => onPlayAs(v)} className="py-2">
+								<DropdownMenuItem
+									key={v.id}
+									onClick={() => onPlayAs(v)}
+									className="py-2"
+								>
 									<span className="min-w-0 flex-1">
-										<span className="block truncate text-sm font-medium">{v.name}</span>
+										<span className="block truncate text-sm font-medium">
+											{v.name}
+										</span>
 										<span className="block truncate text-xs text-muted-foreground">
 											{v.description || v.language.toUpperCase()}
 										</span>
 									</span>
 									{v.id === playAsVoiceId ? (
-										<CheckIcon className="h-3.5 w-3.5 shrink-0 text-accent" aria-hidden="true" />
+										<CheckIcon
+											className="h-3.5 w-3.5 shrink-0 text-accent"
+											aria-hidden="true"
+										/>
 									) : null}
 								</DropdownMenuItem>
 							))}
@@ -274,10 +321,18 @@ export function DetailPane({
 					</DropdownMenu>
 				</span>
 				<Button variant="outline" size="sm" onClick={onCopy}>
-					<ClipboardDocumentIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+					<ClipboardDocumentIcon
+						className="mr-1.5 h-3.5 w-3.5"
+						aria-hidden="true"
+					/>
 					{t("captures.actions.copy")}
 				</Button>
-				<Button variant="outline" size="sm" onClick={onCopyAudio} title="Copy audio to cross-tab clipboard">
+				<Button
+					variant="outline"
+					size="sm"
+					onClick={onCopyAudio}
+					title="Copy audio to cross-tab clipboard"
+				>
 					<MusicalNoteIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
 					Audio
 				</Button>
@@ -289,30 +344,49 @@ export function DetailPane({
 					loading={session.isRefining}
 				>
 					<SparklesIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-					{capture.transcript_refined ? t("captures.actions.reRefine") : t("captures.actions.refine")}
+					{capture.transcript_refined
+						? t("captures.actions.reRefine")
+						: t("captures.actions.refine")}
 				</Button>
 				<TagAdder captureId={capture.id} />
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
 						<Button variant="outline" size="sm">
-							<ArrowDownTrayIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+							<ArrowDownTrayIcon
+								className="mr-1.5 h-3.5 w-3.5"
+								aria-hidden="true"
+							/>
 							{t("captures.actions.export")}
-							<ChevronDownIcon className="ml-1 h-3.5 w-3.5 opacity-70" aria-hidden="true" />
+							<ChevronDownIcon
+								className="ml-1 h-3.5 w-3.5 opacity-70"
+								aria-hidden="true"
+							/>
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="start" className="w-56">
-						<DropdownMenuLabel>{t("captures.actions.exportDropdownLabel")}</DropdownMenuLabel>
+						<DropdownMenuLabel>
+							{t("captures.actions.exportDropdownLabel")}
+						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem onClick={onExportAudio}>
-							<MusicalNoteIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+							<MusicalNoteIcon
+								className="mr-2 h-3.5 w-3.5 text-muted-foreground"
+								aria-hidden="true"
+							/>
 							{t("captures.actions.exportAudio")}
 						</DropdownMenuItem>
 						<DropdownMenuItem onClick={onExportTranscript}>
-							<CaptionsIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+							<CaptionsIcon
+								className="mr-2 h-3.5 w-3.5 text-muted-foreground"
+								aria-hidden="true"
+							/>
 							{t("captures.actions.exportTranscript")}
 						</DropdownMenuItem>
 						<DropdownMenuItem onClick={onExportMarkdown}>
-							<DocumentTextIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+							<DocumentTextIcon
+								className="mr-2 h-3.5 w-3.5 text-muted-foreground"
+								aria-hidden="true"
+							/>
 							{t("captures.actions.exportMarkdown")}
 						</DropdownMenuItem>
 					</DropdownMenuContent>

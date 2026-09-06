@@ -8,8 +8,22 @@ import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import * as z from "zod";
-import { Button } from "@/ui/button";
 import { ChainEditor } from "@/features/effects/ChainEditor";
+import { apiClient } from "@/lib/api/client";
+import type { EffectConfig } from "@/lib/api/types";
+import {
+	LANGUAGE_CODES,
+	LANGUAGE_OPTIONS,
+	type LanguageCode,
+} from "@/lib/constants/languages";
+import {
+	useDeleteAvatar,
+	useProfile,
+	useUpdateProfile,
+	useUploadAvatar,
+} from "@/lib/hooks/useProfiles";
+import { useServerStore } from "@/stores/serverStore";
+import { Button } from "@/ui/button";
 import {
 	FormControl,
 	FormField,
@@ -18,7 +32,7 @@ import {
 	FormMessage,
 	FormProvider,
 } from "@/ui/form";
-import { Field, Input, Textarea } from "@/ui/input";
+import { Input, Textarea } from "@/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -27,21 +41,6 @@ import {
 	SelectValue,
 } from "@/ui/select";
 import { useToast } from "@/ui/use-toast";
-import { apiClient } from "@/lib/api/client";
-import type { EffectConfig } from "@/lib/api/types";
-import {
-	LANGUAGE_CODES,
-	LANGUAGE_OPTIONS,
-	type LanguageCode,
-} from "@/lib/constants/languages";
-import { debug } from "@/lib/utils/debug";
-import {
-	useDeleteAvatar,
-	useProfile,
-	useUpdateProfile,
-	useUploadAvatar,
-} from "@/lib/hooks/useProfiles";
-import { useServerStore } from "@/stores/serverStore";
 import { SampleList } from "./SampleList";
 
 function profileSchema(invalidName: string) {
@@ -78,7 +77,9 @@ export function VoiceInspector({ profileId }: { profileId: string }) {
 	const [chainDirty, setChainDirty] = useState(false);
 
 	const form = useForm<InspectorValues>({
-		resolver: zodResolver(profileSchema(t("profileForm.validation.nameRequired"))),
+		resolver: zodResolver(
+			profileSchema(t("profileForm.validation.nameRequired")),
+		),
 		defaultValues: { name: "", description: "", language: "en" },
 	});
 
@@ -117,7 +118,11 @@ export function VoiceInspector({ profileId }: { profileId: string }) {
 		try {
 			await updateProfile.mutateAsync({
 				profileId,
-				data: { name: data.name, description: data.description, language: data.language },
+				data: {
+					name: data.name,
+					description: data.description,
+					language: data.language,
+				},
 			});
 			if (chainDirty) {
 				try {
@@ -140,13 +145,17 @@ export function VoiceInspector({ profileId }: { profileId: string }) {
 			}
 			toast({
 				title: t("profileForm.toast.voiceUpdated"),
-				description: t("voiceInspector.toast.savedDescription", { name: data.name }),
+				description: t("voiceInspector.toast.savedDescription", {
+					name: data.name,
+				}),
 			});
 		} catch (error: unknown) {
 			toast({
 				title: t("common.error"),
 				description:
-					error instanceof Error ? error.message : t("profileForm.toast.saveFailed"),
+					error instanceof Error
+						? error.message
+						: t("profileForm.toast.saveFailed"),
 				variant: "destructive",
 			});
 		}
@@ -182,7 +191,8 @@ export function VoiceInspector({ profileId }: { profileId: string }) {
 				onError: (err: unknown) =>
 					toast({
 						title: t("profileForm.toast.avatarUploadFailed"),
-						description: err instanceof Error ? err.message : t("common.unknownError"),
+						description:
+							err instanceof Error ? err.message : t("common.unknownError"),
 						variant: "destructive",
 					}),
 			},
@@ -191,7 +201,10 @@ export function VoiceInspector({ profileId }: { profileId: string }) {
 
 	return (
 		<FormProvider {...form}>
-			<form onSubmit={form.handleSubmit(save)} className="flex h-full flex-col overflow-hidden">
+			<form
+				onSubmit={form.handleSubmit(save)}
+				className="flex h-full flex-col overflow-hidden"
+			>
 				<div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
 					<div className="flex justify-center pb-3 pt-5">
 						<div className="group relative">
@@ -204,7 +217,10 @@ export function VoiceInspector({ profileId }: { profileId: string }) {
 										onError={() => setPreviewError(true)}
 									/>
 								) : (
-									<MicrophoneIcon className="size-8 text-muted-foreground" aria-hidden="true" />
+									<MicrophoneIcon
+										className="size-8 text-muted-foreground"
+										aria-hidden="true"
+									/>
 								)}
 							</span>
 							<button
@@ -214,7 +230,10 @@ export function VoiceInspector({ profileId }: { profileId: string }) {
 								onClick={() => avatarRef.current?.click()}
 								className="absolute inset-0 grid place-items-center rounded-full bg-secondary opacity-0 transition-opacity focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100"
 							>
-								<PencilIcon className="size-5 text-foreground" aria-hidden="true" />
+								<PencilIcon
+									className="size-5 text-foreground"
+									aria-hidden="true"
+								/>
 							</button>
 							{preview ? (
 								<button
@@ -224,12 +243,17 @@ export function VoiceInspector({ profileId }: { profileId: string }) {
 									onClick={() => {
 										if (profile.avatar_path) {
 											deleteAvatar.mutate(profileId, {
-												onSuccess: () => toast({ title: t("profileForm.toast.avatarRemoved") }),
+												onSuccess: () =>
+													toast({
+														title: t("profileForm.toast.avatarRemoved"),
+													}),
 												onError: (err: unknown) =>
 													toast({
 														title: t("profileForm.toast.avatarRemoveFailed"),
 														description:
-															err instanceof Error ? err.message : t("common.unknownError"),
+															err instanceof Error
+																? err.message
+																: t("common.unknownError"),
 														variant: "destructive",
 													}),
 											});
@@ -263,7 +287,10 @@ export function VoiceInspector({ profileId }: { profileId: string }) {
 								<FormItem>
 									<FormLabel>{t("profileForm.fields.name")}</FormLabel>
 									<FormControl>
-										<Input placeholder={t("profileForm.fields.namePlaceholder")} {...field} />
+										<Input
+											placeholder={t("profileForm.fields.namePlaceholder")}
+											{...field}
+										/>
 									</FormControl>
 									<FormMessage />
 								</FormItem>
@@ -274,10 +301,14 @@ export function VoiceInspector({ profileId }: { profileId: string }) {
 							name="description"
 							render={({ field }) => (
 								<FormItem>
-									<FormLabel>{t("voiceInspector.fields.description")}</FormLabel>
+									<FormLabel>
+										{t("voiceInspector.fields.description")}
+									</FormLabel>
 									<FormControl>
 										<Textarea
-											placeholder={t("profileForm.fields.descriptionPlaceholder")}
+											placeholder={t(
+												"profileForm.fields.descriptionPlaceholder",
+											)}
 											rows={2}
 											{...field}
 										/>
@@ -329,7 +360,12 @@ export function VoiceInspector({ profileId }: { profileId: string }) {
 						</div>
 
 						{dirty ? (
-							<Button type="submit" className="w-full" disabled={updateProfile.isPending} loading={updateProfile.isPending}>
+							<Button
+								type="submit"
+								className="w-full"
+								disabled={updateProfile.isPending}
+								loading={updateProfile.isPending}
+							>
 								{updateProfile.isPending
 									? t("profileForm.actions.saving")
 									: t("profileForm.actions.saveChanges")}
@@ -337,11 +373,11 @@ export function VoiceInspector({ profileId }: { profileId: string }) {
 						) : null}
 					</div>
 
-				<div className="px-5 pb-5">
-					<SampleList profileId={profileId} />
+					<div className="px-5 pb-5">
+						<SampleList profileId={profileId} />
+					</div>
 				</div>
-			</div>
-		</form>
-	</FormProvider>
+			</form>
+		</FormProvider>
 	);
 }

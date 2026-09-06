@@ -1,5 +1,5 @@
-import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { CheckIcon } from "@heroicons/react/24/outline";
+import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import type * as React from "react";
 import { cn } from "@/lib/utils/cn";
 
@@ -88,7 +88,8 @@ export function DropdownMenuSeparator({
 export function DropdownMenuLabel({
 	className,
 	...props
-}: DropdownMenuPrimitive.DropdownMenuLabelProps & React.HTMLAttributes<HTMLDivElement>) {
+}: DropdownMenuPrimitive.DropdownMenuLabelProps &
+	React.HTMLAttributes<HTMLDivElement>) {
 	return (
 		<DropdownMenuPrimitive.Label
 			className={cn(

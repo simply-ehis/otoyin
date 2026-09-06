@@ -6,6 +6,29 @@ import {
 } from "@heroicons/react/24/outline";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { CapturePill, type PillState } from "@/features/capture/CapturePill";
+import { ChordPicker } from "@/features/capture/ChordPicker";
+import {
+	AccessibilityNotice,
+	InputMonitoringNotice,
+} from "@/features/capture/gates";
+import type {
+	PlannerModelSize,
+	VoiceProfileResponse,
+	WhisperModelSize,
+} from "@/lib/api/types";
+import { showStudioErrorToast } from "@/lib/errors";
+import { useDictationReadiness } from "@/lib/hooks/useDictationReadiness";
+import { useProfiles } from "@/lib/hooks/useProfiles";
+import { useCaptureSettings } from "@/lib/hooks/useSettings";
+import { debug } from "@/lib/utils/debug";
+import {
+	defaultChordKeys,
+	displayLabelForKey,
+	modifierSideHint,
+} from "@/lib/utils/keyCodes";
+import { usePlatform } from "@/platform/PlatformContext";
+import { useServerStore } from "@/stores/serverStore";
 import { Button } from "@/ui/button";
 import { Switch } from "@/ui/controls";
 import {
@@ -24,18 +47,6 @@ import {
 	SelectValue,
 } from "@/ui/select";
 import { useToast } from "@/ui/use-toast";
-import type { VoiceProfileResponse, WhisperModelSize, PlannerModelSize } from "@/lib/api/types";
-import { showStudioErrorToast } from "@/lib/errors";
-import { useDictationReadiness } from "@/lib/hooks/useDictationReadiness";
-import { useProfiles } from "@/lib/hooks/useProfiles";
-import { useCaptureSettings } from "@/lib/hooks/useSettings";
-import { debug } from "@/lib/utils/debug";
-import { defaultChordKeys, displayLabelForKey, modifierSideHint } from "@/lib/utils/keyCodes";
-import { usePlatform } from "@/platform/PlatformContext";
-import { useServerStore } from "@/stores/serverStore";
-import { AccessibilityNotice, InputMonitoringNotice } from "@/features/capture/gates";
-import { ChordPicker } from "@/features/capture/ChordPicker";
-import { CapturePill, type PillState } from "@/features/capture/CapturePill";
 import { SettingRow, SettingSection } from "./rows";
 
 /**
@@ -94,8 +105,10 @@ function CaptureModeConfig() {
 	const readiness = useDictationReadiness();
 
 	const hotkeyEnabled = settings?.hotkey_enabled ?? false;
-	const pushKeys = settings?.chord_push_to_talk_keys ?? defaultChordKeys("push");
-	const toggleKeys = settings?.chord_toggle_to_talk_keys ?? defaultChordKeys("toggle");
+	const pushKeys =
+		settings?.chord_push_to_talk_keys ?? defaultChordKeys("push");
+	const toggleKeys =
+		settings?.chord_toggle_to_talk_keys ?? defaultChordKeys("toggle");
 	const [editor, setEditor] = useState<"push" | "toggle" | null>(null);
 
 	return (
@@ -106,7 +119,9 @@ function CaptureModeConfig() {
 			<div>
 				<SettingRow
 					title={t("settings.captures.dictation.globalShortcut.title")}
-					description={t("settings.captures.dictation.globalShortcut.description")}
+					description={t(
+						"settings.captures.dictation.globalShortcut.description",
+					)}
 					action={
 						<Switch
 							checked={hotkeyEnabled}
@@ -154,7 +169,10 @@ function CaptureModeConfig() {
 							disabled={!hotkeyEnabled}
 							onClick={() => setEditor("push")}
 						>
-							<CommandLineIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+							<CommandLineIcon
+								className="mr-1.5 h-3.5 w-3.5"
+								aria-hidden="true"
+							/>
 							{t("settings.captures.dictation.pushToTalk.change")}
 						</Button>
 					</span>
@@ -173,7 +191,10 @@ function CaptureModeConfig() {
 							disabled={!hotkeyEnabled}
 							onClick={() => setEditor("toggle")}
 						>
-							<CommandLineIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+							<CommandLineIcon
+								className="mr-1.5 h-3.5 w-3.5"
+								aria-hidden="true"
+							/>
 							{t("settings.captures.dictation.toggle.change")}
 						</Button>
 					</span>
@@ -183,7 +204,9 @@ function CaptureModeConfig() {
 			<ChordPicker
 				open={editor === "push"}
 				title={t("settings.captures.dictation.chordPicker.pttTitle")}
-				description={t("settings.captures.dictation.chordPicker.pttDescription")}
+				description={t(
+					"settings.captures.dictation.chordPicker.pttDescription",
+				)}
 				initialKeys={pushKeys}
 				onCancel={() => setEditor(null)}
 				onSave={(keys) => {
@@ -194,7 +217,9 @@ function CaptureModeConfig() {
 			<ChordPicker
 				open={editor === "toggle"}
 				title={t("settings.captures.dictation.chordPicker.toggleTitle")}
-				description={t("settings.captures.dictation.chordPicker.toggleDescription")}
+				description={t(
+					"settings.captures.dictation.chordPicker.toggleDescription",
+				)}
 				initialKeys={toggleKeys}
 				onCancel={() => setEditor(null)}
 				onSave={(keys) => {
@@ -229,7 +254,12 @@ function CaptureModeConfig() {
 }
 
 /** Live pill-state cycler showing what the dictate pill looks like. */
-const PREVIEW_STATES: PillState[] = ["recording", "transcribing", "refining", "rest"];
+const PREVIEW_STATES: PillState[] = [
+	"recording",
+	"transcribing",
+	"refining",
+	"rest",
+];
 const PREVIEW_MS: Partial<Record<PillState, number>> = {
 	recording: 2600,
 	transcribing: 1500,
@@ -244,7 +274,9 @@ function PillPreview({ enabled }: { enabled: boolean }) {
 	useEffect(() => {
 		const id = window.setTimeout(() => {
 			setState(
-				PREVIEW_STATES[(PREVIEW_STATES.indexOf(state) + 1) % PREVIEW_STATES.length] ?? "rest",
+				PREVIEW_STATES[
+					(PREVIEW_STATES.indexOf(state) + 1) % PREVIEW_STATES.length
+				] ?? "rest",
 			);
 		}, PREVIEW_MS[state] ?? 1000);
 		return () => window.clearTimeout(id);
@@ -296,7 +328,9 @@ function StreamingSettings() {
 					action={
 						<Select
 							value={settings?.stt_model ?? "tiny.en"}
-							onValueChange={(v) => update({ stt_model: v as WhisperModelSize })}
+							onValueChange={(v) =>
+								update({ stt_model: v as WhisperModelSize })
+							}
 						>
 							<SelectTrigger className="w-full max-w-[300px]">
 								<SelectValue />
@@ -309,7 +343,9 @@ function StreamingSettings() {
 								</SelectItem>
 								<SelectItem value="base.en">
 									{t("settings.captures.transcription.model.baseEn", {
-										tail: t("settings.captures.transcription.model.tail.balanced"),
+										tail: t(
+											"settings.captures.transcription.model.tail.balanced",
+										),
 									})}
 								</SelectItem>
 								<SelectItem value="cloud">Cloud (BYOK)</SelectItem>
@@ -319,7 +355,9 @@ function StreamingSettings() {
 				/>
 				<SettingRow
 					title={t("settings.captures.transcription.language.title")}
-					description={t("settings.captures.transcription.language.description")}
+					description={t(
+						"settings.captures.transcription.language.description",
+					)}
 					action={
 						<Select
 							value={settings?.language ?? "auto"}
@@ -331,7 +369,9 @@ function StreamingSettings() {
 							<SelectContent>
 								{langs.map((l) => (
 									<SelectItem key={l} value={l}>
-										{t(`settings.captures.transcription.language.${l}` as never)}
+										{t(
+											`settings.captures.transcription.language.${l}` as never,
+										)}
 									</SelectItem>
 								))}
 							</SelectContent>
@@ -340,11 +380,15 @@ function StreamingSettings() {
 				/>
 				<SettingRow
 					title={t("settings.captures.transcription.streamingModel.title")}
-					description={t("settings.captures.transcription.streamingModel.description")}
+					description={t(
+						"settings.captures.transcription.streamingModel.description",
+					)}
 					action={
 						<Select
 							value={settings?.streaming_stt_model ?? "tiny.en"}
-							onValueChange={(v) => update({ streaming_stt_model: v as WhisperModelSize })}
+							onValueChange={(v) =>
+								update({ streaming_stt_model: v as WhisperModelSize })
+							}
 						>
 							<SelectTrigger className="w-full max-w-[300px]">
 								<SelectValue />
@@ -357,7 +401,9 @@ function StreamingSettings() {
 								</SelectItem>
 								<SelectItem value="base.en">
 									{t("settings.captures.transcription.streamingModel.baseEn", {
-										tail: t("settings.captures.transcription.model.tail.balanced"),
+										tail: t(
+											"settings.captures.transcription.model.tail.balanced",
+										),
 									})}
 								</SelectItem>
 							</SelectContent>
@@ -366,7 +412,9 @@ function StreamingSettings() {
 				/>
 				<SettingRow
 					title={t("settings.captures.transcription.streamingLanguage.title")}
-					description={t("settings.captures.transcription.streamingLanguage.description")}
+					description={t(
+						"settings.captures.transcription.streamingLanguage.description",
+					)}
 					action={
 						<Select
 							value={settings?.streaming_stt_language ?? "auto"}
@@ -378,7 +426,9 @@ function StreamingSettings() {
 							<SelectContent>
 								{langs.map((l) => (
 									<SelectItem key={l} value={l}>
-										{t(`settings.captures.transcription.streamingLanguage.${l}` as never)}
+										{t(
+											`settings.captures.transcription.streamingLanguage.${l}` as never,
+										)}
 									</SelectItem>
 								))}
 							</SelectContent>
@@ -389,31 +439,47 @@ function StreamingSettings() {
 
 			<SettingSection
 				title={t("settings.captures.transcription.streamingVad.title")}
-				description={t("settings.captures.transcription.streamingVad.description")}
+				description={t(
+					"settings.captures.transcription.streamingVad.description",
+				)}
 			>
 				<SettingRow
-					title={t("settings.captures.transcription.streamingVad.threshold.title")}
-					description={t("settings.captures.transcription.streamingVad.threshold.description")}
+					title={t(
+						"settings.captures.transcription.streamingVad.threshold.title",
+					)}
+					description={t(
+						"settings.captures.transcription.streamingVad.threshold.description",
+					)}
 					action={
 						<Select
 							value={(settings?.streaming_vad_threshold ?? 0.02).toFixed(2)}
-							onValueChange={(v) => update({ streaming_vad_threshold: parseFloat(v) })}
+							onValueChange={(v) =>
+								update({ streaming_vad_threshold: parseFloat(v) })
+							}
 						>
 							<SelectTrigger className="w-full max-w-[180px]">
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="0.01">
-									{t("settings.captures.transcription.streamingVad.threshold.verySensitive")}
+									{t(
+										"settings.captures.transcription.streamingVad.threshold.verySensitive",
+									)}
 								</SelectItem>
 								<SelectItem value="0.02">
-									{t("settings.captures.transcription.streamingVad.threshold.default")}
+									{t(
+										"settings.captures.transcription.streamingVad.threshold.default",
+									)}
 								</SelectItem>
 								<SelectItem value="0.05">
-									{t("settings.captures.transcription.streamingVad.threshold.lessSensitive")}
+									{t(
+										"settings.captures.transcription.streamingVad.threshold.lessSensitive",
+									)}
 								</SelectItem>
 								<SelectItem value="0.10">
-									{t("settings.captures.transcription.streamingVad.threshold.veryInsensitive")}
+									{t(
+										"settings.captures.transcription.streamingVad.threshold.veryInsensitive",
+									)}
 								</SelectItem>
 							</SelectContent>
 						</Select>
@@ -470,12 +536,16 @@ function RefinementSettings() {
 							</SelectItem>
 							<SelectItem value="4B-v3-Q4_K_M">
 								{t("settings.captures.refinement.model.size4b", {
-									tail: t("settings.captures.refinement.model.tail.fullQuality"),
+									tail: t(
+										"settings.captures.refinement.model.tail.fullQuality",
+									),
 								})}
 							</SelectItem>
 							<SelectItem value="3B-Reasoning-Q4_K_M">
 								{t("settings.captures.refinement.model.size3b", {
-									tail: t("settings.captures.refinement.model.tail.fullQuality"),
+									tail: t(
+										"settings.captures.refinement.model.tail.fullQuality",
+									),
 								})}
 							</SelectItem>
 						</SelectContent>
@@ -495,7 +565,9 @@ function RefinementSettings() {
 			/>
 			<SettingRow
 				title={t("settings.captures.refinement.selfCorrection.title")}
-				description={t("settings.captures.refinement.selfCorrection.description")}
+				description={t(
+					"settings.captures.refinement.selfCorrection.description",
+				)}
 				action={
 					<Switch
 						checked={settings?.self_correction ?? true}
@@ -506,7 +578,9 @@ function RefinementSettings() {
 			/>
 			<SettingRow
 				title={t("settings.captures.refinement.preserveTechnical.title")}
-				description={t("settings.captures.refinement.preserveTechnical.description")}
+				description={t(
+					"settings.captures.refinement.preserveTechnical.description",
+				)}
 				action={
 					<Switch
 						checked={settings?.preserve_technical ?? true}
@@ -586,12 +660,19 @@ function PlaybackStorageSettings() {
 										) : (
 											<span className="text-muted-foreground">
 												{voices.length === 0
-													? t("settings.captures.playback.defaultVoice.noClonedVoices")
-													: t("settings.captures.playback.defaultVoice.noneSelected")}
+													? t(
+															"settings.captures.playback.defaultVoice.noClonedVoices",
+														)
+													: t(
+															"settings.captures.playback.defaultVoice.noneSelected",
+														)}
 											</span>
 										)}
 									</span>
-									<ChevronDownIcon className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden="true" />
+									<ChevronDownIcon
+										className="h-3.5 w-3.5 shrink-0 opacity-60"
+										aria-hidden="true"
+									/>
 								</Button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end" className="w-64">
@@ -606,7 +687,9 @@ function PlaybackStorageSettings() {
 										className="gap-3 py-2"
 									>
 										<span className="min-w-0 flex-1">
-											<span className="block truncate text-sm font-medium">{v.name}</span>
+											<span className="block truncate text-sm font-medium">
+												{v.name}
+											</span>
 											{v.description ? (
 												<span className="block truncate text-xs text-muted-foreground">
 													{v.description}
@@ -614,7 +697,10 @@ function PlaybackStorageSettings() {
 											) : null}
 										</span>
 										{v.id === defaultVoiceId ? (
-											<CheckIcon className="h-3.5 w-3.5 shrink-0 text-accent" aria-hidden="true" />
+											<CheckIcon
+												className="h-3.5 w-3.5 shrink-0 text-accent"
+												aria-hidden="true"
+											/>
 										) : null}
 									</DropdownMenuItem>
 								))}
@@ -630,7 +716,9 @@ function PlaybackStorageSettings() {
 			>
 				<SettingRow
 					title={t("settings.captures.storage.folder.title")}
-					description={capturesPath ?? t("settings.captures.storage.folder.description")}
+					description={
+						capturesPath ?? t("settings.captures.storage.folder.description")
+					}
 					action={
 						<Button
 							variant="outline"
@@ -638,7 +726,10 @@ function PlaybackStorageSettings() {
 							onClick={openFolder}
 							disabled={opening || !capturesPath}
 						>
-							<FolderOpenIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+							<FolderOpenIcon
+								className="mr-1.5 h-3.5 w-3.5"
+								aria-hidden="true"
+							/>
 							{t("settings.captures.storage.folder.open")}
 						</Button>
 					}
@@ -651,7 +742,10 @@ function PlaybackStorageSettings() {
 function CapturesAbout() {
 	const { t } = useTranslation();
 	return (
-		<aside className="sticky top-0 hidden w-[280px] shrink-0 flex-col gap-6 lg:flex" aria-label="About captures">
+		<aside
+			className="sticky top-0 hidden w-[280px] shrink-0 flex-col gap-6 lg:flex"
+			aria-label="About captures"
+		>
 			<div className="flex flex-col gap-2">
 				<h3 className="text-sm font-semibold text-foreground">
 					{t("settings.captures.sidebar.aboutTitle")}

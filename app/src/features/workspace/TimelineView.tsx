@@ -1,26 +1,26 @@
 import {
-	SignalIcon,
+	ArrowUpTrayIcon,
+	ArrowUturnLeftIcon,
 	BackwardIcon,
 	CircleStackIcon,
 	PauseIcon,
 	PlayIcon,
 	PlusIcon,
-	ArrowUturnLeftIcon,
-	ArrowUpTrayIcon,
+	SignalIcon,
 	SpeakerWaveIcon,
 	StopIcon,
 } from "@heroicons/react/24/outline";
-import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Button } from "@/ui/button";
-import { EmptyState, ScreenHeader } from "@/ui/states";
-import { Slider } from "@/ui/slider";
-import { useToast } from "@/ui/use-toast";
+import { useEffect, useState } from "react";
 import { getClip } from "@/lib/clip";
 import { useHistory } from "@/lib/hooks/useHistory";
 import { formatAudioDuration } from "@/lib/utils/audio";
 import { cn } from "@/lib/utils/cn";
 import { usePlayerStore } from "@/stores/playerStore";
+import { Button } from "@/ui/button";
+import { Slider } from "@/ui/slider";
+import { EmptyState, ScreenHeader } from "@/ui/states";
+import { useToast } from "@/ui/use-toast";
 import { ImportModal } from "./ImportModal";
 
 interface Track {
@@ -98,7 +98,8 @@ export function TimelineView() {
 	};
 
 	const pasteClip = async () => {
-		let clip: { name: string; audioUrl: string; durationMs: number } | null = null;
+		let clip: { name: string; audioUrl: string; durationMs: number } | null =
+			null;
 		try {
 			clip = await getClip();
 		} catch {
@@ -143,7 +144,11 @@ export function TimelineView() {
 								<PlusIcon className="mr-1 size-4" aria-hidden="true" />
 								Generate audio
 							</Button>
-							<Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
+							<Button
+								size="sm"
+								variant="outline"
+								onClick={() => setImportOpen(true)}
+							>
 								<ArrowUpTrayIcon className="mr-1 size-4" aria-hidden="true" />
 								Import
 							</Button>
@@ -161,7 +166,9 @@ export function TimelineView() {
 				className="flex h-40 items-end gap-1 overflow-hidden rounded-md border border-border bg-card p-3"
 			>
 				{tracks.length === 0 ? (
-					<p className="m-auto text-xs text-muted-foreground/60">Session overview appears here</p>
+					<p className="m-auto text-xs text-muted-foreground/60">
+						Session overview appears here
+					</p>
 				) : (
 					tracks.map((t) => (
 						<div
@@ -169,16 +176,23 @@ export function TimelineView() {
 							title={`${t.name} — ${t.duration ? formatAudioDuration(t.duration) : "unknown length"}`}
 							className={cn(
 								"min-w-[3px] flex-1 rounded-full",
-								t.muted ? "bg-muted-foreground/30" : "bg-accent",
+								t.muted ? "bg-strong" : "bg-accent",
 							)}
-							style={{ height: `${Math.max(6, ((t.duration ?? 0) / maxDuration) * 100)}%`, opacity: t.muted ? 0.5 : 0.35 + 0.65 * ((t.duration ?? 0) / maxDuration) }}
+							style={{
+								height: `${Math.max(6, ((t.duration ?? 0) / maxDuration) * 100)}%`,
+								opacity: t.muted
+									? 0.5
+									: 0.35 + 0.65 * ((t.duration ?? 0) / maxDuration),
+							}}
 						/>
 					))
 				)}
 			</div>
 
 			<div className="flex items-center gap-2">
-				<span className="text-xs tabular-nums text-muted-foreground">Position</span>
+				<span className="text-xs tabular-nums text-muted-foreground">
+					Position
+				</span>
 				<Slider
 					value={[Math.min(currentTime, duration || 0)]}
 					max={Math.max(duration || 0, 1)}
@@ -257,7 +271,10 @@ export function TimelineView() {
 					/>
 				</Button>
 				<span className="ml-auto flex items-center gap-2">
-					<SpeakerWaveIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+					<SpeakerWaveIcon
+						className="size-4 text-muted-foreground"
+						aria-hidden="true"
+					/>
 					<Slider
 						value={[volume]}
 						max={1}
@@ -298,12 +315,16 @@ export function TimelineView() {
 								aria-pressed={track.muted}
 								onClick={() =>
 									setTracks((prev) =>
-										prev.map((x) => (x.id === track.id ? { ...x, muted: !x.muted } : x)),
+										prev.map((x) =>
+											x.id === track.id ? { ...x, muted: !x.muted } : x,
+										),
 									)
 								}
 								className={cn(
 									"rounded-sm px-2 py-0.5 text-xs font-semibold transition-colors",
-									track.muted ? "bg-warning text-warning-foreground" : "bg-secondary text-muted-foreground hover:text-foreground",
+									track.muted
+										? "bg-warning text-warning-foreground"
+										: "bg-secondary text-muted-foreground hover:text-foreground",
 								)}
 							>
 								M
@@ -315,17 +336,24 @@ export function TimelineView() {
 								aria-pressed={track.solo}
 								onClick={() =>
 									setTracks((prev) =>
-										prev.map((x) => (x.id === track.id ? { ...x, solo: !x.solo } : x)),
+										prev.map((x) =>
+											x.id === track.id ? { ...x, solo: !x.solo } : x,
+										),
 									)
 								}
 								className={cn(
 									"rounded-sm px-2 py-0.5 text-xs font-semibold transition-colors",
-									track.solo ? "bg-info text-info-foreground" : "bg-secondary text-muted-foreground hover:text-foreground",
+									track.solo
+										? "bg-info text-info-foreground"
+										: "bg-secondary text-muted-foreground hover:text-foreground",
 								)}
 							>
 								S
 							</button>
-							<SpeakerWaveIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+							<SpeakerWaveIcon
+								className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+								aria-hidden="true"
+							/>
 						</div>
 					</li>
 				))}

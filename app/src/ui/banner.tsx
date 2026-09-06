@@ -53,7 +53,10 @@ export function Banner({
 			)}
 		>
 			{icon ? (
-				<span aria-hidden="true" className={cn("shrink-0", bannerTones[tone].icon)}>
+				<span
+					aria-hidden="true"
+					className={cn("shrink-0", bannerTones[tone].icon)}
+				>
 					{icon}
 				</span>
 			) : null}

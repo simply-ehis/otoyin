@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils/cn";
+import { debug } from "@/lib/utils/debug";
+import { usePlatform } from "@/platform/PlatformContext";
+import { type LogEntry, useLogStore } from "@/stores/logStore";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import {
@@ -11,10 +15,6 @@ import {
 } from "@/ui/select";
 import { ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
-import { cn } from "@/lib/utils/cn";
-import { debug } from "@/lib/utils/debug";
-import { usePlatform } from "@/platform/PlatformContext";
-import { type LogEntry, useLogStore } from "@/stores/logStore";
 
 const ESC = String.fromCharCode(27);
 const ANSI_RE = new RegExp(`${ESC}\\[[0-9;]*[A-Za-z]`, "g");
@@ -44,7 +44,9 @@ function LogLine({ entry }: { entry: LogEntry }) {
 			<span
 				className={cn(
 					"whitespace-pre-wrap break-all",
-					entry.stream === "stderr" ? "text-warning-text" : "text-muted-foreground",
+					entry.stream === "stderr"
+						? "text-warning-text"
+						: "text-muted-foreground",
 				)}
 			>
 				{entry.line}
@@ -92,7 +94,7 @@ export function LogsPage() {
 		if (autoScroll && containerRef.current) {
 			containerRef.current.scrollTop = containerRef.current.scrollHeight;
 		}
-	}, [filtered, autoScroll]);
+	}, [autoScroll]);
 
 	const serialized = () =>
 		filtered
@@ -192,14 +194,24 @@ export function LogsPage() {
 					aria-label={t("settings.logs.searchPlaceholder")}
 					className="h-8 max-w-xs"
 				/>
-				<Select value={stream} onValueChange={(v) => setStream(v as StreamFilter)}>
-					<SelectTrigger className="h-8 w-28" aria-label={t("settings.logs.streamFilter")}>
+				<Select
+					value={stream}
+					onValueChange={(v) => setStream(v as StreamFilter)}
+				>
+					<SelectTrigger
+						className="h-8 w-28"
+						aria-label={t("settings.logs.streamFilter")}
+					>
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
 						<SelectItem value="all">{t("settings.logs.filterAll")}</SelectItem>
-						<SelectItem value="stdout">{t("settings.logs.filterStdout")}</SelectItem>
-						<SelectItem value="stderr">{t("settings.logs.filterStderr")}</SelectItem>
+						<SelectItem value="stdout">
+							{t("settings.logs.filterStdout")}
+						</SelectItem>
+						<SelectItem value="stderr">
+							{t("settings.logs.filterStderr")}
+						</SelectItem>
 					</SelectContent>
 				</Select>
 			</div>
@@ -218,8 +230,14 @@ export function LogsPage() {
 			>
 				{filtered.length === 0 ? (
 					<div className="flex flex-col gap-1 font-mono text-sm text-muted-foreground/60">
-						<p>{entries.length === 0 ? t("settings.logs.empty") : t("settings.logs.noMatch")}</p>
-						{!import.meta.env?.PROD ? <p>{t("settings.logs.devHint")}</p> : null}
+						<p>
+							{entries.length === 0
+								? t("settings.logs.empty")
+								: t("settings.logs.noMatch")}
+						</p>
+						{!import.meta.env?.PROD ? (
+							<p>{t("settings.logs.devHint")}</p>
+						) : null}
 					</div>
 				) : (
 					filtered.map((entry) => <LogLine key={entry.id} entry={entry} />)

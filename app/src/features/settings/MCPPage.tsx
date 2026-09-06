@@ -7,6 +7,11 @@ import {
 } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
+import { useMCPBindings } from "@/lib/hooks/useMCPBindings";
+import { useProfiles } from "@/lib/hooks/useProfiles";
+import { useCaptureSettings } from "@/lib/hooks/useSettings";
+import { formatDate } from "@/lib/utils/format";
+import { useServerStore } from "@/stores/serverStore";
 import { Button } from "@/ui/button";
 import { CodeConsole } from "@/ui/code-console";
 import {
@@ -16,11 +21,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/ui/select";
-import { useMCPBindings } from "@/lib/hooks/useMCPBindings";
-import { useProfiles } from "@/lib/hooks/useProfiles";
-import { useCaptureSettings } from "@/lib/hooks/useSettings";
-import { formatDate } from "@/lib/utils/format";
-import { useServerStore } from "@/stores/serverStore";
 import { SettingRow, SettingSection } from "./rows";
 
 function shimCommand(): string {
@@ -47,7 +47,8 @@ export function MCPPage() {
 	const serverUrl = useServerStore((s) => s.serverUrl);
 	const { bindings, upsertAsync, remove } = useMCPBindings();
 	const { data: profiles } = useProfiles();
-	const { settings: captureSettings, update: updateCapture } = useCaptureSettings();
+	const { settings: captureSettings, update: updateCapture } =
+		useCaptureSettings();
 
 	const defaultProfileId = captureSettings?.default_playback_voice_id ?? "";
 	const mcpUrl = `${serverUrl}/mcp`;
@@ -132,7 +133,9 @@ export function MCPPage() {
 							<Select
 								value={defaultProfileId || "__default__"}
 								onValueChange={(v) =>
-									updateCapture({ default_playback_voice_id: v === "__default__" ? null : v })
+									updateCapture({
+										default_playback_voice_id: v === "__default__" ? null : v,
+									})
 								}
 							>
 								<SelectTrigger className="w-[220px]">
@@ -159,12 +162,18 @@ export function MCPPage() {
 				>
 					{bindings.length === 0 ? (
 						<p className="py-4 text-sm italic text-muted-foreground">
-							<Trans i18nKey="settings.mcp.bindings.empty" components={{ code: <code /> }} />
+							<Trans
+								i18nKey="settings.mcp.bindings.empty"
+								components={{ code: <code /> }}
+							/>
 						</p>
 					) : (
 						<ul className="divide-y divide-border">
 							{bindings.map((b) => (
-								<li key={b.client_id} className="grid grid-cols-[1fr_auto_auto] items-center gap-4 py-3">
+								<li
+									key={b.client_id}
+									className="grid grid-cols-[1fr_auto_auto] items-center gap-4 py-3"
+								>
 									<div className="min-w-0">
 										<p className="truncate text-sm font-medium text-foreground">
 											{b.label || b.client_id}
@@ -178,7 +187,10 @@ export function MCPPage() {
 														when: b.last_seen_at,
 													})}
 												>
-													<WifiIcon className="inline size-3 text-success" aria-hidden="true" />{" "}
+													<WifiIcon
+														className="inline size-3 text-success"
+														aria-hidden="true"
+													/>{" "}
 													{t("settings.mcp.bindings.lastSeen", {
 														when: formatDate(b.last_seen_at),
 													})}
@@ -253,9 +265,14 @@ export function MCPPage() {
 							/>
 							<Select
 								value={newProfileId || "__default__"}
-								onValueChange={(v) => setNewProfileId(v === "__default__" ? "" : v)}
+								onValueChange={(v) =>
+									setNewProfileId(v === "__default__" ? "" : v)
+								}
 							>
-								<SelectTrigger className="h-9 min-w-[140px]" aria-label="Voice profile">
+								<SelectTrigger
+									className="h-9 min-w-[140px]"
+									aria-label="Voice profile"
+								>
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
@@ -270,14 +287,22 @@ export function MCPPage() {
 								</SelectContent>
 							</Select>
 						</div>
-						<Button size="sm" onClick={add} disabled={!newClientId.trim() || adding} className="self-start">
+						<Button
+							size="sm"
+							onClick={add}
+							disabled={!newClientId.trim() || adding}
+							className="self-start"
+						>
 							{t("settings.mcp.bindings.add.action")}
 						</Button>
 					</div>
 				</SettingSection>
 			</div>
 
-			<aside className="sticky top-0 hidden w-[280px] shrink-0 flex-col gap-6 lg:flex" aria-label="About MCP">
+			<aside
+				className="sticky top-0 hidden w-[280px] shrink-0 flex-col gap-6 lg:flex"
+				aria-label="About MCP"
+			>
 				<div className="flex flex-col gap-2">
 					<h3 className="text-sm font-semibold text-foreground">
 						{t("settings.mcp.sidebar.aboutTitle")}
@@ -300,19 +325,29 @@ export function MCPPage() {
 							<p>{t("settings.mcp.sidebar.tools.transcribe")}</p>
 						</li>
 						<li>
-							<code className="font-mono text-accent">21labs.list_captures</code>
+							<code className="font-mono text-accent">
+								21labs.list_captures
+							</code>
 							<p>{t("settings.mcp.sidebar.tools.listCaptures")}</p>
 						</li>
 						<li>
-							<code className="font-mono text-accent">21labs.list_profiles</code>
+							<code className="font-mono text-accent">
+								21labs.list_profiles
+							</code>
 							<p>{t("settings.mcp.sidebar.tools.listProfiles")}</p>
 						</li>
 					</ul>
 				</div>
 				<p className="flex items-center gap-2 text-xs text-muted-foreground">
-					<GlobeAltIcon className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
+					<GlobeAltIcon
+						className="h-3.5 w-3.5 text-accent"
+						aria-hidden="true"
+					/>
 					<span>
-						<Trans i18nKey="settings.mcp.sidebar.postSpeak" components={{ code: <code /> }} />
+						<Trans
+							i18nKey="settings.mcp.sidebar.postSpeak"
+							components={{ code: <code /> }}
+						/>
 					</span>
 				</p>
 			</aside>
@@ -358,7 +393,10 @@ function SnippetRow({
 						</>
 					) : (
 						<>
-							<ClipboardDocumentIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+							<ClipboardDocumentIcon
+								className="mr-1.5 h-3.5 w-3.5"
+								aria-hidden="true"
+							/>
 							{t("settings.mcp.install.copy")}
 						</>
 					)}

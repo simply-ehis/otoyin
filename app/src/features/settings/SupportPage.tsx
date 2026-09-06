@@ -7,7 +7,13 @@ import { useSupportRequest } from "@/lib/hooks/useContent";
 import { Banner } from "@/ui/banner";
 import { Button } from "@/ui/button";
 import { Field, Input, Textarea } from "@/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/ui/select";
 import { ScreenHeader } from "@/ui/states";
 
 const CATEGORIES: { value: SupportCategory; label: string }[] = [
@@ -85,7 +91,8 @@ export function SupportPage() {
 						tone="success"
 						icon={<CheckCircleIcon className="size-4" aria-hidden="true" />}
 					>
-						Message received — ticket #{ticketId}. We will get back to you by email.
+						Message received — ticket #{ticketId}. We will get back to you by
+						email.
 					</Banner>
 				</div>
 			) : null}
@@ -129,7 +136,11 @@ export function SupportPage() {
 						</SelectContent>
 					</Select>
 				</Field>
-				<Field label="Message" htmlFor="support-message" error={formError ?? undefined}>
+				<Field
+					label="Message"
+					htmlFor="support-message"
+					error={formError ?? undefined}
+				>
 					<Textarea
 						id="support-message"
 						value={message}
@@ -139,7 +150,11 @@ export function SupportPage() {
 					/>
 				</Field>
 				<div>
-					<Button type="submit" disabled={support.isPending} loading={support.isPending}>
+					<Button
+						type="submit"
+						disabled={support.isPending}
+						loading={support.isPending}
+					>
 						<EnvelopeIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
 						{support.isPending ? "Sending…" : "Send message"}
 					</Button>

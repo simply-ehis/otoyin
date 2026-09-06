@@ -31,7 +31,7 @@ export const ListPaneHeader = forwardRef<HTMLDivElement, ListPaneHeaderProps>(
 		<div
 			ref={ref}
 			className={cn(
-				"flex flex-col gap-2 px-4 py-3 border-b border-border bg-muted/30",
+				"flex flex-col gap-2 px-4 py-3 border-b border-border bg-secondary",
 				className,
 			)}
 		>

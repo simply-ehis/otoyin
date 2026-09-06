@@ -26,6 +26,9 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { apiClient } from "@/lib/api/client";
+import type { AvailableEffect, EffectConfig } from "@/lib/api/types";
+import { cn } from "@/lib/utils/cn";
 import { Button } from "@/ui/button";
 import { Label } from "@/ui/primitives";
 import {
@@ -36,13 +39,6 @@ import {
 	SelectValue,
 } from "@/ui/select";
 import { Slider } from "@/ui/slider";
-import { apiClient } from "@/lib/api/client";
-import type {
-	AvailableEffect,
-	EffectConfig,
-	EffectPresetResponse,
-} from "@/lib/api/types";
-import { cn } from "@/lib/utils/cn";
 
 interface EffectWithId extends EffectConfig {
 	uid: string;
@@ -83,7 +79,9 @@ export const ChainEditor = memo(function ChainEditor({
 
 	const sensors = useSensors(
 		useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-		useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+		useSensor(KeyboardSensor, {
+			coordinateGetter: sortableKeyboardCoordinates,
+		}),
 	);
 
 	const { data: available } = useQuery({
@@ -137,7 +135,9 @@ export const ChainEditor = memo(function ChainEditor({
 
 	const toggleAt = useCallback(
 		(index: number) => {
-			onChange(value.map((e, i) => (i === index ? { ...e, enabled: !e.enabled } : e)));
+			onChange(
+				value.map((e, i) => (i === index ? { ...e, enabled: !e.enabled } : e)),
+			);
 		},
 		[value, onChange],
 	);
@@ -191,7 +191,9 @@ export const ChainEditor = memo(function ChainEditor({
 							{presets?.map((p) => (
 								<SelectItem key={p.id} value={p.id}>
 									{p.is_builtin
-										? t(`effects.builtinPresets.${p.name}.name`, { defaultValue: p.name })
+										? t(`effects.builtinPresets.${p.name}.name`, {
+												defaultValue: p.name,
+											})
 										: p.name}
 								</SelectItem>
 							))}
@@ -214,8 +216,15 @@ export const ChainEditor = memo(function ChainEditor({
 				</div>
 			) : null}
 
-			<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-				<SortableContext items={items.map((i) => i.uid)} strategy={verticalListSortingStrategy}>
+			<DndContext
+				sensors={sensors}
+				collisionDetection={closestCenter}
+				onDragEnd={onDragEnd}
+			>
+				<SortableContext
+					items={items.map((i) => i.uid)}
+					strategy={verticalListSortingStrategy}
+				>
 					{items.map((effect, index) => (
 						<ChainRow
 							key={effect.uid}
@@ -223,7 +232,9 @@ export const ChainEditor = memo(function ChainEditor({
 							effect={effect}
 							def={defs.get(effect.type)}
 							expanded={expandedId === effect.uid}
-							onToggleExpand={() => setExpandedId(expandedId === effect.uid ? null : effect.uid)}
+							onToggleExpand={() =>
+								setExpandedId(expandedId === effect.uid ? null : effect.uid)
+							}
 							onRemove={() => removeAt(index)}
 							onToggle={() => toggleAt(index)}
 							onParam={(name, v) => setParam(index, name, v)}
@@ -271,8 +282,14 @@ function ChainRow({
 	onParam: (name: string, value: number) => void;
 }) {
 	const { t } = useTranslation();
-	const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-		useSortable({ id });
+	const {
+		attributes,
+		listeners,
+		setNodeRef,
+		transform,
+		transition,
+		isDragging,
+	} = useSortable({ id });
 	const label = t(`effects.types.${effect.type}.label`, {
 		defaultValue: def?.label ?? effect.type,
 	});
@@ -316,18 +333,29 @@ function ChainRow({
 				>
 					<Bars3Icon className="h-3.5 w-3.5" aria-hidden="true" />
 				</button>
-				<span className={cn("flex-1 text-xs font-medium", !effect.enabled && "text-muted-foreground")}>
+				<span
+					className={cn(
+						"flex-1 text-xs font-medium",
+						!effect.enabled && "text-muted-foreground",
+					)}
+				>
 					{label}
 				</span>
 				<button
 					type="button"
 					onClick={onToggle}
-					title={effect.enabled ? t("effects.chain.disable") : t("effects.chain.enable")}
+					title={
+						effect.enabled
+							? t("effects.chain.disable")
+							: t("effects.chain.enable")
+					}
 					aria-label={effect.enabled ? `Bypass ${label}` : `Enable ${label}`}
 					aria-pressed={effect.enabled}
 					className={cn(
 						"rounded-sm p-0.5 transition-colors",
-						effect.enabled ? "text-accent" : "text-muted-foreground hover:text-foreground",
+						effect.enabled
+							? "text-accent"
+							: "text-muted-foreground hover:text-foreground",
 					)}
 				>
 					<PowerIcon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -355,7 +383,11 @@ function ChainRow({
 										})}
 									</Label>
 									<span className="font-mono text-xs tabular-nums text-foreground">
-										{current.toFixed(p.step < 1 ? Math.max(1, -Math.floor(Math.log10(p.step))) : 0)}
+										{current.toFixed(
+											p.step < 1
+												? Math.max(1, -Math.floor(Math.log10(p.step)))
+												: 0,
+										)}
 									</span>
 								</p>
 								<Slider

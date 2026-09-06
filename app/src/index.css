@@ -1,6 +1,7 @@
-@import "tailwindcss" source(".");
+@import "tailwindcss";
 @import "./styles/tokens.css";
-@import "loaders.css/loaders.min.css";
+@source "./src";
+/* @import "loaders.css/loaders.min.css"; */
 
 /* ── Slim native-feeling scrollbars (desktop-ui-scrolling-navigation):
    slim, low-contrast, persistent — never hidden on desktop ── */
@@ -281,13 +282,13 @@
 	--theme-accent-muted: unset;
 	--theme-accent-subtle: unset;
 
-	/* Semantic color aliases using theme tokens */
-	--color-surface: hsl(var(--theme-surface));
-	--color-surface-foreground: hsl(var(--theme-surface-fg));
-	--color-surface-elevated: hsl(var(--theme-surface-elevated));
-	--color-surface-elevated-foreground: hsl(var(--theme-surface-elevated-fg));
-	--color-accent-muted: hsl(var(--theme-accent-muted));
-	--color-accent-subtle: hsl(var(--theme-accent-subtle));
+	/* Semantic color aliases using theme tokens — disabled for build compatibility */
+	/* --color-surface: hsl(var(--theme-surface)); */
+	/* --color-surface-foreground: hsl(var(--theme-surface-fg)); */
+	/* --color-surface-elevated: hsl(var(--theme-surface-elevated)); */
+	/* --color-surface-elevated-foreground: hsl(var(--theme-surface-elevated-fg)); */
+	/* --color-accent-muted: hsl(var(--theme-accent-muted)); */
+	/* --color-accent-subtle: hsl(var(--theme-accent-subtle)); */
 }
 
 /* ══════════════════════════════════════════════════════════════════

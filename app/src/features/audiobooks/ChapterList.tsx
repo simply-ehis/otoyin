@@ -1,17 +1,9 @@
 import { useState } from "react";
-import { Badge } from "@/ui/primitives";
-import { Button } from "@/ui/button";
-import { Field, Input } from "@/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/ui/select";
 import { apiClient } from "@/lib/api/client";
 import type { AudiobookDetail } from "@/lib/api/clientAudiobooks";
 import { showStudioErrorToast } from "@/lib/errors";
+import { Button } from "@/ui/button";
+import { Badge } from "@/ui/primitives";
 
 /**
  * Chapter list with per-chapter status, utterance splitting
@@ -49,7 +41,10 @@ export function ChapterList({
 	};
 
 	return (
-		<section aria-label={`Chapters (${detail.chapters.length})`} className="overflow-hidden rounded-md border border-border bg-card">
+		<section
+			aria-label={`Chapters (${detail.chapters.length})`}
+			className="overflow-hidden rounded-md border border-border bg-card"
+		>
 			<p className="border-b border-border px-3 py-2 text-sm font-medium text-foreground">
 				Chapters ({detail.chapters.length})
 			</p>
@@ -75,7 +70,9 @@ export function ChapterList({
 										</p>
 										<p className="mt-1 text-xs tabular-nums text-muted-foreground">
 											{ch.word_count || 0} words · {ch.status}
-											{ch.duration_ms ? ` · ${Math.round(ch.duration_ms / 1000)}s` : ""}
+											{ch.duration_ms
+												? ` · ${Math.round(ch.duration_ms / 1000)}s`
+												: ""}
 										</p>
 										{ch.error ? (
 											<p role="alert" className="text-xs text-destructive">
@@ -147,9 +144,9 @@ export function ChapterList({
 										</ul>
 									) : (
 										<p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-											No utterances yet. If this chapter is a script (Alice: hello),
-											click Split to create per-line voices. Otherwise it renders as a
-											single Narrator block.
+											No utterances yet. If this chapter is a script (Alice:
+											hello), click Split to create per-line voices. Otherwise
+											it renders as a single Narrator block.
 										</p>
 									)}
 								</div>

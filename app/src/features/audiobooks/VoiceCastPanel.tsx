@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { Badge } from "@/ui/primitives";
+import { apiClient } from "@/lib/api/client";
+import type { AudiobookDetail } from "@/lib/api/clientAudiobooks";
+import { showStudioErrorToast } from "@/lib/errors";
+import { useProfiles } from "@/lib/hooks/useProfiles";
+import { debug } from "@/lib/utils/debug";
 import { Button } from "@/ui/button";
 import {
 	Select,
@@ -8,11 +12,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/ui/select";
-import { apiClient } from "@/lib/api/client";
-import type { AudiobookDetail } from "@/lib/api/clientAudiobooks";
-import { showStudioErrorToast } from "@/lib/errors";
-import { debug } from "@/lib/utils/debug";
-import { useProfiles } from "@/lib/hooks/useProfiles";
 
 /**
  * Voice cast: LLM-suggested characters with voice assignment.
@@ -73,7 +72,13 @@ export function VoiceCastPanel({
 				<span className="text-sm font-medium text-foreground">
 					Voice cast — per character (LLM)
 				</span>
-				<Button size="sm" variant="outline" onClick={suggest} disabled={suggesting} loading={suggesting}>
+				<Button
+					size="sm"
+					variant="outline"
+					onClick={suggest}
+					disabled={suggesting}
+					loading={suggesting}
+				>
 					{suggesting ? "Analyzing…" : "Suggest with LLM"}
 				</Button>
 			</p>
@@ -86,16 +91,27 @@ export function VoiceCastPanel({
 				<ul className="flex flex-col gap-2">
 					{chars.map((c) => (
 						<li key={c.character} className="flex items-center gap-2 text-sm">
-							<span className="w-32 truncate font-medium text-foreground">{c.character}</span>
+							<span className="w-32 truncate font-medium text-foreground">
+								{c.character}
+							</span>
 							<span className="flex-1 truncate text-xs text-muted-foreground">
 								{c.traits || c.gender || ""}
-								{c.suggested_profile_name ? ` → ${c.suggested_profile_name}` : ""}
+								{c.suggested_profile_name
+									? ` → ${c.suggested_profile_name}`
+									: ""}
 							</span>
 							<Select
-								value={(castMap.get(c.character) || c.suggested_profile_id || "") as string}
+								value={
+									(castMap.get(c.character) ||
+										c.suggested_profile_id ||
+										"") as string
+								}
 								onValueChange={(v) => void assign(c.character, v)}
 							>
-								<SelectTrigger className="h-8 w-[180px] text-xs" aria-label={`Voice for ${c.character}`}>
+								<SelectTrigger
+									className="h-8 w-[180px] text-xs"
+									aria-label={`Voice for ${c.character}`}
+								>
 									<SelectValue placeholder="— pick voice —" />
 								</SelectTrigger>
 								<SelectContent>
@@ -115,7 +131,9 @@ export function VoiceCastPanel({
 					{detail.cast.map((c) => (
 						<li key={c.character} className="flex gap-2">
 							<span className="font-medium text-foreground">{c.character}</span>
-							<span className="text-muted-foreground">{c.profile_id || "unassigned"}</span>
+							<span className="text-muted-foreground">
+								{c.profile_id || "unassigned"}
+							</span>
 						</li>
 					))}
 				</ul>

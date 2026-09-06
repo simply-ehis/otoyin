@@ -229,11 +229,11 @@ export function PricingAdmin() {
 			{/* Summary cards */}
 			{summary && (
 				<div className="grid grid-cols-3 gap-4">
-					<div className="rounded-lg border bg-secondary/30 p-3">
+					<div className="rounded-lg border bg-secondary p-3">
 						<div className="text-xs text-muted-foreground">Total Overrides</div>
 						<div className="text-2xl font-bold">{summary.total_overrides}</div>
 					</div>
-					<div className="rounded-lg border bg-secondary/30 p-3">
+					<div className="rounded-lg border bg-secondary p-3">
 						<div className="text-xs text-muted-foreground">
 							Products with Overrides
 						</div>
@@ -241,7 +241,7 @@ export function PricingAdmin() {
 							{summary.products_with_overrides}
 						</div>
 					</div>
-					<div className="rounded-lg border bg-secondary/30 p-3">
+					<div className="rounded-lg border bg-secondary p-3">
 						<div className="text-xs text-muted-foreground">
 							Countries with Overrides
 						</div>
@@ -254,7 +254,7 @@ export function PricingAdmin() {
 
 			{/* Add form */}
 			{showAddForm && (
-				<div className="space-y-3 rounded-lg border bg-secondary/30 p-4">
+				<div className="space-y-3 rounded-lg border bg-secondary p-4">
 					<h3 className="text-sm font-medium">Add Region Price</h3>
 					<div className="grid grid-cols-4 gap-3">
 						<div>
@@ -360,7 +360,7 @@ export function PricingAdmin() {
 			<div className="overflow-hidden rounded-lg border">
 				<table className="w-full text-sm">
 					<thead>
-						<tr className="border-b bg-secondary/50">
+						<tr className="border-b bg-secondary">
 							<th className="px-4 py-2 text-left font-medium">Product</th>
 							<th className="px-4 py-2 text-left font-medium">Country</th>
 							<th className="px-4 py-2 text-right font-medium">Price (USD)</th>

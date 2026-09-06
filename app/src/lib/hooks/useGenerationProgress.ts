@@ -1,10 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useToast } from "@/ui/use-toast";
 import { apiClient } from "@/lib/api/client";
 import { useGenerationSettings } from "@/lib/hooks/useSettings";
 import { useGenerationStore } from "@/stores/generationStore";
 import { usePlayerStore } from "@/stores/playerStore";
+import { useToast } from "@/ui/use-toast";
 
 interface GenerationStatusEvent {
 	id: string;
@@ -133,6 +133,9 @@ export function useGenerationProgress() {
 	}, []);
 
 	useEffect(() => {
+		// Deliberately read: the nonce is bumped on retryable SSE errors so
+		// this effect re-runs and reopens the stream for the pending id.
+		void retryNonce;
 		const currentSources = eventSourcesRef.current;
 		const retryCounts = retryCountsRef.current;
 		const fallbackCancels = fallbackCancelRef.current;
@@ -187,9 +190,7 @@ export function useGenerationProgress() {
 			}
 
 			// Switch to fully-assembled audio for seamless playback
-			const isAgentSpeak = data.source
-				? AGENT_SOURCES.has(data.source)
-				: false;
+			const isAgentSpeak = data.source ? AGENT_SOURCES.has(data.source) : false;
 			if (autoplayRef.current && !isAgentSpeak) {
 				const genAudioUrl = apiClient.getAudioUrl(id);
 				// If we were streaming, seamlessly switch to the final version.
@@ -229,11 +230,7 @@ export function useGenerationProgress() {
 		// S1: after SSE exhaustion, watch the terminal state via REST so a
 		// completed generation (and its story link) is not silently dropped.
 		const pollForTerminalState = async (id: string) => {
-			for (
-				let attempt = 0;
-				attempt < FALLBACK_POLL_MAX_ATTEMPTS;
-				attempt++
-			) {
+			for (let attempt = 0; attempt < FALLBACK_POLL_MAX_ATTEMPTS; attempt++) {
 				if (fallbackCancels.get(id) || !pendingIds.has(id)) {
 					return;
 				}
@@ -256,9 +253,7 @@ export function useGenerationProgress() {
 					}
 					// Transient — keep polling
 				}
-				await new Promise((r) =>
-					setTimeout(r, FALLBACK_POLL_INTERVAL_MS),
-				);
+				await new Promise((r) => setTimeout(r, FALLBACK_POLL_INTERVAL_MS));
 			}
 			// Backstop: still no terminal state — drop, but say so plainly.
 			if (!pendingIds.has(id)) {
@@ -346,22 +341,22 @@ export function useGenerationProgress() {
 								const q = chunkQueueRef.current.get(id);
 								if (q && nextIdx < q.length && q[nextIdx]) {
 									currentChunkIdxRef.current[id] = nextIdx;
-								// Retry fetch for next chunk (slow disk write)
-								fetchChunkWithRetry(q[nextIdx]).then((validUrl) => {
-									if (validUrl) {
-										setAudioWithAutoPlay(validUrl, id, "", "");
-									} else {
-										chunkPlayingRef.current.delete(id);
-										delete currentChunkIdxRef.current[id];
-										usePlayerStore.getState().setOnFinish(null);
-										toast({
-											title: "Streaming interrupted",
-											description:
-												"A streamed audio chunk could not be read. The finished audio will still play when ready.",
-											variant: "destructive",
-										});
-									}
-								});
+									// Retry fetch for next chunk (slow disk write)
+									fetchChunkWithRetry(q[nextIdx]).then((validUrl) => {
+										if (validUrl) {
+											setAudioWithAutoPlay(validUrl, id, "", "");
+										} else {
+											chunkPlayingRef.current.delete(id);
+											delete currentChunkIdxRef.current[id];
+											usePlayerStore.getState().setOnFinish(null);
+											toast({
+												title: "Streaming interrupted",
+												description:
+													"A streamed audio chunk could not be read. The finished audio will still play when ready.",
+												variant: "destructive",
+											});
+										}
+									});
 								} else {
 									chunkPlayingRef.current.delete(id);
 									delete currentChunkIdxRef.current[id];
@@ -369,22 +364,22 @@ export function useGenerationProgress() {
 								}
 							});
 
-						// Fetch with retry before playing (handles slow disk writes)
-						fetchChunkWithRetry(chunkFullUrl).then((validUrl) => {
-							if (validUrl) {
-								setAudioWithAutoPlay(validUrl, id, "", "");
-							} else {
-								chunkPlayingRef.current.delete(id);
-								delete currentChunkIdxRef.current[id];
-								usePlayerStore.getState().setOnFinish(null);
-								toast({
-									title: "Streaming interrupted",
-									description:
-										"A streamed audio chunk could not be read. The finished audio will still play when ready.",
-									variant: "destructive",
-								});
-							}
-						});
+							// Fetch with retry before playing (handles slow disk writes)
+							fetchChunkWithRetry(chunkFullUrl).then((validUrl) => {
+								if (validUrl) {
+									setAudioWithAutoPlay(validUrl, id, "", "");
+								} else {
+									chunkPlayingRef.current.delete(id);
+									delete currentChunkIdxRef.current[id];
+									usePlayerStore.getState().setOnFinish(null);
+									toast({
+										title: "Streaming interrupted",
+										description:
+											"A streamed audio chunk could not be read. The finished audio will still play when ready.",
+										variant: "destructive",
+									});
+								}
+							});
 						}
 
 						// Auto-play next chunk when it arrives mid-playback
@@ -430,19 +425,19 @@ export function useGenerationProgress() {
 				source.close();
 				currentSources.delete(id);
 
-			const retries = retryCounts.get(id) ?? 0;
-			if (retries < MAX_SSE_RETRIES) {
-				retryCounts.set(id, retries + 1);
-				const delay = SSE_RETRY_BASE_MS * 2 ** retries;
-				setTimeout(() => {
-					if (pendingIds.has(id) && !currentSources.has(id)) {
-						// Re-run the effect so a fresh EventSource is opened
-						// for this still-pending generation.
-						setRetryNonce((n) => n + 1);
-						queryClient.refetchQueries({ queryKey: ["history"] });
-					}
-				}, delay);
-			} else {
+				const retries = retryCounts.get(id) ?? 0;
+				if (retries < MAX_SSE_RETRIES) {
+					retryCounts.set(id, retries + 1);
+					const delay = SSE_RETRY_BASE_MS * 2 ** retries;
+					setTimeout(() => {
+						if (pendingIds.has(id) && !currentSources.has(id)) {
+							// Re-run the effect so a fresh EventSource is opened
+							// for this still-pending generation.
+							setRetryNonce((n) => n + 1);
+							queryClient.refetchQueries({ queryKey: ["history"] });
+						}
+					}, delay);
+				} else {
 					retryCounts.delete(id);
 					// S1: keep the pending generation and its story link —
 					// watch the terminal state via REST instead of dropping it.

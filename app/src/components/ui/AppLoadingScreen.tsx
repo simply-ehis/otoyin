@@ -14,7 +14,7 @@ export function AppLoadingScreen({
 	return (
 		<output
 			className={cn(
-				"flex min-h-0 flex-1 items-center justify-center bg-background/80",
+				"flex min-h-0 flex-1 items-center justify-center bg-background",
 				className,
 			)}
 			aria-live="polite"
@@ -22,7 +22,7 @@ export function AppLoadingScreen({
 		>
 			<div className="flex flex-col items-center gap-4 text-center">
 				<div className="relative size-16">
-					<div className="absolute inset-1 rounded-lg bg-accent/20 blur-xl animate-pulse" />
+					<div className="absolute inset-1 rounded-lg bg-accent opacity-[0.08] blur-xl animate-pulse" />
 					<img
 						src={logo}
 						alt=""

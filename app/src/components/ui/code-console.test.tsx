@@ -18,7 +18,7 @@ describe("CodeConsole", () => {
 	it("applies code variant classes by default", () => {
 		const { container } = render(<CodeConsole>test</CodeConsole>);
 		const div = container.firstElementChild as HTMLElement;
-		expect(div.className).toContain("bg-muted/50");
+		expect(div.className).toContain("bg-sunken");
 		expect(div.className).toContain("text-muted-foreground");
 	});
 

@@ -1,5 +1,5 @@
-import { ScrollArea } from "@/ui/scroll-area";
 import { cn } from "@/lib/utils/cn";
+import { ScrollArea } from "@/ui/scroll-area";
 import type { TranscriptEditorProps } from "./TranscriptEditor.types";
 
 export function TranscriptEditor({
@@ -74,7 +74,7 @@ export function TranscriptEditor({
 							}}
 							className={cn(
 								"w-full text-left px-3 py-1.5 rounded-md transition-colors text-sm font-mono",
-								isSelected && "bg-primary/20 text-primary",
+								isSelected && "bg-accent-muted text-accent",
 								!isSelected && "hover:bg-muted/50",
 								confidenceClass(word.confidence),
 							)}

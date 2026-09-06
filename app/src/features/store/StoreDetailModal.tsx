@@ -112,7 +112,7 @@ export const StoreDetailModal = memo(function StoreDetailModal({
 				<div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
 					{/* quick specs */}
 					<div className="grid grid-cols-3 gap-2 text-xs">
-						<div className="rounded-lg border bg-secondary/30 px-3 py-2">
+						<div className="rounded-lg border bg-secondary px-3 py-2">
 							<div className="uppercase tracking-wider text-muted-foreground">
 								License
 							</div>
@@ -120,7 +120,7 @@ export const StoreDetailModal = memo(function StoreDetailModal({
 								{product.paid ? "Paid · one-time" : "Free · Open"}
 							</div>
 						</div>
-						<div className="rounded-lg border bg-secondary/30 px-3 py-2">
+						<div className="rounded-lg border bg-secondary px-3 py-2">
 							<div className="uppercase tracking-wider text-muted-foreground">
 								Runs
 							</div>
@@ -128,7 +128,7 @@ export const StoreDetailModal = memo(function StoreDetailModal({
 								Local · Offline
 							</div>
 						</div>
-						<div className="rounded-lg border bg-secondary/30 px-3 py-2">
+						<div className="rounded-lg border bg-secondary px-3 py-2">
 							<div className="uppercase tracking-wider text-muted-foreground">
 								Quality
 							</div>
@@ -181,7 +181,7 @@ export const StoreDetailModal = memo(function StoreDetailModal({
 
 					{/* download progress */}
 					{isDownloading && downloadTask && (
-						<div className="space-y-2 rounded-lg border border-warning/20 bg-warning-soft/20 p-3">
+						<div className="space-y-2 rounded-lg border border-warning/20 bg-warning-soft p-3">
 							<div className="flex items-center gap-2 text-xs font-medium text-warning-text">
 								<Spinner size="xs" /> Downloading{" "}
 								{downloadTask.filename ?? product.name}…

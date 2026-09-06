@@ -158,7 +158,7 @@ export function HelpCenter({
 																	{result.tools.slice(0, 3).map((tool) => (
 																		<span
 																			key={tool}
-																			className="text-xs bg-secondary/50 px-1.5 py-0.5 rounded"
+																			className="text-xs bg-secondary px-1.5 py-0.5 rounded"
 																		>
 																			{tool}
 																		</span>
@@ -235,7 +235,7 @@ export function HelpCenter({
 							)}
 						</div>
 
-						<div className="p-3 border-t border-border bg-muted/30 rounded-b-lg">
+						<div className="p-3 border-t border-border bg-secondary rounded-b-lg">
 							<div className="flex items-center justify-between text-xs text-muted-foreground">
 								<div className="flex items-center gap-3">
 									<span>

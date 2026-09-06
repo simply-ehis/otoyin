@@ -34,7 +34,11 @@ export function TitleBar({
 					{title}
 				</span>
 			) : null}
-			<div className="min-w-0 flex-1" data-tauri-drag-region aria-hidden="true" />
+			<div
+				className="min-w-0 flex-1"
+				data-tauri-drag-region
+				aria-hidden="true"
+			/>
 			{actions ? (
 				<div
 					className="flex shrink-0 items-center gap-1"

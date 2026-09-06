@@ -2,11 +2,18 @@ import {
 	CheckIcon,
 	ChevronDownIcon,
 	PlayIcon,
+	SparklesIcon,
 	TrashIcon,
 } from "@heroicons/react/24/outline";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { apiClient } from "@/lib/api/client";
+import type { HistoryResponse } from "@/lib/api/types";
+import { useHistory } from "@/lib/hooks/useHistory";
+import { debug } from "@/lib/utils/debug";
+import { useEffectsStore } from "@/stores/effectsStore";
+import { usePlayerStore } from "@/stores/playerStore";
 import { Button } from "@/ui/button";
 import {
 	Dialog,
@@ -15,20 +22,11 @@ import {
 	DialogFooter,
 	DialogTitle,
 } from "@/ui/dialog";
-import { Field, Input, Textarea } from "@/ui/input";
-import { Label } from "@/ui/primitives";
+import { Field, Input, SearchInput, Textarea } from "@/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover";
-import { SearchInput } from "@/ui/input";
-import { Separator } from "@/ui/primitives";
-import { Spinner } from "@/ui/primitives";
+import { Label, Separator } from "@/ui/primitives";
 import { EmptyState } from "@/ui/states";
 import { ChainEditor } from "./ChainEditor";
-import { apiClient } from "@/lib/api/client";
-import type { HistoryResponse } from "@/lib/api/types";
-import { useHistory } from "@/lib/hooks/useHistory";
-import { debug } from "@/lib/utils/debug";
-import { usePlayerStore } from "@/stores/playerStore";
-import { useEffectsStore } from "@/stores/effectsStore";
 
 /** Generation picker for effect previews (completed only, searchable). */
 function GenerationPicker({
@@ -46,7 +44,10 @@ function GenerationPicker({
 	const completed = (data?.items ?? []).filter((g) => g.status === "completed");
 	const q = query.trim().toLowerCase();
 	const filtered = completed.filter(
-		(g) => !q || g.text.toLowerCase().includes(q) || g.profile_name.toLowerCase().includes(q),
+		(g) =>
+			!q ||
+			g.text.toLowerCase().includes(q) ||
+			g.profile_name.toLowerCase().includes(q),
 	);
 	const selected = completed.find((g) => g.id === selectedId);
 
@@ -59,14 +60,21 @@ function GenerationPicker({
 							<>
 								<span className="font-medium">{selected.profile_name}</span>
 								<span className="ml-1.5 text-muted-foreground">
-									{selected.text.length > 30 ? `${selected.text.slice(0, 30)}…` : selected.text}
+									{selected.text.length > 30
+										? `${selected.text.slice(0, 30)}…`
+										: selected.text}
 								</span>
 							</>
 						) : (
-							<span className="text-muted-foreground">Select a generation…</span>
+							<span className="text-muted-foreground">
+								Select a generation…
+							</span>
 						)}
 					</span>
-					<ChevronDownIcon className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden="true" />
+					<ChevronDownIcon
+						className="h-3.5 w-3.5 shrink-0 opacity-60"
+						aria-hidden="true"
+					/>
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className="w-80 p-0" align="start">
@@ -97,9 +105,13 @@ function GenerationPicker({
 									}}
 									className="w-full border-b border-border px-3 py-2 text-left transition-colors last:border-0 hover:bg-secondary"
 								>
-									<p className="text-sm font-medium text-foreground">{gen.profile_name}</p>
+									<p className="text-sm font-medium text-foreground">
+										{gen.profile_name}
+									</p>
 									<p className="truncate text-xs text-muted-foreground">
-										{gen.text.length > 60 ? `${gen.text.slice(0, 60)}…` : gen.text}
+										{gen.text.length > 60
+											? `${gen.text.slice(0, 60)}…`
+											: gen.text}
 									</p>
 								</button>
 							</li>
@@ -179,7 +191,9 @@ export function PresetDetail() {
 	const builtin = preset?.is_builtin ?? false;
 	const displayName = preset
 		? preset.is_builtin
-			? t(`effects.builtinPresets.${preset.name}.name`, { defaultValue: preset.name })
+			? t(`effects.builtinPresets.${preset.name}.name`, {
+					defaultValue: preset.name,
+				})
 			: preset.name
 		: "";
 
@@ -237,7 +251,11 @@ export function PresetDetail() {
 		<div className="flex h-full min-h-0 flex-col">
 			<div className="mb-4 flex items-center justify-between gap-3">
 				<h2 className="truncate text-lg font-semibold tracking-tight text-foreground">
-					{creating ? t("effects.detail.newTitle") : builtin ? displayName : t("effects.detail.editTitle")}
+					{creating
+						? t("effects.detail.newTitle")
+						: builtin
+							? displayName
+							: t("effects.detail.editTitle")}
 				</h2>
 				<span className="flex shrink-0 items-center gap-2">
 					{!builtin && !creating ? (
@@ -256,11 +274,15 @@ export function PresetDetail() {
 									apiClient
 										.deleteEffectPreset(selectedId)
 										.then(() => {
-											void queryClient.invalidateQueries({ queryKey: ["effect-presets"] });
+											void queryClient.invalidateQueries({
+												queryKey: ["effect-presets"],
+											});
 											setSelectedId(null);
 											setChain([]);
 										})
-										.catch((e: unknown) => debug.warn("[effects] delete failed:", e))
+										.catch((e: unknown) =>
+											debug.warn("[effects] delete failed:", e),
+										)
 										.finally(() => setDeleting(false));
 								}}
 							>
@@ -284,12 +306,16 @@ export function PresetDetail() {
 											effects_chain: chain,
 										})
 										.then(() => {
-											void queryClient.invalidateQueries({ queryKey: ["effect-presets"] });
+											void queryClient.invalidateQueries({
+												queryKey: ["effect-presets"],
+											});
 											void queryClient.invalidateQueries({
 												queryKey: ["effect-preset", selectedId],
 											});
 										})
-										.catch((e: unknown) => debug.warn("[effects] save failed:", e))
+										.catch((e: unknown) =>
+											debug.warn("[effects] save failed:", e),
+										)
 										.finally(() => setSaving(false));
 								}}
 							>
@@ -309,7 +335,9 @@ export function PresetDetail() {
 							}}
 						>
 							<CheckIcon className="h-3.5 w-3.5" aria-hidden="true" />
-							{saving ? t("effects.detail.saving") : t("effects.detail.savePreset")}
+							{saving
+								? t("effects.detail.saving")
+								: t("effects.detail.savePreset")}
 						</Button>
 					) : null}
 					{builtin ? (
@@ -319,13 +347,17 @@ export function PresetDetail() {
 							className="h-8 gap-2"
 							disabled={saving}
 							onClick={() => {
-								setSaveAsName(t("effects.saveAs.suggestedName", { name: displayName }));
+								setSaveAsName(
+									t("effects.saveAs.suggestedName", { name: displayName }),
+								);
 								setSaveAsDescription(description);
 								setSaveAsOpen(true);
 							}}
 						>
 							<CheckIcon className="h-3.5 w-3.5" aria-hidden="true" />
-							{saving ? t("effects.detail.saving") : t("effects.detail.saveAsCustom")}
+							{saving
+								? t("effects.detail.saving")
+								: t("effects.detail.saveAsCustom")}
 						</Button>
 					) : null}
 				</span>
@@ -343,7 +375,10 @@ export function PresetDetail() {
 								className="h-9"
 							/>
 						</Field>
-						<Field label={t("effects.fields.description")} htmlFor="preset-description">
+						<Field
+							label={t("effects.fields.description")}
+							htmlFor="preset-description"
+						>
 							<Textarea
 								id="preset-description"
 								value={description}
@@ -379,14 +414,18 @@ export function PresetDetail() {
 							{t("effects.preview.button")}
 						</Button>
 					</div>
-					<p className="text-xs text-muted-foreground">{t("effects.preview.hint")}</p>
+					<p className="text-xs text-muted-foreground">
+						{t("effects.preview.hint")}
+					</p>
 				</div>
 			</div>
 
 			<Dialog open={saveAsOpen} onOpenChange={setSaveAsOpen}>
 				<DialogContent>
 					<DialogTitle>{t("effects.saveAs.title")}</DialogTitle>
-					<DialogDescription>{t("effects.saveAs.description")}</DialogDescription>
+					<DialogDescription>
+						{t("effects.saveAs.description")}
+					</DialogDescription>
 					<div className="flex flex-col gap-3 py-2">
 						<Field label={t("effects.fields.name")} htmlFor="saveas-name">
 							<Input
@@ -398,16 +437,21 @@ export function PresetDetail() {
 								autoFocus
 								onKeyDown={(e) => {
 									if (e.key === "Enter" && saveAsName.trim()) {
-										void saveNew(saveAsName, saveAsDescription).then((created) => {
-											if (created) {
-												setSaveAsOpen(false);
-											}
-										});
+										void saveNew(saveAsName, saveAsDescription).then(
+											(created) => {
+												if (created) {
+													setSaveAsOpen(false);
+												}
+											},
+										);
 									}
 								}}
 							/>
 						</Field>
-						<Field label={t("effects.fields.description")} htmlFor="saveas-description">
+						<Field
+							label={t("effects.fields.description")}
+							htmlFor="saveas-description"
+						>
 							<Textarea
 								id="saveas-description"
 								value={saveAsDescription}
@@ -418,7 +462,11 @@ export function PresetDetail() {
 						</Field>
 					</div>
 					<DialogFooter>
-						<Button variant="ghost" onClick={() => setSaveAsOpen(false)} disabled={saving}>
+						<Button
+							variant="ghost"
+							onClick={() => setSaveAsOpen(false)}
+							disabled={saving}
+						>
 							{t("common.cancel")}
 						</Button>
 						<Button

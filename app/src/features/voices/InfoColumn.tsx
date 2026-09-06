@@ -3,6 +3,11 @@ import { useRef } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { ChainEditor } from "@/features/effects/ChainEditor";
+import type { EffectConfig } from "@/lib/api/types";
+import { DEFAULT_ENGINE_OPTIONS } from "@/lib/constants/engines";
+import { LANGUAGE_OPTIONS } from "@/lib/constants/languages";
+import { useDeleteAvatar } from "@/lib/hooks/useProfiles";
+import { useServerStore } from "@/stores/serverStore";
 import {
 	FormControl,
 	FormField,
@@ -19,14 +24,6 @@ import {
 	SelectValue,
 } from "@/ui/select";
 import { useToast } from "@/ui/use-toast";
-import type { EffectConfig } from "@/lib/api/types";
-import { DEFAULT_ENGINE_OPTIONS } from "@/lib/constants/engines";
-import { LANGUAGE_OPTIONS } from "@/lib/constants/languages";
-import {
-	useDeleteAvatar,
-	useUploadAvatar,
-} from "@/lib/hooks/useProfiles";
-import { useServerStore } from "@/stores/serverStore";
 
 export interface InfoFormValues {
 	name: string;
@@ -47,7 +44,6 @@ export function InfoColumn({
 	editingId,
 	editingAvatarPath,
 	source,
-	creating,
 	defaultEngine,
 	onDefaultEngine,
 	showEffects,
@@ -60,7 +56,6 @@ export function InfoColumn({
 	editingId: string | null;
 	editingAvatarPath?: string;
 	source: "clone" | "builtin" | "design";
-	creating: boolean;
 	defaultEngine: string;
 	onDefaultEngine: (v: string) => void;
 	showEffects: boolean;
@@ -70,11 +65,11 @@ export function InfoColumn({
 	const { t } = useTranslation();
 	const { toast } = useToast();
 	const serverUrl = useServerStore((s) => s.serverUrl);
-	const uploadAvatar = useUploadAvatar();
 	const deleteAvatar = useDeleteAvatar();
 	const avatarRef = useRef<HTMLInputElement>(null);
 	const shownAvatar =
-		avatarPreview ?? (editingAvatarPath ? `${serverUrl}/profiles/${editingId}/avatar` : null);
+		avatarPreview ??
+		(editingAvatarPath ? `${serverUrl}/profiles/${editingId}/avatar` : null);
 
 	const pickAvatar = (file: File | undefined) => {
 		if (!file) {
@@ -113,7 +108,10 @@ export function InfoColumn({
 								onError={() => setAvatarPreview(null)}
 							/>
 						) : (
-							<span className="text-2xl font-semibold text-muted-foreground" aria-hidden="true">
+							<span
+								className="text-2xl font-semibold text-muted-foreground"
+								aria-hidden="true"
+							>
 								{(form.watch("name") || "?").charAt(0).toUpperCase()}
 							</span>
 						)}
@@ -141,7 +139,9 @@ export function InfoColumn({
 											toast({
 												title: t("profileForm.toast.avatarRemoveFailed"),
 												description:
-													err instanceof Error ? err.message : t("common.unknownError"),
+													err instanceof Error
+														? err.message
+														: t("common.unknownError"),
 												variant: "destructive",
 											}),
 									});
@@ -175,7 +175,11 @@ export function InfoColumn({
 					<FormItem>
 						<FormLabel>{t("profileForm.fields.name")}</FormLabel>
 						<FormControl>
-							<Input placeholder={t("profileForm.fields.namePlaceholder")} {...field} value={(field.value as string) ?? ""} />
+							<Input
+								placeholder={t("profileForm.fields.namePlaceholder")}
+								{...field}
+								value={(field.value as string) ?? ""}
+							/>
 						</FormControl>
 						<FormMessage />
 					</FormItem>
@@ -188,7 +192,11 @@ export function InfoColumn({
 					<FormItem>
 						<FormLabel>{t("profileForm.fields.descriptionLabel")}</FormLabel>
 						<FormControl>
-							<Textarea placeholder={t("profileForm.fields.descriptionPlaceholder")} {...field} value={(field.value as string) ?? ""} />
+							<Textarea
+								placeholder={t("profileForm.fields.descriptionPlaceholder")}
+								{...field}
+								value={(field.value as string) ?? ""}
+							/>
 						</FormControl>
 						<FormMessage />
 					</FormItem>
@@ -208,7 +216,9 @@ export function InfoColumn({
 								value={(field.value as string) ?? ""}
 							/>
 						</FormControl>
-						<p className="text-xs text-muted-foreground">{t("profileForm.fields.personalityHint")}</p>
+						<p className="text-xs text-muted-foreground">
+							{t("profileForm.fields.personalityHint")}
+						</p>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -219,7 +229,10 @@ export function InfoColumn({
 				render={({ field }) => (
 					<FormItem>
 						<FormLabel>{t("profileForm.fields.language")}</FormLabel>
-						<Select onValueChange={field.onChange} value={(field.value as string) ?? "en"}>
+						<Select
+							onValueChange={field.onChange}
+							value={(field.value as string) ?? "en"}
+						>
 							<FormControl>
 								<SelectTrigger>
 									<SelectValue />
@@ -238,7 +251,10 @@ export function InfoColumn({
 				)}
 			/>
 
-			<Field label={t("profileForm.fields.defaultEngine")} htmlFor="profile-engine">
+			<Field
+				label={t("profileForm.fields.defaultEngine")}
+				htmlFor="profile-engine"
+			>
 				<Select
 					value={defaultEngine || "_none"}
 					onValueChange={(v) => onDefaultEngine(v === "_none" ? "" : v)}
@@ -248,7 +264,9 @@ export function InfoColumn({
 						<SelectValue placeholder={t("profileForm.fields.noPreference")} />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="_none">{t("profileForm.fields.noPreference")}</SelectItem>
+						<SelectItem value="_none">
+							{t("profileForm.fields.noPreference")}
+						</SelectItem>
 						{DEFAULT_ENGINE_OPTIONS.map((o) => (
 							<SelectItem key={o.value} value={o.value}>
 								{o.label}
@@ -256,7 +274,9 @@ export function InfoColumn({
 						))}
 					</SelectContent>
 				</Select>
-				<p className="mt-1 text-xs text-muted-foreground">{t("profileForm.fields.defaultEngineHint")}</p>
+				<p className="mt-1 text-xs text-muted-foreground">
+					{t("profileForm.fields.defaultEngineHint")}
+				</p>
 			</Field>
 
 			{showEffects ? (

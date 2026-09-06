@@ -1,15 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import type { MarketplaceProduct } from "@/lib/api/types";
 import { showStudioErrorToast } from "@/lib/errors";
 import { getDeviceId, marketplaceClient } from "@/lib/marketplace";
 import { cn } from "@/lib/utils/cn";
+import { isProductNew, useProductStore } from "@/stores/productStore";
 import { Button } from "@/ui/button";
 import { PageTabs } from "@/ui/tabs";
 import { useToast } from "@/ui/use-toast";
 import { BrowseStates } from "./BrowseStates";
 import { DonateCard } from "./DonateCard";
+import { HintBanner } from "./HintBanner";
 import { LicensesView } from "./LicensesView";
 import { OffersBanner } from "./OffersBanner";
 import { PerEngineKeepaliveRow } from "./PerEngineKeepaliveRow";
@@ -29,6 +31,14 @@ import {
 type StoreView = "browse" | "licenses" | "pricing";
 type ShowFilter = "all" | "installed" | "available" | "paid" | "free";
 
+/** Subtle, dismissible hint shown when the remote-catalog refresh fails. */
+const REFRESH_FAILED_HINT =
+	"Couldn't refresh the catalog from the marketplace service — showing the last synced version. It will retry automatically.";
+
+/** Subtle, dismissible hint shown when a model download fails to start. */
+const DOWNLOAD_FAILED_HINT =
+	"A model download couldn't be started — check your connection and disk space, then try again.";
+
 export function StorePage() {
 	const queryClient = useQueryClient();
 	const { toast } = useToast();
@@ -45,6 +55,12 @@ export function StorePage() {
 	const [pendingDownload, setPendingDownload] = useState<string | null>(null);
 	const [activatingId, setActivatingId] = useState<string | null>(null);
 	const [wishlist, setWishlist] = useState<Set<string>>(new Set());
+	const [refreshHint, setRefreshHint] = useState<string | null>(null);
+	const [downloadHint, setDownloadHint] = useState<string | null>(null);
+	const firstSeenAt = useProductStore((s) => s.firstSeenAt);
+	const lastSeenCatalogAt = useProductStore((s) => s.lastSeenCatalogAt);
+	const recordProducts = useProductStore((s) => s.recordProducts);
+	const markCatalogSeen = useProductStore((s) => s.markCatalogSeen);
 
 	// Catalog — the signed local catalog already carries per-product
 	// `local_status` (cached | not_downloaded) annotated by the backend.
@@ -111,6 +127,38 @@ export function StorePage() {
 			localStorage.setItem("otoyin-wishlist", JSON.stringify([...wishlist]));
 		} catch {}
 	}, [wishlist]);
+	// Nudge the stale-gated remote-catalog refresh when the Store opens, so
+	// newly published models appear without an app restart. The backend is a
+	// cheap no-op when the catalog is fresh (no network, no lock); only a
+	// successful swap triggers a refetch here. Offline-first: a failed nudge
+	// keeps the bundled catalog — but surfaces as a subtle dismissible hint
+	// rather than failing silently.
+	useEffect(() => {
+		let cancelled = false;
+		void apiClient
+			.refreshCatalog()
+			.then((res) => {
+				if (cancelled) {
+					return;
+				}
+				if (res.refreshed) {
+					setRefreshHint(null);
+					void queryClient.invalidateQueries({
+						queryKey: ["marketplace", "catalog"],
+					});
+				} else if (res.reason === "failed") {
+					setRefreshHint(REFRESH_FAILED_HINT);
+				}
+			})
+			.catch(() => {
+				if (!cancelled) {
+					setRefreshHint(REFRESH_FAILED_HINT);
+				}
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [queryClient]);
 
 	const owned = useMemo(() => {
 		const s = new Set<string>();
@@ -139,6 +187,61 @@ export function StorePage() {
 		}
 		return m;
 	}, [catalog.data]);
+
+	// "New" badge bookkeeping. The backend re-stamps `signed_at` on every
+	// fetch, so the *current* document's stamp is not a stable introduction
+	// time — instead, the first fetch in which each product id is ever seen
+	// records that stamp as the product's introduction (`firstSeenAt`), and
+	// the marker advances when the user LEAVES the Store. Products present
+	// at first launch are never "New" (their introduction equals the
+	// initial marker); products introduced later stay badged until the user
+	// visits and then leaves the Store.
+	const catalogSignedAt = catalog.data?.signed_at ?? "";
+	const catalogProductIds = useMemo(
+		() => (catalog.data?.products ?? []).map((p) => p.id),
+		[catalog.data],
+	);
+	const storeViewRef = useRef(storeView);
+	useEffect(() => {
+		storeViewRef.current = storeView;
+	}, [storeView]);
+	useEffect(() => {
+		if (!catalogSignedAt || catalogProductIds.length === 0) {
+			return;
+		}
+		recordProducts(catalogSignedAt, catalogProductIds);
+		if (!useProductStore.getState().lastSeenCatalogAt) {
+			// First ever Store open: baseline — nothing is "New" yet.
+			markCatalogSeen(catalogSignedAt);
+		}
+	}, [catalogSignedAt, catalogProductIds, recordProducts, markCatalogSeen]);
+	// Advance the marker on unmount (leaving the Store tab/route) or when
+	// switching away from the "browse" view — not on fetch, which would
+	// clear the badges before they ever render.
+	useEffect(() => {
+		return () => {
+			if (storeViewRef.current === "browse") {
+				const latest = useProductStore.getState();
+				if (latest.lastSeenCatalogAt !== catalogSignedAtRef.current) {
+					latest.markCatalogSeen(catalogSignedAtRef.current);
+				}
+			}
+		};
+	}, []);
+	const catalogSignedAtRef = useRef(catalogSignedAt);
+	useEffect(() => {
+		catalogSignedAtRef.current = catalogSignedAt;
+	}, [catalogSignedAt]);
+	const newIds = useMemo(() => {
+		const s = new Set<string>();
+		for (const p of catalog.data?.products ?? []) {
+			const intro = firstSeenAt[p.id];
+			if (isProductNew(intro, lastSeenCatalogAt)) {
+				s.add(p.id);
+			}
+		}
+		return s;
+	}, [catalog.data, lastSeenCatalogAt, firstSeenAt]);
 	const downloadProgressMap = useMemo(
 		() => buildDownloadProgressMap(activeTasksQ.data),
 		[activeTasksQ.data],
@@ -218,14 +321,53 @@ export function StorePage() {
 	const installedCount = installed.size;
 
 	// -- Mutations (only here) --
+	// Manual "Check for updates": force a remote-catalog refresh regardless of
+	// staleness (bypasses the 24h gate), then refetch when a swap happened.
+	// Offline-first: a failure or an unconfigured OTOYIN_CATALOG_URL reports
+	// refreshed: false and leaves the current catalog in place.
+	const checkUpdatesMut = useMutation({
+		mutationFn: () => apiClient.refreshCatalog(true),
+		onSuccess: async (res) => {
+			if (res.refreshed) {
+				setRefreshHint(null);
+				toast({
+					title: "Catalog updated",
+					description: "New models are available — take a look.",
+				});
+				await queryClient.invalidateQueries({
+					queryKey: ["marketplace", "catalog"],
+				});
+			} else if (res.reason === "failed") {
+				// A genuine fetch/verify failure: subtle hint, not a toast —
+				// avoid claiming "up to date" when we couldn't check.
+				setRefreshHint(REFRESH_FAILED_HINT);
+			} else {
+				toast({
+					title: "You're up to date",
+					description: "No new products right now — check back later.",
+				});
+			}
+		},
+		onError: () => setRefreshHint(REFRESH_FAILED_HINT),
+	});
 	const downloadMut = useMutation({
 		mutationFn: (id: string) => apiClient.triggerModelDownload(id),
 		onMutate: (id) => setPendingDownload(id),
 		onSuccess: async () => {
+			setDownloadHint(null);
 			await queryClient.invalidateQueries({ queryKey: ["modelStatus"] });
 			await queryClient.invalidateQueries({ queryKey: ["activeTasks"] });
 		},
-		onError: (err) => showStudioErrorToast(err),
+		onError: (err) => {
+			// Subtle non-blocking hint instead of a toast: the user should keep
+			// browsing while deciding whether to retry. Clears on the next
+			// successful download start or when dismissed.
+			setDownloadHint(
+				err instanceof Error && err.message
+					? `${DOWNLOAD_FAILED_HINT} (${err.message})`
+					: DOWNLOAD_FAILED_HINT,
+			);
+		},
 		onSettled: () => setPendingDownload(null),
 	});
 	const cancelMut = useMutation({
@@ -306,14 +448,29 @@ export function StorePage() {
 					cacheDirPath={cacheDirQ.data?.path}
 					wishlistSize={wishlist.size}
 					wishlistOnly={showWishlistOnly}
+					checkingUpdates={checkUpdatesMut.isPending}
+					onCheckUpdates={() => checkUpdatesMut.mutate()}
 					onRefresh={() => {
 						void catalog.refetch();
 						void modelsStatus.refetch();
 						void activeTasksQ.refetch();
 					}}
 					onToggleWishlistOnly={() => setShowWishlistOnly((v) => !v)}
-				/>
-
+				/>{" "}
+				{/* Subtle non-blocking hints: remote-catalog refresh and model
+					    download failures. Dismissible; clear on the next success. */}
+				{refreshHint && (
+					<HintBanner
+						message={refreshHint}
+						onDismiss={() => setRefreshHint(null)}
+					/>
+				)}
+				{downloadHint && (
+					<HintBanner
+						message={downloadHint}
+						onDismiss={() => setDownloadHint(null)}
+					/>
+				)}
 				{/* View tabs */}
 				<PageTabs>
 					{(
@@ -341,11 +498,8 @@ export function StorePage() {
 						</Button>
 					))}
 				</PageTabs>
-
 				<OffersBanner offers={offersQ.data ?? []} onOpen={setDetailProduct} />
-
 				<DonateCard />
-
 				{storeView === "pricing" ? (
 					<PricingAdmin />
 				) : storeView === "licenses" ? (
@@ -410,6 +564,7 @@ export function StorePage() {
 									wishlist={wishlist}
 									pendingDownload={pendingDownload}
 									activatingId={activatingId}
+									newIds={newIds}
 									onDetail={setDetailProduct}
 									onQuickDownload={(id) => downloadMut.mutate(id)}
 									onCancel={(id) => cancelMut.mutate(id)}

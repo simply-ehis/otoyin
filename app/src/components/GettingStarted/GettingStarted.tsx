@@ -59,7 +59,7 @@ export function GettingStarted() {
 	}
 
 	return (
-		<div className="mb-4 rounded-xl border border-border bg-card/60 overflow-hidden">
+		<div className="mb-4 rounded-lg border border-border bg-card overflow-hidden">
 			<div className="flex items-center justify-between px-4 pt-3 pb-1">
 				<div>
 					<h3 className="text-sm font-semibold">Get started</h3>
@@ -89,7 +89,7 @@ export function GettingStarted() {
 									className={cn(
 										"size-7 rounded-full flex items-center justify-center text-xs font-medium shrink-0 transition-colors",
 										step.done
-											? "bg-emerald-500/10 text-emerald-500"
+											? "bg-success-soft text-success"
 											: "bg-muted text-muted-foreground",
 									)}
 								>
@@ -103,7 +103,7 @@ export function GettingStarted() {
 									<div
 										className={cn(
 											"w-px flex-1 my-1",
-											step.done ? "bg-emerald-500/20" : "bg-border",
+											step.done ? "bg-success" : "bg-border",
 										)}
 									/>
 								)}

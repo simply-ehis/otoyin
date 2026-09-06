@@ -115,7 +115,7 @@ function MiniSamplePlayer({ audioUrl }: MiniSamplePlayerProps) {
 	};
 
 	return (
-		<div className="border-t bg-muted/30 px-3 py-2 mt-2">
+		<div className="border-t bg-secondary px-3 py-2 mt-2">
 			<div className="flex items-center gap-2">
 				<Button
 					type="button"

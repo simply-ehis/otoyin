@@ -113,7 +113,7 @@ export function CommandPalette({
 			label: "Generation history",
 			category: "Voice",
 			icon: <ClockIcon className="size-4" />,
-			action: () => navigate({ to: "/history" }),
+			action: () => navigate({ to: "/library" }),
 		},
 		{
 			id: "about",
@@ -216,7 +216,7 @@ export function CommandPalette({
 									cmd.action();
 									onClose();
 								}}
-								className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent/50 focus:outline-none focus:bg-accent/50"
+								className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-secondary focus:outline-none focus:bg-secondary focus:text-foreground"
 							>
 								<span className="size-5 flex items-center justify-center text-muted-foreground">
 									{cmd.icon}
@@ -232,7 +232,7 @@ export function CommandPalette({
 					)}
 				</div>
 
-				<div className="p-2 border-t border-border bg-muted/30 rounded-b-lg">
+				<div className="p-2 border-t border-border bg-secondary rounded-b-lg">
 					<p className="text-xs text-muted-foreground text-center">
 						<XMarkIcon className="size-3 inline mr-1" />
 						Esc to close — ↑↓ to navigate — Enter to select

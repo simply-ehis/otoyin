@@ -7,6 +7,7 @@ export function Label({
 	...props
 }: React.LabelHTMLAttributes<HTMLLabelElement>) {
 	return (
+		// biome-ignore lint/a11y/noLabelWithoutControl: wrapper component; every call site pairs it with a control via htmlFor.
 		<label
 			className={cn("text-xs font-medium text-muted-foreground", className)}
 			{...props}
@@ -58,8 +59,10 @@ export function StatePill({
 				"inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs",
 				state === "ready" &&
 					"border-success/40 bg-success-soft text-success-text",
-				state === "loading" && "border-strong bg-secondary text-muted-foreground",
-				state === "idle" && "border-border bg-transparent text-muted-foreground",
+				state === "loading" &&
+					"border-strong bg-secondary text-muted-foreground",
+				state === "idle" &&
+					"border-border bg-transparent text-muted-foreground",
 				state === "breaker" &&
 					"border-warning/40 bg-warning-soft text-warning-text",
 				className,
@@ -71,7 +74,7 @@ export function StatePill({
 					"size-1.5 rounded-full",
 					state === "ready" && "bg-success",
 					state === "loading" && "animate-pulse bg-muted-foreground",
-					state === "idle" && "bg-muted-foreground/50",
+					state === "idle" && "bg-strong",
 					state === "breaker" && "bg-warning",
 				)}
 			/>
@@ -85,15 +88,14 @@ export function Separator({
 	orientation = "horizontal",
 	className,
 	...props
-}: React.HTMLAttributes<HTMLDivElement> & {
+}: React.HTMLAttributes<HTMLHRElement> & {
 	orientation?: "horizontal" | "vertical";
 }) {
 	return (
-		<div
-			role="separator"
-			aria-orientation={orientation}
+		<hr
+			aria-orientation={orientation === "vertical" ? "vertical" : undefined}
 			className={cn(
-				"bg-border",
+				"border-0 bg-border",
 				orientation === "horizontal" ? "h-px w-full" : "h-full w-px",
 				className,
 			)}
@@ -125,8 +127,7 @@ export function Spinner({
 	className?: string;
 }) {
 	return (
-		<span
-			role="status"
+		<output
 			aria-label="Loading"
 			className={cn(
 				"inline-block animate-spin rounded-full border-2 border-current border-t-transparent",

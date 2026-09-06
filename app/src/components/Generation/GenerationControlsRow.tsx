@@ -65,9 +65,9 @@ function VoiceTypeBadge({ type }: { type?: string }) {
 		<span
 			className={cn(
 				"shrink-0 rounded-full px-1.5 py-px text-xs font-medium",
-				type === "cloned" && "bg-amber-500/10 text-amber-300",
-				type === "designed" && "bg-sky-500/10 text-sky-300",
-				(!type || type === "preset") && "bg-muted/40 text-muted-foreground",
+				type === "cloned" && "bg-warning-soft text-warning-text",
+				type === "designed" && "bg-secondary text-sky-300",
+				(!type || type === "preset") && "bg-secondary text-muted-foreground",
 			)}
 		>
 			{label}

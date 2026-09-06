@@ -1,19 +1,19 @@
 import {
+	BoltIcon,
 	FolderOpenIcon,
 	LanguageIcon,
 	MicrophoneIcon,
-	BoltIcon,
 } from "@heroicons/react/24/outline";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/ui/button";
-import { Switch } from "@/ui/controls";
-import { Slider } from "@/ui/slider";
 import { showStudioErrorToast } from "@/lib/errors";
 import { useGenerationSettings } from "@/lib/hooks/useSettings";
 import { debug } from "@/lib/utils/debug";
 import { usePlatform } from "@/platform/PlatformContext";
 import { useServerStore } from "@/stores/serverStore";
+import { Button } from "@/ui/button";
+import { Switch } from "@/ui/controls";
+import { Slider } from "@/ui/slider";
 import { SettingRow, SettingSection } from "./rows";
 
 /**
@@ -77,7 +77,9 @@ export function GenerationPage() {
 						description={t("settings.generation.chunkLimit.description")}
 						action={
 							<span className="text-sm tabular-nums text-muted-foreground">
-								{t("settings.generation.chunkLimit.value", { chars: maxChunkChars })}
+								{t("settings.generation.chunkLimit.value", {
+									chars: maxChunkChars,
+								})}
 							</span>
 						}
 					>
@@ -164,7 +166,9 @@ export function GenerationPage() {
 
 					<SettingRow
 						title={t("settings.generation.folder.title")}
-						description={generationsPath ?? t("settings.generation.folder.description")}
+						description={
+							generationsPath ?? t("settings.generation.folder.description")
+						}
 						action={
 							<Button
 								variant="outline"
@@ -172,7 +176,10 @@ export function GenerationPage() {
 								onClick={openGenerationsFolder}
 								disabled={opening || !generationsPath}
 							>
-								<FolderOpenIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+								<FolderOpenIcon
+									className="mr-1.5 h-3.5 w-3.5"
+									aria-hidden="true"
+								/>
 								{t("settings.generation.folder.open")}
 							</Button>
 						}
@@ -180,7 +187,10 @@ export function GenerationPage() {
 				</SettingSection>
 			</div>
 
-			<aside className="sticky top-0 hidden w-[280px] shrink-0 flex-col gap-6 lg:flex" aria-label="About generation">
+			<aside
+				className="sticky top-0 hidden w-[280px] shrink-0 flex-col gap-6 lg:flex"
+				aria-label="About generation"
+			>
 				<div className="flex flex-col gap-2">
 					<h3 className="text-sm font-semibold text-foreground">
 						{t("settings.generation.sidebar.aboutTitle")}
@@ -195,7 +205,10 @@ export function GenerationPage() {
 					</h3>
 					<ul className="flex flex-col gap-3 text-sm text-muted-foreground">
 						<li className="flex gap-3">
-							<MicrophoneIcon className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden="true" />
+							<MicrophoneIcon
+								className="mt-0.5 size-4 shrink-0 text-accent"
+								aria-hidden="true"
+							/>
 							<span className="leading-relaxed">
 								<span className="font-medium text-foreground">
 									{t("settings.generation.sidebar.clone.title")}
@@ -204,7 +217,10 @@ export function GenerationPage() {
 							</span>
 						</li>
 						<li className="flex gap-3">
-							<LanguageIcon className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden="true" />
+							<LanguageIcon
+								className="mt-0.5 size-4 shrink-0 text-accent"
+								aria-hidden="true"
+							/>
 							<span className="leading-relaxed">
 								<span className="font-medium text-foreground">
 									{t("settings.generation.sidebar.engines.title")}
@@ -213,7 +229,10 @@ export function GenerationPage() {
 							</span>
 						</li>
 						<li className="flex gap-3">
-							<BoltIcon className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden="true" />
+							<BoltIcon
+								className="mt-0.5 size-4 shrink-0 text-accent"
+								aria-hidden="true"
+							/>
 							<span className="leading-relaxed">
 								<span className="font-medium text-foreground">
 									{t("settings.generation.sidebar.agentReady.title")}

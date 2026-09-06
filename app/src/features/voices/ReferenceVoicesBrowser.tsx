@@ -1,13 +1,11 @@
-import {
-	PauseIcon,
-	PlayIcon,
-	SparklesIcon,
-} from "@heroicons/react/24/outline";
+import { PauseIcon, PlayIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { Badge } from "@/ui/primitives";
+import { apiClient } from "@/lib/api/client";
+import { showStudioErrorToast } from "@/lib/errors";
 import { Button } from "@/ui/button";
 import { SearchInput } from "@/ui/input";
+import { Badge } from "@/ui/primitives";
 import {
 	Select,
 	SelectContent,
@@ -17,8 +15,6 @@ import {
 } from "@/ui/select";
 import { EmptyState, LoadingState } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
-import { apiClient } from "@/lib/api/client";
-import { showStudioErrorToast } from "@/lib/errors";
 
 /**
  * Bundled reference-voice library: filter by language/category/search,
@@ -35,15 +31,22 @@ export function ReferenceVoicesBrowser() {
 
 	const { data, isLoading } = useQuery({
 		queryKey: ["reference-voices", language, category],
-		queryFn: () => apiClient.getReferenceVoices(language || undefined, category || undefined),
+		queryFn: () =>
+			apiClient.getReferenceVoices(
+				language || undefined,
+				category || undefined,
+			),
 	});
 
 	const useMut = useMutation({
 		mutationFn: ({ voiceId, name }: { voiceId: string; name: string }) =>
+			// biome-ignore lint/correctness/useHookAtTopLevel: false positive — useReferenceVoice is an API client method, not a React hook
 			apiClient.useReferenceVoice(voiceId, name),
 		onSuccess: (res) => {
 			void qc.invalidateQueries({ queryKey: ["voiceProfiles"] });
-			toast({ title: `Created profile "${res.profile_name}" from reference voice` });
+			toast({
+				title: `Created profile "${res.profile_name}" from reference voice`,
+			});
 		},
 		onError: (e: unknown) => showStudioErrorToast(e),
 	});
@@ -82,7 +85,10 @@ export function ReferenceVoicesBrowser() {
 		return <LoadingState label="Loading reference voices" lines={4} />;
 	}
 
-	const packInfo = data as unknown as { pack_downloaded?: boolean; manifest_count?: number };
+	const packInfo = data as unknown as {
+		pack_downloaded?: boolean;
+		manifest_count?: number;
+	};
 
 	return (
 		<div className="flex flex-col gap-3">
@@ -124,14 +130,20 @@ export function ReferenceVoicesBrowser() {
 			</div>
 
 			{packInfo?.pack_downloaded === false ? (
-				<p role="note" className="rounded-sm border border-warning/40 bg-warning-soft px-3 py-2 text-xs text-warning-text">
-					Reference pack not downloaded — {packInfo.manifest_count ?? 0} voices in
-					manifest, none available offline. Download from Store.
+				<p
+					role="note"
+					className="rounded-sm border border-warning/40 bg-warning-soft px-3 py-2 text-xs text-warning-text"
+				>
+					Reference pack not downloaded — {packInfo.manifest_count ?? 0} voices
+					in manifest, none available offline. Download from Store.
 				</p>
 			) : null}
 
 			{filtered.length === 0 ? (
-				<EmptyState title="No voices match" body="Try a different search or filter." />
+				<EmptyState
+					title="No voices match"
+					body="Try a different search or filter."
+				/>
 			) : (
 				<ul className="grid max-h-[60vh] gap-2 overflow-auto pr-1">
 					{filtered.map((v) => (
@@ -155,8 +167,12 @@ export function ReferenceVoicesBrowser() {
 								)}
 							</Button>
 							<div className="min-w-0 flex-1">
-								<p className="truncate text-sm font-medium text-foreground">{v.name}</p>
-								<p className="truncate text-xs text-muted-foreground">{v.description}</p>
+								<p className="truncate text-sm font-medium text-foreground">
+									{v.name}
+								</p>
+								<p className="truncate text-xs text-muted-foreground">
+									{v.description}
+								</p>
 								<p className="mt-1 flex items-center gap-1.5">
 									<Badge tone="neutral">{v.language}</Badge>
 									<Badge tone="neutral">{v.category}</Badge>

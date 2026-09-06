@@ -115,7 +115,9 @@ export function Sidebar({ isMacOS }: { isMacOS: boolean }) {
 		<aside
 			className={cn(
 				"shrink-0 flex flex-col h-full bg-background border-r border-border sticky top-0 z-30 transition-[width] duration-200 relative",
-				isMacOS ? "pt-7" : "pt-8",
+				// Collapsed rail: no brand row, minimal top pad so the icons
+				// ride up and fill the space.
+				sidebarOpen ? (isMacOS ? "pt-7" : "pt-8") : "pt-2",
 			)}
 			style={{ width: sidebarOpen ? sidebarWidth : 64 }}
 			aria-label={t("sidebar.ariaLabel")}
@@ -151,24 +153,24 @@ export function Sidebar({ isMacOS }: { isMacOS: boolean }) {
 				/>
 			)}
 			<div className="flex h-full flex-col">
-				{/* Logo / Brand */}
-				<div className="flex h-16 items-center justify-center border-b border-border px-3">
-					<Link
-						to="/"
-						className={cn(
-							"flex items-center gap-2.5 text-foreground transition-opacity",
-							sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none",
-						)}
-						aria-label="Otoyin"
-					>
-						<div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-accent/10">
-							<Sparkles className="size-4 text-accent" />
-						</div>
-						<span className="font-medium text-sm tracking-tight whitespace-nowrap text-muted-foreground">
-							Otoyin
-						</span>
-					</Link>
-				</div>
+				{/* Logo / Brand (expanded only — the collapsed rail skips it
+				    so the nav rides up instead of leaving a blank row). */}
+				{sidebarOpen ? (
+					<div className="flex h-16 items-center justify-center border-b border-border px-3">
+						<Link
+							to="/"
+							className="flex items-center gap-2.5 text-foreground transition-opacity"
+							aria-label="Otoyin"
+						>
+							<div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-accent-muted">
+								<Sparkles className="size-4 text-accent" />
+							</div>
+							<span className="font-medium text-sm tracking-tight whitespace-nowrap text-muted-foreground">
+								Otoyin
+							</span>
+						</Link>
+					</div>
+				) : null}
 
 				{/* Navigation */}
 				<nav
@@ -195,7 +197,7 @@ export function Sidebar({ isMacOS }: { isMacOS: boolean }) {
 													className={cn(
 														"flex items-center gap-3 min-w-0 rounded-lg px-3 py-2 text-sm font-medium transition-colors border-l-2 relative",
 														active
-															? "bg-accent/10 text-accent border-accent"
+															? "bg-accent-muted text-accent border-accent"
 															: "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent",
 													)}
 													aria-current={active ? "page" : undefined}
@@ -229,7 +231,7 @@ export function Sidebar({ isMacOS }: { isMacOS: boolean }) {
 						type="button"
 						onClick={() => useUIStore.getState().setMiniGameOpen(true)}
 						className={cn(
-							"flex items-center rounded-md border border-dashed border-border bg-muted/20 hover:bg-muted hover:border-border transition-colors",
+							"flex items-center rounded-md border border-dashed border-border bg-secondary hover:bg-secondary-hover hover:border-border transition-colors",
 							sidebarOpen
 								? "w-full gap-2 px-3 py-1.5"
 								: "mx-auto size-7 justify-center",

@@ -298,7 +298,7 @@ export const AssistantSettings = memo(function AssistantSettings({
 	};
 
 	return (
-		<div className="px-4 py-3 border-b border-border bg-muted/30 space-y-3">
+		<div className="px-4 py-3 border-b border-border bg-secondary space-y-3">
 			<div className="space-y-1.5">
 				<label
 					htmlFor="model-source"
@@ -497,7 +497,7 @@ export const AssistantSettings = memo(function AssistantSettings({
 						</Button>
 					</div>
 					{showDefault && defaultPrompt && (
-						<pre className="max-h-40 overflow-auto rounded-md border border-border bg-muted/40 p-2 text-xs leading-relaxed text-muted-foreground whitespace-pre-wrap">
+						<pre className="max-h-40 overflow-auto rounded-md border border-border bg-sunken p-2 text-xs leading-relaxed text-muted-foreground whitespace-pre-wrap">
 							{defaultPrompt}
 						</pre>
 					)}

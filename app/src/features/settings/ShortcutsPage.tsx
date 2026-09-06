@@ -1,5 +1,7 @@
 import { CommandLineIcon } from "@heroicons/react/24/outline";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { apiClient } from "@/lib/api/client";
+import { showStudioErrorToast } from "@/lib/errors";
 import { Card, CardBody, CardTitle } from "@/ui/card";
 import {
 	Select,
@@ -9,8 +11,6 @@ import {
 	SelectValue,
 } from "@/ui/select";
 import { EmptyState, LoadingState, ScreenHeader } from "@/ui/states";
-import { apiClient } from "@/lib/api/client";
-import { showStudioErrorToast } from "@/lib/errors";
 
 interface Shortcut {
 	id: string;
@@ -75,13 +75,15 @@ export function ShortcutsPage() {
 		void loadKeymap(selected);
 	}, [selected, loadKeymap]);
 
-	const grouped = useMemo(() => {
-		const acc: Record<string, Shortcut[]> = {};
-		for (const s of current?.shortcuts ?? []) {
-			(acc[s.category] ??= []).push(s);
+	const grouped: Record<string, Shortcut[]> = {};
+	for (const s of current?.shortcuts ?? []) {
+		const list = grouped[s.category];
+		if (list) {
+			list.push(s);
+		} else {
+			grouped[s.category] = [s];
 		}
-		return acc;
-	}, [current]);
+	}
 
 	return (
 		<div className="flex max-w-3xl flex-col gap-6">

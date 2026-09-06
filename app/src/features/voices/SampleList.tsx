@@ -11,18 +11,6 @@ import {
 } from "@heroicons/react/24/outline";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogTitle,
-} from "@/ui/dialog";
-import { Slider } from "@/ui/slider";
-import { Spinner } from "@/ui/primitives";
-import { Textarea } from "@/ui/input";
-import { useToast } from "@/ui/use-toast";
 import { apiClient } from "@/lib/api/client";
 import { copyClip, resolveAudioDurationMs } from "@/lib/clip";
 import {
@@ -32,6 +20,17 @@ import {
 } from "@/lib/hooks/useProfiles";
 import { formatAudioDuration } from "@/lib/utils/audio";
 import { cn } from "@/lib/utils/cn";
+import { Button } from "@/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogTitle,
+} from "@/ui/dialog";
+import { Textarea } from "@/ui/input";
+import { Slider } from "@/ui/slider";
+import { useToast } from "@/ui/use-toast";
 import { SampleUpload } from "./SampleUpload";
 
 function MiniPlayer({ audioUrl }: { audioUrl: string }) {
@@ -91,7 +90,9 @@ function MiniPlayer({ audioUrl }: { audioUrl: string }) {
 							void audioRef.current.play();
 						}
 					}}
-					aria-label={playing ? t("sampleList.player.pause") : t("sampleList.player.play")}
+					aria-label={
+						playing ? t("sampleList.player.pause") : t("sampleList.player.play")
+					}
 				>
 					{playing ? (
 						<PauseIcon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -155,16 +156,25 @@ export function SampleList({ profileId }: { profileId: string }) {
 	const [deleteId, setDeleteId] = useState<string | null>(null);
 
 	if (isLoading) {
-		return <p className="text-sm text-muted-foreground">{t("sampleList.loading")}</p>;
+		return (
+			<p className="text-sm text-muted-foreground">{t("sampleList.loading")}</p>
+		);
 	}
 
 	return (
 		<div className="flex flex-col gap-2 pt-4">
 			{samples && samples.length === 0 ? (
 				<div className="flex flex-col items-center justify-center rounded-md border border-dashed border-strong px-4 py-8 text-center">
-					<SpeakerWaveIcon className="mb-2 size-8 text-muted-foreground/60" aria-hidden="true" />
-					<p className="text-sm text-muted-foreground">{t("sampleList.empty.title")}</p>
-					<p className="mt-1 text-xs text-muted-foreground/70">{t("sampleList.empty.hint")}</p>
+					<SpeakerWaveIcon
+						className="mb-2 size-8 text-muted-foreground/60"
+						aria-hidden="true"
+					/>
+					<p className="text-sm text-muted-foreground">
+						{t("sampleList.empty.title")}
+					</p>
+					<p className="mt-1 text-xs text-muted-foreground/70">
+						{t("sampleList.empty.hint")}
+					</p>
 				</div>
 			) : (
 				<ul className="flex flex-col gap-2">
@@ -220,18 +230,25 @@ export function SampleList({ profileId }: { profileId: string }) {
 													if (!draft.trim()) {
 														toast({
 															title: t("sampleList.toast.invalidText"),
-															description: t("sampleList.toast.invalidTextDescription"),
+															description: t(
+																"sampleList.toast.invalidTextDescription",
+															),
 															variant: "destructive",
 														});
 														return;
 													}
 													updateSample.mutate(
-														{ sampleId: sample.id, referenceText: draft.trim() },
+														{
+															sampleId: sample.id,
+															referenceText: draft.trim(),
+														},
 														{
 															onSuccess: () => {
 																toast({
 																	title: t("sampleList.toast.updated"),
-																	description: t("sampleList.toast.updatedDescription"),
+																	description: t(
+																		"sampleList.toast.updatedDescription",
+																	),
 																});
 																setEditingId(null);
 																setDraft("");
@@ -242,7 +259,9 @@ export function SampleList({ profileId }: { profileId: string }) {
 																	description:
 																		error instanceof Error
 																			? error.message
-																			: t("sampleList.toast.updateFailedFallback"),
+																			: t(
+																					"sampleList.toast.updateFailedFallback",
+																				),
 																	variant: "destructive",
 																}),
 														},
@@ -250,9 +269,14 @@ export function SampleList({ profileId }: { profileId: string }) {
 												}}
 											>
 												{updateSample.isPending ? null : (
-													<CheckIcon className="mr-1 size-4" aria-hidden="true" />
+													<CheckIcon
+														className="mr-1 size-4"
+														aria-hidden="true"
+													/>
 												)}
-												{updateSample.isPending ? t("sampleList.saving") : t("common.save")}
+												{updateSample.isPending
+													? t("sampleList.saving")
+													: t("common.save")}
 											</Button>
 										</div>
 									</div>
@@ -290,10 +314,15 @@ export function SampleList({ profileId }: { profileId: string }) {
 																	name: sample.reference_text,
 																	durationMs,
 																}).then(
-																	() => toast({ title: t("sampleList.toast.copyClipDone") }),
 																	() =>
 																		toast({
-																			title: t("sampleList.toast.copyClipFailed"),
+																			title: t("sampleList.toast.copyClipDone"),
+																		}),
+																	() =>
+																		toast({
+																			title: t(
+																				"sampleList.toast.copyClipFailed",
+																			),
 																			variant: "destructive",
 																		}),
 																),
@@ -306,7 +335,10 @@ export function SampleList({ profileId }: { profileId: string }) {
 													}}
 													className="grid size-7 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
 												>
-													<ClipboardDocumentIcon className="size-3.5" aria-hidden="true" />
+													<ClipboardDocumentIcon
+														className="size-3.5"
+														aria-hidden="true"
+													/>
 												</button>
 												<button
 													type="button"
@@ -329,17 +361,35 @@ export function SampleList({ profileId }: { profileId: string }) {
 				</ul>
 			)}
 
-			<Button type="button" variant="outline" className="w-full" onClick={() => setUploadOpen(true)}>
+			<Button
+				type="button"
+				variant="outline"
+				className="w-full"
+				onClick={() => setUploadOpen(true)}
+			>
 				<PlusIcon className="mr-2 size-4" aria-hidden="true" />
 				{t("sampleList.addSample")}
 			</Button>
-			<p className="px-2 text-center text-xs text-muted-foreground">{t("sampleList.note")}</p>
+			<p className="px-2 text-center text-xs text-muted-foreground">
+				{t("sampleList.note")}
+			</p>
 
-			<SampleUpload profileId={profileId} open={uploadOpen} onOpenChange={setUploadOpen} />
+			<SampleUpload
+				profileId={profileId}
+				open={uploadOpen}
+				onOpenChange={setUploadOpen}
+			/>
 
-			<Dialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>				<DialogContent>
+			<Dialog
+				open={deleteId !== null}
+				onOpenChange={(open) => !open && setDeleteId(null)}
+			>
+				{" "}
+				<DialogContent>
 					<DialogTitle>{t("sampleList.deleteDialog.title")}</DialogTitle>
-					<DialogDescription>{t("sampleList.deleteDialog.description")}</DialogDescription>
+					<DialogDescription>
+						{t("sampleList.deleteDialog.description")}
+					</DialogDescription>
 					<DialogFooter>
 						<Button variant="ghost" onClick={() => setDeleteId(null)}>
 							{t("common.cancel")}

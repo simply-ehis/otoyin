@@ -58,7 +58,7 @@ export function AudioSampleSystem({
 					)}
 
 					{isRecording && (
-						<div className="flex flex-col items-center justify-center gap-4 p-4 border-2 border-destructive rounded-lg bg-destructive/5 min-h-[180px]">
+						<div className="flex flex-col items-center justify-center gap-4 p-4 border-2 border-destructive rounded-lg bg-danger-soft min-h-[180px]">
 							<div className="flex items-center gap-4">
 								<div className="flex items-center gap-2">
 									<div className="size-3 rounded-full bg-destructive animate-pulse" />
@@ -85,7 +85,7 @@ export function AudioSampleSystem({
 					)}
 
 					{file && !isRecording && (
-						<div className="flex flex-col items-center justify-center gap-4 p-4 border-2 border-primary rounded-lg bg-primary/5 min-h-[180px]">
+						<div className="flex flex-col items-center justify-center gap-4 p-4 border-2 border-primary rounded-lg bg-accent-muted min-h-[180px]">
 							<div className="flex items-center gap-2">
 								<Monitor className="size-5 text-primary" />
 								<span className="font-medium">

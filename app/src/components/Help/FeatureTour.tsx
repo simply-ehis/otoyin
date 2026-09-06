@@ -124,7 +124,7 @@ export function FeatureTour({
 			aria-modal="true"
 			aria-label="Welcome tour"
 			tabIndex={-1}
-			className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+			className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
 			onClick={(e) => {
 				if (e.target === e.currentTarget) {
 					onClose();
@@ -165,7 +165,7 @@ export function FeatureTour({
 
 					{/* Content */}
 					<div className="px-8 pt-8 pb-6">
-						<div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-accent/10 text-accent">
+						<div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-accent-muted text-accent">
 							<current.Icon className="size-5" />
 						</div>
 						<h3 className="text-lg font-semibold tracking-tight mb-2">
@@ -207,7 +207,7 @@ export function FeatureTour({
 										"rounded-full transition-all duration-300",
 										i === step
 											? "w-5 h-1.5 bg-primary"
-											: "w-1.5 h-1.5 bg-muted-foreground/25 hover:bg-muted-foreground/50",
+											: "w-1.5 h-1.5 bg-strong hover:brightness-110",
 									)}
 								/>
 							))}
@@ -230,7 +230,7 @@ export function FeatureTour({
 								className={cn(
 									"flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200",
 									isLast
-										? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20"
+										? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-[var(--elevation-floating)]"
 										: "bg-primary text-primary-foreground hover:bg-primary/90",
 								)}
 							>

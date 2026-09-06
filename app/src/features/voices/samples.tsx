@@ -1,15 +1,13 @@
 import {
+	ArrowUpTrayIcon,
 	ComputerDesktopIcon,
 	MicrophoneIcon,
 	PauseIcon,
 	PlayIcon,
-	ArrowUpTrayIcon,
 	XCircleIcon,
 } from "@heroicons/react/24/outline";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/ui/button";
-import { formatAudioDuration } from "@/lib/utils/audio";
 import {
 	ACCEPTED_AUDIO_EXTENSIONS,
 	ACCEPTED_AUDIO_FORMATS_LABEL,
@@ -19,10 +17,15 @@ import {
 	MAX_AUDIO_DURATION_SECONDS,
 	PROFILE_SAMPLE_MAX_FILE_SIZE,
 } from "@/lib/constants/audio";
+import { formatAudioDuration } from "@/lib/utils/audio";
 import { cn } from "@/lib/utils/cn";
+import { Button } from "@/ui/button";
 
 function validateFile(file: File): string | null {
-	if (!isAcceptedAudioMimeType(file.type) && !isAcceptedAudioExtension(file.name)) {
+	if (
+		!isAcceptedAudioMimeType(file.type) &&
+		!isAcceptedAudioExtension(file.name)
+	) {
 		return `Unsupported audio format. Accepted: ${ACCEPTED_AUDIO_FORMATS_LABEL}`;
 	}
 	if (file.size > PROFILE_SAMPLE_MAX_FILE_SIZE) {
@@ -87,6 +90,7 @@ export function AudioSampleUpload({
 	return (
 		<div className="flex flex-col gap-2">
 			<input
+				id={`${fieldName}-input`}
 				type="file"
 				accept={ACCEPTED_AUDIO_EXTENSIONS.join(",")}
 				name={fieldName}
@@ -95,101 +99,114 @@ export function AudioSampleUpload({
 				className="hidden"
 				aria-label="Audio file"
 			/>
-			<div
-				role="button"
-				tabIndex={0}
-				onDragOver={(e) => {
-					e.preventDefault();
-					setDragging(true);
-				}}
-				onDragLeave={(e) => {
-					e.preventDefault();
-					setDragging(false);
-				}}
-				onDrop={(e) => {
-					e.preventDefault();
-					setDragging(false);
-					pick(e.dataTransfer.files?.[0]);
-				}}
-				onKeyDown={(e) => {
-					if (e.key === "Enter" || e.key === " ") {
+			{!file ? (
+				<label
+					htmlFor={`${fieldName}-input`}
+					onDragOver={(e) => {
 						e.preventDefault();
-						inputRef.current?.click();
-					}
-				}}
-				onClick={() => {
-					if (!file) {
-						inputRef.current?.click();
-					}
-				}}
-				className={cn(
-					"flex min-h-[180px] flex-col items-center justify-center gap-4 rounded-md border-2 p-4 transition-colors",
-					"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-					file || dragging
-						? "border-accent bg-accent-muted"
-						: error
-							? "border-destructive bg-danger-soft"
-							: "cursor-pointer border-dashed border-strong hover:border-muted-foreground",
-				)}
-			>
-				{!file ? (
-					<>
-						<Button type="button" size="lg" onClick={() => inputRef.current?.click()}>
-							<ArrowUpTrayIcon className="size-5" aria-hidden="true" />
-							{t("audioSample.chooseFile")}
+						setDragging(true);
+					}}
+					onDragLeave={(e) => {
+						e.preventDefault();
+						setDragging(false);
+					}}
+					onDrop={(e) => {
+						e.preventDefault();
+						setDragging(false);
+						pick(e.dataTransfer.files?.[0]);
+					}}
+					className={cn(
+						"flex min-h-[180px] cursor-pointer flex-col items-center justify-center gap-4 rounded-md border-2 p-4 transition-colors",
+						"focus-within:outline-none focus-within:ring-2 focus-within:ring-ring",
+						dragging
+							? "border-accent bg-accent-muted"
+							: error
+								? "border-destructive bg-danger-soft"
+								: "border-dashed border-strong hover:border-muted-foreground",
+					)}
+				>
+					<span className="inline-flex h-11 items-center gap-2 rounded-md bg-primary px-8 text-sm font-medium text-primary-foreground">
+						<ArrowUpTrayIcon className="size-5" aria-hidden="true" />
+						{t("audioSample.chooseFile")}
+					</span>
+					<span className="text-center text-sm text-muted-foreground">
+						{t("audioSample.uploadHint")}
+					</span>
+				</label>
+			) : (
+				<button
+					type="button"
+					tabIndex={0}
+					onDragOver={(e) => {
+						e.preventDefault();
+						setDragging(true);
+					}}
+					onDragLeave={(e) => {
+						e.preventDefault();
+						setDragging(false);
+					}}
+					onDrop={(e) => {
+						e.preventDefault();
+						setDragging(false);
+						pick(e.dataTransfer.files?.[0]);
+					}}
+					className={cn(
+						"flex min-h-[180px] flex-col items-center justify-center gap-4 rounded-md border-2 border-accent bg-accent-muted p-4 transition-colors",
+						dragging && "border-dashed",
+					)}
+				>
+					<p className="flex items-center gap-2 font-medium text-foreground">
+						<ArrowUpTrayIcon
+							className="size-5 text-accent"
+							aria-hidden="true"
+						/>
+						{t("audioSample.fileUploaded")}
+					</p>
+					<p className="text-center text-sm text-muted-foreground">
+						{t("audioSample.fileLabel", { name: file.name })}
+					</p>
+					<span className="flex gap-2">
+						<Button
+							type="button"
+							size="icon"
+							variant="outline"
+							onClick={onPlayPause}
+							aria-label={
+								isPlaying ? t("audioSample.pause") : t("audioSample.play")
+							}
+						>
+							{isPlaying ? (
+								<PauseIcon className="size-4" aria-hidden="true" />
+							) : (
+								<PlayIcon className="size-4" aria-hidden="true" />
+							)}
 						</Button>
-						<p className="text-center text-sm text-muted-foreground">
-							{t("audioSample.uploadHint")}
-						</p>
-					</>
-				) : (
-					<>
-						<p className="flex items-center gap-2 font-medium text-foreground">
-							<ArrowUpTrayIcon className="size-5 text-accent" aria-hidden="true" />
-							{t("audioSample.fileUploaded")}
-						</p>
-						<p className="text-center text-sm text-muted-foreground">
-							{t("audioSample.fileLabel", { name: file.name })}
-						</p>
-						<span className="flex gap-2">
-							<Button
-								type="button"
-								size="icon"
-								variant="outline"
-								onClick={onPlayPause}
-								aria-label={isPlaying ? t("audioSample.pause") : t("audioSample.play")}
-							>
-								{isPlaying ? (
-									<PauseIcon className="size-4" aria-hidden="true" />
-								) : (
-									<PlayIcon className="size-4" aria-hidden="true" />
-								)}
-							</Button>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={onTranscribe}
-								disabled={isTranscribing || isDisabled}
-							>
-								<MicrophoneIcon className="size-4" aria-hidden="true" />
-								{isTranscribing ? t("audioSample.transcribing") : t("audioSample.transcribe")}
-							</Button>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={() => {
-									pick(undefined);
-									if (inputRef.current) {
-										inputRef.current.value = "";
-									}
-								}}
-							>
-								{t("audioSample.remove")}
-							</Button>
-						</span>
-					</>
-				)}
-			</div>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={onTranscribe}
+							disabled={isTranscribing || isDisabled}
+						>
+							<MicrophoneIcon className="size-4" aria-hidden="true" />
+							{isTranscribing
+								? t("audioSample.transcribing")
+								: t("audioSample.transcribe")}
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => {
+								pick(undefined);
+								if (inputRef.current) {
+									inputRef.current.value = "";
+								}
+							}}
+						>
+							{t("audioSample.remove")}
+						</Button>
+					</span>
+				</button>
+			)}
 			{error ? (
 				<p role="alert" className="text-center text-sm text-destructive">
 					<XCircleIcon className="mr-1 inline size-4" aria-hidden="true" />
@@ -259,7 +276,10 @@ export function AudioSampleRecording({
 			{isRecording ? (
 				<RecordingShell recording file={null} accent="accent">
 					<p className="flex items-center gap-2">
-						<span aria-hidden="true" className="size-3 animate-pulse rounded-full bg-accent" />
+						<span
+							aria-hidden="true"
+							className="size-3 animate-pulse rounded-full bg-accent"
+						/>
 						<span className="font-mono text-lg font-semibold tabular-nums text-foreground">
 							{formatAudioDuration(duration)}
 						</span>
@@ -289,7 +309,9 @@ export function AudioSampleRecording({
 							size="icon"
 							variant="outline"
 							onClick={onPlayPause}
-							aria-label={isPlaying ? t("audioSample.pause") : t("audioSample.play")}
+							aria-label={
+								isPlaying ? t("audioSample.pause") : t("audioSample.play")
+							}
 						>
 							{isPlaying ? (
 								<PauseIcon className="size-4" aria-hidden="true" />
@@ -297,9 +319,16 @@ export function AudioSampleRecording({
 								<PlayIcon className="size-4" aria-hidden="true" />
 							)}
 						</Button>
-						<Button type="button" variant="outline" onClick={onTranscribe} disabled={isTranscribing}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={onTranscribe}
+							disabled={isTranscribing}
+						>
 							<MicrophoneIcon className="size-4" aria-hidden="true" />
-							{isTranscribing ? t("audioSample.transcribing") : t("audioSample.transcribe")}
+							{isTranscribing
+								? t("audioSample.transcribing")
+								: t("audioSample.transcribe")}
 						</Button>
 						<Button type="button" variant="outline" onClick={onCancel}>
 							{t("audioSample.recordAgain")}
@@ -341,7 +370,10 @@ export function AudioSampleSystem({
 			{isRecording ? (
 				<RecordingShell recording file={null} accent="destructive">
 					<p className="flex items-center gap-2">
-						<span aria-hidden="true" className="size-3 animate-pulse rounded-full bg-destructive" />
+						<span
+							aria-hidden="true"
+							className="size-3 animate-pulse rounded-full bg-destructive"
+						/>
 						<span className="font-mono text-lg font-semibold tabular-nums text-foreground">
 							{formatAudioDuration(duration)}
 						</span>
@@ -350,14 +382,19 @@ export function AudioSampleSystem({
 						{t("audioSample.stopCapture")}
 					</Button>
 					<p className="text-center text-sm text-muted-foreground">
-						{t("audioSample.remaining", { time: formatAudioDuration(30 - duration) })}
+						{t("audioSample.remaining", {
+							time: formatAudioDuration(30 - duration),
+						})}
 					</p>
 				</RecordingShell>
 			) : null}
 			{file && !isRecording ? (
 				<RecordingShell recording={false} file={file} accent="destructive">
 					<p className="flex items-center gap-2 font-medium text-foreground">
-						<ComputerDesktopIcon className="size-5 text-accent" aria-hidden="true" />
+						<ComputerDesktopIcon
+							className="size-5 text-accent"
+							aria-hidden="true"
+						/>
 						{t("audioSample.captureComplete")}
 					</p>
 					<p className="text-center text-sm text-muted-foreground">
@@ -369,7 +406,9 @@ export function AudioSampleSystem({
 							size="icon"
 							variant="outline"
 							onClick={onPlayPause}
-							aria-label={isPlaying ? t("audioSample.pause") : t("audioSample.play")}
+							aria-label={
+								isPlaying ? t("audioSample.pause") : t("audioSample.play")
+							}
 						>
 							{isPlaying ? (
 								<PauseIcon className="size-4" aria-hidden="true" />
@@ -377,9 +416,16 @@ export function AudioSampleSystem({
 								<PlayIcon className="size-4" aria-hidden="true" />
 							)}
 						</Button>
-						<Button type="button" variant="outline" onClick={onTranscribe} disabled={isTranscribing}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={onTranscribe}
+							disabled={isTranscribing}
+						>
 							<MicrophoneIcon className="size-4" aria-hidden="true" />
-							{isTranscribing ? t("audioSample.transcribing") : t("audioSample.transcribe")}
+							{isTranscribing
+								? t("audioSample.transcribing")
+								: t("audioSample.transcribe")}
 						</Button>
 						<Button type="button" variant="outline" onClick={onCancel}>
 							{t("audioSample.captureAgain")}

@@ -107,7 +107,7 @@ export function GenerationPicker({
 								type="button"
 								className={cn(
 									"w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors border-b border-border/30 last:border-0",
-									gen.id === selectedId && "bg-accent/10",
+									gen.id === selectedId && "bg-accent-muted",
 								)}
 								onClick={() => {
 									onSelect(gen);

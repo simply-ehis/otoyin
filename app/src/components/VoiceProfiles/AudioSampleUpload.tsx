@@ -115,11 +115,11 @@ export function AudioSampleUpload({
 						}}
 						className={`flex flex-col items-center justify-center gap-4 p-4 border-2 rounded-lg transition-colors min-h-[180px] ${
 							file
-								? "border-primary bg-primary/5"
+								? "border-primary bg-accent-muted"
 								: isDragging
-									? "border-primary bg-primary/5"
+									? "border-primary bg-accent-muted"
 									: validationError
-										? "border-destructive bg-destructive/5"
+										? "border-destructive bg-danger-soft"
 										: "border-dashed border-muted-foreground/25 hover:border-muted-foreground/50"
 						}`}
 					>

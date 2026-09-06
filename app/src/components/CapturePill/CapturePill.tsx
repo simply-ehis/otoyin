@@ -53,7 +53,7 @@ export function PillAudioBars({
 					key={`${mode}-${i}`}
 					className={cn(
 						"w-[3px] rounded-full",
-						mode === "idle" ? "bg-accent/30" : "bg-accent",
+						mode === "idle" ? "bg-strong" : "bg-accent",
 					)}
 					animate={
 						mode === "generating"
@@ -106,7 +106,7 @@ export function VUMeter({
 			<div
 				className={cn(
 					"relative h-3 rounded-full bg-muted overflow-hidden",
-					"dark:bg-muted/50",
+					"dark:bg-sunken",
 					isActive ? "animate-pulse-subtle" : "",
 				)}
 				style={{ width: "100%", maxWidth: "120px" }}
@@ -306,7 +306,7 @@ export function CapturePill({
 					{showConfidence && (
 						<div className="flex items-center gap-1 mt-0.5 text-xs text-accent/60">
 							<span className="flex items-center gap-0.5">
-								<span className="w-1.5 h-1.5 rounded-full bg-accent/50" />
+								<span className="w-1.5 h-1.5 rounded-full bg-accent-muted" />
 								<span>{Math.round(confidence * 100)}%</span>
 							</span>
 						</div>

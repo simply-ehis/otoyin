@@ -59,7 +59,7 @@ export function S2EmotionChips({
 					key={t}
 					type="button"
 					onClick={() => insert(t)}
-					className="rounded-full border border-accent/30 bg-accent/10 px-3 py-0.5 text-xs font-medium text-accent-foreground/80 hover:bg-accent/20 transition-colors"
+					className="rounded-full border border-accent/30 bg-accent-muted px-3 py-0.5 text-xs font-medium text-accent-foreground/80 hover:brightness-110 transition-colors"
 					title={`Insert ${t}`}
 				>
 					{t}

@@ -49,7 +49,9 @@ export function Checkbox({
 	...props
 }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
 	return (
-		<label className={cn("inline-flex cursor-pointer items-center gap-2", className)}>
+		<label
+			className={cn("inline-flex cursor-pointer items-center gap-2", className)}
+		>
 			<input
 				type="checkbox"
 				aria-label={label}
@@ -72,7 +74,9 @@ export function Radio({
 	name: string;
 }) {
 	return (
-		<label className={cn("inline-flex cursor-pointer items-center gap-2", className)}>
+		<label
+			className={cn("inline-flex cursor-pointer items-center gap-2", className)}
+		>
 			<input
 				type="radio"
 				name={name}
@@ -103,14 +107,13 @@ export function Segmented<T extends string>({
 	className?: string;
 }) {
 	return (
-		<div
-			role="group"
-			aria-label={label}
+		<fieldset
 			className={cn(
 				"inline-flex gap-0.5 rounded-md border border-border bg-sunken p-[3px]",
 				className,
 			)}
 		>
+			<legend className="sr-only">{label}</legend>
 			{options.map((opt) => (
 				<button
 					key={opt.value}
@@ -128,6 +131,6 @@ export function Segmented<T extends string>({
 					{opt.label}
 				</button>
 			))}
-		</div>
+		</fieldset>
 	);
 }

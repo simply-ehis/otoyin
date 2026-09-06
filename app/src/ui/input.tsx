@@ -60,7 +60,11 @@ export function Field({
 			</label>
 			{children}
 			{error ? (
-				<span id={describedBy} role="alert" className="text-xs text-destructive">
+				<span
+					id={describedBy}
+					role="alert"
+					className="text-xs text-destructive"
+				>
 					{error}
 				</span>
 			) : hint ? (

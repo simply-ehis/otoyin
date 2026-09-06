@@ -3,13 +3,13 @@ import {
 	XCircleIcon as XCircle,
 } from "@heroicons/react/24/outline";
 import { useCallback, useEffect, useRef } from "react";
-import { Progress } from "@/ui/progress";
-import { Spinner } from "@/ui/primitives";
-import type { Toast } from "@/ui/use-toast";
-import { useToast } from "@/ui/use-toast";
 import type { ModelProgress } from "@/lib/api/types";
 import { showStudioErrorToast } from "@/lib/errors";
 import { useServerStore } from "@/stores/serverStore";
+import { Spinner } from "@/ui/primitives";
+import { Progress } from "@/ui/progress";
+import type { Toast } from "@/ui/use-toast";
+import { useToast } from "@/ui/use-toast";
 
 interface UseModelDownloadToastOptions {
 	modelName: string;

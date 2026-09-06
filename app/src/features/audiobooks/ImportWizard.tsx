@@ -5,11 +5,11 @@ import {
 	DocumentTextIcon,
 } from "@heroicons/react/24/outline";
 import { useState } from "react";
+import { apiClient } from "@/lib/api/client";
+import { useAudiobookStore } from "@/stores/audiobookStore";
 import { Button } from "@/ui/button";
 import { Field, Input } from "@/ui/input";
 import { Spinner } from "@/ui/primitives";
-import { apiClient } from "@/lib/api/client";
-import { useAudiobookStore } from "@/stores/audiobookStore";
 
 interface PreviewChapter {
 	index: number;
@@ -38,7 +38,8 @@ export function ImportWizard({ onImported }: { onImported: () => void }) {
 	const [expanded, setExpanded] = useState<number | null>(null);
 	const [error, setError] = useState<string | null>(null);
 
-	const totalWords = preview?.chapters.reduce((sum, ch) => sum + ch.word_count, 0) ?? 0;
+	const totalWords =
+		preview?.chapters.reduce((sum, ch) => sum + ch.word_count, 0) ?? 0;
 	const estMinutes = Math.round(totalWords / 150);
 
 	const reset = () => {
@@ -80,7 +81,11 @@ export function ImportWizard({ onImported }: { onImported: () => void }) {
 		setBusy(true);
 		setError(null);
 		try {
-			const book = await apiClient.importBook(file, title || preview.title, author || undefined);
+			const book = await apiClient.importBook(
+				file,
+				title || preview.title,
+				author || undefined,
+			);
 			useAudiobookStore.getState().setSelectedId(book.id);
 			setStep("done");
 			onImported();
@@ -107,7 +112,9 @@ export function ImportWizard({ onImported }: { onImported: () => void }) {
 		return (
 			<div className="mb-3 flex flex-col gap-3 rounded-md border border-border bg-card p-3">
 				<p className="flex items-center justify-between">
-					<span className="text-sm font-medium text-foreground">Import preview</span>
+					<span className="text-sm font-medium text-foreground">
+						Import preview
+					</span>
 					<button
 						type="button"
 						onClick={reset}
@@ -117,10 +124,18 @@ export function ImportWizard({ onImported }: { onImported: () => void }) {
 					</button>
 				</p>
 				<Field label="Title" htmlFor="import-title">
-					<Input id="import-title" value={title} onChange={(e) => setTitle(e.target.value)} />
+					<Input
+						id="import-title"
+						value={title}
+						onChange={(e) => setTitle(e.target.value)}
+					/>
 				</Field>
 				<Field label="Author (optional)" htmlFor="import-author">
-					<Input id="import-author" value={author} onChange={(e) => setAuthor(e.target.value)} />
+					<Input
+						id="import-author"
+						value={author}
+						onChange={(e) => setAuthor(e.target.value)}
+					/>
 				</Field>
 				<p className="flex gap-3 text-xs tabular-nums text-muted-foreground">
 					<span>{preview.chapters.length} chapters</span>
@@ -132,22 +147,36 @@ export function ImportWizard({ onImported }: { onImported: () => void }) {
 					{preview.chapters.map((ch) => {
 						const open = expanded === ch.index;
 						return (
-							<li key={ch.index} className="rounded-sm border border-border px-2 py-1 text-xs">
+							<li
+								key={ch.index}
+								className="rounded-sm border border-border px-2 py-1 text-xs"
+							>
 								<button
 									type="button"
 									aria-expanded={open}
 									onClick={() => setExpanded(open ? null : ch.index)}
 									className="flex w-full items-center gap-2 rounded-sm px-1 py-0.5 text-left transition-colors hover:bg-secondary"
 								>
-									<DocumentTextIcon className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden="true" />
-									<span className="flex-1 truncate font-medium text-foreground">{ch.title}</span>
+									<DocumentTextIcon
+										className="h-3 w-3 shrink-0 text-muted-foreground"
+										aria-hidden="true"
+									/>
+									<span className="flex-1 truncate font-medium text-foreground">
+										{ch.title}
+									</span>
 									<span className="shrink-0 tabular-nums text-muted-foreground">
 										{ch.word_count.toLocaleString()} w
 									</span>
 									{open ? (
-										<ChevronUpIcon className="h-3 w-3 shrink-0" aria-hidden="true" />
+										<ChevronUpIcon
+											className="h-3 w-3 shrink-0"
+											aria-hidden="true"
+										/>
 									) : (
-										<ChevronDownIcon className="h-3 w-3 shrink-0" aria-hidden="true" />
+										<ChevronDownIcon
+											className="h-3 w-3 shrink-0"
+											aria-hidden="true"
+										/>
 									)}
 								</button>
 								{open && ch.preview ? (
@@ -165,7 +194,13 @@ export function ImportWizard({ onImported }: { onImported: () => void }) {
 						{error}
 					</p>
 				) : null}
-				<Button size="sm" onClick={confirm} disabled={busy} loading={busy} className="w-full">
+				<Button
+					size="sm"
+					onClick={confirm}
+					disabled={busy}
+					loading={busy}
+					className="w-full"
+				>
 					{busy ? "Importing…" : `Import ${preview.chapters.length} chapters`}
 				</Button>
 			</div>

@@ -1,5 +1,5 @@
-export type { VoiceProfile } from "@/components/AudioStudio/audioStudio/PodcastConversationBuilder";
-export { PodcastProducer } from "@/components/AudioStudio/audioStudio/PodcastProducer";
+export type { VoiceProfile } from "@/features/audioStudio/PodcastConversationBuilder";
+export { PodcastProducer } from "@/features/audioStudio/PodcastProducer";
 export { TranscriptDrawer } from "./TranscriptDrawer";
 export { TranscriptEditor } from "./TranscriptEditor";
 export type { TranscriptEditorProps } from "./TranscriptEditor.types";

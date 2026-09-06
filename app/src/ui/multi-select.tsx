@@ -44,12 +44,17 @@ export function MultiSelect({
 					aria-label={placeholder}
 				>
 					<span className="truncate">{summary}</span>
-					<ChevronDownIcon className="size-3.5 shrink-0 opacity-60" aria-hidden="true" />
+					<ChevronDownIcon
+						className="size-3.5 shrink-0 opacity-60"
+						aria-hidden="true"
+					/>
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className="max-h-64 overflow-y-auto" align="start">
 				{options.length === 0 ? (
-					<p className="px-2 py-1.5 text-xs text-muted-foreground">No options</p>
+					<p className="px-2 py-1.5 text-xs text-muted-foreground">
+						No options
+					</p>
 				) : (
 					options.map((o) => (
 						<label
@@ -65,7 +70,10 @@ export function MultiSelect({
 							<span className="flex min-w-0 flex-1 items-center gap-2">
 								<span className="truncate">{o.label}</span>
 								{value.includes(o.value) ? (
-									<CheckIcon className="size-3.5 shrink-0 text-accent" aria-hidden="true" />
+									<CheckIcon
+										className="size-3.5 shrink-0 text-accent"
+										aria-hidden="true"
+									/>
 								) : null}
 							</span>
 						</label>

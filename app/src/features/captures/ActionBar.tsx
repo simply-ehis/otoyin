@@ -1,16 +1,17 @@
 import {
+	ArrowUpTrayIcon,
 	Cog6ToothIcon,
 	MicrophoneIcon,
-	ArrowUpTrayIcon,
 	StopIcon,
 } from "@heroicons/react/24/outline";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/ui/button";
-import { Spinner } from "@/ui/primitives";
+import { CapturePill } from "@/features/capture/CapturePill";
+import { CopyClipButton } from "@/features/clipboard/CopyClipButton";
+import type { Clip } from "@/lib/clip";
 import type { UseCaptureRecordingSessionResult } from "@/lib/hooks/useCaptureRecordingSession";
 import type { DictationReadiness } from "@/lib/hooks/useDictationReadiness";
-import { CapturePill } from "@/features/capture/CapturePill";
+import { Button } from "@/ui/button";
 
 /**
  * Captures header bar: active model summary, live dictate pill while
@@ -22,12 +23,14 @@ export function CapturesActionBar({
 	session,
 	readiness,
 	onUpload,
+	audioClip,
 }: {
 	sttModel: string;
 	llmModel: string;
 	session: UseCaptureRecordingSessionResult;
 	readiness: DictationReadiness;
 	onUpload: () => void;
+	audioClip: Clip | null;
 }) {
 	const { t } = useTranslation();
 	return (
@@ -50,6 +53,16 @@ export function CapturesActionBar({
 				/>
 			) : (
 				<>
+					<CopyClipButton
+						clip={audioClip}
+						label={t("captures.actions.copyAudio", {
+							defaultValue: "Copy audio",
+						})}
+						title={t("captures.actions.copyAudioTitle", {
+							defaultValue:
+								"Copy the selected capture's audio — paste in any tab",
+						})}
+					/>
 					<Button variant="outline" asChild>
 						<Link to="/settings/captures">
 							<Cog6ToothIcon className="mr-2 size-4" aria-hidden="true" />
@@ -57,9 +70,16 @@ export function CapturesActionBar({
 						</Link>
 					</Button>
 					{readiness.canRecord ? (
-						<Button variant="outline" onClick={onUpload} disabled={session.isUploading} loading={session.isUploading}>
+						<Button
+							variant="outline"
+							onClick={onUpload}
+							disabled={session.isUploading}
+							loading={session.isUploading}
+						>
 							<ArrowUpTrayIcon className="mr-2 size-4" aria-hidden="true" />
-							{session.isUploading ? t("captures.actions.importing") : t("captures.actions.import")}
+							{session.isUploading
+								? t("captures.actions.importing")
+								: t("captures.actions.import")}
 						</Button>
 					) : null}
 				</>
@@ -71,7 +91,10 @@ export function CapturesActionBar({
 				>
 					{session.isRecording ? (
 						<>
-							<StopIcon className="mr-2 size-4 fill-current" aria-hidden="true" />
+							<StopIcon
+								className="mr-2 size-4 fill-current"
+								aria-hidden="true"
+							/>
 							{t("captures.actions.stop")}
 						</>
 					) : (

@@ -16,7 +16,10 @@ import { useServerHealth } from "@/lib/hooks/useServer";
 import { usePerformanceSettings } from "@/lib/hooks/useSettings";
 import { debug } from "@/lib/utils/debug";
 import { usePlatform } from "@/platform/PlatformContext";
-import { isRemoteModeMisconfigured, useServerStore } from "@/stores/serverStore";
+import {
+	isRemoteModeMisconfigured,
+	useServerStore,
+} from "@/stores/serverStore";
 import { Banner } from "@/ui/banner";
 import { Button } from "@/ui/button";
 import { Switch } from "@/ui/controls";
@@ -52,7 +55,10 @@ export function GeneralPage() {
 
 	const form = useForm<{ serverUrl: string }>({
 		resolver: useMemo(
-			() => zodResolver(connectionSchema(t("settings.general.serverUrl.invalidUrl"))),
+			() =>
+				zodResolver(
+					connectionSchema(t("settings.general.serverUrl.invalidUrl")),
+				),
 			[t],
 		),
 		defaultValues: { serverUrl },
@@ -64,7 +70,7 @@ export function GeneralPage() {
 		if (form.formState.errors.serverUrl) {
 			void form.trigger("serverUrl");
 		}
-	}, [form, t]);
+	}, [form]);
 
 	return (
 		<div className="flex max-w-3xl flex-col gap-8">
@@ -75,14 +81,22 @@ export function GeneralPage() {
 					rel="noopener noreferrer"
 					className="group flex items-center gap-3 rounded-md border border-border p-4 transition-colors hover:bg-secondary"
 				>
-					<BookOpenIcon className="size-5 shrink-0 text-accent" aria-hidden="true" />
+					<BookOpenIcon
+						className="size-5 shrink-0 text-accent"
+						aria-hidden="true"
+					/>
 					<span className="min-w-0 flex-1">
 						<span className="block text-sm font-medium text-foreground">
 							{t("settings.general.docs.title")}
 						</span>
-						<span className="block text-xs text-muted-foreground">docs.otoyin.app</span>
+						<span className="block text-xs text-muted-foreground">
+							docs.otoyin.app
+						</span>
 					</span>
-					<ArrowUpRightIcon className="size-4 text-muted-foreground/50 transition-colors group-hover:text-muted-foreground" aria-hidden="true" />
+					<ArrowUpRightIcon
+						className="size-4 text-muted-foreground/50 transition-colors group-hover:text-muted-foreground"
+						aria-hidden="true"
+					/>
 				</a>
 				<a
 					href="https://discord.gg/StkzQasqPS"
@@ -90,7 +104,10 @@ export function GeneralPage() {
 					rel="noopener noreferrer"
 					className="group flex items-center gap-3 rounded-md border border-border p-4 transition-colors hover:bg-secondary"
 				>
-					<span className="grid size-5 shrink-0 place-items-center rounded-sm bg-accent text-[10px] font-bold text-white" aria-hidden="true">
+					<span
+						className="grid size-5 shrink-0 place-items-center rounded-sm bg-accent text-[10px] font-bold text-white"
+						aria-hidden="true"
+					>
 						D
 					</span>
 					<span className="min-w-0 flex-1">
@@ -101,7 +118,10 @@ export function GeneralPage() {
 							{t("settings.general.discord.subtitle")}
 						</span>
 					</span>
-					<ArrowUpRightIcon className="size-4 text-muted-foreground/50 transition-colors group-hover:text-muted-foreground" aria-hidden="true" />
+					<ArrowUpRightIcon
+						className="size-4 text-muted-foreground/50 transition-colors group-hover:text-muted-foreground"
+						aria-hidden="true"
+					/>
 				</a>
 			</div>
 
@@ -123,9 +143,12 @@ export function GeneralPage() {
 							form.reset(data);
 							toast({
 								title: t("settings.general.serverUrl.updatedTitle"),
-								description: t("settings.general.serverUrl.updatedDescription", {
-									url: data.serverUrl,
-								}),
+								description: t(
+									"settings.general.serverUrl.updatedDescription",
+									{
+										url: data.serverUrl,
+									},
+								),
 							});
 						})}
 						className="flex gap-2"
@@ -164,8 +187,12 @@ export function GeneralPage() {
 									toast({
 										title: t("settings.general.keepServerRunning.updatedTitle"),
 										description: checked
-											? t("settings.general.keepServerRunning.runningDescription")
-											: t("settings.general.keepServerRunning.stoppedDescription"),
+											? t(
+													"settings.general.keepServerRunning.runningDescription",
+												)
+											: t(
+													"settings.general.keepServerRunning.stoppedDescription",
+												),
 									});
 								})
 								.catch((error: unknown) => {
@@ -220,7 +247,9 @@ export function GeneralPage() {
 					</SettingRow>
 				) : null}
 				{isRemoteModeMisconfigured(mode, serverUrl) ? (
-					<Banner tone="warning">{t("settings.general.networkAccess.needsUrl")}</Banner>
+					<Banner tone="warning">
+						{t("settings.general.networkAccess.needsUrl")}
+					</Banner>
 				) : null}
 
 				<SettingRow
@@ -268,7 +297,10 @@ function ConnectionStatus({
 	if (healthError) {
 		return (
 			<span className="inline-flex items-center gap-2 rounded-full border border-destructive/40 bg-danger-soft px-3 py-1">
-				<span aria-hidden="true" className="size-2 rounded-full bg-destructive" />
+				<span
+					aria-hidden="true"
+					className="size-2 rounded-full bg-destructive"
+				/>
 				<span className="text-xs text-danger-text">
 					{t("settings.general.connection.offline")}
 				</span>
@@ -322,7 +354,9 @@ function UpdatesSection() {
 						title={t("settings.general.updates.check.title")}
 						description={
 							status.available
-								? t("settings.general.updates.check.available", { version: status.version })
+								? t("settings.general.updates.check.available", {
+										version: status.version,
+									})
 								: status.checking
 									? t("settings.general.updates.check.checking")
 									: t("settings.general.updates.check.upToDate")
@@ -330,14 +364,19 @@ function UpdatesSection() {
 						action={
 							<Button
 								onClick={checkForUpdates}
-								disabled={status.checking || status.downloading || status.readyToInstall}
+								disabled={
+									status.checking || status.downloading || status.readyToInstall
+								}
 								variant="outline"
 								size="sm"
 							>
 								{status.checking ? (
 									<Spinner size="sm" className="mr-1.5" />
 								) : (
-									<ArrowPathIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+									<ArrowPathIcon
+										className="mr-1.5 h-3.5 w-3.5"
+										aria-hidden="true"
+									/>
 								)}
 								{t("settings.general.updates.check.button")}
 							</Button>
@@ -353,11 +392,16 @@ function UpdatesSection() {
 					) : null}
 					{status.available && !status.downloading && !status.readyToInstall ? (
 						<SettingRow
-							title={t("settings.general.updates.download.title", { version: status.version })}
+							title={t("settings.general.updates.download.title", {
+								version: status.version,
+							})}
 							description={t("settings.general.updates.download.description")}
 							action={
 								<Button onClick={downloadAndInstall} size="sm">
-									<ArrowDownTrayIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+									<ArrowDownTrayIcon
+										className="mr-1.5 h-3.5 w-3.5"
+										aria-hidden="true"
+									/>
 									{t("settings.general.updates.download.button")}
 								</Button>
 							}
@@ -366,7 +410,10 @@ function UpdatesSection() {
 					{status.downloading ? (
 						<SettingRow title={t("settings.general.updates.downloading")}>
 							<div className="flex flex-col gap-1.5">
-								<Progress value={status.downloadProgress} label="Update download progress" />
+								<Progress
+									value={status.downloadProgress}
+									label="Update download progress"
+								/>
 								<p className="flex items-center justify-between text-xs text-muted-foreground">
 									<span>
 										{status.downloadedBytes !== undefined &&
@@ -376,7 +423,9 @@ function UpdatesSection() {
 											: ""}
 									</span>
 									{status.downloadProgress !== undefined ? (
-										<span className="tabular-nums">{status.downloadProgress}%</span>
+										<span className="tabular-nums">
+											{status.downloadProgress}%
+										</span>
 									) : null}
 								</p>
 							</div>
@@ -390,7 +439,10 @@ function UpdatesSection() {
 							})}
 							action={
 								<Button onClick={restartAndInstall} size="sm">
-									<ArrowPathIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+									<ArrowPathIcon
+										className="mr-1.5 h-3.5 w-3.5"
+										aria-hidden="true"
+									/>
 									{t("settings.general.updates.ready.button")}
 								</Button>
 							}
@@ -405,10 +457,26 @@ function UpdatesSection() {
 function ApiReferenceCard({ serverUrl }: { serverUrl: string }) {
 	const { t } = useTranslation();
 	const endpoints = [
-		{ method: "POST", path: "/generate", label: t("settings.general.api.endpoints.generate") },
-		{ method: "GET", path: "/health", label: t("settings.general.api.endpoints.health") },
-		{ method: "GET", path: "/profiles", label: t("settings.general.api.endpoints.profiles") },
-		{ method: "GET", path: "/history", label: t("settings.general.api.endpoints.history") },
+		{
+			method: "POST",
+			path: "/generate",
+			label: t("settings.general.api.endpoints.generate"),
+		},
+		{
+			method: "GET",
+			path: "/health",
+			label: t("settings.general.api.endpoints.health"),
+		},
+		{
+			method: "GET",
+			path: "/profiles",
+			label: t("settings.general.api.endpoints.profiles"),
+		},
+		{
+			method: "GET",
+			path: "/history",
+			label: t("settings.general.api.endpoints.history"),
+		},
 	];
 	return (
 		<div className="flex max-w-3xl flex-col gap-3 rounded-md border border-border bg-card p-4">
@@ -421,7 +489,9 @@ function ApiReferenceCard({ serverUrl }: { serverUrl: string }) {
 						i18nKey="settings.general.api.description"
 						values={{ url: serverUrl }}
 						components={{
-							code: <code className="rounded-sm bg-sunken px-1 py-0.5 font-mono text-xs" />,
+							code: (
+								<code className="rounded-sm bg-sunken px-1 py-0.5 font-mono text-xs" />
+							),
 						}}
 					/>
 				</p>
@@ -438,8 +508,12 @@ function ApiReferenceCard({ serverUrl }: { serverUrl: string }) {
 						>
 							{ep.method}
 						</span>
-						<code className="font-mono text-xs text-muted-foreground">{ep.path}</code>
-						<span className="ml-auto text-xs text-muted-foreground/70">{ep.label}</span>
+						<code className="font-mono text-xs text-muted-foreground">
+							{ep.path}
+						</code>
+						<span className="ml-auto text-xs text-muted-foreground/70">
+							{ep.label}
+						</span>
 					</li>
 				))}
 			</ul>

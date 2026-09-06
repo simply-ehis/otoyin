@@ -1,5 +1,9 @@
 import type { MarketplaceProduct } from "@/lib/api/types";
-import { convertUsd, formatMoney, useRegionCurrency } from "@/lib/regionCurrency";
+import {
+	convertUsd,
+	formatMoney,
+	useRegionCurrency,
+} from "@/lib/regionCurrency";
 
 interface Props {
 	offers: MarketplaceProduct[];

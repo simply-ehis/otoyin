@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { apiClient } from "@/lib/api/client";
+import { showStudioErrorToast } from "@/lib/errors";
 import { Button } from "@/ui/button";
 import { Field, Input } from "@/ui/input";
 import {
@@ -8,15 +10,15 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/ui/select";
-import { apiClient } from "@/lib/api/client";
-import { showStudioErrorToast } from "@/lib/errors";
 
 /**
  * Audio format conversion: rendered WAV → mp3/m4a/m4b/flac/ogg/opus
  * via server ffmpeg. Disabled with explanation when ffmpeg is absent.
  */
 export function ConvertPanel() {
-	const [formats, setFormats] = useState<Record<string, { ext: string; mime: string }>>({});
+	const [formats, setFormats] = useState<
+		Record<string, { ext: string; mime: string }>
+	>({});
 	const [ffmpeg, setFfmpeg] = useState<boolean | null>(null);
 	const [audioPath, setAudioPath] = useState("");
 	const [target, setTarget] = useState("mp3");
@@ -35,7 +37,9 @@ export function ConvertPanel() {
 
 	const convert = async () => {
 		if (!audioPath.trim()) {
-			showStudioErrorToast(new Error("Enter audio_path (e.g. generations/xxx.wav)"));
+			showStudioErrorToast(
+				new Error("Enter audio_path (e.g. generations/xxx.wav)"),
+			);
 			return;
 		}
 		setBusy(true);
@@ -57,7 +61,9 @@ export function ConvertPanel() {
 			aria-label="Audio format conversion"
 			className="flex flex-col gap-2 rounded-md border border-border bg-card p-3"
 		>
-			<h3 className="text-sm font-medium text-foreground">Audio format conversion</h3>
+			<h3 className="text-sm font-medium text-foreground">
+				Audio format conversion
+			</h3>
 			<p className="text-xs leading-relaxed text-muted-foreground">
 				WAV is default. Convert any rendered file via ffmpeg.{" "}
 				{ffmpeg === false ? (
@@ -73,7 +79,11 @@ export function ConvertPanel() {
 						onChange={(e) => setAudioPath(e.target.value)}
 					/>
 				</Field>
-				<Field label="Format" htmlFor="convert-target" className="w-28 shrink-0">
+				<Field
+					label="Format"
+					htmlFor="convert-target"
+					className="w-28 shrink-0"
+				>
 					<Select value={target} onValueChange={setTarget}>
 						<SelectTrigger id="convert-target">
 							<SelectValue />
@@ -94,15 +104,17 @@ export function ConvertPanel() {
 					</Select>
 				</Field>
 				<span className="flex items-end">
-					<Button onClick={convert} disabled={busy || ffmpeg === false} loading={busy}>
+					<Button
+						onClick={convert}
+						disabled={busy || ffmpeg === false}
+						loading={busy}
+					>
 						{busy ? "Converting…" : "Convert"}
 					</Button>
 				</span>
 			</div>
 			{out ? (
-				<p className="text-xs text-success" role="status">
-					Done → {out}
-				</p>
+				<output className="text-xs text-success">Done → {out}</output>
 			) : null}
 		</section>
 	);

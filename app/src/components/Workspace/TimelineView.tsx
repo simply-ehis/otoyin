@@ -348,8 +348,8 @@ export function TimelineView() {
 								className={cn(
 									"px-2 py-0.5 text-xs font-semibold rounded transition-colors",
 									track.muted
-										? "bg-destructive/20 text-destructive"
-										: "bg-muted text-muted-foreground hover:bg-muted/80",
+										? "bg-danger-soft text-danger-text"
+										: "bg-muted text-muted-foreground hover:bg-secondary",
 								)}
 								title={track.muted ? "Unmute track" : "Mute track"}
 								aria-label={track.muted ? "Unmute track" : "Mute track"}
@@ -369,8 +369,8 @@ export function TimelineView() {
 								className={cn(
 									"px-2 py-0.5 text-xs font-semibold rounded transition-colors",
 									track.solo
-										? "bg-accent/20 text-accent"
-										: "bg-muted text-muted-foreground hover:bg-muted/80",
+										? "bg-accent-muted text-accent"
+										: "bg-muted text-muted-foreground hover:bg-secondary",
 								)}
 								title={track.solo ? "Unsolo track" : "Solo track"}
 								aria-label={track.solo ? "Unsolo track" : "Solo track"}

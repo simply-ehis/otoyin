@@ -1,9 +1,9 @@
-import * as SelectPrimitive from "@radix-ui/react-select";
 import {
 	CheckIcon,
 	ChevronDownIcon,
 	ChevronUpIcon,
 } from "@heroicons/react/24/outline";
+import * as SelectPrimitive from "@radix-ui/react-select";
 import { cn } from "@/lib/utils/cn";
 
 /**
@@ -63,7 +63,9 @@ export function SelectContent({
 				<SelectPrimitive.ScrollUpButton className="grid place-items-center py-1 text-muted-foreground">
 					<ChevronUpIcon className="size-4" aria-hidden="true" />
 				</SelectPrimitive.ScrollUpButton>
-				<SelectPrimitive.Viewport className="p-1.5">{children}</SelectPrimitive.Viewport>
+				<SelectPrimitive.Viewport className="p-1.5">
+					{children}
+				</SelectPrimitive.Viewport>
 				<SelectPrimitive.ScrollDownButton className="grid place-items-center py-1 text-muted-foreground">
 					<ChevronDownIcon className="size-4" aria-hidden="true" />
 				</SelectPrimitive.ScrollDownButton>

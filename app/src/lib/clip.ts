@@ -106,6 +106,38 @@ export async function clearClip(): Promise<void> {
 	}
 }
 
+export interface ClipHistoryEntry extends Clip {
+	/** History row id (for delete); the live slot has none. */
+	historyId: string;
+	createdAt: string;
+}
+
+function toHistoryEntry(
+	p: ClipboardPayload & { id: string },
+): ClipHistoryEntry {
+	return { ...toClip(p), historyId: p.id, createdAt: p.created_at };
+}
+
+/** Past copies, newest first (server prunes to the newest 20). */
+export async function listClipHistory(): Promise<ClipHistoryEntry[]> {
+	const res = await fetch(`${serverUrl()}/clipboard/history`);
+	if (!res.ok) {
+		throw new Error(`clipboard history failed: ${res.status}`);
+	}
+	const rows = (await res.json()) as (ClipboardPayload & { id: string })[];
+	return rows.map(toHistoryEntry);
+}
+
+export async function deleteClipHistory(historyId: string): Promise<void> {
+	const res = await fetch(
+		`${serverUrl()}/clipboard/history/${encodeURIComponent(historyId)}`,
+		{ method: "DELETE" },
+	);
+	if (!res.ok) {
+		throw new Error(`clipboard history delete failed: ${res.status}`);
+	}
+}
+
 /**
  * Best-effort audio duration in milliseconds for an arbitrary URL.
  * Used when a source (e.g. a voice profile sample) doesn't carry a

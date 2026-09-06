@@ -346,7 +346,7 @@ export function EditorToolbar({
 	removeSilence,
 }: EditorToolbarProps) {
 	return (
-		<div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30 mt-2">
+		<div className="flex items-center justify-between px-3 py-2 border-b bg-secondary mt-2">
 			<PlayControls
 				isCurrentlyPlaying={isCurrentlyPlaying}
 				currentTimeMs={currentTimeMs}

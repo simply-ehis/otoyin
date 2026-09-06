@@ -1,7 +1,15 @@
+export { AudioStudio } from "../features/audioStudio/AudioStudio";
+export { CommunityPresetsPage } from "../features/content/CommunityPresetsPage";
+export { StandaloneProjectPage } from "../features/content/StandaloneProjectPage";
+export { LottieExportPage } from "../features/settings/LottieExportPage";
+export { PluginsPage } from "../features/settings/PluginsPage";
+export { ScriptingPage } from "../features/settings/ScriptingPage";
+export { ShortcutsPage } from "../features/settings/ShortcutsPage";
+export { TelemetryPage } from "../features/settings/TelemetryPage";
+export { TimecodeDisplay } from "../features/settings/TimecodePage";
+export { SpectrogramView } from "../features/workspace/SpectrogramView";
 export { ABComparison } from "./ABComparison/ABComparison";
 export { AudioBars } from "./AudioBars/AudioBars";
-export { AudioStudio } from "./AudioStudio/AudioStudio";
-export { CommunityPresetsPage } from "./CommunityPresets/CommunityPresetsPage";
 export { ImportModal } from "./Import/ImportModal";
 export {
 	ListPane,
@@ -12,14 +20,6 @@ export {
 	ListPaneTitle,
 	ListPaneTitleRow,
 } from "./ListPane/ListPane";
-export { LottieExportPage } from "./LottieExport/LottieExportPage";
-export { PluginsPage } from "./Plugins/PluginsPage";
-export { ScriptingPage } from "./Scripting/ScriptingPage";
-export { ShortcutsPage } from "./Shortcuts/ShortcutsPage";
 export { Sidebar } from "./Sidebar/Sidebar";
-export { SpectrogramView } from "./Spectrogram/SpectrogramView";
-export { StandaloneProjectPage } from "./StandaloneProject/StandaloneProjectPage";
 export { TapeScrubber } from "./TapeScrubber/TapeScrubber";
-export { TelemetryPage } from "./Telemetry/TelemetryPage";
-export { TimecodeDisplay } from "./TimecodeDisplay/TimecodeDisplay";
 export { WaveformVisualizer } from "./WaveformVisualizer/WaveformVisualizer";

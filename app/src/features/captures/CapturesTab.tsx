@@ -4,15 +4,13 @@ import { save } from "@tauri-apps/plugin-dialog";
 import { writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useToast } from "@/ui/use-toast";
 import { apiClient } from "@/lib/api/client";
 import type {
 	CaptureResponse,
-	CaptureSource,
 	GenerationRequest,
 	VoiceProfileResponse,
 } from "@/lib/api/types";
-import { copyClip } from "@/lib/clip";
+import { type Clip, copyClip } from "@/lib/clip";
 import type { LanguageCode } from "@/lib/constants/languages";
 import { useCaptureRecordingSession } from "@/lib/hooks/useCaptureRecordingSession";
 import { useDictationReadiness } from "@/lib/hooks/useDictationReadiness";
@@ -20,10 +18,11 @@ import { useCaptureSettings } from "@/lib/hooks/useSettings";
 import { debug } from "@/lib/utils/debug";
 import { useGenerationStore } from "@/stores/generationStore";
 import { usePlayerStore } from "@/stores/playerStore";
+import { useToast } from "@/ui/use-toast";
 import { CapturesActionBar } from "./ActionBar";
+import { DetailPane } from "./DetailPane";
 import { CapturesEmptyState } from "./EmptyState";
 import { CapturesListPane } from "./ListPane";
-import { DetailPane } from "./DetailPane";
 import { ReadinessChecklist } from "./ReadinessChecklist";
 import { DeleteCaptureDialog, formatDurationMs } from "./shared";
 
@@ -44,15 +43,20 @@ function CapturesTabInner() {
 	const [showRefined, setShowRefined] = useState(true);
 	const [launchedPlayAsId, setLaunchedPlayAsId] = useState<string | null>(null);
 	const [deleteOpen, setDeleteOpen] = useState(false);
-	const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+	const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+		undefined,
+	);
 
 	const playerAudioId = usePlayerStore((s) => s.audioId);
 	const playerPlaying = usePlayerStore((s) => s.isPlaying);
 	const setIsPlaying = usePlayerStore((s) => s.setIsPlaying);
 	const pendingIds = useGenerationStore((s) => s.pendingGenerationIds);
-	const addPendingGeneration = useGenerationStore((s) => s.addPendingGeneration);
+	const addPendingGeneration = useGenerationStore(
+		(s) => s.addPendingGeneration,
+	);
 
-	const { settings: captureSettings, update: updateCaptureSettings } = useCaptureSettings();
+	const { settings: captureSettings, update: updateCaptureSettings } =
+		useCaptureSettings();
 	const sttModel = captureSettings?.stt_model ?? "tiny.en";
 	const llmModel = captureSettings?.llm_model ?? "2B-Q4_K_M";
 	const hotkeyEnabled = captureSettings?.hotkey_enabled ?? false;
@@ -163,7 +167,13 @@ function CapturesTabInner() {
 	});
 
 	const playAsMutation = useMutation({
-		mutationFn: async ({ capture, voice }: { capture: CaptureResponse; voice: VoiceProfileResponse }) => {
+		mutationFn: async ({
+			capture,
+			voice,
+		}: {
+			capture: CaptureResponse;
+			voice: VoiceProfileResponse;
+		}) => {
 			const text = capture.transcript_refined || capture.transcript_raw;
 			if (!text.trim()) {
 				throw new Error(t("captures.noTranscriptError"));
@@ -250,11 +260,26 @@ function CapturesTabInner() {
 				name: selected.transcript_raw?.slice(0, 40) || "Capture",
 				durationMs: Math.round(selected.duration_ms ?? 0),
 			});
-			toast({ title: t("captures.toast.audioCopied", "Audio copied to clipboard — paste in any tab") });
+			toast({
+				title: t(
+					"captures.toast.audioCopied",
+					"Audio copied to clipboard — paste in any tab",
+				),
+			});
 		} catch {
 			toast({ title: t("captures.toast.copyFailed"), variant: "destructive" });
 		}
 	}, [selected, toast, t]);
+
+	const selectedClip: Clip | null = selected
+		? {
+				kind: "capture",
+				id: selected.id,
+				audioUrl: apiClient.getCaptureAudioUrl(selected.id),
+				name: selected.transcript_raw?.slice(0, 40) || "Capture",
+				durationMs: Math.round(selected.duration_ms ?? 0),
+			}
+		: null;
 
 	const exportFailed = (err: unknown) =>
 		toast({
@@ -294,7 +319,11 @@ function CapturesTabInner() {
 		if (!selected) {
 			return;
 		}
-		const text = (selected.transcript_refined || selected.transcript_raw || "").trim();
+		const text = (
+			selected.transcript_refined ||
+			selected.transcript_raw ||
+			""
+		).trim();
 		if (!text) {
 			toast({ title: t("captures.toast.exportEmpty"), variant: "destructive" });
 			return;
@@ -338,12 +367,20 @@ function CapturesTabInner() {
 		}
 		lines.push("");
 		if (selected.transcript_refined?.trim()) {
-			lines.push("## Refined transcript", "", selected.transcript_refined.trim(), "");
+			lines.push(
+				"## Refined transcript",
+				"",
+				selected.transcript_refined.trim(),
+				"",
+			);
 		}
 		if (selected.transcript_raw?.trim()) {
 			lines.push("## Raw transcript", "", selected.transcript_raw.trim(), "");
 		}
-		if (!selected.transcript_refined?.trim() && !selected.transcript_raw?.trim()) {
+		if (
+			!selected.transcript_refined?.trim() &&
+			!selected.transcript_raw?.trim()
+		) {
 			toast({ title: t("captures.toast.exportEmpty"), variant: "destructive" });
 			return;
 		}
@@ -395,6 +432,7 @@ function CapturesTabInner() {
 					session={session}
 					readiness={readiness}
 					onUpload={() => uploadRef.current?.click()}
+					audioClip={selectedClip}
 				/>
 				{selected ? (
 					<DetailPane
@@ -427,7 +465,10 @@ function CapturesTabInner() {
 						toggleKeys={toggleKeys}
 					/>
 				)}
-				{!selected && !isLoading && captures.length === 0 && !readiness.canRecord ? (
+				{!selected &&
+				!isLoading &&
+				captures.length === 0 &&
+				!readiness.canRecord ? (
 					<div className="px-8 pb-8">
 						<ReadinessChecklist readiness={readiness} />
 					</div>

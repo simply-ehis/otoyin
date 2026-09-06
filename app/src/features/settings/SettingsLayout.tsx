@@ -30,51 +30,119 @@ interface SettingsTab {
 const TAB_GROUPS: { label: string; tabs: SettingsTab[] }[] = [
 	{
 		label: "General",
-		tabs: [{ labelKey: "settings.tabs.general", path: "/settings", icon: Cog6ToothIcon }],
+		tabs: [
+			{
+				labelKey: "settings.tabs.general",
+				path: "/settings",
+				icon: Cog6ToothIcon,
+			},
+		],
 	},
 	{
 		label: "Audio",
 		tabs: [
-			{ labelKey: "settings.tabs.generation", path: "/settings/generation", icon: CommandLineIcon },
+			{
+				labelKey: "settings.tabs.generation",
+				path: "/settings/generation",
+				icon: CommandLineIcon,
+			},
 		],
 	},
 	{
 		label: "Capture",
 		tabs: [
-			{ labelKey: "settings.tabs.captures", path: "/settings/captures", icon: ChartBarIcon },
-			{ labelKey: "settings.tabs.shortcuts", path: "/settings/shortcuts", icon: WrenchIcon },
-			{ labelKey: "settings.tabs.timecode", path: "/settings/timecode", icon: ClockIcon },
+			{
+				labelKey: "settings.tabs.captures",
+				path: "/settings/captures",
+				icon: ChartBarIcon,
+			},
+			{
+				labelKey: "settings.tabs.shortcuts",
+				path: "/settings/shortcuts",
+				icon: WrenchIcon,
+			},
+			{
+				labelKey: "settings.tabs.timecode",
+				path: "/settings/timecode",
+				icon: ClockIcon,
+			},
 		],
 	},
 	{
 		label: "AI & Integration",
 		tabs: [
-			{ labelKey: "settings.tabs.mcp", path: "/settings/mcp", icon: GlobeAltIcon },
-			{ labelKey: "settings.tabs.apiKeys", path: "/settings/api-keys", icon: KeyIcon },
+			{
+				labelKey: "settings.tabs.mcp",
+				path: "/settings/mcp",
+				icon: GlobeAltIcon,
+			},
+			{
+				labelKey: "settings.tabs.apiKeys",
+				path: "/settings/api-keys",
+				icon: KeyIcon,
+			},
 		],
 	},
 	{
 		label: "System",
 		tabs: [
-			{ labelKey: "settings.tabs.gpu", path: "/settings/gpu", icon: CpuChipIcon, tauriOnly: true },
-			{ labelKey: "settings.tabs.system", path: "/settings/system", icon: CpuChipIcon },
-			{ labelKey: "settings.tabs.logs", path: "/settings/logs", icon: ChartBarIcon, tauriOnly: true },
+			{
+				labelKey: "settings.tabs.gpu",
+				path: "/settings/gpu",
+				icon: CpuChipIcon,
+				tauriOnly: true,
+			},
+			{
+				labelKey: "settings.tabs.system",
+				path: "/settings/system",
+				icon: CpuChipIcon,
+			},
+			{
+				labelKey: "settings.tabs.logs",
+				path: "/settings/logs",
+				icon: ChartBarIcon,
+				tauriOnly: true,
+			},
 		],
 	},
 	{
 		label: "Advanced",
 		tabs: [
-			{ labelKey: "settings.tabs.scripting", path: "/settings/scripting", icon: CommandLineIcon },
-			{ labelKey: "settings.tabs.plugins", path: "/settings/plugins", icon: CpuChipIcon },
-			{ labelKey: "settings.tabs.lottieExport", path: "/settings/lottie-export", icon: WrenchIcon },
+			{
+				labelKey: "settings.tabs.scripting",
+				path: "/settings/scripting",
+				icon: CommandLineIcon,
+			},
+			{
+				labelKey: "settings.tabs.plugins",
+				path: "/settings/plugins",
+				icon: CpuChipIcon,
+			},
+			{
+				labelKey: "settings.tabs.lottieExport",
+				path: "/settings/lottie-export",
+				icon: WrenchIcon,
+			},
 		],
 	},
 	{
 		label: "Privacy & Info",
 		tabs: [
-			{ labelKey: "settings.tabs.telemetry", path: "/settings/telemetry", icon: ShieldCheckIcon },
-			{ labelKey: "settings.tabs.about", path: "/settings/about", icon: InformationCircleIcon },
-			{ labelKey: "settings.tabs.support", path: "/settings/support", icon: EnvelopeIcon },
+			{
+				labelKey: "settings.tabs.telemetry",
+				path: "/settings/telemetry",
+				icon: ShieldCheckIcon,
+			},
+			{
+				labelKey: "settings.tabs.about",
+				path: "/settings/about",
+				icon: InformationCircleIcon,
+			},
+			{
+				labelKey: "settings.tabs.support",
+				path: "/settings/support",
+				icon: EnvelopeIcon,
+			},
 		],
 	},
 ];
@@ -127,7 +195,10 @@ export function SettingsLayout() {
 														className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r bg-accent"
 													/>
 												) : null}
-												<tab.icon className="size-4 shrink-0" aria-hidden="true" />
+												<tab.icon
+													className="size-4 shrink-0"
+													aria-hidden="true"
+												/>
 												<span className="truncate">{t(tab.labelKey)}</span>
 											</Link>
 										</li>

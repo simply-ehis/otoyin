@@ -1,14 +1,12 @@
 import { SparklesIcon } from "@heroicons/react/24/outline";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useTranslation } from "react-i18next";
-import { Badge } from "@/ui/primitives";
-import { SearchInput } from "@/ui/input";
-import { Spinner } from "@/ui/primitives";
 import type { CaptureResponse } from "@/lib/api/types";
 import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
-import { SourceBadge } from "./shared";
-import { formatDurationMs } from "./shared";
+import { SearchInput } from "@/ui/input";
+import { Badge, Spinner } from "@/ui/primitives";
+import { formatDurationMs, SourceBadge } from "./shared";
 
 /**
  * Virtualized capture list: search header, snippet rows with source +
@@ -45,7 +43,9 @@ export function CapturesListPane({
 		<div className="flex h-full w-[340px] shrink-0 flex-col border-r border-border">
 			<div className="shrink-0 px-4 pb-2 pt-3">
 				<p className="flex items-center gap-2">
-					<span className="text-sm font-semibold text-foreground">{t("captures.title")}</span>
+					<span className="text-sm font-semibold text-foreground">
+						{t("captures.title")}
+					</span>
 					<Badge tone="accent">{t("captures.beta")}</Badge>
 				</p>
 				<SearchInput
@@ -61,15 +61,23 @@ export function CapturesListPane({
 			<div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
 				<div className="px-4 pb-6">
 					{loading ? (
-						<p className="flex items-center justify-center px-4 py-12" role="status" aria-label="Loading captures">
+						<output
+							className="flex items-center justify-center px-4 py-12"
+							aria-label="Loading captures"
+						>
 							<Spinner size="md" />
-						</p>
+						</output>
 					) : items.length === 0 ? (
 						<p className="px-4 py-12 text-center text-sm text-muted-foreground">
-							{search ? t("captures.empty.noMatches", { query: search }) : t("captures.empty.none")}
+							{search
+								? t("captures.empty.noMatches", { query: search })
+								: t("captures.empty.none")}
 						</p>
 					) : (
-						<div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
+						<div
+							className="relative w-full"
+							style={{ height: virtualizer.getTotalSize() }}
+						>
 							{virtualizer.getVirtualItems().map((row) => {
 								const capture = items[row.index];
 								if (!capture) {
@@ -116,7 +124,10 @@ export function CapturesListPane({
 												<SourceBadge source={capture.source} />
 												{capture.transcript_refined ? (
 													<Badge tone="accent">
-														<SparklesIcon className="h-2.5 w-2.5" aria-hidden="true" />
+														<SparklesIcon
+															className="h-2.5 w-2.5"
+															aria-hidden="true"
+														/>
 														{t("captures.transcript.refined")}
 													</Badge>
 												) : null}

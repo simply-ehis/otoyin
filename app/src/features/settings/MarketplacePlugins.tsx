@@ -8,14 +8,13 @@ import {
 } from "@heroicons/react/24/outline";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { Badge } from "@/ui/primitives";
-import { Button } from "@/ui/button";
-import { Spinner } from "@/ui/primitives";
-import { EmptyState, ScreenHeader } from "@/ui/states";
-import { useToast } from "@/ui/use-toast";
 import { apiClient } from "@/lib/api/client";
 import type { MarketplacePlugin } from "@/lib/api/types";
 import { cn } from "@/lib/utils/cn";
+import { Button } from "@/ui/button";
+import { Badge, Spinner } from "@/ui/primitives";
+import { EmptyState } from "@/ui/states";
+import { useToast } from "@/ui/use-toast";
 
 /**
  * Offline plugin bundles: install signed .otoyin files (disabled by
@@ -52,7 +51,8 @@ export function MarketplacePlugins() {
 				: apiClient.enableMarketplacePlugin(p.plugin_id),
 		onMutate: (p) => setBusyId(p.plugin_id),
 		onSettled: () => setBusyId(null),
-		onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["marketplace-plugins"] }),
+		onSuccess: () =>
+			void queryClient.invalidateQueries({ queryKey: ["marketplace-plugins"] }),
 		onError: fail("Action failed"),
 	});
 	const approveMut = useMutation({
@@ -83,7 +83,8 @@ export function MarketplacePlugins() {
 		mutationFn: (id: string) => apiClient.uninstallMarketplacePlugin(id),
 		onMutate: (id) => setBusyId(id),
 		onSettled: () => setBusyId(null),
-		onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["marketplace-plugins"] }),
+		onSuccess: () =>
+			void queryClient.invalidateQueries({ queryKey: ["marketplace-plugins"] }),
 		onError: fail("Uninstall failed"),
 	});
 
@@ -93,8 +94,9 @@ export function MarketplacePlugins() {
 		<div className="flex h-full flex-col gap-3 p-4">
 			<div className="flex items-center justify-between gap-3">
 				<p className="text-xs text-muted-foreground">
-					Install offline <code className="font-mono text-foreground">.otoyin</code>{" "}
-					bundles. Plugins install disabled and never run until you enable them.
+					Install offline{" "}
+					<code className="font-mono text-foreground">.otoyin</code> bundles.
+					Plugins install disabled and never run until you enable them.
 				</p>
 				<span className="flex shrink-0 items-center gap-2">
 					<Button
@@ -125,9 +127,12 @@ export function MarketplacePlugins() {
 
 			<div className="min-h-0 flex-1 overflow-y-auto">
 				{pluginsQuery.isLoading ? (
-					<div className="flex items-center justify-center py-16" role="status" aria-label="Loading plugins">
+					<output
+						className="flex items-center justify-center py-16"
+						aria-label="Loading plugins"
+					>
 						<Spinner size="sm" />
-					</div>
+					</output>
 				) : plugins.length === 0 ? (
 					<EmptyState
 						icon={<ArrowUpTrayIcon aria-hidden="true" />}
@@ -151,13 +156,18 @@ export function MarketplacePlugins() {
 												<Badge tone="neutral">{p.kind ?? "unknown"}</Badge>
 												{p.verified ? (
 													<Badge tone="success">
-														<ShieldCheckIcon className="mr-0.5 size-3" aria-hidden="true" />
+														<ShieldCheckIcon
+															className="mr-0.5 size-3"
+															aria-hidden="true"
+														/>
 														Verified
 													</Badge>
 												) : (
 													<Badge tone="warning">Unverified</Badge>
 												)}
-												{!p.enabled ? <Badge tone="neutral">Disabled</Badge> : null}
+												{!p.enabled ? (
+													<Badge tone="neutral">Disabled</Badge>
+												) : null}
 											</p>
 											<p className="truncate text-xs text-muted-foreground">
 												{p.developer ?? "unknown"} · v{p.version}
@@ -177,8 +187,16 @@ export function MarketplacePlugins() {
 											) : isExternal ? (
 												<button
 													type="button"
-													title={isRunning ? "Stop external app" : "Launch external app"}
-													aria-label={isRunning ? "Stop external app" : "Launch external app"}
+													title={
+														isRunning
+															? "Stop external app"
+															: "Launch external app"
+													}
+													aria-label={
+														isRunning
+															? "Stop external app"
+															: "Launch external app"
+													}
 													disabled={!p.enabled || busyId === p.plugin_id}
 													onClick={() =>
 														isRunning
@@ -187,7 +205,9 @@ export function MarketplacePlugins() {
 													}
 													className={cn(
 														"rounded-sm p-1.5 transition-colors disabled:opacity-40",
-														isRunning ? "text-destructive" : "text-accent hover:text-foreground",
+														isRunning
+															? "text-destructive"
+															: "text-accent hover:text-foreground",
 													)}
 												>
 													{isRunning ? (
@@ -197,22 +217,33 @@ export function MarketplacePlugins() {
 													)}
 												</button>
 											) : null}
-											{(!isExternal || p.trust_external) && !(isExternal && !p.trust_external) ? (
+											{(!isExternal || p.trust_external) &&
+											!(isExternal && !p.trust_external) ? (
 												<button
 													type="button"
 													title={p.enabled ? "Disable plugin" : "Enable plugin"}
-													aria-label={p.enabled ? "Disable plugin" : "Enable plugin"}
-													disabled={busyId === p.plugin_id || (isExternal && !p.trust_external)}
+													aria-label={
+														p.enabled ? "Disable plugin" : "Enable plugin"
+													}
+													disabled={
+														busyId === p.plugin_id ||
+														(isExternal && !p.trust_external)
+													}
 													onClick={() => toggleMut.mutate(p)}
 													className={cn(
 														"rounded-sm p-1.5 transition-colors disabled:opacity-40",
-														p.enabled ? "text-accent" : "text-muted-foreground/60 hover:text-foreground",
+														p.enabled
+															? "text-accent"
+															: "text-muted-foreground/60 hover:text-foreground",
 													)}
 												>
-											{busyId === p.plugin_id ? (
+													{busyId === p.plugin_id ? (
 														<Spinner size="sm" />
 													) : (
-														<PowerIcon className="size-3.5" aria-hidden="true" />
+														<PowerIcon
+															className="size-3.5"
+															aria-hidden="true"
+														/>
 													)}
 												</button>
 											) : null}

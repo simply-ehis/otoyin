@@ -2,6 +2,7 @@ import { AgentMethods } from "./clientAgents";
 import type {
 	Announcement,
 	Catalog,
+	CatalogRefreshResult,
 	EntitlementResponse,
 	LicensesResponse,
 	MarketplacePlugin,
@@ -43,6 +44,21 @@ export class ContentMethods extends AgentMethods {
 
 	async getCatalog(): Promise<Catalog> {
 		return this.request<Catalog>("/marketplace/catalog");
+	}
+
+	/**
+	 * Nudge a remote-catalog refresh; true when products changed. Pass
+	 * force=true (manual "Check for updates") to bypass the 24h stale gate.
+	 * reason !== null explains why nothing was swapped — "fresh" (gate
+	 * skip), "no_url" (remote unconfigured), or "failed" (fetch/verify
+	 * error the Store should surface).
+	 */
+	async refreshCatalog(force = false): Promise<CatalogRefreshResult> {
+		const query = force ? "?force=true" : "";
+		return this.request<CatalogRefreshResult>(
+			`/marketplace/catalog/refresh${query}`,
+			{ method: "POST" },
+		);
 	}
 
 	async getMarketplaceOffers(): Promise<MarketplaceProduct[]> {

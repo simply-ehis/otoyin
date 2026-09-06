@@ -29,7 +29,7 @@ export function SimilarProducts({
 					<button
 						key={sp.id}
 						type="button"
-						className="flex w-full items-center gap-3 rounded-lg border border-border/60 bg-secondary/30 px-3 py-2 text-left hover:bg-secondary transition-colors"
+						className="flex w-full items-center gap-3 rounded-lg border border-border/60 bg-secondary px-3 py-2 text-left hover:bg-secondary-hover transition-colors"
 						onClick={() => onProductChange(sp)}
 					>
 						<div className="min-w-0 flex-1">

@@ -83,7 +83,7 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
 
 	if (!style) {
 		return (
-			<pre className="bg-muted/50 p-3 rounded text-sm font-mono overflow-x-auto">
+			<pre className="bg-sunken p-3 rounded text-sm font-mono overflow-x-auto">
 				<code>{code}</code>
 			</pre>
 		);
@@ -92,7 +92,7 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
 	return (
 		<Suspense
 			fallback={
-				<pre className="bg-muted/50 p-3 rounded text-sm font-mono overflow-x-auto">
+				<pre className="bg-sunken p-3 rounded text-sm font-mono overflow-x-auto">
 					<code>{code}</code>
 				</pre>
 			}
@@ -126,7 +126,7 @@ const MARKDOWN_COMPONENTS: Record<string, MarkdownComponentType> = {
 		) : (
 			<code
 				className={cn(
-					"bg-muted/50 px-1.5 py-0.5 rounded text-sm font-mono",
+					"bg-secondary px-1.5 py-0.5 rounded text-sm font-mono",
 					(props as { className?: string }).className,
 				)}
 			>
@@ -287,7 +287,7 @@ function ToolResultBubble({ msg }: { msg: Msg }) {
 			</div>
 
 			{audio?.streamUrl && (
-				<div className="flex flex-col gap-1 rounded-lg bg-muted/50 px-3 py-2">
+				<div className="flex flex-col gap-1 rounded-lg bg-secondary px-3 py-2">
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
@@ -317,7 +317,7 @@ function ToolResultBubble({ msg }: { msg: Msg }) {
 							max={duration || 100}
 							value={currentTime}
 							onChange={handleSeek}
-							className="flex-1 h-1 appearance-none bg-muted/50 rounded-full accent-accent"
+							className="flex-1 h-1 appearance-none bg-secondary rounded-full accent-accent"
 							aria-label="Playback position"
 						/>
 						<span className="text-xs text-muted-foreground w-12 text-right">
@@ -342,7 +342,7 @@ function ToolResultBubble({ msg }: { msg: Msg }) {
 							step="0.1"
 							value={volume}
 							onChange={handleVolumeChange}
-							className="w-20 h-1 appearance-none bg-muted/50 rounded-full accent-accent"
+							className="w-20 h-1 appearance-none bg-secondary rounded-full accent-accent"
 							aria-label="Volume"
 						/>
 					</div>
@@ -385,8 +385,8 @@ function TextBubble({
 			className={cn(
 				"rounded-lg px-3 py-2 text-sm max-w-[90%] relative group",
 				isUser
-					? "bg-accent/10 text-foreground ml-auto"
-					: "bg-muted/50 text-foreground",
+					? "bg-accent-muted text-foreground ml-auto"
+					: "bg-secondary text-foreground",
 			)}
 		>
 			<div className="flex items-start gap-2">
@@ -491,7 +491,7 @@ function AudioPreviewBubble({ msg }: { msg: Msg }) {
 	}
 
 	return (
-		<div className="flex flex-col gap-1 rounded-lg bg-muted/50 px-3 py-2">
+		<div className="flex flex-col gap-1 rounded-lg bg-secondary px-3 py-2">
 			<div className="flex items-center gap-2 text-xs">
 				<Sparkles className="size-3 text-accent" />
 				<span className="font-medium text-accent">Streaming audio preview</span>
@@ -518,7 +518,7 @@ function AudioPreviewBubble({ msg }: { msg: Msg }) {
 					max={duration || 100}
 					value={currentTime}
 					onChange={handleSeek}
-					className="flex-1 h-1 appearance-none bg-muted/50 rounded-full accent-accent"
+					className="flex-1 h-1 appearance-none bg-secondary rounded-full accent-accent"
 					aria-label="Playback position"
 				/>
 				<span className="text-xs text-muted-foreground w-12 text-right">
@@ -543,7 +543,7 @@ function AudioPreviewBubble({ msg }: { msg: Msg }) {
 					step="0.1"
 					value={volume}
 					onChange={handleVolumeChange}
-					className="w-20 h-1 appearance-none bg-muted/50 rounded-full accent-accent"
+					className="w-20 h-1 appearance-none bg-secondary rounded-full accent-accent"
 					aria-label="Volume"
 				/>
 			</div>
@@ -591,7 +591,7 @@ export const AssistantMessage = memo(function AssistantMessage({
 	}
 	if (msg.role === "error") {
 		return (
-			<div className="rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2">
+			<div className="rounded-lg bg-danger-soft border border-destructive/20 px-3 py-2">
 				<p className="text-xs text-destructive">{msg.content}</p>
 			</div>
 		);
@@ -601,7 +601,7 @@ export const AssistantMessage = memo(function AssistantMessage({
 	}
 	if (msg.role === "thinking") {
 		return (
-			<div className="rounded-lg bg-muted/40 border border-dashed border-border px-3 py-2">
+			<div className="rounded-lg bg-secondary border border-dashed border-border px-3 py-2">
 				<p className="text-xs uppercase tracking-wide text-muted-foreground/70 mb-1">
 					Reasoning
 				</p>

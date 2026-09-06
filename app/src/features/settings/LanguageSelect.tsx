@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { type LanguageCode, SUPPORTED_LANGUAGES } from "@/i18n";
 import {
 	Select,
 	SelectContent,
@@ -6,7 +7,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/ui/select";
-import { type LanguageCode, SUPPORTED_LANGUAGES } from "@/i18n";
 
 /** Interface language picker. Applies immediately via i18next. */
 export function LanguageSelect() {

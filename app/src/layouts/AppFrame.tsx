@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { TooltipProvider } from "@/ui/tooltip";
-import { applyThemeAccent } from "@/lib/design-system";
 import { TOP_SAFE_AREA_PADDING } from "@/lib/constants/ui";
+import { applyThemeAccent } from "@/lib/design-system";
 import { useServerErrorToast } from "@/lib/hooks/useServerErrorToast";
 import { cn } from "@/lib/utils/cn";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useUIStore } from "@/stores/uiStore";
+import { TooltipProvider } from "@/ui/tooltip";
 import { TitleBar } from "./TitleBar";
 
 /**
@@ -28,8 +28,14 @@ export function AppFrame({
 	titleBarActions?: React.ReactNode;
 	aside?: React.ReactNode;
 	bottomBar?: React.ReactNode;
-	renderHelp?: (props: { open: boolean; onClose: () => void }) => React.ReactNode;
-	renderPalette?: (props: { open: boolean; onClose: () => void }) => React.ReactNode;
+	renderHelp?: (props: {
+		open: boolean;
+		onClose: () => void;
+	}) => React.ReactNode;
+	renderPalette?: (props: {
+		open: boolean;
+		onClose: () => void;
+	}) => React.ReactNode;
 }) {
 	useServerErrorToast();
 	const theme = useUIStore((s) => s.theme);
@@ -74,7 +80,9 @@ export function AppFrame({
 						break;
 					case "ArrowRight":
 						e.preventDefault();
-						setCurrentTime(Math.min(duration, currentTime + (e.shiftKey ? 30 : 10)));
+						setCurrentTime(
+							Math.min(duration, currentTime + (e.shiftKey ? 30 : 10)),
+						);
 						break;
 					case "ArrowLeft":
 						e.preventDefault();
@@ -132,8 +140,15 @@ export function AppFrame({
 					{aside}
 				</div>
 				{bottomBar}
-				{renderHelp ? renderHelp({ open: helpOpen, onClose: () => setHelpOpen(false) }) : null}
-				{renderPalette ? renderPalette({ open: paletteOpen, onClose: () => setPaletteOpen(false) }) : null}
+				{renderHelp
+					? renderHelp({ open: helpOpen, onClose: () => setHelpOpen(false) })
+					: null}
+				{renderPalette
+					? renderPalette({
+							open: paletteOpen,
+							onClose: () => setPaletteOpen(false),
+						})
+					: null}
 			</div>
 		</TooltipProvider>
 	);

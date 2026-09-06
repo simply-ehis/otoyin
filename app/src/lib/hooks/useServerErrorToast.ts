@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { useToast } from "@/ui/use-toast";
 import { usePlatform } from "@/platform/PlatformContext";
+import { useToast } from "@/ui/use-toast";
 
 /**
  * Subscribes to `server-error` events from the Rust sidecar and shows a

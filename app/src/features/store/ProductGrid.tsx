@@ -18,6 +18,8 @@ interface Props {
 	wishlist: Set<string>;
 	pendingDownload: string | null;
 	activatingId: string | null;
+	/** product id -> true when it arrived after the last seen catalog. */
+	newIds: Set<string>;
 	onDetail: (p: MarketplaceProduct) => void;
 	onQuickDownload: (id: string) => void;
 	onCancel: (id: string) => void;
@@ -40,6 +42,7 @@ export function ProductGrid({
 	wishlist,
 	pendingDownload,
 	activatingId,
+	newIds,
 	onDetail,
 	onQuickDownload,
 	onCancel,
@@ -88,6 +91,7 @@ export function ProductGrid({
 											wishlist={wishlist}
 											pendingDownload={pendingDownload}
 											activatingId={activatingId}
+											newIds={newIds}
 											onDetail={onDetail}
 											onQuickDownload={onQuickDownload}
 											onCancel={onCancel}
@@ -121,6 +125,7 @@ export function ProductGrid({
 									wishlist={wishlist}
 									pendingDownload={pendingDownload}
 									activatingId={activatingId}
+									newIds={newIds}
 									onDetail={onDetail}
 									onQuickDownload={onQuickDownload}
 									onCancel={onCancel}
@@ -147,6 +152,7 @@ function GridCard({
 	wishlist,
 	pendingDownload,
 	activatingId,
+	newIds,
 	onDetail,
 	onQuickDownload,
 	onCancel,
@@ -155,6 +161,7 @@ function GridCard({
 	onToggleWishlist,
 }: {
 	p: MarketplaceProduct;
+	newIds: Set<string>;
 	models: ModelStatus[] | undefined;
 	owned: Set<string>;
 	installed: Set<string>;
@@ -185,6 +192,7 @@ function GridCard({
 			activating={activatingId === p.id}
 			onActivate={onActivate}
 			wishlisted={wishlist.has(p.id)}
+			isNew={newIds.has(p.id)}
 			onToggleWishlist={onToggleWishlist}
 			onDetail={onDetail}
 			onQuickDownload={onQuickDownload}

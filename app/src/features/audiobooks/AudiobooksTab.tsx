@@ -1,27 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Badge } from "@/ui/primitives";
-import { Button } from "@/ui/button";
-import { Field, Input } from "@/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/ui/select";
-import { EmptyState, ErrorState } from "@/ui/states";
-import { useToast } from "@/ui/use-toast";
-import { apiClient } from "@/lib/api/client";
-import { showStudioErrorToast } from "@/lib/errors";
+import { useEffect } from "react";
 import {
 	useAudiobookDetail,
 	useAudiobookList,
-	useDeleteAudiobook,
 } from "@/lib/hooks/useAudiobooks";
 import { useAudiobookStore } from "@/stores/audiobookStore";
+import { EmptyState, ErrorState } from "@/ui/states";
 import { BookDetail } from "./BookDetail";
+import { BookList } from "./BookList";
 import { ImportWizard } from "./ImportWizard";
 
 /**
@@ -31,7 +16,12 @@ import { ImportWizard } from "./ImportWizard";
 export function AudiobooksTab() {
 	const selectedId = useAudiobookStore((s) => s.selectedId);
 	const setSelectedId = useAudiobookStore((s) => s.setSelectedId);
-	const { data: books = [], isLoading, error, refetch: refetchBooks } = useAudiobookList();
+	const {
+		data: books = [],
+		isLoading,
+		error,
+		refetch: refetchBooks,
+	} = useAudiobookList();
 	const {
 		data: detail = null,
 		isLoading: detailLoading,
@@ -58,9 +48,18 @@ export function AudiobooksTab() {
 			<div className="min-h-0 min-w-0 flex-1 overflow-y-auto pr-1">
 				{detailLoading && selectedId ? (
 					<div className="flex flex-col gap-2 p-4">
-						<div aria-hidden="true" className="h-8 w-48 animate-pulse rounded-sm bg-secondary" />
-						<div aria-hidden="true" className="h-4 w-32 animate-pulse rounded-sm bg-secondary" />
-						<div aria-hidden="true" className="h-64 w-full animate-pulse rounded-md bg-secondary" />
+						<div
+							aria-hidden="true"
+							className="h-8 w-48 animate-pulse rounded-sm bg-secondary"
+						/>
+						<div
+							aria-hidden="true"
+							className="h-4 w-32 animate-pulse rounded-sm bg-secondary"
+						/>
+						<div
+							aria-hidden="true"
+							className="h-64 w-full animate-pulse rounded-md bg-secondary"
+						/>
 					</div>
 				) : detail ? (
 					<BookDetail detail={detail} onRefresh={() => void refetchDetail()} />

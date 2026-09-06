@@ -1,17 +1,17 @@
+import type * as React from "react";
+import { createContext, useContext, useId } from "react";
 import {
 	Controller,
 	type ControllerProps,
 	type FieldPath,
 	type FieldValues,
+	useForm,
 	useFormContext,
 } from "react-hook-form";
-import { useForm } from "react-hook-form";
-import { createContext, useContext, useId } from "react";
-import type * as React from "react";
 import { cn } from "@/lib/utils/cn";
 
 export { useForm };
-export type { UseFormReturn, FieldValues } from "react-hook-form";
+export type { FieldValues, UseFormReturn } from "react-hook-form";
 export { FormProvider } from "react-hook-form";
 
 /** react-hook-form field bridge: wires Controller state to item + message. */
@@ -41,12 +41,15 @@ export function FormItem({
 	);
 }
 
-export function FormControl({ ...props }: React.HTMLAttributes<HTMLDivElement>) {
+export function FormControl({
+	...props
+}: React.HTMLAttributes<HTMLDivElement>) {
 	const { id } = useContext(FormItemContext);
 	return <div id={`${id}-control`} {...props} />;
 }
 
-export function FormMessage({ className }: { className?: string }) {	const { name } = useContext(FormFieldContext);
+export function FormMessage({ className }: { className?: string }) {
+	const { name } = useContext(FormFieldContext);
 	const { getFieldState, formState } = useFormContext();
 	const error = getFieldState(name as FieldPath<FieldValues>, formState).error;
 	if (!error?.message) {
@@ -92,15 +95,20 @@ export function FormActions({
 	...props
 }: React.HTMLAttributes<HTMLDivElement>) {
 	return (
-		<div className={cn("flex items-center justify-end gap-2 pt-1", className)} {...props} />
+		<div
+			className={cn("flex items-center justify-end gap-2 pt-1", className)}
+			{...props}
+		/>
 	);
 }
 
 /** Field label inside FormItem grids. Pairs with FormMessage below. */
-export function FormLabel({	className,
+export function FormLabel({
+	className,
 	...props
 }: React.LabelHTMLAttributes<HTMLLabelElement>) {
 	return (
+		// biome-ignore lint/a11y/noLabelWithoutControl: wrapper component; every call site pairs it with a control.
 		<label
 			className={cn("text-xs font-medium text-muted-foreground", className)}
 			{...props}

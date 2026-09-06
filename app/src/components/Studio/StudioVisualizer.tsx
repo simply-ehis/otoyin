@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef, useState } from "react";
-import { useAudioStudioStore } from "@/components/AudioStudio/AudioStudioStore";
 import { WaveformVisualizer } from "@/components/WaveformVisualizer";
+import { useAudioStudioStore } from "@/features/audioStudio/AudioStudioStore";
 import { cn } from "@/lib/utils/cn";
 import { usePlayerStore } from "@/stores/playerStore";
 

@@ -69,7 +69,7 @@ export function AssistantChatView({
 			>
 				{messages.length === 0 ? (
 					<div className="flex flex-col items-center justify-center h-full text-center space-y-6">
-						<div className="size-16 rounded-full bg-accent/10 flex items-center justify-center">
+						<div className="size-16 rounded-full bg-accent-muted flex items-center justify-center">
 							<Sparkles className="size-8 text-accent/60" />
 						</div>
 						<div>
@@ -104,11 +104,11 @@ export function AssistantChatView({
 			</div>
 
 			{attachments.length > 0 && (
-				<div className="px-4 py-2 border-t border-border bg-muted/30 space-y-1">
+				<div className="px-4 py-2 border-t border-border bg-secondary space-y-1">
 					{attachments.map((att) => (
 						<div
 							key={`${att.file.name}-${att.file.size}-${att.file.lastModified}`}
-							className="flex items-center gap-2 px-2 py-1 bg-muted/50 rounded-lg"
+							className="flex items-center gap-2 px-2 py-1 bg-sunken rounded-lg"
 						>
 							{att.preview ? (
 								att.preview.startsWith("blob:") ? (

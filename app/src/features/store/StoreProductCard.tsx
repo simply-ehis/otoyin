@@ -49,6 +49,8 @@ interface Props {
 	busy?: boolean;
 	wishlisted?: boolean;
 	onToggleWishlist?: (id: string) => void;
+	/** Product arrived in a catalog newer than the last seen one — "New" badge. */
+	isNew?: boolean;
 }
 
 /** Chip tones for the three per-product states + price/free. */
@@ -73,6 +75,7 @@ export function StoreProductCard({
 	busy,
 	wishlisted,
 	onToggleWishlist,
+	isNew,
 }: Props) {
 	// Disk truth: the catalog annotation and/or the live model-status signal
 	// (both read the same manifest — they never contradict each other).
@@ -115,10 +118,21 @@ export function StoreProductCard({
 				}}
 				className="flex flex-1 cursor-pointer flex-col gap-3 p-4 text-left"
 			>
+				{" "}
 				<div className="flex items-start justify-between gap-2">
-					<h3 className="min-w-0 flex-1 truncate text-sm font-semibold leading-tight text-foreground">
-						{product.name}
-					</h3>
+					<div className="flex min-w-0 flex-1 items-center gap-1.5">
+						<h3 className="min-w-0 truncate text-sm font-semibold leading-tight text-foreground">
+							{product.name}
+						</h3>
+						{isNew && (
+							<span
+								className="shrink-0 rounded-full border border-info/40 bg-info-soft px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-info-text"
+								title={`Added since your last visit`}
+							>
+								New
+							</span>
+						)}
+					</div>
 					<Button
 						type="button"
 						variant="ghost"
@@ -175,7 +189,6 @@ export function StoreProductCard({
 						</span>
 					)}
 				</div>
-
 				<p className="min-h-[3.2em] text-xs leading-relaxed text-muted-foreground line-clamp-3">
 					{description}
 				</p>
@@ -184,7 +197,6 @@ export function StoreProductCard({
 						<SparklesIcon className="size-3" /> Special
 					</span>
 				)}
-
 				{/* meta chips + rating */}
 				<div className="mt-1 flex flex-wrap items-center gap-2">
 					<span className="inline-flex items-center rounded-full border border-border bg-secondary px-2 py-0.5 text-xs font-medium capitalize text-muted-foreground">
@@ -216,7 +228,6 @@ export function StoreProductCard({
 						</span>
 					))}
 				</div>
-
 				{isDownloading && downloadTask && (
 					<div className="mt-2 w-full space-y-1">
 						<Progress value={downloadTask.progress ?? 0} className="h-1.5" />
@@ -234,7 +245,7 @@ export function StoreProductCard({
 			</div>
 
 			{/* footer action bar — the only place to activate/buy/download/delete */}
-			<div className="flex items-center gap-2 border-t border-border bg-secondary/40 px-3 py-3">
+			<div className="flex items-center gap-2 border-t border-border bg-secondary px-3 py-3">
 				{cached ? (
 					<>
 						<Button

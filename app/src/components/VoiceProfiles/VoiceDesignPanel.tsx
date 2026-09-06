@@ -211,7 +211,7 @@ export function VoiceDesignPanel({
 			{/* Engine badge when only one engine available */}
 			{engineList.length === 1 && currentEngine && (
 				<div className="flex items-center gap-2">
-					<span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent-foreground border border-accent/20">
+					<span className="text-xs px-2 py-0.5 rounded-full bg-accent-muted text-accent-foreground border border-accent/20">
 						{currentEngine.label}
 					</span>
 					<span className="text-xs text-muted-foreground/50">
@@ -386,7 +386,7 @@ function ComposedPreview({
 	}
 
 	return (
-		<div className="rounded-md border border-dashed border-border/60 bg-muted/30 px-3 py-2">
+		<div className="rounded-md border border-dashed border-border/60 bg-secondary px-3 py-2">
 			<p className="text-xs text-muted-foreground/50 mb-1">
 				Composed description:
 			</p>

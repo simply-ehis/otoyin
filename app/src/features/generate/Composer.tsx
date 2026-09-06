@@ -1,14 +1,22 @@
 import {
 	AdjustmentsHorizontalIcon,
-	CommandLineIcon,
 	SparklesIcon,
 	Squares2X2Icon,
 } from "@heroicons/react/24/outline";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "@tanstack/react-router";
+import { apiClient } from "@/lib/api/client";
+import type { EffectPresetResponse } from "@/lib/api/types";
+import { getLanguageOptionsForEngine } from "@/lib/constants/languages";
+import { useGenerationForm } from "@/lib/hooks/useGenerationForm";
+import { useProfile, useProfiles } from "@/lib/hooks/useProfiles";
+import { cn } from "@/lib/utils/cn";
+import { useGenerationStore } from "@/stores/generationStore";
+import { useUIStore } from "@/stores/uiStore";
 import { Button } from "@/ui/button";
+import { Switch } from "@/ui/controls";
 import { FormProvider } from "@/ui/form";
 import { Field, Textarea } from "@/ui/input";
 import { Label } from "@/ui/primitives";
@@ -20,27 +28,13 @@ import {
 	SelectValue,
 } from "@/ui/select";
 import { Slider } from "@/ui/slider";
-import { Spinner } from "@/ui/primitives";
-import { Switch } from "@/ui/controls";
 import { useToast } from "@/ui/use-toast";
-import { apiClient } from "@/lib/api/client";
-import type {
-	EffectPresetResponse,
-	VoiceProfileResponse,
-} from "@/lib/api/types";
-import { getLanguageOptionsForEngine } from "@/lib/constants/languages";
-import { useProfiles } from "@/lib/hooks/useProfiles";
-import { useProfile } from "@/lib/hooks/useProfiles";
-import { useGenerationForm } from "@/lib/hooks/useGenerationForm";
-import { useGenerationStore } from "@/stores/generationStore";
-import { useUIStore } from "@/stores/uiStore";
-import { cn } from "@/lib/utils/cn";
 import { buildEffectsChain } from "./buildEffectsChain";
 import {
 	applyEngineSelection,
 	EMOTION_OPTIONS,
-	selectableEngines,
 	installableEngines,
+	selectableEngines,
 	useDownloadedEngines,
 	useEngineCapabilities,
 	VOICE_TYPE_LABELS,
@@ -99,8 +93,14 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 			}
 		},
 		getEffectsChain: () => {
-			const cached = queryClient.getQueryData<EffectPresetResponse[]>(["effect-presets"]);
-			return buildEffectsChain(presetId, selectedProfile, effectPresets ?? cached);
+			const cached = queryClient.getQueryData<EffectPresetResponse[]>([
+				"effect-presets",
+			]);
+			return buildEffectsChain(
+				presetId,
+				selectedProfile,
+				effectPresets ?? cached,
+			);
 		},
 	});
 
@@ -110,8 +110,14 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 			setSelectedProfileId(profiles[0].id);
 			return;
 		}
-		if (selectedProfileId && profiles && !profiles.find((p) => p.id === selectedProfileId)) {
-			setSelectedProfileId(profiles.length > 0 && profiles[0] ? profiles[0].id : null);
+		if (
+			selectedProfileId &&
+			profiles &&
+			!profiles.find((p) => p.id === selectedProfileId)
+		) {
+			setSelectedProfileId(
+				profiles.length > 0 && profiles[0] ? profiles[0].id : null,
+			);
 		}
 	}, [selectedProfileId, profiles, setSelectedProfileId]);
 
@@ -126,13 +132,19 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 		if (selectedProfile?.language) {
 			form.setValue("language", selectedProfile.language as never);
 		}
-		const engine = selectedProfile?.default_engine ?? selectedProfile?.preset_engine;
+		const engine =
+			selectedProfile?.default_engine ?? selectedProfile?.preset_engine;
 		if (engine) {
 			form.setValue("engine", engine as never);
 		}
-		if (selectedProfile?.effects_chain && selectedProfile.effects_chain.length > 0) {
+		if (
+			selectedProfile?.effects_chain &&
+			selectedProfile.effects_chain.length > 0
+		) {
 			const match = effectPresets?.find(
-				(p) => JSON.stringify(p.effects_chain) === JSON.stringify(selectedProfile.effects_chain),
+				(p) =>
+					JSON.stringify(p.effects_chain) ===
+					JSON.stringify(selectedProfile.effects_chain),
 			);
 			setPresetId(match ? match.id : "_profile");
 		} else if (selectedProfile) {
@@ -195,7 +207,8 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 		} catch (e: unknown) {
 			toast({
 				title: "Cancel failed",
-				description: e instanceof Error ? e.message : "Could not cancel generation",
+				description:
+					e instanceof Error ? e.message : "Could not cancel generation",
 				variant: "destructive",
 			});
 		} finally {
@@ -204,18 +217,26 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 	};
 
 	return (
-		<section aria-label="Generate" className="rounded-md border border-border bg-card p-4">
+		<section
+			aria-label="Generate"
+			className="rounded-md border border-border bg-card p-4"
+		>
 			<h2 className="flex items-center gap-2 text-[15px] font-semibold tracking-tight text-foreground">
 				<SparklesIcon className="size-4 text-accent" aria-hidden="true" />
 				Generate
 			</h2>
 			<FormProvider {...form}>
 				<form
-					onSubmit={form.handleSubmit((data) => handleSubmit(data, selectedProfileId))}
+					onSubmit={form.handleSubmit((data) =>
+						handleSubmit(data, selectedProfileId),
+					)}
 					className="mt-3 flex flex-col gap-3"
 				>
 					{tags.length > 0 ? (
-						<ul className="flex flex-wrap gap-1.5" aria-label="Insert voice tag">
+						<ul
+							className="flex flex-wrap gap-1.5"
+							aria-label="Insert voice tag"
+						>
 							{tags.map((tag) => (
 								<li key={tag}>
 									<button
@@ -245,7 +266,9 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 							}}
 							placeholder={
 								selectedProfile
-									? t("generation.placeholder.profile", { name: selectedProfile.name })
+									? t("generation.placeholder.profile", {
+											name: selectedProfile.name,
+										})
 									: t("generation.placeholder.selectVoice")
 							}
 							disabled={!selectedProfileId}
@@ -254,7 +277,10 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 							className="max-h-[300px] min-h-[64px] resize-y"
 						/>
 					</Field>
-					<p className="text-right text-xs tabular-nums text-muted-foreground/70" aria-live="off">
+					<p
+						className="text-right text-xs tabular-nums text-muted-foreground/70"
+						aria-live="off"
+					>
 						{text.length.toLocaleString()} / 50,000
 					</p>
 
@@ -289,12 +315,15 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 									onValueChange={(v) => setSelectedProfileId(v || null)}
 								>
 									<SelectTrigger id="composer-voice" className="h-8 text-xs">
-										<SelectValue placeholder={t("generation.voiceSelector.placeholder")} />
+										<SelectValue
+											placeholder={t("generation.voiceSelector.placeholder")}
+										/>
 									</SelectTrigger>
 									<SelectContent>
 										{profiles?.map((p) => (
 											<SelectItem key={p.id} value={p.id} className="text-xs">
-												{p.name} · {VOICE_TYPE_LABELS[p.voice_type ?? ""] ?? p.voice_type}
+												{p.name} ·{" "}
+												{VOICE_TYPE_LABELS[p.voice_type ?? ""] ?? p.voice_type}
 											</SelectItem>
 										))}
 									</SelectContent>
@@ -311,7 +340,11 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 								</SelectTrigger>
 								<SelectContent>
 									{getLanguageOptionsForEngine(engine ?? "").map((l) => (
-										<SelectItem key={l.value} value={l.value} className="text-xs">
+										<SelectItem
+											key={l.value}
+											value={l.value}
+											className="text-xs"
+										>
 											{l.label}
 										</SelectItem>
 									))}
@@ -328,7 +361,11 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 								</SelectTrigger>
 								<SelectContent>
 									{EMOTION_OPTIONS.map((o) => (
-										<SelectItem key={o.value} value={o.value} className="text-xs">
+										<SelectItem
+											key={o.value}
+											value={o.value}
+											className="text-xs"
+										>
 											{o.label}
 										</SelectItem>
 									))}
@@ -357,7 +394,11 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 										</p>
 									) : (
 										engineOptions.map((o) => (
-											<SelectItem key={o.value} value={o.value} className="text-xs">
+											<SelectItem
+												key={o.value}
+												value={o.value}
+												className="text-xs"
+											>
 												{o.label}
 											</SelectItem>
 										))
@@ -395,8 +436,14 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 								/>
 								<button
 									type="button"
-									title={tempAuto ? "Engine default — click to set" : "Click to reset to auto"}
-									onClick={() => form.setValue("temperature", tempAuto ? 0.7 : null)}
+									title={
+										tempAuto
+											? "Engine default — click to set"
+											: "Click to reset to auto"
+									}
+									onClick={() =>
+										form.setValue("temperature", tempAuto ? 0.7 : undefined)
+									}
 									className="w-8 rounded-sm text-right text-xs tabular-nums text-muted-foreground transition-colors hover:text-foreground"
 								>
 									{tempAuto ? "auto" : (temperature ?? 0.7).toFixed(1)}
@@ -415,7 +462,8 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 									<SelectItem value="none" className="text-xs">
 										{t("generation.effects.none")}
 									</SelectItem>
-									{selectedProfile?.effects_chain && selectedProfile.effects_chain.length > 0 ? (
+									{selectedProfile?.effects_chain &&
+									selectedProfile.effects_chain.length > 0 ? (
 										<SelectItem value="_profile" className="text-xs">
 											{t("generation.effects.profileDefault")}
 										</SelectItem>
@@ -438,20 +486,31 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 						<div className="flex items-end gap-1 pb-0.5">
 							{selectedProfile?.personality?.trim() ? (
 								<IconRailButton
-									label={form.watch("personality") ? "Persona on" : "Persona off"}
+									label={
+										form.watch("personality") ? "Persona on" : "Persona off"
+									}
 									active={!!form.watch("personality")}
-									onClick={() => form.setValue("personality", !form.watch("personality"))}
+									onClick={() =>
+										form.setValue("personality", !form.watch("personality"))
+									}
 								>
 									<SparklesIcon className="size-4" aria-hidden="true" />
 								</IconRailButton>
 							) : null}
 							{supportsInstruct ? (
 								<IconRailButton
-									label={instructOpen ? t("generation.instruct.hide") : t("generation.instruct.show")}
+									label={
+										instructOpen
+											? t("generation.instruct.hide")
+											: t("generation.instruct.show")
+									}
 									active={instructOpen}
 									onClick={() => setInstructOpen((v) => !v)}
 								>
-									<AdjustmentsHorizontalIcon className="size-4" aria-hidden="true" />
+									<AdjustmentsHorizontalIcon
+										className="size-4"
+										aria-hidden="true"
+									/>
 								</IconRailButton>
 							) : null}
 							{selectedProfile?.personality?.trim() ? (
@@ -462,7 +521,9 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 									onClick={() => {
 										composeMutation.mutateAsync().then(
 											(result) => {
-												form.setValue("text", result.text, { shouldDirty: true });
+												form.setValue("text", result.text, {
+													shouldDirty: true,
+												});
 												setExpanded(true);
 											},
 											() => {},
@@ -532,7 +593,10 @@ function IconRailButton({
 			)}
 		>
 			{loading ? (
-				<span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden="true" />
+				<span
+					className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+					aria-hidden="true"
+				/>
 			) : (
 				children
 			)}

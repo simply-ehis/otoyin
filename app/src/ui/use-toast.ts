@@ -53,13 +53,23 @@ function scheduleRemove(id: string, duration: number) {
 export function toast(props: Toast) {
 	const id = genId();
 	const duration =
-		props.duration ?? (props.variant === "destructive" ? 8000 : DEFAULT_DURATION);
-	memoryState = [{ ...props, id, open: true }, ...memoryState].slice(0, TOAST_LIMIT);
+		props.duration ??
+		(props.variant === "destructive" ? 8000 : DEFAULT_DURATION);
+	memoryState = [{ ...props, id, open: true }, ...memoryState].slice(
+		0,
+		TOAST_LIMIT,
+	);
 	emit();
 	scheduleRemove(id, duration);
 	return {
 		id,
 		dismiss: () => dismissToast(id),
+		update: (newProps: Partial<Toast>) => {
+			memoryState = memoryState.map((t) =>
+				t.id === id ? { ...t, ...newProps } : t,
+			);
+			emit();
+		},
 	};
 }
 

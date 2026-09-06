@@ -1,4 +1,4 @@
-import type { AudioStudioSnapshot } from "@/components/AudioStudio/AudioStudioStore";
+import type { AudioStudioSnapshot } from "@/features/audioStudio/AudioStudioStore";
 import { formatErrorDetail } from "./clientCore";
 import { StoriesAMethods } from "./clientStoriesA";
 import type {
@@ -529,6 +529,13 @@ export class StoriesBMethods extends StoriesAMethods {
 
 	// --- Conversation / Podcast / Debate Mode ---
 
+	async listConversationPresets() {
+		return this.request<Record<string, { name: string }>>(
+			"/conversation/presets",
+			{ method: "GET" },
+		);
+	}
+
 	async autoDuckSpeakers(
 		lines: Array<{
 			id: string;
@@ -625,6 +632,24 @@ export class StoriesBMethods extends StoriesAMethods {
 		});
 	}
 
+	async listCompingSessions() {
+		return this.request<SessionResponse[]>("/comping/sessions", {
+			method: "GET",
+		});
+	}
+
+	async getCompingSession(id: string) {
+		return this.request<SessionResponse>(`/comping/sessions/${id}`, {
+			method: "GET",
+		});
+	}
+
+	async deleteCompingSession(id: string) {
+		return this.request(`/comping/sessions/${id}`, {
+			method: "DELETE",
+		});
+	}
+
 	async createMixerSession(name: string, data: unknown, isAutosave = false) {
 		return this.request<SessionResponse>("/mixer/sessions", {
 			method: "POST",
@@ -643,6 +668,24 @@ export class StoriesBMethods extends StoriesAMethods {
 		return this.request<SessionResponse>(`/mixer/sessions/${id}/promote`, {
 			method: "POST",
 			body: JSON.stringify({ name, data }),
+		});
+	}
+
+	async listMixerSessions() {
+		return this.request<SessionResponse[]>("/mixer/sessions", {
+			method: "GET",
+		});
+	}
+
+	async getMixerSession(id: string) {
+		return this.request<SessionResponse>(`/mixer/sessions/${id}`, {
+			method: "GET",
+		});
+	}
+
+	async deleteMixerSession(id: string) {
+		return this.request(`/mixer/sessions/${id}`, {
+			method: "DELETE",
 		});
 	}
 

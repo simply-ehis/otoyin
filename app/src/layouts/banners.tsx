@@ -5,14 +5,14 @@ import {
 } from "@heroicons/react/24/outline";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Banner } from "@/ui/banner";
-import type { Announcement, RecommendedModel } from "@/lib/api/types";
 import { apiClient } from "@/lib/api/client";
+import type { Announcement, RecommendedModel } from "@/lib/api/types";
 import { useAnnouncements } from "@/lib/hooks/useContent";
 import { MODEL_DISPLAY_NAMES } from "@/lib/hooks/useRestoreActiveTasks";
 import { useServerHealth } from "@/lib/hooks/useServer";
 import { useContentStore } from "@/stores/contentStore";
 import { useServerStore } from "@/stores/serverStore";
+import { Banner } from "@/ui/banner";
 
 function isActive(a: Announcement, now: number): boolean {
 	const start = a.starts_at ? Date.parse(a.starts_at) : Number.NaN;
@@ -38,7 +38,8 @@ export function AnnouncementBanner() {
 
 	const now = Date.now();
 	const active = useMemo(
-		() => (data ?? []).filter((a) => isActive(a, now) && !dismissed.includes(a.id)),
+		() =>
+			(data ?? []).filter((a) => isActive(a, now) && !dismissed.includes(a.id)),
 		[data, dismissed, now],
 	);
 
@@ -46,9 +47,12 @@ export function AnnouncementBanner() {
 		return null;
 	}
 	const a = active[0];
-	const tone = a.severity === "promo" || a.severity === "success" ? "success"
-		: a.severity === "warning" ? "warning"
-		: "info";
+	const tone =
+		a.severity === "promo" || a.severity === "success"
+			? "success"
+			: a.severity === "warning"
+				? "warning"
+				: "info";
 	return (
 		<Banner
 			tone={tone}
@@ -135,11 +139,15 @@ export function RecommendedModelsBanner() {
 			dismissLabel="Dismiss model recommendation"
 		>
 			<span className="font-medium text-foreground">
-				{missing.length} model{missing.length > 1 ? "s" : ""} missing for the full
-				studio
+				{missing.length} model{missing.length > 1 ? "s" : ""} missing for the
+				full studio
 			</span>{" "}
 			<span className="hidden sm:inline">
-				({missing.map((m) => MODEL_DISPLAY_NAMES[m.model_name] ?? m.model_name).join(", ")})
+				(
+				{missing
+					.map((m) => MODEL_DISPLAY_NAMES[m.model_name] ?? m.model_name)
+					.join(", ")}
+				)
 			</span>{" "}
 			<Link
 				to="/store"

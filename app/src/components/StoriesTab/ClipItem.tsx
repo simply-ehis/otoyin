@@ -75,7 +75,7 @@ export function ClipItem({
 				type="button"
 				className={cn(
 					"w-full h-full rounded cursor-move overflow-hidden",
-					"bg-accent/80 hover:bg-accent border border-accent-foreground/20",
+					"bg-accent hover:brightness-110 border border-accent-foreground/20",
 					"flex flex-col justify-center",
 					isDragging && "opacity-80 shadow-lg z-20",
 					!isDragging &&
@@ -120,13 +120,13 @@ export function ClipItem({
 				<>
 					<button
 						type="button"
-						className="trim-handle absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-primary/30 bg-primary/20 z-30 rounded-l"
+						className="trim-handle absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize bg-strong hover:brightness-110 transition-[filter] z-30 rounded-l"
 						onMouseDown={(e) => onTrimStart(e, item, "start")}
 						aria-label="Trim start"
 					/>
 					<button
 						type="button"
-						className="trim-handle absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-primary/30 bg-primary/20 z-30 rounded-r"
+						className="trim-handle absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize bg-strong hover:brightness-110 transition-[filter] z-30 rounded-r"
 						onMouseDown={(e) => onTrimStart(e, item, "end")}
 						aria-label="Trim end"
 					/>

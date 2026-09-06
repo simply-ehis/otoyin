@@ -48,7 +48,9 @@ export function CapturesEmptyState({
 					body={t("captures.empty.turnOnShortcut")}
 					action={
 						<Button asChild variant="outline" size="sm">
-							<Link to="/settings/captures">{t("captures.empty.openSettings")}</Link>
+							<Link to="/settings/captures">
+								{t("captures.empty.openSettings")}
+							</Link>
 						</Button>
 					}
 				/>
@@ -76,7 +78,9 @@ export function CapturesEmptyState({
 						</p>
 					) : null}
 				</div>
-				<p className="text-sm text-muted-foreground">{t("captures.empty.pressShortcut")}</p>
+				<p className="text-sm text-muted-foreground">
+					{t("captures.empty.pressShortcut")}
+				</p>
 			</div>
 		);
 	}
@@ -88,7 +92,9 @@ export function CapturesEmptyState({
 				body={t("captures.empty.turnOnShortcut")}
 				action={
 					<Button asChild variant="outline" size="sm">
-						<Link to="/settings/captures">{t("captures.empty.openSettings")}</Link>
+						<Link to="/settings/captures">
+							{t("captures.empty.openSettings")}
+						</Link>
 					</Button>
 				}
 			/>

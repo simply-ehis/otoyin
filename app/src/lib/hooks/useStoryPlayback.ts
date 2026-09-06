@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { interpolateValue } from "@/components/StoriesTab/AutomationLane";
+import { interpolateValue } from "@/features/stories/timeline";
 import { apiClient } from "@/lib/api/client";
 import type { StoryItemDetail } from "@/lib/api/types";
 import { useStoryStore } from "@/stores/storyStore";

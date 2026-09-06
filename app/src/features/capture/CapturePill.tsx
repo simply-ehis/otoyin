@@ -29,7 +29,9 @@ const PILL_LABEL_KEYS: Record<Exclude<PillState, "rest" | "error">, string> = {
 	offline: "captures.pill.offline",
 };
 
-function barModeFor(state: Exclude<PillState, "error">): "busy" | "live" | "idle" {
+function barModeFor(
+	state: Exclude<PillState, "error">,
+): "busy" | "live" | "idle" {
 	if (state === "recording" || state === "speaking" || state === "partial") {
 		return "live";
 	}
@@ -62,7 +64,13 @@ export function PillAudioBars({ mode }: { mode: "busy" | "live" | "idle" }) {
 }
 
 /** Live input-level meter with numeric readout. */
-export function VUMeter({ energy, isLoud }: { energy: number; isLoud: boolean }) {
+export function VUMeter({
+	energy,
+	isLoud,
+}: {
+	energy: number;
+	isLoud: boolean;
+}) {
 	const clamped = Math.max(0, Math.min(1, energy));
 	return (
 		<div className="flex min-w-[80px] max-w-[160px] items-center gap-2">
@@ -144,10 +152,16 @@ export function CapturePill({
 	}
 
 	const visible = state !== "rest";
-	const label = t(state === "rest" ? PILL_LABEL_KEYS.recording : PILL_LABEL_KEYS[state]);
+	const label = t(
+		state === "rest" ? PILL_LABEL_KEYS.recording : PILL_LABEL_KEYS[state],
+	);
 	const live = state === "recording" || state === "partial";
 	const showTranscript =
-		transcript && (state === "recording" || state === "transcribing" || state === "partial" || isEditing);
+		transcript &&
+		(state === "recording" ||
+			state === "transcribing" ||
+			state === "partial" ||
+			isEditing);
 	const lines = (transcript ?? "").split("\n").slice(-2);
 
 	return (
@@ -172,10 +186,16 @@ export function CapturePill({
 					</span>
 				</button>
 			) : (
-				<span className="size-2 shrink-0 rounded-full bg-accent" aria-hidden="true" />
+				<span
+					className="size-2 shrink-0 rounded-full bg-accent"
+					aria-hidden="true"
+				/>
 			)}
 			<div className="flex min-w-[104px] max-w-[320px] flex-col">
-				<span className="shrink-0 truncate text-sm font-medium" style={{ minWidth: "104px" }}>
+				<span
+					className="shrink-0 truncate text-sm font-medium"
+					style={{ minWidth: "104px" }}
+				>
 					{label}
 					{!isFinal && transcript && live ? (
 						<span className="ml-1.5 text-xs italic text-accent/70">
@@ -198,7 +218,10 @@ export function CapturePill({
 								<Button variant="ghost" size="sm" onClick={onCancel}>
 									{t("captures.pill.cancel")}
 								</Button>
-								<Button size="sm" onClick={() => onAccept?.(editedText ?? transcript ?? "")}>
+								<Button
+									size="sm"
+									onClick={() => onAccept?.(editedText ?? transcript ?? "")}
+								>
 									{t("captures.pill.accept")}
 								</Button>
 							</div>
@@ -208,20 +231,28 @@ export function CapturePill({
 							{lines.map((line) => (
 								<span
 									key={line}
-									className={cn("truncate", isFinal ? "text-accent" : "italic text-accent/70")}
+									className={cn(
+										"truncate",
+										isFinal ? "text-accent" : "italic text-accent/70",
+									)}
 								>
 									{line}
 								</span>
 							))}
 							{confidence !== undefined && state === "recording" ? (
 								<span className="mt-0.5 flex items-center gap-1 text-accent/70">
-									<span aria-hidden="true" className="size-1.5 rounded-full bg-accent" />
+									<span
+										aria-hidden="true"
+										className="size-1.5 rounded-full bg-accent"
+									/>
 									{Math.round(confidence * 100)}%
 								</span>
 							) : null}
 							{!isEditing && !isFinal && transcript && live ? (
 								<span className="mt-0.5 flex items-center justify-between">
-									<span className="italic text-accent/70">({t("captures.pill.partial")})</span>
+									<span className="italic text-accent/70">
+										({t("captures.pill.partial")})
+									</span>
 									<Button variant="ghost" size="sm" onClick={onEdit}>
 										{t("captures.pill.edit")}
 									</Button>
@@ -231,7 +262,9 @@ export function CapturePill({
 					)
 				) : null}
 			</div>
-			{state === "recording" ? <VUMeter energy={energy ?? 0} isLoud={isLoud ?? false} /> : null}
+			{state === "recording" ? (
+				<VUMeter energy={energy ?? 0} isLoud={isLoud ?? false} />
+			) : null}
 			<PillAudioBars mode={barModeFor(state)} />
 			<span className="-ml-1 shrink-0 text-xs font-medium tabular-nums text-accent/70">
 				{formatElapsed(elapsedMs ?? 0)}
@@ -266,7 +299,10 @@ function ErrorPill({
 				className,
 			)}
 		>
-			<ExclamationCircleIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+			<ExclamationCircleIcon
+				className="h-3.5 w-3.5 shrink-0"
+				aria-hidden="true"
+			/>
 			<span className="truncate text-sm font-medium">{message}</span>
 		</button>
 	);

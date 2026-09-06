@@ -1,14 +1,18 @@
-import {
-	MicrophoneIcon,
-	PlusIcon,
-} from "@heroicons/react/24/outline";
+import { MicrophoneIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { apiClient } from "@/lib/api/client";
+import type { VoiceProfileResponse } from "@/lib/api/types";
+import { inferStudioError, showStudioErrorToast } from "@/lib/errors";
+import { useProfiles } from "@/lib/hooks/useProfiles";
+import { cn } from "@/lib/utils/cn";
+import { useServerStore } from "@/stores/serverStore";
+import { useUIStore } from "@/stores/uiStore";
 import { Button } from "@/ui/button";
 import { SearchInput } from "@/ui/input";
 import { MultiSelect } from "@/ui/multi-select";
-import { EmptyState, LoadingState, ScreenHeader } from "@/ui/states";
+import { EmptyState, LoadingState } from "@/ui/states";
 import {
 	Table,
 	TableBody,
@@ -18,13 +22,6 @@ import {
 	TableRow,
 } from "@/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
-import { apiClient } from "@/lib/api/client";
-import type { VoiceProfileResponse } from "@/lib/api/types";
-import { inferStudioError, showStudioErrorToast } from "@/lib/errors";
-import { useProfiles } from "@/lib/hooks/useProfiles";
-import { cn } from "@/lib/utils/cn";
-import { useServerStore } from "@/stores/serverStore";
-import { useUIStore } from "@/stores/uiStore";
 import { QuickCloneDialog } from "./QuickCloneDialog";
 import { ReferenceVoicesBrowser } from "./ReferenceVoicesBrowser";
 import { VoiceInspector } from "./VoiceInspector";
@@ -109,7 +106,9 @@ export function VoicesTab() {
 			<div className="flex h-full items-center justify-center text-center">
 				<div>
 					<p className="font-medium text-destructive">{studioErr.title}</p>
-					<p className="mt-1 text-sm text-muted-foreground">{studioErr.message}</p>
+					<p className="mt-1 text-sm text-muted-foreground">
+						{studioErr.message}
+					</p>
 				</div>
 			</div>
 		);
@@ -148,7 +147,9 @@ export function VoicesTab() {
 								{filtered.length === 0 ? (
 									<EmptyState
 										icon={<MicrophoneIcon aria-hidden="true" />}
-										title={search ? "No matching voices" : "No voice profiles yet"}
+										title={
+											search ? "No matching voices" : "No voice profiles yet"
+										}
 										body={
 											search
 												? "Try a different search term."
@@ -223,7 +224,10 @@ export function VoicesTab() {
 						</div>
 					)}
 				</TabsContent>
-				<TabsContent value="reference" className="mt-3 min-h-0 flex-1 overflow-y-auto">
+				<TabsContent
+					value="reference"
+					className="mt-3 min-h-0 flex-1 overflow-y-auto"
+				>
 					<ReferenceVoicesBrowser />
 				</TabsContent>
 			</Tabs>
@@ -265,8 +269,7 @@ function VoiceRow({
 
 	return (
 		<TableRow
-			onClick={onSelect}
-			className={cn("cursor-pointer", selected && "bg-secondary")}
+			className={cn(selected && "bg-secondary")}
 			aria-selected={selected}
 		>
 			<TableCell>
@@ -280,11 +283,21 @@ function VoiceRow({
 								onError={() => setAvatarError(true)}
 							/>
 						) : (
-							<MicrophoneIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+							<MicrophoneIcon
+								className="size-4 text-muted-foreground"
+								aria-hidden="true"
+							/>
 						)}
 					</span>
 					<span className="min-w-0">
-						<span className="block truncate font-medium">{profile.name}</span>
+						<button
+							type="button"
+							onClick={onSelect}
+							aria-label={`Open ${profile.name}`}
+							className="block max-w-full truncate rounded-sm text-left font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+						>
+							{profile.name}
+						</button>
 						{profile.description ? (
 							<span className="block truncate text-sm text-muted-foreground">
 								{profile.description}
@@ -309,20 +322,18 @@ function VoiceRow({
 				)}
 			</TableCell>
 			<TableCell>
-				<span onClick={(e) => e.stopPropagation()}>
-					<MultiSelect
-						options={channels.map((ch) => ({
-							value: ch.id,
-							label: ch.is_default
-								? t("voicesTab.channelDefaultLabel", { name: ch.name })
-								: ch.name,
-						}))}
-						value={channelIds}
-						onChange={onChannels}
-						placeholder={t("voicesTab.selectChannels")}
-						className="w-full"
-					/>
-				</span>
+				<MultiSelect
+					options={channels.map((ch) => ({
+						value: ch.id,
+						label: ch.is_default
+							? t("voicesTab.channelDefaultLabel", { name: ch.name })
+							: ch.name,
+					}))}
+					value={channelIds}
+					onChange={onChannels}
+					placeholder={t("voicesTab.selectChannels")}
+					className="w-full"
+				/>
 			</TableCell>
 		</TableRow>
 	);

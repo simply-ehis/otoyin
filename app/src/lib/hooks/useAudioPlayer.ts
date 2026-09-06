@@ -1,11 +1,11 @@
 import { useCallback, useRef, useState } from "react";
-import { useToast } from "@/ui/use-toast";
 import { registerFileSource } from "@/lib/audio/sources";
 import {
 	ERR_DESC_PLAYBACK_FAILED,
 	ERR_TITLE_PLAYBACK,
 } from "@/lib/errorMessages";
 import { usePlayerStore } from "@/stores/playerStore";
+import { useToast } from "@/ui/use-toast";
 
 let sharedContext: AudioContext | null = null;
 let sharedAnalyser: AnalyserNode | null = null;

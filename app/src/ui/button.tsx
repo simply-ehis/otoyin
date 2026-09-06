@@ -25,7 +25,8 @@ const buttonVariants = cva(
 					"bg-secondary text-secondary-foreground border border-strong [@media(hover:hover)]:hover:bg-secondary-hover",
 				outline:
 					"border border-input bg-background [@media(hover:hover)]:hover:bg-secondary [@media(hover:hover)]:hover:text-foreground",
-				ghost: "text-muted-foreground [@media(hover:hover)]:hover:bg-secondary [@media(hover:hover)]:hover:text-foreground",
+				ghost:
+					"text-muted-foreground [@media(hover:hover)]:hover:bg-secondary [@media(hover:hover)]:hover:text-foreground",
 				destructive:
 					"bg-destructive text-destructive-foreground [@media(hover:hover)]:hover:brightness-110",
 				link: "text-foreground underline-offset-4 [@media(hover:hover)]:hover:underline",

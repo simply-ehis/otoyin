@@ -14,7 +14,7 @@ export function AudioBars({ mode, className }: AudioBarsProps) {
 					key={`${mode}-${i}`}
 					className={cn(
 						"w-[3px] rounded-full",
-						mode === "idle" ? "bg-accent/30" : "bg-accent",
+						mode === "idle" ? "bg-strong" : "bg-accent",
 					)}
 					animate={
 						mode === "generating"

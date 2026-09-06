@@ -186,8 +186,7 @@ async function fetchRates(): Promise<Record<string, number>> {
  */
 export function useRegionCurrency(): FxState {
 	const [locale] = useState(
-		() =>
-			(typeof navigator !== "undefined" && navigator.language) || "en-US",
+		() => (typeof navigator !== "undefined" && navigator.language) || "en-US",
 	);
 	const currency = currencyForLocale(locale);
 	const [rate, setRate] = useState(1);

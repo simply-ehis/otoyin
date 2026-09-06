@@ -34,13 +34,13 @@ export function CodeConsole({
 				className,
 			)}
 		>
-			<pre
+			<section
 				aria-label={language ? `${language} snippet` : "Code snippet"}
-				className="overflow-x-auto p-3 font-mono text-xs leading-relaxed text-foreground"
+				className="overflow-x-auto whitespace-pre p-3 font-mono text-xs leading-relaxed text-foreground"
 				style={maxHeight ? { maxHeight, overflowY: "auto" } : undefined}
 			>
 				{children}
-			</pre>
+			</section>
 			<button
 				type="button"
 				onClick={copy}

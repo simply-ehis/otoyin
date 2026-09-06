@@ -372,7 +372,7 @@ export function AudioEditorPanel({
 
 			{/* Error display */}
 			{error && (
-				<div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 rounded-md p-3">
+				<div className="flex items-start gap-2 text-sm text-danger-text bg-danger-soft rounded-md p-3">
 					<AlertCircle className="size-4 shrink-0 mt-0.5" />
 					<span>{error}</span>
 				</div>
@@ -380,7 +380,7 @@ export function AudioEditorPanel({
 
 			{/* Result */}
 			{editedGen && (
-				<div className="border rounded-md bg-muted/30 p-3 space-y-2">
+				<div className="border rounded-md bg-secondary p-3 space-y-2">
 					<div className="flex items-center justify-between">
 						<span className="text-xs font-medium text-accent">
 							Edited Audio

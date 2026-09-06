@@ -19,7 +19,11 @@ import {
 	marketplaceClient,
 	openExternalUrl,
 } from "@/lib/marketplace";
-import { convertUsd, formatMoney, useRegionCurrency } from "@/lib/regionCurrency";
+import {
+	convertUsd,
+	formatMoney,
+	useRegionCurrency,
+} from "@/lib/regionCurrency";
 import { Button } from "@/ui/button";
 import { Spinner } from "@/ui/primitives";
 import { formatPrice, formatSize } from "./storeUtils";
@@ -264,8 +268,8 @@ export function ProductActions({
 						</Button>
 					</div>
 					<p className="text-xs text-muted-foreground">
-						Buying installs the license automatically. Paste one here only
-						if support sent you license JSON directly.
+						Buying installs the license automatically. Paste one here only if
+						support sent you license JSON directly.
 					</p>
 				</div>
 			) : isDownloading ? (
@@ -339,8 +343,8 @@ export function ProductActions({
 								)}
 							</Button>
 							<p className="text-xs text-muted-foreground">
-								Paid but landed back here? Your order is still open —
-								checking again picks up the license, no new payment.
+								Paid but landed back here? Your order is still open — checking
+								again picks up the license, no new payment.
 							</p>
 						</>
 					) : null}

@@ -97,7 +97,7 @@ export function HistoryRow({
 			<div
 				className={cn(
 					"border rounded-md bg-card transition-colors text-left w-full",
-					isCurrentlyPlaying && "bg-muted/70",
+					isCurrentlyPlaying && "bg-accent-muted",
 				)}
 			>
 				{/* biome-ignore lint/a11y/useSemanticElements: contains nested interactive elements, can't be <button> */}

@@ -1,6 +1,6 @@
 import {
-	ExclamationTriangleIcon,
 	ArrowTopRightOnSquareIcon,
+	ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
@@ -93,7 +93,9 @@ export function useInputMonitoringPermission() {
 		}
 		setChecking(true);
 		try {
-			const trusted = await invoke<boolean>("check_input_monitoring_permission");
+			const trusted = await invoke<boolean>(
+				"check_input_monitoring_permission",
+			);
 			setNeedsPermission(!trusted);
 			return trusted;
 		} catch (err: unknown) {
@@ -165,15 +167,25 @@ function PermissionNotice({
 					</p>
 					<div className="flex items-center gap-2 pt-1.5">
 						<Button size="sm" onClick={openSettings}>
-							<ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" aria-hidden="true" />
+							<ArrowTopRightOnSquareIcon
+								className="h-3.5 w-3.5"
+								aria-hidden="true"
+							/>
 							{openLabel}
 						</Button>
-						<Button variant="outline" size="sm" onClick={onRecheck} disabled={checking}>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={onRecheck}
+							disabled={checking}
+						>
 							{checking ? recheckingLabel : recheckLabel}
 						</Button>
 					</div>
 					{stillMissing && !checking ? (
-						<p className="pt-1 text-xs text-warning-text">{t(stillMissingKey)}</p>
+						<p className="pt-1 text-xs text-warning-text">
+							{t(stillMissingKey)}
+						</p>
 					) : null}
 				</div>
 			</div>

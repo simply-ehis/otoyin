@@ -44,8 +44,8 @@ export function TrackRow({
 						className={cn(
 							"w-4 h-3 text-[7px] font-bold rounded flex items-center justify-center transition-colors",
 							isMuted
-								? "bg-yellow-500/80 text-yellow-950"
-								: "bg-muted text-muted-foreground hover:bg-muted/80",
+								? "bg-warning text-warning-foreground"
+								: "bg-muted text-muted-foreground hover:bg-secondary",
 						)}
 						title={isMuted ? "Unmute track" : "Mute track"}
 						aria-label={isMuted ? "Unmute track" : "Mute track"}
@@ -58,8 +58,8 @@ export function TrackRow({
 						className={cn(
 							"w-4 h-3 text-[7px] font-bold rounded flex items-center justify-center transition-colors",
 							isSolo
-								? "bg-cyan-500/80 text-cyan-950"
-								: "bg-muted text-muted-foreground hover:bg-muted/80",
+								? "bg-info text-info-foreground"
+								: "bg-muted text-muted-foreground hover:bg-secondary",
 						)}
 						title={isSolo ? "Unsolo track" : "Solo track"}
 						aria-label={isSolo ? "Unsolo track" : "Solo track"}
@@ -93,7 +93,7 @@ export function TrackRow({
 			<div
 				className={cn(
 					"border-b flex-1 pointer-events-none",
-					index % 2 === 0 ? "bg-background" : "bg-muted/10",
+					index % 2 === 0 ? "bg-background" : "bg-sunken",
 					isMuted && "bg-yellow-500/5",
 				)}
 			/>

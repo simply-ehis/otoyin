@@ -18,7 +18,7 @@ interface CodeConsoleProps {
  * - `"terminal"` — dark console with syntax-colored tokens (--color-terminal-*).
  * - `"code"` — neutral muted code block (--color-muted).
  *
- * Replaces all inline `bg-terminal-bg font-mono` and `bg-muted/50 font-mono`
+ * Replaces all inline `bg-terminal-bg font-mono` and `bg-sunken font-mono`
  * patterns across the app.
  */
 export function CodeConsole({
@@ -36,7 +36,7 @@ export function CodeConsole({
 				showBorder && "border",
 				variant === "terminal" &&
 					"bg-[var(--color-terminal-bg)] text-[var(--color-terminal-fg)]",
-				variant === "code" && "bg-muted/50 text-muted-foreground",
+				variant === "code" && "bg-sunken text-muted-foreground",
 				className,
 			)}
 			title={title}

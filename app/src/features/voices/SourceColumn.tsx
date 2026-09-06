@@ -1,6 +1,9 @@
 import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Badge } from "@/ui/primitives";
+import type { PresetVoice } from "@/lib/api/types";
+import { cn } from "@/lib/utils/cn";
+import { usePlatform } from "@/platform/PlatformContext";
+import { Segmented } from "@/ui/controls";
 import {
 	FormControl,
 	FormDescription,
@@ -9,6 +12,7 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/ui/form";
+import { Badge } from "@/ui/primitives";
 import {
 	Select,
 	SelectContent,
@@ -17,17 +21,12 @@ import {
 	SelectValue,
 } from "@/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
-import { Textarea } from "@/ui/input";
-import { Segmented } from "@/ui/controls";
-import type { PresetVoice } from "@/lib/api/types";
-import { usePlatform } from "@/platform/PlatformContext";
-import { cn } from "@/lib/utils/cn";
-import { VoiceDesignPanel } from "./VoiceDesignPanel";
 import {
 	AudioSampleRecording,
 	AudioSampleSystem,
 	AudioSampleUpload,
 } from "./samples";
+import { VoiceDesignPanel } from "./VoiceDesignPanel";
 
 export type VoiceSource = "clone" | "builtin" | "design";
 export type SampleMode = "upload" | "record" | "system";
@@ -68,7 +67,6 @@ export function SourceColumn({
 	onPlayPause,
 	isPlaying,
 	isTranscribing,
-	isValidating,
 	audioSeconds,
 	maxSeconds,
 }: {
@@ -102,7 +100,6 @@ export function SourceColumn({
 	onPlayPause: () => void;
 	isPlaying: boolean;
 	isTranscribing: boolean;
-	isValidating: boolean;
 	audioSeconds: number | null;
 	maxSeconds: number;
 }) {
@@ -124,7 +121,9 @@ export function SourceColumn({
 
 			{source === "builtin" ? (
 				<div className="mt-4 flex flex-col gap-4">
-					<p className="text-xs text-muted-foreground">{t("profileForm.builtin.hint")}</p>
+					<p className="text-xs text-muted-foreground">
+						{t("profileForm.builtin.hint")}
+					</p>
 					<FormItem>
 						<FormLabel>{t("profileForm.fields.engine")}</FormLabel>
 						<Select value={presetEngine} onValueChange={onPresetEngine}>
@@ -183,7 +182,9 @@ export function SourceColumn({
 												: "border-border hover:bg-secondary",
 										)}
 									>
-										<span className="block font-medium text-foreground">{voice.name}</span>
+										<span className="block font-medium text-foreground">
+											{voice.name}
+										</span>
 										<span className="mt-0.5 flex gap-1">
 											<Badge tone="neutral">{voice.gender}</Badge>
 											<Badge tone="neutral">{voice.language}</Badge>
@@ -196,7 +197,11 @@ export function SourceColumn({
 				</div>
 			) : source === "design" ? (
 				<div className="mt-4">
-					<VoiceDesignPanel form={form} designEngine={designEngine} onSetDesignEngine={onDesignEngine} />
+					<VoiceDesignPanel
+						form={form}
+						designEngine={designEngine}
+						onSetDesignEngine={onDesignEngine}
+					/>
 				</div>
 			) : (
 				<div className="mt-4">
@@ -213,7 +218,9 @@ export function SourceColumn({
 							onSampleMode(next);
 						}}
 					>
-						<TabsList className={`grid w-full ${platform.metadata.isTauri && systemSupported ? "grid-cols-3" : "grid-cols-2"}`}>
+						<TabsList
+							className={`grid w-full ${platform.metadata.isTauri && systemSupported ? "grid-cols-3" : "grid-cols-2"}`}
+						>
 							<TabsTrigger value="upload">
 								{t("profileForm.sampleTabs.upload")}
 							</TabsTrigger>
@@ -235,13 +242,14 @@ export function SourceColumn({
 										<FormControl>
 											<AudioSampleUpload
 												file={sampleFile}
-												onFileChange={onChange}
+												onFileChange={(file) => onChange(file)}
 												onTranscribe={onTranscribe}
 												onPlayPause={onPlayPause}
 												isPlaying={isPlaying}
-												isValidating={isValidating}
 												isTranscribing={isTranscribing}
-												isDisabled={audioSeconds !== null && audioSeconds > maxSeconds}
+												isDisabled={
+													audioSeconds !== null && audioSeconds > maxSeconds
+												}
 												fieldName={name as string}
 											/>
 										</FormControl>
@@ -312,7 +320,9 @@ export function SourceColumn({
 								<FormLabel>{t("profileForm.fields.referenceText")}</FormLabel>
 								<FormControl>
 									<textarea
-										placeholder={t("profileForm.fields.referenceTextPlaceholder")}
+										placeholder={t(
+											"profileForm.fields.referenceTextPlaceholder",
+										)}
 										rows={3}
 										{...field}
 										value={(field.value as string) ?? ""}
@@ -321,7 +331,10 @@ export function SourceColumn({
 									/>
 								</FormControl>
 								<FormDescription>
-									{t("profileForm.fields.referenceTextHint", "The exact words spoken in the sample.")}
+									{t(
+										"profileForm.fields.referenceTextHint",
+										"The exact words spoken in the sample.",
+									)}
 								</FormDescription>
 								<FormMessage />
 							</FormItem>

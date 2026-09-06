@@ -18,7 +18,9 @@ import { toast } from "@/ui/use-toast";
 describe("canonical button", () => {
 	it("renders one primary with an accessible name", () => {
 		render(<Button>Generate</Button>);
-		expect(screen.getByRole("button", { name: "Generate" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Generate" }),
+		).toBeInTheDocument();
 	});
 
 	it("disables while loading and keeps its size", async () => {
@@ -44,7 +46,9 @@ describe("canonical inputs", () => {
 				<Input id="srv" defaultValue="127.0.0.1:17493" />
 			</Field>,
 		);
-		expect(screen.getByLabelText("Server address")).toHaveValue("127.0.0.1:17493");
+		expect(screen.getByLabelText("Server address")).toHaveValue(
+			"127.0.0.1:17493",
+		);
 	});
 
 	it("search exposes a searchbox role and clear action", async () => {
@@ -60,7 +64,9 @@ describe("canonical inputs", () => {
 				}}
 			/>,
 		);
-		expect(screen.getByRole("searchbox", { name: "Search sounds" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("searchbox", { name: "Search sounds" }),
+		).toBeInTheDocument();
 		await user.click(screen.getByRole("button", { name: "Clear search" }));
 		expect(cleared).toBe(true);
 	});
@@ -71,11 +77,18 @@ describe("canonical feedback", () => {
 		const user = userEvent.setup();
 		let dismissed = false;
 		render(
-			<Banner tone="warning" onDismiss={() => { dismissed = true; }}>
+			<Banner
+				tone="warning"
+				onDismiss={() => {
+					dismissed = true;
+				}}
+			>
 				Model not downloaded yet.
 			</Banner>,
 		);
-		expect(screen.getByRole("status")).toHaveTextContent("Model not downloaded");
+		expect(screen.getByRole("status")).toHaveTextContent(
+			"Model not downloaded",
+		);
 		await user.click(screen.getByRole("button", { name: "Dismiss" }));
 		expect(dismissed).toBe(true);
 	});
@@ -85,7 +98,9 @@ describe("canonical feedback", () => {
 		render(<Toaster />);
 		toast({ title: "Export complete", description: "12 tracks bounced." });
 		expect(await screen.findByText("Export complete")).toBeInTheDocument();
-		await user.click(screen.getByRole("button", { name: "Dismiss notification" }));
+		await user.click(
+			screen.getByRole("button", { name: "Dismiss notification" }),
+		);
 		expect(screen.queryByText("Export complete")).not.toBeInTheDocument();
 	});
 
@@ -98,11 +113,19 @@ describe("canonical feedback", () => {
 			/>,
 		);
 		expect(screen.getByText("No generations yet")).toBeInTheDocument();
-		expect(screen.getByRole("button", { name: "Generate" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Generate" }),
+		).toBeInTheDocument();
 	});
 
 	it("error state announces via alert role with retry", () => {
-		render(<ErrorState title="Save failed" body="Disk might be full." onRetry={() => {}} />);
+		render(
+			<ErrorState
+				title="Save failed"
+				body="Disk might be full."
+				onRetry={() => {}}
+			/>,
+		);
 		expect(screen.getByRole("alert")).toHaveTextContent("Save failed");
 		expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
 	});
@@ -134,7 +157,9 @@ describe("canonical structure", () => {
 				actions={<Button>Generate</Button>}
 			/>,
 		);
-		expect(screen.getByRole("heading", { name: "Generate" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "Generate" }),
+		).toBeInTheDocument();
 	});
 
 	it("segmented control marks the active option pressed", async () => {
@@ -144,7 +169,9 @@ describe("canonical structure", () => {
 			<Segmented
 				label="View mode"
 				value={value as "list"}
-				onChange={(v) => { value = v; }}
+				onChange={(v) => {
+					value = v;
+				}}
 				options={[{ value: "list", label: "List" }]}
 			/>,
 		);
@@ -156,7 +183,9 @@ describe("canonical structure", () => {
 			<Segmented
 				label="View mode"
 				value={value as "list"}
-				onChange={(v) => { value = v; }}
+				onChange={(v) => {
+					value = v;
+				}}
 				options={[{ value: "list", label: "List" }]}
 			/>,
 		);

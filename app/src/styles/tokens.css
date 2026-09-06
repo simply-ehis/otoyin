@@ -15,98 +15,105 @@
    ══════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── Surface roles (desktop-ui-color-system) ─────────────────────
+	/* ── Surface roles (desktop-ui-color-system) ─────────────────────
      Warm single-source neutrals (proof.html). One-step shifts for
      stacked layers; never more than 3 distinct elevation levels on
      screen at once. */
-  --surface-base: hsl(28 6% 9%);
-  --surface-raised: hsl(28 5% 13%);
-  --surface-overlay: hsl(28 5% 16%);
-  --surface-sunken: hsl(28 8% 7%);
+	--surface-base: hsl(28 6% 9%);
+	--surface-raised: hsl(28 5% 13%);
+	--surface-overlay: hsl(28 5% 16%);
+	--surface-sunken: hsl(28 8% 7%);
 
-  /* ── Text roles (desktop-ui-foundations type scale) ───────────── */
-  --text-primary: hsl(30 12% 92%);
-  --text-secondary: hsl(30 6% 68%);
-  --text-tertiary: hsl(30 4% 52%);
-  --text-on-accent: hsl(0 0% 98%);
+	/* ── Text roles (desktop-ui-foundations type scale) ───────────── */
+	--text-primary: hsl(30 12% 92%);
+	--text-secondary: hsl(30 6% 68%);
+	--text-tertiary: hsl(30 4% 52%);
+	--text-on-accent: hsl(0 0% 98%);
 
-  /* ── Borders (hairline vs emphasized) ──────────────────────────── */
-  --border-subtle: hsl(28 4% 22%);
-  --border-strong: hsl(28 4% 34%);
+	/* ── Borders (hairline vs emphasized) ──────────────────────────── */
+	--border-subtle: hsl(28 4% 22%);
+	--border-strong: hsl(28 4% 34%);
 
-  /* ── Accent (flat rose brand hue — never a gradient sweep) ─────── */
-  --accent: hsl(348 68% 58%);
-  --accent-hover: hsl(348 68% 63%);
-  --accent-muted: hsl(348 28% 22%);
-  --accent-foreground: hsl(0 0% 98%);
+	/* ── Accent (flat rose brand hue — never a gradient sweep) ─────── */
+	--accent: hsl(348 68% 58%);
+	--accent-hover: hsl(348 68% 63%);
+	--accent-muted: hsl(348 28% 22%);
+	--accent-foreground: hsl(0 0% 98%);
 
-  /* ── Status colors — consistent 4-level severity scale ─────────── */
-  --status-info: hsl(210 65% 52%);
-  --status-success: hsl(152 55% 42%);
-  --status-success-soft: hsl(152 24% 16%);
-  --status-warning: hsl(38 80% 48%);
-  --status-warning-soft: hsl(38 30% 16%);
-  --status-danger: hsl(0 62% 50%);
-  --status-danger-soft: hsl(0 30% 18%);
+	/* ── Status colors — consistent 4-level severity scale ───────────
+     Values mirror the consumer aliases in index.css @theme
+     (info, success, warning, danger families), which Tailwind utilities
+     (soft backgrounds, tinted text) resolve against — keep the two in lockstep. */
+	--status-info: hsl(210 65% 52%);
+	--status-info-soft: hsl(213 24% 15%);
+	--status-info-text: hsl(210 60% 80%);
+	--status-success: hsl(152 55% 42%);
+	--status-success-soft: hsl(152 24% 15%);
+	--status-success-text: hsl(152 55% 75%);
+	--status-warning: hsl(38 80% 48%);
+	--status-warning-soft: hsl(38 30% 15%);
+	--status-warning-text: hsl(38 85% 78%);
+	--status-danger: hsl(0 62% 50%);
+	--status-danger-soft: hsl(0 30% 16%);
+	--status-danger-text: hsl(0 70% 78%);
 
-  /* ── Elevation scale (foundations: raised / floating / modal) ────
+	/* ── Elevation scale (foundations: raised / floating / modal) ────
      Cheap box-shadows; no real-time blur. Surfaces are SOLID — never
      translucent fills for panels/cards. */
-  --elevation-raised:
-    0 1px 2px rgba(0, 0, 0, 0.08);
-  --elevation-floating:
-    0 4px 12px rgba(0, 0, 0, 0.16), 0 1px 2px rgba(0, 0, 0, 0.1);
-  --elevation-modal:
-    0 12px 32px rgba(0, 0, 0, 0.32), 0 2px 6px rgba(0, 0, 0, 0.18);
+	--elevation-raised: 0 1px 2px rgba(0, 0, 0, 0.08);
+	--elevation-floating:
+		0 4px 12px rgba(0, 0, 0, 0.16), 0 1px 2px rgba(0, 0, 0, 0.1);
+	--elevation-modal:
+		0 12px 32px rgba(0, 0, 0, 0.32), 0 2px 6px rgba(0, 0, 0, 0.18);
 
-  /* ── Radius scale (exactly 3 steps — sm 4 / md 8 / lg 12) ─────── */
-  --radius-sm: 0.25rem; /* inputs, small controls */
-  --radius-md: 0.5rem; /* buttons, cards */
-  --radius-lg: 0.75rem; /* modals, large panels */
+	/* ── Radius scale (exactly 3 steps — sm 4 / md 8 / lg 12) ─────── */
+	--radius-sm: 0.25rem; /* inputs, small controls */
+	--radius-md: 0.5rem; /* buttons, cards */
+	--radius-lg: 0.75rem; /* modals, large panels */
 
-  /* ── Motion tokens (desktop-ui-motion) ───────────────────────────
+	/* ── Motion tokens (desktop-ui-motion) ───────────────────────────
      Enter 150-250ms ease-out; exit FASTER than enter (100-180ms);
      hover/color shifts 100-150ms; functional UI under 300ms.
      Animate transform + opacity ONLY. */
-  --motion-fast: 120ms;
-  --motion-base: 200ms;
-  --motion-slow: 300ms;
-  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+	--motion-fast: 120ms;
+	--motion-base: 200ms;
+	--motion-slow: 300ms;
+	--ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+	--ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+	--ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
-  /* ── Focus ring (accessibility floor) ──────────────────────────── */
-  --focus-ring: var(--accent);
+	/* ── Focus ring (accessibility floor) ──────────────────────────── */
+	--focus-ring: var(--accent);
 }
 
 /* Press feedback (desktop-ui-motion core pattern) — scale(0.97),
    150ms ease-out, transform only. */
 .pressable {
-  transition:
-    transform var(--motion-fast) var(--ease-out),
-    background-color var(--motion-fast) var(--ease-standard);
+	transition:
+		transform var(--motion-fast) var(--ease-out),
+		background-color var(--motion-fast) var(--ease-standard);
 }
 .pressable:active {
-  transform: scale(0.97);
+	transform: scale(0.97);
 }
 
 /* Origin-aware entrances: never scale from 0 (teleport). */
 .enter-anchored {
-  transform: scale(0.95);
-  opacity: 0;
-  transition:
-    transform var(--motion-base) var(--ease-out),
-    opacity var(--motion-base) var(--ease-out);
+	transform: scale(0.95);
+	opacity: 0;
+	transition:
+		transform var(--motion-base) var(--ease-out),
+		opacity var(--motion-base) var(--ease-out);
 }
 .enter-anchored.is-entered {
-  transform: scale(1);
-  opacity: 1;
+	transform: scale(1);
+	opacity: 1;
 }
 
-/* Solid-surface card/panel (replaces translucent bg-*/NN fills). */
+/* Solid-surface card/panel (replaces translucent bg-NN fills). */
 .surface-raised-solid {
-  background: var(--surface-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  box-shadow: var(--elevation-raised);
+	background: var(--surface-raised);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-md);
+	box-shadow: var(--elevation-raised);
 }

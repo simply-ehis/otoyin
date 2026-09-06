@@ -6,9 +6,21 @@ import {
 } from "@heroicons/react/24/outline";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Badge } from "@/ui/primitives";
+import { apiClient } from "@/lib/api/client";
+import type {
+	DubJobResponse,
+	DubPreviewResponse,
+} from "@/lib/api/clientDubbing";
+import type {
+	ModelStatusListResponse,
+	VoiceProfileResponse,
+} from "@/lib/api/types";
+import { DUB_ENGINES, TTS_ENGINES } from "@/lib/constants/engines";
+import { useFirstDownloadedTtsEngine } from "@/lib/hooks/useFirstDownloadedTtsEngine";
+import { cn } from "@/lib/utils/cn";
 import { Button } from "@/ui/button";
 import { Field } from "@/ui/input";
+import { Badge } from "@/ui/primitives";
 import { Progress } from "@/ui/progress";
 import {
 	Select,
@@ -17,17 +29,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/ui/select";
-import { ErrorState } from "@/ui/states";
+import { ErrorState, ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
-import { apiClient } from "@/lib/api/client";
-import type { DubJobResponse, DubPreviewResponse } from "@/lib/api/clientDubbing";
-import type {
-	ModelStatusListResponse,
-	VoiceProfileResponse,
-} from "@/lib/api/types";
-import { DUB_ENGINES, TTS_ENGINES } from "@/lib/constants/engines";
-import { useFirstDownloadedTtsEngine } from "@/lib/hooks/useFirstDownloadedTtsEngine";
-import { cn } from "@/lib/utils/cn";
 
 const VIDEO_EXTENSIONS = ".mp4,.mov,.mkv,.webm,.avi";
 const STEPS = ["upload", "preview", "configure", "dubbing", "done"] as const;
@@ -79,14 +82,21 @@ export function DubbingTab() {
 	});
 
 	const previewMutation = useMutation({
-		mutationFn: (params: { video_path: string; source_lang?: string | null; num_speakers?: number | null }) =>
-			apiClient.previewDub(params),
+		mutationFn: (params: {
+			video_path: string;
+			source_lang?: string | null;
+			num_speakers?: number | null;
+		}) => apiClient.previewDub(params),
 		onSuccess: (data) => {
 			setPreview(data);
 			setStep("preview");
 		},
 		onError: (error: Error) =>
-			toast({ title: "Preview failed", description: error.message, variant: "destructive" }),
+			toast({
+				title: "Preview failed",
+				description: error.message,
+				variant: "destructive",
+			}),
 	});
 	const dubMutation = useMutation({
 		mutationFn: (params: {
@@ -101,7 +111,11 @@ export function DubbingTab() {
 			pollJob(data.job_id);
 		},
 		onError: (error: Error) =>
-			toast({ title: "Dubbing failed to start", description: error.message, variant: "destructive" }),
+			toast({
+				title: "Dubbing failed to start",
+				description: error.message,
+				variant: "destructive",
+			}),
 	});
 
 	const pollJob = useCallback(
@@ -120,7 +134,10 @@ export function DubbingTab() {
 						setStep(status.status === "done" ? "done" : "configure");
 						toast(
 							status.status === "done"
-								? { title: "Dubbing complete", description: "Your dubbed video is ready." }
+								? {
+										title: "Dubbing complete",
+										description: "Your dubbed video is ready.",
+									}
 								: {
 										title: "Dubbing failed",
 										description: status.error || "Unknown error",
@@ -165,7 +182,8 @@ export function DubbingTab() {
 			target_lang: targetLang,
 			profile_id: profileId,
 			engine,
-			num_speakers: numSpeakers === "auto" ? null : Number.parseInt(numSpeakers, 10),
+			num_speakers:
+				numSpeakers === "auto" ? null : Number.parseInt(numSpeakers, 10),
 		});
 	}, [videoPath, profileId, targetLang, engine, numSpeakers, dubMutation]);
 
@@ -220,7 +238,16 @@ export function DubbingTab() {
 		};
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
-	}, [step, profileId, videoPath, job?.job_id, download, reset, startDub, toast]);
+	}, [
+		step,
+		profileId,
+		videoPath,
+		job?.job_id,
+		download,
+		reset,
+		startDub,
+		toast,
+	]);
 
 	const pickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
@@ -250,14 +277,24 @@ export function DubbingTab() {
 				description="Transcribe → translate → re-voice → export."
 			/>
 			<div className="mt-4 min-h-0 flex-1 space-y-6 overflow-y-auto pb-4">
-				<p className="flex items-center gap-1.5 text-xs text-muted-foreground" aria-label={`Step ${STEPS.indexOf(step) + 1} of ${STEPS.length}: ${step}`}>
+				<p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+					<span className="sr-only">
+						Step {STEPS.indexOf(step) + 1} of {STEPS.length}: current step{" "}
+						{step}.{" "}
+					</span>
 					{STEPS.map((s, i) => (
 						<span key={s} className="flex items-center gap-1.5">
-							{i > 0 ? <span aria-hidden="true" className="text-muted-foreground/50">→</span> : null}
+							{i > 0 ? (
+								<span aria-hidden="true" className="text-muted-foreground/50">
+									→
+								</span>
+							) : null}
 							<span
 								className={cn(
 									"rounded-sm px-2 py-1 font-medium",
-									step === s ? "bg-accent text-white" : "bg-secondary text-muted-foreground",
+									step === s
+										? "bg-accent text-white"
+										: "bg-secondary text-muted-foreground",
 								)}
 								aria-current={step === s ? "step" : undefined}
 							>
@@ -266,23 +303,31 @@ export function DubbingTab() {
 						</span>
 					))}
 					{hint[step] ? (
-						<span className="ml-auto font-mono text-muted-foreground/70">{hint[step]}</span>
+						<span className="ml-auto font-mono text-muted-foreground/70">
+							{hint[step]}
+						</span>
 					) : null}
 				</p>
 
 				{(step === "upload" || step === "configure") && (
 					<div className="flex flex-col gap-4">
-						<div
-							role="button"
-							tabIndex={0}
-							onClick={() => fileRef.current?.click()}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === " ") {
+						<label
+							className="flex cursor-pointer flex-col items-center gap-3 rounded-md border-2 border-dashed border-strong p-8 text-center transition-colors hover:border-muted-foreground focus-within:outline-none focus-within:ring-2 focus-within:ring-ring"
+							onDragOver={(e) => {
+								if (e.dataTransfer?.types.includes("Files")) {
 									e.preventDefault();
-									fileRef.current?.click();
 								}
 							}}
-							className="flex cursor-pointer flex-col items-center gap-3 rounded-md border-2 border-dashed border-strong p-8 text-center transition-colors hover:border-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+							onDrop={(e) => {
+								const file = e.dataTransfer?.files?.[0];
+								if (!file) {
+									return;
+								}
+								e.preventDefault();
+								pickFile({
+									target: { files: [file] },
+								} as unknown as React.ChangeEvent<HTMLInputElement>);
+							}}
 						>
 							<input
 								ref={fileRef}
@@ -292,31 +337,39 @@ export function DubbingTab() {
 								aria-label="Video file"
 								onChange={pickFile}
 							/>
-							<FilmIcon className="size-10 text-muted-foreground" aria-hidden="true" />
-							<p className="text-sm text-muted-foreground">
+							<FilmIcon
+								className="size-10 text-muted-foreground"
+								aria-hidden="true"
+							/>
+							<span className="text-sm text-muted-foreground">
 								{videoName || "Drop a video file or click to browse"}
-							</p>
-							<Button variant="outline" size="sm" asChild>
-								<span>
-									<ArrowUpTrayIcon className="mr-2 h-4 w-4" aria-hidden="true" />
-									Choose video
-								</span>
-							</Button>
-						</div>
+							</span>
+							<span className="inline-flex h-8 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium text-foreground">
+								<ArrowUpTrayIcon className="h-4 w-4" aria-hidden="true" />
+								Choose video
+							</span>
+						</label>
 						{videoPath ? (
 							<p className="text-sm text-muted-foreground">
-								Selected: <span className="font-medium text-foreground">{videoName}</span>
+								Selected:{" "}
+								<span className="font-medium text-foreground">{videoName}</span>
 							</p>
 						) : null}
 					</div>
 				)}
 
 				{step === "preview" && preview ? (
-					<section aria-label="Transcript preview" className="flex flex-col gap-3">
+					<section
+						aria-label="Transcript preview"
+						className="flex flex-col gap-3"
+					>
 						<p className="flex items-center justify-between">
-							<span className="text-sm font-medium text-foreground">Transcript preview</span>
+							<span className="text-sm font-medium text-foreground">
+								Transcript preview
+							</span>
 							<span className="text-xs tabular-nums text-muted-foreground">
-								{preview.segments.length} segments · {speakers} speaker{speakers === 1 ? "" : "s"}
+								{preview.segments.length} segments · {speakers} speaker
+								{speakers === 1 ? "" : "s"}
 							</span>
 						</p>
 						<ul className="max-h-64 space-y-1 overflow-y-auto rounded-md border border-border p-3">
@@ -325,13 +378,19 @@ export function DubbingTab() {
 									<span className="w-16 shrink-0 font-mono tabular-nums text-muted-foreground">
 										{seg.start.toFixed(1)}s
 									</span>
-									<span className="w-16 shrink-0 truncate text-accent">{seg.speaker}</span>
+									<span className="w-16 shrink-0 truncate text-accent">
+										{seg.speaker}
+									</span>
 									<span className="text-foreground">{seg.text}</span>
 								</li>
 							))}
 						</ul>
 						<div>
-							<Button variant="outline" size="sm" onClick={() => setStep("configure")}>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => setStep("configure")}
+							>
 								Continue to configuration
 							</Button>
 						</div>
@@ -339,8 +398,13 @@ export function DubbingTab() {
 				) : null}
 
 				{(step === "configure" || step === "preview") && (
-					<section aria-label="Dubbing settings" className="flex max-w-2xl flex-col gap-4">
-						<h3 className="text-sm font-medium text-foreground">Dubbing settings</h3>
+					<section
+						aria-label="Dubbing settings"
+						className="flex max-w-2xl flex-col gap-4"
+					>
+						<h3 className="text-sm font-medium text-foreground">
+							Dubbing settings
+						</h3>
 						<div className="grid grid-cols-2 gap-4">
 							<Field label="Target language" htmlFor="dub-lang">
 								<Select value={targetLang} onValueChange={setTargetLang}>
@@ -351,7 +415,7 @@ export function DubbingTab() {
 										{languages &&
 											Object.entries(languages).map(([code, name]) => (
 												<SelectItem key={code} value={code}>
-													{name as string}
+													{Array.isArray(name) ? name.join(", ") : String(name)}
 												</SelectItem>
 											))}
 									</SelectContent>
@@ -402,7 +466,11 @@ export function DubbingTab() {
 							</Select>
 						</Field>
 						<div className="flex gap-2">
-							<Button onClick={startDub} disabled={!profileId || dubMutation.isPending} loading={dubMutation.isPending}>
+							<Button
+								onClick={startDub}
+								disabled={!profileId || dubMutation.isPending}
+								loading={dubMutation.isPending}
+							>
 								<SparklesIcon className="mr-2 h-4 w-4" aria-hidden="true" />
 								{dubMutation.isPending ? "Starting…" : "Start dubbing"}
 							</Button>
@@ -414,12 +482,21 @@ export function DubbingTab() {
 				)}
 
 				{step === "dubbing" && job ? (
-					<section aria-label="Dubbing progress" className="flex max-w-2xl flex-col gap-2">
-						<h3 className="text-sm font-medium text-foreground">Dubbing progress</h3>
+					<section
+						aria-label="Dubbing progress"
+						className="flex max-w-2xl flex-col gap-2"
+					>
+						<h3 className="text-sm font-medium text-foreground">
+							Dubbing progress
+						</h3>
 						<p className="flex items-center gap-2">
 							<Badge tone="neutral">{job.status}</Badge>
 							{job.progress !== undefined ? (
-								<Progress value={job.progress} label="Dubbing progress" className="h-2 flex-1" />
+								<Progress
+									value={job.progress}
+									label="Dubbing progress"
+									className="h-2 flex-1"
+								/>
 							) : null}
 						</p>
 						{job.status === "dubbing" ? (
@@ -435,8 +512,13 @@ export function DubbingTab() {
 				) : null}
 
 				{step === "done" && job ? (
-					<section aria-label="Dubbing complete" className="flex max-w-2xl flex-col gap-3">
-						<h3 className="text-sm font-medium text-foreground">Dubbing complete</h3>
+					<section
+						aria-label="Dubbing complete"
+						className="flex max-w-2xl flex-col gap-3"
+					>
+						<h3 className="text-sm font-medium text-foreground">
+							Dubbing complete
+						</h3>
 						<div className="flex flex-col gap-2 rounded-md border border-border bg-card p-4">
 							<p className="flex items-center justify-between">
 								<span className="text-sm font-medium text-foreground">
@@ -450,7 +532,10 @@ export function DubbingTab() {
 							</p>
 							<span className="flex gap-2">
 								<Button onClick={() => void download()}>
-									<ArrowDownTrayIcon className="mr-2 h-4 w-4" aria-hidden="true" />
+									<ArrowDownTrayIcon
+										className="mr-2 h-4 w-4"
+										aria-hidden="true"
+									/>
 									Download
 								</Button>
 								<Button variant="outline" onClick={reset}>

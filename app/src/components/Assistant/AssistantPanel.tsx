@@ -123,8 +123,8 @@ export function AssistantPanel({
 						onClick={() => setView(id)}
 						className={`size-9 flex items-center justify-center rounded-lg transition-colors ${
 							view === id
-								? "bg-accent/15 text-accent"
-								: "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+								? "bg-accent-muted text-accent"
+								: "text-muted-foreground hover:bg-secondary hover:text-foreground"
 						}`}
 					>
 						<Icon className="size-5" />

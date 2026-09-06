@@ -5,13 +5,13 @@ import {
 	MusicalNoteIcon,
 } from "@heroicons/react/24/outline";
 import { useCallback, useState } from "react";
+import { debug } from "@/lib/utils/debug";
+import { useServerStore } from "@/stores/serverStore";
 import { Button } from "@/ui/button";
 import { Card, CardBody, CardTitle } from "@/ui/card";
 import { Field, Input } from "@/ui/input";
 import { EmptyState, ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
-import { debug } from "@/lib/utils/debug";
-import { useServerStore } from "@/stores/serverStore";
 
 interface ExportResult {
 	filename: string;
@@ -43,7 +43,10 @@ export function LottieExportPage() {
 			const res = await fetch(`${serverUrl}/export/lottie`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ audio_path: audioPath.trim(), name: exportName.trim() }),
+				body: JSON.stringify({
+					audio_path: audioPath.trim(),
+					name: exportName.trim(),
+				}),
 			});
 			if (!res.ok) {
 				const err = await res.json().catch((e: unknown) => {
@@ -55,11 +58,15 @@ export function LottieExportPage() {
 			const data = (await res.json()) as ExportResult;
 			data.download_url = `${serverUrl}${data.download_url}`;
 			setResult(data);
-			toast({ title: "Export complete", description: `${data.filename} is ready.` });
+			toast({
+				title: "Export complete",
+				description: `${data.filename} is ready.`,
+			});
 		} catch (err: unknown) {
 			toast({
 				title: "Export failed",
-				description: err instanceof Error ? err.message : "Could not export audio",
+				description:
+					err instanceof Error ? err.message : "Could not export audio",
 				variant: "destructive",
 			});
 		} finally {
@@ -94,7 +101,11 @@ export function LottieExportPage() {
 						/>
 					</Field>
 					<div>
-						<Button onClick={run} disabled={!audioPath.trim() || exporting} loading={exporting}>
+						<Button
+							onClick={run}
+							disabled={!audioPath.trim() || exporting}
+							loading={exporting}
+						>
 							<MusicalNoteIcon className="mr-1.5 size-4" aria-hidden="true" />
 							{exporting ? "Exporting…" : "Export to Lottie"}
 						</Button>
@@ -105,22 +116,32 @@ export function LottieExportPage() {
 			{result ? (
 				<Card>
 					<CardTitle className="flex items-center gap-2 text-sm">
-						<ArrowDownTrayIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+						<ArrowDownTrayIcon
+							className="size-4 text-muted-foreground"
+							aria-hidden="true"
+						/>
 						Export result
 					</CardTitle>
 					<CardBody className="mt-3 flex flex-col gap-3">
 						<p className="text-sm">
 							<span className="text-muted-foreground">File: </span>
-							<code className="font-mono text-xs text-foreground">{result.filename}</code>
+							<code className="font-mono text-xs text-foreground">
+								{result.filename}
+							</code>
 						</p>
 						<p className="flex gap-4 text-sm text-muted-foreground">
 							<span className="flex items-center gap-1">
 								<ClockIcon className="h-3.5 w-3.5" aria-hidden="true" />
-								<span className="tabular-nums">{result.duration.toFixed(1)}s</span>
+								<span className="tabular-nums">
+									{result.duration.toFixed(1)}s
+								</span>
 							</span>
 							<span className="tabular-nums">{result.sample_rate} Hz</span>
 							<span>
-								Size: <span className="tabular-nums">{(result.size_bytes / 1024).toFixed(1)} KB</span>
+								Size:{" "}
+								<span className="tabular-nums">
+									{(result.size_bytes / 1024).toFixed(1)} KB
+								</span>
 							</span>
 						</p>
 						<div>
@@ -131,7 +152,10 @@ export function LottieExportPage() {
 									title="Download exported Lottie audio"
 									aria-label="Download exported Lottie audio"
 								>
-									<ArrowDownTrayIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+									<ArrowDownTrayIcon
+										className="mr-1.5 h-3.5 w-3.5"
+										aria-hidden="true"
+									/>
 									Download
 								</a>
 							</Button>

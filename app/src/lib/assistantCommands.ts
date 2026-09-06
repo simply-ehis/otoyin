@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useAudioStudioStore } from "@/components/AudioStudio/AudioStudioStore";
+import { useAudioStudioStore } from "@/features/audioStudio/AudioStudioStore";
 import { apiClient } from "@/lib/api/client";
 import { logger } from "@/lib/utils/debug";
 import { useUIStore } from "@/stores/uiStore";

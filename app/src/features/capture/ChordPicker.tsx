@@ -1,6 +1,7 @@
 import { CommandLineIcon } from "@heroicons/react/24/outline";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils/cn";
 import {
 	canonicalKeyFromEvent,
 	displayLabelForKey,
@@ -16,7 +17,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/ui/dialog";
-import { cn } from "@/lib/utils/cn";
 
 /**
  * Key-chord capture dialog (push-to-talk / toggle-to-talk). Records the
@@ -79,7 +79,9 @@ export function ChordPicker({
 				if (prev.size === 0) {
 					return candidate;
 				}
-				return candidate.length >= prevCaptured.length ? candidate : prevCaptured;
+				return candidate.length >= prevCaptured.length
+					? candidate
+					: prevCaptured;
 			});
 			return next;
 		});
@@ -116,7 +118,8 @@ export function ChordPicker({
 		};
 	}, [open, onKeyDown, onKeyUp]);
 
-	const shown = pressed.size > 0 ? sortChordKeys(Array.from(pressed)) : captured;
+	const shown =
+		pressed.size > 0 ? sortChordKeys(Array.from(pressed)) : captured;
 
 	return (
 		<Dialog
@@ -130,7 +133,9 @@ export function ChordPicker({
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>{title}</DialogTitle>
-					{description ? <DialogDescription>{description}</DialogDescription> : null}
+					{description ? (
+						<DialogDescription>{description}</DialogDescription>
+					) : null}
 				</DialogHeader>
 				<div
 					ref={captureRef}
@@ -164,7 +169,10 @@ export function ChordPicker({
 					<Button variant="ghost" onClick={onCancel}>
 						{t("common.cancel")}
 					</Button>
-					<Button onClick={() => onSave(captured)} disabled={captured.length === 0}>
+					<Button
+						onClick={() => onSave(captured)}
+						disabled={captured.length === 0}
+					>
 						{t("common.save")}
 					</Button>
 				</DialogFooter>

@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { Badge } from "@/ui/primitives";
+import { apiClient } from "@/lib/api/client";
+import type { AudiobookDetail } from "@/lib/api/clientAudiobooks";
+import { showStudioErrorToast } from "@/lib/errors";
+import { useAudiobookStore } from "@/stores/audiobookStore";
 import { Button } from "@/ui/button";
 import {
 	Dialog,
@@ -8,11 +11,8 @@ import {
 	DialogFooter,
 	DialogTitle,
 } from "@/ui/dialog";
+import { Badge } from "@/ui/primitives";
 import { useToast } from "@/ui/use-toast";
-import { apiClient } from "@/lib/api/client";
-import type { AudiobookDetail } from "@/lib/api/clientAudiobooks";
-import { showStudioErrorToast } from "@/lib/errors";
-import { useAudiobookStore } from "@/stores/audiobookStore";
 import { ChapterList } from "./ChapterList";
 import { ConvertPanel } from "./ConvertPanel";
 import { VoiceCastPanel } from "./VoiceCastPanel";
@@ -35,14 +35,6 @@ export function BookDetail({
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [deleting, setDeleting] = useState(false);
 
-	const coverUrl = detail.cover_path
-		? apiClient.getAudiobookCoverUrl(detail.id)
-		: null;
-	const [coverError, setCoverError] = useState(false);
-	useEffect(() => {
-		setCoverError(false);
-	}, [detail.id, detail.cover_path]);
-
 	const uploadCover = async (file: File | undefined) => {
 		if (!file) {
 			return;
@@ -61,7 +53,9 @@ export function BookDetail({
 	const render = async () => {
 		if (!engine) {
 			showStudioErrorToast(
-				new Error("Pick a cached engine first — no auto-download, no default forcing."),
+				new Error(
+					"Pick a cached engine first — no auto-download, no default forcing.",
+				),
 			);
 			return;
 		}
@@ -101,23 +95,15 @@ export function BookDetail({
 		<div className="flex flex-col gap-4 pb-8">
 			<div className="flex gap-4 rounded-md border border-border bg-card p-4">
 				<span className="grid size-24 shrink-0 place-items-center overflow-hidden rounded-sm bg-secondary text-xs text-muted-foreground">
-					{coverUrl && !coverError ? (
-						<img
-							src={coverUrl}
-							alt={`${detail.title} cover`}
-							className="h-full w-full object-cover"
-							onError={() => setCoverError(true)}
-						/>
-					) : (
-						"Cover"
-					)}
+					Cover
 				</span>
 				<div className="min-w-0 flex-1">
 					<h2 className="truncate text-lg font-semibold tracking-tight text-foreground">
 						{detail.title}
 					</h2>
 					<p className="text-sm tabular-nums text-muted-foreground">
-						{detail.author || "Unknown author"} · {detail.chapters.length} chapters
+						{detail.author || "Unknown author"} · {detail.chapters.length}{" "}
+						chapters
 						{detail.total_duration_ms
 							? ` · ${Math.round(detail.total_duration_ms / 1000)}s`
 							: ""}
@@ -140,16 +126,34 @@ export function BookDetail({
 								}}
 							/>
 						</label>
-						<Button size="sm" onClick={render} disabled={rendering || !engine} loading={rendering}>
+						<Button
+							size="sm"
+							onClick={render}
+							disabled={rendering || !engine}
+							loading={rendering}
+						>
 							{rendering ? "Queuing…" : "Render WAV"}
 						</Button>
-						<Button size="sm" variant="outline" onClick={() => void download("wav")}>
+						<Button
+							size="sm"
+							variant="outline"
+							onClick={() => void download("wav")}
+						>
 							Export WAV
 						</Button>
-						<Button size="sm" variant="outline" onClick={() => void download("m4b")}>
+						<Button
+							size="sm"
+							variant="outline"
+							onClick={() => void download("m4b")}
+						>
 							Export .m4b
 						</Button>
-						<Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeleteOpen(true)}>
+						<Button
+							size="sm"
+							variant="ghost"
+							className="text-destructive"
+							onClick={() => setDeleteOpen(true)}
+						>
 							Delete
 						</Button>
 					</div>
@@ -203,7 +207,9 @@ function CachedEngineSelector({
 	value: string | null;
 	onChange: (engine: string | null) => void;
 }) {
-	const [engines, setEngines] = useState<{ engine: string; display_name: string }[]>([]);
+	const [engines, setEngines] = useState<
+		{ engine: string; display_name: string }[]
+	>([]);
 	const [loading, setLoading] = useState(true);
 	useEffect(() => {
 		apiClient
@@ -213,12 +219,17 @@ function CachedEngineSelector({
 			.finally(() => setLoading(false));
 	}, []);
 	if (loading) {
-		return <span className="text-xs text-muted-foreground">Loading cached engines…</span>;
+		return (
+			<span className="text-xs text-muted-foreground">
+				Loading cached engines…
+			</span>
+		);
 	}
 	if (engines.length === 0) {
 		return (
 			<Badge tone="warning">
-				No TTS engines cached — download one from Models tab first. No auto-download, no default.
+				No TTS engines cached — download one from Models tab first. No
+				auto-download, no default.
 			</Badge>
 		);
 	}

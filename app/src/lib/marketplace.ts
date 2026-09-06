@@ -154,12 +154,9 @@ class MarketplaceClient {
 			await new Promise((r) => setTimeout(r, LICENSE_POLL_INTERVAL_MS));
 			let resp: Response;
 			try {
-				resp = await fetch(
-					`${this.baseUrl}/v1/webhook/license/${orderRef}`,
-					{
-						signal: AbortSignal.timeout(10_000),
-					},
-				);
+				resp = await fetch(`${this.baseUrl}/v1/webhook/license/${orderRef}`, {
+					signal: AbortSignal.timeout(10_000),
+				});
 			} catch (e) {
 				// Network error — retry while attempts remain.
 				if (i === last) {

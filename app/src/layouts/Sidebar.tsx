@@ -2,6 +2,7 @@ import {
 	BookOpenIcon,
 	ChevronLeftIcon,
 	ChevronRightIcon,
+	Cog6ToothIcon,
 	CubeTransparentIcon,
 	FolderOpenIcon,
 	HomeIcon,
@@ -11,7 +12,6 @@ import {
 	PlayCircleIcon,
 	PuzzlePieceIcon,
 	RectangleStackIcon,
-	Cog6ToothIcon,
 	ShoppingBagIcon,
 	SignalIcon,
 	SparklesIcon,
@@ -38,13 +38,21 @@ const NAV_GROUPS: { items: NavItem[] }[] = [
 	{
 		items: [
 			{ path: "/", label: "sidebar.generate", icon: HomeIcon },
-			{ path: "/audio-studio", label: "sidebar.audioStudio", icon: MusicalNoteIcon },
+			{
+				path: "/audio-studio",
+				label: "sidebar.audioStudio",
+				icon: MusicalNoteIcon,
+			},
 		],
 	},
 	{
 		items: [
 			{ path: "/stories", label: "sidebar.stories", icon: BookOpenIcon },
-			{ path: "/audiobooks", label: "sidebar.audiobooks", icon: RectangleStackIcon },
+			{
+				path: "/audiobooks",
+				label: "sidebar.audiobooks",
+				icon: RectangleStackIcon,
+			},
 		],
 	},
 	{
@@ -57,7 +65,11 @@ const NAV_GROUPS: { items: NavItem[] }[] = [
 	{
 		items: [
 			{ path: "/effects", label: "sidebar.effects", icon: SparklesIcon },
-			{ path: "/instruments", label: "sidebar.instruments", icon: CubeTransparentIcon },
+			{
+				path: "/instruments",
+				label: "sidebar.instruments",
+				icon: CubeTransparentIcon,
+			},
 			{ path: "/workspace", label: "sidebar.workspace", icon: SpeakerWaveIcon },
 			{ path: "/sounds", label: "sidebar.sounds", icon: PlayCircleIcon },
 		],
@@ -69,7 +81,9 @@ const NAV_GROUPS: { items: NavItem[] }[] = [
 		],
 	},
 	{
-		items: [{ path: "/settings", label: "sidebar.settings", icon: Cog6ToothIcon }],
+		items: [
+			{ path: "/settings", label: "sidebar.settings", icon: Cog6ToothIcon },
+		],
 	},
 ];
 
@@ -205,7 +219,10 @@ export function Sidebar() {
 				{NAV_GROUPS.map((group, gi) => (
 					<div key={group.items[0]?.path ?? gi}>
 						{gi > 0 ? (
-							<div aria-hidden="true" className="mx-2 my-2 border-t border-border" />
+							<div
+								aria-hidden="true"
+								className="mx-2 my-2 border-t border-border"
+							/>
 						) : null}
 						<ul className="flex flex-col gap-0.5">
 							{group.items.map((item) => {
@@ -231,8 +248,13 @@ export function Sidebar() {
 													className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r bg-accent"
 												/>
 											) : null}
-											<item.icon className="size-5 shrink-0" aria-hidden="true" />
-											<span className={cn("truncate", !sidebarOpen && "sr-only")}>
+											<item.icon
+												className="size-5 shrink-0"
+												aria-hidden="true"
+											/>
+											<span
+												className={cn("truncate", !sidebarOpen && "sr-only")}
+											>
 												{t(item.label)}
 											</span>
 										</Link>
@@ -252,7 +274,9 @@ export function Sidebar() {
 					aria-label="Open Brick Survivors"
 					className={cn(
 						"flex items-center rounded-md border border-dashed border-strong bg-transparent transition-colors hover:bg-secondary",
-						sidebarOpen ? "w-full gap-2 px-3 py-1.5" : "mx-auto size-7 justify-center",
+						sidebarOpen
+							? "w-full gap-2 px-3 py-1.5"
+							: "mx-auto size-7 justify-center",
 					)}
 				>
 					<PuzzlePieceIcon
@@ -279,9 +303,15 @@ export function Sidebar() {
 				)}
 			>
 				{sidebarOpen ? (
-					<ChevronLeftIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+					<ChevronLeftIcon
+						className="size-4 text-muted-foreground"
+						aria-hidden="true"
+					/>
 				) : (
-					<ChevronRightIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+					<ChevronRightIcon
+						className="size-4 text-muted-foreground"
+						aria-hidden="true"
+					/>
 				)}
 				{sidebarOpen ? (
 					<span className="text-sm font-medium text-muted-foreground">

@@ -10,10 +10,14 @@ import {
 
 /** Solid thumbnail washes (pure CSS, no image assets). */
 const THUMB_WASH: Record<string, string> = {
-	"di-stefano": "linear-gradient(135deg, hsl(28 6% 9%) 0%, hsl(28 5% 16%) 100%)",
-	stripe: "repeating-linear-gradient(135deg, hsl(0 0% 8%) 0 8px, hsl(0 0% 14%) 8px 16px)",
-	"coastal-light": "linear-gradient(135deg, hsl(35 40% 96%) 0%, hsl(25 30% 92%) 100%)",
-	"mesh-dark": "radial-gradient(ellipse at 30% 20%, hsl(215 20% 18%) 0%, hsl(215 20% 4%) 70%)",
+	"di-stefano":
+		"linear-gradient(135deg, hsl(28 6% 9%) 0%, hsl(28 5% 16%) 100%)",
+	stripe:
+		"repeating-linear-gradient(135deg, hsl(0 0% 8%) 0 8px, hsl(0 0% 14%) 8px 16px)",
+	"coastal-light":
+		"linear-gradient(135deg, hsl(35 40% 96%) 0%, hsl(25 30% 92%) 100%)",
+	"mesh-dark":
+		"radial-gradient(ellipse at 30% 20%, hsl(215 20% 18%) 0%, hsl(215 20% 4%) 70%)",
 	system: "linear-gradient(135deg, hsl(0 0% 94%) 0%, hsl(0 0% 98%) 100%)",
 	light: "linear-gradient(135deg, hsl(0 0% 96%) 0%, hsl(0 0% 100%) 100%)",
 	dark: "linear-gradient(135deg, hsl(0 0% 6%) 0%, hsl(0 0% 14%) 100%)",
@@ -75,16 +79,22 @@ export function ThemeSelect() {
 	const setTheme = useUIStore((s) => s.setTheme);
 	return (
 		<div className="flex flex-col gap-3">
-			<div className="grid grid-cols-4 gap-2" role="group" aria-label="Color themes">
+			<fieldset className="grid grid-cols-4 gap-2">
+				<legend className="sr-only">Color themes</legend>
 				{PLAIN_THEMES.map((t) => (
-					<ThemeCard key={t} theme={t} active={theme === t} onSelect={() => setTheme(t)} />
+					<ThemeCard
+						key={t}
+						theme={t}
+						active={theme === t}
+						onSelect={() => setTheme(t)}
+					/>
 				))}
 				<ThemeCard
 					theme="di-stefano"
 					active={theme === "di-stefano"}
 					onSelect={() => setTheme("di-stefano")}
 				/>
-			</div>
+			</fieldset>
 			<div className="relative" aria-hidden="true">
 				<div className="absolute inset-0 flex items-center">
 					<div className="w-full border-t border-border" />
@@ -95,11 +105,17 @@ export function ThemeSelect() {
 					</span>
 				</div>
 			</div>
-			<div className="grid grid-cols-3 gap-2" role="group" aria-label="Special themes">
+			<fieldset className="grid grid-cols-3 gap-2">
+				<legend className="sr-only">Special themes</legend>
 				{SPECIAL_THEMES.filter((t) => t !== "di-stefano").map((t) => (
-					<ThemeCard key={t} theme={t} active={theme === t} onSelect={() => setTheme(t)} />
+					<ThemeCard
+						key={t}
+						theme={t}
+						active={theme === t}
+						onSelect={() => setTheme(t)}
+					/>
 				))}
-			</div>
+			</fieldset>
 		</div>
 	);
 }

@@ -83,8 +83,9 @@ function StatusBanner({
 	message: string;
 }) {
 	const styles = {
-		info: "bg-blue-500/10 border-blue-500/30 text-blue-200",
-		error: "bg-red-500/10 border-red-500/30 text-red-200",
+		// Solid status surfaces — no translucent fills.
+		info: "bg-secondary border-border text-foreground",
+		error: "bg-danger-soft border-destructive/40 text-danger-text",
 	};
 	return (
 		<div className="mx-auto mt-3 max-w-[1800px] px-8">

@@ -85,6 +85,9 @@ interface UIStore {
 	// Mini-game overlay
 	miniGameOpen: boolean;
 	setMiniGameOpen: (open: boolean) => void;
+	// Game registry selection (features/game/registry). Null = default game.
+	openGameId: string | null;
+	setOpenGameId: (id: string | null) => void;
 }
 
 export const useUIStore = create<UIStore>()(
@@ -124,6 +127,8 @@ export const useUIStore = create<UIStore>()(
 
 			miniGameOpen: false,
 			setMiniGameOpen: (open) => set({ miniGameOpen: open }),
+			openGameId: null,
+			setOpenGameId: (id) => set({ openGameId: id }),
 		}),
 		{
 			name: "otoyin-ui",

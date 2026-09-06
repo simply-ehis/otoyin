@@ -7,9 +7,9 @@ import {
 } from "@heroicons/react/24/outline";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/ui/button";
 import type { DictationReadiness } from "@/lib/hooks/useDictationReadiness";
 import { cn } from "@/lib/utils/cn";
+import { Button } from "@/ui/button";
 
 function GateRow({
 	icon,
@@ -28,7 +28,9 @@ function GateRow({
 		<div
 			className={cn(
 				"flex items-start gap-3 rounded-md border p-3.5 transition-colors",
-				ready ? "border-success/40 bg-success-soft" : "border-border bg-secondary",
+				ready
+					? "border-success/40 bg-success-soft"
+					: "border-border bg-secondary",
 			)}
 		>
 			<span className="mt-0.5 shrink-0" aria-hidden="true">
@@ -41,7 +43,9 @@ function GateRow({
 			<div className="min-w-0 flex-1">
 				<p className="flex items-center gap-2 text-muted-foreground">{icon}</p>
 				<p className="text-sm font-medium text-foreground">{title}</p>
-				<p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
+				<p className="text-xs leading-relaxed text-muted-foreground">
+					{description}
+				</p>
 				{!ready && action ? <div className="pt-1.5">{action}</div> : null}
 			</div>
 		</div>
@@ -62,11 +66,16 @@ export function ReadinessChecklist({
 }) {
 	const { t } = useTranslation();
 	const isMacOS =
-		typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent);
+		typeof navigator !== "undefined" &&
+		/Mac|iPhone|iPad/.test(navigator.userAgent);
 	const sttSize =
-		readiness.stt?.size_mb != null ? `${(readiness.stt.size_mb / 1000).toFixed(1)} GB` : null;
+		readiness.stt?.size_mb != null
+			? `${(readiness.stt.size_mb / 1000).toFixed(1)} GB`
+			: null;
 	const llmSize =
-		readiness.llm?.size_mb != null ? `${(readiness.llm.size_mb / 1000).toFixed(1)} GB` : null;
+		readiness.llm?.size_mb != null
+			? `${(readiness.llm.size_mb / 1000).toFixed(1)} GB`
+			: null;
 
 	return (
 		<div className={cn("w-full space-y-2.5", !compact && "mx-auto max-w-md")}>
@@ -75,14 +84,18 @@ export function ReadinessChecklist({
 					<h2 className="text-base font-semibold text-foreground">
 						{t("captures.readiness.title")}
 					</h2>
-					<p className="text-xs text-muted-foreground">{t("captures.readiness.subheading")}</p>
+					<p className="text-xs text-muted-foreground">
+						{t("captures.readiness.subheading")}
+					</p>
 				</div>
 			) : null}
 
 			{readiness.stt ? (
 				<GateRow
 					icon={<CpuChipIcon className="h-3.5 w-3.5" aria-hidden="true" />}
-					title={t("captures.readiness.stt.label", { name: readiness.stt.display_name })}
+					title={t("captures.readiness.stt.label", {
+						name: readiness.stt.display_name,
+					})}
 					description={
 						readiness.stt.ready
 							? t("captures.readiness.stt.ready")
@@ -93,7 +106,10 @@ export function ReadinessChecklist({
 					ready={readiness.stt.ready}
 					action={
 						!readiness.stt.ready ? (
-							<Link to="/store" className="inline-block text-xs text-accent hover:underline">
+							<Link
+								to="/store"
+								className="inline-block text-xs text-accent hover:underline"
+							>
 								Get from Store →
 							</Link>
 						) : undefined
@@ -104,7 +120,9 @@ export function ReadinessChecklist({
 			{readiness.llm ? (
 				<GateRow
 					icon={<CpuChipIcon className="h-3.5 w-3.5" aria-hidden="true" />}
-					title={t("captures.readiness.llm.label", { name: readiness.llm.display_name })}
+					title={t("captures.readiness.llm.label", {
+						name: readiness.llm.display_name,
+					})}
 					description={
 						readiness.llm.ready
 							? t("captures.readiness.llm.ready")
@@ -115,7 +133,10 @@ export function ReadinessChecklist({
 					ready={readiness.llm.ready}
 					action={
 						!readiness.llm.ready ? (
-							<Link to="/store" className="inline-block text-xs text-accent hover:underline">
+							<Link
+								to="/store"
+								className="inline-block text-xs text-accent hover:underline"
+							>
 								Get from Store →
 							</Link>
 						) : undefined
@@ -135,7 +156,10 @@ export function ReadinessChecklist({
 					ready={readiness.inputMonitoring}
 					action={
 						<Button size="sm" onClick={readiness.openInputMonitoringSettings}>
-							<ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" aria-hidden="true" />
+							<ArrowTopRightOnSquareIcon
+								className="h-3.5 w-3.5"
+								aria-hidden="true"
+							/>
 							{t("captures.readiness.inputMonitoring.openSettings")}
 						</Button>
 					}
@@ -154,7 +178,10 @@ export function ReadinessChecklist({
 					ready={readiness.accessibility}
 					action={
 						<Button size="sm" onClick={readiness.openAccessibilitySettings}>
-							<ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" aria-hidden="true" />
+							<ArrowTopRightOnSquareIcon
+								className="h-3.5 w-3.5"
+								aria-hidden="true"
+							/>
 							{t("captures.readiness.accessibility.openSettings")}
 						</Button>
 					}

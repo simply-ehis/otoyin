@@ -187,13 +187,13 @@ export function WaveformABDiff({
 		<div className={cn("relative", className)}>
 			<canvas
 				ref={canvasRef}
-				className="w-full rounded bg-muted/30"
+				className="w-full rounded bg-sunken"
 				style={{ height }}
 			/>
 			{/* Legend */}
 			<div className="absolute bottom-1 right-2 flex items-center gap-3 text-xs text-muted-foreground/70 pointer-events-none select-none">
 				<span className="flex items-center gap-1">
-					<span className="inline-block size-1.5 rounded-full bg-muted-foreground/40" />
+					<span className="inline-block size-1.5 rounded-full bg-strong" />
 					Original
 				</span>
 				<span className="flex items-center gap-1">
@@ -201,7 +201,7 @@ export function WaveformABDiff({
 					Enhanced
 				</span>
 				<span className="flex items-center gap-1">
-					<span className="inline-block size-1.5 rounded-full bg-accent/40" />
+					<span className="inline-block size-1.5 rounded-full bg-accent-muted" />
 					Diff
 				</span>
 			</div>

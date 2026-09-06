@@ -6,10 +6,13 @@ import { Spinner } from "./primitives";
  * motion in the visual identity), one honest loading line. Shown while
  * route chunks load — never a blank pane.
  */
-export function AppLoadingScreen({ label = "Loading Otoyin" }: { label?: string }) {
+export function AppLoadingScreen({
+	label = "Loading Otoyin",
+}: {
+	label?: string;
+}) {
 	return (
-		<div
-			role="status"
+		<output
 			aria-label={label}
 			className="flex h-full min-h-[240px] flex-1 flex-col items-center justify-center gap-4"
 		>
@@ -26,7 +29,7 @@ export function AppLoadingScreen({ label = "Loading Otoyin" }: { label?: string 
 				<Spinner size="sm" />
 				<span>{label}…</span>
 			</div>
-		</div>
+		</output>
 	);
 }
 
@@ -34,9 +37,18 @@ export function AppLoadingScreen({ label = "Loading Otoyin" }: { label?: string 
 export function PageLoadingFallback() {
 	return (
 		<div className={cn("flex h-full flex-1 flex-col gap-2 p-8")}>
-			<div aria-hidden="true" className="h-7 w-48 animate-pulse rounded-sm bg-secondary" />
-			<div aria-hidden="true" className="h-4 w-96 max-w-full animate-pulse rounded-sm bg-secondary" />
-			<div aria-hidden="true" className="mt-4 h-40 animate-pulse rounded-md bg-secondary" />
+			<div
+				aria-hidden="true"
+				className="h-7 w-48 animate-pulse rounded-sm bg-secondary"
+			/>
+			<div
+				aria-hidden="true"
+				className="h-4 w-96 max-w-full animate-pulse rounded-sm bg-secondary"
+			/>
+			<div
+				aria-hidden="true"
+				className="mt-4 h-40 animate-pulse rounded-md bg-secondary"
+			/>
 		</div>
 	);
 }

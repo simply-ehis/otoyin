@@ -1,5 +1,7 @@
 import { ClockIcon } from "@heroicons/react/24/outline";
 import { useEffect, useState } from "react";
+import { apiClient } from "@/lib/api/client";
+import { debug } from "@/lib/utils/debug";
 import { Card, CardBody, CardTitle } from "@/ui/card";
 import {
 	Select,
@@ -9,8 +11,6 @@ import {
 	SelectValue,
 } from "@/ui/select";
 import { ScreenHeader } from "@/ui/states";
-import { apiClient } from "@/lib/api/client";
-import { debug } from "@/lib/utils/debug";
 
 const FALLBACK_FPS = [23.976, 24, 25, 29.97, 30];
 
@@ -73,7 +73,9 @@ export function TimecodeDisplay({
 			<p className="font-mono text-2xl tabular-nums tracking-wider text-foreground">
 				{serverTimecode ?? formatSmpte(currentTimeMs / 1000, fps)}
 			</p>
-			<span aria-hidden="true" className="text-sm text-muted-foreground">/</span>
+			<span aria-hidden="true" className="text-sm text-muted-foreground">
+				/
+			</span>
 			<p className="font-mono text-sm tabular-nums text-muted-foreground">
 				{formatSmpte(durationMs / 1000, fps)}
 			</p>
@@ -103,7 +105,10 @@ export function TimecodeDisplay({
 			/>
 			<Card>
 				<CardTitle className="flex items-center gap-2">
-					<ClockIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+					<ClockIcon
+						className="size-4 text-muted-foreground"
+						aria-hidden="true"
+					/>
 					Timecode
 				</CardTitle>
 				<CardBody className="mt-3">{readout}</CardBody>

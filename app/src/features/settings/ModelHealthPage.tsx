@@ -1,5 +1,8 @@
 import { CpuChipIcon } from "@heroicons/react/24/outline";
 import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api/client";
+import { useServerHealth } from "@/lib/hooks/useServer";
+import { useServerStore } from "@/stores/serverStore";
 import { Badge } from "@/ui/primitives";
 import { Progress } from "@/ui/progress";
 import { ScreenHeader } from "@/ui/states";
@@ -11,9 +14,6 @@ import {
 	TableHeaderCell,
 	TableRow,
 } from "@/ui/table";
-import { apiClient } from "@/lib/api/client";
-import { useServerHealth } from "@/lib/hooks/useServer";
-import { useServerStore } from "@/stores/serverStore";
 
 function ago(a: number | null, b: number | null): string {
 	if (b != null) {
@@ -61,7 +61,10 @@ export function ModelHealthPage() {
 
 	const used = h?.vram_used_mb;
 	const total = h?.vram_total_mb;
-	const pct = used != null && total != null && total > 0 ? Math.round((used / total) * 100) : 0;
+	const pct =
+		used != null && total != null && total > 0
+			? Math.round((used / total) * 100)
+			: 0;
 	const label =
 		used != null && total != null
 			? `${used.toFixed(0)}/${total.toFixed(0)} MB`
@@ -78,10 +81,15 @@ export function ModelHealthPage() {
 			<section className="rounded-md border border-border bg-card p-4">
 				<div className="flex items-center justify-between">
 					<span className="flex items-center gap-2 text-sm font-medium text-foreground">
-						<CpuChipIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+						<CpuChipIcon
+							className="size-4 text-muted-foreground"
+							aria-hidden="true"
+						/>
 						VRAM
 					</span>
-					<span className="text-xs tabular-nums text-muted-foreground">{label}</span>
+					<span className="text-xs tabular-nums text-muted-foreground">
+						{label}
+					</span>
 				</div>
 				<Progress value={pct} label="VRAM usage" className="mt-3 h-2" />
 				<p className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
@@ -130,7 +138,9 @@ export function ModelHealthPage() {
 						<TableBody>
 							{(m?.engines ?? []).map((e) => (
 								<TableRow key={e.engine}>
-									<TableCell className="font-mono text-xs">{e.engine}</TableCell>
+									<TableCell className="font-mono text-xs">
+										{e.engine}
+									</TableCell>
 									<TableCell>
 										<Badge tone={e.is_loaded ? "success" : "neutral"}>
 											{e.is_loaded ? "yes" : "no"}
@@ -141,19 +151,26 @@ export function ModelHealthPage() {
 									</TableCell>
 									<TableCell>
 										{e.per_engine_keepalive != null ? (
-											<Badge tone={e.per_engine_keepalive ? "success" : "neutral"}>
+											<Badge
+												tone={e.per_engine_keepalive ? "success" : "neutral"}
+											>
 												{e.per_engine_keepalive ? "on" : "off"}
 											</Badge>
 										) : e.always_on ? (
 											<Badge tone="accent">always</Badge>
 										) : (
-											<span className="text-xs text-muted-foreground">follow global</span>
+											<span className="text-xs text-muted-foreground">
+												follow global
+											</span>
 										)}
 									</TableCell>
 									<TableCell>
 										<span className="flex flex-wrap gap-1">
 											{e.gpu_only ? (
-												<Badge tone="danger" title="Requires GPU — disabled on CPU">
+												<Badge
+													tone="danger"
+													title="Requires GPU — disabled on CPU"
+												>
 													GPU
 												</Badge>
 											) : null}

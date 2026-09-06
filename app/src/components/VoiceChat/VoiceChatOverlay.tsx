@@ -295,9 +295,9 @@ export function VoiceChatOverlay() {
 
 			{/* Tool confirmation panel */}
 			{toolConfirmation && (
-				<div className="absolute top-full left-0 mt-2 w-80 rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3 shadow-lg z-50 max-sm:fixed max-sm:bottom-0 max-sm:left-0 max-sm:right-0 max-sm:top-auto max-sm:mt-0 max-sm:w-full max-sm:rounded-b-none max-sm:border-b-0">
+				<div className="absolute top-full left-0 mt-2 w-80 rounded-lg border border-warning/40 bg-warning-soft p-3 shadow-lg z-50 max-sm:fixed max-sm:bottom-0 max-sm:left-0 max-sm:right-0 max-sm:top-auto max-sm:mt-0 max-sm:w-full max-sm:rounded-b-none max-sm:border-b-0">
 					<div className="mb-1">
-						<span className="text-xs uppercase tracking-wider text-yellow-600 dark:text-yellow-400">
+						<span className="text-xs uppercase tracking-wider text-warning-text">
 							Tool Confirmation
 						</span>
 					</div>
@@ -380,7 +380,7 @@ export function VoiceChatOverlay() {
 
 			{/* Error display */}
 			{error && (
-				<div className="absolute top-full left-0 mt-2 w-80 rounded-lg border border-destructive/50 bg-destructive/10 p-2 shadow-lg z-50 max-sm:fixed max-sm:bottom-0 max-sm:left-0 max-sm:right-0 max-sm:top-auto max-sm:mt-0 max-sm:w-full max-sm:rounded-b-none max-sm:border-b-0">
+				<div className="absolute top-full left-0 mt-2 w-80 rounded-lg border border-destructive/50 bg-danger-soft p-2 shadow-[var(--elevation-floating)] z-50 max-sm:fixed max-sm:bottom-0 max-sm:left-0 max-sm:right-0 max-sm:top-auto max-sm:mt-0 max-sm:w-full max-sm:rounded-b-none max-sm:border-b-0">
 					<p className="text-xs text-destructive">{error}</p>
 				</div>
 			)}

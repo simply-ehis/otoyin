@@ -145,7 +145,7 @@ export function AppFrame({ children }: AppFrameProps) {
 		};
 	}, []);
 
-	// First-run tour — no longer auto-opens; use ? to open manually
+	// First-run tour — no longer auto-opens; use ? to open manually (qmark-ok: literal key)
 	useEffect(() => {
 		localStorage.setItem("Otoyin-tour-seen", "true");
 	}, []);

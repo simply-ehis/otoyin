@@ -40,6 +40,8 @@ export function NotificationBell() {
 	const [whatsNew, setWhatsNew] = useState<WhatsNewEntry[]>([]);
 	const claimedOffers = useContentStore((s) => s.claimedOffers);
 	const seenVersions = useContentStore((s) => s.seenWhatsNewVersions);
+	const markWhatsNewSeen = useContentStore((s) => s.markWhatsNewSeen);
+	const claimOffer = useContentStore((s) => s.claimOffer);
 	const containerRef = useRef<HTMLDivElement>(null);
 
 	const refresh = useCallback(async () => {
@@ -93,8 +95,10 @@ export function NotificationBell() {
 	const unseenWhatsNew = whatsNew.filter(
 		(w) => !seenVersions.includes(w.version),
 	);
-	const attentionCount =
-		missing.length + unclaimedOffers.length + unseenWhatsNew.length;
+	// Badge counts live activity only. Bundled content (missing-model
+	// suggestions, offers, release notes) is listed in the drawer but must
+	// not inflate the badge — that reads as false noise on fresh installs.
+	const attentionCount = activeDownloads.length;
 
 	return (
 		<div ref={containerRef} className="relative">
@@ -104,7 +108,7 @@ export function NotificationBell() {
 				className={`relative size-9 rounded-full flex items-center justify-center transition-colors duration-200 ${
 					open
 						? "bg-accent text-accent-foreground shadow-lg"
-						: "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
+						: "bg-secondary text-muted-foreground hover:bg-secondary-hover hover:text-foreground"
 				}`}
 				title="Notifications"
 				aria-label={
@@ -141,7 +145,7 @@ export function NotificationBell() {
 									}
 									// Mark all offers as claimed
 									for (const o of unclaimedOffers) {
-										markOfferClaimed(o.id);
+										claimOffer(o.id);
 									}
 								}}
 								className="text-xs text-muted-foreground hover:text-foreground"

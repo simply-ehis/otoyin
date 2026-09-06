@@ -18,10 +18,10 @@ export function TimelineRuler({
 			className="flex sticky top-0 z-30"
 			style={{ width: `${timelineWidth + LABEL_COL_WIDTH}px` }}
 		>
-			<div className="w-16 h-6 shrink-0 border-b border-r bg-muted/30 sticky left-0 z-40" />
+			<div className="w-16 h-6 shrink-0 border-b border-r bg-secondary sticky left-0 z-40" />
 			<button
 				type="button"
-				className="h-6 border-b bg-muted/20 cursor-pointer text-left relative"
+				className="h-6 border-b bg-card cursor-pointer text-left relative"
 				style={{ width: `${timelineWidth}px` }}
 				onClick={onTimelineClick}
 				aria-label="Seek timeline"

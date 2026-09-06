@@ -5,10 +5,7 @@ import { cn } from "@/lib/utils/cn";
  * Canonical slider: full keyboard model (arrows/Home/End) via Radix.
  * Thumb hit target padded beyond its visible size.
  */
-export function Slider({
-	className,
-	...props
-}: SliderPrimitive.SliderProps) {
+export function Slider({ className, ...props }: SliderPrimitive.SliderProps) {
 	return (
 		<SliderPrimitive.Root
 			className={cn(

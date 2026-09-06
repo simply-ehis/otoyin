@@ -8,21 +8,17 @@ import {
 	SpeakerWaveIcon,
 	TrashIcon,
 	WifiIcon,
-	WrenchIcon,
 } from "@heroicons/react/24/outline";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Badge } from "@/ui/primitives";
-import { Button } from "@/ui/button";
-import { SearchInput } from "@/ui/input";
-import { Label } from "@/ui/primitives";
-import { Separator } from "@/ui/primitives";
-import { Slider } from "@/ui/slider";
-import { Spinner } from "@/ui/primitives";
-import { EmptyState, ScreenHeader } from "@/ui/states";
-import { useToast } from "@/ui/use-toast";
 import { apiClient } from "@/lib/api/client";
 import { cn } from "@/lib/utils/cn";
+import { Button } from "@/ui/button";
+import { SearchInput } from "@/ui/input";
+import { Badge, Label, Separator, Spinner } from "@/ui/primitives";
+import { Slider } from "@/ui/slider";
+import { EmptyState, ScreenHeader } from "@/ui/states";
+import { useToast } from "@/ui/use-toast";
 import { MarketplacePlugins } from "./MarketplacePlugins";
 
 interface PluginParam {
@@ -85,7 +81,11 @@ export function PluginsPage() {
 			toast({ title: "Plugin scan complete" });
 		},
 		onError: (e: Error) =>
-			toast({ title: "Scan failed", description: e.message, variant: "destructive" }),
+			toast({
+				title: "Scan failed",
+				description: e.message,
+				variant: "destructive",
+			}),
 	});
 
 	const raw: PluginInfo[] = pluginsQuery.data ?? [];
@@ -103,7 +103,10 @@ export function PluginsPage() {
 			params[key] = param.default;
 		}
 		chainCounter += 1;
-		setChain((prev) => [...prev, { key: `ci-${chainCounter}`, plugin, enabled: true, params }]);
+		setChain((prev) => [
+			...prev,
+			{ key: `ci-${chainCounter}`, plugin, enabled: true, params },
+		]);
 		setExpandedChain(null);
 	};
 
@@ -136,7 +139,9 @@ export function PluginsPage() {
 					<>
 						{statusQuery.data ? (
 							<Badge tone="neutral">
-								{(statusQuery.data as { plugin_count: number }).plugin_count ?? 0} found
+								{(statusQuery.data as { plugin_count: number }).plugin_count ??
+									0}{" "}
+								found
 							</Badge>
 						) : null}
 						<Button
@@ -144,7 +149,9 @@ export function PluginsPage() {
 							size="icon"
 							title="Refresh"
 							aria-label="Refresh plugin list"
-							onClick={() => void queryClient.invalidateQueries({ queryKey: ["plugins"] })}
+							onClick={() =>
+								void queryClient.invalidateQueries({ queryKey: ["plugins"] })
+							}
 						>
 							{pluginsQuery.isLoading ? (
 								<Spinner size="sm" />
@@ -152,15 +159,26 @@ export function PluginsPage() {
 								<ArrowPathIcon className="h-3.5 w-3.5" aria-hidden="true" />
 							)}
 						</Button>
-						<Button size="sm" onClick={() => scanMut.mutate()} disabled={scanMut.isPending}>
-							<MagnifyingGlassIcon className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
+						<Button
+							size="sm"
+							onClick={() => scanMut.mutate()}
+							disabled={scanMut.isPending}
+						>
+							<MagnifyingGlassIcon
+								className="mr-1 h-3.5 w-3.5"
+								aria-hidden="true"
+							/>
 							Scan
 						</Button>
 					</>
 				}
 			/>
 
-			<div role="tablist" aria-label="Plugin sources" className="flex items-center gap-1 border-b border-border pb-2">
+			<div
+				role="tablist"
+				aria-label="Plugin sources"
+				className="flex items-center gap-1 border-b border-border pb-2"
+			>
 				{(["audio", "marketplace"] as const).map((v) => (
 					<button
 						key={v}
@@ -171,7 +189,9 @@ export function PluginsPage() {
 						className={cn(
 							"rounded-sm px-3 py-1 text-xs transition-colors",
 							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-							view === v ? "bg-secondary font-medium text-foreground" : "text-muted-foreground hover:text-foreground",
+							view === v
+								? "bg-secondary font-medium text-foreground"
+								: "text-muted-foreground hover:text-foreground",
 						)}
 					>
 						{v === "audio" ? "Audio plugins" : "Marketplace"}
@@ -184,7 +204,8 @@ export function PluginsPage() {
 			) : (
 				<div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
 					<div className="w-72 shrink-0 overflow-y-auto border-r border-border pr-3">
-						<div className="mb-2 flex flex-wrap items-center gap-1" role="group" aria-label="Categories">
+						<fieldset className="mb-2 flex flex-wrap items-center gap-1">
+							<legend className="sr-only">Categories</legend>
 							<button
 								type="button"
 								aria-pressed={category === null}
@@ -214,7 +235,7 @@ export function PluginsPage() {
 									{cat}
 								</button>
 							))}
-						</div>
+						</fieldset>
 						<SearchInput
 							aria-label="Search plugins"
 							placeholder="Search plugins"
@@ -224,14 +245,20 @@ export function PluginsPage() {
 							className="mb-2 [&_input]:h-7 [&_input]:text-xs"
 						/>
 						{pluginsQuery.isLoading ? (
-							<p className="py-8 text-center text-xs text-muted-foreground">Loading…</p>
+							<p className="py-8 text-center text-xs text-muted-foreground">
+								Loading…
+							</p>
 						) : filtered.length === 0 ? (
 							<EmptyState
 								icon={<WifiIcon aria-hidden="true" />}
 								title="No plugins found"
 								body="Widen the search or scan for newly installed plugins."
 								action={
-									<Button size="sm" variant="outline" onClick={() => scanMut.mutate()}>
+									<Button
+										size="sm"
+										variant="outline"
+										onClick={() => scanMut.mutate()}
+									>
 										Scan for plugins
 									</Button>
 								}
@@ -239,11 +266,16 @@ export function PluginsPage() {
 						) : (
 							<ul className="flex flex-col gap-1.5">
 								{filtered.map((plugin) => (
-									<li key={plugin.id} className="rounded-md border border-border bg-card">
+									<li
+										key={plugin.id}
+										className="rounded-md border border-border bg-card"
+									>
 										<button
 											type="button"
 											aria-expanded={expanded === plugin.id}
-											onClick={() => setExpanded(expanded === plugin.id ? null : plugin.id)}
+											onClick={() =>
+												setExpanded(expanded === plugin.id ? null : plugin.id)
+											}
 											className="flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-xs transition-colors hover:bg-secondary"
 										>
 											<span className="min-w-0">
@@ -255,11 +287,19 @@ export function PluginsPage() {
 												</span>
 											</span>
 											<span className="flex shrink-0 items-center gap-1">
-												{plugin.is_builtin ? <Badge tone="neutral">Built-in</Badge> : null}
+												{plugin.is_builtin ? (
+													<Badge tone="neutral">Built-in</Badge>
+												) : null}
 												{expanded === plugin.id ? (
-													<ChevronDownIcon className="size-3 text-muted-foreground" aria-hidden="true" />
+													<ChevronDownIcon
+														className="size-3 text-muted-foreground"
+														aria-hidden="true"
+													/>
 												) : (
-													<ChevronRightIcon className="size-3 text-muted-foreground" aria-hidden="true" />
+													<ChevronRightIcon
+														className="size-3 text-muted-foreground"
+														aria-hidden="true"
+													/>
 												)}
 											</span>
 										</button>
@@ -274,7 +314,10 @@ export function PluginsPage() {
 													className="h-6 w-full text-xs"
 													onClick={() => addToChain(plugin)}
 												>
-													<PlusIcon className="mr-1 size-3" aria-hidden="true" />
+													<PlusIcon
+														className="mr-1 size-3"
+														aria-hidden="true"
+													/>
 													Add to chain
 												</Button>
 											</div>
@@ -304,7 +347,11 @@ export function PluginsPage() {
 											className="rounded-md border border-border bg-card"
 										>
 											<div className="flex items-center gap-2 px-3 py-2">
-												<span className="flex flex-col" role="group" aria-label="Reorder">
+												<span
+													className="flex flex-col"
+													role="toolbar"
+													aria-label={`Reorder ${item.plugin.name}`}
+												>
 													<button
 														type="button"
 														aria-label={`Move ${item.plugin.name} up`}
@@ -326,18 +373,26 @@ export function PluginsPage() {
 												</span>
 												<button
 													type="button"
-													aria-label={item.enabled ? `Bypass ${item.plugin.name}` : `Enable ${item.plugin.name}`}
+													aria-label={
+														item.enabled
+															? `Bypass ${item.plugin.name}`
+															: `Enable ${item.plugin.name}`
+													}
 													aria-pressed={item.enabled}
 													onClick={() =>
 														setChain((prev) =>
 															prev.map((c) =>
-																c.key === item.key ? { ...c, enabled: !c.enabled } : c,
+																c.key === item.key
+																	? { ...c, enabled: !c.enabled }
+																	: c,
 															),
 														)
 													}
 													className={cn(
 														"rounded-sm p-1 transition-colors",
-														item.enabled ? "text-accent" : "text-muted-foreground/50",
+														item.enabled
+															? "text-accent"
+															: "text-muted-foreground/50",
 													)}
 												>
 													<PowerIcon className="size-3" aria-hidden="true" />
@@ -345,7 +400,9 @@ export function PluginsPage() {
 												<span
 													className={cn(
 														"flex-1 truncate text-xs font-medium",
-														item.enabled ? "text-foreground" : "text-muted-foreground/60 line-through",
+														item.enabled
+															? "text-foreground"
+															: "text-muted-foreground/60 line-through",
 													)}
 												>
 													{item.plugin.name}
@@ -353,24 +410,38 @@ export function PluginsPage() {
 												<Badge tone="neutral">{item.plugin.vendor}</Badge>
 												<button
 													type="button"
-													aria-label={expandedChain === item.key ? "Collapse parameters" : "Expand parameters"}
+													aria-label={
+														expandedChain === item.key
+															? "Collapse parameters"
+															: "Expand parameters"
+													}
 													aria-expanded={expandedChain === item.key}
 													onClick={() =>
-														setExpandedChain(expandedChain === item.key ? null : item.key)
+														setExpandedChain(
+															expandedChain === item.key ? null : item.key,
+														)
 													}
 													className="rounded-sm p-1 text-muted-foreground transition-colors hover:text-foreground"
 												>
 													{expandedChain === item.key ? (
-														<ChevronDownIcon className="size-3" aria-hidden="true" />
+														<ChevronDownIcon
+															className="size-3"
+															aria-hidden="true"
+														/>
 													) : (
-														<ChevronRightIcon className="size-3" aria-hidden="true" />
+														<ChevronRightIcon
+															className="size-3"
+															aria-hidden="true"
+														/>
 													)}
 												</button>
 												<button
 													type="button"
 													aria-label={`Remove ${item.plugin.name} from chain`}
 													onClick={() =>
-														setChain((prev) => prev.filter((c) => c.key !== item.key))
+														setChain((prev) =>
+															prev.filter((c) => c.key !== item.key),
+														)
 													}
 													className="rounded-sm p-1 text-destructive/70 transition-colors hover:text-destructive"
 												>
@@ -380,39 +451,49 @@ export function PluginsPage() {
 											{expandedChain === item.key ? (
 												<div className="flex flex-col gap-2 border-t border-border px-3 py-2">
 													{Object.entries(item.plugin.params).length > 0 ? (
-														Object.entries(item.plugin.params).map(([name, def]) => (
-															<div key={name}>
-																<p className="mb-1 flex items-center justify-between">
-																	<Label className="text-xs text-muted-foreground">
-																		{name}
-																	</Label>
-																	<span className="font-mono text-xs tabular-nums text-muted-foreground">
-																		{(item.params[name] ?? def.default).toFixed(
-																			def.unit === "dB" ? 1 : 2,
-																		)}
-																		{def.unit ? ` ${def.unit}` : ""}
-																	</span>
-																</p>
-																<Slider
-																	min={def.min}
-																	max={def.max}
-																	step={(def.max - def.min) / 100}
-																	value={[item.params[name] ?? def.default]}
-																	onValueChange={([v]) =>
-																		setChain((prev) =>
-																			prev.map((c) =>
-																				c.key === item.key
-																					? { ...c, params: { ...c.params, [name]: v ?? def.default } }
-																					: c,
-																			),
-																		)
-																	}
-																	aria-label={`${item.plugin.name} ${name}`}
-																/>
-															</div>
-														))
+														Object.entries(item.plugin.params).map(
+															([name, def]) => (
+																<div key={name}>
+																	<p className="mb-1 flex items-center justify-between">
+																		<Label className="text-xs text-muted-foreground">
+																			{name}
+																		</Label>
+																		<span className="font-mono text-xs tabular-nums text-muted-foreground">
+																			{(
+																				item.params[name] ?? def.default
+																			).toFixed(def.unit === "dB" ? 1 : 2)}
+																			{def.unit ? ` ${def.unit}` : ""}
+																		</span>
+																	</p>
+																	<Slider
+																		min={def.min}
+																		max={def.max}
+																		step={(def.max - def.min) / 100}
+																		value={[item.params[name] ?? def.default]}
+																		onValueChange={([v]) =>
+																			setChain((prev) =>
+																				prev.map((c) =>
+																					c.key === item.key
+																						? {
+																								...c,
+																								params: {
+																									...c.params,
+																									[name]: v ?? def.default,
+																								},
+																							}
+																						: c,
+																				),
+																			)
+																		}
+																		aria-label={`${item.plugin.name} ${name}`}
+																	/>
+																</div>
+															),
+														)
 													) : (
-														<p className="text-xs text-muted-foreground">No parameters</p>
+														<p className="text-xs text-muted-foreground">
+															No parameters
+														</p>
 													)}
 												</div>
 											) : null}
@@ -422,7 +503,8 @@ export function PluginsPage() {
 								<Separator className="my-2" />
 								<p className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
 									<SpeakerWaveIcon className="size-3" aria-hidden="true" />
-									Chain has {activeCount} active plugin{activeCount === 1 ? "" : "s"}
+									Chain has {activeCount} active plugin
+									{activeCount === 1 ? "" : "s"}
 								</p>
 							</>
 						)}

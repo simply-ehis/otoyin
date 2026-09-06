@@ -1,12 +1,19 @@
 import {
+	ArrowUpTrayIcon,
 	ComputerDesktopIcon,
 	MicrophoneIcon,
-	ArrowUpTrayIcon,
 } from "@heroicons/react/24/outline";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { showStudioErrorToast } from "@/lib/errors";
+import { useAudioPlayer } from "@/lib/hooks/useAudioPlayer";
+import { useAudioRecording } from "@/lib/hooks/useAudioRecording";
+import { useAddSample, useProfile } from "@/lib/hooks/useProfiles";
+import { useSystemAudioCapture } from "@/lib/hooks/useSystemAudioCapture";
+import { useTranscription } from "@/lib/hooks/useTranscription";
+import { usePlatform } from "@/platform/PlatformContext";
 import { Button } from "@/ui/button";
 import {
 	Dialog,
@@ -22,16 +29,8 @@ import {
 	FormMessage,
 	FormProvider,
 } from "@/ui/form";
-import { Field, Textarea } from "@/ui/input";
+import { Textarea } from "@/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
-import { ERR_TITLE_VALIDATION } from "@/lib/errorMessages";
-import { showStudioErrorToast } from "@/lib/errors";
-import { useAudioPlayer } from "@/lib/hooks/useAudioPlayer";
-import { useAudioRecording } from "@/lib/hooks/useAudioRecording";
-import { useAddSample, useProfile } from "@/lib/hooks/useProfiles";
-import { useSystemAudioCapture } from "@/lib/hooks/useSystemAudioCapture";
-import { useTranscription } from "@/lib/hooks/useTranscription";
-import { usePlatform } from "@/platform/PlatformContext";
 import {
 	AudioSampleRecording,
 	AudioSampleSystem,
@@ -173,26 +172,46 @@ export function SampleUpload({
 			<DialogContent>
 				<DialogTitle>Add audio sample</DialogTitle>
 				<DialogDescription>
-					Upload a file and provide the exact reference text spoken in the audio.
+					Upload a file and provide the exact reference text spoken in the
+					audio.
 				</DialogDescription>
 				<FormProvider {...form}>
-					<form onSubmit={form.handleSubmit(submit)} className="mt-2 flex flex-col gap-4">
+					<form
+						onSubmit={form.handleSubmit(submit)}
+						className="mt-2 flex flex-col gap-4"
+					>
 						<Tabs
 							value={mode}
-							onValueChange={(v) => setMode(v as "upload" | "record" | "system")}
+							onValueChange={(v) =>
+								setMode(v as "upload" | "record" | "system")
+							}
 						>
-							<TabsList className={`grid w-full ${platform.metadata.isTauri && systemSupported ? "grid-cols-3" : "grid-cols-2"}`}>
+							<TabsList
+								className={`grid w-full ${platform.metadata.isTauri && systemSupported ? "grid-cols-3" : "grid-cols-2"}`}
+							>
 								<TabsTrigger value="upload" className="flex items-center gap-2">
-									<ArrowUpTrayIcon className="size-4 shrink-0" aria-hidden="true" />
+									<ArrowUpTrayIcon
+										className="size-4 shrink-0"
+										aria-hidden="true"
+									/>
 									Upload
 								</TabsTrigger>
 								<TabsTrigger value="record" className="flex items-center gap-2">
-									<MicrophoneIcon className="size-4 shrink-0" aria-hidden="true" />
+									<MicrophoneIcon
+										className="size-4 shrink-0"
+										aria-hidden="true"
+									/>
 									Record
 								</TabsTrigger>
 								{platform.metadata.isTauri && systemSupported ? (
-									<TabsTrigger value="system" className="flex items-center gap-2">
-										<ComputerDesktopIcon className="size-4 shrink-0" aria-hidden="true" />
+									<TabsTrigger
+										value="system"
+										className="flex items-center gap-2"
+									>
+										<ComputerDesktopIcon
+											className="size-4 shrink-0"
+											aria-hidden="true"
+										/>
 										System
 									</TabsTrigger>
 								) : null}
@@ -303,7 +322,10 @@ export function SampleUpload({
 								<FormItem>
 									<FormLabel>Reference text</FormLabel>
 									<FormControl>
-										<Textarea placeholder="Enter the exact text spoken in the audio" {...field} />
+										<Textarea
+											placeholder="Enter the exact text spoken in the audio"
+											{...field}
+										/>
 									</FormControl>
 									<FormMessage />
 								</FormItem>
@@ -311,10 +333,18 @@ export function SampleUpload({
 						/>
 
 						<div className="flex justify-end gap-2">
-							<Button type="button" variant="ghost" onClick={() => close(false)}>
+							<Button
+								type="button"
+								variant="ghost"
+								onClick={() => close(false)}
+							>
 								Cancel
 							</Button>
-							<Button type="submit" disabled={addSample.isPending} loading={addSample.isPending}>
+							<Button
+								type="submit"
+								disabled={addSample.isPending}
+								loading={addSample.isPending}
+							>
 								{addSample.isPending ? "Uploading…" : "Add sample"}
 							</Button>
 						</div>

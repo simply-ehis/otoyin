@@ -179,7 +179,7 @@ export function ChordPicker({
 				<div
 					ref={captureRef}
 					tabIndex={-1}
-					className="rounded-lg border border-border bg-muted/30 p-6 outline-none focus:ring-2 focus:ring-accent"
+					className="rounded-lg border border-border bg-sunken p-6 outline-none focus:ring-2 focus:ring-accent"
 				>
 					<div className="flex flex-col items-center gap-3">
 						<div className="flex items-center gap-2 text-xs text-muted-foreground">

@@ -776,7 +776,7 @@
 		"createVoice": "Create Voice",
 		"import": {
 			"invalidTitle": "Invalid file type",
-				"invalidDescription": "Please select a valid .dstf.zip file",
+			"invalidDescription": "Please select a valid .dstf.zip file",
 			"successTitle": "Profile imported",
 			"successDescription": "Voice profile imported successfully",
 			"failedTitle": "Failed to import profile",

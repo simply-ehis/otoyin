@@ -1,10 +1,8 @@
-import {
-	ArrowUpTrayIcon,
-	SparklesIcon,
-} from "@heroicons/react/24/outline";
+import { ArrowUpTrayIcon, SparklesIcon } from "@heroicons/react/24/outline";
+import { useNavigate } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "@tanstack/react-router";
+import { useImportProfile } from "@/lib/hooks/useProfiles";
 import { Button } from "@/ui/button";
 import {
 	Dialog,
@@ -13,9 +11,7 @@ import {
 	DialogFooter,
 	DialogTitle,
 } from "@/ui/dialog";
-import { ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
-import { useImportProfile } from "@/lib/hooks/useProfiles";
 import { Composer } from "./Composer";
 import { GettingStarted } from "./GettingStarted";
 import { HistoryList } from "./HistoryList";
@@ -61,47 +57,62 @@ export function GeneratePage() {
 	};
 
 	return (
-		<div className="grid h-full min-h-0 grid-cols-1 gap-4 overflow-hidden lg:grid-cols-[minmax(0,1fr)_400px]">
-			<div className="flex min-h-0 flex-col overflow-hidden">
-				<ScreenHeader
-					title="Otoyin"
-					actions={
-						<>
-							<Button variant="outline" onClick={() => fileRef.current?.click()}>
-								<ArrowUpTrayIcon className="mr-2 size-4" aria-hidden="true" />
-								{t("main.importVoice")}
-							</Button>
-							<input
-								ref={fileRef}
-								type="file"
-								accept=".otoyin.zip"
-								className="hidden"
-								aria-label="Import voice profile archive"
-								onChange={(e) => {
-									const file = e.target.files?.[0];
-									if (!file) {
-										return;
-									}
-									if (!file.name.endsWith(".otoyin.zip")) {
-										toast({
-											title: t("main.import.invalidTitle"),
-											description: t("main.import.invalidDescription"),
-											variant: "destructive",
-										});
-										return;
-									}
-									setSelectedFile(file);
-									setImportDialogOpen(true);
-								}}
-							/>
-							<Button onClick={() => navigate({ to: "/voices" })}>
-								<SparklesIcon className="mr-2 size-4" aria-hidden="true" />
-								{t("main.createVoice")}
-							</Button>
-						</>
+		<div className="flex h-full min-h-0 flex-col overflow-hidden">
+			<div className="flex items-center justify-between gap-2 pb-3">
+				<h1 className="flex min-w-0 items-center">
+					<img
+						src="/otoyin-logo.svg"
+						alt="Otoyin"
+						className="h-8 w-8 shrink-0"
+					/>
+				</h1>
+				<div className="flex shrink-0 items-center gap-2">
+					<Button
+						type="button"
+						variant="outline"
+						size="icon"
+						title={t("main.importVoice")}
+						aria-label={t("main.importVoice")}
+						onClick={() => fileRef.current?.click()}
+					>
+						<ArrowUpTrayIcon className="size-4" aria-hidden="true" />
+					</Button>
+					<Button
+						type="button"
+						size="icon"
+						title={t("main.createVoice")}
+						aria-label={t("main.createVoice")}
+						onClick={() => navigate({ to: "/voices" })}
+					>
+						<SparklesIcon className="size-4" aria-hidden="true" />
+					</Button>
+				</div>
+			</div>
+			<input
+				ref={fileRef}
+				type="file"
+				accept=".otoyin.zip"
+				className="hidden"
+				aria-label="Import voice profile archive"
+				onChange={(e) => {
+					const file = e.target.files?.[0];
+					if (!file) {
+						return;
 					}
-				/>
-				<div className="mt-4 min-h-0 flex-1 overflow-y-auto pb-4">
+					if (!file.name.endsWith(".otoyin.zip")) {
+						toast({
+							title: t("main.import.invalidTitle"),
+							description: t("main.import.invalidDescription"),
+							variant: "destructive",
+						});
+						return;
+					}
+					setSelectedFile(file);
+					setImportDialogOpen(true);
+				}}
+			/>
+			<div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-hidden lg:grid-cols-[minmax(0,1fr)_400px]">
+				<div className="min-h-0 flex-1 overflow-y-auto pb-4">
 					<GettingStarted />
 					<section aria-label="Voices" className="mt-4">
 						<VoicePicker />
@@ -123,7 +134,9 @@ export function GeneratePage() {
 				<DialogContent>
 					<DialogTitle>{t("main.import.dialogTitle")}</DialogTitle>
 					<DialogDescription>
-						{t("main.import.dialogDescription", { name: selectedFile?.name ?? "" })}
+						{t("main.import.dialogDescription", {
+							name: selectedFile?.name ?? "",
+						})}
 					</DialogDescription>
 					<DialogFooter>
 						<Button

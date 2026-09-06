@@ -1,5 +1,5 @@
-import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import type * as React from "react";
 import { cn } from "@/lib/utils/cn";
 
@@ -71,7 +71,10 @@ export function DialogHeader({
 	...props
 }: React.HTMLAttributes<HTMLDivElement>) {
 	return (
-		<div className={cn("mb-4 flex flex-col gap-1 pr-8", className)} {...props} />
+		<div
+			className={cn("mb-4 flex flex-col gap-1 pr-8", className)}
+			{...props}
+		/>
 	);
 }
 

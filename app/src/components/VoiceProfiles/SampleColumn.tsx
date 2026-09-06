@@ -208,7 +208,7 @@ export function SampleColumn(props: SampleColumnProps) {
 		<div className="space-y-4 border-r pr-6 overflow-y-auto min-h-0">
 			{/* Voice source selector */}
 			<div className="flex pt-4 pb-2">
-				<div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/50">
+				<div className="inline-flex rounded-lg border border-border p-0.5 bg-secondary">
 					<button
 						type="button"
 						onClick={() => onSetVoiceSource("clone")}
@@ -308,7 +308,7 @@ export function SampleColumn(props: SampleColumnProps) {
 										}}
 										className={`text-left px-3 py-2 rounded-md border text-sm transition-colors ${
 											selected
-												? "border-accent bg-accent/10 text-accent-foreground"
+												? "border-accent bg-accent-muted text-accent-foreground"
 												: "border-border hover:bg-muted"
 										}`}
 										aria-pressed={selected}

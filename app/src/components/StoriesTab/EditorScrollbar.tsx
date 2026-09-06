@@ -35,7 +35,7 @@ export function EditorScrollbar({
 				className="relative flex-1 overflow-hidden select-none px-1"
 			>
 				<div
-					className="absolute top-1 bottom-1 bg-foreground/10 hover:bg-foreground/15 transition-colors group rounded-full"
+					className="absolute top-1 bottom-1 bg-secondary hover:bg-secondary-hover transition-colors group rounded-full"
 					style={{ width: `${thumbWidth}px`, left: `${thumbLeft}px` }}
 				>
 					<div
@@ -45,7 +45,7 @@ export function EditorScrollbar({
 						aria-valuenow={Math.round(pixelsPerSecond)}
 						aria-valuemin={Math.round(minPps)}
 						aria-valuemax={Math.round(maxPps)}
-						className="absolute top-0 bottom-0 left-0 w-1.5 cursor-ew-resize bg-foreground/25 hover:bg-foreground/40 transition-colors rounded-l-full"
+						className="absolute top-0 bottom-0 left-0 w-1.5 cursor-ew-resize bg-strong hover:brightness-110 transition-[filter] rounded-l-full"
 						onMouseDown={onScrollbarMouseDown("left")}
 					/>
 					{/* biome-ignore lint/a11y/noStaticElementInteractions: mouse-driven drag area */}
@@ -67,7 +67,7 @@ export function EditorScrollbar({
 						aria-valuenow={Math.round(pixelsPerSecond)}
 						aria-valuemin={Math.round(minPps)}
 						aria-valuemax={Math.round(maxPps)}
-						className="absolute top-0 bottom-0 right-0 w-1.5 cursor-ew-resize bg-foreground/25 hover:bg-foreground/40 transition-colors rounded-r-full"
+						className="absolute top-0 bottom-0 right-0 w-1.5 cursor-ew-resize bg-strong hover:brightness-110 transition-[filter] rounded-r-full"
 						onMouseDown={onScrollbarMouseDown("right")}
 					/>
 				</div>

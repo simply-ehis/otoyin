@@ -64,7 +64,9 @@ export function GettingStarted() {
 			<div className="flex items-center justify-between px-4 pb-1 pt-3">
 				<div>
 					<h3 className="text-sm font-semibold text-foreground">Get started</h3>
-					<p className="text-xs text-muted-foreground">Three steps to your first voice</p>
+					<p className="text-xs text-muted-foreground">
+						Three steps to your first voice
+					</p>
 				</div>
 				<button
 					type="button"
@@ -91,15 +93,24 @@ export function GettingStarted() {
 								aria-hidden="true"
 								className={cn(
 									"grid size-7 shrink-0 place-items-center rounded-full text-xs font-medium transition-colors",
-									step.done ? "bg-success-soft text-success" : "bg-secondary text-muted-foreground",
+									step.done
+										? "bg-success-soft text-success"
+										: "bg-secondary text-muted-foreground",
 								)}
 							>
-								{step.done ? <CheckIcon className="size-3.5" aria-hidden="true" /> : <span>{i + 1}</span>}
+								{step.done ? (
+									<CheckIcon className="size-3.5" aria-hidden="true" />
+								) : (
+									<span>{i + 1}</span>
+								)}
 							</span>
 							{i < steps.length - 1 ? (
 								<span
 									aria-hidden="true"
-									className={cn("my-1 w-px flex-1", step.done ? "bg-success" : "bg-border")}
+									className={cn(
+										"my-1 w-px flex-1",
+										step.done ? "bg-success" : "bg-border",
+									)}
 								/>
 							) : null}
 						</span>
@@ -107,9 +118,14 @@ export function GettingStarted() {
 							<span className="block text-sm font-medium leading-tight text-foreground">
 								{step.title}
 							</span>
-							<span className="mt-0.5 block text-xs text-muted-foreground">{step.body}</span>
+							<span className="mt-0.5 block text-xs text-muted-foreground">
+								{step.body}
+							</span>
 							{step.link && !step.done ? (
-								<Link to={step.link.to} className="mt-1.5 inline-block text-xs font-medium text-accent hover:underline">
+								<Link
+									to={step.link.to}
+									className="mt-1.5 inline-block text-xs font-medium text-accent hover:underline"
+								>
 									{step.link.label} →
 								</Link>
 							) : null}

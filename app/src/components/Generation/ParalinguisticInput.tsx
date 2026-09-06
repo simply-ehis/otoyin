@@ -441,7 +441,7 @@ export function ParalinguisticInput({
 				className={cn(
 					"min-h-[32px] text-sm whitespace-pre-wrap break-words outline-none",
 					"[&_.ptag-badge]:inline-flex [&_.ptag-badge]:items-center [&_.ptag-badge]:rounded-full",
-					"[&_.ptag-badge]:bg-accent/20 [&_.ptag-badge]:text-accent [&_.ptag-badge]:border [&_.ptag-badge]:border-accent/30",
+					"[&_.ptag-badge]:bg-accent-muted [&_.ptag-badge]:text-accent [&_.ptag-badge]:border [&_.ptag-badge]:border-accent/30",
 					"[&_.ptag-badge]:px-2 [&_.ptag-badge]:py-0 [&_.ptag-badge]:text-xs [&_.ptag-badge]:font-medium",
 					"[&_.ptag-badge]:mx-0.5 [&_.ptag-badge]:select-none [&_.ptag-badge]:cursor-default",
 					"[&_.ptag-badge]:align-baseline",
@@ -489,8 +489,8 @@ export function ParalinguisticInput({
 										className={cn(
 											"flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left transition-colors",
 											i === menuIndex
-												? "bg-accent/20 text-accent-foreground"
-												: "text-popover-foreground hover:bg-muted/50",
+												? "bg-accent-muted text-accent-foreground"
+												: "text-popover-foreground hover:bg-secondary",
 										)}
 										onMouseDown={(e) => {
 											e.preventDefault(); // Keep focus in editor

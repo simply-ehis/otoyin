@@ -1,7 +1,6 @@
 import {
 	CheckCircleIcon,
 	CloudArrowUpIcon,
-	ExclamationTriangleIcon,
 	MusicalNoteIcon,
 	PauseIcon,
 	PlayIcon,
@@ -9,19 +8,15 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogTitle,
-} from "@/ui/dialog";
-import { Field, Input } from "@/ui/input";
-import { Spinner } from "@/ui/primitives";
-import { useToast } from "@/ui/use-toast";
 import { apiClient } from "@/lib/api/client";
 import type { ModelStatusListResponse } from "@/lib/api/types";
 import { useAddSample, useCreateProfile } from "@/lib/hooks/useProfiles";
 import { cn } from "@/lib/utils/cn";
+import { Button } from "@/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/ui/dialog";
+import { Field, Input } from "@/ui/input";
+import { Spinner } from "@/ui/primitives";
+import { useToast } from "@/ui/use-toast";
 
 const MAX_SECONDS = 60;
 const MIN_SECONDS = 5;
@@ -44,7 +39,6 @@ export function QuickCloneDialog({
 	const { t } = useTranslation();
 	const { toast } = useToast();
 	const queryClient = useQueryClient();
-	const fileRef = useRef<HTMLInputElement>(null);
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 
 	const [step, setStep] = useState<Step>("upload");
@@ -60,7 +54,9 @@ export function QuickCloneDialog({
 	const addSample = useAddSample();
 
 	const bestEngine = useCallback((): string => {
-		const data = queryClient.getQueryData<ModelStatusListResponse>(["modelStatus"]);
+		const data = queryClient.getQueryData<ModelStatusListResponse>([
+			"modelStatus",
+		]);
 		const models = data?.models ?? [];
 		const clones = models.filter((m) => m.clone_voice);
 		const loaded = clones.filter((m) => m.loaded);
@@ -181,7 +177,10 @@ export function QuickCloneDialog({
 			setStep("done");
 			toast({
 				title: t("quickClone.success", "Voice cloned!"),
-				description: t("quickClone.successDesc", "Your voice profile is ready to use."),
+				description: t(
+					"quickClone.successDesc",
+					"Your voice profile is ready to use.",
+				),
 			});
 			onComplete?.(profile.id);
 		} catch (err: unknown) {
@@ -195,27 +194,39 @@ export function QuickCloneDialog({
 			});
 			setStep("naming");
 		}
-	}, [file, name, referenceText, createProfile, addSample, toast, t, onComplete, bestEngine]);
-
-	const tooShort = duration !== null && duration < MIN_SECONDS;
+	}, [
+		file,
+		name,
+		referenceText,
+		createProfile,
+		addSample,
+		toast,
+		t,
+		onComplete,
+		bestEngine,
+	]);
 
 	return (
 		<Dialog open={open} onOpenChange={close}>
 			<DialogContent className="max-h-[85vh] overflow-y-auto p-0">
 				<div className="px-6 pb-6 pt-6">
 					<DialogTitle className="flex items-center gap-2">
-						<MusicalNoteIcon className="size-5 text-accent" aria-hidden="true" />
+						<MusicalNoteIcon
+							className="size-5 text-accent"
+							aria-hidden="true"
+						/>
 						{t("quickClone.title", "Clone a Voice")}
 					</DialogTitle>
 
 					{step === "upload" ? (
 						<div className="mt-4 flex flex-col gap-4">
 							<p className="text-sm text-muted-foreground">
-								{t("quickClone.description", "Upload 5–60 seconds of clear speech to create a voice clone.")}
+								{t(
+									"quickClone.description",
+									"Upload 5–60 seconds of clear speech to create a voice clone.",
+								)}
 							</p>
-							<div
-								role="button"
-								tabIndex={0}
+							<label
 								onDrop={(e) => {
 									e.preventDefault();
 									setDragOver(false);
@@ -229,55 +240,47 @@ export function QuickCloneDialog({
 									setDragOver(true);
 								}}
 								onDragLeave={() => setDragOver(false)}
-								onClick={() => fileRef.current?.click()}
-								onKeyDown={(e) => {
-									if (e.key === "Enter" || e.key === " ") {
-										e.preventDefault();
-										fileRef.current?.click();
-									}
-								}}
 								className={cn(
 									"flex cursor-pointer flex-col items-center justify-center gap-3 rounded-md border-2 border-dashed p-8 transition-colors",
-									"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+									"focus-within:outline-none focus-within:ring-2 focus-within:ring-ring",
 									dragOver
 										? "border-accent bg-accent-muted"
 										: "border-strong hover:border-muted-foreground hover:bg-secondary",
 								)}
 							>
+								<input
+									type="file"
+									accept="audio/*"
+									className="hidden"
+									aria-label="Reference audio file"
+									onChange={(e) => {
+										const f = e.target.files?.[0];
+										if (f) {
+											handleFile(f);
+										}
+									}}
+								/>
 								<CloudArrowUpIcon
-									className={cn("size-10 transition-colors", dragOver ? "text-accent" : "text-muted-foreground/60")}
+									className={cn(
+										"size-10 transition-colors",
+										dragOver ? "text-accent" : "text-muted-foreground/60",
+									)}
 									aria-hidden="true"
 								/>
 								<span className="text-center">
 									<span className="block text-sm font-medium text-foreground">
 										{dragOver
 											? t("quickClone.dropHere", "Drop audio here")
-											: t("quickClone.dragOrClick", "Drag audio or click to browse")}
+											: t(
+													"quickClone.dragOrClick",
+													"Drag audio or click to browse",
+												)}
 									</span>
 									<span className="mt-1 block text-xs text-muted-foreground">
 										WAV, MP3, OGG, FLAC · {MIN_SECONDS}–{MAX_SECONDS}s
 									</span>
 								</span>
-							</div>
-							{tooShort ? (
-								<p role="alert" className="flex items-center gap-2 text-xs text-warning-text">
-									<ExclamationTriangleIcon className="size-3.5 shrink-0" aria-hidden="true" />
-									{t("quickClone.tooShort", "Audio is too short. At least 5 seconds of speech is needed.")}
-								</p>
-							) : null}
-							<input
-								ref={fileRef}
-								type="file"
-								accept="audio/*"
-								className="hidden"
-								aria-label="Reference audio file"
-								onChange={(e) => {
-									const f = e.target.files?.[0];
-									if (f) {
-										handleFile(f);
-									}
-								}}
-							/>
+							</label>
 						</div>
 					) : null}
 
@@ -289,7 +292,11 @@ export function QuickCloneDialog({
 									size="icon"
 									className="size-8 shrink-0"
 									onClick={togglePreview}
-									aria-label={playing ? t("quickClone.pause", "Pause preview") : t("quickClone.play", "Play preview")}
+									aria-label={
+										playing
+											? t("quickClone.pause", "Pause preview")
+											: t("quickClone.play", "Play preview")
+									}
 								>
 									{playing ? (
 										<PauseIcon className="size-4" aria-hidden="true" />
@@ -298,14 +305,19 @@ export function QuickCloneDialog({
 									)}
 								</Button>
 								<div className="min-w-0 flex-1">
-									<p className="truncate text-xs font-medium text-foreground">{file?.name}</p>
+									<p className="truncate text-xs font-medium text-foreground">
+										{file?.name}
+									</p>
 									<p className="text-xs tabular-nums text-muted-foreground">
 										{duration !== null ? `${duration.toFixed(1)}s` : ""}
 										{name ? ` · ${name}` : ""}
 									</p>
 								</div>
 							</div>
-							<Field label={t("quickClone.nameLabel", "Voice name")} htmlFor="clone-name">
+							<Field
+								label={t("quickClone.nameLabel", "Voice name")}
+								htmlFor="clone-name"
+							>
 								<Input
 									id="clone-name"
 									value={name}
@@ -322,10 +334,15 @@ export function QuickCloneDialog({
 									id="clone-text"
 									value={referenceText}
 									onChange={(e) => setReferenceText(e.target.value)}
-									placeholder={t("quickClone.refTextPlaceholder", "The spoken words improve clone quality")}
+									placeholder={t(
+										"quickClone.refTextPlaceholder",
+										"The spoken words improve clone quality",
+									)}
 								/>
 								{transcribing ? (
-									<span className="mt-1 block text-xs text-muted-foreground">Transcribing…</span>
+									<span className="mt-1 block text-xs text-muted-foreground">
+										Transcribing…
+									</span>
 								) : null}
 							</Field>
 							<div className="flex justify-end gap-2 pt-2">
@@ -340,7 +357,12 @@ export function QuickCloneDialog({
 								>
 									{t("common.back", "Back")}
 								</Button>
-								<Button size="sm" onClick={clone} disabled={!name.trim() || createProfile.isPending} loading={createProfile.isPending}>
+								<Button
+									size="sm"
+									onClick={clone}
+									disabled={!name.trim() || createProfile.isPending}
+									loading={createProfile.isPending}
+								>
 									{t("quickClone.cloneButton", "Clone Voice")}
 								</Button>
 							</div>
@@ -355,7 +377,10 @@ export function QuickCloneDialog({
 									{t("quickClone.creating", "Cloning voice…")}
 								</p>
 								<p className="text-xs text-muted-foreground">
-									{t("quickClone.creatingDesc", "Creating profile and processing audio")}
+									{t(
+										"quickClone.creatingDesc",
+										"Creating profile and processing audio",
+									)}
 								</p>
 							</div>
 						</div>
@@ -363,13 +388,20 @@ export function QuickCloneDialog({
 
 					{step === "done" ? (
 						<div className="mt-4 flex flex-col items-center gap-4 py-6">
-							<CheckCircleIcon className="size-12 text-success" aria-hidden="true" />
+							<CheckCircleIcon
+								className="size-12 text-success"
+								aria-hidden="true"
+							/>
 							<div className="space-y-1 text-center">
 								<p className="text-sm font-medium text-foreground">
 									{t("quickClone.doneTitle", "Voice cloned!")}
 								</p>
 								<p className="text-xs text-muted-foreground">
-									{t("quickClone.doneDesc", '"{{name}}" is ready. You can now use it for TTS generation.', { name })}
+									{t(
+										"quickClone.doneDesc",
+										'"{{name}}" is ready. You can now use it for TTS generation.',
+										{ name },
+									)}
 								</p>
 							</div>
 							<Button size="sm" onClick={() => close(false)}>

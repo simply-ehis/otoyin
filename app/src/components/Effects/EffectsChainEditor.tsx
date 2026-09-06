@@ -354,7 +354,7 @@ function SortableEffectItem({
 				"rounded-md border",
 				effect.enabled
 					? "border-border bg-card"
-					: "border-border/50 bg-muted/30",
+					: "border-border/50 bg-secondary",
 				isDragging && "opacity-80 shadow-lg",
 			)}
 		>

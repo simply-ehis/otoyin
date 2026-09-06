@@ -94,9 +94,7 @@ export function DonateCard() {
 						aria-hidden="true"
 					/>
 					<span>
-						<span className="font-medium text-foreground">
-							Support Otoyin.
-						</span>{" "}
+						<span className="font-medium text-foreground">Support Otoyin.</span>{" "}
 						Pay what you want, one time — no account, no subscription.
 					</span>
 				</h2>
@@ -141,7 +139,9 @@ export function DonateCard() {
 					onClick={() => void donate()}
 					className="mb-[1px]"
 				>
-					{busy ? "Processing…" : `Donate${validAmount ? ` $${parsedAmount}` : ""}`}
+					{busy
+						? "Processing…"
+						: `Donate${validAmount ? ` $${parsedAmount}` : ""}`}
 				</Button>
 				{pendingOrderRef ? (
 					<Button

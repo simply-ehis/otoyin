@@ -25,13 +25,16 @@ keep old configs working, and what was intentionally left alone and why.
 - `.agents/skills/21 labs/` → `.agents/skills/otoyin-studio/` (skill `name:` frontmatter updated; `docs/knowledge/34-content-recipes.md` reference updated).
 - `README.md` + studio skill: "44 active agent skills" → "63" (verified: 63 folders under `.agents/skills/` excluding `_shared`, none marked deprecated).
 - `justfile` header comment → "Otoyin development commands".
+- Tauri bundle identifier `com.21labs.app` → `com.otoyin.app`
+  (`tauri.conf.json`, 2026-09-05 — never deployed, so no installed base to
+  strand); CUDA data path moved with it (`sh.21labs.app` → `sh.otoyin.app`
+  in `justfile`).
 
 ## Intentionally left alone
 
 - **MCP tool namespace `21labs.*`** (`MCP_NAME_PREFIX`, ~110 tool names, assistant mappings, voice-chat/workflow prompts, `mcp-tools-extended.md`, knowledge index): public agent API. Renaming breaks every connected MCP client and all recorded docs. Separate versioned migration, not this pass.
 - **`X-21labs-Client-Id` legacy header + `twentylabs_CLIENT_ID` strings in en i18n**: describe the still-accepted legacy header. Both headers work, so both old and new doc wording stay true.
-- **Binary/spec filenames** (`21labs-mcp.spec`, `21labs-server.spec`, `build_binary.py` names, `justfile` copy paths, `tauri.conf.json` resources, `setup-dev.js` placeholder, `sh.21labs.app` data path): build coordination slice. Renaming needs the spec files, build scripts, and Tauri sidecar wiring changed atomically and installer-tested.
-- **Tauri bundle identifier `com.21labs.app`**: OS-level app identity. Changing it breaks updates for installed users; needs release planning.
+- **Binary/spec filenames** (`21labs-mcp.spec`, `21labs-server.spec`, `build_binary.py` names, `justfile` copy paths, `tauri.conf.json` resources, `setup-dev.js` placeholder): build coordination slice. Renaming needs the spec files, build scripts, and Tauri sidecar wiring changed atomically and installer-tested.
 - **`.mcp.json` server key/command**: points at the real `21labs-mcp` binary name; changes with the binary slice above.
 - **Prod URLs** (`marketplace.21labs.app`, `app.21labs.app`, `telemetry.21labs.app`, marketplace `webhook_url`): DNS-dependent. Change only after the new domain serves traffic.
 - **Plugin extension `.21labs` / `21labs.db` filename / `.21labs_probe`**: on-disk formats. Renaming orphans existing installs without a migration.

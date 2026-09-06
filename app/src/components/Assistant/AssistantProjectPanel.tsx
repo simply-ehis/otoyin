@@ -119,8 +119,8 @@ export function AssistantProjectPanel({
 								disabled={selectingProject}
 								className={`w-full text-left rounded-lg border px-3 py-2 transition-colors ${
 									activeProjectId === p.id
-										? "border-accent/50 bg-accent/10"
-										: "border-border hover:bg-muted/50"
+										? "border-accent/50 bg-accent-muted"
+										: "border-border hover:bg-secondary"
 								} ${selectingProject ? "opacity-50" : ""}`}
 							>
 								{p.name}

@@ -1,5 +1,8 @@
 import { useState } from "react";
+import { apiClient } from "@/lib/api/client";
+import { showStudioErrorToast } from "@/lib/errors";
 import { Button } from "@/ui/button";
+import { Segmented } from "@/ui/controls";
 import {
 	Dialog,
 	DialogContent,
@@ -14,10 +17,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/ui/select";
-import { Segmented } from "@/ui/controls";
-import { showStudioErrorToast } from "@/lib/errors";
 import { useToast } from "@/ui/use-toast";
-import { apiClient } from "@/lib/api/client";
 
 /**
  * Media import: audio file (with resample/channel/sanitize options)
@@ -39,7 +39,11 @@ export function ImportModal({
 	const [channels, setChannels] = useState(1);
 	const [sanitize, setSanitize] = useState(false);
 	const [importing, setImporting] = useState(false);
-	const [info, setInfo] = useState<{ duration: number; sample_rate: number; channels: number } | null>(null);
+	const [info, setInfo] = useState<{
+		duration: number;
+		sample_rate: number;
+		channels: number;
+	} | null>(null);
 
 	const probe = async () => {
 		if (!filePath.trim()) {
@@ -60,8 +64,18 @@ export function ImportModal({
 		try {
 			const result =
 				mode === "video"
-					? await apiClient.extractAudioFromVideo(filePath.trim(), sampleRate, channels)
-					: await apiClient.convertAudio(filePath.trim(), "wav", sampleRate, channels, sanitize);
+					? await apiClient.extractAudioFromVideo(
+							filePath.trim(),
+							sampleRate,
+							channels,
+						)
+					: await apiClient.convertAudio(
+							filePath.trim(),
+							"wav",
+							sampleRate,
+							channels,
+							sanitize,
+						);
 			const audioPath = result.audio_path ?? result.output_path;
 			if (!audioPath) {
 				throw new Error("No audio path returned from import");
@@ -99,17 +113,25 @@ export function ImportModal({
 							value={filePath}
 							onChange={(e) => setFilePath(e.target.value)}
 							onBlur={probe}
-							placeholder={mode === "video" ? "C:\\Videos\\interview.mp4" : "C:\\Audio\\recording.m4a"}
+							placeholder={
+								mode === "video"
+									? "C:\\Videos\\interview.mp4"
+									: "C:\\Audio\\recording.m4a"
+							}
 						/>
 					</Field>
 					{info ? (
 						<p className="rounded-sm border border-border bg-sunken p-3 text-sm tabular-nums text-muted-foreground">
-							Duration: {info.duration?.toFixed(1)}s · {info.sample_rate} Hz · {info.channels} ch
+							Duration: {info.duration?.toFixed(1)}s · {info.sample_rate} Hz ·{" "}
+							{info.channels} ch
 						</p>
 					) : null}
 					<div className="grid grid-cols-2 gap-4">
 						<Field label="Sample rate" htmlFor="import-rate">
-							<Select value={String(sampleRate)} onValueChange={(v) => setSampleRate(Number.parseInt(v, 10))}>
+							<Select
+								value={String(sampleRate)}
+								onValueChange={(v) => setSampleRate(Number.parseInt(v, 10))}
+							>
 								<SelectTrigger id="import-rate">
 									<SelectValue />
 								</SelectTrigger>
@@ -121,7 +143,10 @@ export function ImportModal({
 							</Select>
 						</Field>
 						<Field label="Channels" htmlFor="import-channels">
-							<Select value={String(channels)} onValueChange={(v) => setChannels(Number.parseInt(v, 10))}>
+							<Select
+								value={String(channels)}
+								onValueChange={(v) => setChannels(Number.parseInt(v, 10))}
+							>
 								<SelectTrigger id="import-channels">
 									<SelectValue />
 								</SelectTrigger>
@@ -144,7 +169,12 @@ export function ImportModal({
 						</label>
 					) : null}
 					<div>
-						<Button onClick={run} disabled={importing || !filePath.trim()} loading={importing} className="w-full">
+						<Button
+							onClick={run}
+							disabled={importing || !filePath.trim()}
+							loading={importing}
+							className="w-full"
+						>
 							{importing ? "Importing…" : "Import"}
 						</Button>
 					</div>

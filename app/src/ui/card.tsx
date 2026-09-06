@@ -26,7 +26,10 @@ export function CardHeader({
 	...props
 }: React.HTMLAttributes<HTMLDivElement>) {
 	return (
-		<div className={cn("mb-3 flex items-start justify-between gap-3", className)} {...props} />
+		<div
+			className={cn("mb-3 flex items-start justify-between gap-3", className)}
+			{...props}
+		/>
 	);
 }
 
@@ -50,7 +53,10 @@ export function CardBody({
 	...props
 }: React.HTMLAttributes<HTMLDivElement>) {
 	return (
-		<div className={cn("text-[13px] text-muted-foreground", className)} {...props} />
+		<div
+			className={cn("text-[13px] text-muted-foreground", className)}
+			{...props}
+		/>
 	);
 }
 

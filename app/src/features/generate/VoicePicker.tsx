@@ -1,17 +1,16 @@
-import { MicrophoneIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { MicrophoneIcon } from "@heroicons/react/24/outline";
+import { useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "@tanstack/react-router";
-import { Badge } from "@/ui/primitives";
-import { Button } from "@/ui/button";
-import { Card } from "@/ui/card";
-import { EmptyState } from "@/ui/states";
-import { PRESET_ENGINES } from "@/lib/constants/engines";
 import type { VoiceProfileResponse } from "@/lib/api/types";
+import { PRESET_ENGINES } from "@/lib/constants/engines";
 import { inferStudioError } from "@/lib/errors";
 import { useProfiles } from "@/lib/hooks/useProfiles";
 import { cn } from "@/lib/utils/cn";
 import { useUIStore } from "@/stores/uiStore";
+import { Button } from "@/ui/button";
+import { Badge } from "@/ui/primitives";
+import { EmptyState } from "@/ui/states";
 import { VOICE_TYPE_LABELS } from "./engines";
 
 /**
@@ -38,14 +37,27 @@ export function VoicePicker() {
 
 	if (isLoading) {
 		return (
-			<div className="grid grid-cols-2 gap-3 md:grid-cols-3" aria-label="Loading voices">
-				{Array.from({ length: 6 }, (_, i) => (
-					<div key={i} className="rounded-md border border-border bg-card p-4">
-						<div aria-hidden="true" className="h-16 w-full animate-pulse rounded-sm bg-secondary" />
-						<div aria-hidden="true" className="mt-3 h-4 w-3/4 animate-pulse rounded-sm bg-secondary" />
+			<output
+				className="grid grid-cols-2 gap-3 md:grid-cols-3"
+				aria-label="Loading voices"
+			>
+				{["a", "b", "c", "d", "e", "f"].map((k) => (
+					<div
+						key={`voice-skeleton-${k}`}
+						className="rounded-md border border-border bg-card p-4"
+					>
+						{" "}
+						<div
+							aria-hidden="true"
+							className="h-16 w-full animate-pulse rounded-sm bg-secondary"
+						/>
+						<div
+							aria-hidden="true"
+							className="mt-3 h-4 w-3/4 animate-pulse rounded-sm bg-secondary"
+						/>
 					</div>
 				))}
-			</div>
+			</output>
 		);
 	}
 
@@ -55,7 +67,9 @@ export function VoicePicker() {
 			<div className="flex items-center justify-center p-8 text-center">
 				<div>
 					<p className="font-medium text-destructive">{studioErr.title}</p>
-					<p className="mt-1 text-sm text-muted-foreground">{studioErr.message}</p>
+					<p className="mt-1 text-sm text-muted-foreground">
+						{studioErr.message}
+					</p>
 				</div>
 			</div>
 		);
@@ -79,7 +93,11 @@ export function VoicePicker() {
 				body="Clone a voice from a short sample, or start from a preset."
 				action={
 					<span className="flex gap-2">
-						<Button variant="outline" size="sm" onClick={() => navigate({ to: "/voices" })}>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => navigate({ to: "/voices" })}
+						>
 							Quick clone
 						</Button>
 						<Button size="sm" onClick={() => navigate({ to: "/voices" })}>
@@ -114,8 +132,13 @@ export function VoicePicker() {
 						)}
 					>
 						<span className="flex w-full items-center gap-1.5">
-							<span className="truncate text-sm font-medium text-foreground">{p.name}</span>
-							<Badge tone={p.voice_type === "preset" ? "neutral" : "accent"} className="ml-auto shrink-0">
+							<span className="truncate text-sm font-medium text-foreground">
+								{p.name}
+							</span>
+							<Badge
+								tone={p.voice_type === "preset" ? "neutral" : "accent"}
+								className="ml-auto shrink-0"
+							>
 								{VOICE_TYPE_LABELS[p.voice_type ?? ""] ?? p.voice_type}
 							</Badge>
 						</span>

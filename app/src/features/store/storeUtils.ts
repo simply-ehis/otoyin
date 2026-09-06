@@ -65,8 +65,6 @@ export const CATEGORY_ACCENT: Record<string, string> = {
 export const MODEL_DESCRIPTIONS: Record<string, string> = {
 	"kokoro-onnx":
 		"Kokoro 82M by hexgrad — the default Otoyin voice. Tiny 82M ONNX model that speaks in realtime on CPU, 45 warm preset voices across 8 languages, plus voice-mixing to blend your own. Apache 2.0, no PyTorch needed. Best starting point for podcasts, dialogue, and voice-overs.",
-	"fish-speech-s1-mini":
-		"Fish Speech S1-mini (0.5B) — CC-BY-NC-SA, free. Fast multilingual cloning from a 10-second clip. 13 languages, 44.1 kHz, emotion + voice design.",
 	"fish-speech-s2-pro":
 		"Fish Audio S2 Pro (4.5B GGUF) — SOTA Dual-AR TTS. 80+ languages, voice cloning from 10-30s, inline emotion tags ([whisper], [angry], etc). Slow-AR 4B + Fast-AR 0.4B. GPU or 24GB+ RAM.",
 	"zonos-v0.1":
@@ -79,12 +77,8 @@ export const MODEL_DESCRIPTIONS: Record<string, string> = {
 		"StyleTTS2 — style-based TTS with a learned style encoder and differentiable duration. Expressive, stable pacing for long-form narration and audiobooks. 200–300% realtime on CPU.",
 	"styletts2-onnx":
 		"StyleTTS2 ONNX — same expressive voices, zero PyTorch. Five ONNX graphs run inside ONNX Runtime for a lighter install and faster cold start.",
-	chattts:
-		"ChatTTS — conversational TTS with [laugh], [break] and prosody tags. Ideal for dialogue, debates, and podcasts where timing and reaction matter.",
 	"f5-tts":
 		"F5-TTS Small — flow-matching zero-shot clone with no speaker embedding. Clean, faithful cloning from one clip, English + Mandarin focus.",
-	"f5-tts-onnx":
-		"F5-TTS ONNX — torch-free F5 with identical quality via ONNX Runtime. Good for CPU-only laptops.",
 	"pocket-tts":
 		"Pocket-TTS (100M) — compact CPU-realtime multilingual TTS for 6 European languages. Clone or pick 18 presets, <200MB download.",
 	"pocket-tts-onnx":
@@ -243,7 +237,11 @@ export function formatPrice(
 	if (!fx || fx.currency === "USD" || !(fx.rate > 0)) {
 		return `$${product.price_usd}`;
 	}
-	return formatMoney(convertUsd(product.price_usd, fx.rate), fx.currency, fx.locale);
+	return formatMoney(
+		convertUsd(product.price_usd, fx.rate),
+		fx.currency,
+		fx.locale,
+	);
 }
 
 export function priceTone(
