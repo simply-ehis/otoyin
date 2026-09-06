@@ -151,7 +151,7 @@ class TestVoiceCloneE2E:
                 "name": "Full Clone Test",
                 "language": "en",
                 "voice_type": "cloned",
-                "default_engine": "fish_speech",
+                "default_engine": "zonos",
             },
         )
         assert resp.status_code == 200

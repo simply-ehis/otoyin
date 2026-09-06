@@ -7,8 +7,7 @@ structural contract the factory relies on:
   * every ONNX backend module imports cleanly,
   * ``is_onnx_available()`` returns the expected bool (gated by deps),
   * the factory resolves each engine to a backend instance, preferring the
-    ONNX wrapper when available, else the torch backend (never raises),
-  * ChatTTS has no ONNX backend and routes straight to torch.
+    ONNX wrapper when available, else the torch backend (never raises).
 
 Run:  python -m pytest backend/tests/test_onnx_backend_registration.py
 """
@@ -20,8 +19,8 @@ import pytest
 # engine -> (onnx_module, onnx_symbol, torch_module, torch_symbol)
 # moss_tts_nano has NO torch fallback: the tuple uses None for the torch side,
 # and the factory raises (no ONNX assets) rather than silently picking torch.
+# (fish_speech/chattts/f5_tts were removed 2026-09-05: CC-BY-NC weights.)
 ENGINE_MAP = {
-    "f5_tts": ("f5_tts_onnx_backend", "F5TTSOnnxBackend", "f5_tts_backend", "F5TTSBackend"),
     "pocket_tts": ("pocket_tts_onnx_backend", "PocketTTSOnnxBackend", "pocket_tts_backend", "PocketTTSBackend"),
     "styletts2": ("styletts2_onnx_backend", "StyleTTS2OnnxBackend", "styletts2_backend", "StyleTTS2Backend"),
     "kokoro": ("kokoro_onnx_backend", "KokoroONNXBackend", "kokoro_backend", "KokoroTTSBackend"),
@@ -59,14 +58,16 @@ def test_moss_tts_nano_registered_no_torch_fallback():
     assert not os.path.exists(os.path.join(backends_dir, "moss_tts_nano_backend.py"))
 
 
-def test_chattts_has_no_onnx_backend():
-    import os
+def test_removed_nc_engines_rejected():
+    """fish_speech/chattts/f5_tts were removed (CC-BY-NC) — unknown engine."""
+    from backend.backends import get_tts_backend_for_engine
 
-    backends_dir = os.path.join(os.path.dirname(__file__), "..", "backends")
-    assert not os.path.exists(os.path.join(backends_dir, "chattts_onnx_backend.py"))
+    for engine in ("fish_speech", "chattts", "f5_tts"):
+        with pytest.raises(ValueError, match="Unknown TTS engine"):
+            get_tts_backend_for_engine(engine)
 
 
-@pytest.mark.parametrize("engine", ["f5_tts", "pocket_tts", "styletts2", "kokoro", "chattts"])
+@pytest.mark.parametrize("engine", ["pocket_tts", "styletts2", "kokoro"])
 def test_factory_resolves_without_raising(engine):
     from backend.backends import get_tts_backend_for_engine
 

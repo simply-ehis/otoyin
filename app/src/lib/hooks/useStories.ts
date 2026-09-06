@@ -4,12 +4,17 @@ import type {
 	StoryCreate,
 	StoryItemBatchUpdate,
 	StoryItemCreate,
+	StoryItemCrossfade,
+	StoryItemMerge,
 	StoryItemMove,
+	StoryItemMoveToStory,
 	StoryItemReorder,
+	StoryItemSpeed,
 	StoryItemSplit,
 	StoryItemTrim,
 	StoryItemVersionUpdate,
 	StoryItemVolumeUpdate,
+	StoryMatchLoudness,
 } from "@/lib/api/types";
 import { usePlatform } from "@/platform/PlatformContext";
 
@@ -420,5 +425,134 @@ export function useRemoveSilenceFromStoryItem() {
 				queryKey: ["stories", variables.storyId],
 			});
 		},
+	});
+}
+
+function invalidateStory(
+	queryClient: ReturnType<typeof useQueryClient>,
+	storyId: string,
+) {
+	queryClient.invalidateQueries({ queryKey: ["stories"] });
+	queryClient.invalidateQueries({ queryKey: ["stories", storyId] });
+	queryClient.invalidateQueries({ queryKey: ["story-history-depth", storyId] });
+}
+
+export function useMergeStoryItems() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({
+			storyId,
+			data,
+		}: {
+			storyId: string;
+			data: StoryItemMerge;
+		}) => apiClient.mergeStoryItems(storyId, data),
+		onSuccess: (_, variables) =>
+			invalidateStory(queryClient, variables.storyId),
+	});
+}
+
+export function useSetStoryItemSpeed() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({
+			storyId,
+			itemId,
+			data,
+		}: {
+			storyId: string;
+			itemId: string;
+			data: StoryItemSpeed;
+		}) => apiClient.setStoryItemSpeed(storyId, itemId, data),
+		onSuccess: (_, variables) =>
+			invalidateStory(queryClient, variables.storyId),
+	});
+}
+
+export function useMatchStoryLoudness() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({
+			storyId,
+			data,
+		}: {
+			storyId: string;
+			data: StoryMatchLoudness;
+		}) => apiClient.matchStoryLoudness(storyId, data),
+		onSuccess: (_, variables) =>
+			invalidateStory(queryClient, variables.storyId),
+	});
+}
+
+export function useCrossfadeStoryItems() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({
+			storyId,
+			itemId,
+			data,
+		}: {
+			storyId: string;
+			itemId: string;
+			data: StoryItemCrossfade;
+		}) => apiClient.crossfadeStoryItems(storyId, itemId, data),
+		onSuccess: (_, variables) =>
+			invalidateStory(queryClient, variables.storyId),
+	});
+}
+
+export function useMoveStoryItemToStory() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({
+			storyId,
+			itemId,
+			data,
+		}: {
+			storyId: string;
+			itemId: string;
+			data: StoryItemMoveToStory;
+		}) => apiClient.moveStoryItemToStory(storyId, itemId, data),
+		onSuccess: (_, variables) => {
+			invalidateStory(queryClient, variables.storyId);
+			invalidateStory(queryClient, variables.data.target_story_id);
+		},
+	});
+}
+
+export function useStoryHistoryDepth(storyId: string | null) {
+	return useQuery({
+		queryKey: ["story-history-depth", storyId],
+		queryFn: () => {
+			if (!storyId) {
+				throw new Error("storyId is required");
+			}
+			return apiClient.storyHistoryDepth(storyId);
+		},
+		enabled: !!storyId,
+		staleTime: 5_000,
+	});
+}
+
+export function useUndoStoryEdit() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (storyId: string) => apiClient.undoStoryEdit(storyId),
+		onSuccess: (_, storyId) => invalidateStory(queryClient, storyId),
+	});
+}
+
+export function useRedoStoryEdit() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (storyId: string) => apiClient.redoStoryEdit(storyId),
+		onSuccess: (_, storyId) => invalidateStory(queryClient, storyId),
 	});
 }

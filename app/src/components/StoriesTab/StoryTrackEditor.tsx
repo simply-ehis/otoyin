@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import type { StoryItemDetail } from "@/lib/api/types";
 import {
+	useCrossfadeStoryItems,
+	useMergeStoryItems,
 	useMoveStoryItem,
 	useNormalizeStoryItem,
 	useRemoveSilenceFromStoryItem,
@@ -10,6 +12,7 @@ import {
 	useSetStoryItemFade,
 	useSetStoryItemGain,
 	useSetStoryItemPan,
+	useSetStoryItemSpeed,
 	useTrimStoryItem,
 	useUpdateStoryItemTimes,
 	useUpdateStoryItemVolume,
@@ -54,6 +57,9 @@ export function StoryTrackEditor({ storyId, items }: StoryTrackEditorProps) {
 	const setFade = useSetStoryItemFade();
 	const setGain = useSetStoryItemGain();
 	const setPan = useSetStoryItemPan();
+	const setSpeed = useSetStoryItemSpeed();
+	const mergeItems = useMergeStoryItems();
+	const crossfadeItems = useCrossfadeStoryItems();
 	const normalizeItem = useNormalizeStoryItem();
 	const reverseItem = useReverseStoryItem();
 	const batchUpdateTimes = useUpdateStoryItemTimes();
@@ -126,9 +132,10 @@ export function StoryTrackEditor({ storyId, items }: StoryTrackEditorProps) {
 			const totalDuration = Math.max(
 				...items.map((item) => {
 					const effectiveDuration =
-						item.duration * 1000 -
-						(item.trim_start_ms || 0) -
-						(item.trim_end_ms || 0);
+						(item.duration * 1000 -
+							(item.trim_start_ms || 0) -
+							(item.trim_end_ms || 0)) /
+						(item.speed || 1);
 					return item.start_time_ms + effectiveDuration;
 				}),
 				0,
@@ -364,6 +371,9 @@ export function StoryTrackEditor({ storyId, items }: StoryTrackEditorProps) {
 					setFade={setFade}
 					setGain={setGain}
 					setPan={setPan}
+					setSpeed={setSpeed}
+					mergeItems={mergeItems}
+					crossfadeItems={crossfadeItems}
 					normalizeItem={normalizeItem}
 					reverseItem={reverseItem}
 					removeSilence={removeSilence}

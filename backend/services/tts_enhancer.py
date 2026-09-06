@@ -43,9 +43,6 @@ ENGINE_PRESETS: dict[str, str] = {
     "styletts2-onnx": "medium",
     "neutts-air": "medium",
     # Heavy: most synthetic artifacts
-    "chattts": "heavy",
-    "f5-tts": "heavy",
-    "f5-tts-onnx": "heavy",
     "parler-tts-mini": "heavy",
     "orpheus": "heavy",
 }

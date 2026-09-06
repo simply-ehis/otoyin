@@ -104,12 +104,10 @@ ignore = [
 "utils/chunked_tts.py" = ["RUF002"]
 "utils/model_lifecycle.py" = ["RUF002", "RUF003"]
 # CJK TTS sample strings legitimately contain fullwidth punctuation.
-"backends/_f5_tts_onnx.py" = ["RUF001"]
 # Availability probes: these modules `import X` only to test importability
 # (torch.xpu/IPEX enablement, ONNX runtime presence, MLX/Apple Silicon,
 # DeepFilterNet/HF optional deps). The import is intentionally unused.
 "backends/base.py" = ["F401"]
-"backends/f5_tts_onnx_backend.py" = ["F401"]
 "backends/kokoro_onnx_backend.py" = ["F401"]
 "backends/moss_tts_nano_onnx_backend.py" = ["F401"]
 "backends/pocket_tts_onnx_backend.py" = ["F401"]

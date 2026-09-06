@@ -144,11 +144,9 @@ def compose_design_prompt(attrs: dict | None, fallback: str | None = None) -> st
 logger = logging.getLogger(__name__)
 
 CLONING_ENGINES = {
-    "fish_speech",
     "zonos",
     "qwen3_tts",
     "styletts2",
-    "f5_tts",
     "pocket_tts",
     "moss_tts_nano",
     "neutts",

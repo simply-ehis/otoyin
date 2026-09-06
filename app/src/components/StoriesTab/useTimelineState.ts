@@ -13,9 +13,10 @@ interface UseTimelineStateProps {
 }
 
 function getEffectiveDuration(item: StoryItemDetail) {
-	return (
-		item.duration * 1000 - (item.trim_start_ms || 0) - (item.trim_end_ms || 0)
-	);
+	const base =
+		item.duration * 1000 - (item.trim_start_ms || 0) - (item.trim_end_ms || 0);
+	const speed = item.speed || 1;
+	return base / speed;
 }
 
 export function useTimelineState({

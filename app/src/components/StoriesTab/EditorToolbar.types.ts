@@ -40,6 +40,20 @@ export interface EditorToolbarProps {
 		data: { gain_db: number };
 	}>;
 	setPan: Mutator<{ storyId: string; itemId: string; data: { pan: number } }>;
+	setSpeed: Mutator<{
+		storyId: string;
+		itemId: string;
+		data: { speed: number };
+	}>;
+	mergeItems: Mutator<{
+		storyId: string;
+		data: { first_item_id: string; second_item_id: string };
+	}>;
+	crossfadeItems: Mutator<{
+		storyId: string;
+		itemId: string;
+		data: { next_item_id: string; duration_ms: number };
+	}>;
 	normalizeItem: Mutator<{ storyId: string; itemId: string }>;
 	reverseItem: Mutator<{ storyId: string; itemId: string }>;
 	removeSilence: Mutator<{ storyId: string; itemId: string }>;

@@ -68,7 +68,7 @@ describe("downloadedTtsEngines", () => {
 				downloaded: true,
 				category: "stt",
 			}),
-			model({ model_name: "fish", engine: "fish_speech", downloaded: false }),
+			model({ model_name: "zonos", engine: "zonos", downloaded: false }),
 		]);
 		expect(downloadedTtsEngines(s)).toEqual(["kokoro", "xtts_v2"]);
 	});

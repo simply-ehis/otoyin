@@ -68,7 +68,7 @@ class TestCloningEngines:
 
     def test_known_engines_present(self):
         """Core cloning engines should be in the set."""
-        for engine in ("fish_speech", "zonos", "styletts2"):
+        for engine in ("zonos", "styletts2", "qwen3_tts"):
             assert engine in CLONING_ENGINES, f"{engine} missing from CLONING_ENGINES"
 
 
@@ -82,14 +82,14 @@ class TestClonedProfileCreation:
             VoiceProfileCreate(
                 name="My Clone",
                 voice_type="cloned",
-                default_engine="fish_speech",
+                default_engine="zonos",
             ),
             db,
         )
         assert profile.id is not None
         assert profile.name == "My Clone"
         assert profile.voice_type == "cloned"
-        assert profile.default_engine == "fish_speech"
+        assert profile.default_engine == "zonos"
 
     @pytest.mark.asyncio
     async def test_create_cloned_profile_all_engines(self, db, mock_profiles_dir):
@@ -139,7 +139,7 @@ class TestClonedEngineValidation:
         profile = MagicMock()
         profile.voice_type = "cloned"
         profile.design_prompt = None
-        validate_profile_engine(profile, "fish_speech")
+        validate_profile_engine(profile, "zonos")
 
     def test_invalid_engine_raises(self):
         profile = MagicMock()
@@ -167,7 +167,7 @@ class TestClonedProfileSamples:
             VoiceProfileCreate(
                 name="With Sample",
                 voice_type="cloned",
-                default_engine="fish_speech",
+                default_engine="zonos",
             ),
             db,
         )
@@ -202,7 +202,7 @@ class TestClonedProfileSamples:
             VoiceProfileCreate(
                 name="Sample List",
                 voice_type="cloned",
-                default_engine="fish_speech",
+                default_engine="zonos",
             ),
             db,
         )
@@ -238,7 +238,7 @@ class TestClonedFieldValidation:
             preset_engine=None,
             preset_voice_id=None,
             design_prompt=None,
-            default_engine="fish_speech",
+            default_engine="zonos",
         )
         assert result is None
 
@@ -270,7 +270,7 @@ class TestClonedFieldValidation:
             preset_engine="kokoro",
             preset_voice_id=None,
             design_prompt=None,
-            default_engine="fish_speech",
+            default_engine="zonos",
         )
         assert result is not None
 
@@ -280,6 +280,6 @@ class TestClonedFieldValidation:
             preset_engine=None,
             preset_voice_id=None,
             design_prompt="Some prompt",
-            default_engine="fish_speech",
+            default_engine="zonos",
         )
         assert result is not None

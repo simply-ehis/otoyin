@@ -70,7 +70,7 @@ export function QuickCloneDialog({
 		if (clones[0]) {
 			return clones[0].engine ?? clones[0].model_name;
 		}
-		return "fish_speech";
+		return "zonos";
 	}, [queryClient]);
 
 	useEffect(

@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+	isNativeMicAvailable,
+	startNativeMicCapture,
+	stopNativeMicCapture,
+} from "@/lib/audio/nativeMic";
+import {
 	RECORDING_MIME_TYPE,
 	RECORDING_MIME_TYPE_FALLBACK,
 	RECORDING_MIME_TYPE_MP4,
@@ -7,11 +12,6 @@ import {
 	RECORDING_MIME_TYPE_WAV,
 	RECORDING_TIMESLICE_MS,
 } from "@/lib/constants/audio";
-import {
-	isNativeMicAvailable,
-	startNativeMicCapture,
-	stopNativeMicCapture,
-} from "@/lib/audio/nativeMic";
 import { usePlatform } from "@/platform/PlatformContext";
 
 interface UseAudioRecordingOptions {
@@ -53,10 +53,7 @@ export function useAudioRecording({
 				}
 				const elapsed = (Date.now() - startTimeRef.current) / 1000;
 				setDuration(elapsed);
-				if (
-					maxDurationSeconds !== undefined &&
-					elapsed >= maxDurationSeconds
-				) {
+				if (maxDurationSeconds !== undefined && elapsed >= maxDurationSeconds) {
 					onLimit();
 				}
 			}, 100);
@@ -235,8 +232,7 @@ export function useAudioRecording({
 				// (recorder.mimeType), not what we requested — on WebKit the
 				// browser may normalize to MP4 even when our chain matched.
 				const recordedBlob = new Blob(chunksRef.current, {
-					type:
-						mediaRecorder.mimeType || options.mimeType || "audio/webm",
+					type: mediaRecorder.mimeType || options.mimeType || "audio/webm",
 				});
 
 				// Stop all tracks now that we have the data

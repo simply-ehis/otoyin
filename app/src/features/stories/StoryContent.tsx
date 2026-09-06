@@ -16,9 +16,12 @@ import {
 import {
 	ArrowDownTrayIcon,
 	ArrowUpTrayIcon,
+	ArrowUturnLeftIcon,
+	ArrowUturnRightIcon,
 	ClipboardDocumentIcon,
 	MusicalNoteIcon,
 	PlusIcon,
+	SpeakerWaveIcon,
 } from "@heroicons/react/24/outline";
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -28,9 +31,13 @@ import { useHistory } from "@/lib/hooks/useHistory";
 import {
 	useAddStoryItem,
 	useExportStoryAudio,
+	useMatchStoryLoudness,
+	useRedoStoryEdit,
 	useRemoveStoryItem,
 	useReorderStoryItems,
 	useStory,
+	useStoryHistoryDepth,
+	useUndoStoryEdit,
 } from "@/lib/hooks/useStories";
 import { useStoryPlayback } from "@/lib/hooks/useStoryPlayback";
 import { useGenerationStore } from "@/stores/generationStore";
@@ -56,6 +63,10 @@ export function StoryContent() {
 	const reorderItems = useReorderStoryItems();
 	const exportAudio = useExportStoryAudio();
 	const addItem = useAddStoryItem();
+	const undoEdit = useUndoStoryEdit();
+	const redoEdit = useRedoStoryEdit();
+	const matchLoudness = useMatchStoryLoudness();
+	const { data: historyDepth } = useStoryHistoryDepth(selectedId);
 	const addPendingGeneration = useGenerationStore(
 		(s) => s.addPendingGeneration,
 	);
@@ -264,6 +275,94 @@ export function StoryContent() {
 							{t("storyContent.generatingCount", { count: pendingCount })}
 						</span>
 					) : null}
+					<Button
+						variant="ghost"
+						size="icon"
+						className="size-8"
+						disabled={
+							!historyDepth || historyDepth.undo === 0 || undoEdit.isPending
+						}
+						title={t("storyContent.undo", { defaultValue: "Undo edit" })}
+						aria-label={t("storyContent.undo", { defaultValue: "Undo edit" })}
+						onClick={() =>
+							undoEdit.mutate(story.id, {
+								onError: (error) =>
+									toast({
+										title: t("storyContent.toast.undoFailed", {
+											defaultValue: "Nothing to undo",
+										}),
+										description: error.message,
+										variant: "destructive",
+									}),
+							})
+						}
+					>
+						<ArrowUturnLeftIcon className="size-4" aria-hidden="true" />
+					</Button>
+					<Button
+						variant="ghost"
+						size="icon"
+						className="size-8"
+						disabled={
+							!historyDepth || historyDepth.redo === 0 || redoEdit.isPending
+						}
+						title={t("storyContent.redo", { defaultValue: "Redo edit" })}
+						aria-label={t("storyContent.redo", { defaultValue: "Redo edit" })}
+						onClick={() =>
+							redoEdit.mutate(story.id, {
+								onError: (error) =>
+									toast({
+										title: t("storyContent.toast.redoFailed", {
+											defaultValue: "Nothing to redo",
+										}),
+										description: error.message,
+										variant: "destructive",
+									}),
+							})
+						}
+					>
+						<ArrowUturnRightIcon className="size-4" aria-hidden="true" />
+					</Button>
+					{story.items.length > 1 ? (
+						<Button
+							variant="outline"
+							size="sm"
+							disabled={matchLoudness.isPending}
+							title={t("storyContent.matchLoudnessTitle", {
+								defaultValue:
+									"Set every clip's gain so all lines play at one loudness",
+							})}
+							aria-label={t("storyContent.matchLoudness", {
+								defaultValue: "Match loudness",
+							})}
+							onClick={() =>
+								matchLoudness.mutate(
+									{ storyId: story.id, data: {} },
+									{
+										onSuccess: () =>
+											toast({
+												title: t("storyContent.toast.loudnessMatched", {
+													defaultValue: "Loudness matched across clips",
+												}),
+											}),
+										onError: (error) =>
+											toast({
+												title: t("storyContent.toast.loudnessFailed", {
+													defaultValue: "Match loudness failed",
+												}),
+												description: error.message,
+												variant: "destructive",
+											}),
+									},
+								)
+							}
+						>
+							<SpeakerWaveIcon className="mr-1.5 size-4" aria-hidden="true" />
+							{t("storyContent.matchLoudness", {
+								defaultValue: "Match loudness",
+							})}
+						</Button>
+					) : null}
 					<Button variant="outline" size="sm" onClick={pasteClip}>
 						<ClipboardDocumentIcon
 							className="mr-1.5 size-4"
@@ -424,6 +523,7 @@ export function StoryContent() {
 									item={item}
 									storyId={story.id}
 									index={index}
+									nextItemId={sorted[index + 1]?.id ?? null}
 									onRemove={() =>
 										removeItem.mutate(
 											{ storyId: story.id, itemId: item.id },

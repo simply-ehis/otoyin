@@ -100,9 +100,9 @@ class TestVoiceCleanABIntegration:
         t = np.linspace(0, 0.5, 12000, endpoint=False)
         audio = (0.3 * np.sin(2 * np.pi * 220 * t)).astype(np.float32)
         kokoro_out = enhance_tts(audio, 24000, engine="kokoro")  # light
-        chattts_out = enhance_tts(audio, 24000, engine="chattts")  # heavy
+        orpheus_out = enhance_tts(audio, 24000, engine="orpheus")  # heavy
         # Different presets → different outputs
-        assert not np.allclose(kokoro_out, chattts_out, atol=1e-4)
+        assert not np.allclose(kokoro_out, orpheus_out, atol=1e-4)
 
     def test_strength_affects_enhancement_intensity(self):
         """Different strengths produce different outputs."""

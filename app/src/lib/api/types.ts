@@ -94,14 +94,11 @@ export interface GenerationRequest {
 	model_size?: "1.7B" | "0.6B";
 	engine?:
 		| "kokoro"
-		| "fish_speech"
 		| "fish_speech_s2"
 		| "zonos"
 		| "qwen3_tts"
 		| "bark_small"
 		| "styletts2"
-		| "chattts"
-		| "f5_tts"
 		| "pocket_tts"
 		| "parler_tts"
 		| "moss_tts_nano"
@@ -566,6 +563,7 @@ export interface StoryItemDetail {
 	fade_out_ms: number;
 	gain_db: number;
 	pan: number;
+	speed?: number;
 	generation_created_at: string;
 	versions?: GenerationVersionResponse[];
 	active_version_id?: string;
@@ -619,6 +617,34 @@ export interface StoryItemTrim {
 
 export interface StoryItemSplit {
 	split_time_ms: number;
+}
+
+export interface StoryItemMerge {
+	first_item_id: string;
+	second_item_id: string;
+}
+
+export interface StoryItemSpeed {
+	speed: number;
+}
+
+export interface StoryMatchLoudness {
+	target_lufs?: number;
+}
+
+export interface StoryItemCrossfade {
+	next_item_id: string;
+	duration_ms: number;
+}
+
+export interface StoryItemMoveToStory {
+	target_story_id: string;
+	as_copy?: boolean;
+}
+
+export interface StoryHistoryDepth {
+	undo: number;
+	redo: number;
 }
 
 // Effects

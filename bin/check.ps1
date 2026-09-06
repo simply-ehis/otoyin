@@ -3,7 +3,8 @@
   Unified verification gate - runs all checks for this project.
 .DESCRIPTION
   Runs Biome lint+format (JS/TS), TypeScript typecheck, Ruff lint+format (Python),
-  Async-blocking check, NAME_MAP coverage, Placeholder check, Python pytest, and Frontend vitest.
+  Async-blocking check, NAME_MAP coverage, Placeholder check, Encoding check (UTF-8/mojibake),
+  Python pytest, and Frontend vitest.
   Mirrors the pre-commit gate and CI jobs. Exits non-zero on any failure.
 .PARAMETER Fix
   Auto-fix issues where possible (biome --write, ruff --fix, ruff format).
@@ -33,6 +34,7 @@ if (-not $Quick) {
   $steps += "Async blocking check"
   $steps += "NAME_MAP coverage"
   $steps += "Placeholder markers (TODO/FIXME/HACK)"
+  $steps += "Encoding check (UTF-8 / mojibake)"
 }
 if (-not $NoTests) {
   $steps += "Python pytest (core)"
@@ -54,21 +56,21 @@ function Invoke-Step {
 
 # -- JS/TS: Biome lint --
 Invoke-Step "Biome lint" {
-  if ($Fix) { & bunx biome lint app/src --write --unsafe }
-  else { & bunx biome lint app/src }
+  if ($Fix) { & npx biome lint app/src --write --unsafe }
+  else { & npx biome lint app/src }
 }
 
 # -- JS/TS: Biome format --
 Invoke-Step "Biome format" {
-  if ($Fix) { & bunx biome format app/src --write }
-  else { & bunx biome format app/src }
+  if ($Fix) { & npx biome format app/src --write }
+  else { & npx biome format app/src }
 }
 
 # -- JS/TS: TypeScript typecheck (90s budget; slow on low-end hardware) --
 $step++
 Write-Host "`n[$step/$total] TypeScript typecheck..." -ForegroundColor Yellow
 $appDir = Join-Path $PSScriptRoot '..\app'
-$tsJob = Start-Job -ScriptBlock { param($dir) Set-Location $dir; & bun run typecheck 2>&1 } -ArgumentList $appDir
+$tsJob = Start-Job -ScriptBlock { param($dir) Set-Location $dir; & npm run typecheck 2>&1 } -ArgumentList $appDir
 if (-not (Wait-Job $tsJob -Timeout 90)) {
   Stop-Job $tsJob | Out-Null
   Write-Host "  TypeScript typecheck timed out after 90s (slow hardware) - warning, not failing gate" -ForegroundColor Yellow
@@ -123,6 +125,14 @@ if (-not $Quick) {
   $venvPy2 = Join-Path $PSScriptRoot '..\backend\venv\Scripts\python.exe'
   if (-not (Test-Path $venvPy2)) { $venvPy2 = 'python' }
   & $venvPy2 -X utf8 -m backend.scripts.check_placeholders
+  if ($LASTEXITCODE -ne 0) { $bad = $true }
+  Pop-Location
+
+  # -- Encoding: no invalid UTF-8 bytes or U+FFFD in tracked text files --
+  $step++
+  Write-Host "`n[$step/$total] Encoding check (UTF-8 / mojibake)..." -ForegroundColor Yellow
+  Push-Location (Join-Path $PSScriptRoot '..')
+  & $venvPy2 -X utf8 scripts/check-encoding.py
   if ($LASTEXITCODE -ne 0) { $bad = $true }
   Pop-Location
 }

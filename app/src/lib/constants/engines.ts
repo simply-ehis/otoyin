@@ -12,12 +12,9 @@
  */
 export const TTS_ENGINES = {
 	kokoro: "Kokoro 82M",
-	fish_speech: "Fish Speech S1-mini",
 	fish_speech_s2: "Fish Audio S2 Pro (GGUF)",
 	zonos: "Zyphra Zonos",
 	styletts2: "StyleTTS2",
-	chattts: "ChatTTS",
-	f5_tts: "F5-TTS",
 	pocket_tts: "Pocket-TTS",
 	parler_tts: "Parler-TTS Mini",
 	moss_tts_nano: "MOSS-TTS-Nano",
@@ -51,14 +48,11 @@ export const ALL_ENGINES = Object.freeze([
 /** Map engine id to its HuggingFace model name used for downloading. */
 export const MODEL_NAME_MAP: Record<string, (size?: string) => string> = {
 	kokoro: () => "kokoro-onnx",
-	fish_speech: () => "fish-speech-s1-mini",
 	fish_speech_s2: () => "fish-speech-s2-pro",
 	zonos: () => "zonos-v0.1",
 	qwen3_tts: () => "qwen3-tts-1.7b",
 	bark_small: () => "bark-small",
 	styletts2: () => "styletts2",
-	chattts: () => "chattts",
-	f5_tts: () => "f5-tts",
 	pocket_tts: () => "pocket-tts",
 	parler_tts: () => "parler-tts-mini",
 	moss_tts_nano: () => "moss-tts-nano",
@@ -81,12 +75,10 @@ export const ENGLISH_ONLY_ENGINES = new Set([
 
 /** Engines that support cloned (reference audio) profiles. */
 export const CLONING_ENGINES = new Set([
-	"fish_speech",
 	"fish_speech_s2",
 	"zonos",
 	"qwen3_tts",
 	"styletts2",
-	"f5_tts",
 	"pocket_tts",
 	"moss_tts_nano",
 	"neutts",
@@ -109,14 +101,11 @@ export const DEFAULT_ENGINE_OPTIONS = Object.entries(TTS_ENGINES).map(
 /** Engines offered in the dubbing TTS-engine picker (subset of TTS_ENGINES). */
 export const DUB_ENGINES = [
 	"kokoro",
-	"fish_speech",
 	"fish_speech_s2",
 	"zonos",
 	"qwen3_tts",
 	"bark_small",
 	"styletts2",
-	"chattts",
-	"f5_tts",
 	"pocket_tts",
 	"parler_tts",
 	"moss_tts_nano",

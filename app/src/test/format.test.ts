@@ -76,9 +76,9 @@ describe("formatDate", () => {
 describe("formatEngineName", () => {
 	it("formats known engines", () => {
 		expect(formatEngineName("kokoro")).toBe("Kokoro");
-		expect(formatEngineName("fish_speech")).toBe("Fish Speech");
+		expect(formatEngineName("zonos")).toBe("Zonos");
 		expect(formatEngineName("styletts2")).toBe("StyleTTS2");
-		expect(formatEngineName("chattts")).toBe("ChatTTS");
+		expect(formatEngineName("orpheus")).toBe("Orpheus");
 	});
 
 	it("includes model size when provided", () => {

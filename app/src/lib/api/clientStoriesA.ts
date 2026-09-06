@@ -5,15 +5,21 @@ import type {
 	PitchSegment,
 	StoryCreate,
 	StoryDetailResponse,
+	StoryHistoryDepth,
 	StoryItemBatchUpdate,
 	StoryItemCreate,
+	StoryItemCrossfade,
 	StoryItemDetail,
+	StoryItemMerge,
 	StoryItemMove,
+	StoryItemMoveToStory,
 	StoryItemReorder,
+	StoryItemSpeed,
 	StoryItemSplit,
 	StoryItemTrim,
 	StoryItemVersionUpdate,
 	StoryItemVolumeUpdate,
+	StoryMatchLoudness,
 	StoryResponse,
 } from "./types";
 
@@ -249,6 +255,92 @@ export class StoriesAMethods extends ChannelsMethods {
 				method: "POST",
 			},
 		);
+	}
+
+	async mergeStoryItems(
+		storyId: string,
+		data: StoryItemMerge,
+	): Promise<StoryItemDetail> {
+		return this.request<StoryItemDetail>(
+			`/stories/${storyId}/items/merge`,
+			{
+				method: "POST",
+				body: JSON.stringify(data),
+			},
+		);
+	}
+
+	async setStoryItemSpeed(
+		storyId: string,
+		itemId: string,
+		data: StoryItemSpeed,
+	): Promise<StoryItemDetail> {
+		return this.request<StoryItemDetail>(
+			`/stories/${storyId}/items/${itemId}/speed`,
+			{
+				method: "PUT",
+				body: JSON.stringify(data),
+			},
+		);
+	}
+
+	async matchStoryLoudness(
+		storyId: string,
+		data: StoryMatchLoudness = {},
+	): Promise<StoryItemDetail[]> {
+		return this.request<StoryItemDetail[]>(
+			`/stories/${storyId}/match-loudness`,
+			{
+				method: "POST",
+				body: JSON.stringify(data),
+			},
+		);
+	}
+
+	async crossfadeStoryItems(
+		storyId: string,
+		itemId: string,
+		data: StoryItemCrossfade,
+	): Promise<StoryItemDetail[]> {
+		return this.request<StoryItemDetail[]>(
+			`/stories/${storyId}/items/${itemId}/crossfade`,
+			{
+				method: "POST",
+				body: JSON.stringify(data),
+			},
+		);
+	}
+
+	async moveStoryItemToStory(
+		storyId: string,
+		itemId: string,
+		data: StoryItemMoveToStory,
+	): Promise<StoryItemDetail> {
+		return this.request<StoryItemDetail>(
+			`/stories/${storyId}/items/${itemId}/move-to-story`,
+			{
+				method: "POST",
+				body: JSON.stringify(data),
+			},
+		);
+	}
+
+	async storyHistoryDepth(storyId: string): Promise<StoryHistoryDepth> {
+		return this.request<StoryHistoryDepth>(
+			`/stories/${storyId}/history-depth`,
+		);
+	}
+
+	async undoStoryEdit(storyId: string): Promise<{ message: string }> {
+		return this.request<{ message: string }>(`/stories/${storyId}/undo`, {
+			method: "POST",
+		});
+	}
+
+	async redoStoryEdit(storyId: string): Promise<{ message: string }> {
+		return this.request<{ message: string }>(`/stories/${storyId}/redo`, {
+			method: "POST",
+		});
 	}
 
 	async analyzePitch(

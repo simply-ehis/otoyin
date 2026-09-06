@@ -213,8 +213,8 @@ def test_engine_preset_light_for_clean_engines():
 
 
 def test_engine_preset_heavy_for_synthetic_engines():
-    """Heavy engines (chattts, f5-tts) should use the 'heavy' preset."""
-    for engine in ("chattts", "f5-tts", "parler-tts-mini"):
+    """Heavy engines (parler-tts-mini, orpheus) should use the 'heavy' preset."""
+    for engine in ("parler-tts-mini", "orpheus"):
         merged = tts_enhancer._resolve_params(None, engine=engine)
         assert merged["dynamics"] is True, f"{engine} should be heavy preset"
         assert merged["denoise"] is True
@@ -245,6 +245,6 @@ def test_enhance_tts_with_engine_param():
 
 def test_strength_override_with_engine():
     """Engine provides preset, but explicit strength still works."""
-    merged = tts_enhancer._resolve_params({"strength": 0.3}, engine="chattts")
-    assert merged["dynamics"] is True  # from chattts heavy preset
+    merged = tts_enhancer._resolve_params({"strength": 0.3}, engine="orpheus")
+    assert merged["dynamics"] is True  # from orpheus heavy preset
     assert merged["strength"] == 0.3  # from explicit param

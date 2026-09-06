@@ -204,6 +204,9 @@ function ClipEditControls({
 	setFade,
 	setGain,
 	setPan,
+	setSpeed,
+	mergeItems,
+	crossfadeItems,
 	normalizeItem,
 	reverseItem,
 	removeSilence,
@@ -235,6 +238,20 @@ function ClipEditControls({
 		data: { gain_db: number };
 	}>;
 	setPan: Mutator<{ storyId: string; itemId: string; data: { pan: number } }>;
+	setSpeed: Mutator<{
+		storyId: string;
+		itemId: string;
+		data: { speed: number };
+	}>;
+	mergeItems: Mutator<{
+		storyId: string;
+		data: { first_item_id: string; second_item_id: string };
+	}>;
+	crossfadeItems: Mutator<{
+		storyId: string;
+		itemId: string;
+		data: { next_item_id: string; duration_ms: number };
+	}>;
 	normalizeItem: Mutator<{ storyId: string; itemId: string }>;
 	reverseItem: Mutator<{ storyId: string; itemId: string }>;
 	removeSilence: Mutator<{ storyId: string; itemId: string }>;
@@ -287,8 +304,12 @@ function ClipEditControls({
 			<ClipToolsMenu
 				storyId={storyId}
 				selectedItem={selectedItem}
+				nextItem={nextItem}
 				setFade={setFade}
 				setGain={setGain}
+				setSpeed={setSpeed}
+				mergeItems={mergeItems}
+				crossfadeItems={crossfadeItems}
 				normalizeItem={normalizeItem}
 				reverseItem={reverseItem}
 				removeSilence={removeSilence}
@@ -341,6 +362,9 @@ export function EditorToolbar({
 	setFade,
 	setGain,
 	setPan,
+	setSpeed,
+	mergeItems,
+	crossfadeItems,
 	normalizeItem,
 	reverseItem,
 	removeSilence,
@@ -370,6 +394,9 @@ export function EditorToolbar({
 					setFade={setFade}
 					setGain={setGain}
 					setPan={setPan}
+					setSpeed={setSpeed}
+					mergeItems={mergeItems}
+					crossfadeItems={crossfadeItems}
 					normalizeItem={normalizeItem}
 					reverseItem={reverseItem}
 					removeSilence={removeSilence}

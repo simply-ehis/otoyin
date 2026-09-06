@@ -152,15 +152,9 @@ def build_server(cuda=False):
             # --- New TTS engine backends (Phase 1/2 consolidation) ---
             # kokoro_backend REMOVED (bloat) — never bundled
             "--hidden-import",
-            "backend.backends.fish_speech_backend",
-            "--hidden-import",
             "backend.backends.zonos_backend",
             "--hidden-import",
             "backend.backends.styletts2_backend",
-            "--hidden-import",
-            "backend.backends.chattts_backend",
-            "--hidden-import",
-            "backend.backends.f5_tts_backend",
             "--hidden-import",
             "backend.backends.pocket_tts_backend",
             "--hidden-import",

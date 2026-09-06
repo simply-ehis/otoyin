@@ -71,7 +71,7 @@ if (-not $BackendOnly) {
   Write-Host "`nTauri: starting dev mode..." -ForegroundColor Yellow
    Push-Location (Join-Path $PSScriptRoot '..\tauri')
   try {
-    & bun run tauri dev
+    & npm run tauri dev
   } finally {
     Pop-Location
   }

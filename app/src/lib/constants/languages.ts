@@ -2,7 +2,7 @@
  * Supported languages for voice generation, per engine.
  *
  * kokoro supports 8 languages.
- * fish_speech / zonos / chattts / f5_tts / styletts2 / pocket_tts are English-centric
+ * zonos / styletts2 / pocket_tts are English-centric
  * (with some multilingual coverage); parler_tts is English.
  */
 
@@ -66,21 +66,6 @@ const WIDE_23 = [
 export const ENGINE_LANGUAGES: Record<string, readonly LanguageCode[]> = {
 	kokoro: KOKORO_8,
 	fish_speech_s2: ["en", "zh", "ja", "ko", "de", "fr", "es", "pt", "ru", "it"],
-	fish_speech: [
-		"en",
-		"zh",
-		"ja",
-		"de",
-		"fr",
-		"es",
-		"ko",
-		"ar",
-		"ru",
-		"nl",
-		"it",
-		"pl",
-		"pt",
-	],
 	zonos: ["en", "ja", "zh", "fr", "de"],
 	qwen3_tts: ["zh", "en", "de", "it", "pt", "es", "ja", "ko", "fr", "ru"],
 	bark_small: [
@@ -99,8 +84,6 @@ export const ENGINE_LANGUAGES: Record<string, readonly LanguageCode[]> = {
 		"zh",
 	],
 	styletts2: ["en"],
-	chattts: ["zh", "en"],
-	f5_tts: ["en", "zh"],
 	pocket_tts: ["en", "es", "fr", "de", "it", "pt"],
 	parler_tts: ["en"],
 	moss_tts_nano: WIDE_23,

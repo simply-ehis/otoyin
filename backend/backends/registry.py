@@ -87,11 +87,6 @@ ENGINE_REGISTRY: list[_TTSBackendEntry] = [
         torch_module=".styletts2_backend", torch_class="StyleTTS2Backend",
     ),
     _TTSBackendEntry(
-        engine="f5_tts",
-        onnx_module=".f5_tts_onnx_backend", onnx_class="F5TTSOnnxBackend",
-        torch_module=".f5_tts_backend", torch_class="F5TTSBackend",
-    ),
-    _TTSBackendEntry(
         engine="pocket_tts",
         onnx_module=".pocket_tts_onnx_backend", onnx_class="PocketTTSOnnxBackend",
         torch_module=".pocket_tts_backend", torch_class="PocketTTSBackend",
@@ -108,9 +103,7 @@ ENGINE_REGISTRY: list[_TTSBackendEntry] = [
         onnx_only=True,
     ),
     # --- Simple torch-only ---
-    _TTSBackendEntry(engine="fish_speech", torch_module=".fish_speech_backend", torch_class="FishSpeechBackend"),
     _TTSBackendEntry(engine="zonos", torch_module=".zonos_backend", torch_class="ZonosBackend"),
-    _TTSBackendEntry(engine="chattts", torch_module=".chattts_backend", torch_class="ChatTTSBackend"),
     _TTSBackendEntry(engine="parler_tts", torch_module=".parler_tts_backend", torch_class="ParlerTTSBackend"),
     # --- Singleton pre-created instances ---
     _TTSBackendEntry(engine="neutts", singleton_module=".neutts_backend", singleton_attr="neutts_backend"),
@@ -133,9 +126,9 @@ def _resolve_tts_backend(entry: _TTSBackendEntry) -> TTSBackend:
     """Generic TTS backend resolver driven by a table entry.
 
     Handles the four patterns:
-    1. ONNX-preferred with torch fallback (kokoro, styletts2, f5_tts, pocket_tts)
+    1. ONNX-preferred with torch fallback (kokoro, styletts2, pocket_tts)
     2. ONNX-only, no torch fallback (moss_tts_nano, kitten_tts)
-    3. Simple torch-only (fish_speech, zonos, chattts, parler_tts)
+    3. Simple torch-only (zonos, parler_tts)
     4. Singleton import (neutts, neutts_2e, orpheus)
 
     Lifecycle registration happens exactly once at the end of every path.
@@ -290,10 +283,7 @@ async def load_engine_model(engine: str, model_size: str = "default") -> None:
     from ..utils.vram_pressure import VRAMInsufficientError as _VRAMErr
 
     try:
-        if engine == "f5_tts":
-            await backend.load_model_async(model_size)
-        else:
-            await backend.load_model(model_size)
+        await backend.load_model(model_size)
     except _VRAMErr:
         raise
     except Exception:
@@ -459,6 +449,10 @@ def get_stt_backend(engine: str = "whisper") -> STTBackend:
     Engines: "whisper" (whisper.cpp GGML), "faster-whisper" (CTranslate2 int8),
              "parakeet" (parakeet.cpp native C++), "qwen3_asr" (ONNX Runtime).
     Raises RuntimeError if no STT backend is available for the engine.
+
+    NOTE: no manifest gate here on purpose — backends self-gate on cache
+    presence at load, routes enforce entitlement, and tests/tools call this
+    factory directly. See docs/reports/2026-09-05-model-download-gating-audit.md.
     """
     global _stt_backends
 
@@ -510,7 +504,11 @@ def get_llm_backend() -> LLMBackend:
 
 
 def get_llm_backend_for_engine(engine: str) -> LLMBackend:
-    """Get or create an LLM backend for the given engine."""
+    """Get or create an LLM backend for the given engine.
+
+    NOTE: no manifest gate here on purpose — same reasoning as
+    get_stt_backend (see its docstring + the gating audit doc).
+    """
     global _llm_backends
 
     if engine in _llm_backends:
@@ -541,6 +539,10 @@ def get_music_backend(engine: str = "stable_audio") -> MusicBackend:
 
     Returns:
         Music backend instance conforming to :class:`MusicBackend`.
+
+    NOTE: no manifest gate here on purpose — backends self-gate on cache
+    presence at load; entitlement lives at routes/the TTS chokepoint.
+    See docs/reports/2026-09-05-model-download-gating-audit.md.
     """
     global _music_backends
 

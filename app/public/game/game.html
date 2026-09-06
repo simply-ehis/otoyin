@@ -1657,13 +1657,14 @@
                         e.x += Math.cos(angle) * spd;
                         e.y += Math.sin(angle) * spd;
                         break;
-                    case 'strafe':
+                    case 'strafe': {
                         const strafeAngle = angle + Math.PI / 2;
                         if (dist > 180) { e.x += Math.cos(angle) * spd * 0.8; e.y += Math.sin(angle) * spd * 0.8; }
                         else if (dist < 120) { e.x -= Math.cos(angle) * spd * 0.5; e.y -= Math.sin(angle) * spd * 0.5; }
                         e.x += Math.cos(strafeAngle) * spd * 0.5 * Math.sin(e.strafeTimer);
                         e.y += Math.sin(strafeAngle) * spd * 0.5 * Math.sin(e.strafeTimer);
                         break;
+                    }
                     case 'tank':
                         e.x += Math.cos(angle + Math.sin(e.strafeTimer) * 0.3) * spd;
                         e.y += Math.sin(angle + Math.sin(e.strafeTimer) * 0.3) * spd;
@@ -1675,7 +1676,7 @@
                             if (e.rushDist > 200) { e.rushCooldown = 60; e.rushDist = 0; }
                         } else { e.rushCooldown--; e.x += Math.cos(angle) * spd * 0.2; e.y += Math.sin(angle) * spd * 0.2; }
                         break;
-                    case 'dodge':
+                    case 'dodge': {
                         let nearProj = null, pDist = 100;
                         this.projectiles.forEach(proj => { const d = Math.hypot(proj.x - e.x, proj.y - e.y); if (d < pDist) { pDist = d; nearProj = proj; } });
                         if (nearProj && e.stateTimer % 60 < 20) {
@@ -1683,6 +1684,7 @@
                             e.x += Math.cos(da) * spd * 2; e.y += Math.sin(da) * spd * 2;
                         } else { e.x += Math.cos(angle) * spd * 0.7; e.y += Math.sin(angle) * spd * 0.7; }
                         break;
+                    }
                     case 'elite':
                         if (!e.aiState) e.aiState = 'approach';
                         if (e.aiState === 'approach') {
@@ -1702,7 +1704,7 @@
                             if (e.stateTimer > 25 || dist > 300) { e.aiState = 'approach'; e.stateTimer = 0; }
                         }
                         break;
-                    case 'boss':
+                    case 'boss': {
                         const orbAngle = angle + Math.PI / 2;
                         e.x += Math.cos(orbAngle) * spd * 0.5; e.y += Math.sin(orbAngle) * spd * 0.5;
                         if (dist > 180) { e.x += Math.cos(angle) * spd * 0.3; e.y += Math.sin(angle) * spd * 0.3; }
@@ -1716,6 +1718,7 @@
                             this.spawnEnemyAt(e.x + (Math.random()-0.5)*60, e.y + (Math.random()-0.5)*60, 'gray');
                         }
                         break;
+                    }
                 }
                 e.x = Math.max(-20, Math.min(920, e.x));
                 e.y = Math.max(-20, Math.min(670, e.y));
@@ -1750,7 +1753,7 @@
             spawnEnemy() {
                 const stage = getStage(this.stage);
                 const isBoss = this.wave % stage.bossEvery === 0 && Math.random() < 0.35;
-                let type = isBoss ? 'boss' : stage.enemies[Math.floor(Math.random() * stage.enemies.length)];
+                const type = isBoss ? 'boss' : stage.enemies[Math.floor(Math.random() * stage.enemies.length)];
                 const side = Math.floor(Math.random() * 4);
                 let x, y;
                 if (side === 0) { x = Math.random() * 900; y = -40; }
@@ -1874,12 +1877,13 @@
             applyPowerUp(pu) {
                 const p = this.player;
                 switch (pu.type) {
-                    case 'heal':
+                    case 'heal': {
                         const heal = Math.min(30, p.maxHp - p.hp);
                         p.hp += heal;
                         sfx.play('heal');
                         this.addFloat(p.x, p.y - 30, `+${heal} HP`, '#44ff88', 14);
                         break;
+                    }
                     case 'magnet':
                         this.xpGems.forEach(g => { if (Math.hypot(p.x - g.x, p.y - g.y) < 250) this.addXP(g.value); });
                         this.xpGems = this.xpGems.filter(g => Math.hypot(p.x - g.x, p.y - g.y) >= 250);

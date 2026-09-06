@@ -383,7 +383,7 @@ def test_deepfilter_offline_and_gate(monkeypatch):
 
 
 def test_health_models_lists_engines():
-    """Slice C: GET /health/models returns 16 TTS engines, fish_speech_s2 present, is_loaded bool."""
+    """Slice C: GET /health/models returns 13 TTS engines, fish_speech_s2 present, is_loaded bool."""
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
@@ -398,7 +398,7 @@ def test_health_models_lists_engines():
     data = resp.json()
     assert "engines" in data
     engines = data["engines"]
-    assert len(engines) == 16
+    assert len(engines) == 13
     names = {e["engine"] for e in engines}
     assert "fish_speech_s2" in names
     assert "kokoro" in names

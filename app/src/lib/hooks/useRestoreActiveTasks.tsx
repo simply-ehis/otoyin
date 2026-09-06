@@ -86,7 +86,6 @@ export function useRestoreActiveTasks() {
  * Map model names to display names for download toasts.
  */
 export const MODEL_DISPLAY_NAMES: Record<string, string> = {
-	chattts: "ChatTTS",
 	"whisper-tiny-en": "Whisper Tiny",
 	"planner-2b": "Qwen3.5-2B Planner",
 	"planner-0.8b": "Qwen3.5-0.8B Planner",

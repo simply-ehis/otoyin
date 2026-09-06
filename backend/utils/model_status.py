@@ -17,16 +17,15 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# Ordered recommended pack — ChatTTS is the top recommended TTS engine
-# (small, fast, expressive via paralinguistic tags). Whisper-tiny powers
-# transcription/STS input, the jackrong Qwen3.5-2B planner is the on-device
-# assistant brain. DeepFilterNet + LavaSR need no download — they ship inside
-# the ``audiosronnx`` dependency.
+# Ordered recommended pack — Kokoro 82M is the default voice (tiny, fast,
+# Apache-2.0). Whisper-tiny powers transcription/STT input, the jackrong
+# Qwen3.5-2B planner is the on-device assistant brain. DeepFilterNet + LavaSR
+# need no download — they ship inside the ``audiosronnx`` dependency.
 RECOMMENDED_MODELS: list[dict] = [
     {
-        "model_name": "chattts",
+        "model_name": "kokoro-onnx",
         "role": "tts",
-        "reason": "Recommended voice engine — small, fast, expressive",
+        "reason": "Recommended voice engine — tiny, fast, Apache-2.0",
     },
     {
         "model_name": "whisper-tiny-en",
@@ -80,9 +79,8 @@ def _onnxruntime_available() -> bool:
 #   20  ONNX-preferred, small model        — kokoro (82M)
 #   30  Subprocess one-shot, no resident   — qwen3_tts, bark_small
 #   40  GGUF singleton (llama.cpp sidecar) — neutts, neutts_2e, orpheus
-#   50  Torch-only, small/medium model     — chattts, pocket_tts
-#   60  Torch-only, large model            — fish_speech, zonos, styletts2,
-#                                            f5_tts, parler_tts
+#   50  Torch-only, small/medium model     — pocket_tts
+#   60  Torch-only, large model            — zonos, styletts2, parler_tts
 
 _ENGINE_WEIGHTS: dict[str, int] = {
     "kitten_tts": 10,
@@ -94,10 +92,7 @@ _ENGINE_WEIGHTS: dict[str, int] = {
     "neutts": 40,
     "neutts_2e": 40,
     "orpheus": 40,
-    "chattts": 50,
     "styletts2": 60,
-    "f5_tts": 60,
-    "fish_speech": 60,
     "zonos": 60,
     "parler_tts": 60,
 }
@@ -106,7 +101,6 @@ _ENGINE_WEIGHTS: dict[str, int] = {
 _ONNX_PREFERRED_ENGINES = {
     "kokoro",
     "styletts2",
-    "f5_tts",
     "pocket_tts",
     "kitten_tts",
     "moss_tts_nano",
@@ -186,7 +180,7 @@ def dynamic_tts_preference_order() -> list[str]:
 # Legacy alias — kept for backward compatibility with imports.
 def _static_preference_order() -> list[str]:
     """Fallback static order when dynamic ranking is unavailable."""
-    return ["kitten_tts", "moss_tts_nano", "kokoro", "chattts"]
+    return ["kitten_tts", "moss_tts_nano", "kokoro", "zonos"]
 
 
 # Module-level cache: computed once on first access, then stable.

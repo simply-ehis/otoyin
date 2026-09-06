@@ -378,6 +378,10 @@ def get_vc_backend(engine: str):
       - ``rvc``       → RVCBackend (pre-trained voice packs)
       - ``seed_vc``   → SeedVCBackend (zero-shot from reference audio)
       - ``openvoice`` → OpenVoiceBackend (zero-shot tone-color conversion)
+
+    Local engines require no factory-level manifest row: backends
+    self-gate on cache presence at load, and ``cloud`` (BYOK, no local
+    weights) is exempt by design. See the gating audit doc.
     """
     if engine == "seed_vc":
         from ..seed_vc_backend import seed_vc_backend

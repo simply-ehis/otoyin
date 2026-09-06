@@ -200,8 +200,9 @@ export function useStoryPlayback(items: StoryItemDetail[] | undefined) {
 				// Use effective duration (accounting for trims)
 				const trimStartMs = item.trim_start_ms || 0;
 				const trimEndMs = item.trim_end_ms || 0;
+				const speed = item.speed || 1;
 				const effectiveDurationMs =
-					item.duration * 1000 - trimStartMs - trimEndMs;
+					(item.duration * 1000 - trimStartMs - trimEndMs) / speed;
 				const itemEnd = item.start_time_ms + effectiveDurationMs;
 				return storyTimeMs >= itemStart && storyTimeMs < itemEnd;
 			});
@@ -283,17 +284,20 @@ export function useStoryPlayback(items: StoryItemDetail[] | undefined) {
 					// Calculate effective duration and trim offsets
 					const trimStartSec = (item.trim_start_ms || 0) / 1000;
 					const trimEndSec = (item.trim_end_ms || 0) / 1000;
-					const effectiveDuration = item.duration - trimStartSec - trimEndSec;
+					const rate = item.speed || 1;
+					const effectiveDuration =
+						(item.duration - trimStartSec - trimEndSec) / rate;
 					const itemEndStoryTime =
 						item.start_time_ms + effectiveDuration * 1000;
 
-					// Calculate offset into the buffer (if seeking mid-way)
-					// Offset is relative to the trimmed start of the clip
+					// Calculate offset into the buffer (if seeking mid-way).
+					// Story-time offsets scale back up to buffer-time by the rate.
 					const offsetIntoEffectiveClip = Math.max(
 						0,
 						(storyTimeMs - item.start_time_ms) / 1000,
 					);
-					const offsetIntoBuffer = trimStartSec + offsetIntoEffectiveClip;
+					const offsetIntoBuffer =
+						trimStartSec + offsetIntoEffectiveClip * rate;
 					const duration = effectiveDuration - offsetIntoEffectiveClip;
 
 					// If the item should have already started, schedule it to start immediately
@@ -304,6 +308,12 @@ export function useStoryPlayback(items: StoryItemDetail[] | undefined) {
 
 					const source = audioContext.createBufferSource();
 					source.buffer = buffer;
+					// Preview uses resampling (pitch follows rate); the export
+					// renders constant-pitch stretch, so 0.5×/2× previews sound
+					// higher/lower than the final mix.
+					if (rate !== 1) {
+						source.playbackRate.value = rate;
+					}
 					// Per-clip gain so each item can override its level independently
 					// of the master volume. Falls through 1.0 for any item without a
 					// saved value (older rows pre-migration).

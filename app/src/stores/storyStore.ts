@@ -203,14 +203,15 @@ export const useStoryStore = create<StoryPlaybackState>((set, get) => ({
 
 	// Actions
 	play: (storyId, items) => {
-		// Calculate total duration from items (accounting for trim)
+		// Calculate total duration from items (accounting for trim + speed)
 		const maxEndTimeMs = Math.max(
 			...items.map(
 				(item) =>
 					item.start_time_ms +
-					item.duration * 1000 -
-					(item.trim_start_ms || 0) -
-					(item.trim_end_ms || 0),
+					(item.duration * 1000 -
+						(item.trim_start_ms || 0) -
+						(item.trim_end_ms || 0)) /
+						(item.speed || 1),
 			),
 			0,
 		);

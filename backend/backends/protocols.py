@@ -109,12 +109,10 @@ class ModelConfig:
         elif self.engine in {
             "kokoro",
             "styletts2",
-            "f5_tts",
             "pocket_tts",
             "parler_tts",
             "kitten_tts",
             "moss_tts_nano",
-            "chattts",
             "stable_audio",
         }:
             # ONNX TTS models - quant optional, will be INT8 quantized in pipeline
@@ -369,12 +367,9 @@ class MusicBackend(Protocol):
 # The factory function uses this for the if/elif chain; the model configs live on the backend classes.
 TTS_ENGINES = {
     "kokoro": "Kokoro 82M",
-    "fish_speech": "Fish Speech S1-mini",
     "fish_speech_s2": "Fish Audio S2 Pro (GGUF)",
     "zonos": "Zyphra Zonos",
     "styletts2": "StyleTTS2",
-    "chattts": "ChatTTS",
-    "f5_tts": "F5-TTS",
     "pocket_tts": "Pocket-TTS",
     "parler_tts": "Parler-TTS Mini",
     "moss_tts_nano": "MOSS-TTS-Nano",

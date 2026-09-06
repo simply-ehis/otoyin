@@ -1,11 +1,14 @@
 import {
+	ArrowsRightLeftIcon,
 	ClipboardDocumentIcon as ClipboardPaste,
 	ClipboardIcon as Copy,
+	ForwardIcon,
 	MinusIcon as Minus,
 	PlusIcon as Plus,
 	ArrowUturnLeftIcon as RotateCcw,
 	ScissorsIcon as Scissors,
 	Cog6ToothIcon as Settings2,
+	Square2StackIcon,
 	SpeakerWaveIcon as Volume2,
 	BoltIcon as Waves,
 	BoltIcon as Zap,
@@ -236,14 +239,19 @@ export function EditTools({
 export function ClipToolsMenu({
 	storyId,
 	selectedItem,
+	nextItem,
 	setFade,
 	setGain,
+	setSpeed,
+	mergeItems,
+	crossfadeItems,
 	normalizeItem,
 	reverseItem,
 	removeSilence,
 }: {
 	storyId: string;
 	selectedItem: StoryItemDetail;
+	nextItem?: StoryItemDetail;
 	setFade: Mutator<{
 		storyId: string;
 		itemId: string;
@@ -254,12 +262,33 @@ export function ClipToolsMenu({
 		itemId: string;
 		data: { gain_db: number };
 	}>;
+	setSpeed: Mutator<{
+		storyId: string;
+		itemId: string;
+		data: { speed: number };
+	}>;
+	mergeItems: Mutator<{
+		storyId: string;
+		data: { first_item_id: string; second_item_id: string };
+	}>;
+	crossfadeItems: Mutator<{
+		storyId: string;
+		itemId: string;
+		data: { next_item_id: string; duration_ms: number };
+	}>;
 	normalizeItem: Mutator<{ storyId: string; itemId: string }>;
 	reverseItem: Mutator<{ storyId: string; itemId: string }>;
 	removeSilence: Mutator<{ storyId: string; itemId: string }>;
 }) {
 	const { toast } = useToast();
 	const itemId = selectedItem.id;
+
+	const SPEEDS = [1, 1.25, 1.5, 2, 0.75, 0.5];
+	const currentSpeed = selectedItem.speed ?? 1;
+	const nextSpeed =
+		SPEEDS[
+			(SPEEDS.indexOf(currentSpeed) + 1 + SPEEDS.length) % SPEEDS.length
+		] ?? 1;
 
 	const run = <T,>(mutate: Mutator<T>, args: T) =>
 		mutate.mutate(args, {
@@ -330,6 +359,38 @@ export function ClipToolsMenu({
 					label="Remove Silence"
 					onClick={() => run(removeSilence, { storyId, itemId })}
 				/>
+				<ToolItem
+					icon={<ForwardIcon className="mr-2 size-4" />}
+					label={`Speed: ${currentSpeed}× → ${nextSpeed}×`}
+					onClick={() =>
+						run(setSpeed, { storyId, itemId, data: { speed: nextSpeed } })
+					}
+				/>
+				{nextItem ? (
+					<>
+						<ToolItem
+							icon={<Square2StackIcon className="mr-2 size-4" />}
+							label="Merge with next clip"
+							onClick={() =>
+								run(mergeItems, {
+									storyId,
+									data: { first_item_id: itemId, second_item_id: nextItem.id },
+								})
+							}
+						/>
+						<ToolItem
+							icon={<ArrowsRightLeftIcon className="mr-2 size-4" />}
+							label="Crossfade into next (0.5s)"
+							onClick={() =>
+								run(crossfadeItems, {
+									storyId,
+									itemId,
+									data: { next_item_id: nextItem.id, duration_ms: 500 },
+								})
+							}
+						/>
+					</>
+				) : null}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

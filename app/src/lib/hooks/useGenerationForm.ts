@@ -19,14 +19,11 @@ import { useToast } from "@/ui/use-toast";
 // Engine keys as const tuple for proper zod enum inference
 const ENGINE_KEYS = [
 	"kokoro",
-	"fish_speech",
 	"fish_speech_s2",
 	"zonos",
 	"qwen3_tts",
 	"bark_small",
 	"styletts2",
-	"chattts",
-	"f5_tts",
 	"pocket_tts",
 	"parler_tts",
 	"moss_tts_nano",
@@ -218,7 +215,7 @@ export function useGenerationForm(options: UseGenerationFormOptions = {}) {
 
 			// instruct reaches the backend only for models that can act on it:
 			// supports_instruct or emotion_control (instruct-as-emotion-tag for
-			// fish/zonos/chattts/orpheus).
+			// zonos/orpheus).
 			const modelStatusCache =
 				queryClient.getQueryData<ModelStatusListResponse>(["modelStatus"]);
 			const capModel = modelStatusCache?.models.find(
