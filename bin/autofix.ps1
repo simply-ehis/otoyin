@@ -80,7 +80,9 @@ if ($DryRun) {
 
 # ── Apply diff ──
 $tmp = Join-Path $env:TEMP ("autofix_" + (Get-Date -Format yyyyMMddHHmmss) + ".diff")
-$diff | Out-File -LiteralPath $tmp -Encoding utf8
+# BOM-less UTF-8 (PS 5.1's `-Encoding utf8` writes a BOM, which git apply
+# chokes on) — .NET default is UTF-8 without BOM in every PowerShell.
+[System.IO.File]::WriteAllText($tmp, $diff + "`n")
 try {
   git apply --check $tmp 2>&1 | Out-Null
   git apply $tmp

@@ -21,6 +21,15 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# UTF-8 discipline (docs/knowledge/80-powershell-redirect-corruption.md):
+# Windows PowerShell 5.1 writes UTF-16LE for `>` and ANSI for Set-Content by
+# default — the corruption that produced the mojibake reports. Pin every
+# file-writing cmdlet to UTF-8; sites below use .NET WriteAll* (BOM-less
+# UTF-8 in both PS 5.1 and pwsh 7) for byte-exact writes.
+$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
+$PSDefaultParameterValues['Set-Content:Encoding'] = 'utf8'
+$PSDefaultParameterValues['Add-Content:Encoding'] = 'utf8'
+
 # Resolve paths relative to repo root
 $RepoRoot = Split-Path $PSScriptRoot -Parent
 $VenvDir = Join-Path $RepoRoot $VenvDir
@@ -152,7 +161,9 @@ if (Test-Path $pyvenvCfg) {
             $_
         }
     }
-    Set-Content -Path $cfgPath -Value $patched
+    # BOM-less UTF-8: a BOM would prepend pyvenv.cfg's first key and older
+    # CPythons (< 3.12) fail to parse the file (getpath reads raw bytes).
+    [System.IO.File]::WriteAllLines($cfgPath, [string[]]$patched)
 }
 
 # ── Copy backend source code (so `import backend` works) ──────────────────────
@@ -176,7 +187,8 @@ if ($LASTEXITCODE -gt 3) {
 }
 
 # ── Write a marker file so the Rust sidecar knows this is a venv bundle ───────
-Set-Content -Path (Join-Path $OutputDir ".python-bundle") -Value "21labs-python-bundle-v1"
+# Marker consumed by byte comparison — BOM-less so the exact string matches.
+[System.IO.File]::WriteAllText((Join-Path $OutputDir ".python-bundle"), "21labs-python-bundle-v1")
 
 # ── Report size ───────────────────────────────────────────────────────────────
 $size = (Get-ChildItem $OutputDir -Recurse -File | Measure-Object -Property Length -Sum).Sum

@@ -144,3 +144,16 @@ is already anomalous, which is exactly the shape of this corruption.
 - `docs/reports/2026-09-04-typecheck-triage.txt` — repaired case 1 (born corrupt)
 - `docs/reports/2026-09-04-wiring-audit.txt` — repaired case 2 (restored from ancestor)
 - `docs/reports/README.md` — the header convention for marking snapshots
+
+## Remediated sites (2026-09-07)
+
+All in-repo PowerShell file-writes now pin UTF-8 explicitly: `bin/autofix.ps1`
+(diff temp file → `[IO.File]::WriteAllText`, BOM-less — `git apply` rejects a
+BOM'd patch), `scripts/bundle-python.ps1` (pyvenv.cfg + bundle marker →
+`WriteAllLines`/`WriteAllText`, BOM-less — older CPythons reject a BOM'd
+pyvenv.cfg) plus a `$PSDefaultParameterValues` UTF-8 pin as the catch-all.
+`bin/finetune-needle.ps1` keeps explicit `-Encoding UTF8` (BOM'd, but its
+output is Python source, which CPython tolerates). The justfile's
+`[windows]` recipes already use `Invoke-WebRequest`/`Out-Null` — no raw `>`;
+CI workflows run bash only. Verified under PS 5.1: BOM-less bytes, non-ASCII
+round-trip, `git apply --check` green.
