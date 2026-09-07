@@ -76,7 +76,7 @@ def _phonemize(text: str) -> str:
     try:
         from phonemizer.backend import EspeakBackend
     except Exception:
-        logger.debug("phonemizer/espeak unavailable; using raw text (less precise prosody)")
+        logger.debug("phonemizer/espeak unavailable; using raw text (less precise prosody)", exc_info=True)
         return text
     try:
         backend = EspeakBackend(language="en-us", preserve_punctuation=True, with_stress=True)

@@ -282,6 +282,7 @@ async def load_engine_model(engine: str, model_size: str = "default") -> None:
     except _VRAMErr:
         raise
     except Exception:
+        logger.debug("Model load for '%s' failed", engine, exc_info=True)
         # Record circuit-breaker failure so repeated 503s don't hammer the same broken engine
         with contextlib.suppress(Exception):
             lifecycle_manager.record_load_failure(engine)

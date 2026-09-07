@@ -162,6 +162,20 @@ export function connectVoiceChat(
 			return;
 		}
 
+		// Tear down any lingering connection from a previous attempt
+		if (ws) {
+			try {
+				ws.close();
+			} catch {
+				/* best effort */
+			}
+			ws = null;
+		}
+		if (reconnectTimer) {
+			clearTimeout(reconnectTimer);
+			reconnectTimer = null;
+		}
+
 		savedMessageHandler = onMessage;
 		savedConfig = config;
 

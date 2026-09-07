@@ -419,6 +419,7 @@ class GGUFServerProcess:
         try:
             alive = self.is_alive
         except Exception:
+            logger.debug("Failed to check llama-server liveness", exc_info=True)
             alive = False
         if not alive or pid is None:
             _OWNERS.pop(pid, None) if pid is not None else None

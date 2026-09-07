@@ -1,9 +1,3 @@
-import {
-	MicrophoneIcon,
-	PlayIcon,
-	StopIcon,
-	TrashIcon,
-} from "@heroicons/react/24/outline";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "@/lib/api/client";
@@ -11,9 +5,8 @@ import type { SessionResponse } from "@/lib/api/types";
 import { getClip } from "@/lib/clip";
 import { showStudioErrorToast } from "@/lib/errors";
 import { useAudioRecording } from "@/lib/hooks/useAudioRecording";
-import { cn } from "@/lib/utils/cn";
 import { Button } from "@/ui/button";
-import { Badge, Label, Separator, Spinner } from "@/ui/primitives";
+import { Separator } from "@/ui/primitives";
 import {
 	Select,
 	SelectContent,
@@ -23,64 +16,19 @@ import {
 } from "@/ui/select";
 import { EmptyState, ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
-import { hueLine, hueText } from "./hueIdentity";
+import { CompResult } from "./comping/CompResult";
+import type { TakeLane } from "./comping/compingTypes";
+import { isTakeLane } from "./comping/compingTypes";
+import {
+	blobToBase64,
+	formatMs,
+	newLaneId,
+	newRegionId,
+	PLAY_TONES,
+	TOTAL_DURATION_MS,
+} from "./comping/compingUtils";
+import { TakeLaneComponent } from "./comping/TakeLane";
 import { playPreviewBlob } from "./playBlob";
-
-const PLAY_TONES = [330, 392, 440, 494, 554, 659];
-const TOTAL_DURATION_MS = 10000;
-
-function blobToBase64(blob: Blob): Promise<string> {
-	return new Promise((resolve, reject) => {
-		const reader = new FileReader();
-		reader.onloadend = () => {
-			const result = reader.result as string;
-			resolve(result.includes(",") ? (result.split(",")[1] ?? "") : result);
-		};
-		reader.onerror = () => reject(reader.error);
-		reader.readAsDataURL(blob);
-	});
-}
-
-interface TakeRegion {
-	id: string;
-	startMs: number;
-	endMs: number;
-	label: string;
-}
-
-interface TakeLane {
-	id: string;
-	name: string;
-	regions: TakeRegion[];
-	selectedRegionId: string | null;
-	audioBase64?: string | null;
-}
-
-function isTakeLane(v: unknown): v is TakeLane {
-	if (typeof v !== "object" || v === null) {
-		return false;
-	}
-	const l = v as Record<string, unknown>;
-	return (
-		typeof l.id === "string" &&
-		typeof l.name === "string" &&
-		Array.isArray(l.regions)
-	);
-}
-
-function formatMs(ms: number): string {
-	const s = Math.floor(ms / 1000);
-	const m = Math.floor(s / 60);
-	return `${m}:${String(s % 60).padStart(2, "0")}`;
-}
-
-function newLaneId() {
-	return `lane-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
-}
-
-function newRegionId() {
-	return `r-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
-}
 
 export function MultiTakeCompingView() {
 	const { toast } = useToast();
@@ -317,7 +265,6 @@ export function MultiTakeCompingView() {
 			}),
 		);
 	}, []);
-
 	function restoreSession(session: SessionResponse) {
 		const data = session.data as { lanes?: unknown };
 		const restored = Array.isArray(data.lanes)
@@ -357,7 +304,6 @@ export function MultiTakeCompingView() {
 			showStudioErrorToast(err);
 		}
 	}
-
 	async function handleSaveSession() {
 		if (lanes.length === 0) {
 			return;
@@ -498,118 +444,19 @@ export function MultiTakeCompingView() {
 			) : (
 				<div className="space-y-2">
 					{lanes.map((lane, laneIndex) => (
-						<div
+						<TakeLaneComponent
 							key={lane.id}
-							className={cn(
-								"space-y-1.5 rounded-md border border-border bg-card p-3",
-								"border-l-[3px]",
-								hueLine(laneIndex),
-							)}
-						>
-							<div className="flex items-center justify-between gap-2">
-								<div className="flex min-w-0 items-center gap-2">
-									{" "}
-									<span
-										className={cn(
-											"truncate text-xs font-medium",
-											hueText(laneIndex),
-										)}
-									>
-										{lane.name}
-									</span>
-									<Badge tone="neutral">{lane.regions.length} regions</Badge>
-									{lane.audioBase64 ? (
-										<Badge tone="accent">Has audio</Badge>
-									) : null}
-								</div>
-								<div className="flex shrink-0 items-center gap-1">
-									<Button
-										type="button"
-										variant="ghost"
-										size="sm"
-										className="h-6 px-2 text-xs"
-										title="Add region"
-										aria-label={`Add region to ${lane.name}`}
-										onClick={() => addRegion(lane.id)}
-									>
-										+ Region
-									</Button>
-									<Button
-										type="button"
-										variant={
-											recordingLaneId === lane.id ? "destructive" : "ghost"
-										}
-										size="sm"
-										className="h-6 px-2 text-xs"
-										disabled={isRecording && recordingLaneId !== lane.id}
-										title={
-											recordingLaneId === lane.id
-												? "Stop recording"
-												: `Record take on ${lane.name}`
-										}
-										aria-label={
-											recordingLaneId === lane.id
-												? "Stop recording"
-												: `Record take on ${lane.name}`
-										}
-										onClick={() =>
-											recordingLaneId === lane.id
-												? stopRecording()
-												: startLaneRecord(lane.id)
-										}
-									>
-										{recordingLaneId === lane.id ? (
-											<StopIcon className="size-3" aria-hidden="true" />
-										) : (
-											<MicrophoneIcon className="size-3" aria-hidden="true" />
-										)}
-									</Button>
-									{recordingLaneId === lane.id && (
-										<span className="text-xs tabular-nums text-destructive">
-											{formatMs(duration * 1000)}
-										</span>
-									)}
-									<Button
-										type="button"
-										variant="ghost"
-										size="sm"
-										className="h-6 px-2 text-xs text-destructive hover:text-destructive"
-										title={`Remove ${lane.name}`}
-										aria-label={`Remove ${lane.name}`}
-										onClick={() => removeLane(lane.id)}
-									>
-										<TrashIcon className="size-3" aria-hidden="true" />
-									</Button>
-								</div>
-							</div>
-							<div className="relative h-12 overflow-hidden rounded-md bg-secondary">
-								{lane.regions.map((region) => {
-									const left = (region.startMs / TOTAL_DURATION_MS) * 100;
-									const width =
-										((region.endMs - region.startMs) / TOTAL_DURATION_MS) * 100;
-									const selected = lane.selectedRegionId === region.id;
-									return (
-										<button
-											key={region.id}
-											type="button"
-											aria-pressed={selected}
-											className={cn(
-												"absolute bottom-1 top-1 flex items-center justify-center overflow-hidden rounded-sm text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-												selected
-													? "border border-accent bg-accent-muted text-foreground"
-													: "border border-border bg-card text-muted-foreground hover:border-strong",
-											)}
-											style={{ left: `${left}%`, width: `${width}%` }}
-											title={`${region.label} (${formatMs(region.startMs)} → ${formatMs(region.endMs)})`}
-											aria-label={`Select ${region.label}`}
-											onClick={() => selectRegion(lane.id, region.id)}
-										>
-											<span className="truncate px-1">{region.label}</span>
-										</button>
-									);
-								})}
-							</div>
-						</div>
+							lane={lane}
+							laneIndex={laneIndex}
+							isRecording={isRecording}
+							recordingLaneId={recordingLaneId}
+							duration={duration}
+							onAddRegion={addRegion}
+							onRecord={startLaneRecord}
+							onStopRecording={stopRecording}
+							onRemove={removeLane}
+							onSelectRegion={selectRegion}
+						/>
 					))}
 
 					<div className="flex gap-2">
@@ -641,58 +488,13 @@ export function MultiTakeCompingView() {
 
 			<Separator />
 
-			<section className="space-y-2 rounded-md border border-border bg-card p-3">
-				<div className="flex items-center justify-between">
-					<Label>
-						Comp result{" "}
-						<span className="text-muted-foreground">
-							({compedCount} of {lanes.length} lanes)
-						</span>
-					</Label>
-				</div>
-				<div className="relative h-8 overflow-hidden rounded-md bg-secondary">
-					{lanes.map((lane, compLaneIndex) => {
-						const region = lane.regions.find(
-							(r) => r.id === lane.selectedRegionId,
-						);
-						if (!region) {
-							return null;
-						}
-						return (
-							<div
-								key={lane.id}
-								aria-hidden="true"
-								title={`${lane.name} — ${region.label}`}
-								className={cn(
-									"absolute bottom-0.5 top-0.5 rounded-sm",
-									compLaneIndex % 2 === 0 ? "bg-accent" : "bg-foreground",
-								)}
-								style={{
-									left: `${(region.startMs / TOTAL_DURATION_MS) * 100}%`,
-									width: `${((region.endMs - region.startMs) / TOTAL_DURATION_MS) * 100}%`,
-								}}
-							/>
-						);
-					})}
-				</div>
-				<Button
-					type="button"
-					size="sm"
-					variant="outline"
-					className="h-7 text-xs"
-					disabled={assembleMut.isPending || compedCount === 0}
-					title="Assemble and play the comp"
-					aria-label="Assemble and play comp"
-					onClick={() => assembleMut.mutate()}
-				>
-					{assembleMut.isPending || compLoading ? (
-						<Spinner size="xs" className="mr-1" />
-					) : (
-						<PlayIcon className="mr-1 size-3" aria-hidden="true" />
-					)}
-					{assembleMut.isPending || compLoading ? "Assembling…" : "Play Comp"}
-				</Button>
-			</section>
+			<CompResult
+				lanes={lanes}
+				compedCount={compedCount}
+				isPending={assembleMut.isPending}
+				compLoading={compLoading}
+				onAssemble={() => assembleMut.mutate()}
+			/>
 		</div>
 	);
 }

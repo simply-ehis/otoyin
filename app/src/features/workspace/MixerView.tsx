@@ -5,9 +5,7 @@ import type { SessionResponse } from "@/lib/api/types";
 import { getClip } from "@/lib/clip";
 import { ERR_DESC_MIX_FAILED, ERR_TITLE_MIX } from "@/lib/errorMessages";
 import { showStudioErrorToast } from "@/lib/errors";
-import { cn } from "@/lib/utils/cn";
 import { Button } from "@/ui/button";
-import { Label, Spinner } from "@/ui/primitives";
 import {
 	Select,
 	SelectContent,
@@ -15,136 +13,18 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/ui/select";
-import { Slider } from "@/ui/slider";
 import { EmptyState, ErrorState, ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
+import { ChannelCard } from "./mixer/ChannelCard";
+import { MasterCard } from "./mixer/MasterCard";
+import type { ChannelState } from "./mixer/mixerTypes";
+import { toMixerState } from "./mixer/mixerTypes";
+import {
+	removeChannel as removeChannelUtil,
+	restoreSession as restoreSessionUtil,
+	updateChannel as updateChannelUtil,
+} from "./mixer/mixerUtils";
 import { playPreviewBlob } from "./playBlob";
-
-interface ChannelState {
-	id: string;
-	name: string;
-	volume: number;
-	pan: number;
-	muted: boolean;
-	soloed: boolean;
-	clipId?: string;
-	audioUrl?: string;
-}
-
-function isChannelState(v: unknown): v is ChannelState {
-	if (typeof v !== "object" || v === null) {
-		return false;
-	}
-	const c = v as Record<string, unknown>;
-	return (
-		typeof c.id === "string" &&
-		typeof c.name === "string" &&
-		typeof c.volume === "number" &&
-		typeof c.pan === "number" &&
-		typeof c.muted === "boolean" &&
-		typeof c.soloed === "boolean"
-	);
-}
-
-function toMixerState(channels: ChannelState[], masterVolume: number) {
-	return {
-		tracks: channels.map((ch) => ({
-			id: ch.id,
-			name: ch.name,
-			volume: ch.volume,
-			pan: ch.pan,
-			muted: ch.muted,
-			solo: ch.soloed,
-		})),
-		buses: [
-			{ id: "dialogue", name: "Dialogue", volume: 0, pan: 0 },
-			{ id: "music", name: "Music", volume: -6, pan: 0 },
-			{ id: "sfx", name: "SFX", volume: -3, pan: 0 },
-		],
-		master_volume: masterVolume,
-	};
-}
-
-function ChannelCard({
-	ch,
-	onUpdate,
-	onRemove,
-}: {
-	ch: ChannelState;
-	onUpdate: (id: string, updates: Partial<ChannelState>) => void;
-	onRemove: (id: string) => void;
-}) {
-	return (
-		<div className="flex min-w-52 flex-1 flex-col gap-3 rounded-md border border-border bg-card p-3">
-			<div className="flex min-w-0 items-center gap-2">
-				<span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-					{ch.name}
-				</span>
-				<Button
-					type="button"
-					variant="ghost"
-					size="sm"
-					className="h-7 px-2 text-xs"
-					title={`Remove ${ch.name}`}
-					aria-label={`Remove ${ch.name}`}
-					onClick={() => onRemove(ch.id)}
-				>
-					Remove
-				</Button>
-			</div>
-			<div>
-				<Label className="mb-1 block">
-					Volume {Math.round(ch.volume * 100)}%
-				</Label>
-				<Slider
-					min={0}
-					max={1}
-					step={0.01}
-					value={[ch.volume]}
-					onValueChange={([v]) => onUpdate(ch.id, { volume: v ?? 0 })}
-					aria-label={`${ch.name} volume`}
-				/>
-			</div>
-			<div>
-				<Label className="mb-1 block">
-					Pan {ch.pan === 0 ? "center" : ch.pan < 0 ? "left" : "right"}
-				</Label>
-				<Slider
-					min={-1}
-					max={1}
-					step={0.01}
-					value={[ch.pan]}
-					onValueChange={([v]) => onUpdate(ch.id, { pan: v ?? 0 })}
-					aria-label={`${ch.name} pan`}
-				/>
-			</div>
-			<div className="flex gap-2">
-				<Button
-					type="button"
-					variant={ch.muted ? "destructive" : "outline"}
-					size="sm"
-					className="h-7 flex-1 text-xs"
-					aria-pressed={ch.muted}
-					title={ch.muted ? `Unmute ${ch.name}` : `Mute ${ch.name}`}
-					onClick={() => onUpdate(ch.id, { muted: !ch.muted })}
-				>
-					{ch.muted ? "Muted" : "Mute"}
-				</Button>
-				<Button
-					type="button"
-					variant={ch.soloed ? "default" : "outline"}
-					size="sm"
-					className="h-7 flex-1 text-xs"
-					aria-pressed={ch.soloed}
-					title={ch.soloed ? `Unsolo ${ch.name}` : `Solo ${ch.name}`}
-					onClick={() => onUpdate(ch.id, { soloed: !ch.soloed })}
-				>
-					{ch.soloed ? "Soloed" : "Solo"}
-				</Button>
-			</div>
-		</div>
-	);
-}
 
 export function MixerView() {
 	const { toast } = useToast();
@@ -208,14 +88,12 @@ export function MixerView() {
 		};
 	}, []);
 
-	function updateChannel(id: string, updates: Partial<ChannelState>) {
-		setChannels((prev) =>
-			prev.map((ch) => (ch.id === id ? { ...ch, ...updates } : ch)),
-		);
+	function handleUpdateChannel(id: string, updates: Partial<ChannelState>) {
+		setChannels((prev) => updateChannelUtil(prev, id, updates));
 	}
 
-	function removeChannel(id: string) {
-		setChannels((prev) => prev.filter((ch) => ch.id !== id));
+	function handleRemoveChannel(id: string) {
+		setChannels((prev) => removeChannelUtil(prev, id));
 	}
 
 	const pasteClip = useCallback(async () => {
@@ -243,18 +121,11 @@ export function MixerView() {
 		]);
 	}, []);
 
-	function restoreSession(session: SessionResponse) {
-		const data = session.data as {
-			tracks?: unknown;
-			master_volume?: unknown;
-		};
-		const tracks = Array.isArray(data.tracks)
-			? data.tracks.filter(isChannelState)
-			: [];
-		setChannels(tracks);
-		setMasterVolume(
-			typeof data.master_volume === "number" ? data.master_volume : 0.8,
-		);
+	function handleRestoreSession(session: SessionResponse) {
+		const { channels: restored, masterVolume: mv } =
+			restoreSessionUtil(session);
+		setChannels(restored);
+		setMasterVolume(mv);
 		setSessionId(session.id);
 		setIsAutosave(session.is_autosave);
 		setUnsaved(false);
@@ -266,7 +137,7 @@ export function MixerView() {
 		}
 		try {
 			const session = await apiClient.getMixerSession(selectedSession);
-			restoreSession(session);
+			handleRestoreSession(session);
 			toast({ title: "Session loaded", description: session.name });
 		} catch (err) {
 			showStudioErrorToast(err);
@@ -490,57 +361,20 @@ export function MixerView() {
 						<ChannelCard
 							key={ch.id}
 							ch={ch}
-							onUpdate={updateChannel}
-							onRemove={removeChannel}
+							onUpdate={handleUpdateChannel}
+							onRemove={handleRemoveChannel}
 						/>
 					))}
 				</div>
 			)}
 
-			<div className="flex flex-col gap-3 rounded-md border border-border bg-card p-3">
-				<div className="flex items-center justify-between gap-2">
-					<span className="text-xs font-semibold uppercase tracking-wide text-accent">
-						Master
-					</span>
-					<span className="text-xs tabular-nums text-muted-foreground">
-						{Math.round(masterVolume * 100)}%
-					</span>
-				</div>
-				<div
-					className="h-2 overflow-hidden rounded-full bg-secondary"
-					role="img"
-					aria-label={`Master output level ${Math.round(masterLevel * 100)} percent`}
-				>
-					<div
-						className={cn(
-							"h-full rounded-full transition-[width]",
-							masterLevel > 0.85 ? "bg-destructive" : "bg-accent",
-						)}
-						style={{ width: `${Math.min(100, masterLevel * 100)}%` }}
-					/>
-				</div>
-				<Slider
-					min={0}
-					max={1}
-					step={0.01}
-					value={[masterVolume]}
-					onValueChange={([v]) => setMasterVolume(v ?? 0.8)}
-					aria-label="Master volume"
-				/>
-				<Button
-					type="button"
-					variant="outline"
-					size="sm"
-					className="h-8 self-start text-xs"
-					disabled={channels.length === 0 || previewMut.isPending}
-					title="Render and play the current mix"
-					aria-label="Preview mix"
-					onClick={() => previewMut.mutate()}
-				>
-					{previewMut.isPending ? <Spinner size="xs" className="mr-1" /> : null}
-					{previewMut.isPending ? "Rendering…" : "Preview Mix"}
-				</Button>
-			</div>
+			<MasterCard
+				masterVolume={masterVolume}
+				masterLevel={masterLevel}
+				onMasterVolumeChange={setMasterVolume}
+				channelsLength={channels.length}
+				previewMut={previewMut}
+			/>
 		</div>
 	);
 }
