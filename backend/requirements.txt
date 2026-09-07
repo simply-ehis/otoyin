@@ -145,6 +145,42 @@ psutil>=5.9.0
 # BYOK model-provider service at import time; do not remove.
 cryptography>=41.0.0
 
+# HTTP client — backends/gguf_runner.py, backends/kokoro_onnx_backend.py
+requests>=2.31.0
+
+# PDF/EPUB book import — routes/assistant_tools/harness.py
+pdfplumber>=0.10.0
+beautifulsoup4>=4.12.0
+ebooklib>=0.18.0
+
+# Diffusion models — backends/minimax_music3_backend.py (lazy-imported)
+diffusers>=0.25.0
+
+# SNAC decoder — backends/orpheus_backend.py (Orpheus TTS, lazy-imported)
+snac>=1.0.0
+
+# NLP text preprocessing — utils/text_preprocessing.py (lazy-imported)
+spacy>=3.7.0
+
+# G2P phonemizer — backends/_kitten_tts_onnx.py (lazy-imported)
+phonemizer>=3.2.0
+
+# SafeTensors weight format — backends/_pocket_tts_onnx.py (lazy-imported)
+safetensors>=0.4.0
+
+# Kokoro ONNX TTS — backends/kokoro_onnx_backend.py (lazy-imported)
+kokoro-onnx>=0.1.0
+
+# Zonos TTS — backends/zonos_backend.py (lazy-imported, torch-based)
+zonos>=0.1.0
+
+# ONNX model format — routes/models/download.py, scripts/quantize_onnx.py
+onnx>=1.16.0
+
+# GPU platform support (optional, lazy-imported, platform-gated)
+intel-extension-for-pytorch>=2.1.0; sys_platform == "win32"
+torch-directml>=0.2.0; sys_platform == "win32"
+
 # ── Additional optional, lazy-imported engines (degrade to a clean 501 if absent) ──
 # Same on-demand pattern as demucs / tinysoundfont / neuTTS / OpenVoice above:
 #

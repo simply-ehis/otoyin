@@ -75,7 +75,6 @@ ignore = [
 # project's lazy-loading philosophy), so ruff sees `torch`/`np` as undefined at
 # module scope. E402 covers the same deliberate late-import pattern.
 "backends/stable_audio_backend.py" = ["F821"]
-"services/deepfilter_cleanup.py" = ["F821"]
 # SQLAlchemy filter() expressions need `== True`/`== False` (operator overload
 # builds the SQL clause); `is True` would evaluate in plain Python and break
 # the query silently.
