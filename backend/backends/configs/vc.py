@@ -22,6 +22,8 @@ def _get_rvc_configs() -> list[ModelConfig]:
                 gpu_only=False,
                 quality_score=5,
                 category="vc",
+                pip_packages=["rvc-python>=0.1.5"],
+                venv_name="rvc",
             )
         )
     return configs
@@ -42,6 +44,7 @@ def _get_neutts_configs() -> list[ModelConfig]:
             quant="Q4_0",
             quality_score=6,
             category="tts",
+            pip_packages=["neutts[llama,onnx]>=0.1.0"],
         )
     ]
 
@@ -67,6 +70,7 @@ def _get_neutts_2e_configs() -> list[ModelConfig]:
             emotion_control=True,
             quality_score=7,
             category="tts",
+            pip_packages=["neutts[llama,onnx]>=0.1.0"],
             structured_preset_voices=neutts_2e_voices,
             quant="Q4_0",
         ),
@@ -82,6 +86,7 @@ def _get_neutts_2e_configs() -> list[ModelConfig]:
             emotion_control=True,
             quality_score=8,
             category="tts",
+            pip_packages=["neutts[llama,onnx]>=0.1.0"],
             structured_preset_voices=neutts_2e_voices,
             quant="Q8_0",
         ),
@@ -112,6 +117,7 @@ def _get_orpheus_configs() -> list[ModelConfig]:
             emotion_control=True,
             quality_score=9,
             category="vc",
+            pip_packages=["snac>=1.0.0"],
             paralinguistic_tags=True,
             supported_tags=["<laugh>", "<sigh>", "<cough>", "<sniffle>", "<groan>", "<yawn>", "<gasp>"],
             structured_preset_voices=orpheus_voices,
@@ -129,6 +135,7 @@ def _get_orpheus_configs() -> list[ModelConfig]:
             emotion_control=True,
             quality_score=10,
             category="vc",
+            pip_packages=["snac>=1.0.0"],
             paralinguistic_tags=True,
             supported_tags=["<laugh>", "<sigh>", "<cough>", "<sniffle>", "<groan>", "<yawn>", "<gasp>"],
             structured_preset_voices=orpheus_voices,
@@ -153,6 +160,8 @@ def _get_seed_vc_configs() -> list[ModelConfig]:
             gpu_only=True,
             quality_score=8,
             category="vc",
+            pip_packages=["seed-vc"],
+            venv_name="seed_vc",
         )
     ]
 
@@ -176,5 +185,6 @@ def _get_openvoice_configs() -> list[ModelConfig]:
             clone_voice=True,
             quality_score=6,
             category="vc",
+            pip_packages=["git+https://github.com/myshell-ai/OpenVoice.git"],
         )
     ]

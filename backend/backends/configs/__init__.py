@@ -43,6 +43,7 @@ def _get_whisper_configs() -> list[ModelConfig]:
             size_mb=75,
             quality_score=3,
             category="stt",
+            pip_packages=["pywhispercpp>=1.5.0"],
         ),
         ModelConfig(
             model_name="whisper-base-en",
@@ -53,6 +54,7 @@ def _get_whisper_configs() -> list[ModelConfig]:
             size_mb=142,
             quality_score=5,
             category="stt",
+            pip_packages=["pywhispercpp>=1.5.0"],
         ),
         ModelConfig(
             model_name="whisper-large-v3-turbo",
@@ -64,6 +66,7 @@ def _get_whisper_configs() -> list[ModelConfig]:
             quality_score=10,
             category="stt",
             clone_voice=False,
+            pip_packages=["pywhispercpp>=1.5.0"],
         ),
     ]
 
@@ -92,6 +95,7 @@ def _get_faster_whisper_configs() -> list[ModelConfig]:
             size_mb=75,
             quality_score=3,
             category="stt",
+            pip_packages=["faster-whisper>=1.0.0"],
         ),
         ModelConfig(
             model_name="whisper-base-en",
@@ -102,6 +106,7 @@ def _get_faster_whisper_configs() -> list[ModelConfig]:
             size_mb=142,
             quality_score=5,
             category="stt",
+            pip_packages=["faster-whisper>=1.0.0"],
         ),
         ModelConfig(
             model_name="whisper-small-en",
@@ -112,6 +117,7 @@ def _get_faster_whisper_configs() -> list[ModelConfig]:
             size_mb=466,
             quality_score=7,
             category="stt",
+            pip_packages=["faster-whisper>=1.0.0"],
         ),
         ModelConfig(
             model_name="whisper-medium-en",
@@ -122,6 +128,7 @@ def _get_faster_whisper_configs() -> list[ModelConfig]:
             size_mb=1530,
             quality_score=8,
             category="stt",
+            pip_packages=["faster-whisper>=1.0.0"],
         ),
         ModelConfig(
             model_name="whisper-large-v3",
@@ -132,6 +139,7 @@ def _get_faster_whisper_configs() -> list[ModelConfig]:
             size_mb=3100,
             quality_score=10,
             category="stt",
+            pip_packages=["faster-whisper>=1.0.0"],
         ),
         ModelConfig(
             model_name="whisper-large-v3-turbo",
@@ -142,6 +150,7 @@ def _get_faster_whisper_configs() -> list[ModelConfig]:
             size_mb=1620,
             quality_score=9,
             category="stt",
+            pip_packages=["faster-whisper>=1.0.0"],
         ),
     ]
 
@@ -350,6 +359,7 @@ def _get_translation_configs() -> list[ModelConfig]:
                 size_mb=45,
                 quality_score=8,
                 category="translation",
+                pip_packages=["argostranslate>=1.9.0"],
             )
         )
     return configs
@@ -367,6 +377,8 @@ def _get_audio_processing_configs() -> list[ModelConfig]:
             size_mb=316,
             quality_score=8,
             category="sfx",
+            pip_packages=["demucs>=4.0.0"],
+            venv_name="demucs",
         ),
     ]
 

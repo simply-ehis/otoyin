@@ -74,6 +74,14 @@ class ModelConfig:
     # TTS scores are only compared against other TTS models, etc.
     quality_score: int = 0  # 0-10, set in config files
     category: str = "tts"  # tts | stt | llm | music | sfx | vc
+    # On-demand pip dependencies — installed automatically when the model
+    # is downloaded. Empty list = no extra pip deps needed (uses base install
+    # or a binary sidecar like llama-server/crispasr).
+    pip_packages: list[str] = field(default_factory=list)
+    # Dedicated venv name for engines with conflicting deps (e.g. "rvc"
+    # pins numpy<=1.23.5). If set, pip installs into data/venvs/{venv_name}/
+    # instead of the main environment. None = install into main env.
+    venv_name: str | None = None
 
     def __post_init__(self):
         """Validate quantization field based on engine type."""

@@ -146,6 +146,7 @@ def _get_tts_configs() -> list[ModelConfig]:
             quality_score=10,
             category="tts",
             quant="int8",
+            pip_packages=["kokoro>=0.9.4", "misaki[en,ja,zh]>=0.9.4"],
         ),
         # --- Fish Audio S2 Pro (GGUF, 4.56B Dual-AR): s2.cpp sidecar -----
         # Fish Audio Research License (non-commercial research). Q4_K_M GGUF
@@ -189,6 +190,7 @@ def _get_tts_configs() -> list[ModelConfig]:
             category="tts",
             emotion_control=True,
             paralinguistic_tags=True,
+            pip_packages=["zonos>=0.1.0"],
             supported_tags=[
                 "[angry]",
                 "[happy]",
@@ -213,6 +215,7 @@ def _get_tts_configs() -> list[ModelConfig]:
             clone_voice=True,
             quality_score=5,
             category="tts",
+            pip_packages=["pocket-tts>=0.1.0"],
             preset_voices=_POCKET_TTS_PRESET_IDS,
             structured_preset_voices=_POCKET_TTS_STRUCTURED_VOICES,
             languages=["en", "fr", "de", "pt", "it", "es"],
@@ -227,6 +230,7 @@ def _get_tts_configs() -> list[ModelConfig]:
             clone_voice=True,
             quality_score=5,
             category="tts",
+            pip_packages=["pocket-tts>=0.1.0", "sentencepiece>=0.2.0"],
             preset_voices=_POCKET_TTS_PRESET_IDS,
             structured_preset_voices=_POCKET_TTS_STRUCTURED_VOICES,
             languages=["en", "de", "fr", "it", "pt", "es"],
@@ -245,6 +249,7 @@ def _get_tts_configs() -> list[ModelConfig]:
             clone_voice=True,
             quality_score=5,
             category="tts",
+            pip_packages=["sentencepiece>=0.2.0"],
             languages=[
                 "en",
                 "zh",
@@ -280,6 +285,7 @@ def _get_tts_configs() -> list[ModelConfig]:
             voice_design=True,
             quality_score=6,
             category="tts",
+            pip_packages=["parler-tts>=0.1.0"],
             preset_voices=[
                 "Jon",
                 "Lea",
@@ -328,6 +334,7 @@ def _get_tts_configs() -> list[ModelConfig]:
             size_mb=80,
             quality_score=3,
             category="tts",
+            pip_packages=["phonemizer>=3.2.0", "safetensors>=0.4.0"],
             preset_voices=["Bella", "Jasper", "Luna", "Bruno", "Rosie", "Hugo", "Kiki", "Leo"],
             structured_preset_voices=[
                 PresetVoiceConfig(id="Bella", name="Bella", gender="female", language="en"),

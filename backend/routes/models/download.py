@@ -23,47 +23,107 @@ logger = logging.getLogger(__name__)
 # Engine -> pip packages that are intentionally NOT in requirements.txt or
 # the frozen bundle. They are installed on-demand when the user downloads
 # the corresponding model, so the base install stays lean.
+# Fallback for engines not yet in ModelConfig.pip_packages.
 _ENGINE_PIP_DEPS: dict[str, list[str]] = {
-    # Kokoro torch (hexgrad/Kokoro-82M, 350 MB) — bloat, on-demand only.
-    # `kokoro` pulls `misaki` which pulls language-tags / espeakng-loader /
-    # en_core_web_sm / unidic etc. Never bundled (see build_binary.py).
     "kokoro": ["kokoro>=0.9.4", "misaki[en,ja,zh]>=0.9.4"],
-    # Faster-Whisper (Systran, CTranslate2 int8) — bloat, on-demand only.
-    # `faster-whisper` pulls `ctranslate2`. Never bundled.
     "faster-whisper": ["faster-whisper>=1.0.0"],
 }
+
+# Import name -> pip package name mapping for importability checks.
+_ENGINE_IMPORT_PROBES: dict[str, str] = {
+    "kokoro": "kokoro",
+    "faster-whisper": "faster_whisper",
+    "pocket_tts": "pocket_tts",
+    "parler_tts": "parler_tts",
+    "moss_tts_nano": "sentencepiece",
+    "kitten_tts": "phonemizer",
+    "neutts": "neutts",
+    "neutts_2e": "neutts",
+    "orpheus": "snac",
+    "zonos": "zonos",
+    "whisper": "pywhispercpp",
+    "rvc": "rvc_python",
+    "openvoice": "openvoice",
+    "argos_translate": "argostranslate",
+    "demucs_onnx": "demucs",
+}
+
+
+def _ensure_venv(venv_name: str) -> str:
+    """Create or reuse a dedicated venv for engines with conflicting deps.
+
+    Returns the path to the venv's python executable. Venvs are stored at
+    ``data/venvs/{venv_name}/``.
+    """
+    import sys
+
+    from ...config import get_data_dir
+
+    venv_dir = get_data_dir() / "venvs" / venv_name
+    if not venv_dir.exists():
+        logger.info("Creating dedicated venv for %s: %s", venv_name, venv_dir)
+        import subprocess
+
+        subprocess.run([sys.executable, "-m", "venv", str(venv_dir)], check=True, timeout=60)
+
+    if sys.platform == "win32":
+        return str(venv_dir / "Scripts" / "python.exe")
+    return str(venv_dir / "bin" / "python")
 
 
 def _ensure_engine_pip_deps(engine: str) -> None:
     """Pip-install missing deps for *engine* if not already importable.
 
-    Only runs for engines in ``_ENGINE_PIP_DEPS``. No-op for frozen
-    binaries (sys.frozen) or when deps already importable. Failures are
-    logged, not raised — the model download still proceeds and the
-    backend will return 501 until the user installs manually.
+    Reads ``pip_packages`` and ``venv_name`` from ModelConfig when available,
+    falls back to ``_ENGINE_PIP_DEPS`` for engines not yet in the config.
+
+    No-op for frozen binaries (sys.frozen) or when deps already importable.
+    Failures are logged, not raised — the model download still proceeds and
+    the backend will return 501 until the user installs manually.
     """
-    deps = _ENGINE_PIP_DEPS.get(engine)
+    import sys
+
+    if getattr(sys, "frozen", False):
+        return
+
+    # Resolve deps + venv from ModelConfig (preferred) or fallback dict.
+    deps: list[str] = []
+    venv_name: str | None = None
+    try:
+        from ...backends import get_all_model_configs
+
+        for cfg in get_all_model_configs():
+            if cfg.engine == engine and cfg.pip_packages:
+                deps = cfg.pip_packages
+                venv_name = cfg.venv_name
+                break
+    except Exception:
+        pass
+    if not deps:
+        deps = _ENGINE_PIP_DEPS.get(engine, [])
     if not deps:
         return
-    # Quick importability check — e.g. kokoro -> `import kokoro`
-    probe = {"kokoro": "kokoro", "faster-whisper": "faster_whisper"}.get(engine, engine)
+
+    # Quick importability check.
+    probe = _ENGINE_IMPORT_PROBES.get(engine, engine)
     try:
         __import__(probe)
         return  # already installed
     except ImportError:
         pass
-    # Frozen binary has no pip — skip.
-    import sys
 
-    if getattr(sys, "frozen", False):
-        logger.info("Skipping pip install for engine %s (frozen binary)", engine)
-        return
     import subprocess
 
-    logger.info("On-demand pip install for engine %s: %s", engine, deps)
+    # Determine python executable: dedicated venv or main env.
+    if venv_name:
+        python = _ensure_venv(venv_name)
+    else:
+        python = sys.executable
+
+    logger.info("On-demand pip install for engine %s: %s (python=%s)", engine, deps, python)
     try:
         subprocess.run(
-            [sys.executable, "-m", "pip", "install", *deps, "-q"],
+            [python, "-m", "pip", "install", *deps, "-q"],
             check=True,
             timeout=300,
         )
