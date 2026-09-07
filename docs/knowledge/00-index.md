@@ -321,6 +321,7 @@ Every knowledge doc should have an `## Agent Callable` section with exact MCP to
 - [77-notifications.md](77-notifications.md) — Push-style notices: remote `GET /v1/notices` merged into bundled announcements at startup; admin `POST /v1/notices/admin`; offline-first.
 - [78-component-lineage.md](78-component-lineage.md) — Recovery map after archive/ deletion: pre/post-repair component text via git objects (`630b6f9`, `ba07d00`), never recreate archive/.
 - [79-encoding-repairs.md](79-encoding-repairs.md) — Repair method for corrupted files + round-trip verification (HEAD-blob refix, per-glyph corruption-source proof), taxonomy, gotchas.
+- [80-powershell-redirect-corruption.md](80-powershell-redirect-corruption.md) — The valid-UTF-8 corruption class byte gates miss (PowerShell `>` redirect): mechanism, script-run detection heuristic, surgical repair recipe.
 
 ### Audit info docs
 - [52-cross-tab-clip-linkage.md](52-cross-tab-clip-linkage.md) — Cross-tab clip linkage (copy/paste linked clips) + per-tab autosave & compulsory Save.

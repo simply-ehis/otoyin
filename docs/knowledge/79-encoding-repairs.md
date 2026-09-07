@@ -25,10 +25,13 @@ UPDATED: 2026-09-06
 | BOM misuse | UTF-8 file carrying a UTF-16 BOM | Yes — stripped by `--fix` |
 | Letter→control-byte swaps | `` `b ``/`` `f `` shell escapes → 0x08/0x0C eating letters | **Lossy** — maps cannot know the letter; needs per-site ground truth |
 | U+FFFD, invalid UTF-8 | Information already destroyed at write time | **Lossy** — recover only from external sources (git history, the running code, docs) |
+| Valid-UTF-8 script-run garbage | PowerShell `>` redirect + conversion pass: CJK/Hangul/PUA glyphs at line boundaries of an ASCII-only log | **Lossy-ish** — boundary bytes unrecoverable, content lines survive verbatim; strip surgically (see 80) |
 
 The fixer's maps handle the first three classes. The last two require a human decision
 grounded in evidence — the verification method below proves those decisions touched
-nothing else.
+nothing else. The sixth class is worse in a different way: it is **invisible to this
+file's byte-level scanner** (valid UTF-8, no FFFD/C1/BOM) and needs the script-run
+audit in `80-powershell-redirect-corruption.md`.
 
 ## Repair procedure
 
