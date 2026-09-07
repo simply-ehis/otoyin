@@ -92,7 +92,7 @@ class ReadFileRequest(BaseModel):
 
 
 @router.post("/files/read")
-def read_file(req: ReadFileRequest) -> dict:
+async def read_file(req: ReadFileRequest) -> dict:
     """Read a text file and return its contents."""
     file_path = _resolve_path(req.path)
     ext = file_path.suffix.lower()
@@ -125,7 +125,7 @@ class ReadPdfRequest(BaseModel):
 
 
 @router.post("/files/read-pdf")
-def read_pdf(req: ReadPdfRequest) -> dict:
+async def read_pdf(req: ReadPdfRequest) -> dict:
     """Extract text from a PDF document."""
     file_path = _resolve_path(req.path)
     ext = file_path.suffix.lower()
@@ -135,13 +135,12 @@ def read_pdf(req: ReadPdfRequest) -> dict:
         import fitz  # PyMuPDF
     except ImportError as err:
         raise HTTPException(status_code=501, detail="PyMuPDF not installed — pip install PyMuPDF") from err
-    doc = fitz.open(str(file_path))
-    pages = []
-    for i, page in enumerate(doc):
-        if i >= req.max_pages:
-            break
-        pages.append(page.get_text())
-    doc.close()
+    with fitz.open(str(file_path)) as doc:
+        pages = []
+        for i, page in enumerate(doc):
+            if i >= req.max_pages:
+                break
+            pages.append(page.get_text())
     text = "\n\n".join(pages)
     truncated = False
     if req.compact:
@@ -163,7 +162,7 @@ class ReadEpubRequest(BaseModel):
 
 
 @router.post("/files/read-epub")
-def read_epub(req: ReadEpubRequest) -> dict:
+async def read_epub(req: ReadEpubRequest) -> dict:
     """Extract text from an EPUB ebook."""
     file_path = _resolve_path(req.path)
     ext = file_path.suffix.lower()
@@ -173,11 +172,10 @@ def read_epub(req: ReadEpubRequest) -> dict:
         import fitz  # PyMuPDF handles EPUB too
     except ImportError as err:
         raise HTTPException(status_code=501, detail="PyMuPDF not installed — pip install PyMuPDF") from err
-    doc = fitz.open(str(file_path))
-    pages = []
-    for page in doc:
-        pages.append(page.get_text())
-    doc.close()
+    with fitz.open(str(file_path)) as doc:
+        pages = []
+        for page in doc:
+            pages.append(page.get_text())
     text = "\n\n".join(pages)
     truncated = False
     if req.compact:
@@ -197,7 +195,7 @@ class TranscribeFileRequest(BaseModel):
 
 
 @router.post("/files/transcribe")
-def transcribe_file(req: TranscribeFileRequest) -> dict:
+async def transcribe_file(req: TranscribeFileRequest) -> dict:
     """Transcribe an audio file using Whisper STT."""
     file_path = _resolve_path(req.audio_path)
     ext = file_path.suffix.lower()

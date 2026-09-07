@@ -1,5 +1,4 @@
 import type { LanguageCode } from "@/lib/constants/languages";
-import { formatErrorDetail } from "./clientCore";
 import { ProfilesMethods } from "./clientProfiles";
 import type {
 	ConversationPresets,
@@ -63,41 +62,27 @@ export class GenerationsMethods extends ProfilesMethods {
 		if (sanitize) {
 			form.append("sanitize", "true");
 		}
-		const res = await fetch(`${this.getBaseUrl()}/generate/import`, {
+		const resp = await this.fetchWithAuth("/generate/import", {
 			method: "POST",
 			body: form,
 		});
-		if (!res.ok) {
-			const detail = await res.text().catch(() => res.statusText);
-			throw new Error(detail || `HTTP ${res.status}`);
-		}
-		return res.json();
+		return resp.json();
 	}
 
 	async generateSfx(data: SFXGenerateRequest): Promise<Blob> {
-		const res = await fetch(`${this.getBaseUrl()}/generate/sfx`, {
+		const resp = await this.fetchWithAuth("/generate/sfx", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(data),
 		});
-		if (!res.ok) {
-			const error = await res.json().catch(() => ({ detail: res.statusText }));
-			throw new Error(formatErrorDetail(error.detail, `HTTP error! status: ${res.status}`));
-		}
-		return res.blob();
+		return resp.blob();
 	}
 
 	async generateMusic(data: { engine: string; prompt: string; duration_seconds: number; genre?: string; mood?: string; tempo?: number; seed?: number; mode?: string; reference_audio_path?: string }): Promise<Blob> {
-		const res = await fetch(`${this.getBaseUrl()}/generate/music`, {
+		const resp = await this.fetchWithAuth("/generate/music", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(data),
 		});
-		if (!res.ok) {
-			const error = await res.json().catch(() => ({ detail: res.statusText }));
-			throw new Error(formatErrorDetail(error.detail, `HTTP error! status: ${res.status}`));
-		}
-		return res.blob();
+		return resp.blob();
 	}
 
 	async searchFreesound(q: string, page = 1, pageSize = 20): Promise<{ results: Array<{ id: number; name: string; username: string; license: string; duration: number; previews: { "preview-hq-ogg": string; "preview-lq-ogg": string }; tags: string[] }>; count: number; next?: string }> {
@@ -191,41 +176,13 @@ export class GenerationsMethods extends ProfilesMethods {
 	}
 
 	async exportGeneration(generationId: string): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/history/${generationId}/export`;
-		const response = await fetch(url);
-
-		if (!response.ok) {
-			const error = await response.json().catch(() => ({
-				detail: response.statusText,
-			}));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-
-		return response.blob();
+		const resp = await this.fetchWithAuth(`/history/${generationId}/export`);
+		return resp.blob();
 	}
 
 	async exportGenerationAudio(generationId: string): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/history/${generationId}/export-audio`;
-		const response = await fetch(url);
-
-		if (!response.ok) {
-			const error = await response.json().catch(() => ({
-				detail: response.statusText,
-			}));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-
-		return response.blob();
+		const resp = await this.fetchWithAuth(`/history/${generationId}/export-audio`);
+		return resp.blob();
 	}
 
 	async importGeneration(file: File): Promise<{
@@ -235,28 +192,13 @@ export class GenerationsMethods extends ProfilesMethods {
 		text: string;
 		message: string;
 	}> {
-		const url = `${this.getBaseUrl()}/history/import`;
 		const formData = new FormData();
 		formData.append("file", file);
-
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/history/import", {
 			method: "POST",
 			body: formData,
 		});
-
-		if (!response.ok) {
-			const error = await response.json().catch(() => ({
-				detail: response.statusText,
-			}));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-
-		return response.json();
+		return resp.json();
 	}
 
 	// Generation status SSE
@@ -298,26 +240,11 @@ export class GenerationsMethods extends ProfilesMethods {
 		if (model) {
 			formData.append("model", model);
 		}
-
-		const url = `${this.getBaseUrl()}/transcribe`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/transcribe", {
 			method: "POST",
 			body: formData,
 		});
-
-		if (!response.ok) {
-			const error = await response.json().catch(() => ({
-				detail: response.statusText,
-			}));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-
-		return response.json();
+		return resp.json();
 	}
 
 	// Captures

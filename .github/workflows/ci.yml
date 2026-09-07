@@ -15,6 +15,7 @@ jobs:
   frontend-lint:
     name: "Frontend: Biome lint"
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,6 +28,7 @@ jobs:
   frontend-typecheck:
     name: "Frontend: TypeScript"
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -39,6 +41,7 @@ jobs:
   frontend-test:
     name: "Frontend: Vitest"
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -51,6 +54,7 @@ jobs:
   frontend-e2e:
     name: "Frontend: Playwright e2e (critical paths)"
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -70,6 +74,7 @@ jobs:
   frontend-test-floor:
     name: "Frontend: canonical component test floor (prompt 14)"
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -80,6 +85,7 @@ jobs:
   wiring-check:
     name: "Wiring: stranded endpoints / orphaned pages (prompt 20)"
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -96,6 +102,7 @@ jobs:
   i18n-parity:
     name: "i18n: locale key parity (advisory until backlog is clear)"
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     # Advisory while ja/zh-CN/zh-TW carry the 123-key backlog (see
     # docs/reports/2026-09-04-i18n-backlog.md). Flip off continue-on-error
     # and add --strict once translators close it.
@@ -110,6 +117,7 @@ jobs:
   security-audit:
     name: "Dependencies: vulnerability audit (prompt 16)"
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -129,6 +137,7 @@ jobs:
   frontend-build:
     name: "Frontend: Vite build"
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -142,6 +151,7 @@ jobs:
   backend-lint:
     name: "Backend: Ruff lint + format"
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -154,6 +164,7 @@ jobs:
   backend-test:
     name: "Backend: Pytest"
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -178,6 +189,7 @@ jobs:
   backend-checks:
     name: "Backend: Static checks"
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -196,6 +208,7 @@ jobs:
   encoding-check:
     name: "Encoding: no invalid UTF-8 or U+FFFD (mojibake gate)"
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -210,6 +223,7 @@ jobs:
   rust-check:
     name: "Rust: Clippy + tests"
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: tauri/src-tauri

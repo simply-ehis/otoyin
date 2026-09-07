@@ -204,7 +204,13 @@ export function connectVoiceChat(
 		};
 
 		ws.onmessage = (event) => {
-			const msg: VoiceChatMessage = JSON.parse(event.data);
+			let msg: VoiceChatMessage;
+			try {
+				msg = JSON.parse(event.data);
+			} catch {
+				logger.debug("[voiceChat] malformed message:", event.data);
+				return;
+			}
 			onMessage(msg);
 
 			if (msg.type === "started") {

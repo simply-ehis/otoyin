@@ -164,3 +164,9 @@ checkpoints/needle2.pkl
 
 # Nested reference repo (separate clone, not part of this project)
 awesome-desktop-design.skills/
+
+# MCP codebase-memory artifacts
+.codebase-memory/
+
+# ONNX model weights (large, user-downloaded)
+*.onnx

@@ -84,15 +84,14 @@ def _parse_with_pymupdf(path: Path) -> tuple[str, list[dict], str | None]:
     except ImportError as e:
         raise RuntimeError("PyMuPDF not installed — run: pip install PyMuPDF") from e
 
-    doc = fitz.open(str(path))
-    meta_title = (doc.metadata.get("title") or "").strip() or path.stem
-    # Try TOC first
-    toc = doc.get_toc(simple=True)  # list of [level, title, page]
-    full_text_parts: list[str] = []
-    for page in doc:
-        full_text_parts.append(page.get_text("text"))
-    full_text = _clean_text("\n".join(full_text_parts))
-    doc.close()
+    with fitz.open(str(path)) as doc:
+        meta_title = (doc.metadata.get("title") or "").strip() or path.stem
+        # Try TOC first
+        toc = doc.get_toc(simple=True)  # list of [level, title, page]
+        full_text_parts: list[str] = []
+        for page in doc:
+            full_text_parts.append(page.get_text("text"))
+        full_text = _clean_text("\n".join(full_text_parts))
 
     if toc and len(toc) >= 2:
         # Build chapters from TOC boundaries when available — but we still use text splitting
