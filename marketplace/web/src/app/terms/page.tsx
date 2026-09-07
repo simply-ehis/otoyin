@@ -17,8 +17,9 @@ const SECTIONS: { heading: string; body: string[] }[] = [
   {
     heading: 'What you are buying',
     body: [
-      'When you purchase a product from the Otoyin Marketplace, you are buying a license to use that specific product within the Otoyin application. You are not buying the underlying intellectual property, source code, or ownership of the product itself.',
-      'Each purchase grants you a perpetual, non-exclusive license to use the product — meaning you can use it forever, but we retain ownership and can license it to others.',
+      'When you purchase a product from the Otoyin Marketplace, you are buying a license to use that specific product — a model pack, voice pack, plugin, or other asset distributed through the Marketplace. You are not buying the underlying intellectual property, source code, or ownership of the product itself.',
+      'Each purchase grants you a perpetual, non-exclusive license to use the product within the Otoyin application — meaning you can use it forever, but we retain ownership and can license it to others.',
+      'Important: The Otoyin application itself is open source software governed by its own license (see the app repository). These Terms apply only to proprietary products purchased from the Marketplace, not to the open source application code.',
     ],
   },
   {
@@ -32,10 +33,10 @@ const SECTIONS: { heading: string; body: string[] }[] = [
   {
     heading: 'What you cannot do',
     body: [
-      'Redistribute or resell. You cannot share, sell, sublicense, or redistribute the product files (model weights, voice packs, plugins, or any other downloaded assets) to third parties — whether standalone, bundled, or embedded in another application.',
-      'Extract for use outside Otoyin. You cannot extract model files, voice data, or plugin binaries from the Otoyin application to use them in competing software, scripts, or services.',
-      'Reverse engineer for IP extraction. You may reverse engineer for interoperability purposes where permitted by applicable law, but not to replicate, clone, or extract the core intellectual property of the product.',
-      'Circumvent device limits. You may not use automated tools, shared accounts, or other methods to use the product on more devices than your license allows.',
+      'Redistribute or resell Marketplace products. You cannot share, sell, sublicense, or redistribute product files downloaded from the Marketplace (model weights, voice packs, plugins, or any other downloaded assets) to third parties — whether standalone, bundled, or embedded in another application.',
+      'Extract Marketplace products for use outside Otoyin. You cannot extract model files, voice data, or plugin binaries that you downloaded from the Marketplace to use them in competing software, scripts, or services. This restriction applies to Marketplace-distributed assets, not to the open source application code.',
+      'Reverse engineer Marketplace products for IP extraction. You may reverse engineer for interoperability purposes where permitted by applicable law, but not to replicate, clone, or extract the core intellectual property of Marketplace products.',
+      'Circumvent device limits. You may not use automated tools, shared accounts, or other methods to use Marketplace products on more devices than your license allows.',
     ],
   },
   {

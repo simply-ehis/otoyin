@@ -19,3 +19,10 @@ Re-run e2e push after any backend/client change: no changes made in this pass. P
 - [ ] No floating pattern (pending scoped grep)
 - [ ] Silent offline degradation (code yes, manual test no)
 → FILE IN PROGRESS. All three opens are demonstrations, not builds.
+
+## 2026-09-07 — E2E + conformance run (all three opens demonstrated)
+`backend/tests/test_notices_e2e.py` (marked `e2e`, excluded by default addopts) — same real-process topology as the 07 catalog E2E:
+- [x] **Remote notice reaches app without update**: fake notices server (ThreadingHTTPServer) + real backend subprocess; startup merge delivers a NEW remote id (appended last per merge ordering) and a same-id REPLACEMENT of `offline-promise` (remote text wins in place); `/content/offers` + `/content/whats-new` untouched; 'Merged N remote notice(s)' info log present; same process, no restart.
+- [x] **No floating pattern**: scoped grep on `components/Banner/AnnouncementBanner.tsx` — zero blur/floating/bg-white-NN/bg-black-NN/backdrop hits.
+- [x] **Silent offline degradation**: second backend boots with the notices URL on a dead port — app healthy, bundled content served exactly, failure visible ONLY as the debug-level breadcrumb (invisible at default INFO level, no Traceback, no ERROR line) — the silence is the contract, asserted in the test.
+FINDING: the merge is **startup-only** — no periodic poll and no nudge endpoint exist (unlike the 07 catalog), so a notice published while the app runs appears on next launch, not 'within an interval' as the unit description assumed. Either add a poll (mirror 07's REMOTE_REFRESH pattern) or record startup-only as the intended contract. → FILE IN PROGRESS (one decision left).
