@@ -770,6 +770,29 @@ export class StoriesBMethods extends StoriesAMethods {
 		return response.json();
 	}
 
+	async exportProject(projectId: string): Promise<Blob> {
+		const response = await this.fetchWithAuth(`/project/export/${projectId}`);
+		if (!response.ok) {
+			const detail = await response.json().catch(() => ({}));
+			throw new Error(detail.detail || `Export failed (${response.status})`);
+		}
+		return response.blob();
+	}
+
+	async importProject(file: File) {
+		const form = new FormData();
+		form.append("file", file);
+		const response = await this.fetchWithAuth("/project/import", {
+			method: "POST",
+			body: form,
+		});
+		if (!response.ok) {
+			const detail = await response.json().catch(() => ({}));
+			throw new Error(detail.detail || `Import failed (${response.status})`);
+		}
+		return response.json();
+	}
+
 	// --- Phase 2: Extended Import ---
 
 	// --- YouTube / URL Download ---

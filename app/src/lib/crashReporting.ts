@@ -4,7 +4,7 @@ import { apiClient } from "@/lib/api/client";
 const REDACTIONS: Array<[RegExp, string]> = [
 	[/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, "<email>"],
 	[/\bsk-[A-Za-z0-9_-]{8,}/g, "<redacted-key>"],
-	[/\bearer\s+[A-Za-z0-9._~+/-]+=*/gi, "Bearer <redacted-key>"],
+	[/\bbearer\s+[A-Za-z0-9._~+/-]+=*/gi, "Bearer <redacted-key>"],
 	[/(api[_-]?key\s*[:=]\s*['"]?)[^'"\s,}]+/gi, "$1<redacted-key>"],
 	[/(?::\/\/)[^/\s:@]+:[^/\s@]+@/g, "://<credentials>@"],
 	[/[A-Za-z]:\\Users\\[^\\/:"*?<>|]+/g, "<home>"],

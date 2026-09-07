@@ -17,12 +17,20 @@ export const metadata: Metadata = {
     description: 'Open-source AI voice studio. TTS, voice cloning, editing, mixing. Models you own forever.',
   },
   icons: { icon: '/logo.svg' },
-  metadataBase: new URL('https://Otoyin.app'),
+  metadataBase: new URL('https://otoyin.app'),
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body>{children}</body>
     </html>
   );

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
+import Link from 'next/link';
 import { Providers } from './providers';
 import './globals.css';
 
@@ -36,6 +37,14 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>
+        <footer className="border-t border-border py-6 mt-auto">
+          <div className="max-w-7xl mx-auto px-6 flex items-center gap-6 text-xs text-muted-foreground">
+            <span>&copy; {new Date().getFullYear()} Otoyin</span>
+            <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+            <Link href="/refund" className="hover:text-foreground transition-colors">Refund Policy</Link>
+            <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+          </div>
+        </footer>
       </body>
     </html>
   );

@@ -28,6 +28,28 @@ pub(crate) struct AppState {
 /// Crash log cap: rotate instead of growing without bound.
 const CRASH_LOG_MAX_BYTES: u64 = 256 * 1024;
 
+/// Write a panic entry to the given log path, rotating if over the size cap.
+/// Extracted so it can be unit-tested without a Tauri AppHandle.
+fn write_panic_to_log(log_path: &std::path::Path, info: &std::panic::PanicHookInfo) -> Result<(), String> {
+    if let Some(parent) = log_path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    if std::fs::metadata(log_path).map(|m| m.len()).unwrap_or(0) > CRASH_LOG_MAX_BYTES {
+        let rotated = log_path.with_extension("log.1");
+        let _ = std::fs::remove_file(&rotated);
+        std::fs::rename(log_path, &rotated).map_err(|e| e.to_string())?;
+    }
+    use std::io::Write;
+    let mut file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(log_path)
+        .map_err(|e| e.to_string())?;
+    writeln!(file, "--- panic at {:?} ---\n{}", std::time::SystemTime::now(), info)
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 fn install_panic_hook(app: &tauri::AppHandle) {
     // Rust panics are otherwise invisible on user machines: persist them to
     // `crashes.log` in the app-data dir so users can attach them to bug
@@ -41,26 +63,7 @@ fn install_panic_hook(app: &tauri::AppHandle) {
     std::panic::set_hook(Box::new(move |info| {
         // Keep default behavior (stderr) AND persist to file.
         default_hook(info);
-        let result: Result<(), String> = (|| {
-            if let Some(parent) = log_path.parent() {
-                std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-            }
-            if std::fs::metadata(&log_path).map(|m| m.len()).unwrap_or(0) > CRASH_LOG_MAX_BYTES {
-                let rotated = log_path.with_extension("log.1");
-                let _ = std::fs::remove_file(&rotated);
-                std::fs::rename(&log_path, &rotated).map_err(|e| e.to_string())?;
-            }
-            use std::io::Write;
-            let mut file = std::fs::OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open(&log_path)
-                .map_err(|e| e.to_string())?;
-            writeln!(file, "--- panic at {:?} ---\n{}", std::time::SystemTime::now(), info)
-                .map_err(|e| e.to_string())?;
-            Ok(())
-        })();
-        if let Err(e) = result {
+        if let Err(e) = write_panic_to_log(&log_path, info) {
             eprintln!("crash log write failed: {}", e);
         }
     }));
@@ -174,4 +177,103 @@ pub fn run() {
             }
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Helper: install a test panic hook that writes to `log_path`, trigger a
+    /// panic, catch it, restore the original hook, and return the log path.
+    fn trigger_test_panic(log_path: &std::path::Path, msg: &str) {
+        let lp = log_path.to_path_buf();
+        let default_hook = std::panic::take_hook();
+        std::panic::set_hook(Box::new(move |info| {
+            default_hook(info);
+            let _ = write_panic_to_log(&lp, info);
+        }));
+
+        let result = std::panic::catch_unwind(|| {
+            panic!("{}", msg);
+        });
+
+        // Restore default hook
+        let _ = std::panic::take_hook();
+        std::panic::set_hook(default_hook);
+
+        assert!(result.is_err(), "should have caught the panic");
+    }
+
+    #[test]
+    fn panic_hook_writes_to_log_file() {
+        let dir = std::env::temp_dir().join("otoyin-crash-test");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let log_path = dir.join("crashes.log");
+
+        trigger_test_panic(&log_path, "deliberate test panic for crash log verification");
+
+        assert!(
+            log_path.exists(),
+            "crash log file should exist at {}",
+            log_path.display()
+        );
+        let contents = std::fs::read_to_string(&log_path).unwrap();
+        assert!(
+            contents.contains("deliberate test panic"),
+            "log should contain the panic message, got: {}",
+            &contents[..contents.len().min(200)]
+        );
+        assert!(
+            contents.contains("--- panic at"),
+            "log should have the timestamp header"
+        );
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn panic_log_rotates_at_max_size() {
+        let dir = std::env::temp_dir().join("otoyin-crash-rotate-test");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let log_path = dir.join("crashes.log");
+
+        // Fill the log to just over CRASH_LOG_MAX_BYTES
+        let oversized = vec![b'x'; (CRASH_LOG_MAX_BYTES as usize) + 100];
+        std::fs::write(&log_path, &oversized).unwrap();
+        let original_size = std::fs::metadata(&log_path).unwrap().len();
+        assert!(original_size > CRASH_LOG_MAX_BYTES);
+
+        trigger_test_panic(&log_path, "rotation test panic");
+
+        // The original oversized file should have been rotated to .log.1
+        let rotated = log_path.with_extension("log.1");
+        assert!(
+            rotated.exists(),
+            "rotated file should exist at {}",
+            rotated.display()
+        );
+
+        // The new log should contain our panic message
+        let contents = std::fs::read_to_string(&log_path).unwrap();
+        assert!(contents.contains("rotation test panic"));
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn panic_log_creates_parent_dirs() {
+        let dir = std::env::temp_dir().join("otoyin-crash-nested-test");
+        let _ = std::fs::remove_dir_all(&dir);
+        let log_path = dir.join("sub").join("dir").join("crashes.log");
+
+        trigger_test_panic(&log_path, "nested dir test panic");
+
+        assert!(log_path.exists());
+        let contents = std::fs::read_to_string(&log_path).unwrap();
+        assert!(contents.contains("nested dir test panic"));
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }

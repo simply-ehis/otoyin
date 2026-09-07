@@ -80,6 +80,7 @@ export function StandaloneProjectPage() {
 	const [projectId, setProjectId] = useState<string | null>(null);
 	const [unsaved, setUnsaved] = useState(false);
 	const autosaveRef = useRef<number | null>(null);
+	const importFileRef = useRef<HTMLInputElement | null>(null);
 
 	useEffect(() => {
 		function handleBeforeUnload(e: BeforeUnloadEvent) {
@@ -126,6 +127,54 @@ export function StandaloneProjectPage() {
 			toast({
 				title: ERR_TITLE_PROJECT,
 				description: ERR_DESC_PROJECT_FAILED,
+				variant: "destructive",
+			});
+		}
+	}
+
+	async function handleExport() {
+		if (!projectId) {
+			return;
+		}
+		try {
+			const blob = await apiClient.exportProject(projectId);
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `${project?.name || "project"}.zip`;
+			a.click();
+			URL.revokeObjectURL(url);
+			toast({ title: "Project exported" });
+		} catch {
+			toast({
+				title: ERR_TITLE_IMPORT,
+				description: ERR_DESC_IMPORT_FAILED,
+				variant: "destructive",
+			});
+		}
+	}
+
+	async function handleImport(file: File) {
+		try {
+			const result = await apiClient.importProject(file);
+			setProject({
+				id: result.id,
+				name: result.name,
+				description: "",
+				fps: 24,
+				sample_rate: 48000,
+				scenes: [],
+			} as Project);
+			setProjectId(result.id);
+			setUnsaved(false);
+			toast({
+				title: "Project imported",
+				description: result.message,
+			});
+		} catch {
+			toast({
+				title: ERR_TITLE_IMPORT,
+				description: ERR_DESC_IMPORT_FAILED,
 				variant: "destructive",
 			});
 		}
@@ -220,6 +269,40 @@ export function StandaloneProjectPage() {
 								/>
 							)}
 						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							disabled={!projectId}
+							title="Export project as ZIP archive"
+							aria-label="Export project"
+							onClick={() => void handleExport()}
+						>
+							Export
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							title="Import project from ZIP archive"
+							aria-label="Import project"
+							onClick={() => importFileRef.current?.click()}
+						>
+							Import
+						</Button>
+						<input
+							ref={importFileRef}
+							type="file"
+							accept=".zip"
+							className="hidden"
+							onChange={(e) => {
+								const file = e.target.files?.[0];
+								if (file) {
+									void handleImport(file);
+								}
+								e.target.value = "";
+							}}
+						/>
 						<Button
 							type="button"
 							variant="outline"

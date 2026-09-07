@@ -3,8 +3,8 @@ import {
 	ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import { useCallback, useState } from "react";
+import { apiClient } from "@/lib/api/client";
 import { showStudioErrorToast } from "@/lib/errors";
-import { useServerStore } from "@/stores/serverStore";
 import { Button } from "@/ui/button";
 import { Card, CardBody, CardTitle } from "@/ui/card";
 import { ScreenHeader } from "@/ui/states";
@@ -12,20 +12,16 @@ import { useToast } from "@/ui/use-toast";
 
 export function PrivacyPage() {
 	const { toast } = useToast();
-	const serverUrl = useServerStore((s) => s.serverUrl);
 	const [exporting, setExporting] = useState(false);
 	const [deleting, setDeleting] = useState(false);
-	const [confirmationToken, setConfirmationToken] = useState<string | null>(null);
+	const [confirmationToken, setConfirmationToken] = useState<string | null>(
+		null,
+	);
 
 	const handleExport = useCallback(async () => {
 		setExporting(true);
 		try {
-			const resp = await fetch(`${serverUrl}/v1/privacy/export`, {
-				method: "POST",
-			});
-			if (!resp.ok) throw new Error(`Export failed: ${resp.status}`);
-
-			const blob = await resp.blob();
+			const blob = await apiClient.exportData();
 			const url = URL.createObjectURL(blob);
 			const a = document.createElement("a");
 			a.href = url;
@@ -33,43 +29,36 @@ export function PrivacyPage() {
 			a.click();
 			URL.revokeObjectURL(url);
 
-			toast({ title: "Data exported", description: "Your data has been downloaded as a ZIP file." });
+			toast({
+				title: "Data exported",
+				description: "Your data has been downloaded as a ZIP file.",
+			});
 		} catch (err) {
 			showStudioErrorToast(err);
 		} finally {
 			setExporting(false);
 		}
-	}, [serverUrl, toast]);
+	}, [toast]);
 
 	const handleRequestDelete = useCallback(async () => {
 		try {
-			const resp = await fetch(`${serverUrl}/v1/privacy/delete/confirm`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({}),
-			});
-			if (!resp.ok) throw new Error(`Request failed: ${resp.status}`);
-			const data = await resp.json();
+			const data = await apiClient.requestDeleteConfirm();
 			setConfirmationToken(data.confirmation_token);
 			toast({
 				title: "Confirmation required",
-				description: "Click 'Permanently Delete' again to confirm. This cannot be undone.",
+				description:
+					"Click 'Permanently Delete' again to confirm. This cannot be undone.",
 			});
 		} catch (err) {
 			showStudioErrorToast(err);
 		}
-	}, [serverUrl, toast]);
+	}, [toast]);
 
 	const handleConfirmDelete = useCallback(async () => {
 		if (!confirmationToken) return;
 		setDeleting(true);
 		try {
-			const resp = await fetch(`${serverUrl}/v1/privacy/delete`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ confirmation_token: confirmationToken }),
-			});
-			if (!resp.ok) throw new Error(`Delete failed: ${resp.status}`);
+			await apiClient.confirmDelete(confirmationToken);
 			setConfirmationToken(null);
 			toast({
 				title: "Data deleted",
@@ -80,7 +69,7 @@ export function PrivacyPage() {
 		} finally {
 			setDeleting(false);
 		}
-	}, [confirmationToken, serverUrl, toast]);
+	}, [confirmationToken, toast]);
 
 	return (
 		<div className="flex flex-col h-full">
@@ -145,8 +134,8 @@ export function PrivacyPage() {
 					<CardBody>
 						<CardTitle>Privacy Policy</CardTitle>
 						<p className="text-sm text-muted-foreground mb-3">
-							Otoyin runs entirely on your device. No data is uploaded unless you
-							opt in to telemetry or crash reporting.
+							Otoyin runs entirely on your device. No data is uploaded unless
+							you opt in to telemetry or crash reporting.
 						</p>
 						<a
 							href="https://github.com/anomalyco/otoyin/blob/main/docs/PRIVACY_POLICY.md"

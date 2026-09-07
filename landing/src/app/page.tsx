@@ -1,11 +1,21 @@
 import './globals.css';
 import { WaveformStrip } from '@/components/WaveformStrip';
 import { FeatureSection } from '@/components/FeatureSection';
+import { PetalOverlay } from '@/components/PetalOverlay';
 
 export default function Home() {
   return (
     <>
+      <PetalOverlay />
+
+      {/* ══════ HERO ══════ */}
       <section className="hero-section">
+        <div className="hero-bg">
+          {/* SLOT: drop a sakura photo here — recommended 1920×1080+ WebP, <300KB */}
+          {/* <img src="/sakura-hero.webp" alt="" /> */}
+          <div style={{width:'100%',height:'100%',background:'linear-gradient(135deg,#F5C8AE 0%,#D98278 40%,#9C4457 100%)'}} />
+        </div>
+        <div className="hero-scrim" />
         <div className="hero-content">
           <span className="hero-label">Open Source</span>
           <h1 className="hero-title">The voice studio that runs on your machine</h1>
@@ -14,7 +24,7 @@ export default function Home() {
             Open-source app. Models you own forever. No subscription.
           </p>
           <div className="hero-cta-group">
-            <a href="#download" className="btn btn-primary">
+            <a href="#download" className="btn btn-primary btn-pulse">
               <DownloadIcon /> Download for Desktop
             </a>
             <a
@@ -27,9 +37,12 @@ export default function Home() {
             </a>
           </div>
         </div>
-        <WaveformStrip />
+        <span className="hero-photo-credit">
+          {/* SLOT: photo credit — e.g. "Photo by Name / Unsplash" */}
+        </span>
       </section>
 
+      {/* ══════ NUMBERS ══════ */}
       <section className="numbers-section">
         <div className="numbers-row">
           <div className="number-block">
@@ -47,11 +60,16 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ══════ FEATURES ══════ */}
       <FeatureSection
         title="Voice"
         screenshot={
           <div className="screenshot-placeholder">
-            <div className="screenshot-placeholder__label">Generate tab</div>
+            {/* SLOT: Generate tab screenshot */}
+            <svg className="screenshot-placeholder__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M12 16v-8m0 0l-3 3m3-3l3 3M3 12a9 9 0 1018 0 9 9 0 00-18 0z" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span className="screenshot-placeholder__label">Evidence slot — Generate tab</span>
           </div>
         }
       >
@@ -67,7 +85,11 @@ export default function Home() {
         reversed
         screenshot={
           <div className="screenshot-placeholder">
-            <div className="screenshot-placeholder__label">Effects chain</div>
+            {/* SLOT: Effects chain screenshot */}
+            <svg className="screenshot-placeholder__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M4 6h16M4 12h10M4 18h14" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span className="screenshot-placeholder__label">Evidence slot — Effects chain</span>
           </div>
         }
       >
@@ -83,7 +105,11 @@ export default function Home() {
         title="Mix"
         screenshot={
           <div className="screenshot-placeholder">
-            <div className="screenshot-placeholder__label">Mixer view</div>
+            {/* SLOT: Mixer view screenshot */}
+            <svg className="screenshot-placeholder__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M4 20v-8m4 8v-4m4 4v-12m4 12v-6m4 6V4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span className="screenshot-placeholder__label">Evidence slot — Mixer view</span>
           </div>
         }
       >
@@ -100,7 +126,11 @@ export default function Home() {
         reversed
         screenshot={
           <div className="screenshot-placeholder">
-            <div className="screenshot-placeholder__label">Assistant panel</div>
+            {/* SLOT: Assistant panel screenshot */}
+            <svg className="screenshot-placeholder__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span className="screenshot-placeholder__label">Evidence slot — Assistant panel</span>
           </div>
         }
       >
@@ -114,6 +144,7 @@ export default function Home() {
         </p>
       </FeatureSection>
 
+      {/* ══════ PROMISE ══════ */}
       <section className="promise-section">
         <p>
           Your voice data stays on your machine. No cloud account to create. No
@@ -123,13 +154,14 @@ export default function Home() {
         </p>
       </section>
 
+      {/* ══════ OPEN SOURCE ══════ */}
       <section className="opensource-section">
         <p>
           The app is free and open-source. React, Python, Tauri.
         </p>
         <a
           href="https://github.com/Otoyin/voice-studio"
-          className="btn btn-secondary"
+          className="btn btn-ghost"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -137,6 +169,7 @@ export default function Home() {
         </a>
       </section>
 
+      {/* ══════ CTA ══════ */}
       <section className="cta-section" id="download">
         <h2 className="cta-title">Start producing</h2>
         <p className="cta-desc">
@@ -146,7 +179,7 @@ export default function Home() {
         <div className="cta-buttons">
           <a
             href="https://github.com/Otoyin/voice-studio/releases"
-            className="btn btn-primary"
+            className="btn btn-primary btn-pulse"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -155,6 +188,7 @@ export default function Home() {
           <a
             href="https://github.com/Otoyin/voice-studio"
             className="btn btn-secondary"
+            style={{color:'var(--text-on-dark)',borderColor:'rgba(255,255,255,.3)'}}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -164,7 +198,7 @@ export default function Home() {
       </section>
 
       <footer className="footer">
-        Otoyin &middot; React &middot; Python &middot; Tauri
+        Otoyin · React · Python · Tauri
       </footer>
     </>
   );

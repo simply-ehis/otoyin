@@ -1,4 +1,4 @@
-import { ApiClientCore } from "./clientCore";
+import { ClientPrivacyMethods } from "./clientPrivacy";
 
 export interface CrashReportInput {
 	layer?: "frontend" | "rust" | "backend";
@@ -33,7 +33,7 @@ export interface LocalCrashReport {
  * to check the toggle themselves, and failures are always silent:
  * a broken reporter must never break the app further.
  */
-export class CrashesMethods extends ApiClientCore {
+export class CrashesMethods extends ClientPrivacyMethods {
 	async getCrashStatus(): Promise<CrashStatus> {
 		return this.request<CrashStatus>("/crashes/status");
 	}

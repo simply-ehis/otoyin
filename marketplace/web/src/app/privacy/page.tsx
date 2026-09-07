@@ -79,6 +79,14 @@ export default function PrivacyPage() {
           <Link href="/" className="underline underline-offset-4">
             Back to the marketplace
           </Link>
+          {' · '}
+          <Link href="/terms" className="underline underline-offset-4">
+            Terms of Service
+          </Link>
+          {' · '}
+          <Link href="/refund" className="underline underline-offset-4">
+            Refund Policy
+          </Link>
         </p>
       </article>
     </main>

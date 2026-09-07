@@ -255,10 +255,7 @@ def test_new_tree_legacy_import_flagged(tmp_path):
         },
     )
     h = hazards(tmp_path)
-    assert any(
-        "imports legacy @/components/ui/badge" in x and "features/Thing" in x
-        for x in h
-    )
+    assert any("imports legacy @/components/ui/badge" in x and "features/Thing" in x for x in h)
 
 
 def test_root_shell_legacy_import_flagged(tmp_path):

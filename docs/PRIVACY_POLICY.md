@@ -64,6 +64,34 @@ Use `POST /v1/privacy/export` to download a ZIP archive containing:
 - All audio files referenced by the database
 - A manifest.json with metadata
 
+### Export a Single Project (Portable)
+Use `GET /project/export/{project_id}` to download a self-contained ZIP archive containing:
+- The project JSON (scenes, characters, settings)
+- All referenced voice profiles (with samples and avatars embedded)
+- Project audio files
+- A manifest.json for verification
+
+This archive can be imported on any otoyin instance via `POST /project/import` — voice profiles are matched by name and reused if they exist, otherwise imported from the archive. All IDs are regenerated to avoid collisions.
+
+### Whole Data Directory Backup (Complete)
+For a complete, zero-dependency backup, copy the entire `data/` directory:
+```
+data/
+├── otoyin.db           # SQLite database (all tables)
+├── audio/              # All audio files (generations, samples, captures)
+├── telemetry.jsonl     # Opt-in usage events (if enabled)
+├── crash_reports.jsonl # Opt-in crash reports (if enabled)
+└── models/             # Downloaded model weights (if any)
+```
+
+This is the only backup method that guarantees 100% fidelity — including:
+- Model download state and cache
+- MCP server configuration
+- Engine virtual environments (if using on-demand pip install)
+- All settings, presets, and UI state
+
+To restore: stop otoyin, replace the `data/` directory, restart otoyin.
+
 ### Delete Your Data
 Use `POST /v1/privacy/delete` to permanently remove:
 - All voice profiles and their samples

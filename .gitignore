@@ -170,3 +170,6 @@ awesome-desktop-design.skills/
 
 # ONNX model weights (large, user-downloaded)
 *.onnx
+
+# Next.js build output (marketplace/web)
+marketplace/web/.next/

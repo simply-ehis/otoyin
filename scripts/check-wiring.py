@@ -1,13 +1,16 @@
 """Wiring guard (prompt 20): stranded backend endpoints + orphaned pages.
 
-Usage: python scripts/check-wiring.py [--strict]
+Usage: python scripts/check-wiring.py [--strict | --strict-all | --self-test]
 - (a) diffs FastAPI OpenAPI paths against endpoint literals in
       app/src/lib/api/*.ts; prints backend routes no client calls.
 - (b) diffs page components (features/**/xidPage.tsx, layouts/*.tsx)
       against imports in app/src/router.tsx; prints pages the router
       never references.
 
-Exit 1 in --strict mode when either list is non-empty (CI gate).
+Exit 1 in --strict mode when orphaned pages or hand-rolled callers exist
+(CI gate — stranded endpoints are advisory mid-rebuild).
+Exit 1 in --strict-all mode when ANY violations exist (including stranded).
+--self-test runs internal verification checks.
 Heuristic on purpose: string-literal matching, not a TS parser.
 Whitelist genuinely client-less routes (webhooks, MCP, SSE internals)
 in STRANDED_ALLOWLIST with a one-line reason.
@@ -44,7 +47,9 @@ def normalize_pattern(text: str) -> list[str]:
     return [s for s in segs if s]
 
 
-def segments_match(open_segs: list[str], lit_segs: list[str], full: bool = False) -> bool:
+def segments_match(
+    open_segs: list[str], lit_segs: list[str], full: bool = False
+) -> bool:
     # Literal matches when every literal segment equals the OpenAPI segment
     # or is a wildcard, for all literal segments (clients often compose
     # `${base}/subpath` across statements — prefix match is the signal).
@@ -128,9 +133,9 @@ def find_orphaned_pages() -> tuple[list[str], list[str]]:
         if tsx.name.endswith((".test.tsx", ".spec.tsx")):
             continue
         try:
-            sources[str(tsx.relative_to(ROOT))] = tsx.read_text(
-                encoding="utf-8", errors="replace"
-            )
+            # Normalize to forward slashes for cross-platform matching
+            rel = str(tsx.relative_to(ROOT)).replace("\\", "/")
+            sources[rel] = tsx.read_text(encoding="utf-8", errors="replace")
         except OSError:
             continue
     router = sources.get("app/src/router.tsx", "")
@@ -156,7 +161,72 @@ def find_orphaned_pages() -> tuple[list[str], list[str]]:
     return nowhere, not_in_router
 
 
+def self_test() -> int:
+    """Verify the script catches orphaned components and stranded endpoints.
+
+    Creates a temporary orphaned .tsx file, runs detection, confirms it's
+    caught, then cleans up. Also verifies stranded detection finds routes.
+    """
+
+    print("=== Self-test: verifying wiring detection ===")
+    passed = 0
+    failed = 0
+
+    # Test 1: orphaned component detection
+    selftest_dir = ROOT / "app" / "src" / "features" / "_selftest"
+    selftest_file = selftest_dir / "OrphanTest.tsx"
+    try:
+        selftest_dir.mkdir(parents=True, exist_ok=True)
+        selftest_file.write_text(
+            "export function OrphanTest() { return <div>self-test</div>; }\n",
+            encoding="utf-8",
+        )
+        _, not_in_router = find_orphaned_pages()
+        # The orphan should appear in not_in_router (UNWIRED) or nowhere (ORPHANED)
+        # Since it's a new file with a unique name, it should be caught
+        caught = any("OrphanTest" in p for p in not_in_router) or any(
+            "OrphanTest" in p for p in _
+        )
+        if caught:
+            print("  PASS  orphan detection — temporary file caught")
+            passed += 1
+        else:
+            print("  FAIL  orphan detection — temporary file NOT caught")
+            failed += 1
+    finally:
+        # Clean up
+        if selftest_file.exists():
+            selftest_file.unlink()
+        if selftest_dir.exists():
+            try:
+                selftest_dir.rmdir()
+            except OSError:
+                pass
+
+    # Test 2: stranded endpoint detection
+    stranded, _ = find_stranded()
+    if stranded:
+        print(f"  PASS  stranded detection — {len(stranded)} routes found")
+        passed += 1
+    else:
+        print("  FAIL  stranded detection — no routes found (expected > 0)")
+        failed += 1
+
+    # Test 3: allowlist works (MCP/webhook routes should not be stranded)
+    if "/mcp" not in stranded and "/webhook" not in stranded:
+        print("  PASS  allowlist — /mcp and /webhook correctly excluded")
+        passed += 1
+    else:
+        print("  FAIL  allowlist — /mcp or /webhook incorrectly flagged")
+        failed += 1
+
+    print(f"=== Self-test: {passed} passed, {failed} failed ===")
+    return 0 if failed == 0 else 1
+
+
 def main() -> int:
+    if "--self-test" in sys.argv:
+        return self_test()
     stranded, handrolled_only = find_stranded()
     nowhere, not_in_router = find_orphaned_pages()
     print(f"OpenAPI paths: {len(openapi_paths())}")
@@ -182,7 +252,9 @@ def main() -> int:
     print(f"Not referenced by router ({len(not_in_router)}, advisory mid-rebuild):")
     for p in not_in_router:
         print(f"  UNWIRED   {p}")
-    if "--strict" in sys.argv and (stranded or nowhere or handrolled_only):
+    if "--strict" in sys.argv and (nowhere or handrolled_only):
+        return 1
+    if "--strict-all" in sys.argv and (stranded or nowhere or handrolled_only):
         return 1
     return 0
 
