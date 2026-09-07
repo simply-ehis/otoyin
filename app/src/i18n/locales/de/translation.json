@@ -805,6 +805,7 @@
 			"plugins": "Plugins",
 			"lottieExport": "Lottie Export",
 			"telemetry": "Telemetry",
+			"privacy": "Privatsphäre",
 			"apiKeys": "API Keys",
 			"changelog": "Changelog",
 			"system": "System",

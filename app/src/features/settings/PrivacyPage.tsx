@@ -1,0 +1,164 @@
+import {
+	ArrowDownTrayIcon,
+	ExclamationTriangleIcon,
+} from "@heroicons/react/24/outline";
+import { useCallback, useState } from "react";
+import { showStudioErrorToast } from "@/lib/errors";
+import { useServerStore } from "@/stores/serverStore";
+import { Button } from "@/ui/button";
+import { Card, CardBody, CardTitle } from "@/ui/card";
+import { ScreenHeader } from "@/ui/states";
+import { useToast } from "@/ui/use-toast";
+
+export function PrivacyPage() {
+	const { toast } = useToast();
+	const serverUrl = useServerStore((s) => s.serverUrl);
+	const [exporting, setExporting] = useState(false);
+	const [deleting, setDeleting] = useState(false);
+	const [confirmationToken, setConfirmationToken] = useState<string | null>(null);
+
+	const handleExport = useCallback(async () => {
+		setExporting(true);
+		try {
+			const resp = await fetch(`${serverUrl}/v1/privacy/export`, {
+				method: "POST",
+			});
+			if (!resp.ok) throw new Error(`Export failed: ${resp.status}`);
+
+			const blob = await resp.blob();
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `otoyin-export-${new Date().toISOString().slice(0, 10)}.zip`;
+			a.click();
+			URL.revokeObjectURL(url);
+
+			toast({ title: "Data exported", description: "Your data has been downloaded as a ZIP file." });
+		} catch (err) {
+			showStudioErrorToast(err);
+		} finally {
+			setExporting(false);
+		}
+	}, [serverUrl, toast]);
+
+	const handleRequestDelete = useCallback(async () => {
+		try {
+			const resp = await fetch(`${serverUrl}/v1/privacy/delete/confirm`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({}),
+			});
+			if (!resp.ok) throw new Error(`Request failed: ${resp.status}`);
+			const data = await resp.json();
+			setConfirmationToken(data.confirmation_token);
+			toast({
+				title: "Confirmation required",
+				description: "Click 'Permanently Delete' again to confirm. This cannot be undone.",
+			});
+		} catch (err) {
+			showStudioErrorToast(err);
+		}
+	}, [serverUrl, toast]);
+
+	const handleConfirmDelete = useCallback(async () => {
+		if (!confirmationToken) return;
+		setDeleting(true);
+		try {
+			const resp = await fetch(`${serverUrl}/v1/privacy/delete`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ confirmation_token: confirmationToken }),
+			});
+			if (!resp.ok) throw new Error(`Delete failed: ${resp.status}`);
+			setConfirmationToken(null);
+			toast({
+				title: "Data deleted",
+				description: "All your data has been permanently removed.",
+			});
+		} catch (err) {
+			showStudioErrorToast(err);
+		} finally {
+			setDeleting(false);
+		}
+	}, [confirmationToken, serverUrl, toast]);
+
+	return (
+		<div className="flex flex-col h-full">
+			<ScreenHeader
+				title="Privacy"
+				description="Your data stays on your device"
+			/>
+
+			<div className="flex-1 overflow-y-auto p-4 space-y-4">
+				<Card>
+					<CardBody>
+						<CardTitle>Data Export</CardTitle>
+						<p className="text-sm text-muted-foreground mb-3">
+							Download all your data as a ZIP archive containing your profiles,
+							generations, stories, audio files, and settings.
+						</p>
+						<Button
+							onClick={handleExport}
+							disabled={exporting}
+							variant="outline"
+							size="sm"
+						>
+							<ArrowDownTrayIcon className="size-4 mr-2" />
+							{exporting ? "Exporting..." : "Export All Data"}
+						</Button>
+					</CardBody>
+				</Card>
+
+				<Card className="border-destructive/30">
+					<CardBody>
+						<CardTitle className="text-destructive flex items-center gap-2">
+							<ExclamationTriangleIcon className="size-5" />
+							Data Deletion
+						</CardTitle>
+						<p className="text-sm text-muted-foreground mb-3">
+							Permanently delete all your data including profiles, generations,
+							stories, audio files, and settings. This action cannot be undone.
+						</p>
+						{!confirmationToken ? (
+							<Button
+								onClick={handleRequestDelete}
+								variant="destructive"
+								size="sm"
+							>
+								Request Deletion
+							</Button>
+						) : (
+							<Button
+								onClick={handleConfirmDelete}
+								disabled={deleting}
+								variant="destructive"
+								size="sm"
+							>
+								<ExclamationTriangleIcon className="size-4 mr-2" />
+								{deleting ? "Deleting..." : "Permanently Delete All Data"}
+							</Button>
+						)}
+					</CardBody>
+				</Card>
+
+				<Card>
+					<CardBody>
+						<CardTitle>Privacy Policy</CardTitle>
+						<p className="text-sm text-muted-foreground mb-3">
+							Otoyin runs entirely on your device. No data is uploaded unless you
+							opt in to telemetry or crash reporting.
+						</p>
+						<a
+							href="https://github.com/anomalyco/otoyin/blob/main/docs/PRIVACY_POLICY.md"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="text-sm text-primary hover:underline"
+						>
+							Read the full Privacy Policy
+						</a>
+					</CardBody>
+				</Card>
+			</div>
+		</div>
+	);
+}

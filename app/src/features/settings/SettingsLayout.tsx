@@ -134,6 +134,11 @@ const TAB_GROUPS: { label: string; tabs: SettingsTab[] }[] = [
 				icon: ShieldCheckIcon,
 			},
 			{
+				labelKey: "settings.tabs.privacy",
+				path: "/settings/privacy",
+				icon: ShieldCheckIcon,
+			},
+			{
 				labelKey: "settings.tabs.about",
 				path: "/settings/about",
 				icon: InformationCircleIcon,

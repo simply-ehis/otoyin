@@ -151,42 +151,118 @@ for check in biome:Biome tsc:TypeScript ruff:Ruff async:Async-BLocking namemap:N
 done
 
 # ═══════════════════════════════════════════════════════════════════
-# Phase 2: Backend tests (~10s)
+# Phase 2+3: Backend (pytest) ∥ Frontend (vitest), run in parallel.
+#
+# The full vitest suite takes ~4-5 min, which blows normal commit
+# timeouts. Frontend scoping (override with GATE_FULL=1 for a forced
+# full run):
+#   1. staged frontend test files          → run exactly those files
+#   2. no staged app/src changes at all    → skip frontend tests
+#   3. staged app/src source changed       → colocated tests per changed
+#      file, PLUS a core-path floor covering shared seams (ui primitives,
+#      platform/toast wiring, store, settings updater)
+# CI runs the full suite; the gate optimizes for fast, honest feedback.
 # ═══════════════════════════════════════════════════════════════════
 
 echo ""
-echo "Phase 2: Backend tests..."
-cd "$root" || exit 1
-if timeout 90 $PY -X utf8 -m pytest \
-    backend/tests/test_tool_registry.py \
-    backend/tests/test_tr_dispatch.py \
-    backend/tests/test_stt_backends.py \
-    backend/tests/test_stt_self_check.py \
-    backend/tests/test_generation_subfunctions.py \
-    backend/tests/test_items_4_5_6.py \
-    backend/tests/test_items_7_8_9.py \
-    backend/tests/test_verify_system.py \
-    -q --tb=line --no-header --timeout=15 \
-    2>&1 | tail -10; then
+echo "Phase 2+3: Backend + Frontend tests (parallel)..."
+
+BACKEND_TEST_FILES=(
+  backend/tests/test_tool_registry.py
+  backend/tests/test_tr_dispatch.py
+  backend/tests/test_stt_backends.py
+  backend/tests/test_stt_self_check.py
+  backend/tests/test_generation_subfunctions.py
+  backend/tests/test_items_4_5_6.py
+  backend/tests/test_items_7_8_9.py
+  backend/tests/test_verify_system.py
+)
+
+CORE_FLOOR_STR="src/ui/ui.test.tsx src/hooks/useAutoUpdater.test.tsx src/features/store/storeUtils.test.ts src/features/store/StorePage.test.tsx src/features/settings/GeneralPage.test.tsx"
+
+changed_tests=$(git diff --cached --name-only --diff-filter=ACM -- \
+  'app/src/**/*.test.ts' 'app/src/**/*.test.tsx' \
+  'app/src/**/*.spec.ts' 'app/src/**/*.spec.tsx')
+changed_src=$(git diff --cached --name-only --diff-filter=ACM -- 'app/src' \
+  | grep -vE '\.(test|spec)\.(ts|tsx)$' || true)
+
+frontend_mode="full"
+frontend_files=""
+if [ -n "${GATE_FULL:-}" ]; then
+  frontend_mode="full"
+elif [ -z "$changed_tests" ] && [ -z "$changed_src" ]; then
+  frontend_mode="skip"
+else
+  # Scoped = directly staged tests ∪ tests colocated with staged source
+  # files ∪ the shared-seam core floor. Any app/src change lands here.
+  colocated=""
+  for f in $changed_src; do
+    dir=${f%/*}; base=${f##*/}; stem=${base%.*}
+    for ext in test.ts test.tsx spec.ts spec.tsx; do
+      [ -f "$root/$dir/$stem.$ext" ] && colocated="$colocated ${dir#app/}/$stem.$ext"
+    done
+  done
+  frontend_mode="scoped"
+  frontend_files="$CORE_FLOOR_STR $(printf '%s ' $changed_tests | sed 's| app/| |g') $colocated"
+fi
+if [ "$frontend_mode" = "scoped" ]; then
+  frontend_files=$(printf '%s\n' $frontend_files | awk '!seen[$0]++' | paste -sd' ' -)
+  [ -z "$frontend_files" ] && frontend_mode="full"
+fi
+
+vitest_timeout=300
+[ "$frontend_mode" = "full" ] && vitest_timeout=600
+
+(
+  cd "$root" || exit 1
+  timeout 90 $PY -X utf8 -m pytest "${BACKEND_TEST_FILES[@]}" \
+      -q --tb=line --no-header --timeout=15 \
+      2>&1 | tail -10
+  echo $? > "$tmpdir/pytest.rc"
+) > "$tmpdir/pytest.log" 2>&1 &
+pid_pytest=$!
+
+(
+  cd "$root/app" || exit 1
+  case "$frontend_mode" in
+    skip)
+      echo "skipped: no staged app/src changes"
+      echo 0 > "$tmpdir/vitest.rc" ;;
+    scoped)
+      echo "scoped: $frontend_files"
+      # shellcheck disable=SC2086
+      timeout $vitest_timeout $VITEST run --reporter=dot $frontend_files \
+        2>&1 | tail -10
+      echo $? > "$tmpdir/vitest.rc" ;;
+    full)
+      timeout $vitest_timeout $VITEST run --reporter=dot \
+        2>&1 | tail -10
+      echo $? > "$tmpdir/vitest.rc" ;;
+  esac
+) > "$tmpdir/vitest.log" 2>&1 &
+pid_vitest=$!
+
+wait $pid_pytest 2>/dev/null
+wait $pid_vitest 2>/dev/null
+
+if [ "$(cat "$tmpdir/pytest.rc" 2>/dev/null || echo 1)" -eq 0 ]; then
   echo "  ✅ Backend tests passed"
 else
   echo "  ❌ Backend tests FAILED"
+  cat "$tmpdir/pytest.log"
   failed=1
 fi
 
-# ═══════════════════════════════════════════════════════════════════
-# Phase 3: Frontend tests
-# ═══════════════════════════════════════════════════════════════════
-
-echo ""
-echo "Phase 3: Frontend tests..."
-cd "$root/app" || exit 1
-if timeout 600 $VITEST run --reporter=dot 2>&1 | tail -10; then
-  echo "  ✅ Frontend tests passed"
+if [ "$frontend_mode" = "skip" ]; then
+  echo "  ⏭️ Frontend tests skipped (no staged app/src changes)"
+elif [ "$(cat "$tmpdir/vitest.rc" 2>/dev/null || echo 1)" -eq 0 ]; then
+  echo "  ✅ Frontend tests passed ($frontend_mode)"
 else
   echo "  ❌ Frontend tests FAILED"
+  cat "$tmpdir/vitest.log"
   failed=1
 fi
+[ "$frontend_mode" = "scoped" ] && echo "  ↳ scope: $frontend_files (GATE_FULL=1 forces the full run)"
 
 # ═══════════════════════════════════════════════════════════════════
 # Summary

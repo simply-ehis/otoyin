@@ -673,6 +673,10 @@
 		"itemActions": {
 			"playFromHere": "Play from here",
 			"regenerate": "Regenerate",
+			"vocalQa": "Vocal QA",
+			"vocalQaRunning": "Checking vocals…",
+			"vocalQaDone": "Vocal QA complete",
+			"vocalQaFailed": "Vocal QA failed",
 			"removeFromStory": "Remove from Story"
 		},
 		"importAudio": "Import audio…",
@@ -803,6 +807,7 @@
 			"plugins": "Plugins",
 			"lottieExport": "Lottie Export",
 			"telemetry": "Telemetry",
+			"privacy": "Privacy",
 			"apiKeys": "API Keys",
 			"changelog": "Changelog",
 			"system": "System",

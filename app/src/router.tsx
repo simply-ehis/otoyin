@@ -13,7 +13,7 @@ import { ServerStatusBanner } from "@/components/Banner/ServerStatusBanner";
 import { ErrorBoundary } from "@/components/ErrorBoundary/ErrorBoundary";
 import { RecommendedModelsBanner } from "@/components/RecommendedModelsBanner/RecommendedModelsBanner";
 import { AppLoadingScreen } from "@/components/ui/AppLoadingScreen";
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from "@/ui/toaster";
 import { TabIntroMount } from "@/features/onboarding/TabIntro";
 import { AutoUpdateFlow } from "@/features/settings/AutoUpdateFlow";
 
@@ -310,6 +310,11 @@ const LottieExportPage = lazy(() =>
 const TelemetryPage = lazy(() =>
 	import("@/features/settings/TelemetryPage").then((m) => ({
 		default: m.TelemetryPage,
+	})),
+);
+const PrivacyPage = lazy(() =>
+	import("@/features/settings/PrivacyPage").then((m) => ({
+		default: m.PrivacyPage,
 	})),
 );
 const ApiKeysPage = lazy(() =>
@@ -662,6 +667,12 @@ const settingsTelemetryRoute = createRoute({
 	component: TelemetryPage,
 });
 
+const settingsPrivacyRoute = createRoute({
+	getParentRoute: () => settingsRoute,
+	path: "/privacy",
+	component: PrivacyPage,
+});
+
 const settingsApiKeysRoute = createRoute({
 	getParentRoute: () => settingsRoute,
 	path: "/api-keys",
@@ -987,6 +998,7 @@ const routeTree = rootRoute.addChildren([
 		settingsPluginsRoute,
 		settingsLottieExportRoute,
 		settingsTelemetryRoute,
+		settingsPrivacyRoute,
 		settingsApiKeysRoute,
 		settingsSupportRoute,
 	]),

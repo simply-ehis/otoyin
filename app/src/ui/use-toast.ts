@@ -42,6 +42,13 @@ function scheduleRemove(id: string, duration: number) {
 	if (timers.has(id)) {
 		return;
 	}
+	// `Infinity` means "persist until dismissed or updated" (e.g. the updater
+	// flow's available/downloading/ready toasts). Browsers coerce a setTimeout
+	// delay of Infinity to 0ms via ToInt32 — guard explicitly so persistent
+	// toasts don't flash and vanish.
+	if (!Number.isFinite(duration)) {
+		return;
+	}
 	const timer = setTimeout(() => {
 		timers.delete(id);
 		memoryState = memoryState.filter((t) => t.id !== id);
