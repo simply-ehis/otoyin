@@ -26,8 +26,8 @@ what's left plus where the done ones went.
 | 15 | Accessibility | DONE → `archive/15-…md` | Baked into canonical components (biome a11y clean), `prefers-reduced-motion`, semantic pass, `ShortcutsPage`, scoped hard-surfaces statement in `docs/design/DESIGN_SYSTEM.md` §7 (2026-09-05). |
 | 16 | Security hardening | DONE → `archive/16-…md` | Encrypted BYOK, rate limits, webhook sig verify, Bearer admin auth, `dependabot.yml` + CI `security-audit` job, MCP trust-model statement in `SECURITY.md` (loopback-by-default; remote bind needs auth first). |
 | 17 | Signing/notarization | PARTIAL | DONE: updater artifact signing in CI. LEFT: macOS notarization + Windows Authenticode (needs certs/accounts — your decision). |
-| 18 | Privacy compliance | NOT STARTED | Zero matches for policy/export/deletion in `marketplace/` — policy, manual process doc, and provider-coverage note all missing. |
-| 19 | Build reproducibility | PARTIAL | DONE: `tauri/src-tauri/rust-toolchain.toml` (1.97.0), `check-env.sh` (macOS/Linux mirror), device detection untouched, `.env.example` verified. LEFT: pip lockfile — honestly blocked: no venv exists and system python lacks deps (`fastmcp` etc.), so any `pip freeze` here would enshrine a broken env. Needs a known-good env first. |
+| 18 | Privacy compliance | DONE | `docs/PRIVACY_POLICY.md` created; `POST /v1/privacy/export` (ZIP of all 37 ORM tables + audio files), `/delete/confirm` (token-gated), `/delete` (permanent wipe); `PrivacyPage` settings UI with export/delete/policy link; i18n keys for all 9 locales; Settings layout "Privacy & Info" tab added. |
+| 19 | Build reproducibility | PARTIAL | DONE: `tauri/src-tauri/rust-toolchain.toml` (1.97.0), `check-env.sh` (macOS/Linux mirror), device detection untouched, `.env.example` verified, `requirements.txt` updated with all 53 Python deps. LEFT: pip lockfile — needs `pip install -r requirements.txt` in a fresh venv to generate pinned versions. |
 | 20 | Component wiring | PARTIAL | DONE: 24-file `app/src/lib/api/` client layer intact, `scripts/check-wiring.py` + CI advisory job, wired-DoD followed in slices. LEFT: blocking enforcement — deferred deliberately: flipping to blocking now would fail CI on in-flight work (parallel session files, locale JSON backlog). Flip when the tree is quiet. |
 | 21 | Small-model harness | DONE | Removed dead `deepfilter_cleanup.py` (PyInstaller ref only, superseded by `deepfilter_onnx`). `deepfilter_onnx.py`, `stem_separation.py`, `stem_separation_onnx.py` confirmed live — kept. `test_vad.py` already removed. |
 
@@ -35,7 +35,8 @@ what's left plus where the done ones went.
 
 03 (slices 13–17) → 04 exposure audit → 05 profiling → 07 Part A →
 09/02 identifier decision → 14 e2e + blocking gates → 15 scoped statement →
-16 trust-model note → 19 lockfile → 20 blocking enforcement → then 11, 18, 21.
+16 trust-model note → 19 lockfile → 20 blocking enforcement → then 11.
+(18, 21 DONE.)
 
 ## Bugs fixed this pass (outside prompts)
 
