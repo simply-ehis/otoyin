@@ -2,11 +2,11 @@
 
 **Date:** 2026-09-03
 **Prompt:** `otoyin-redesign-prompts/06-model-lifecycle-optimization.md`
-**Status:** Audit pass. Most of the requested behavior already exists; one real
-gap found (catalog `local_status` annotation), with a proposed implementation.
-**Implemented 2026-09-06** — annotation, frontend states, and the
-manifest-backfill reconciliation so a downloadable-but-generatable model never
-reads as needs-download.
+**Status:** DONE — implemented 2026-09-06: catalog `local_status` annotation,
+frontend states, and the manifest-backfill reconciliation so a
+downloadable-but-generatable model never reads as needs-download. (Audit pass
+found most requested behavior already in place.)
+**Last verified:** 2026-09-06
 
 ---
 

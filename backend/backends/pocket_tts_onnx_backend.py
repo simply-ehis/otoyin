@@ -46,13 +46,21 @@ def is_onnx_available() -> bool:
 
 
 def _resolve_bundle_dir() -> str:
-    """Return the local path to the Pocket-TTS ONNX bundle snapshot."""
+    """Return the local path to the Pocket-TTS ONNX bundle snapshot.
+
+    Pathlib-based (not string rsplit): hf_hub_download returns backslash
+    paths on Windows, so `rsplit("/onnx/")` never matched there and this
+    returned `.../bundle.json/onnx` — a guaranteed FileNotFoundError at
+    model load (prompt 19 path-handling audit).
+    """
+    from pathlib import Path
+
     from huggingface_hub import hf_hub_download
 
-    # hf_hub_download returns the cached file path; the bundle lives alongside
-    # it inside the snapshot dir.
+    # marker = <snapshot>/onnx/<language>/bundle.json → bundle root is its
+    # grandparent (<snapshot>/onnx).
     marker = hf_hub_download(ONNX_REPO, f"onnx/{DEFAULT_LANGUAGE}/bundle.json")
-    return str(marker).rsplit("/onnx/", 1)[0] + "/onnx"
+    return str(Path(marker).parent.parent)
 
 
 class PocketTTSOnnxBackend(BackendBase):

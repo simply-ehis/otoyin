@@ -16,9 +16,7 @@ from backend.routes.vocal_qa import _coverage, _normalise, _wer, router
 def _client() -> TestClient:
     fd, path = tempfile.mkstemp(suffix=".db")
     os.close(fd)
-    engine = create_engine(
-        f"sqlite:///{path}", connect_args={"check_same_thread": False}
-    )
+    engine = create_engine(f"sqlite:///{path}", connect_args={"check_same_thread": False})
     Base.metadata.create_all(bind=engine)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     app = FastAPI()

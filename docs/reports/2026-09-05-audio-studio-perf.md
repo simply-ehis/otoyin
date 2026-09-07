@@ -1,5 +1,10 @@
 # Audio Studio perf pass (prompt 05 leftover)
 
+**Date:** 2026-09-05
+**Status:** DONE — static audit complete, its one fix landed; live-FPS
+measurement below still pending capable hardware.
+**Last verified:** 2026-09-07
+
 Static audit of every canvas/rAF surface in `app/src/features/audioStudio/`
 plus the one real fix found. Live FPS measurement was out of reach on this
 box (no browser harness, no models for loaded playback) — the procedure at

@@ -1,5 +1,10 @@
 # Media Stack Research — editor, instruments, recording (2026-09-05)
 
+**Date:** 2026-09-05
+**Status:** PLANNED — decision record; decisions not yet adopted (editor
+`waveform-playlist` absent from app/package.json as of 2026-09-07).
+**Last verified:** 2026-09-07
+
 Three parallel deep-research tracks (fresh sources only, 2025-2026).
 One-line verdicts first, phases after.
 

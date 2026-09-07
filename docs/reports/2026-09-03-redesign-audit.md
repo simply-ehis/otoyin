@@ -2,6 +2,9 @@
 
 **Date:** 2026-09-03
 **Scope:** find-and-report pass (no fixes merged here). Frontend `app/src/components/` was empty at audit time (redesign pivot — 342 files archived to `archive/frontend-components/`); component code was audited via the archive copy.
+**Status:** SUPERSEDED
+**Superseded by:** docs/reports/2026-09-04-redesign-audit-followup.md (re-verification pass)
+**Last verified:** 2026-09-04
 **Baselines read:** `AUDIT_REPORT.md` (2025-07-21, historical), `docs/reports/XXX_TODO_AUDIT.md` (2026-08-23, placeholder sweep — not re-grepped per brief), `AGENT_FEEDBACK.md` (full read).
 
 ---

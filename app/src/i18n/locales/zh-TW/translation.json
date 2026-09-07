@@ -20,7 +20,8 @@
 		"audio": "音訊",
 		"models": "模型",
 		"settings": "設定",
-		"updateBadge": "更新"
+		"updateBadge": "更新",
+		"songwriter": "Songwriter"
 	},
 	"captures": {
 		"title": "擷取",
@@ -103,7 +104,13 @@
 			"completed": "完成",
 			"stopAria": "停止錄音",
 			"errorFallback": "發生錯誤",
-			"errorCopyTooltip": "點選複製錯誤訊息"
+			"errorCopyTooltip": "點選複製錯誤訊息",
+			"accept": "Accept",
+			"cancel": "Cancel",
+			"edit": "Edit",
+			"editPlaceholder": "Edit transcript…",
+			"offline": "Offline",
+			"partial": "Partial"
 		},
 		"chord": {
 			"capturing": "擷取中…",
@@ -243,7 +250,8 @@
 		"discard": "捨棄",
 		"source": {
 			"clone": "從音訊複製",
-			"builtin": "內建聲音"
+			"builtin": "內建聲音",
+			"design": "Design voice"
 		},
 		"builtin": {
 			"hint": "選擇預建的聲音。這些不需要音訊樣本。",
@@ -332,7 +340,10 @@
 			"sampleFailed": "新增樣本失敗",
 			"sampleFailedDescription": "新增樣本失敗。",
 			"sampleFailedRolledBack": "新增樣本失敗。檔案已復原。",
-			"saveFailed": "儲存檔案失敗"
+			"saveFailed": "儲存檔案失敗",
+			"noVoiceDescription": "No voice description",
+			"noVoiceDescriptionDescription": "Please select at least one voice attribute or add notes.",
+			"profileCreatedDesign": "\"{{name}}\" has been created with a designed voice."
 		}
 	},
 	"audioSample": {
@@ -389,8 +400,11 @@
 			"updated": "樣本已更新",
 			"updatedDescription": "參考文字已成功更新。",
 			"updateFailed": "更新失敗",
-			"updateFailedFallback": "更新樣本失敗"
-		}
+			"updateFailedFallback": "更新樣本失敗",
+			"copyClipDone": "Copied to clipboard - paste into any tab",
+			"copyClipFailed": "Failed to copy clip"
+		},
+		"copyClip": "Copy as clip"
 	},
 	"profiles": {
 		"card": {
@@ -630,7 +644,11 @@
 		"itemActions": {
 			"playFromHere": "從此處播放",
 			"regenerate": "重新生成",
-			"removeFromStory": "從故事中移除"
+			"removeFromStory": "從故事中移除",
+			"vocalQa": "Vocal QA",
+			"vocalQaDone": "Vocal QA complete",
+			"vocalQaFailed": "Vocal QA failed",
+			"vocalQaRunning": "Checking vocals…"
 		},
 		"importAudio": "匯入音訊…",
 		"importing": "匯入中…",
@@ -641,8 +659,12 @@
 			"exportFailed": "匯出音訊失敗",
 			"addFailed": "新增生成失敗",
 			"regenerateFailed": "重新生成失敗",
-			"importFailed": "匯入音訊失敗"
-		}
+			"importFailed": "匯入音訊失敗",
+			"noClip": "Clipboard is empty — copy a clip from History first",
+			"pasteFailed": "Failed to paste clip"
+		},
+		"pasteClip": "Paste clip",
+		"sourceUnavailable": "Source audio is no longer available"
 	},
 	"history": {
 		"empty": "尚無語音生成…",
@@ -652,7 +674,10 @@
 			"exportAudio": "匯出音訊",
 			"exportPackage": "匯出套件",
 			"applyEffects": "套用效果",
-			"regenerate": "重新生成"
+			"regenerate": "重新生成",
+			"copyClip": "Copy as clip",
+			"copyClipDone": "Copied to clipboard — paste into any tab",
+			"copyClipFailed": "Failed to copy clip"
 		},
 		"deleteDialog": {
 			"title": "刪除生成",
@@ -757,7 +782,10 @@
 			"telemetry": "遙測",
 			"privacy": "隱私",
 			"changelog": "更新日誌",
-			"about": "關於"
+			"about": "關於",
+			"apiKeys": "API Keys",
+			"support": "Support",
+			"system": "System"
 		},
 		"language": {
 			"label": "語言",
@@ -769,8 +797,13 @@
 			"options": {
 				"system": "跟隨系統",
 				"light": "淺色",
-				"dark": "深色"
-			}
+				"dark": "深色",
+				"coastalLight": "Coastal Light",
+				"diStefano": "Otoyin",
+				"meshDark": "Mesh Dark",
+				"stripe": "Stripe"
+			},
+			"special": "Special"
 		},
 		"general": {
 			"docs": {
@@ -801,7 +834,8 @@
 				"description": "讓網路上的其他裝置可存取伺服器。變更後請重新啟動應用程式。",
 				"updatedTitle": "設定已更新",
 				"enabled": "已啟用網路存取。重新啟動應用程式以套用。",
-				"disabled": "已停用網路存取。重新啟動應用程式以套用。"
+				"disabled": "已停用網路存取。重新啟動應用程式以套用。",
+				"needsUrl": "Remote mode is on but the server address is still local. Enter your server address above."
 			},
 			"connection": {
 				"connecting": "連線中",
@@ -845,6 +879,10 @@
 					"profiles": "聲音清單",
 					"history": "歷史生成"
 				}
+			},
+			"performanceMode": {
+				"description": "Trade RAM for speed: keep models loaded and render all UI immediately instead of deferring off-screen work.",
+				"title": "Performance Mode"
 			}
 		},
 		"generation": {
@@ -890,6 +928,14 @@
 					"title": "代理就緒。",
 					"body": "REST API 提供逐一聲音檔案的控制——讓任何 AI 擁有您複製過的聲音。"
 				}
+			},
+			"audioTags": {
+				"description": "Enable bracketed tags ([laughs], [sigh]) in TTS text for expressive vocalizations.",
+				"title": "Audio Tags"
+			},
+			"preload": {
+				"description": "Warm-start an already-downloaded voice engine at launch for a faster first generation. Never triggers a download.",
+				"title": "Preload cached engine on start"
 			}
 		},
 		"captures": {
@@ -963,6 +1009,40 @@
 				"archive": {
 					"title": "封存音訊",
 					"description": "在每筆轉錄文字旁保留原始錄音。"
+				},
+				"streamingLanguage": {
+					"auto": "Auto-detect",
+					"de": "German",
+					"description": "Auto-detect works for most live dictation. Lock it if you're always speaking the same language.",
+					"en": "English",
+					"es": "Spanish",
+					"fr": "French",
+					"hi": "Hindi",
+					"ja": "Japanese",
+					"title": "Live dictation language",
+					"zh": "Chinese"
+				},
+				"streamingModel": {
+					"baseEn": "Whisper Base.en · 74M · {{tail}}",
+					"description": "Model used for real-time transcription while you speak. Smaller models are faster but less accurate.",
+					"tail": {
+						"balanced": "Balanced",
+						"fast": "Fast, lower accuracy"
+					},
+					"tinyEn": "Whisper Tiny.en · 39M · {{tail}}",
+					"title": "Live dictation model"
+				},
+				"streamingVad": {
+					"description": "Energy threshold for detecting speech vs silence. Lower = more sensitive (picks up quiet speech), Higher = less sensitive (ignores background noise).",
+					"threshold": {
+						"default": "Default (0.02)",
+						"description": "Energy threshold for voice activity detection.",
+						"lessSensitive": "Less sensitive (0.05)",
+						"title": "Sensitivity",
+						"veryInsensitive": "Very insensitive (0.10)",
+						"verySensitive": "Very sensitive (0.01)"
+					},
+					"title": "Voice activity detection"
 				}
 			},
 			"refinement": {
@@ -1196,10 +1276,13 @@
 			"voiceGeneration": "語音生成",
 			"voiceConversion": "聲音轉換",
 			"transcription": "語音轉錄",
-			"languageModels": "語言模型"
+			"languageModels": "語言模型",
+			"music": "Music Generation",
+			"sfx": "Sound Effects"
 		},
 		"status": {
-			"loaded": "已載入"
+			"loaded": "已載入",
+			"licensed": "Licensed"
 		},
 		"storage": {
 			"location": "儲存位置",
@@ -1228,7 +1311,15 @@
 			"languagesCount": "支援 {{count}} 種語言",
 			"languagesList": "語言:{{list}}",
 			"onDisk": "磁碟佔用 {{size}}",
-			"samplePreview": "試聽"
+			"samplePreview": "試聽",
+			"blending": "Blending:",
+			"emotion": "Emotion",
+			"inlineEmotionTags": "Inline emotion tags",
+			"insertTagsHint": "Insert these tags directly in your text for expressive delivery:",
+			"mixing": "mixing",
+			"selectToBlend": "(select up to {{count}} to blend)",
+			"voiceMixer": "Voice Mixer",
+			"voicesCount": "{{count}} voices"
 		},
 		"actions": {
 			"download": "下載",
@@ -1236,7 +1327,9 @@
 			"unload": "卸載",
 			"unloading": "卸載中…",
 			"unloadFirst": "刪除前請先卸載模型",
-			"deleteModel": "刪除模型"
+			"deleteModel": "刪除模型",
+			"licenseRequired": "License Required",
+			"purchaseLicense": "Purchase License"
 		},
 		"deleteDialog": {
 			"title": "刪除模型",
@@ -1273,7 +1366,9 @@
 			"migrated": "模型已成功移動",
 			"migrationFailed": "遷移失敗",
 			"migrationFailedGeneric": "遷移模型失敗",
-			"migrationConnectionLost": "遷移期間連線中斷"
+			"migrationConnectionLost": "遷移期間連線中斷",
+			"licenseRequired": "License Required",
+			"licenseRequiredDescription": "This model requires a license. Purchase it from the Marketplace, then install the license file."
 		}
 	},
 	"sidebar": {
@@ -1297,6 +1392,87 @@
 		"ariaLabel": "Main navigation",
 		"navigation": "Navigation",
 		"collapse": "Collapse sidebar",
-		"expand": "Expand sidebar"
+		"expand": "Expand sidebar",
+		"launcher": "Launcher",
+		"library": "Library",
+		"pitchMap": "Pitch Map",
+		"songwriter": "Songwriter"
+	},
+	"instruments": {
+		"description": "Install SoundFont packs (SF2/SF3), SFZ instruments, or audio samples for use in the launcher and studio.",
+		"empty": "No instrument packs installed. Import a SoundFont (SF2/SF3), SFZ, or audio file to get started.",
+		"import": "Import Instrument",
+		"title": "Instrument Library",
+		"uploading": "Uploading…"
+	},
+	"launcher": {
+		"capture": "Capture",
+		"description": "Trigger clips across tracks in real time. Launch scenes or individual clips.",
+		"title": "Clip Launcher",
+		"toast": {
+			"captured": "Captured to library",
+			"noSession": "Save the session first",
+			"saved": "Session saved"
+		},
+		"tracks": "tracks"
+	},
+	"podcast": {
+		"conversation": {
+			"noEngines": "No TTS engine installed. Download a text-to-speech engine to build a conversation."
+		}
+	},
+	"referenceVoices": {
+		"allCategories": "All Categories",
+		"allLanguages": "All Languages",
+		"loading": "Loading voices...",
+		"noVoices": "No reference voices available",
+		"noVoicesSub": "Run the download script to populate the voice library",
+		"preview": "Preview",
+		"subtitle": "Pre-recorded voice clips for zero-shot voice cloning",
+		"title": "Reference Voices",
+		"useAsReference": "Use as Reference"
+	},
+	"subtitleStyle": {
+		"bold": "Bold",
+		"fontFamily": "Font Family",
+		"fontSize": "Font Size",
+		"italic": "Italic",
+		"outlineColor": "Outline Color",
+		"outlineWidth": "Outline Width",
+		"position": "Position",
+		"preview": "This is a sample subtitle",
+		"save": "Save Style",
+		"saving": "Saving...",
+		"textColor": "Text Color",
+		"title": "Subtitle Style",
+		"verticalMargin": "Vertical Margin"
+	},
+	"translate": {
+		"autoDetect": "Auto Detect",
+		"sourceLanguage": "Source Language",
+		"targetLanguage": "Target Language",
+		"title": "Translate",
+		"translate": "Translate",
+		"translated": "Translated",
+		"translating": "Translating..."
+	},
+	"youtube": {
+		"audio": "Audio",
+		"compressed": "MP3 (Compressed)",
+		"download": "Download",
+		"downloadComplete": "Download complete",
+		"downloadFailed": "Download failed",
+		"downloading": "Starting...",
+		"downloads": "Downloads",
+		"emptyState": "Paste a URL above to download audio or video",
+		"emptyStateSub": "Supports YouTube, SoundCloud, Vimeo, and 1000+ other sites",
+		"lossless": "WAV (Lossless)",
+		"losslessFlac": "FLAC (Lossless)",
+		"remove": "Remove",
+		"sendToCaptures": "Send to Captures",
+		"subtitle": "Import audio/video from YouTube, SoundCloud, Vimeo, and 1000+ sites",
+		"title": "Download from URL",
+		"urlPlaceholder": "Paste YouTube, SoundCloud, Vimeo URL...",
+		"video": "Video"
 	}
 }

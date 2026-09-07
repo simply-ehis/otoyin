@@ -1,5 +1,10 @@
 # Help / Skills Exposure Audit (prompt 11, backend slice — 2026-09-04)
 
+**Date:** 2026-09-04
+**Status:** DONE — backend verified render-ready; the surfaced gap closed
+2026-09-07 (`app/src/features/help/`: HelpCenter, HelpPage, SkillsBrowser).
+**Last verified:** 2026-09-07
+
 No backend work needed. Everything below already exists and is shaped for
 rendering; the gap is purely that the **new tree has no surfaces for it**.
 

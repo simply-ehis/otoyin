@@ -133,3 +133,32 @@ just test               # run pytest
 ## Dependencies
 
 Runtime dependencies are in `requirements.txt`. Optional engine dependencies are documented inline there. Dev tools (ruff, pytest) are installed automatically by `just setup-python`.
+
+### Lockfile (requirements.lock)
+
+`requirements.lock` pins the exact resolved versions (including transitives)
+that CI and this repo's test floor run against — install from it, not from
+`requirements.txt`, so a fresh clone gets the same environment that was
+tested:
+
+```bash
+pip install -r requirements.lock
+```
+
+Regenerate after any change to `requirements.txt` (uv resolves the full
+transitive closure across platforms in one pass):
+
+```bash
+uv pip compile requirements.txt -o requirements.lock --universal --header
+```
+
+CI (`ci.yml`) installs from the lock and runs `pip-audit` against it, so a
+stale lock fails loudly rather than drifting silently. Engine-specific
+dependencies are NOT in the lock — they are declared per engine in
+`ModelConfig.pip_packages` and installed into dedicated venvs at
+model-download time.
+
+Known platform note: `resemblyzer` pulls in `webrtcvad`, a 2019 C-extension
+with no prebuilt wheels for newer Pythons — it builds from source, which
+needs a C compiler (MSVC Build Tools on Windows; gcc is preinstalled on
+Linux CI).

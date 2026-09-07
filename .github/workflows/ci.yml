@@ -86,8 +86,11 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: backend/requirements.txt
-      - run: pip install -r backend/requirements.txt
+          cache-dependency-path: backend/requirements.lock
+      # Install from the lockfile (prompt 19): exact tested versions, not
+      # re-resolved ranges. Regenerate with: uv pip compile requirements.txt
+      # -o requirements.lock --universal --header (run in backend/).
+      - run: pip install -r backend/requirements.lock
       - run: python scripts/check-wiring.py --strict
 
   i18n-parity:
@@ -119,7 +122,9 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm audit --audit-level=high
       - run: pip install pip-audit
-      - run: pip-audit -r backend/requirements.txt
+      # Audit the lockfile so every transitive pin is covered, not just the
+      # declared ranges.
+      - run: pip-audit -r backend/requirements.lock
 
   frontend-build:
     name: "Frontend: Vite build"
@@ -155,8 +160,8 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: backend/requirements.txt
-      - run: pip install -r backend/requirements.txt pytest pytest-asyncio pytest-timeout
+          cache-dependency-path: backend/requirements.lock
+      - run: pip install -r backend/requirements.lock pytest pytest-asyncio pytest-timeout
       - name: Run CI test suite
         run: |
           python -m pytest \

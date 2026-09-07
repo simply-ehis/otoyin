@@ -1,5 +1,10 @@
 # i18n human-review log
 
+**Date:** 2026-09-04
+**Status:** IN PROGRESS — living review log; `es fr de pt-BR ko` ship as English
+mirrors until a human reviewer replaces every value.
+**Last verified:** 2026-09-05
+
 New locales (`es fr de pt-BR ko`) ship as English-valued structural
 mirrors — never machine translation. A locale leaves this queue when a
 human reviewer replaces every value, spot-checks interpolation

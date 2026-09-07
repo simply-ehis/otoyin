@@ -1,78 +1,83 @@
-뿯붿਍ഀ
-> @otoyin/app@0.1.0 typecheck਍ഀ
-> tsc -p tsconfig.json --noEmit਍ഀ
-਍ഀ
-src/components/Help/CommandPalette.tsx(116,29): error TS2322: Type '"/history"' is not assignable to type '"/settings/generation" | "/settings/captures" | "/stories" | "/projects" | "/audiobooks" | "/" | "/voices" | "/workspace" | "/workspace/adr" | "/workspace/studio" | "/audio-studio" | ... 50 more ... | ".."'.਍ഀ
-src/components/Notifications/NotificationBell.tsx(140,11): error TS2304: Cannot find name 'markWhatsNewSeen'.਍ഀ
-src/components/Notifications/NotificationBell.tsx(144,11): error TS2304: Cannot find name 'markOfferClaimed'.਍ഀ
-src/features/audiobooks/AudiobooksTab.tsx(1,1): error TS6133: 'useQuery' is declared but its value is never read.਍ഀ
-src/features/audiobooks/AudiobooksTab.tsx(2,21): error TS6133: 'useState' is declared but its value is never read.਍ഀ
-src/features/audiobooks/AudiobooksTab.tsx(3,1): error TS6133: 'useTranslation' is declared but its value is never read.਍ഀ
-src/features/audiobooks/AudiobooksTab.tsx(4,1): error TS6133: 'Badge' is declared but its value is never read.਍ഀ
-src/features/audiobooks/AudiobooksTab.tsx(5,1): error TS6133: 'Button' is declared but its value is never read.਍ഀ
-src/features/audiobooks/AudiobooksTab.tsx(6,1): error TS6192: All imports in import declaration are unused.਍ഀ
-src/features/audiobooks/AudiobooksTab.tsx(7,1): error TS6192: All imports in import declaration are unused.਍ഀ
-src/features/audiobooks/AudiobooksTab.tsx(15,1): error TS6133: 'useToast' is declared but its value is never read.਍ഀ
-src/features/audiobooks/AudiobooksTab.tsx(16,1): error TS6133: 'apiClient' is declared but its value is never read.਍ഀ
-src/features/audiobooks/AudiobooksTab.tsx(17,1): error TS6133: 'showStudioErrorToast' is declared but its value is never read.਍ഀ
-src/features/audiobooks/AudiobooksTab.tsx(21,2): error TS6133: 'useDeleteAudiobook' is declared but its value is never read.਍ഀ
-src/features/audiobooks/AudiobooksTab.tsx(51,6): error TS2304: Cannot find name 'BookList'.਍ഀ
-src/features/audiobooks/BookDetail.tsx(39,15): error TS2339: Property 'getAudiobookCoverUrl' does not exist on type 'ApiClient'.਍ഀ
-src/features/audiobooks/BookList.tsx(12,1): error TS6133: 'Spinner' is declared but its value is never read.਍ഀ
-src/features/audiobooks/ChapterList.tsx(4,1): error TS6192: All imports in import declaration are unused.਍ഀ
-src/features/audiobooks/ChapterList.tsx(5,1): error TS6192: All imports in import declaration are unused.਍ഀ
-src/features/audiobooks/VoiceCastPanel.tsx(2,1): error TS6133: 'Badge' is declared but its value is never read.਍ഀ
-src/features/captures/ActionBar.tsx(10,1): error TS6133: 'Spinner' is declared but its value is never read.਍ഀ
-src/features/captures/CapturesTab.tsx(11,2): error TS6196: 'CaptureSource' is declared but never used.਍ഀ
-src/features/dubbing/DubbingTab.tsx(248,5): error TS2304: Cannot find name 'ScreenHeader'.਍ഀ
-src/features/dubbing/DubbingTab.tsx(354,15): error TS2352: Conversion of type 'string[]' to type 'string' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.਍ഀ
-src/features/effects/ChainEditor.tsx(43,2): error TS6196: 'EffectPresetResponse' is declared but never used.਍ഀ
-src/features/effects/PresetDetail.tsx(23,1): error TS6133: 'Spinner' is declared but its value is never read.਍ഀ
-src/features/effects/PresetDetail.tsx(229,12): error TS2304: Cannot find name 'SparklesIcon'.਍ഀ
-src/features/generate/Composer.tsx(3,2): error TS6133: 'CommandLineIcon' is declared but its value is never read.਍ഀ
-src/features/generate/Composer.tsx(23,1): error TS6133: 'Spinner' is declared but its value is never read.਍ഀ
-src/features/generate/Composer.tsx(29,2): error TS6196: 'VoiceProfileResponse' is declared but never used.਍ഀ
-src/features/generate/Composer.tsx(242,8): error TS2322: Type '{ ref: (node: any) => void; placeholder: string; disabled: boolean; onFocus: () => void; rows: number; className: string; onChange: ChangeHandler; onBlur: ChangeHandler; ... 7 more ...; id: string; }' is not assignable to type 'IntrinsicAttributes & TextareaHTMLAttributes<HTMLTextAreaElement>'.਍ഀ
-  Property 'ref' does not exist on type 'IntrinsicAttributes & TextareaHTMLAttributes<HTMLTextAreaElement>'.਍ഀ
-src/features/generate/Composer.tsx(242,14): error TS7006: Parameter 'node' implicitly has an 'any' type.਍ഀ
-src/features/generate/Composer.tsx(399,54): error TS2345: Argument of type '0.7 | null' is not assignable to parameter of type 'number | undefined'.਍ഀ
-  Type 'null' is not assignable to type 'number | undefined'.਍ഀ
-src/features/generate/HistoryList.tsx(75,8): error TS6133: 'exportAudio' is declared but its value is never read.਍ഀ
-src/features/generate/HistoryList.tsx(76,8): error TS6133: 'exportZip' is declared but its value is never read.਍ഀ
-src/features/generate/VoicePicker.tsx(1,26): error TS6133: 'PlusIcon' is declared but its value is never read.਍ഀ
-src/features/generate/VoicePicker.tsx(7,1): error TS6133: 'Card' is declared but its value is never read.਍ഀ
-src/features/library/LibraryTab.tsx(224,8): error TS2322: Type '{ ref: RefObject<HTMLInputElement | null>; placeholder: string; "aria-label": string; value: string; onChange: (e: ChangeEvent<HTMLInputElement, HTMLInputElement>) => void; className: string; }' is not assignable to type 'IntrinsicAttributes & InputHTMLAttributes<HTMLInputElement>'.਍ഀ
-  Property 'ref' does not exist on type 'IntrinsicAttributes & InputHTMLAttributes<HTMLInputElement>'.਍ഀ
-src/features/settings/MarketplacePlugins.tsx(14,22): error TS6133: 'ScreenHeader' is declared but its value is never read.਍ഀ
-src/features/settings/PluginsPage.tsx(11,2): error TS6133: 'WrenchIcon' is declared but its value is never read.਍ഀ
-src/features/stories/StoryContent.tsx(2,2): error TS6133: 'arrayMove' is declared but its value is never read.਍ഀ
-src/features/stories/StoryContent.tsx(23,10): error TS6133: 'useEffect' is declared but its value is never read.਍ഀ
-src/features/stories/StoryContent.tsx(73,8): error TS6133: 'trackConfigs' is declared but its value is never read.਍ഀ
-src/features/stories/StoryContent.tsx(366,30): error TS2591: Cannot find name 'require'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.਍ഀ
-src/features/stories/StoryList.tsx(207,39): error TS2339: Property 'items' does not exist on type 'StoryResponse'.਍ഀ
-src/features/voices/InfoColumn.tsx(50,2): error TS6133: 'creating' is declared but its value is never read.਍ഀ
-src/features/voices/InfoColumn.tsx(73,8): error TS6133: 'uploadAvatar' is declared but its value is never read.਍ഀ
-src/features/voices/ProfileCard.tsx(44,8): error TS6133: 'selectedId' is declared but its value is never read.਍ഀ
-src/features/voices/ProfileCard.tsx(48,19): error TS2552: Cannot find name 'selectedProfileId'. Did you mean 'deleteProfile'?਍ഀ
-src/features/voices/ProfileCard.tsx(52,4): error TS2552: Cannot find name 'setSelectedProfileId'. Did you mean 'useDeleteProfile'?਍ഀ
-src/features/voices/ProfileCard.tsx(53,28): error TS2304: Cannot find name 'setSelectedProfileId'.਍ഀ
-src/features/voices/ProfileForm.tsx(19,10): error TS6133: 'formatAudioDuration' is declared but its value is never read.਍ഀ
-src/features/voices/ProfileForm.tsx(27,2): error TS2305: Module '"@/lib/hooks/useProfiles"' has no exported member 'useTranscription'.਍ഀ
-src/features/voices/ProfileForm.tsx(107,9): error TS2451: Cannot redeclare block-scoped variable 'designEngine'.਍ഀ
-src/features/voices/ProfileForm.tsx(107,23): error TS2451: Cannot redeclare block-scoped variable 'setDesignEngine'.਍ഀ
-src/features/voices/ProfileForm.tsx(120,8): error TS6133: 'deleteAvatar' is declared but its value is never read.਍ഀ
-src/features/voices/ProfileForm.tsx(547,9): error TS2451: Cannot redeclare block-scoped variable 'designEngine'.਍ഀ
-src/features/voices/ProfileForm.tsx(547,23): error TS2451: Cannot redeclare block-scoped variable 'setDesignEngine'.਍ഀ
-src/features/voices/SampleList.tsx(23,1): error TS6133: 'Spinner' is declared but its value is never read.਍ഀ
-src/features/voices/SampleUpload.tsx(25,10): error TS6133: 'Field' is declared but its value is never read.਍ഀ
-src/features/voices/SampleUpload.tsx(27,1): error TS6133: 'ERR_TITLE_VALIDATION' is declared but its value is never read.਍ഀ
-src/features/voices/SourceColumn.tsx(20,1): error TS6133: 'Textarea' is declared but its value is never read.਍ഀ
-src/features/voices/SourceColumn.tsx(242,13): error TS2322: Type '{ file: File | undefined; onFileChange: (...event: any[]) => void; onTranscribe: () => void; onPlayPause: () => void; isPlaying: boolean; isValidating: boolean; isTranscribing: boolean; isDisabled: boolean; fieldName: string; }' is not assignable to type 'IntrinsicAttributes & { file: File | null | undefined; onFileChange: (file: File | undefined) => void; onTranscribe: () => void; onPlayPause: () => void; isPlaying: boolean; isTranscribing?: boolean | undefined; isDisabled?: boolean | undefined; fieldName: string; }'.਍ഀ
-  Property 'isValidating' does not exist on type 'IntrinsicAttributes & { file: File | null | undefined; onFileChange: (file: File | undefined) => void; onTranscribe: () => void; onPlayPause: () => void; isPlaying: boolean; isTranscribing?: boolean | undefined; isDisabled?: boolean | undefined; fieldName: string; }'.਍ഀ
-src/features/voices/VoiceDesignPanel.tsx(274,17): error TS2352: Conversion of type 'readonly unknown[]' to type 'string' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.਍ഀ
-src/features/voices/VoiceInspector.tsx(21,10): error TS6133: 'Field' is declared but its value is never read.਍ഀ
-src/features/voices/VoiceInspector.tsx(37,1): error TS6133: 'debug' is declared but its value is never read.਍ഀ
-src/features/voices/VoicesTab.tsx(11,36): error TS6133: 'ScreenHeader' is declared but its value is never read.਍ഀ
-src/features/workspace/nav.tsx(21,2): error TS6133: 'SpeakerWaveIcon' is declared but its value is never read.਍ഀ
-src/hooks/useAutoUpdater.tsx(120,16): error TS2339: Property 'update' does not exist on type '{ id: string; dismiss: () => void; }'.਍ഀ
-src/lib/hooks/useModelDownloadToast.tsx(66,40): error TS2339: Property 'update' does not exist on type '{ id: string; dismiss: () => void; }'.਍ഀ
+**Date:** 2026-09-04
+**Status:** HISTORICAL — tsc-output snapshot; every listed error has since been
+resolved (frontend typecheck green as of 2026-09-07). Raw log capture, born with
+PowerShell-redirect encoding corruption; repaired 2026-09-07 by stripping the
+mis-decoded boundary artifacts (see docs/knowledge/79-encoding-repairs.md).
+
+> @otoyin/app@0.1.0 typecheck
+> tsc -p tsconfig.json --noEmit
+
+src/components/Help/CommandPalette.tsx(116,29): error TS2322: Type '"/history"' is not assignable to type '"/settings/generation" | "/settings/captures" | "/stories" | "/projects" | "/audiobooks" | "/" | "/voices" | "/workspace" | "/workspace/adr" | "/workspace/studio" | "/audio-studio" | ... 50 more ... | ".."'.
+src/components/Notifications/NotificationBell.tsx(140,11): error TS2304: Cannot find name 'markWhatsNewSeen'.
+src/components/Notifications/NotificationBell.tsx(144,11): error TS2304: Cannot find name 'markOfferClaimed'.
+src/features/audiobooks/AudiobooksTab.tsx(1,1): error TS6133: 'useQuery' is declared but its value is never read.
+src/features/audiobooks/AudiobooksTab.tsx(2,21): error TS6133: 'useState' is declared but its value is never read.
+src/features/audiobooks/AudiobooksTab.tsx(3,1): error TS6133: 'useTranslation' is declared but its value is never read.
+src/features/audiobooks/AudiobooksTab.tsx(4,1): error TS6133: 'Badge' is declared but its value is never read.
+src/features/audiobooks/AudiobooksTab.tsx(5,1): error TS6133: 'Button' is declared but its value is never read.
+src/features/audiobooks/AudiobooksTab.tsx(6,1): error TS6192: All imports in import declaration are unused.
+src/features/audiobooks/AudiobooksTab.tsx(7,1): error TS6192: All imports in import declaration are unused.
+src/features/audiobooks/AudiobooksTab.tsx(15,1): error TS6133: 'useToast' is declared but its value is never read.
+src/features/audiobooks/AudiobooksTab.tsx(16,1): error TS6133: 'apiClient' is declared but its value is never read.
+src/features/audiobooks/AudiobooksTab.tsx(17,1): error TS6133: 'showStudioErrorToast' is declared but its value is never read.
+src/features/audiobooks/AudiobooksTab.tsx(21,2): error TS6133: 'useDeleteAudiobook' is declared but its value is never read.
+src/features/audiobooks/AudiobooksTab.tsx(51,6): error TS2304: Cannot find name 'BookList'.
+src/features/audiobooks/BookDetail.tsx(39,15): error TS2339: Property 'getAudiobookCoverUrl' does not exist on type 'ApiClient'.
+src/features/audiobooks/BookList.tsx(12,1): error TS6133: 'Spinner' is declared but its value is never read.
+src/features/audiobooks/ChapterList.tsx(4,1): error TS6192: All imports in import declaration are unused.
+src/features/audiobooks/ChapterList.tsx(5,1): error TS6192: All imports in import declaration are unused.
+src/features/audiobooks/VoiceCastPanel.tsx(2,1): error TS6133: 'Badge' is declared but its value is never read.
+src/features/captures/ActionBar.tsx(10,1): error TS6133: 'Spinner' is declared but its value is never read.
+src/features/captures/CapturesTab.tsx(11,2): error TS6196: 'CaptureSource' is declared but never used.
+src/features/dubbing/DubbingTab.tsx(248,5): error TS2304: Cannot find name 'ScreenHeader'.
+src/features/dubbing/DubbingTab.tsx(354,15): error TS2352: Conversion of type 'string[]' to type 'string' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+src/features/effects/ChainEditor.tsx(43,2): error TS6196: 'EffectPresetResponse' is declared but never used.
+src/features/effects/PresetDetail.tsx(23,1): error TS6133: 'Spinner' is declared but its value is never read.
+src/features/effects/PresetDetail.tsx(229,12): error TS2304: Cannot find name 'SparklesIcon'.
+src/features/generate/Composer.tsx(3,2): error TS6133: 'CommandLineIcon' is declared but its value is never read.
+src/features/generate/Composer.tsx(23,1): error TS6133: 'Spinner' is declared but its value is never read.
+src/features/generate/Composer.tsx(29,2): error TS6196: 'VoiceProfileResponse' is declared but never used.
+src/features/generate/Composer.tsx(242,8): error TS2322: Type '{ ref: (node: any) => void; placeholder: string; disabled: boolean; onFocus: () => void; rows: number; className: string; onChange: ChangeHandler; onBlur: ChangeHandler; ... 7 more ...; id: string; }' is not assignable to type 'IntrinsicAttributes & TextareaHTMLAttributes<HTMLTextAreaElement>'.
+  Property 'ref' does not exist on type 'IntrinsicAttributes & TextareaHTMLAttributes<HTMLTextAreaElement>'.
+src/features/generate/Composer.tsx(242,14): error TS7006: Parameter 'node' implicitly has an 'any' type.
+src/features/generate/Composer.tsx(399,54): error TS2345: Argument of type '0.7 | null' is not assignable to parameter of type 'number | undefined'.
+  Type 'null' is not assignable to type 'number | undefined'.
+src/features/generate/HistoryList.tsx(75,8): error TS6133: 'exportAudio' is declared but its value is never read.
+src/features/generate/HistoryList.tsx(76,8): error TS6133: 'exportZip' is declared but its value is never read.
+src/features/generate/VoicePicker.tsx(1,26): error TS6133: 'PlusIcon' is declared but its value is never read.
+src/features/generate/VoicePicker.tsx(7,1): error TS6133: 'Card' is declared but its value is never read.
+src/features/library/LibraryTab.tsx(224,8): error TS2322: Type '{ ref: RefObject<HTMLInputElement | null>; placeholder: string; "aria-label": string; value: string; onChange: (e: ChangeEvent<HTMLInputElement, HTMLInputElement>) => void; className: string; }' is not assignable to type 'IntrinsicAttributes & InputHTMLAttributes<HTMLInputElement>'.
+  Property 'ref' does not exist on type 'IntrinsicAttributes & InputHTMLAttributes<HTMLInputElement>'.
+src/features/settings/MarketplacePlugins.tsx(14,22): error TS6133: 'ScreenHeader' is declared but its value is never read.
+src/features/settings/PluginsPage.tsx(11,2): error TS6133: 'WrenchIcon' is declared but its value is never read.
+src/features/stories/StoryContent.tsx(2,2): error TS6133: 'arrayMove' is declared but its value is never read.
+src/features/stories/StoryContent.tsx(23,10): error TS6133: 'useEffect' is declared but its value is never read.
+src/features/stories/StoryContent.tsx(73,8): error TS6133: 'trackConfigs' is declared but its value is never read.
+src/features/stories/StoryContent.tsx(366,30): error TS2591: Cannot find name 'require'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+src/features/stories/StoryList.tsx(207,39): error TS2339: Property 'items' does not exist on type 'StoryResponse'.
+src/features/voices/InfoColumn.tsx(50,2): error TS6133: 'creating' is declared but its value is never read.
+src/features/voices/InfoColumn.tsx(73,8): error TS6133: 'uploadAvatar' is declared but its value is never read.
+src/features/voices/ProfileCard.tsx(44,8): error TS6133: 'selectedId' is declared but its value is never read.
+src/features/voices/ProfileCard.tsx(48,19): error TS2552: Cannot find name 'selectedProfileId'. Did you mean 'deleteProfile'?
+src/features/voices/ProfileCard.tsx(52,4): error TS2552: Cannot find name 'setSelectedProfileId'. Did you mean 'useDeleteProfile'?
+src/features/voices/ProfileCard.tsx(53,28): error TS2304: Cannot find name 'setSelectedProfileId'.
+src/features/voices/ProfileForm.tsx(19,10): error TS6133: 'formatAudioDuration' is declared but its value is never read.
+src/features/voices/ProfileForm.tsx(27,2): error TS2305: Module '"@/lib/hooks/useProfiles"' has no exported member 'useTranscription'.
+src/features/voices/ProfileForm.tsx(107,9): error TS2451: Cannot redeclare block-scoped variable 'designEngine'.
+src/features/voices/ProfileForm.tsx(107,23): error TS2451: Cannot redeclare block-scoped variable 'setDesignEngine'.
+src/features/voices/ProfileForm.tsx(120,8): error TS6133: 'deleteAvatar' is declared but its value is never read.
+src/features/voices/ProfileForm.tsx(547,9): error TS2451: Cannot redeclare block-scoped variable 'designEngine'.
+src/features/voices/ProfileForm.tsx(547,23): error TS2451: Cannot redeclare block-scoped variable 'setDesignEngine'.
+src/features/voices/SampleList.tsx(23,1): error TS6133: 'Spinner' is declared but its value is never read.
+src/features/voices/SampleUpload.tsx(25,10): error TS6133: 'Field' is declared but its value is never read.
+src/features/voices/SampleUpload.tsx(27,1): error TS6133: 'ERR_TITLE_VALIDATION' is declared but its value is never read.
+src/features/voices/SourceColumn.tsx(20,1): error TS6133: 'Textarea' is declared but its value is never read.
+src/features/voices/SourceColumn.tsx(242,13): error TS2322: Type '{ file: File | undefined; onFileChange: (...event: any[]) => void; onTranscribe: () => void; onPlayPause: () => void; isPlaying: boolean; isValidating: boolean; isTranscribing: boolean; isDisabled: boolean; fieldName: string; }' is not assignable to type 'IntrinsicAttributes & { file: File | null | undefined; onFileChange: (file: File | undefined) => void; onTranscribe: () => void; onPlayPause: () => void; isPlaying: boolean; isTranscribing?: boolean | undefined; isDisabled?: boolean | undefined; fieldName: string; }'.
+  Property 'isValidating' does not exist on type 'IntrinsicAttributes & { file: File | null | undefined; onFileChange: (file: File | undefined) => void; onTranscribe: () => void; onPlayPause: () => void; isPlaying: boolean; isTranscribing?: boolean | undefined; isDisabled?: boolean | undefined; fieldName: string; }'.
+src/features/voices/VoiceDesignPanel.tsx(274,17): error TS2352: Conversion of type 'readonly unknown[]' to type 'string' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+src/features/voices/VoiceInspector.tsx(21,10): error TS6133: 'Field' is declared but its value is never read.
+src/features/voices/VoiceInspector.tsx(37,1): error TS6133: 'debug' is declared but its value is never read.
+src/features/voices/VoicesTab.tsx(11,36): error TS6133: 'ScreenHeader' is declared but its value is never read.
+src/features/workspace/nav.tsx(21,2): error TS6133: 'SpeakerWaveIcon' is declared but its value is never read.
+src/hooks/useAutoUpdater.tsx(120,16): error TS2339: Property 'update' does not exist on type '{ id: string; dismiss: () => void; }'.
+src/lib/hooks/useModelDownloadToast.tsx(66,40): error TS2339: Property 'update' does not exist on type '{ id: string; dismiss: () => void; }'.

@@ -2,7 +2,10 @@
 
 **Date:** 2026-09-03
 **Prompt:** `otoyin-redesign-prompts/09-updater-hardening.md`
-**Verdict (updated 2026-09-06):** the update channel is now **wired end-to-end**
+**Status:** DONE — update channel wired end-to-end (2026-09-06); unreleased: no
+signed release cut yet.
+**Last verified:** 2026-09-06
+**Verdict (2026-09-06):** the update channel is now **wired end-to-end**
 (Rust plugin + shell, endpoints, pubkey, updater artifacts, CI signing +
 `latest.json` release manifest) — but **unreleased**: no signed release has been
 cut yet. The Rust engine commands (§5) are now **implemented** and compile clean

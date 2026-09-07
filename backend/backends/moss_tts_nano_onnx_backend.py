@@ -12,6 +12,7 @@ into the rest of the pipeline. Voice cloning uses a reference audio path
 import asyncio
 import logging
 import threading
+from pathlib import Path
 
 import numpy as np
 
@@ -86,12 +87,12 @@ class MossTTSNanoOnnxBackend(BackendBase):
         for name in ("browser_poc_manifest.json", "tts_browser_onnx_meta.json", "tokenizer.model"):
             path = hf_hub_download(ONNX_REPO_TTS, name)
             if tts_dir is None:
-                tts_dir = str(path).rsplit("/", 1)[0]
+                tts_dir = str(Path(path).parent)
         codec_dir = None
         for name in ("codec_browser_onnx_meta.json",):
             path = hf_hub_download(ONNX_REPO_CODEC, name)
             if codec_dir is None:
-                codec_dir = str(path).rsplit("/", 1)[0]
+                codec_dir = str(Path(path).parent)
 
         model_dir = tts_dir
         engine = MossTTSNanoOnnx(model_dir, thread_count=4, execution_provider="cpu")

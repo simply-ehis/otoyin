@@ -2,7 +2,8 @@
 
 **Date:** 2026-09-03
 **Prompt:** `otoyin-redesign-prompts/11-help-onboarding-skills-exposure.md`
-**Stage:** audit + plan. Everything the prompt feared was missing actually exists; the work is **surfacing it under the design system**, not building from zero.
+**Status:** DONE — help surfaces landed 2026-09-07 (`app/src/features/help/`: HelpCenter, HelpPage, SkillsBrowser). Audit + plan pass: everything the prompt feared was missing already existed; the work was surfacing it under the design system.
+**Last verified:** 2026-09-07
 
 ## 1. What already exists (verified)
 

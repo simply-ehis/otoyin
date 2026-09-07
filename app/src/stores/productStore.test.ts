@@ -61,24 +61,18 @@ describe("productStore — New badge bookkeeping", () => {
 		});
 		const s1 = useProductStore.getState();
 		// …which is New because its introduction postdates the marker.
-		expect(
-			isProductNew(
-				s1.firstSeenAt.fresh,
-				s1.lastSeenCatalogAt,
-			),
-		).toBe(true);
+		expect(isProductNew(s1.firstSeenAt.fresh, s1.lastSeenCatalogAt)).toBe(true);
 		// …while the baseline product is not.
-		expect(
-			isProductNew(
-				s1.firstSeenAt.kokoro,
-				s1.lastSeenCatalogAt,
-			),
-		).toBe(false);
+		expect(isProductNew(s1.firstSeenAt.kokoro, s1.lastSeenCatalogAt)).toBe(
+			false,
+		);
 		act(() => {
 			s1.markCatalogSeen("2026-09-05T00:00:00+00:00");
 		});
 		const s2 = useProductStore.getState();
-		expect(isProductNew(s2.firstSeenAt.fresh, s2.lastSeenCatalogAt)).toBe(false);
+		expect(isProductNew(s2.firstSeenAt.fresh, s2.lastSeenCatalogAt)).toBe(
+			false,
+		);
 	});
 
 	it("markCatalogSeen is idempotent for the same stamp", () => {

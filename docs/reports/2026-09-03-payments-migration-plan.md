@@ -2,7 +2,8 @@
 
 **Date:** 2026-09-03
 **Prompt:** `otoyin-redesign-prompts/10-payments-migration.md`
-**Stage:** decision-support + scoped plan. **No provider is chosen or integrated here** — the pack is explicit that the seller must confirm real payout mechanics with a provider before any integration code.
+**Status:** PLANNED — decision-support + scoped plan. No provider is chosen or integrated; the seller must confirm real payout mechanics with a provider before any integration code.
+**Last verified:** 2026-09-07
 
 ## 0. Live-path correction (verified in code)
 

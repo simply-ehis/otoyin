@@ -88,7 +88,9 @@ export function useModelDownloadToast({
 
 					switch (progress.status) {
 						case "complete":
-							statusIcon = <CheckCircle2 className="size-4 text-success-text" />;
+							statusIcon = (
+								<CheckCircle2 className="size-4 text-success-text" />
+							);
 							statusText = "Download complete";
 							break;
 						case "error":

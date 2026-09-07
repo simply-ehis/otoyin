@@ -2,7 +2,9 @@
 
 **Date:** 2026-09-03
 **Prompt:** `otoyin-redesign-prompts/07-marketplace-redesign-and-backend.md`
-**Stage:** plan + decision note; **backend + Store UI now implemented (2026-09-06):**
+**Status:** DONE — plan + decision note; backend + Store UI implemented (2026-09-06); payments/admin e2e remain.
+**Last verified:** 2026-09-06
+**Implemented (2026-09-06):**
 `local_status` annotation on catalog endpoints, signed remote-catalog fetch with
 bundled fallback, staleness-gated + 24h periodic refresh + Store-open nudge +
 manual check button, per-product owned/cached/needs-download states, dismissible

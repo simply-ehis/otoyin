@@ -20,7 +20,8 @@
 		"audio": "オーディオ",
 		"models": "モデル",
 		"settings": "設定",
-		"updateBadge": "更新"
+		"updateBadge": "更新",
+		"songwriter": "Songwriter"
 	},
 	"captures": {
 		"title": "キャプチャ",
@@ -103,7 +104,13 @@
 			"completed": "完了",
 			"stopAria": "録音を停止",
 			"errorFallback": "問題が発生しました",
-			"errorCopyTooltip": "クリックでエラーをコピー"
+			"errorCopyTooltip": "クリックでエラーをコピー",
+			"accept": "Accept",
+			"cancel": "Cancel",
+			"edit": "Edit",
+			"editPlaceholder": "Edit transcript…",
+			"offline": "Offline",
+			"partial": "Partial"
 		},
 		"chord": {
 			"capturing": "取得中…",
@@ -243,7 +250,8 @@
 		"discard": "破棄",
 		"source": {
 			"clone": "オーディオから複製",
-			"builtin": "ビルトインボイス"
+			"builtin": "ビルトインボイス",
+			"design": "Design voice"
 		},
 		"builtin": {
 			"hint": "あらかじめ用意されたボイスを選択してください。オーディオサンプルは不要です。",
@@ -332,7 +340,10 @@
 			"sampleFailed": "サンプルの追加に失敗しました",
 			"sampleFailedDescription": "サンプルの追加に失敗しました。",
 			"sampleFailedRolledBack": "サンプルの追加に失敗しました。プロファイルはロールバックされました。",
-			"saveFailed": "プロファイルの保存に失敗しました"
+			"saveFailed": "プロファイルの保存に失敗しました",
+			"noVoiceDescription": "No voice description",
+			"noVoiceDescriptionDescription": "Please select at least one voice attribute or add notes.",
+			"profileCreatedDesign": "\"{{name}}\" has been created with a designed voice."
 		}
 	},
 	"audioSample": {
@@ -389,8 +400,11 @@
 			"updated": "サンプルを更新しました",
 			"updatedDescription": "リファレンステキストを正常に更新しました。",
 			"updateFailed": "更新に失敗しました",
-			"updateFailedFallback": "サンプルの更新に失敗しました"
-		}
+			"updateFailedFallback": "サンプルの更新に失敗しました",
+			"copyClipDone": "Copied to clipboard - paste into any tab",
+			"copyClipFailed": "Failed to copy clip"
+		},
+		"copyClip": "Copy as clip"
 	},
 	"profiles": {
 		"card": {
@@ -630,7 +644,11 @@
 		"itemActions": {
 			"playFromHere": "ここから再生",
 			"regenerate": "再生成",
-			"removeFromStory": "ストーリーから削除"
+			"removeFromStory": "ストーリーから削除",
+			"vocalQa": "Vocal QA",
+			"vocalQaDone": "Vocal QA complete",
+			"vocalQaFailed": "Vocal QA failed",
+			"vocalQaRunning": "Checking vocals…"
 		},
 		"importAudio": "オーディオをインポート…",
 		"importing": "インポート中…",
@@ -641,8 +659,12 @@
 			"exportFailed": "オーディオのエクスポートに失敗しました",
 			"addFailed": "生成の追加に失敗しました",
 			"regenerateFailed": "再生成に失敗しました",
-			"importFailed": "オーディオのインポートに失敗しました"
-		}
+			"importFailed": "オーディオのインポートに失敗しました",
+			"noClip": "Clipboard is empty — copy a clip from History first",
+			"pasteFailed": "Failed to paste clip"
+		},
+		"pasteClip": "Paste clip",
+		"sourceUnavailable": "Source audio is no longer available"
 	},
 	"history": {
 		"empty": "音声生成はまだありません…",
@@ -652,7 +674,10 @@
 			"exportAudio": "オーディオをエクスポート",
 			"exportPackage": "パッケージをエクスポート",
 			"applyEffects": "エフェクトを適用",
-			"regenerate": "再生成"
+			"regenerate": "再生成",
+			"copyClip": "Copy as clip",
+			"copyClipDone": "Copied to clipboard — paste into any tab",
+			"copyClipFailed": "Failed to copy clip"
 		},
 		"deleteDialog": {
 			"title": "生成を削除",
@@ -757,7 +782,10 @@
 			"telemetry": "テレメトリー",
 			"privacy": "プライバシー",
 			"changelog": "変更履歴",
-			"about": "このアプリについて"
+			"about": "このアプリについて",
+			"apiKeys": "API Keys",
+			"support": "Support",
+			"system": "System"
 		},
 		"language": {
 			"label": "言語",
@@ -769,8 +797,13 @@
 			"options": {
 				"system": "システム",
 				"light": "ライト",
-				"dark": "ダーク"
-			}
+				"dark": "ダーク",
+				"coastalLight": "Coastal Light",
+				"diStefano": "Otoyin",
+				"meshDark": "Mesh Dark",
+				"stripe": "Stripe"
+			},
+			"special": "Special"
 		},
 		"general": {
 			"docs": {
@@ -801,7 +834,8 @@
 				"description": "ネットワーク上の他のデバイスからサーバーにアクセスできるようにします。変更後はアプリを再起動してください。",
 				"updatedTitle": "設定を更新しました",
 				"enabled": "ネットワークアクセスが有効になりました。適用するにはアプリを再起動してください。",
-				"disabled": "ネットワークアクセスが無効になりました。適用するにはアプリを再起動してください。"
+				"disabled": "ネットワークアクセスが無効になりました。適用するにはアプリを再起動してください。",
+				"needsUrl": "Remote mode is on but the server address is still local. Enter your server address above."
 			},
 			"connection": {
 				"connecting": "接続中",
@@ -845,6 +879,10 @@
 					"profiles": "ボイス一覧",
 					"history": "過去の生成"
 				}
+			},
+			"performanceMode": {
+				"description": "Trade RAM for speed: keep models loaded and render all UI immediately instead of deferring off-screen work.",
+				"title": "Performance Mode"
 			}
 		},
 		"generation": {
@@ -890,6 +928,14 @@
 					"title": "エージェント対応。",
 					"body": "プロファイル単位で制御できる REST API — クローンしたボイスをどの AI にも渡せます。"
 				}
+			},
+			"audioTags": {
+				"description": "Enable bracketed tags ([laughs], [sigh]) in TTS text for expressive vocalizations.",
+				"title": "Audio Tags"
+			},
+			"preload": {
+				"description": "Warm-start an already-downloaded voice engine at launch for a faster first generation. Never triggers a download.",
+				"title": "Preload cached engine on start"
 			}
 		},
 		"captures": {
@@ -963,6 +1009,40 @@
 				"archive": {
 					"title": "音声をアーカイブ",
 					"description": "文字起こしと一緒に元の録音も保持します。"
+				},
+				"streamingLanguage": {
+					"auto": "Auto-detect",
+					"de": "German",
+					"description": "Auto-detect works for most live dictation. Lock it if you're always speaking the same language.",
+					"en": "English",
+					"es": "Spanish",
+					"fr": "French",
+					"hi": "Hindi",
+					"ja": "Japanese",
+					"title": "Live dictation language",
+					"zh": "Chinese"
+				},
+				"streamingModel": {
+					"baseEn": "Whisper Base.en · 74M · {{tail}}",
+					"description": "Model used for real-time transcription while you speak. Smaller models are faster but less accurate.",
+					"tail": {
+						"balanced": "Balanced",
+						"fast": "Fast, lower accuracy"
+					},
+					"tinyEn": "Whisper Tiny.en · 39M · {{tail}}",
+					"title": "Live dictation model"
+				},
+				"streamingVad": {
+					"description": "Energy threshold for detecting speech vs silence. Lower = more sensitive (picks up quiet speech), Higher = less sensitive (ignores background noise).",
+					"threshold": {
+						"default": "Default (0.02)",
+						"description": "Energy threshold for voice activity detection.",
+						"lessSensitive": "Less sensitive (0.05)",
+						"title": "Sensitivity",
+						"veryInsensitive": "Very insensitive (0.10)",
+						"verySensitive": "Very sensitive (0.01)"
+					},
+					"title": "Voice activity detection"
 				}
 			},
 			"refinement": {
@@ -1196,10 +1276,13 @@
 			"voiceGeneration": "音声生成",
 			"voiceConversion": "ボイスチェンジ",
 			"transcription": "文字起こし",
-			"languageModels": "言語モデル"
+			"languageModels": "言語モデル",
+			"music": "Music Generation",
+			"sfx": "Sound Effects"
 		},
 		"status": {
-			"loaded": "読み込み済み"
+			"loaded": "読み込み済み",
+			"licensed": "Licensed"
 		},
 		"storage": {
 			"location": "保存場所",
@@ -1228,7 +1311,15 @@
 			"languagesCount": "{{count}} 言語に対応",
 			"languagesList": "対応言語:{{list}}",
 			"onDisk": "ディスク使用量 {{size}}",
-			"samplePreview": "プレビュー"
+			"samplePreview": "プレビュー",
+			"blending": "Blending:",
+			"emotion": "Emotion",
+			"inlineEmotionTags": "Inline emotion tags",
+			"insertTagsHint": "Insert these tags directly in your text for expressive delivery:",
+			"mixing": "mixing",
+			"selectToBlend": "(select up to {{count}} to blend)",
+			"voiceMixer": "Voice Mixer",
+			"voicesCount": "{{count}} voices"
 		},
 		"actions": {
 			"download": "ダウンロード",
@@ -1236,7 +1327,9 @@
 			"unload": "アンロード",
 			"unloading": "アンロード中…",
 			"unloadFirst": "削除する前にモデルをアンロードしてください",
-			"deleteModel": "モデルを削除"
+			"deleteModel": "モデルを削除",
+			"licenseRequired": "License Required",
+			"purchaseLicense": "Purchase License"
 		},
 		"deleteDialog": {
 			"title": "モデルを削除",
@@ -1273,7 +1366,9 @@
 			"migrated": "モデルを正常に移動しました",
 			"migrationFailed": "移行に失敗しました",
 			"migrationFailedGeneric": "モデルの移行に失敗しました",
-			"migrationConnectionLost": "移行中に接続が切断されました"
+			"migrationConnectionLost": "移行中に接続が切断されました",
+			"licenseRequired": "License Required",
+			"licenseRequiredDescription": "This model requires a license. Purchase it from the Marketplace, then install the license file."
 		}
 	},
 	"sidebar": {
@@ -1297,6 +1392,87 @@
 		"ariaLabel": "Main navigation",
 		"navigation": "Navigation",
 		"collapse": "Collapse sidebar",
-		"expand": "Expand sidebar"
+		"expand": "Expand sidebar",
+		"launcher": "Launcher",
+		"library": "Library",
+		"pitchMap": "Pitch Map",
+		"songwriter": "Songwriter"
+	},
+	"instruments": {
+		"description": "Install SoundFont packs (SF2/SF3), SFZ instruments, or audio samples for use in the launcher and studio.",
+		"empty": "No instrument packs installed. Import a SoundFont (SF2/SF3), SFZ, or audio file to get started.",
+		"import": "Import Instrument",
+		"title": "Instrument Library",
+		"uploading": "Uploading…"
+	},
+	"launcher": {
+		"capture": "Capture",
+		"description": "Trigger clips across tracks in real time. Launch scenes or individual clips.",
+		"title": "Clip Launcher",
+		"toast": {
+			"captured": "Captured to library",
+			"noSession": "Save the session first",
+			"saved": "Session saved"
+		},
+		"tracks": "tracks"
+	},
+	"podcast": {
+		"conversation": {
+			"noEngines": "No TTS engine installed. Download a text-to-speech engine to build a conversation."
+		}
+	},
+	"referenceVoices": {
+		"allCategories": "All Categories",
+		"allLanguages": "All Languages",
+		"loading": "Loading voices...",
+		"noVoices": "No reference voices available",
+		"noVoicesSub": "Run the download script to populate the voice library",
+		"preview": "Preview",
+		"subtitle": "Pre-recorded voice clips for zero-shot voice cloning",
+		"title": "Reference Voices",
+		"useAsReference": "Use as Reference"
+	},
+	"subtitleStyle": {
+		"bold": "Bold",
+		"fontFamily": "Font Family",
+		"fontSize": "Font Size",
+		"italic": "Italic",
+		"outlineColor": "Outline Color",
+		"outlineWidth": "Outline Width",
+		"position": "Position",
+		"preview": "This is a sample subtitle",
+		"save": "Save Style",
+		"saving": "Saving...",
+		"textColor": "Text Color",
+		"title": "Subtitle Style",
+		"verticalMargin": "Vertical Margin"
+	},
+	"translate": {
+		"autoDetect": "Auto Detect",
+		"sourceLanguage": "Source Language",
+		"targetLanguage": "Target Language",
+		"title": "Translate",
+		"translate": "Translate",
+		"translated": "Translated",
+		"translating": "Translating..."
+	},
+	"youtube": {
+		"audio": "Audio",
+		"compressed": "MP3 (Compressed)",
+		"download": "Download",
+		"downloadComplete": "Download complete",
+		"downloadFailed": "Download failed",
+		"downloading": "Starting...",
+		"downloads": "Downloads",
+		"emptyState": "Paste a URL above to download audio or video",
+		"emptyStateSub": "Supports YouTube, SoundCloud, Vimeo, and 1000+ other sites",
+		"lossless": "WAV (Lossless)",
+		"losslessFlac": "FLAC (Lossless)",
+		"remove": "Remove",
+		"sendToCaptures": "Send to Captures",
+		"subtitle": "Import audio/video from YouTube, SoundCloud, Vimeo, and 1000+ sites",
+		"title": "Download from URL",
+		"urlPlaceholder": "Paste YouTube, SoundCloud, Vimeo URL...",
+		"video": "Video"
 	}
 }

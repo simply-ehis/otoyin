@@ -3,6 +3,10 @@
 **Date:** 2026-09-03
 **Prompt:** `otoyin-redesign-prompts/04-design-system-and-redesign.md` (feature-exposure section)
 **Method:** cross-referenced `backend/data/app_features.json` (60 features, machine-readable, each with `where` + `tools`) against the restored component tree (`app/src/components/`) and the TanStack Router route table (`app/src/router.tsx`).
+**Status:** HISTORICAL — point-in-time snapshot feeding prompts 04/05/11; the
+restore note below was true at audit time (components committed long since;
+`archive/` deleted 2026-09-06).
+**Last verified:** 2026-09-03 (frozen snapshot)
 
 ## Verdict
 

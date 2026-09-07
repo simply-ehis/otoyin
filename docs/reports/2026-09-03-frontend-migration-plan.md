@@ -2,7 +2,8 @@
 
 **Date:** 2026-09-03
 **Prompt:** `otoyin-redesign-prompts/03-frontend-framework-migration.md`
-**Status:** DECISION MADE — stay on React. Planning pass only; no framework swap.
+**Status:** DONE — decision made (stay on React); planning pass only, no framework swap.
+**Last verified:** 2026-09-07
 
 ---
 

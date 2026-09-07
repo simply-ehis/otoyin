@@ -27,7 +27,9 @@
 		"ariaLabel": "Main navigation",
 		"navigation": "Navigation",
 		"collapse": "Collapse sidebar",
-		"expand": "Expand sidebar"
+		"expand": "Expand sidebar",
+		"launcher": "Launcher",
+		"songwriter": "Songwriter"
 	},
 	"common": {
 		"cancel": "Cancel",
@@ -50,7 +52,8 @@
 		"audio": "Audio",
 		"models": "Models",
 		"settings": "Settings",
-		"updateBadge": "Update"
+		"updateBadge": "Update",
+		"songwriter": "Songwriter"
 	},
 	"captures": {
 		"title": "Captures",
@@ -675,7 +678,11 @@
 		"itemActions": {
 			"playFromHere": "Play from here",
 			"regenerate": "Regenerate",
-			"removeFromStory": "Remove from Story"
+			"removeFromStory": "Remove from Story",
+			"vocalQa": "Vocal QA",
+			"vocalQaDone": "Vocal QA complete",
+			"vocalQaFailed": "Vocal QA failed",
+			"vocalQaRunning": "Checking vocals…"
 		},
 		"importAudio": "Import audio…",
 		"importing": "Importing…",
@@ -1454,5 +1461,23 @@
 		"conversation": {
 			"noEngines": "No TTS engine installed. Download a text-to-speech engine to build a conversation."
 		}
+	},
+	"instruments": {
+		"description": "Install SoundFont packs (SF2/SF3), SFZ instruments, or audio samples for use in the launcher and studio.",
+		"empty": "No instrument packs installed. Import a SoundFont (SF2/SF3), SFZ, or audio file to get started.",
+		"import": "Import Instrument",
+		"title": "Instrument Library",
+		"uploading": "Uploading…"
+	},
+	"launcher": {
+		"capture": "Capture",
+		"description": "Trigger clips across tracks in real time. Launch scenes or individual clips.",
+		"title": "Clip Launcher",
+		"toast": {
+			"captured": "Captured to library",
+			"noSession": "Save the session first",
+			"saved": "Session saved"
+		},
+		"tracks": "tracks"
 	}
 }

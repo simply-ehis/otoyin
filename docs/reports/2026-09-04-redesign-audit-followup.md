@@ -1,5 +1,10 @@
 # Redesign Audit — Follow-up Pass (2026-09-04)
 
+**Date:** 2026-09-04
+**Status:** DONE — re-verification pass complete; the remaining typecheck tail it
+flagged was resolved 2026-09-06 (frontend typecheck green).
+**Last verified:** 2026-09-07
+
 Follow-up to `docs/reports/2026-09-03-redesign-audit.md`. That pass's fixes
 were re-verified; this doc records what is now confirmed FIXED, what is
 STALE (prompt premise no longer true), and NEW findings with file:line

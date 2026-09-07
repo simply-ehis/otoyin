@@ -28,7 +28,9 @@ export async function isNativeMicAvailable(): Promise<boolean> {
 	}
 }
 
-export async function startNativeMicCapture(deviceId?: string | null): Promise<void> {
+export async function startNativeMicCapture(
+	deviceId?: string | null,
+): Promise<void> {
 	await invoke("start_mic_capture", { deviceId: deviceId ?? null });
 }
 

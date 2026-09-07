@@ -20,10 +20,12 @@ accelerate>=0.26.0
 huggingface_hub>=0.20.0
 
 # ONNX Runtime — shared inference runtime for every torch-free ONNX backend.
-# Without it the app silently degrades to torch paths. macOS users get CoreML
-# via onnxruntime-coreml. Windows-AMD users may add onnxruntime-directml.
+# Without it the app silently degrades to torch paths. macOS users: the stock
+# onnxruntime wheel ships the CoreML execution provider — do NOT add the
+# abandoned `onnxruntime-coreml` package (PyPI max 1.13.1, 2023; its old
+# >=1.17.0 pin here made every fresh macOS install unsatisfiable — removed
+# 2026-09-07). Windows-AMD users may add onnxruntime-directml.
 onnxruntime>=1.17.0
-onnxruntime-coreml>=1.17.0; sys_platform == "darwin"
 
 # Audio processing
 librosa>=0.10.0

@@ -1,13 +1,19 @@
-﻿OpenAPI paths: 428
-HOW TO READ THIS: the frontend rebuild (03) is mid-flight ù new
+**Date:** 2026-09-04
+**Status:** HISTORICAL — snapshot of `scripts/check-wiring.py` output mid-rebuild
+(STRANDED = UI not rebuilt yet). Regenerate by re-running the script as screens
+land; do not hand-edit. Repaired 2026-09-07: BOM stripped, cp850 mojibake
+(em-dash glyphs) fixed, CRLF normalized.
+
+OpenAPI paths: 428
+HOW TO READ THIS: the frontend rebuild (03) is mid-flight — new
 screens exist but router.tsx still points at the old tree. STRANDED
 mostly means 'UI not rebuilt yet', NOT 'dead backend'. Re-run as
 screens land; the stranded count should fall toward the allowlisted
 remainder (webhooks/MCP/schema). HANDROLLED = works today but
-bypasses lib/api ù move into the client layer per prompt 20.
+bypasses lib/api — move into the client layer per prompt 20.
 ORPHANED = imported nowhere (real). UNWIRED = not in router yet
 (expected until REBUILD_LOG step 2 lands).
-Stranded endpoints ù no UI caller anywhere (98):
+Stranded endpoints — no UI caller anywhere (98):
   STRANDED  /
   STRANDED  /adr/audio/{take_id}
   STRANDED  /adr/guide-audio/{session_id}
@@ -106,7 +112,7 @@ Stranded endpoints ù no UI caller anywhere (98):
   STRANDED  /workflow/templates
   STRANDED  /youtube/file/{task_id}
   STRANDED  /youtube/tasks/{task_id}
-Hand-rolled callers outside lib/api ù move into client layer (0):
+Hand-rolled callers outside lib/api — move into client layer (0):
 Imported nowhere (2):
   ORPHANED  app\src\features\generate\GeneratePage.tsx
   ORPHANED  app\src\features\settings\TimecodePage.tsx

@@ -2,7 +2,8 @@
 
 **Date:** 2026-09-03
 **Prompt:** `otoyin-redesign-prompts/05-audio-studio-page-redesign.md`
-**Stage:** planning pass (per the pack's sign-off gate: proof screens first, then this page). The design system it builds on is `docs/design/DESIGN_SYSTEM.md` + `docs/design/proof/proof.html`.
+**Status:** DONE (2026-09-07) — rollout complete; see 2026-09-07-audio-studio-exposure-audit.md. Design system it builds on: `docs/design/DESIGN_SYSTEM.md` + `docs/design/proof/proof.html`.
+**Last verified:** 2026-09-07
 
 ## 0. Current structure (verified)
 

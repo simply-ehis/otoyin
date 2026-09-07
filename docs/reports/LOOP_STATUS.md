@@ -2,7 +2,7 @@
 
 **Protocol:** `LOOP-PROTOCOL.md` in `C:\Users\ehis\Downloads\otoyin-redesign-prompts`
 **Sequencing:** `00-START-HERE.md` in the same pack.
-**Updated:** 2026-09-05 (first Loop-Protocol pass; prior work verified, not re-done).
+**Updated:** 2026-09-07 (rows 03/04/06/09/14 refreshed 2026-09-06/07; report-header convention applied across docs/reports/ — see README.md there).
 **How to resume:** read this file first, then `docs/reports/loop-logs/<slug>.md` for the file you're picking up.
 
 | File | Status | Current unit | Last updated | Notes |
@@ -24,6 +24,6 @@
 | 16-security-and-secrets-hardening | IN PROGRESS | unit 1/5 | 2026-09-05 | Paddle webhook verify exists in code; MCP trust model + admin-auth attack tests + dep-scan gate not yet demonstrated |
 | 17-release-signing-and-notarization | BLOCKED | unit 2/4 | 2026-09-05 | updater signing key wired in CI; macOS notarization + Windows Authenticode need paid certs/human account decision |
 | 18-privacy-and-data-compliance | IN PROGRESS | unit 1/4 | 2026-09-05 | marketplace/web/src/app/privacy/page.tsx exists; deletion/export walkthrough + provider-coverage note pending |
-| 19-environment-and-build-reproducibility | IN PROGRESS | unit 3/5 | 2026-09-05 | check-env.sh exists; tauri/src-tauri/rust-toolchain.toml exists; NO python lockfile (requirements still >=); path audit pending |
+| 19-environment-and-build-reproducibility | DONE | 5/5 | 2026-09-07 | requirements.lock (uv universal, 131 pins) validated on locked env (122/122); CI installs + audits the lock; path audit: 3 Windows-breaking rsplit bugs fixed; onnxruntime-coreml unsatisfiable pin removed (was breaking fresh macOS installs) |
 | 20-component-wiring-and-integration | IN PROGRESS | unit 3/4 | 2026-09-05 | check-wiring.py LIVE-RUN (74 routers, 434 paths, 98 stranded=mid-flight); deliberate self-test + DoD spot-check pending |
 | 21-small-model-harness | NOT STARTED | unit 0/4 | 2026-09-05 | duplication still present (both deepfilter + both stem files); only test_vad.py; no lifecycle/measurement decision |

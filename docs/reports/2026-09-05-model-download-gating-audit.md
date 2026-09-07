@@ -1,5 +1,10 @@
 # Model-download gating audit (prompt 07, Part A) — CORRECTED
 
+**Date:** 2026-09-05
+**Status:** DONE — Part A verified (no ungated download path); re-run procedure
+in Tracked follow-ups; the factory-guard prohibition below is a standing rule.
+**Last verified:** 2026-09-06
+
 Question: can any code path silently download model weights outside the
 marketplace/Models-tab install flow? Method: enumerated every
 `hf_hub_download` / `snapshot_download` / `from_pretrained` call site in

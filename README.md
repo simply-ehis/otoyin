@@ -89,7 +89,7 @@ just dev-web
 python -m venv backend/venv
 backend/venv/Scripts/activate    # Windows
 source backend/venv/bin/activate # macOS/Linux
-pip install -r backend/requirements.txt
+pip install -r backend/requirements.lock   # exact tested versions (see note below)
 
 # Frontend
 npm install

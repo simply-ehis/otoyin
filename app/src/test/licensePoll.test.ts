@@ -37,7 +37,9 @@ describe("pollForLicense recovery", () => {
 				jsonResponse(200, { product_id: "qwen3-tts", signature: "sig" }),
 			);
 		vi.stubGlobal("fetch", fetchMock);
-		const license = await settlePoll(marketplaceClient.pollForLicense("otoyin_abc"));
+		const license = await settlePoll(
+			marketplaceClient.pollForLicense("otoyin_abc"),
+		);
 		expect(license).toMatchObject({ product_id: "qwen3-tts" });
 		expect(fetchMock).toHaveBeenCalledTimes(3);
 		expect(vi.mocked(fetchMock).mock.calls[0]?.[0]).toContain("otoyin_abc");
@@ -49,7 +51,9 @@ describe("pollForLicense recovery", () => {
 		const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, licenseBody));
 		vi.stubGlobal("fetch", fetchMock);
 		// Simulates the "Check again" button: brand-new poll, same order ref.
-		const license = await settlePoll(marketplaceClient.pollForLicense("otoyin_still_open"));
+		const license = await settlePoll(
+			marketplaceClient.pollForLicense("otoyin_still_open"),
+		);
 		expect(license).toMatchObject(licenseBody);
 		expect(vi.mocked(fetchMock).mock.calls[0]?.[0]).toContain(
 			"otoyin_still_open",
