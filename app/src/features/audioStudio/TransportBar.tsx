@@ -6,8 +6,8 @@ import {
 	XMarkIcon as X,
 } from "@heroicons/react/24/outline";
 import { useEffect, useRef, useState } from "react";
-import { CircleButton } from "@/components/ui/circle-button";
 import { Slider } from "@/ui/slider";
+import { IconButton } from "@/ui/tooltip";
 
 interface TransportBarProps {
 	media: HTMLAudioElement | HTMLVideoElement | null;
@@ -117,13 +117,16 @@ export function TransportBar({
 
 	return (
 		<div className="flex items-center gap-2 rounded-md border border-border p-2">
-			<CircleButton
-				icon={playing ? Pause : Play}
+			<IconButton
 				label={playing ? `Pause ${label}` : `Play ${label}`}
 				onClick={togglePlay}
-			/>
+			>
+				{playing ? <Pause /> : <Play />}
+			</IconButton>
 			{onCancel && (
-				<CircleButton icon={X} label={`Stop ${label}`} onClick={onCancel} />
+				<IconButton label={`Stop ${label}`} onClick={onCancel}>
+					<X />
+				</IconButton>
 			)}
 			<span className="w-10 text-right text-xs tabular-nums text-muted-foreground">
 				{fmt(current)}
@@ -140,11 +143,12 @@ export function TransportBar({
 			<span className="w-10 text-xs tabular-nums text-muted-foreground">
 				{fmt(duration)}
 			</span>
-			<CircleButton
-				icon={muted || volume === 0 ? VolumeX : Volume2}
+			<IconButton
 				label={muted ? `Unmute ${label}` : `Mute ${label}`}
 				onClick={() => changeVolume([muted ? 1 : 0])}
-			/>
+			>
+				{muted || volume === 0 ? <VolumeX /> : <Volume2 />}
+			</IconButton>
 			<Slider
 				value={[muted ? 0 : volume]}
 				min={0}

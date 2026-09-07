@@ -188,6 +188,115 @@ def test_split_brain_allowlist_honored(tmp_path):
     assert cdi.scan(REPO_ROOT) == []
 
 
+# ── hazard 4: twin freeze (components/ui stem in ui/ must be shim or frozen) ─
+
+
+def test_forked_twin_not_in_frozen_list_flagged(tmp_path):
+    make_tree(
+        tmp_path,
+        {
+            "app/src/ui/badge.tsx": "export const Badge = () => <span/>;",
+            "app/src/components/ui/badge.tsx": "export const Badge = () => <span/>;",
+        },
+    )
+    h = hazards(tmp_path)
+    assert any("legacy twin" in x and "badge" in x for x in h)
+
+
+def test_frozen_twin_allowed(tmp_path):
+    # `button` is on the real FROZEN_TWINS list (old-tree screens still port).
+    make_tree(
+        tmp_path,
+        {
+            "app/src/ui/button.tsx": "export const Button = () => <button/>;",
+            "app/src/components/ui/button.tsx": "export const Button = () => <button/>;",
+        },
+    )
+    h = hazards(tmp_path)
+    assert not any("legacy twin" in x and "forks canonical" in x for x in h)
+
+
+def test_shim_twin_passes_freeze_rule(tmp_path):
+    # A stem NOT on the frozen list but implemented as a pure shim is the
+    # remedy — allowed (the use-toast shape).
+    make_tree(
+        tmp_path,
+        {
+            "app/src/ui/progress.tsx": "export const Progress = () => <div/>;",
+            "app/src/components/ui/progress.tsx": SHIM_TWIN,
+        },
+    )
+    h = hazards(tmp_path)
+    assert not any("legacy twin" in x for x in h)
+
+
+def test_legacy_twin_test_files_exempt_from_freeze(tmp_path):
+    make_tree(
+        tmp_path,
+        {
+            "app/src/ui/button.tsx": "export const Button = () => <button/>;",
+            "app/src/components/ui/button.tsx": "export const Button = () => <button/>;",
+            "app/src/components/ui/button.dom.test.tsx": 'import { render } from "@testing-library/react";\n',
+        },
+    )
+    h = hazards(tmp_path)
+    assert not any("button.dom.test" in x for x in h)
+
+
+# ── hazard 5: new-tree import pin (canonical paths only) ─────────────────
+
+
+def test_new_tree_legacy_import_flagged(tmp_path):
+    make_tree(
+        tmp_path,
+        {
+            "app/src/components/ui/badge.tsx": "export const Badge = () => <span/>;",
+            "app/src/features/Thing.tsx": 'import { Badge } from "@/components/ui/badge";\n',
+        },
+    )
+    h = hazards(tmp_path)
+    assert any(
+        "imports legacy @/components/ui/badge" in x and "features/Thing" in x
+        for x in h
+    )
+
+
+def test_root_shell_legacy_import_flagged(tmp_path):
+    # Files at app/src root (App/router/main) are new-tree too.
+    make_tree(
+        tmp_path,
+        {
+            "app/src/components/ui/spinner.tsx": "export const Spinner = () => <span/>;",
+            "app/src/router.tsx": 'import { Spinner } from "@/components/ui/spinner";\n',
+        },
+    )
+    h = hazards(tmp_path)
+    assert any("router.tsx imports legacy" in x for x in h)
+
+
+def test_components_internal_legacy_import_ok(tmp_path):
+    # Old-tree screens may keep importing the legacy primitives until ported.
+    make_tree(
+        tmp_path,
+        {
+            "app/src/components/ui/badge.tsx": "export const Badge = () => <span/>;",
+            "app/src/components/VoiceProfiles/Card.tsx": 'import { Badge } from "@/components/ui/badge";\n',
+        },
+    )
+    assert hazards(tmp_path) == []
+
+
+def test_new_tree_canonical_import_ok(tmp_path):
+    make_tree(
+        tmp_path,
+        {
+            "app/src/ui/badge.tsx": "export const Badge = () => <span/>;",
+            "app/src/features/Thing.tsx": 'import { Badge } from "@/ui/badge";\n',
+        },
+    )
+    assert hazards(tmp_path) == []
+
+
 # ── real tree sanity ──────────────────────────────────────────────────────
 
 

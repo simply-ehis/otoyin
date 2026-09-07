@@ -3,10 +3,10 @@ import {
 	StopIcon as Square,
 } from "@heroicons/react/24/outline";
 import { useCallback, useRef, useState } from "react";
-import { CircleButton } from "@/components/ui/circle-button";
 import { useAudioBus } from "@/lib/audio/audioBus";
 import { showStudioErrorToast } from "@/lib/errors";
 import { useMonitorStream } from "@/lib/hooks/useMonitorStream";
+import { IconButton } from "@/ui/tooltip";
 import { useToast } from "@/ui/use-toast";
 
 interface MonitorRecorderProps {
@@ -83,8 +83,7 @@ export function MonitorRecorder({ onRecordComplete }: MonitorRecorderProps) {
 			className="flex items-center gap-2"
 			title="Record from monitor source to selected track"
 		>
-			<CircleButton
-				icon={Mic}
+			<IconButton
 				label={
 					canRecord
 						? `Record from ${source?.label ?? "monitor"}`
@@ -93,13 +92,13 @@ export function MonitorRecorder({ onRecordComplete }: MonitorRecorderProps) {
 				disabled={!canRecord}
 				onClick={startRecording}
 				className={recording ? "text-danger-text animate-pulse" : ""}
-			/>
+			>
+				<Mic />
+			</IconButton>
 			{recording && (
-				<CircleButton
-					icon={Square}
-					label="Stop monitor recording"
-					onClick={stopRecording}
-				/>
+				<IconButton label="Stop monitor recording" onClick={stopRecording}>
+					<Square />
+				</IconButton>
 			)}
 			{recording && (
 				<span className="text-xs text-danger-text font-mono tabular-nums">

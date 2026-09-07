@@ -8,7 +8,8 @@ it back.
 
 import json
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -109,3 +110,53 @@ async def list_templates():
     from ..services.standalone_project import list_builtin_templates
 
     return list_builtin_templates()
+
+
+# ── Export / Import ─────────────────────────────────────────────────
+
+
+@router.get("/project/export/{project_id}")
+async def export_project(project_id: str, db: Session = Depends(get_db)):
+    """Export a standalone project as a self-contained ZIP archive.
+
+    The archive includes the project JSON, all referenced voice profiles
+    (with samples and avatars), and any project audio files.
+    """
+    from ..services.export_import import export_standalone_project_to_zip
+
+    try:
+        zip_bytes = export_standalone_project_to_zip(project_id, db)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    project = json.loads(db.query(StandaloneProjectRow).filter_by(id=project_id).first().project_json)
+    filename = f"{project.get('name', 'project').replace(' ', '_')}.zip"
+    return Response(
+        content=zip_bytes,
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+@router.post("/project/import")
+async def import_project(file: UploadFile, db: Session = Depends(get_db)):
+    """Import a standalone project from a ZIP archive.
+
+    Voice profiles are matched by name (reuse) before importing embedded copies.
+    All project and profile IDs are regenerated to avoid collisions.
+    """
+    from ..services.export_import import import_standalone_project_from_zip
+
+    if not file.filename or not file.filename.endswith(".zip"):
+        raise HTTPException(status_code=400, detail="File must be a .zip archive")
+
+    try:
+        file_bytes = await file.read()
+        if len(file_bytes) < 100:
+            raise HTTPException(status_code=400, detail="Invalid ZIP file (too small)")
+        result = await import_standalone_project_from_zip(file_bytes, db)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Import failed: {e}") from e
+
+    return result

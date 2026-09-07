@@ -51,6 +51,42 @@ def test_scrub_recurses_into_context():
     assert out == {"a": ["x <email>"], "n": 3}
 
 
+def test_scrub_bearer_tokens():
+    dirty = "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.secret.signature"
+    clean = crash_reports.scrub_text(dirty)
+    assert "eyJhbGciOiJIUzI1NiJ9" not in clean
+    assert "Bearer <redacted-key>" in clean
+
+
+def test_scrub_api_key_equals_values():
+    dirty = "request failed with api_key=supersecret123 in url"
+    clean = crash_reports.scrub_text(dirty)
+    assert "supersecret123" not in clean
+    assert "<redacted-key>" in clean
+
+
+def test_scrub_credentialed_urls():
+    dirty = "connection to https://admin:password123@db.example.com failed"
+    clean = crash_reports.scrub_text(dirty)
+    assert "password123" not in clean
+    assert "<email>" in clean
+
+
+def test_scrub_linux_home_paths():
+    dirty = "file not found at /home/runner/project/src/index.js"
+    clean = crash_reports.scrub_text(dirty)
+    assert "/home/runner" not in clean
+    assert "<home>" in clean
+
+
+def test_scrub_depth_limit_truncates():
+    """Nested context deeper than 4 levels gets <truncated>."""
+    deep = {"a": {"b": {"c": {"d": {"e": "secret admin@example.com"}}}}}
+    out = crash_reports.scrub_value(deep)
+    # Depth 4 dict is still processed; depth 5 values are truncated
+    assert out["a"]["b"]["c"]["d"] == {"e": "<truncated>"}
+
+
 def test_capture_disabled_is_noop(tmp_path):
     with pytest.raises(ValueError):
         raise ValueError("boom buyer@example.com")

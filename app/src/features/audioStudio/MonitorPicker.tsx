@@ -2,9 +2,9 @@ import {
 	SpeakerWaveIcon as Volume2,
 	SpeakerXMarkIcon as VolumeX,
 } from "@heroicons/react/24/outline";
-import { CircleButton } from "@/components/ui/circle-button";
 import { type AudioSourceKind, useAudioBus } from "@/lib/audio/audioBus";
 import { Slider } from "@/ui/slider";
+import { IconButton } from "@/ui/tooltip";
 
 const KIND_LABEL: Record<AudioSourceKind, string> = {
 	file: "Voiceover",
@@ -76,13 +76,14 @@ export function MonitorPicker({
 											{KIND_LABEL[src.kind]}
 										</span>
 									</button>
-									<CircleButton
-										icon={src.muted ? VolumeX : Volume2}
+									<IconButton
 										label={
 											src.muted ? `Unmute ${src.label}` : `Mute ${src.label}`
 										}
 										onClick={() => setSourceMuted(src.id, !src.muted)}
-									/>
+									>
+										{src.muted ? <VolumeX /> : <Volume2 />}
+									</IconButton>
 								</div>
 								<Slider
 									value={[src.muted ? 0 : src.volume]}

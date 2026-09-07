@@ -12,10 +12,10 @@ import { AnnouncementBanner } from "@/components/Banner/AnnouncementBanner";
 import { ServerStatusBanner } from "@/components/Banner/ServerStatusBanner";
 import { ErrorBoundary } from "@/components/ErrorBoundary/ErrorBoundary";
 import { RecommendedModelsBanner } from "@/components/RecommendedModelsBanner/RecommendedModelsBanner";
-import { AppLoadingScreen } from "@/components/ui/AppLoadingScreen";
-import { Toaster } from "@/ui/toaster";
 import { TabIntroMount } from "@/features/onboarding/TabIntro";
 import { AutoUpdateFlow } from "@/features/settings/AutoUpdateFlow";
+import { AppLoadingScreen } from "@/ui/AppLoadingScreen";
+import { Toaster } from "@/ui/toaster";
 
 const MiniGame = lazy(() =>
 	import("@/features/game/GameModal").then((m) => ({

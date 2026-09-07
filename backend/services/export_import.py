@@ -11,8 +11,9 @@ from __future__ import annotations
 import io
 import json
 import logging
+import uuid
 import zipfile
-from datetime import UTC
+from datetime import UTC, datetime
 from pathlib import Path
 
 from sqlalchemy.orm import Session
@@ -986,3 +987,260 @@ async def import_story_from_zip(file_bytes: bytes, db: Session) -> dict:
         if isinstance(e, ValueError):
             raise
         raise ValueError(f"Error importing story: {e!s}") from e
+
+
+# ── Standalone project export / import ──────────────────────────────
+#
+# Scope decision (deliberate): project archives are SELF-CONTAINED.
+# Voice profiles referenced by characters are embedded inline (record +
+# samples + avatar) so a project renders on a machine that has never
+# seen that voice. Import regenerates every ID (new uuids) so archives
+# never collide with the target machine. Profiles match by name first
+# (reuse) and only then import the embedded copy.
+
+
+def export_standalone_project_to_zip(project_id: str, db: Session) -> bytes:
+    """Export a standalone project to a self-contained ZIP archive.
+
+    The archive includes the project JSON manifest, all referenced voice
+    profiles (with samples and avatars), and any audio files stored in
+    the project's audio_files list.
+
+    Raises ValueError if the project is not found or has no scenes.
+    """
+    from ..database.models import StandaloneProjectRow
+
+    doc = db.query(StandaloneProjectRow).filter_by(id=project_id).first()
+    if not doc:
+        raise ValueError(f"Project {project_id} not found")
+
+    project_data = json.loads(doc.project_json)
+    characters = project_data.get("characters", [])
+    scenes = project_data.get("scenes", [])
+    if not scenes:
+        raise ValueError("Project has no scenes to export")
+
+    # Collect voice profile IDs referenced by characters
+    profile_ids = sorted({c["voice_profile_id"] for c in characters if c.get("voice_profile_id")})
+    profiles = {}
+    if profile_ids:
+        profiles = {p.id: p for p in db.query(DBVoiceProfile).filter(DBVoiceProfile.id.in_(profile_ids)).all()}
+
+    zip_buffer = io.BytesIO()
+    audio_included = 0
+
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        # ── Profiles (self-contained, same pattern as story export) ──
+        manifest_profiles: dict[str, dict] = {}
+        for prof_id, prof in profiles.items():
+            samples = db.query(DBProfileSample).filter_by(profile_id=prof_id).all()
+            sample_entries: list[dict] = []
+            avatar_arc = None
+            if prof.avatar_path:
+                avatar_path = config.resolve_storage_path(prof.avatar_path)
+                if avatar_path is not None and avatar_path.exists():
+                    avatar_arc = f"profiles/{prof_id}/avatar{avatar_path.suffix}"
+                    zip_file.write(avatar_path, avatar_arc)
+            for sample in samples:
+                sample_path = config.resolve_storage_path(sample.audio_path)
+                if sample_path is None or not sample_path.exists():
+                    logger.warning("Skipping missing sample in project export: %s", sample.audio_path)
+                    continue
+                sample_arc = f"profiles/{prof_id}/samples/{sample_path.name}"
+                zip_file.write(sample_path, sample_arc)
+                sample_entries.append({"file": sample_arc, "reference_text": sample.reference_text})
+                audio_included += 1
+            voice_attributes = None
+            if prof.voice_attributes:
+                try:
+                    voice_attributes = json.loads(prof.voice_attributes)
+                except (json.JSONDecodeError, TypeError):
+                    voice_attributes = None
+            manifest_profiles[prof_id] = {
+                "name": prof.name,
+                "description": prof.description,
+                "language": prof.language,
+                "voice_type": prof.voice_type or "cloned",
+                "preset_engine": prof.preset_engine,
+                "preset_voice_id": prof.preset_voice_id,
+                "design_prompt": prof.design_prompt,
+                "voice_attributes": voice_attributes,
+                "default_engine": prof.default_engine,
+                "personality": prof.personality,
+                "effects_chain": prof.effects_chain,
+                "avatar": avatar_arc,
+                "samples": sample_entries,
+            }
+
+        # ── Audio files referenced in the project ──
+        manifest_audio: list[dict] = []
+        for af in project_data.get("audio_files", []):
+            if isinstance(af, dict) and af.get("path"):
+                resolved = config.resolve_storage_path(af["path"])
+                if resolved is not None and resolved.exists():
+                    arc_name = f"audio/{resolved.name}"
+                    zip_file.write(resolved, arc_name)
+                    manifest_audio.append({"path": af["path"], "arc": arc_name})
+                    audio_included += 1
+
+        # ── Project manifest ──
+        manifest = {
+            "version": "1.0",
+            "export_id": f"project-{uuid.uuid4().hex[:8]}",
+            "project": project_data,
+            "profiles": manifest_profiles,
+            "audio_files": manifest_audio,
+        }
+        zip_file.writestr("manifest.json", json.dumps(manifest, indent=2))
+
+    zip_buffer.seek(0)
+    return zip_buffer.read()
+
+
+async def import_standalone_project_from_zip(file_bytes: bytes, db: Session) -> dict:
+    """Import a standalone project archive: new IDs everywhere, voices matched by name.
+
+    Returns ``{"id", "name", "scenes", "characters", "profiles_reused",
+    "profiles_imported"}``. Raises ValueError on any invalid archive.
+    """
+    import shutil
+    import tempfile
+
+    from ..database.models import StandaloneProjectRow
+    from ..services.standalone_project import project_from_json, project_to_dict
+
+    zip_buffer = io.BytesIO(file_bytes)
+
+    try:
+        with zipfile.ZipFile(zip_buffer, "r") as zip_file:
+            namelist = _check_story_zip_bounds(zip_file)
+
+            try:
+                manifest_data = json.loads(zip_file.read("manifest.json"))
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Invalid JSON in archive: {e}") from e
+            if manifest_data.get("version") not in ("1.0", 1):
+                raise ValueError("Unsupported project archive version")
+            if "project" not in manifest_data:
+                raise ValueError("Invalid manifest.json: missing project")
+
+            project_data = manifest_data["project"]
+            profiles_data = manifest_data.get("profiles", {})
+            audio_files_data = manifest_data.get("audio_files", [])
+
+            # ── Profiles: reuse by name, else import embedded copy ──
+            profile_id_map: dict[str, str] = {}
+            profiles_reused = 0
+            profiles_imported = 0
+            for prof_key, prof in profiles_data.items():
+                existing = db.query(DBVoiceProfile).filter_by(name=prof.get("name", "")).first()
+                if existing:
+                    profile_id_map[prof_key] = existing.id
+                    profiles_reused += 1
+                    continue
+                unique_name = _get_unique_profile_name(prof.get("name") or "Imported Voice", db)
+                voice_attributes = prof.get("voice_attributes")
+                if isinstance(voice_attributes, str):
+                    try:
+                        voice_attributes = json.loads(voice_attributes)
+                    except (json.JSONDecodeError, TypeError):
+                        voice_attributes = None
+                new_profile = await create_profile(
+                    VoiceProfileCreate(
+                        name=unique_name,
+                        description=prof.get("description"),
+                        language=prof.get("language") or "en",
+                        voice_type=prof.get("voice_type") or "cloned",
+                        preset_engine=prof.get("preset_engine"),
+                        preset_voice_id=prof.get("preset_voice_id"),
+                        design_prompt=prof.get("design_prompt"),
+                        voice_attributes=voice_attributes,
+                        default_engine=prof.get("default_engine"),
+                        personality=prof.get("personality"),
+                    ),
+                    db,
+                )
+                if prof.get("effects_chain"):
+                    db.query(DBVoiceProfile).filter_by(id=new_profile.id).update(
+                        {"effects_chain": prof["effects_chain"]}
+                    )
+                    db.commit()
+                for sample in prof.get("samples", []):
+                    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                        tmp.write(zip_file.read(sample["file"]))
+                        tmp_path = tmp.name
+                    try:
+                        await add_profile_sample(new_profile.id, tmp_path, sample.get("reference_text", ""), db)
+                    finally:
+                        Path(tmp_path).unlink(missing_ok=True)
+                if prof.get("avatar"):
+                    try:
+                        with tempfile.NamedTemporaryFile(suffix=Path(prof["avatar"]).suffix, delete=False) as tmp:
+                            tmp.write(zip_file.read(prof["avatar"]))
+                            tmp_path = tmp.name
+                        try:
+                            from .profiles import upload_avatar
+
+                            await upload_avatar(new_profile.id, tmp_path, db)
+                        finally:
+                            Path(tmp_path).unlink(missing_ok=True)
+                    except Exception:
+                        logger.debug("Project avatar import failed (non-fatal)", exc_info=True)
+                profile_id_map[prof_key] = new_profile.id
+                profiles_imported += 1
+
+            # ── Remap voice_profile_id in characters ──
+            for char in project_data.get("characters", []):
+                old_id = char.get("voice_profile_id")
+                if old_id and old_id in profile_id_map:
+                    char["voice_profile_id"] = profile_id_map[old_id]
+
+            # ── Restore audio files ──
+            generations_dir = config.get_generations_dir()
+            generations_dir.mkdir(parents=True, exist_ok=True)
+            restored_audio: list[dict] = []
+            for af in audio_files_data:
+                arc_name = af.get("arc")
+                if arc_name and arc_name in namelist:
+                    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                        tmp.write(zip_file.read(arc_name))
+                        tmp_path = tmp.name
+                    new_id = str(uuid.uuid4())
+                    dest = generations_dir / f"{new_id}.wav"
+                    try:
+                        shutil.copy(tmp_path, dest)
+                        restored_audio.append({"path": config.to_storage_path(dest)})
+                    finally:
+                        Path(tmp_path).unlink(missing_ok=True)
+
+            # ── Create project with new ID ──
+            project_data["id"] = str(uuid.uuid4())
+            project_data["created_at"] = datetime.now(UTC).isoformat()
+            project_data["updated_at"] = datetime.now(UTC).isoformat()
+            project_data["audio_files"] = restored_audio
+
+            project = project_from_json(json.dumps(project_data))
+            doc = StandaloneProjectRow(
+                id=project.id,
+                name=project.name,
+                project_json=json.dumps(project_to_dict(project)),
+            )
+            db.add(doc)
+            db.commit()
+
+            return {
+                "id": project.id,
+                "name": project.name,
+                "scenes": len(project.scenes),
+                "characters": len(project.characters),
+                "profiles_reused": profiles_reused,
+                "profiles_imported": profiles_imported,
+                "message": f"Project imported successfully ({len(project.scenes)} scenes, {len(project.characters)} characters)",
+            }
+
+    except zipfile.BadZipFile as exc:
+        raise ValueError("Invalid ZIP file") from exc
+    except Exception as e:
+        if isinstance(e, ValueError):
+            raise
+        raise ValueError(f"Error importing project: {e!s}") from e

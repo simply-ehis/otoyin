@@ -14,7 +14,12 @@ This gate fails when:
      different specifiers that resolve to different files (a latent mixed
      wiring), or
   3. two files in ui/ vs components/ui/ both define a store-like module
-     (create / createStore / useSyncExternalStore) with the same stem.
+     (create / createStore / useSyncExternalStore) with the same stem, or
+  4. a components/ui file sharing a stem with a ui/ module is neither a pure
+     re-export shim nor on the FROZEN_TWINS allowlist (a forked primitive that
+     silently diverges from the canonical design system), or
+  5. a file OUTSIDE app/src/components/ imports a legacy `@/components/ui/*`
+     path (new-tree code must import the canonical `@/ui/*` primitive).
 
 Shims are recognized: a same-stem twin whose entire content is re-exports of
 its canonical sibling (`export * from "@/ui/..."`) is the *remedy*, not a
@@ -174,6 +179,64 @@ def scan(root: Path = ROOT) -> list[str]:
                 hazards.append(
                     f"{rel_p} imports both ui-trees for {stem!r} ({sorted(group)}) "
                     "— split-brain import"
+                )
+
+    # Hazard 4: twin freeze — a components/ui file sharing a stem with a ui/
+    # module must be a pure re-export shim or on the frozen allowlist. Frozen
+    # = live legacy implementation still imported by old-tree screens; it gets
+    # deleted when the last screen ports to the canonical primitive (03).
+    FROZEN_TWINS = {
+        "button",
+        "card",
+        "code-console",
+        "dialog",
+        "dropdown-menu",
+        "form",
+        "input",
+        "popover",
+        "select",
+        "slider",
+        "tabs",
+        "toggle",
+        "tooltip",
+    }
+    ui_dir = src / "ui"
+    legacy_ui = src / "components" / "ui"
+    if ui_dir.is_dir() and legacy_ui.is_dir():
+        canonical_stems = {p.stem for p in ui_dir.glob("*.ts*")}
+        for p in sorted(legacy_ui.glob("*.ts*")):
+            if p.suffix == ".test.tsx" or ".test." in p.name:
+                continue
+            if (
+                p.stem in canonical_stems
+                and p.stem not in FROZEN_TWINS
+                and not is_shim(texts[p])
+            ):
+                hazards.append(
+                    f"legacy twin {norm(p)} forks canonical @/ui/{p.stem} — "
+                    "make it a pure re-export shim, list it in FROZEN_TWINS "
+                    "(old-tree screens still porting), or delete it"
+                )
+
+    # Hazard 5: new-tree import pin — files outside app/src/components/ must
+    # import canonical primitives, never the legacy tree. ALLOWLIST: tests
+    # that pin shim→canonical identity on purpose.
+    ALLOWED_NEW_TREE_LEGACY = {
+        "app/src/hooks/useAutoUpdater.test.tsx": "pins legacy shim → canonical store identity",
+    }
+    for p in files:
+        rel_p = norm(p, root)
+        if rel_p.startswith("app/src/components/"):
+            continue
+        if rel_p in ALLOWED_NEW_TREE_LEGACY:
+            continue
+        for m in IMPORT_RE.finditer(texts[p]):
+            spec = m.group(1) or m.group(2) or ""
+            lm = re.match(r"@/components/ui/([\w-]+)$", spec)
+            if lm:
+                hazards.append(
+                    f"{rel_p} imports legacy @/components/ui/{lm.group(1)} — "
+                    "new-tree code imports the canonical @/ui/ primitive"
                 )
 
     return hazards

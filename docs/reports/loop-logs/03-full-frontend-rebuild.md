@@ -28,3 +28,6 @@
 - [ ] `app/_archive/` deleted (N/A — archive was `archive/frontend-components/`, already deleted)
 - [x] bun/pnpm removed, npm-only in CI
 → FILE IN PROGRESS (correct long-running state per protocol).
+
+## 2026-09-07 — legacy-primitives teardown sweep (canonical-vs-legacy pins)
+Post-dual-toast-bug sweep of the ui/ vs components/ui/ fork: 12 dead copies deleted (alert, alert-dialog, drawer, multi-select, progress, scroll-area, table, checkbox, separator, star-rating, LoadingState, AppLoadingScreen — all 0 importers). Repointed to canonical: router.tsx AppLoadingScreen; 3 audioStudio files CircleButton→IconButton. New gate hazards in `check-dual-instances.py`: (4) twin freeze — a components/ui stem shared with ui/ must be a pure shim or on FROZEN_TWINS (13 live twins remain, imported only by old-tree screens pending port), (5) new-tree import pin — files outside components/ may not import `@/components/ui/*` (identity-pin test allowlisted). 8 new gate tests (20 total).
