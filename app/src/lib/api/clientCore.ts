@@ -1,3 +1,4 @@
+import type { VocalQAResult } from "./types";
 import { useServerStore } from "@/stores/serverStore";
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
@@ -260,6 +261,15 @@ export class ApiClientCore {
 		const resp = await this.fetchWithAuth("/dsp/upload", {
 			method: "POST",
 			body: formData,
+		});
+		return resp.json();
+	}
+
+	async vocalQA(generationId: string, lyrics: string, language?: string): Promise<VocalQAResult> {
+		const resp = await this.fetchWithAuth("/audio/vocal-qa", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ generation_id: generationId, lyrics, language }),
 		});
 		return resp.json();
 	}
