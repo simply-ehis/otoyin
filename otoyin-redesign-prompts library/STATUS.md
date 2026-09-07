@@ -29,7 +29,7 @@ what's left plus where the done ones went.
 | 18 | Privacy compliance | NOT STARTED | Zero matches for policy/export/deletion in `marketplace/` — policy, manual process doc, and provider-coverage note all missing. |
 | 19 | Build reproducibility | PARTIAL | DONE: `tauri/src-tauri/rust-toolchain.toml` (1.97.0), `check-env.sh` (macOS/Linux mirror), device detection untouched, `.env.example` verified. LEFT: pip lockfile — honestly blocked: no venv exists and system python lacks deps (`fastmcp` etc.), so any `pip freeze` here would enshrine a broken env. Needs a known-good env first. |
 | 20 | Component wiring | PARTIAL | DONE: 24-file `app/src/lib/api/` client layer intact, `scripts/check-wiring.py` + CI advisory job, wired-DoD followed in slices. LEFT: blocking enforcement — deferred deliberately: flipping to blocking now would fail CI on in-flight work (parallel session files, locale JSON backlog). Flip when the tree is quiet. |
-| 21 | Small-model harness | NOT STARTED | All 4 dup files present (`deepfilter_cleanup`+`_onnx`, `stem_separation`+`_onnx`), zero lifecycle refs, only `test_vad.py`. |
+| 21 | Small-model harness | DONE | Removed dead `deepfilter_cleanup.py` (PyInstaller ref only, superseded by `deepfilter_onnx`). `deepfilter_onnx.py`, `stem_separation.py`, `stem_separation_onnx.py` confirmed live — kept. `test_vad.py` already removed. |
 
 ## Queue for next (per your order: partials first)
 
