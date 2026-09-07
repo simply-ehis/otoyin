@@ -240,8 +240,6 @@ def build_server(cuda=False):
             "--hidden-import",
             "backend.services.deepfilter_onnx",
             "--hidden-import",
-            "backend.services.deepfilter_cleanup",
-            "--hidden-import",
             "backend.services.noise_reduction",
             "--hidden-import",
             "backend.services.audio_enhancer",
