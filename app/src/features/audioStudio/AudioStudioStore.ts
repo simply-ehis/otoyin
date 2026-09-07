@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { MutableRefObject } from "react";
 
 export interface AutomationPoint {
 	time: number;
@@ -119,6 +120,8 @@ interface AudioStudioStore {
 	setIsRecording: (recording: boolean) => void;
 	setIsLooping: (looping: boolean) => void;
 	setCurrentTime: (time: number) => void;
+	/** Mutable ref for high-frequency time updates — read in rAF, not zustand subscriptions. */
+	currentTimeRef: MutableRefObject<number>;
 	setMasterVolume: (volume: number) => void;
 	setPlaybackSpeed: (speed: number) => void;
 	setRecordingTrackIndex: (index: number | null) => void;
@@ -188,6 +191,7 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 	isRecording: false,
 	isLooping: false,
 	currentTime: 0,
+	currentTimeRef: { current: 0 },
 	masterVolume: 1,
 	playbackSpeed: 1,
 	recordingTrackIndex: null,
@@ -301,7 +305,9 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 	setIsPlaying: (playing) => set({ isPlaying: playing }),
 	setIsRecording: (recording) => set({ isRecording: recording }),
 	setIsLooping: (looping) => set({ isLooping: looping }),
-	setCurrentTime: (time) => set({ currentTime: time }),
+	setCurrentTime: (time) => {
+		get().currentTimeRef.current = time;
+	},
 	setMasterVolume: (volume) =>
 		set({ masterVolume: Math.max(0, Math.min(2, volume)) }),
 	setPlaybackSpeed: (speed) => set({ playbackSpeed: speed }),

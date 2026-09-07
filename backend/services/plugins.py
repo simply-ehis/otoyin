@@ -238,7 +238,7 @@ class PluginRegistry:
                 PluginInfo(
                     id=f"builtin-{type_key}",
                     name=defn.get("name", type_key),
-                    vendor="21labs",
+                    vendor="otoyin",
                     category="Built-in",
                     path="",
                     version="1.0.0",

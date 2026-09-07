@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import {
 	CircleStackIcon as Circle,
 	FlagIcon as Flag,
@@ -19,6 +20,8 @@ import { VoiceChatOverlay } from "@/components/VoiceChat/VoiceChatOverlay";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/ui/button";
 import { Slider } from "@/ui/slider";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/ui/select";
+import { useAudioStudioStore } from "./AudioStudioStore";
 import type { StudioTrack } from "./AudioStudioStore";
 import { formatTime } from "./formatTime";
 import { MonitorPicker } from "./MonitorPicker";
@@ -28,7 +31,6 @@ interface TransportControlsProps {
 	isPlaying: boolean;
 	isRecording: boolean;
 	isLooping: boolean;
-	currentTime: number;
 	masterVolume: number;
 	playbackSpeed: number;
 	zoomLevel: number;
@@ -54,7 +56,6 @@ export function TransportControls({
 	isPlaying,
 	isRecording,
 	isLooping,
-	currentTime,
 	masterVolume,
 	playbackSpeed,
 	zoomLevel,
@@ -75,11 +76,31 @@ export function TransportControls({
 	onAddMidiNote,
 	onRecordComplete,
 }: TransportControlsProps) {
+	const currentTimeRef = useAudioStudioStore((s) => s.currentTimeRef);
+	const [displayTime, setDisplayTime] = useState(0);
+	const rafRef = useRef<number>(0);
+
+	useEffect(() => {
+		if (rafRef.current !== null) {
+			cancelAnimationFrame(rafRef.current);
+		}
+		const tick = () => {
+			setDisplayTime(currentTimeRef.current);
+			rafRef.current = requestAnimationFrame(tick);
+		};
+		rafRef.current = requestAnimationFrame(tick);
+		return () => {
+			if (rafRef.current !== null) {
+				cancelAnimationFrame(rafRef.current);
+			}
+		};
+	}, [currentTimeRef]);
+
 	return (
 		<div className="border-t border-border bg-card px-4 py-2 shrink-0">
 			<div className="flex items-center gap-2 flex-wrap">
 				<span className="text-sm font-mono tabular-nums text-foreground min-w-[90px]">
-					{formatTime(currentTime)}
+					{formatTime(displayTime)}
 				</span>
 
 				<div className="flex items-center gap-1">
@@ -134,7 +155,7 @@ export function TransportControls({
 						variant="ghost"
 						size="icon"
 						className="size-8"
-						onClick={() => onAddMarker(currentTime)}
+						onClick={() => onAddMarker(displayTime)}
 						title="Add marker at playhead"
 						aria-label="Add marker at playhead"
 					>
@@ -158,23 +179,26 @@ export function TransportControls({
 				{!isRecording && tracks.length > 0 && (
 					<div className="flex items-center gap-1">
 						<span className="text-xs text-muted-foreground">to:</span>
-						<select
-							className="h-7 text-xs bg-muted border border-border rounded px-1.5 text-foreground"
+						<Select
 							value={tracks[selectedTrackIndex]?.id ?? ""}
-							onChange={(e) => {
-								const idx = tracks.findIndex((t) => t.id === e.target.value);
+							onValueChange={(val) => {
+								const idx = tracks.findIndex((t) => t.id === val);
 								if (idx >= 0) {
 									onSetSelectedTrackIndex(idx);
 								}
 							}}
-							aria-label="Record destination track"
 						>
-							{tracks.map((track) => (
-								<option key={track.id} value={track.id}>
-									{track.name}
-								</option>
-							))}
-						</select>
+							<SelectTrigger className="h-7 text-xs w-32" aria-label="Record destination track">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{tracks.map((track) => (
+									<SelectItem key={track.id} value={track.id}>
+										{track.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 						<Button
 							variant="outline"
 							size="sm"

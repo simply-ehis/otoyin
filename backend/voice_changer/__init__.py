@@ -1,4 +1,4 @@
-"""Headless voice-changer service for 21labs.
+"""Headless voice-changer service for otoyin.
 
 Standalone lightweight process that converts voice in real-time:
   mic → Silero VAD → DeepFilterNet → Whisper → kokoro TTS → LavaSR → out

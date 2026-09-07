@@ -1,6 +1,7 @@
 import { DocumentTextIcon as Document } from "@heroicons/react/24/outline";
 import { cn } from "@/lib/utils/cn";
 import { Slider } from "@/ui/slider";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/ui/select";
 import { type StudioTrack, useAudioStudioStore } from "./AudioStudioStore";
 import { TrackMeter } from "./TrackMeter";
 
@@ -222,11 +223,9 @@ export function TrackCrossfadeControls({
 	}
 	return (
 		<div className="flex flex-col gap-1 w-full mt-1">
-			<select
-				className="h-6 text-xs bg-muted border border-border rounded px-1 text-foreground w-full"
+			<Select
 				value={track.crossfade?.targetTrackId ?? ""}
-				onChange={(e) => {
-					const targetId = e.target.value;
+				onValueChange={(targetId) => {
 					if (!targetId) {
 						updateTrack(track.id, { crossfade: null });
 					} else {
@@ -239,13 +238,18 @@ export function TrackCrossfadeControls({
 					}
 				}}
 			>
-				<option value="">No crossfade</option>
-				{otherTracks.map((ot) => (
-					<option key={ot.id} value={ot.id}>
-						{ot.name}
-					</option>
-				))}
-			</select>
+				<SelectTrigger className="h-6 text-xs w-full" aria-label="Crossfade target">
+					<SelectValue placeholder="No crossfade" />
+				</SelectTrigger>
+				<SelectContent>
+					<SelectItem value="">No crossfade</SelectItem>
+					{otherTracks.map((ot) => (
+						<SelectItem key={ot.id} value={ot.id}>
+							{ot.name}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
 			{track.crossfade && (
 				<Slider
 					min={10}

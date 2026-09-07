@@ -20,7 +20,7 @@ import soundfile as sf
 
 from .text_preprocessing import normalize_text, split_sentences
 
-logger = logging.getLogger("21labs.chunked-tts")
+logger = logging.getLogger("otoyin.chunked-tts")
 
 # Default chunk size in characters.  Can be overridden per-request via
 # the ``max_chunk_chars`` field on GenerationRequest.

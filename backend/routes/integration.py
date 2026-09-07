@@ -32,7 +32,7 @@ class AudioReturnRequest(BaseModel):
 class TimelineSyncRequest(BaseModel):
     time: float
     playing: bool
-    source: str = "21labs"
+    source: str = "otoyin"
 
 
 @router.get("/integration/status")
@@ -41,7 +41,7 @@ async def integration_status():
     return {
         "standalone": _standalone_mode,
         "project_loaded": _project_loaded,
-        "mode": "standalone" if _standalone_mode else "21labs",
+        "mode": "standalone" if _standalone_mode else "otoyin",
     }
 
 

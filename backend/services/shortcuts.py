@@ -82,7 +82,7 @@ def get_protools_keymap() -> Keymap:
 
 def get_twentylabs_keymap() -> Keymap:
     return Keymap(
-        name="21labs",
+        name="otoyin",
         description="Default otoyin shortcuts",
         shortcuts=[
             Shortcut("ds-play", "play_pause", "Transport", "Space", "Play/Pause"),

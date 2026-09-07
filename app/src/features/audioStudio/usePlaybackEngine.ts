@@ -143,7 +143,7 @@ export function usePlaybackEngine({
 
 		const startOffset = Math.max(
 			0,
-			Math.min(useAudioStudioStore.getState().currentTime || 0, maxDuration),
+			Math.min(useAudioStudioStore.getState().currentTimeRef.current || 0, maxDuration),
 		);
 
 		const xfadeIn = new Map<string, number>();

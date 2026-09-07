@@ -2,11 +2,11 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['marketplace.21labs.app', 'localhost'],
+    domains: ['marketplace.otoyin.app', 'localhost'],
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'marketplace.21labs.app',
+        hostname: 'marketplace.otoyin.app',
       },
       {
         protocol: 'http',

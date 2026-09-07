@@ -37,7 +37,6 @@ export function AudioStudio() {
 	const isPlaying = useAudioStudioStore((s) => s.isPlaying);
 	const isRecording = useAudioStudioStore((s) => s.isRecording);
 	const isLooping = useAudioStudioStore((s) => s.isLooping);
-	const currentTime = useAudioStudioStore((s) => s.currentTime);
 	const masterVolume = useAudioStudioStore((s) => s.masterVolume);
 	const playbackSpeed = useAudioStudioStore((s) => s.playbackSpeed);
 	const zoomLevel = useAudioStudioStore((s) => s.zoomLevel);
@@ -45,6 +44,21 @@ export function AudioStudio() {
 	const markers = useAudioStudioStore((s) => s.markers);
 	const undoStack = useAudioStudioStore((s) => s.undoStack);
 	const redoStack = useAudioStudioStore((s) => s.redoStack);
+	const currentTimeRef = useAudioStudioStore((s) => s.currentTimeRef);
+
+	const [waveformProgress, setWaveformProgress] = useState(0);
+
+	// Drive waveform progress from ref at rAF rate — avoids subscribing to currentTime in zustand
+	useEffect(() => {
+		let raf: number;
+		const tick = () => {
+			const dur = durationRef.current;
+			setWaveformProgress(dur ? Math.min(1, currentTimeRef.current / dur) : 0);
+			raf = requestAnimationFrame(tick);
+		};
+		raf = requestAnimationFrame(tick);
+		return () => cancelAnimationFrame(raf);
+	}, [currentTimeRef]);
 
 	const setIsPlaying = useAudioStudioStore((s) => s.setIsPlaying);
 	const setIsRecording = useAudioStudioStore((s) => s.setIsRecording);
@@ -329,11 +343,7 @@ export function AudioStudio() {
 				<WaveformVisualizer
 					analyser={analyserRef.current}
 					playing={isPlaying}
-					progress={
-						durationRef.current
-							? Math.min(1, currentTime / durationRef.current)
-							: 0
-					}
+					progress={waveformProgress}
 					height={72}
 					className="w-full rounded-md"
 				/>
@@ -343,7 +353,6 @@ export function AudioStudio() {
 				isPlaying={isPlaying}
 				isRecording={isRecording}
 				isLooping={isLooping}
-				currentTime={currentTime}
 				masterVolume={masterVolume}
 				playbackSpeed={playbackSpeed}
 				zoomLevel={zoomLevel}

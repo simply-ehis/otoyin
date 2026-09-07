@@ -47,7 +47,7 @@ export function TrackStripInner({
 	};
 
 	const addAutomationPoint = () => {
-		const currentTime = useAudioStudioStore.getState().currentTime;
+		const currentTime = useAudioStudioStore.getState().currentTimeRef.current;
 		const pts = [...(track.volumeAutomation ?? [])];
 		pts.push({ time: currentTime, value: track.volume });
 		updateTrack(track.id, { volumeAutomation: pts });

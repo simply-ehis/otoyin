@@ -152,7 +152,7 @@ _DEFAULT_CONTENT = {
         {
             "version": "1.0.0",
             "date": "2026-08-19",
-            "title": "Welcome to 21-labs — your offline AI studio",
+            "title": "Welcome to Otoyin — your offline AI studio",
             "highlights": [
                 "Your studio, fully offline: voice generation, transcription, neural cleanup, and the planner assistant all run on your machine. Nothing leaves the device.",
                 "New in-app Marketplace: browse the model catalog, download free starter models, and redeem voice-pack licenses without leaving the studio.",
@@ -200,25 +200,8 @@ _DEFAULT_CONTENT = {
             "dismissible": True,
             "scope": "global",
         },
-        {
-            "id": "launch-week",
-            "kind": "promo",
-            "message": "21-labs is live! Get 20% off all voice packs this launch week with code LAUNCH20.",
-            "dismissible": True,
-            "scope": "global",
-            "cta": {"label": "View offers", "href": "/offers"},
-        },
     ],
     "offers": [
-        {
-            "id": "launch-20",
-            "title": "Launch week — 20% off all voice packs",
-            "description": "Every paid Orpheus voice pack is 20% cheaper for launch week.",
-            "code": "LAUNCH20",
-            "discount_pct": 20,
-            "expires_at": "2026-09-01",
-            "cta": {"label": "Browse the Marketplace", "href": "/store"},
-        },
         {
             "id": "free-starter",
             "title": "Free starter pack forever",

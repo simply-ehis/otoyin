@@ -12,8 +12,12 @@ cut yet. The Rust engine commands (§5) are now **implemented** and compile clea
 on the Windows host. **2026-09-06 E2E (faked server, real dev build):** detect →
 signature-verified download → install guard all verified through the live plugin
 (the fake's non-installer stub is correctly rejected *after* signature
-verification). Remaining: install of a real signed installer + the toast-click
-UI path on a real artifact (see §5).
+verification). **2026-09-07 walkthrough log**
+(`2026-09-07-updater-e2e-walkthrough.md`): the toast-click UI path is verified
+and regression-pinned — the E2E had exposed a dual-toast-store bug (updater
+toasts rendered into the void via the legacy toaster), now fixed with 7
+tests through the real Toaster. Remaining: `relaunch()` on a real signed
+installer (see §5).
 
 ## 1. What exists (and is good)
 
