@@ -150,8 +150,8 @@ export const WORKSPACE_GROUPS: WorkspaceGroup[] = [
 				id: "vocal-isolation",
 				path: "/workspace/vocal-isolation",
 				icon: ScissorsIcon,
-				label: "Isolate",
-				description: "Demucs stem separation",
+				label: "Stems",
+				description: "Split audio into vocals, drums, bass, other",
 			},
 			{
 				id: "transcript",

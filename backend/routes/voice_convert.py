@@ -1,7 +1,11 @@
 """Voice-conversion endpoints (RVC + Seed-VC)."""
 
+import hashlib
 import io
+import json
 import logging
+from datetime import UTC, datetime
+from pathlib import Path
 
 import numpy as np
 import soundfile as sf
@@ -21,9 +25,44 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _file_sha256(path: Path) -> str:
+    """Compute SHA-256 hex digest of a file."""
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _log_provenance(
+    engine: str,
+    source_path: Path,
+    reference_path: Path | None,
+    source_hash: str,
+    reference_hash: str | None,
+) -> None:
+    """Append a provenance entry to the consent log."""
+    log_path = config.get_data_dir() / "voice_conversion_log.jsonl"
+    entry = {
+        "timestamp": datetime.now(UTC).isoformat(),
+        "engine": engine,
+        "source_hash": source_hash,
+        "reference_hash": reference_hash,
+        "source_name": source_path.name,
+        "reference_name": reference_path.name if reference_path else None,
+    }
+    try:
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry) + "\n")
+    except OSError:
+        logger.warning("Failed to write voice conversion provenance log")
+
+
 class VoiceConvertRequest(BaseModel):
     audio_path: str
-    engine: str = "rvc"  # "rvc" | "seed_vc"
+    engine: str = "rvc"  # "rvc" | "seed_vc" | "openvoice" | "cloud"
+    # Consent
+    consent_given: bool = False
     # RVC fields
     voice_pack: str = ""
     transpose: int = 0
@@ -70,10 +109,24 @@ async def convert_voice(req: VoiceConvertRequest):
     - engine="rvc": needs a downloaded ``voice_pack`` (pre-trained).
     - engine="seed_vc": needs a ``reference_audio_path`` (zero-shot clone).
     Returns WAV audio.
+
+    Requires ``consent_given=true`` — the caller must attest they have
+    rights to use the source audio and any reference voice.
     """
+    if not req.consent_given:
+        raise HTTPException(
+            status_code=400,
+            detail="Consent is required. Set consent_given=true to confirm you have rights to use this audio.",
+        )
+
     resolved = config.resolve_storage_path(req.audio_path)
     if resolved is None or not resolved.exists():
         raise HTTPException(status_code=404, detail=ERR_AUDIO_NOT_FOUND)
+
+    # Compute source hash for provenance
+    source_hash = _file_sha256(resolved)
+    reference_hash: str | None = None
+    ref_path: Path | None = None
 
     try:
         audio, sr = await async_load_audio(str(resolved))
@@ -88,6 +141,7 @@ async def convert_voice(req: VoiceConvertRequest):
                 wav, out_sr = backend.convert(audio, sr, voice, pitch_shift=req.transpose)
             except LookupError as exc:
                 raise HTTPException(status_code=400, detail=str(exc)) from exc
+            _log_provenance(req.engine, resolved, None, source_hash, None)
             buf = io.BytesIO()
             sf.write(buf, np.asarray(wav, dtype=np.float32), out_sr, format="WAV")
             buf.seek(0)
@@ -103,6 +157,8 @@ async def convert_voice(req: VoiceConvertRequest):
                     status_code=400,
                     detail=ERR_SEED_VC_NEEDS_REF,
                 )
+            ref_path = ref
+            reference_hash = _file_sha256(ref)
             wav, out_sr = backend.convert(
                 audio,
                 sr,
@@ -127,6 +183,8 @@ async def convert_voice(req: VoiceConvertRequest):
                 index_rate=req.index_rate,
                 f0_method=req.f0_method,
             )
+
+        _log_provenance(req.engine, resolved, ref_path, source_hash, reference_hash)
 
         buf = io.BytesIO()
         sf.write(buf, np.asarray(wav, dtype=np.float32), out_sr, format="WAV")

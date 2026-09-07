@@ -148,8 +148,8 @@ const TOOL_GROUPS: ToolGroup[] = [
 				id: "vocal-isolation",
 				path: "/workspace/vocal-isolation",
 				icon: Scissors,
-				label: "Isolate",
-				description: "Demucs stem separation",
+				label: "Stems",
+				description: "Split audio into vocals, drums, bass, other",
 			},
 			{
 				id: "transcript",

@@ -9,7 +9,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-TELEMETRY_ENDPOINT = "https://telemetry.21labs.app/events"
+TELEMETRY_ENDPOINT = "https://telemetry.otoyin.app/events"
 
 
 @dataclass

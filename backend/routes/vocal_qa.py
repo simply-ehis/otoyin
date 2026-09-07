@@ -1,0 +1,153 @@
+"""Vocal QA — compare transcribed audio against reference lyrics.
+
+Uses faster-whisper for per-word transcription, then computes WER,
+coverage %, and missing words.  Inspired by Resonant's vocal QA concept
+(© 2026 Calesthio, AGPL-3.0-only), rebuilt on otoyin's STT stack.
+"""
+
+from __future__ import annotations
+
+import logging
+import re
+from difflib import SequenceMatcher
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from .. import config
+from ..database import get_db
+from ..errors import ERR_AUDIO_NOT_FOUND
+from ..services import history
+
+logger = logging.getLogger(__name__)
+router = APIRouter()
+
+
+# ─── Request / response models ───────────────────────────────────────────────
+
+
+class VocalQARequest(BaseModel):
+    generation_id: str
+    lyrics: str
+    language: str | None = None
+    model: str | None = None
+
+
+class WordAlignment(BaseModel):
+    word: str
+    start_ms: float
+    end_ms: float
+    confidence: float
+
+
+class VocalQAResult(BaseModel):
+    transcribed_text: str
+    wer: float
+    coverage_pct: float
+    missing_words: list[str]
+    extra_words: list[str]
+    word_count_ref: int
+    word_count_transcribed: int
+    words: list[WordAlignment]
+
+
+# ─── Helpers ─────────────────────────────────────────────────────────────────
+
+
+def _normalise(text: str) -> list[str]:
+    """Lowercase, strip punctuation, split into word tokens."""
+    text = text.lower()
+    text = re.sub(r"[^\w\s]", " ", text)
+    return [w for w in text.split() if w]
+
+
+def _wer(reference: list[str], hypothesis: list[str]) -> tuple[float, list[str], list[str]]:
+    """Compute Word Error Rate via SequenceMatcher alignment.
+
+    Returns (wer, missing_words, extra_words).
+    WER = (S + D + I) / N  where S=substitutions, D=deletions,
+    I=insertions, N=reference length.
+    """
+    if not reference:
+        return 0.0, [], list(hypothesis)
+
+    sm = SequenceMatcher(None, reference, hypothesis, autojunk=False)
+    missing: list[str] = []
+    extra: list[str] = []
+    total_errors = 0
+
+    for tag, i1, i2, j1, j2 in sm.get_opcodes():
+        if tag == "replace":
+            missing.extend(reference[i1:i2])
+            extra.extend(hypothesis[j1:j2])
+            total_errors += max(i2 - i1, j2 - j1)
+        elif tag == "delete":
+            missing.extend(reference[i1:i2])
+            total_errors += i2 - i1
+        elif tag == "insert":
+            extra.extend(hypothesis[j1:j2])
+            total_errors += j2 - j1
+
+    wer = total_errors / len(reference) if reference else 0.0
+    return wer, missing, extra
+
+
+def _coverage(reference: list[str], hypothesis: list[str]) -> float:
+    """Percentage of reference words found in hypothesis (order-insensitive)."""
+    if not reference:
+        return 100.0
+    ref_set = list(reference)
+    hyp_set = set(hypothesis)
+    matched = sum(1 for w in ref_set if w in hyp_set)
+    return (matched / len(ref_set)) * 100.0
+
+
+# ─── Endpoint ────────────────────────────────────────────────────────────────
+
+
+@router.post("/audio/vocal-qa", response_model=VocalQAResult)
+async def vocal_qa(data: VocalQARequest, db: Session = Depends(get_db)):
+    """Compare transcribed audio against reference lyrics.
+
+    Returns WER, word coverage %, missing/extra words, and per-word
+    timestamps with confidence scores.
+    """
+    generation = await history.get_generation(data.generation_id, db)
+    audio_path = getattr(generation, "audio_path", None) if generation else None
+    if not audio_path:
+        raise HTTPException(status_code=404, detail=ERR_AUDIO_NOT_FOUND)
+
+    resolved = config.resolve_storage_path(audio_path)
+    if resolved is None or not resolved.exists():
+        raise HTTPException(status_code=404, detail=ERR_AUDIO_NOT_FOUND)
+
+    try:
+        from ..backends.registry import get_stt_backend
+
+        stt = get_stt_backend("faster-whisper")
+        words_raw = await stt.transcribe_with_words(
+            str(resolved), language=data.language, model_size=data.model
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.debug("vocal-qa transcription failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="Transcription failed") from exc
+
+    ref_words = _normalise(data.lyrics)
+    hyp_words = [w["word"].lower().strip() for w in words_raw if w.get("word")]
+
+    wer_value, missing, extra = _wer(ref_words, hyp_words)
+    cov = _coverage(ref_words, hyp_words)
+
+    return VocalQAResult(
+        transcribed_text=" ".join(h["word"] for h in words_raw),
+        wer=round(wer_value, 4),
+        coverage_pct=round(cov, 2),
+        missing_words=missing,
+        extra_words=extra,
+        word_count_ref=len(ref_words),
+        word_count_transcribed=len(hyp_words),
+        words=[WordAlignment(**w) for w in words_raw],
+    )

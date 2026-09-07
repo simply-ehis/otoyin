@@ -50,6 +50,8 @@ def register_generation_tools(mcp: FastMCP) -> None:
             "Generate a music track from a text prompt using otoyin's local "
             "music engines (genre/mood controllable, optional tempo). "
             "engine: acestep (ACE-Step 1.5) or heartmula (HeartMuLa 3B). "
+            "mode: generate (default), cover (cover of described style), "
+            "or repaint (reimagined version). "
             "Returns the rendered WAV as base64."
         ),
     )
@@ -61,6 +63,7 @@ def register_generation_tools(mcp: FastMCP) -> None:
         mood: str = "neutral",
         tempo: int | None = None,
         seed: int | None = None,
+        mode: str = "generate",
     ) -> dict[str, Any]:
         from ...backends import get_music_backend
         from ...backends.protocols import MUSIC_ENGINES
@@ -78,6 +81,7 @@ def register_generation_tools(mcp: FastMCP) -> None:
                 mood=mood,
                 tempo=tempo,
                 seed=seed,
+                mode=mode,
             )
         except Exception as exc:
             raise ValueError(f"Music generation failed: {exc}") from exc

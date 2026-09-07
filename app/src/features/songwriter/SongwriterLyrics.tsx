@@ -6,9 +6,24 @@ import type { RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/ui/button";
 import { Textarea } from "@/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/ui/select";
 import type { SongwritingAnalysis, SongwritingDraft } from "./packs/types";
 import type { UpdateDraft } from "./SongwriterBrief";
 import { SongwriterCoach } from "./SongwriterCoach";
+
+export type AceStepMode = "generate" | "cover" | "repaint";
+
+const ACE_STEP_MODES: { value: AceStepMode; label: string; hint: string }[] = [
+	{ value: "generate", label: "Generate", hint: "Original music from prompt" },
+	{ value: "cover", label: "Cover", hint: "Cover of described song/style" },
+	{ value: "repaint", label: "Repaint", hint: "Reimagined version" },
+];
 
 /** Lyrics editor: section inserts, live counts, brief/render actions, coach. */
 export function SongwriterLyrics({
@@ -24,6 +39,8 @@ export function SongwriterLyrics({
 	onSend,
 	canSend,
 	sending,
+	aceStepMode,
+	onAceStepModeChange,
 }: {
 	draft: SongwritingDraft;
 	update: UpdateDraft;
@@ -37,6 +54,8 @@ export function SongwriterLyrics({
 	onSend: () => void;
 	canSend: boolean;
 	sending: boolean;
+	aceStepMode: AceStepMode;
+	onAceStepModeChange: (mode: AceStepMode) => void;
 }) {
 	const { t } = useTranslation();
 	return (
@@ -86,7 +105,7 @@ export function SongwriterLyrics({
 						{t("songwriter.repeated", { defaultValue: "repeated" })}
 					</span>
 				</p>
-				<div className="flex flex-wrap gap-2">
+				<div className="flex flex-wrap items-center gap-2">
 					<Button
 						type="button"
 						size="sm"
@@ -96,6 +115,24 @@ export function SongwriterLyrics({
 						<ClipboardDocumentIcon className="size-4" aria-hidden="true" />
 						{t("songwriter.copyBrief", { defaultValue: "Copy agent brief" })}
 					</Button>
+					<Select
+						value={aceStepMode}
+						onValueChange={(v) => onAceStepModeChange(v as AceStepMode)}
+					>
+						<SelectTrigger
+							className="h-8 w-32 text-xs"
+							aria-label="ACE-Step mode"
+						>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{ACE_STEP_MODES.map((m) => (
+								<SelectItem key={m.value} value={m.value}>
+									{m.label}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
 					<Button
 						type="button"
 						size="sm"

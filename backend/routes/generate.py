@@ -33,6 +33,8 @@ class MusicGenerateRequest(BaseModel):
     mood: str = Field(default="neutral", max_length=32)
     tempo: int | None = Field(default=None, ge=40, le=240)
     seed: int | None = Field(default=None, ge=0, le=2**31 - 1)
+    mode: str = Field(default="generate", pattern="^(generate|cover|repaint)$")
+    reference_audio_path: str = ""
 
 
 @router.post("/generate/music")
@@ -52,18 +54,29 @@ async def generate_music(data: MusicGenerateRequest):
         from ..utils.rate_limiter import get_limiter, with_retry
 
         await get_limiter("music").acquire()
+
+        gen_kwargs: dict = dict(
+            prompt=data.prompt,
+            duration_seconds=data.duration_seconds,
+            genre=data.genre,
+            mood=data.mood,
+            tempo=data.tempo,
+            seed=data.seed,
+        )
+        # Only pass mode/reference_audio_path when the backend accepts them
+        # (currently acestep-specific).
+        import inspect
+
+        sig = inspect.signature(backend.generate)
+        if "mode" in sig.parameters:
+            gen_kwargs["mode"] = data.mode
+        if "reference_audio_path" in sig.parameters:
+            gen_kwargs["reference_audio_path"] = data.reference_audio_path or None
+
         audio, sample_rate = await with_retry(
             # generate() is a blocking, multi-minute CPU call - keep the
             # event loop free by running it in a worker thread.
-            lambda: asyncio.to_thread(
-                backend.generate,
-                prompt=data.prompt,
-                duration_seconds=data.duration_seconds,
-                genre=data.genre,
-                mood=data.mood,
-                tempo=data.tempo,
-                seed=data.seed,
-            ),
+            lambda: asyncio.to_thread(backend.generate, **gen_kwargs),
             attempts=3,
             label="music.generate",
         )

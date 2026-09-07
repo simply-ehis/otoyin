@@ -9,6 +9,7 @@ import {
 	type AudioStudioSnapshot,
 	useAudioStudioStore,
 } from "./AudioStudioStore";
+import { PROJECT_TEMPLATES } from "./templates";
 
 interface SavedSession {
 	id: string;
@@ -22,6 +23,7 @@ export function useSessionManager() {
 	const { toast } = useToast();
 	const [showSaveDialog, setShowSaveDialog] = useState(false);
 	const [showLoadDialog, setShowLoadDialog] = useState(false);
+	const [showTemplateDialog, setShowTemplateDialog] = useState(false);
 	const [sessionName, setSessionName] = useState("");
 	const [savedSessions, setSavedSessions] = useState<SavedSession[]>([]);
 	const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -189,11 +191,55 @@ export function useSessionManager() {
 		[toast],
 	);
 
+	const doDeleteSession = useCallback(
+		async (sessionId: string) => {
+			try {
+				await apiClient.deleteAudioStudioSession(sessionId);
+				setSavedSessions((prev) => prev.filter((s) => s.id !== sessionId));
+				if (currentSessionId === sessionId) {
+					setCurrentSessionId(null);
+					setIsAutosave(false);
+				}
+				toast({ title: "Session deleted" });
+			} catch (err) {
+				toast({
+					title: "Delete failed",
+					description: err instanceof Error ? err.message : "Unknown error",
+					variant: "destructive",
+				});
+			}
+		},
+		[currentSessionId, toast],
+	);
+
+	const handleNewSession = useCallback(() => {
+		setShowTemplateDialog(true);
+	}, []);
+
+	const doNewFromTemplate = useCallback(
+		(templateIndex: number) => {
+			const template = PROJECT_TEMPLATES[templateIndex];
+			if (!template) {
+				return;
+			}
+			const store = useAudioStudioStore.getState();
+			store.resetToTemplate(template.snapshot);
+			setCurrentSessionId(null);
+			setIsAutosave(false);
+			setUnsaved(false);
+			setCanUndo(false);
+			toast({ title: `New session: ${template.name}` });
+		},
+		[toast],
+	);
+
 	return {
 		showSaveDialog,
 		setShowSaveDialog,
 		showLoadDialog,
 		setShowLoadDialog,
+		showTemplateDialog,
+		setShowTemplateDialog,
 		sessionName,
 		setSessionName,
 		savedSessions,
@@ -202,7 +248,10 @@ export function useSessionManager() {
 		canUndoAutosave: canUndo,
 		handleSaveSession,
 		handleLoadSession,
+		handleNewSession,
 		doLoadSession,
+		doDeleteSession,
+		doNewFromTemplate,
 		handleUndo,
 		onUndoAutosave: handleUndo,
 	};

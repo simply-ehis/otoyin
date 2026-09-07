@@ -5,13 +5,21 @@ The official ``ACE-Step/Ace-Step1.5`` bundle ships custom modeling code
 ``trust_remote_code=True`` against the HF cache. MIT weights, sellable
 (catalog id ``acestep-1-5``, $43). Output is 48kHz stereo from the model,
 channel-mean'd to mono to match the pre-existing music backend contract.
+
+Modes:
+  - generate: standard text-to-audio (default)
+  - cover: cover of the described song/style
+  - repaint: reimagined version of the described song/style
 """
 
 import importlib
+import logging
 
 import numpy as np
 
 from .base import BackendBase, ModelNotCachedError, is_model_cached
+
+logger = logging.getLogger(__name__)
 
 ACESTEP_HF_REPO = "ACE-Step/Ace-Step1.5"
 
@@ -49,9 +57,24 @@ class AceStepBackend(BackendBase):
         mood: str = "neutral",
         tempo: int | None = None,
         seed: int | None = None,
+        mode: str = "generate",
+        reference_audio_path: str | None = None,
     ) -> tuple[np.ndarray, int]:
         self.load_model()
-        full_prompt = f"{genre}, {mood}, {prompt}"
+
+        # Fold mode into prompt
+        if mode == "cover" and reference_audio_path:
+            full_prompt = f"cover of {genre}, {mood}, {prompt}"
+            logger.debug("ACE-Step cover mode with reference: %s", reference_audio_path)
+        elif mode == "cover":
+            full_prompt = f"cover of {genre}, {mood}, {prompt}"
+        elif mode == "repaint":
+            full_prompt = f"reimagined version of {genre}, {mood}, {prompt}"
+            if reference_audio_path:
+                logger.debug("ACE-Step repaint mode with reference: %s", reference_audio_path)
+        else:
+            full_prompt = f"{genre}, {mood}, {prompt}"
+
         if tempo is not None:
             full_prompt = f"{full_prompt} {tempo} bpm"
         kwargs: dict = {"max_duration_seconds": duration_seconds}

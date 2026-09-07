@@ -277,6 +277,7 @@ def test_voice_convert_route_cloud_no_provider():
                     json={
                         "audio_path": "test.wav",
                         "engine": "cloud",
+                        "consent_given": True,
                         "voice_pack": "test_voice",
                     },
                 )
@@ -284,6 +285,19 @@ def test_voice_convert_route_cloud_no_provider():
                 assert "No cloud provider configured" in resp.json()["detail"]
             finally:
                 mock_path.unlink(missing_ok=True)
+
+
+def test_voice_convert_requires_consent():
+    client = TestClient(app)
+    resp = client.post(
+        "/voice-convert",
+        json={
+            "audio_path": "test.wav",
+            "engine": "rvc",
+        },
+    )
+    assert resp.status_code == 400
+    assert "Consent is required" in resp.json()["detail"]
 
 
 def test_voice_convert_route_cloud():
@@ -302,6 +316,7 @@ def test_voice_convert_route_cloud():
                     json={
                         "audio_path": "test.wav",
                         "engine": "cloud",
+                        "consent_given": True,
                         "voice_pack": "test_voice",
                     },
                 )

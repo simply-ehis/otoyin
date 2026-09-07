@@ -185,12 +185,14 @@ def register_voice_changer_tools(mcp: FastMCP) -> None:
         name="21labs.convert_voice",
         description=(
             "Convert a stored audio file into a downloaded RVC v2 voice pack. "
-            "Returns base64 WAV. Requires the pack to be downloaded first."
+            "Returns base64 WAV. Requires the pack to be downloaded first. "
+            "consent_given must be true — caller attests rights to use the audio."
         ),
     )
     async def twentylabs_convert_voice(
         audio_path: str,
         engine: str = "rvc",
+        consent_given: bool = False,
         voice_pack: str = "",
         reference_audio_path: str = "",
         transpose: int = 0,
@@ -202,6 +204,7 @@ def register_voice_changer_tools(mcp: FastMCP) -> None:
             json={
                 "audio_path": audio_path,
                 "engine": engine,
+                "consent_given": consent_given,
                 "voice_pack": voice_pack,
                 "reference_audio_path": reference_audio_path,
                 "transpose": transpose,

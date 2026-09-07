@@ -201,6 +201,7 @@ export class SpatialMethods extends ADRMethods {
 	async convertVoice(opts: {
 		audio_path: string;
 		engine?: "rvc" | "seed_vc" | "openvoice" | "cloud";
+		consent_given?: boolean;
 		voice_pack?: string;
 		transpose?: number;
 		index_rate?: number;

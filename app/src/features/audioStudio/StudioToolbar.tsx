@@ -35,6 +35,7 @@ interface StudioToolbarProps {
 	isolating: boolean;
 	isolateStem: IsolationStem;
 	selectedTrackHasAudio: boolean;
+	onNew: () => void;
 	onSave: () => void;
 	onPaste: () => void;
 	onLoad: () => void;
@@ -62,6 +63,7 @@ export function StudioToolbar({
 	isolating,
 	isolateStem,
 	selectedTrackHasAudio,
+	onNew,
 	onSave,
 	onPaste,
 	onLoad,
@@ -82,6 +84,16 @@ export function StudioToolbar({
 			className="border-b border-border bg-sidebar shrink-0"
 			actions={
 				<>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-8 text-xs px-2"
+						onClick={onNew}
+						title="New session from template"
+					>
+						<Plus className="size-3 mr-1" />
+						New
+					</Button>
 					<Button
 						variant="ghost"
 						size="sm"

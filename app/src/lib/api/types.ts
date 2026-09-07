@@ -362,6 +362,24 @@ export interface TranscriptionResponse {
 	duration: number;
 }
 
+export interface VocalQAWord {
+	word: string;
+	start_ms: number;
+	end_ms: number;
+	confidence: number;
+}
+
+export interface VocalQAResult {
+	transcribed_text: string;
+	wer: number;
+	coverage_pct: number;
+	missing_words: string[];
+	extra_words: string[];
+	word_count_ref: number;
+	word_count_transcribed: number;
+	words: VocalQAWord[];
+}
+
 export interface HealthResponse {
 	status: string;
 	model_loaded: boolean;

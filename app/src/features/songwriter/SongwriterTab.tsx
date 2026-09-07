@@ -33,7 +33,7 @@ import {
 import { listSongwritingLanguages } from "./packs/registry";
 import type { SongwritingDraft } from "./packs/types";
 import { SongwriterBrief, type UpdateDraft } from "./SongwriterBrief";
-import { SongwriterLyrics } from "./SongwriterLyrics";
+import { type AceStepMode, SongwriterLyrics } from "./SongwriterLyrics";
 import {
 	useCreateSongDraft,
 	useDeleteSongDraft,
@@ -56,6 +56,7 @@ export function SongwriterTab() {
 		emptySongwritingDraft(),
 	);
 	const [dirty, setDirty] = useState(false);
+	const [aceStepMode, setAceStepMode] = useState<AceStepMode>("generate");
 	const lyricsRef = useRef<HTMLTextAreaElement>(null);
 
 	const { data: drafts } = useSongDrafts();
@@ -186,6 +187,7 @@ export function SongwriterTab() {
 				duration_seconds: 60,
 				genre: draft.genre || "pop",
 				mood: draft.mood || "neutral",
+				mode: aceStepMode,
 			});
 		},
 		onSuccess: (blob) => {
@@ -332,6 +334,8 @@ export function SongwriterTab() {
 						onSend={() => sendToGenerator.mutate()}
 						canSend={canSend}
 						sending={sendToGenerator.isPending}
+						aceStepMode={aceStepMode}
+						onAceStepModeChange={setAceStepMode}
 					/>
 				</TabsContent>
 			</Tabs>

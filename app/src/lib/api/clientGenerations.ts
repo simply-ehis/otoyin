@@ -87,7 +87,7 @@ export class GenerationsMethods extends ProfilesMethods {
 		return res.blob();
 	}
 
-	async generateMusic(data: { engine: string; prompt: string; duration_seconds: number; genre?: string; mood?: string; tempo?: number; seed?: number }): Promise<Blob> {
+	async generateMusic(data: { engine: string; prompt: string; duration_seconds: number; genre?: string; mood?: string; tempo?: number; seed?: number; mode?: string; reference_audio_path?: string }): Promise<Blob> {
 		const res = await fetch(`${this.getBaseUrl()}/generate/music`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },

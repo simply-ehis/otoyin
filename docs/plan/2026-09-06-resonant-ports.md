@@ -60,6 +60,9 @@ pytest + ruff · tsc + biome · scripts/check-wiring.py · `just dev` smoke
 
 ## Approvals log
 - [x] Slices: songwriter + launcher + instruments-replace + all 4 extras
-- [ ] `spessasynth_core` npm dep (Phase 3a)
+- [x] `spessasynth_core` npm dep (Phase 3a — installed)
 - [ ] `pinyin-pro` npm dep for zh-CN pack (Phase 1 staged)
 - [ ] Order: 1→2→3→4 (default unless re-sequenced)
+
+## Deps to install
+- `pinyin-pro` — needed for zh-CN songwriter pack phonetic support

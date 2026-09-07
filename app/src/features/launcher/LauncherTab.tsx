@@ -5,6 +5,7 @@
  */
 import {
 	MusicalNoteIcon,
+	PencilSquareIcon,
 	PlayIcon,
 	PlusIcon,
 	StopIcon,
@@ -26,7 +27,8 @@ import {
 import { ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
 import { liveEngine } from "./engine";
-import type { Clip, LauncherSession, Track } from "./types";
+import { StepSequencer } from "./StepSequencer";
+import type { Clip, LauncherSession, MidiClip, Track } from "./types";
 import {
 	useCreateLauncherSession,
 	useDeleteLauncherSession,
@@ -97,6 +99,7 @@ export function LauncherTab() {
 	const [playing, setPlaying] = useState(false);
 	const [beat, setBeat] = useState(0);
 	const [dirty, setDirty] = useState(false);
+	const [editingClipId, setEditingClipId] = useState<string | null>(null);
 
 	const animRef = useRef(0);
 
@@ -446,10 +449,46 @@ export function LauncherTab() {
 							activeClips={activeClips}
 							onLaunchScene={launchScene}
 							onLaunchClip={launchClip}
+							onEditClip={setEditingClipId}
 						/>
 					))}
 				</div>
 			</div>
+
+			{editingClipId && session.clips[editingClipId]?.type === "midi" ? (
+				<div className="rounded-md border border-border bg-card p-3">
+					<div className="mb-2 flex items-center justify-between">
+						<span className="text-xs font-medium">
+							Editing: {session.clips[editingClipId].name}
+						</span>
+						<Button
+							type="button"
+							size="sm"
+							variant="ghost"
+							onClick={() => setEditingClipId(null)}
+						>
+							Close
+						</Button>
+					</div>
+					<StepSequencer
+						clip={session.clips[editingClipId] as MidiClip}
+						onChange={(notes) => {
+							setSession((prev) => ({
+								...prev,
+								clips: {
+									...prev.clips,
+									[editingClipId]: {
+										...prev.clips[editingClipId],
+										notes,
+									} as MidiClip,
+								},
+							}));
+							setDirty(true);
+						}}
+						className="max-h-80"
+					/>
+				</div>
+			) : null}
 		</div>
 	);
 }
@@ -461,6 +500,7 @@ function SceneRow({
 	activeClips,
 	onLaunchScene,
 	onLaunchClip,
+	onEditClip,
 }: {
 	scene: number;
 	tracks: Track[];
@@ -468,6 +508,7 @@ function SceneRow({
 	activeClips: Record<string, string | null>;
 	onLaunchScene: (scene: number) => void;
 	onLaunchClip: (trackId: string, clipId: string | null) => void;
+	onEditClip: (clipId: string) => void;
 }) {
 	return (
 		<>
@@ -487,7 +528,7 @@ function SceneRow({
 					<button
 						key={track.id}
 						type="button"
-						className={`flex flex-col items-center justify-center gap-0.5 border-b border-border px-2 py-2 text-left transition-colors ${
+						className={`group relative flex flex-col items-center justify-center gap-0.5 border-b border-border px-2 py-2 text-left transition-colors ${
 							active
 								? "bg-primary/10 ring-1 ring-primary/40"
 								: clip
@@ -510,6 +551,20 @@ function SceneRow({
 										? `${clip.lengthBeats} beats`
 										: `${(clip.notes ?? []).length} notes`}
 								</span>
+								{clip.type === "midi" ? (
+									<button
+										type="button"
+										className="absolute right-1 top-1 rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover:opacity-100"
+										title="Edit MIDI"
+										aria-label={`Edit ${clip.name}`}
+										onClick={(e) => {
+											e.stopPropagation();
+											onEditClip(clip.id);
+										}}
+									>
+										<PencilSquareIcon className="size-3" aria-hidden="true" />
+									</button>
+								) : null}
 								{active && (
 									<span className="text-[10px] font-medium text-primary">
 										LIVE

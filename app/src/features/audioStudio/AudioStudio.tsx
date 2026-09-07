@@ -253,6 +253,7 @@ export function AudioStudio() {
 					!!tracks[selectedTrackIndex]?.audioUrl ||
 					!!tracks[selectedTrackIndex]?.audioBlob
 				}
+				onNew={session.handleNewSession}
 				onSave={() => session.setShowSaveDialog(true)}
 				onPaste={pasteClip}
 				onLoad={session.handleLoadSession}
@@ -273,13 +274,17 @@ export function AudioStudio() {
 			<SessionDialogs
 				showSaveDialog={session.showSaveDialog}
 				showLoadDialog={session.showLoadDialog}
+				showTemplateDialog={session.showTemplateDialog}
 				sessionName={session.sessionName}
 				savedSessions={session.savedSessions}
 				setSessionName={session.setSessionName}
 				setShowSaveDialog={session.setShowSaveDialog}
 				setShowLoadDialog={session.setShowLoadDialog}
+				setShowTemplateDialog={session.setShowTemplateDialog}
 				handleSaveSession={session.handleSaveSession}
 				doLoadSession={session.doLoadSession}
+				doDeleteSession={session.doDeleteSession}
+				doNewFromTemplate={session.doNewFromTemplate}
 			/>
 
 			<TranscriptDrawer

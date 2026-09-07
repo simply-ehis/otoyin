@@ -4,6 +4,7 @@ import {
 	ArrowsRightLeftIcon,
 	ArrowUturnLeftIcon,
 	Bars3Icon,
+	CheckBadgeIcon,
 	ClipboardDocumentIcon,
 	EllipsisHorizontalIcon,
 	FolderArrowDownIcon,
@@ -76,6 +77,7 @@ export function StoryChatItem({
 	const serverUrl = useServerStore((s) => s.serverUrl);
 	const [avatarError, setAvatarError] = useState(false);
 	const [moveOpen, setMoveOpen] = useState(false);
+	const [vocalQALoading, setVocalQALoading] = useState(false);
 	const mergeItems = useMergeStoryItems();
 	const crossfadeItems = useCrossfadeStoryItems();
 	const setSpeed = useSetStoryItemSpeed();
@@ -409,6 +411,49 @@ export function StoryChatItem({
 							{t("storyContent.itemActions.regenerate")}
 						</DropdownMenuItem>
 					) : null}
+					<DropdownMenuItem
+						disabled={vocalQALoading}
+						onClick={async () => {
+							setVocalQALoading(true);
+							try {
+								const result = await apiClient.vocalQA(
+									item.generation_id,
+									item.text,
+								);
+								const pct = Math.round(result.coverage_pct);
+								const werPct = Math.round(result.wer * 100);
+								const missing = result.missing_words.length;
+								const msg =
+									missing > 0
+										? `${pct}% coverage · ${werPct}% WER · ${missing} missing word${missing > 1 ? "s" : ""}`
+										: `${pct}% coverage · perfect match`;
+								toast({
+									title: t("storyContent.itemActions.vocalQaDone", {
+										defaultValue: "Vocal QA complete",
+									}),
+									description: msg,
+								});
+							} catch (_err) {
+								toast({
+									title: t("storyContent.itemActions.vocalQaFailed", {
+										defaultValue: "Vocal QA failed",
+									}),
+									variant: "destructive",
+								});
+							} finally {
+								setVocalQALoading(false);
+							}
+						}}
+					>
+						<CheckBadgeIcon className="mr-2 size-4" aria-hidden="true" />
+						{vocalQALoading
+							? t("storyContent.itemActions.vocalQaRunning", {
+									defaultValue: "Checking vocals…",
+								})
+							: t("storyContent.itemActions.vocalQa", {
+									defaultValue: "Vocal QA",
+								})}
+					</DropdownMenuItem>
 					<DropdownMenuItem
 						onClick={() => {
 							copyClip({

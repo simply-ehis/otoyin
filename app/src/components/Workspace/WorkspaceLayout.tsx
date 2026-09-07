@@ -125,7 +125,7 @@ const workspaceTabGroups: TabGroup[] = [
 				id: "vocal-isolation",
 				path: "/workspace/vocal-isolation",
 				icon: Scissors,
-				label: "Isolate",
+				label: "Stems",
 			},
 			{
 				id: "transcript",
