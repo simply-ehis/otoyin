@@ -230,10 +230,10 @@ async def preview_book(
     tmp = Path(tempfile.mktemp(suffix=suffix))
     tmp.write_bytes(await file.read())
     try:
-        from ..services.book_import import parse_book
+        from ..utils.async_audio import async_parse_book
 
         try:
-            parsed = parse_book(tmp)
+            parsed = await async_parse_book(tmp)
         except RuntimeError as e:
             raise HTTPException(status_code=503, detail=str(e)) from e
         chapters = parsed.get("chapters") or []
@@ -267,10 +267,11 @@ async def import_book(
     tmp = Path(tempfile.mktemp(suffix=suffix))
     tmp.write_bytes(await file.read())
     try:
-        from ..services.book_import import parse_book, save_cover
+        from ..services.book_import import save_cover
+        from ..utils.async_audio import async_parse_book
 
         try:
-            parsed = parse_book(tmp)
+            parsed = await async_parse_book(tmp)
         except RuntimeError as e:
             raise HTTPException(status_code=503, detail=str(e)) from e
         book_title = title or parsed["title"]
@@ -327,10 +328,11 @@ async def import_book_from_path(data: ImportPathRequest, db: Session = Depends(g
     if suffix not in (".pdf", ".epub"):
         raise HTTPException(status_code=400, detail=ERR_FORMAT_UNSUPPORTED_EPUB)
     try:
-        from ..services.book_import import parse_book, save_cover
+        from ..services.book_import import save_cover
+        from ..utils.async_audio import async_parse_book
 
         try:
-            parsed = parse_book(path)
+            parsed = await async_parse_book(path)
         except RuntimeError as e:
             raise HTTPException(status_code=503, detail=str(e)) from e
         book_title = data.title or parsed["title"]
@@ -729,12 +731,12 @@ async def export_m4b(book_id: str, bitrate: str = "64k", db: Session = Depends(g
                 titles.append(ch.title)
     if not wav_paths:
         raise HTTPException(status_code=400, detail=ERR_EMPTY_RENDERED)
-    from ..services.audio_conversion import build_m4b
+    from ..utils.async_audio import async_build_m4b
 
     cover_path = config.resolve_storage_path(book.cover_path) if book.cover_path else None
     out = Path(tempfile.mktemp(suffix=".m4b"))
     try:
-        build_m4b(wav_paths, titles, out, cover_path=cover_path, author=book.author, title=book.title, bitrate=bitrate)
+        await async_build_m4b(wav_paths, titles, out, cover_path=cover_path, author=book.author, title=book.title, bitrate=bitrate)
         data = out.read_bytes()
         return StreamingResponse(
             io.BytesIO(data),
@@ -750,7 +752,8 @@ async def export_m4b(book_id: str, bitrate: str = "64k", db: Session = Depends(g
 
 @router.post("/audiobooks/convert")
 async def convert_audio_endpoint(data: ConvertRequest):
-    from ..services.audio_conversion import SUPPORTED_FORMATS, convert_audio_file, ffmpeg_available
+    from ..services.audio_conversion import SUPPORTED_FORMATS, ffmpeg_available
+    from ..utils.async_audio import async_convert_audio_file
 
     if not ffmpeg_available():
         raise HTTPException(status_code=500, detail="ffmpeg not available")
@@ -760,7 +763,7 @@ async def convert_audio_endpoint(data: ConvertRequest):
     if not resolved or not resolved.exists():
         raise HTTPException(status_code=404, detail="Audio file not found")
     try:
-        out = convert_audio_file(resolved, data.format, bitrate=data.bitrate, sample_rate=data.sample_rate)
+        out = await async_convert_audio_file(resolved, data.format, bitrate=data.bitrate, sample_rate=data.sample_rate)
         # Move to exports dir
         exports = config.get_exports_dir()
         final = exports / f"{resolved.stem}.{data.format}"

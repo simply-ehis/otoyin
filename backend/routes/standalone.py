@@ -6,10 +6,11 @@ returns a stable ``project_id``; explicit Save upserts by that id; Load reads
 it back.
 """
 
+import io
 import json
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
-from fastapi.responses import Response
+from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
+from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -35,7 +36,7 @@ class CreateProjectRequest(BaseModel):
 class ImportScriptRequest(BaseModel):
     project_json: str
     text: str
-    format: str = "plain"
+    format: str = "plain"  # "plain", "fountain", or "markdown"
 
 
 class ProjectSaveRequest(BaseModel):
@@ -90,7 +91,7 @@ async def load_project(data: ProjectLoadRequest, db: Session = Depends(get_db)):
 
 @router.post("/project/import-script")
 async def import_script(data: ImportScriptRequest, db: Session = Depends(get_db)):
-    """Import a script (plain text or Fountain) into a project, creating scenes."""
+    """Import a script (plain text, Fountain, or Markdown) into a project, creating scenes."""
     from ..services.standalone_project import import_script as _import_script
 
     try:
@@ -110,6 +111,134 @@ async def list_templates():
     from ..services.standalone_project import list_builtin_templates
 
     return list_builtin_templates()
+
+
+@router.post("/project/import-file")
+async def import_script_file(
+    file: UploadFile,
+    project_json: str | None = None,
+    script_format: str = "plain",
+    db: Session = Depends(get_db),
+):
+    """Import a script from a text/markdown file into a project.
+
+    Accepts .txt, .md, .markdown files. If project_json is provided,
+    imports into that project; otherwise creates a new project.
+    """
+    from ..services.standalone_project import (
+        create_standalone_project,
+        import_script as _import_script,
+        project_from_json,
+        project_to_dict,
+    )
+
+    filename = (file.filename or "").lower()
+    if not filename.endswith((".txt", ".md", ".markdown")):
+        raise HTTPException(status_code=400, detail="File must be .txt, .md, or .markdown")
+
+    # Auto-detect format from extension
+    if script_format == "plain" and filename.endswith((".md", ".markdown")):
+        script_format = "markdown"
+
+    content = await file.read()
+    try:
+        text = content.decode("utf-8")
+    except UnicodeDecodeError as e:
+        raise HTTPException(status_code=400, detail="File must be valid UTF-8 text") from e
+
+    if project_json:
+        try:
+            project = project_from_json(project_json)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=ERR_INVALID_PROJECT_DATA) from e
+    else:
+        project = create_standalone_project("Imported Script")
+
+    scene_count = _import_script(project, text, script_format)
+    return {
+        "scene_count": scene_count,
+        "project": project_to_dict(project),
+    }
+
+
+@router.post("/project/import-and-generate")
+async def import_and_generate(
+    file: UploadFile,
+    voice_profile_id: str = Form(...),
+    engine: str = Form(...),
+    script_format: str = Form("plain"),
+    db: Session = Depends(get_db),
+):
+    """Import a script file and generate speech for all scenes in one call.
+
+    Creates a project, imports the script, assigns the voice profile to all characters,
+    and queues generation for each dialogue line. Returns the project with generation IDs.
+    """
+    from ..database.models import VoiceProfile as DBVoiceProfile
+    from ..services.batch import add_job_from_scripting
+    from ..services.standalone_project import (
+        create_standalone_project,
+        import_script as _import_script,
+        project_to_dict,
+    )
+
+    filename = (file.filename or "").lower()
+    if not filename.endswith((".txt", ".md", ".markdown")):
+        raise HTTPException(status_code=400, detail="File must be .txt, .md, or .markdown")
+
+    # Auto-detect format from extension
+    if script_format == "plain" and filename.endswith((".md", ".markdown")):
+        script_format = "markdown"
+
+    content = await file.read()
+    try:
+        text = content.decode("utf-8")
+    except UnicodeDecodeError as e:
+        raise HTTPException(status_code=400, detail="File must be valid UTF-8 text") from e
+
+    # Verify voice profile exists
+    profile = db.query(DBVoiceProfile).filter_by(id=voice_profile_id).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Voice profile not found")
+
+    # Create project
+    project = create_standalone_project("Generated Project")
+    scene_count = _import_script(project, text, script_format)
+
+    # Assign voice profile to all characters
+    for char in project.characters:
+        char.voice_profile_id = voice_profile_id
+
+    # Queue generation for each dialogue line in each scene
+    generation_ids = []
+    for scene in project.scenes:
+        for dialogue in scene.dialogue:
+            text_content = dialogue.get("text", "").strip()
+            if text_content:
+                job = await add_job_from_scripting(
+                    text=text_content,
+                    voice_profile_id=voice_profile_id,
+                    engine=engine,
+                    db=db,
+                )
+                generation_ids.append(job.id)
+
+    # Save project with updated characters
+    doc = StandaloneProjectRow(
+        id=project.id,
+        name=project.name,
+        project_json=json.dumps(project_to_dict(project)),
+    )
+    db.add(doc)
+    db.commit()
+
+    return {
+        "project": project_to_dict(project),
+        "generation_ids": generation_ids,
+        "scene_count": scene_count,
+        "status": "queued",
+        "message": f"Created {len(generation_ids)} generation jobs. Use /batch/jobs/{{id}} to poll status.",
+    }
 
 
 # ── Export / Import ─────────────────────────────────────────────────
@@ -160,3 +289,61 @@ async def import_project(file: UploadFile, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Import failed: {e}") from e
 
     return result
+
+
+@router.get("/project/export-epub/{project_id}")
+async def export_project_epub(
+    project_id: str,
+    db: Session = Depends(get_db),
+):
+    """Export a standalone project as EPUB for e-readers."""
+    from ..services.story_export import export_project_to_epub
+
+    doc = db.query(StandaloneProjectRow).filter_by(id=project_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail=ERR_PROJECT_NOT_FOUND)
+
+    project_data = json.loads(doc.project_json)
+
+    try:
+        epub_bytes = export_project_to_epub(project_id, project_data, db)
+    except RuntimeError as e:
+        raise HTTPException(status_code=501, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"EPUB export failed: {e}") from e
+
+    filename = f"{project_data.get('name', 'project').replace(' ', '_')}.epub"
+    return StreamingResponse(
+        io.BytesIO(epub_bytes),
+        media_type="application/epub+zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/project/export-pdf/{project_id}")
+async def export_project_pdf(
+    project_id: str,
+    db: Session = Depends(get_db),
+):
+    """Export a standalone project as PDF for printing/sharing."""
+    from ..services.story_export import export_project_to_pdf
+
+    doc = db.query(StandaloneProjectRow).filter_by(id=project_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail=ERR_PROJECT_NOT_FOUND)
+
+    project_data = json.loads(doc.project_json)
+
+    try:
+        pdf_bytes = export_project_to_pdf(project_id, project_data, db)
+    except RuntimeError as e:
+        raise HTTPException(status_code=501, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PDF export failed: {e}") from e
+
+    filename = f"{project_data.get('name', 'project').replace(' ', '_')}.pdf"
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

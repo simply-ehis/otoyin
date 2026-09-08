@@ -48,6 +48,11 @@ const TEMPLATES = [
 
 const FPS_OPTIONS = ["23.976", "24", "25", "29.97", "30"];
 const SAMPLE_RATES = ["44100", "48000", "96000"];
+const SCRIPT_FORMATS = [
+	{ value: "plain", label: "Plain Text" },
+	{ value: "fountain", label: "Fountain" },
+	{ value: "markdown", label: "Markdown" },
+];
 
 interface ProjectScene {
 	name?: string;
@@ -73,14 +78,15 @@ export function StandaloneProjectPage() {
 	const [sampleRate, setSampleRate] = useState("48000");
 	const [selectedTemplate, setSelectedTemplate] = useState("blank");
 	const [importText, setImportText] = useState("");
-	const [importFormat, setImportFormat] = useState<"plain" | "fountain">(
-		"plain",
-	);
+	const [importFormat, setImportFormat] = useState<
+		"plain" | "fountain" | "markdown"
+	>("plain");
 	const [importing, setImporting] = useState(false);
 	const [projectId, setProjectId] = useState<string | null>(null);
 	const [unsaved, setUnsaved] = useState(false);
 	const autosaveRef = useRef<number | null>(null);
 	const importFileRef = useRef<HTMLInputElement | null>(null);
+	const importScriptFileRef = useRef<HTMLInputElement | null>(null);
 
 	useEffect(() => {
 		function handleBeforeUnload(e: BeforeUnloadEvent) {
@@ -170,6 +176,73 @@ export function StandaloneProjectPage() {
 			toast({
 				title: "Project imported",
 				description: result.message,
+			});
+		} catch {
+			toast({
+				title: ERR_TITLE_IMPORT,
+				description: ERR_DESC_IMPORT_FAILED,
+				variant: "destructive",
+			});
+		}
+	}
+
+	async function handleExportEpub() {
+		if (!projectId) {
+			return;
+		}
+		try {
+			const blob = await apiClient.exportProjectEpub(projectId);
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `${project?.name || "project"}.epub`;
+			a.click();
+			URL.revokeObjectURL(url);
+			toast({ title: "EPUB exported" });
+		} catch {
+			toast({
+				title: ERR_TITLE_IMPORT,
+				description: "Failed to export EPUB",
+				variant: "destructive",
+			});
+		}
+	}
+
+	async function handleExportPdf() {
+		if (!projectId) {
+			return;
+		}
+		try {
+			const blob = await apiClient.exportProjectPdf(projectId);
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `${project?.name || "project"}.pdf`;
+			a.click();
+			URL.revokeObjectURL(url);
+			toast({ title: "PDF exported" });
+		} catch {
+			toast({
+				title: ERR_TITLE_IMPORT,
+				description: "Failed to export PDF",
+				variant: "destructive",
+			});
+		}
+	}
+
+	async function handleImportScriptFile(file: File) {
+		try {
+			const result = await apiClient.importScriptFile(
+				file,
+				undefined,
+				importFormat,
+			);
+			setProject(result.project as Project);
+			setProjectId(result.project_id);
+			setUnsaved(false);
+			toast({
+				title: "Script file imported",
+				description: `${result.scene_count} scenes`,
 			});
 		} catch {
 			toast({
@@ -278,7 +351,29 @@ export function StandaloneProjectPage() {
 							aria-label="Export project"
 							onClick={() => void handleExport()}
 						>
-							Export
+							Export ZIP
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							disabled={!projectId}
+							title="Export project as EPUB"
+							aria-label="Export EPUB"
+							onClick={() => void handleExportEpub()}
+						>
+							EPUB
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							disabled={!projectId}
+							title="Export project as PDF"
+							aria-label="Export PDF"
+							onClick={() => void handleExportPdf()}
+						>
+							PDF
 						</Button>
 						<Button
 							type="button"
@@ -288,7 +383,17 @@ export function StandaloneProjectPage() {
 							aria-label="Import project"
 							onClick={() => importFileRef.current?.click()}
 						>
-							Import
+							Import ZIP
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							title="Import script file (.txt, .md)"
+							aria-label="Import script file"
+							onClick={() => importScriptFileRef.current?.click()}
+						>
+							Import File
 						</Button>
 						<input
 							ref={importFileRef}
@@ -299,6 +404,19 @@ export function StandaloneProjectPage() {
 								const file = e.target.files?.[0];
 								if (file) {
 									void handleImport(file);
+								}
+								e.target.value = "";
+							}}
+						/>
+						<input
+							ref={importScriptFileRef}
+							type="file"
+							accept=".txt,.md,.markdown,.fountain"
+							className="hidden"
+							onChange={(e) => {
+								const file = e.target.files?.[0];
+								if (file) {
+									void handleImportScriptFile(file);
 								}
 								e.target.value = "";
 							}}
@@ -392,7 +510,7 @@ export function StandaloneProjectPage() {
 							<Select
 								value={importFormat}
 								onValueChange={(v) =>
-									setImportFormat(v as "plain" | "fountain")
+									setImportFormat(v as "plain" | "fountain" | "markdown")
 								}
 							>
 								<SelectTrigger
@@ -402,8 +520,11 @@ export function StandaloneProjectPage() {
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="plain">Plain Text</SelectItem>
-									<SelectItem value="fountain">Fountain</SelectItem>
+									{SCRIPT_FORMATS.map((fmt) => (
+										<SelectItem key={fmt.value} value={fmt.value}>
+											{fmt.label}
+										</SelectItem>
+									))}
 								</SelectContent>
 							</Select>
 							<Button

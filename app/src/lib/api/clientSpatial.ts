@@ -183,6 +183,45 @@ export class SpatialMethods extends ADRMethods {
 		return response.blob();
 	}
 
+	async batchConvertAudio(
+		files: string[],
+		format: string,
+		options?: {
+			sample_rate?: number;
+			bit_depth?: number;
+			normalize?: boolean;
+			target_lufs?: number;
+			zip_output?: boolean;
+		},
+	): Promise<Blob | { results: any[] }> {
+		const url = `${this.getBaseUrl()}/bridge/batch-convert`;
+		const response = await fetch(url, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				files,
+				format,
+				...options,
+			}),
+		});
+		if (!response.ok) {
+			const error = await response
+				.json()
+				.catch(() => ({ detail: response.statusText }));
+			throw new Error(
+				formatErrorDetail(
+					error.detail,
+					`HTTP error! status: ${response.status}`,
+				),
+			);
+		}
+		const contentType = response.headers.get("Content-Type") || "";
+		if (contentType.includes("application/zip")) {
+			return response.blob();
+		}
+		return response.json();
+	}
+
 	// --- Voice Changer ---
 
 	async getVoiceChangerCapabilities(): Promise<{

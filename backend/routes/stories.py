@@ -478,3 +478,92 @@ async def import_story_archive(
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=ERR_IMPORT_FAILED) from e
+
+
+@router.get("/stories/{story_id}/export-epub")
+async def export_story_epub(
+    story_id: str,
+    db: Session = Depends(get_db),
+):
+    """Export a story as EPUB for e-readers."""
+    from ..services.story_export import export_story_to_epub
+
+    story = db.query(database.Story).filter_by(id=story_id).first()
+    if not story:
+        raise HTTPException(status_code=404, detail=ERR_STORY_NOT_FOUND)
+
+    # Build story data with items
+    items = db.query(database.StoryItem).filter_by(story_id=story_id).order_by(database.StoryItem.order).all()
+    story_data = {
+        "title": story.name,
+        "author": getattr(story, "author", None),
+        "items": [
+            {
+                "title": item.name or f"Chapter {idx + 1}",
+                "text": item.text or "",
+            }
+            for idx, item in enumerate(items)
+        ],
+    }
+
+    try:
+        epub_bytes = export_story_to_epub(story_id, story_data, db)
+    except RuntimeError as e:
+        raise HTTPException(status_code=501, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"EPUB export failed: {e}") from e
+
+    safe_name = "".join(c for c in story.name if c.isalnum() or c in (" ", "-", "_")).strip()
+    if not safe_name:
+        safe_name = "story"
+    filename = f"story-{safe_name}.epub"
+
+    return StreamingResponse(
+        io.BytesIO(epub_bytes),
+        media_type="application/epub+zip",
+        headers={"Content-Disposition": safe_content_disposition("attachment", filename)},
+    )
+
+
+@router.get("/stories/{story_id}/export-pdf")
+async def export_story_pdf(
+    story_id: str,
+    db: Session = Depends(get_db),
+):
+    """Export a story as PDF for printing/sharing."""
+    from ..services.story_export import export_story_to_pdf
+
+    story = db.query(database.Story).filter_by(id=story_id).first()
+    if not story:
+        raise HTTPException(status_code=404, detail=ERR_STORY_NOT_FOUND)
+
+    items = db.query(database.StoryItem).filter_by(story_id=story_id).order_by(database.StoryItem.order).all()
+    story_data = {
+        "title": story.name,
+        "author": getattr(story, "author", None),
+        "items": [
+            {
+                "title": item.name or f"Chapter {idx + 1}",
+                "text": item.text or "",
+            }
+            for idx, item in enumerate(items)
+        ],
+    }
+
+    try:
+        pdf_bytes = export_story_to_pdf(story_id, story_data, db)
+    except RuntimeError as e:
+        raise HTTPException(status_code=501, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PDF export failed: {e}") from e
+
+    safe_name = "".join(c for c in story.name if c.isalnum() or c in (" ", "-", "_")).strip()
+    if not safe_name:
+        safe_name = "story"
+    filename = f"story-{safe_name}.pdf"
+
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": safe_content_disposition("attachment", filename)},
+    )

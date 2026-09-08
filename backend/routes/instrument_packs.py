@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -91,19 +92,23 @@ async def upload_instrument_pack(
 
     pack_id = uuid.uuid4().hex[:12]
     pack_dir = os.path.join(_instruments_dir(), pack_id)
-    os.makedirs(pack_dir, exist_ok=True)
-    dest = os.path.join(pack_dir, filename)
-    with open(dest, "wb") as f:
-        f.write(contents)
 
-    instruments = _index_instruments(dest, fmt, pack_id)
-    manifest = {
-        "name": name or os.path.splitext(filename)[0],
-        "format": fmt,
-        "instruments": instruments,
-    }
-    with open(os.path.join(pack_dir, "manifest.json"), "w") as f:
-        json.dump(manifest, f)
+    def _write_pack():
+        os.makedirs(pack_dir, exist_ok=True)
+        dest = os.path.join(pack_dir, filename)
+        with open(dest, "wb") as f:
+            f.write(contents)
+        instruments = _index_instruments(dest, fmt, pack_id)
+        manifest = {
+            "name": name or os.path.splitext(filename)[0],
+            "format": fmt,
+            "instruments": instruments,
+        }
+        with open(os.path.join(pack_dir, "manifest.json"), "w") as f:
+            json.dump(manifest, f)
+        return instruments
+
+    instruments = await asyncio.to_thread(_write_pack)
 
     row = DBInstrumentPack(
         id=pack_id,
@@ -214,6 +219,6 @@ async def delete_instrument_pack(pack_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=ERR_INVALID_REQUEST)
     pack_dir = os.path.join(_instruments_dir(), pack_id)
     if os.path.isdir(pack_dir):
-        shutil.rmtree(pack_dir, ignore_errors=True)
+        await asyncio.to_thread(shutil.rmtree, pack_dir, True)
     db.delete(row)
     db.commit()

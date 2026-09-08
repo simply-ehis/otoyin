@@ -7,6 +7,8 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from ..services.audio_conversion import SUPPORTED_FORMATS, convert_audio_file, ffmpeg_available
+
 router = APIRouter()
 
 
@@ -78,6 +80,26 @@ EXPORT_PRESETS = {
         target_lufs=-14.0,
         true_peak_limit_db=-1.0,
     ),
+    "streaming_opus": ExportPreset(
+        name="Streaming (OPUS)",
+        description="OPUS, 48kHz stereo, -16 LUFS — optimal for web streaming",
+        format="opus",
+        sample_rate=48000,
+        bit_depth=16,
+        channels="stereo",
+        target_lufs=-16.0,
+        true_peak_limit_db=-1.0,
+    ),
+    "archive_aiff": ExportPreset(
+        name="Archive (AIFF)",
+        description="AIFF, 48kHz stereo, 24-bit — lossless archive format",
+        format="aiff",
+        sample_rate=48000,
+        bit_depth=24,
+        channels="stereo",
+        target_lufs=-16.0,
+        true_peak_limit_db=-1.0,
+    ),
 }
 
 
@@ -119,26 +141,69 @@ async def apply_export_preset(req: ApplyPresetRequest):
         audio = await async_reduce_noise_deepfilter(audio, sample_rate)
     normalized = normalize_to_lufs(audio, sample_rate, preset.target_lufs)
 
-    import tempfile
-    from pathlib import Path
+    fmt = preset.format.lower()
+    native_formats = {"wav", "flac", "ogg"}
 
-    import soundfile as sf
+    if fmt in native_formats:
+        import tempfile
+        from pathlib import Path
 
-    suffix = f".{preset.format}"
-    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
-        tmp_path = tmp.name
-    from ..utils.audio import save_audio
+        import soundfile as sf
 
-    await asyncio.to_thread(save_audio, normalized, tmp_path, sample_rate)
+        suffix = f".{fmt}"
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            tmp_path = tmp.name
+        from ..utils.audio import save_audio
 
-    buf = io.BytesIO()
-    sf.write(buf, normalized, sample_rate, format=preset.format.upper())
-    buf.seek(0)
-    Path(tmp_path).unlink(missing_ok=True)
+        await asyncio.to_thread(save_audio, normalized, tmp_path, sample_rate)
 
-    media_type = f"audio/{preset.format}"
-    return StreamingResponse(
-        buf,
-        media_type=media_type,
-        headers={"Content-Disposition": f'inline; filename="export_{req.preset_name}.{preset.format}"'},
-    )
+        buf = io.BytesIO()
+        sf.write(buf, normalized, sample_rate, format=fmt.upper())
+        buf.seek(0)
+        Path(tmp_path).unlink(missing_ok=True)
+
+        media_type = f"audio/{fmt}"
+        return StreamingResponse(
+            buf,
+            media_type=media_type,
+            headers={"Content-Disposition": f'inline; filename="export_{req.preset_name}.{fmt}"'},
+        )
+
+    # Use ffmpeg-based conversion for MP3, OPUS, AIFF, M4A, etc.
+    if not ffmpeg_available():
+        raise HTTPException(status_code=501, detail="ffmpeg not available for this format")
+
+    if fmt not in SUPPORTED_FORMATS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported format: {fmt}. Supported: {', '.join(SUPPORTED_FORMATS)}",
+        )
+
+    # Write to temp WAV first, then convert
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_wav:
+        import soundfile as sf
+
+        sf.write(tmp_wav.name, normalized, sample_rate)
+        tmp_wav_path = tmp_wav.name
+
+    try:
+        output_path = convert_audio_file(
+            tmp_wav_path,
+            fmt,
+            bitrate="128k",
+            sample_rate=sample_rate,
+        )
+        with open(output_path, "rb") as f:
+            content = f.read()
+        media_type = SUPPORTED_FORMATS[fmt]["mime"]
+        return StreamingResponse(
+            io.BytesIO(content),
+            media_type=media_type,
+            headers={
+                "Content-Disposition": f'inline; filename="export_{req.preset_name}.{SUPPORTED_FORMATS[fmt]["ext"]}"'
+            },
+        )
+    finally:
+        Path(tmp_wav_path).unlink(missing_ok=True)
+        if "output_path" in locals():
+            Path(output_path).unlink(missing_ok=True)

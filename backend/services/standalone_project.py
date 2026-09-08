@@ -138,7 +138,7 @@ def project_from_json(json_str: str) -> StandaloneProject:
 def import_script(project: StandaloneProject, text: str, format: str = "plain") -> int:
     """Import a script into the project, creating scenes from it.
 
-    Supports: plain text, Fountain screenplay format.
+    Supports: plain text, Fountain screenplay format, Markdown, JSON.
     Returns number of scenes created.
     """
     project.script_text = text
@@ -146,6 +146,10 @@ def import_script(project: StandaloneProject, text: str, format: str = "plain") 
 
     if format == "fountain":
         scenes = _parse_fountain(text)
+    elif format == "markdown":
+        scenes = _parse_markdown(text)
+    elif format == "json":
+        scenes = _parse_json(text)
     else:
         scenes = _parse_plain_text(text)
 
@@ -184,6 +188,129 @@ def _parse_fountain(text: str) -> list[ProjectScene]:
         scenes.append(current_scene)
     if not scenes:
         scenes.append(ProjectScene(id=str(uuid.uuid4()), name="Scene 1"))
+    return scenes
+
+
+def _parse_markdown(text: str) -> list[ProjectScene]:
+    """Parse Markdown into scenes using heading hierarchy.
+
+    Headings (# ## ###) become scene boundaries. Paragraphs become dialogue.
+    """
+    try:
+        from markdown_it import MarkdownIt
+    except ImportError:
+        # Fallback to plain text if markdown-it-py not available
+        return _parse_plain_text(text)
+
+    md = MarkdownIt()
+    tokens = md.parse(text)
+
+    scenes = []
+    current_scene = None
+    current_paragraph = []
+
+    def flush_paragraph():
+        nonlocal current_scene, current_paragraph
+        if current_paragraph and current_scene:
+            para_text = "\n".join(current_paragraph).strip()
+            if para_text:
+                if not current_scene.dialogue:
+                    current_scene.dialogue.append({"character": "Narrator", "text": para_text})
+                else:
+                    current_scene.dialogue[-1]["text"] += " " + para_text
+        current_paragraph = []
+
+    in_heading = False
+    heading_text = ""
+
+    for token in tokens:
+        if token.type == "heading_open":
+            flush_paragraph()
+            in_heading = True
+            heading_text = ""
+        elif token.type == "inline" and in_heading:
+            heading_text = token.content.strip()
+            if current_scene:
+                scenes.append(current_scene)
+            current_scene = ProjectScene(
+                id=str(uuid.uuid4()),
+                name=heading_text or f"Scene {len(scenes) + 1}",
+            )
+            in_heading = False
+        elif token.type == "heading_close":
+            in_heading = False
+        elif token.type == "paragraph_open":
+            continue
+        elif token.type == "inline" and not in_heading:
+            current_paragraph.append(token.content)
+        elif token.type == "paragraph_close":
+            flush_paragraph()
+        # Skip code blocks, tables, lists, blockquotes, etc.
+
+    flush_paragraph()
+    if current_scene:
+        scenes.append(current_scene)
+
+    if not scenes:
+        scenes.append(ProjectScene(id=str(uuid.uuid4()), name="Scene 1"))
+
+    return scenes
+
+
+def _parse_json(text: str) -> list[ProjectScene]:
+    """Parse JSON script format into scenes.
+
+    Expected format:
+    {
+        "scenes": [
+            {
+                "name": "Scene 1",
+                "dialogue": [
+                    {"character": "Alice", "text": "Hello"},
+                    {"character": "Bob", "text": "Hi there"}
+                ],
+                "markers": []
+            }
+        ],
+        "characters": [
+            {"name": "Alice", "voice_profile_id": "..."},
+            {"name": "Bob", "voice_profile_id": "..."}
+        ]
+    }
+    """
+    import json
+
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        # Fallback to plain text if invalid JSON
+        return _parse_plain_text(text)
+
+    scenes = []
+    for s in data.get("scenes", []):
+        scene = ProjectScene(
+            id=str(uuid.uuid4()),
+            name=s.get("name", "Scene"),
+            duration=s.get("duration", 60.0),
+        )
+        for d in s.get("dialogue", []):
+            scene.dialogue.append(
+                {
+                    "character": d.get("character", "Narrator"),
+                    "text": d.get("text", ""),
+                }
+            )
+        scene.markers = s.get("markers", [])
+        scenes.append(scene)
+
+    # If project has characters, update them
+    if "characters" in data:
+        # This is handled by the caller updating project.characters
+        pass
+
+    if not scenes:
+        scenes.append(ProjectScene(id=str(uuid.uuid4()), name="Scene 1"))
+
     return scenes
 
 

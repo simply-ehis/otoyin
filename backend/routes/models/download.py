@@ -589,7 +589,7 @@ async def delete_model(model_name: str):
                 raise HTTPException(status_code=404, detail=f"Model {model_name} not found")
             import shutil
 
-            shutil.rmtree(model_dir)
+            await asyncio.to_thread(shutil.rmtree, model_dir)
             from ...services.model_registry import forget_download
 
             forget_download(model_name, config.model_size)
@@ -603,7 +603,7 @@ async def delete_model(model_name: str):
             raise HTTPException(status_code=404, detail=f"Model {model_name} not found in cache")
 
         try:
-            shutil.rmtree(repo_cache_dir)
+            await asyncio.to_thread(shutil.rmtree, repo_cache_dir)
         except OSError as e:
             raise HTTPException(status_code=500, detail=f"Failed to delete model cache directory: {e!s}") from e
 

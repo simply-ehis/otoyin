@@ -30,7 +30,7 @@ from ..errors import (
     ERR_PROFILE_NOT_FOUND,
     ERR_REGENERATE_COMPLETED,
 )
-from ..services import history, personality, profiles, tts, versions
+from ..services import history, personality, profiles, versions
 from ..services.generation import GenerationContext, run_generation
 from ..services.task_queue import cancel_generation as cancel_generation_job, enqueue_generation
 from ..utils.audio import load_audio, save_audio
@@ -634,16 +634,18 @@ async def stream_speech(
             effects_chain_config = None
 
     if effects_chain_config:
-        from ..utils.effects import apply_effects
+        from ..utils.async_audio import async_apply_effects
 
-        audio = apply_effects(audio, sample_rate, effects_chain_config)
+        audio = await async_apply_effects(audio, sample_rate, effects_chain_config)
 
     if data.normalize:
-        from ..utils.audio import normalize_audio
+        from ..utils.async_audio import async_normalize_audio
 
-        audio = normalize_audio(audio)
+        audio = await async_normalize_audio(audio)
 
-    wav_bytes = tts.audio_to_wav_bytes(audio, sample_rate)
+    from ..utils.async_audio import async_audio_to_wav_bytes
+
+    wav_bytes = await async_audio_to_wav_bytes(audio, sample_rate)
 
     async def _wav_stream():
         try:

@@ -756,7 +756,7 @@ export class StoriesBMethods extends StoriesAMethods {
 	async importScript(
 		projectId: string,
 		text: string,
-		format: "plain" | "fountain",
+		format: "plain" | "fountain" | "markdown",
 	) {
 		const response = await this.fetchWithAuth("/project/import-script", {
 			method: "POST",
@@ -791,6 +791,68 @@ export class StoriesBMethods extends StoriesAMethods {
 			throw new Error(detail.detail || `Import failed (${response.status})`);
 		}
 		return response.json();
+	}
+
+	async importScriptFile(
+		file: File,
+		projectJson?: string,
+		format: "plain" | "fountain" | "markdown" = "plain",
+	) {
+		const form = new FormData();
+		form.append("file", file);
+		if (projectJson) {
+			form.append("project_json", projectJson);
+		}
+		form.append("format", format);
+		const response = await this.fetchWithAuth("/project/import-file", {
+			method: "POST",
+			body: form,
+		});
+		if (!response.ok) {
+			const detail = await response.json().catch(() => ({}));
+			throw new Error(detail.detail || `Import failed (${response.status})`);
+		}
+		return response.json();
+	}
+
+	async importAndGenerate(
+		file: File,
+		voiceProfileId: string,
+		engine: string,
+		format: "plain" | "fountain" | "markdown" = "plain",
+	) {
+		const form = new FormData();
+		form.append("file", file);
+		form.append("voice_profile_id", voiceProfileId);
+		form.append("engine", engine);
+		form.append("format", format);
+		const response = await this.fetchWithAuth("/project/import-and-generate", {
+			method: "POST",
+			body: form,
+		});
+		if (!response.ok) {
+			const detail = await response.json().catch(() => ({}));
+			throw new Error(detail.detail || `Import and generate failed (${response.status})`);
+		}
+		return response.json();
+	}
+
+	async exportProjectEpub(projectId: string): Promise<Blob> {
+		const response = await this.fetchWithAuth(`/project/export-epub/${projectId}`);
+		if (!response.ok) {
+			const detail = await response.json().catch(() => ({}));
+			throw new Error(detail.detail || `EPUB export failed (${response.status})`);
+		}
+		return response.blob();
+	}
+
+	async exportProjectPdf(projectId: string): Promise<Blob> {
+		const response = await this.fetchWithAuth(`/project/export-pdf/${projectId}`);
+		if (!response.ok) {
+			const detail = await response.json().catch(() => ({}));
+			throw new Error(detail.detail || `PDF export failed (${response.status})`);
+		}
+		return response.blob();
 	}
 
 	// --- Phase 2: Extended Import ---

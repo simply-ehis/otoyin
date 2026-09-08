@@ -1066,6 +1066,24 @@ export class StoriesAMethods extends ChannelsMethods {
 		return { blob, filename: match?.[1] ?? `story-${storyId}.dstf.zip` };
 	}
 
+	async exportStoryEpub(storyId: string): Promise<Blob> {
+		const res = await this.fetchWithAuth(`/stories/${storyId}/export-epub`);
+		if (!res.ok) {
+			const detail = await res.json().catch(() => ({}));
+			throw new Error(detail.detail || `EPUB export failed (${res.status})`);
+		}
+		return res.blob();
+	}
+
+	async exportStoryPdf(storyId: string): Promise<Blob> {
+		const res = await this.fetchWithAuth(`/stories/${storyId}/export-pdf`);
+		if (!res.ok) {
+			const detail = await res.json().catch(() => ({}));
+			throw new Error(detail.detail || `PDF export failed (${res.status})`);
+		}
+		return res.blob();
+	}
+
 	async importStory(file: File): Promise<{
 		id: string;
 		name: string;

@@ -58,6 +58,13 @@ yt-dlp>=2024.1.0
 # Book import — PyMuPDF handles PDF + EPUB offline
 PyMuPDF>=1.24.0
 
+# Markdown parsing for script import
+markdown-it-py>=3.0.0
+
+# EPUB/PDF export
+ebooklib>=0.18
+reportlab>=4.0.0
+
 # Speaker diarization (torch-free)
 resemblyzer>=0.1.4
 silero-vad>=5.1.0
