@@ -48,18 +48,6 @@ export function AudioStudio() {
 
 	const [waveformProgress, setWaveformProgress] = useState(0);
 
-	// Drive waveform progress from ref at rAF rate — avoids subscribing to currentTime in zustand
-	useEffect(() => {
-		let raf: number;
-		const tick = () => {
-			const dur = durationRef.current;
-			setWaveformProgress(dur ? Math.min(1, currentTimeRef.current / dur) : 0);
-			raf = requestAnimationFrame(tick);
-		};
-		raf = requestAnimationFrame(tick);
-		return () => cancelAnimationFrame(raf);
-	}, [currentTimeRef]);
-
 	const setIsPlaying = useAudioStudioStore((s) => s.setIsPlaying);
 	const setIsRecording = useAudioStudioStore((s) => s.setIsRecording);
 	const setIsLooping = useAudioStudioStore((s) => s.setIsLooping);
@@ -125,6 +113,18 @@ export function AudioStudio() {
 		sourceNodesRef,
 		trackAnalysers,
 	} = playback;
+
+	// Drive waveform progress from ref at rAF rate — avoids subscribing to currentTime in zustand
+	useEffect(() => {
+		let raf: number;
+		const tick = () => {
+			const dur = durationRef.current;
+			setWaveformProgress(dur ? Math.min(1, currentTimeRef.current / dur) : 0);
+			raf = requestAnimationFrame(tick);
+		};
+		raf = requestAnimationFrame(tick);
+		return () => cancelAnimationFrame(raf);
+	}, [currentTimeRef, durationRef.current]);
 
 	const { handleExportWithPlugins, exportWithPlugins } = usePluginExport({
 		tracks,

@@ -104,6 +104,7 @@ class ModelConfig:
                 "Q3_K_S",
                 "Q5_K_S",
                 "Q4_0",
+                "UD-Q2_K_XL",  # unsloth custom quant
             }
             if self.quant and self.quant not in valid_quants:
                 raise ValueError(f"GGUF LLM must use valid quant: {valid_quants}, got {self.quant}")
