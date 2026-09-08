@@ -335,7 +335,7 @@ def export_project_to_pdf(
             for p in paragraphs:
                 p = p.strip()
                 if p:
-                    p = p.replace("&", "&").replace("<", "<").replace(">", ">")
+                    p = html_escape(p)
                     story_elements.append(Paragraph(p, styles["Normal"]))
     else:
         for scene in scenes:
@@ -349,8 +349,8 @@ def export_project_to_pdf(
                 character = d.get("character", "Unknown")
                 text = d.get("text", "")
                 if text:
-                    text = text.replace("&", "&").replace("<", "<").replace(">", ">")
-                    story_elements.append(Paragraph(f"<b>{character}:</b> {text}", dialogue_style))
+                    text = html_escape(text)
+                    story_elements.append(Paragraph(f"<b>{html_escape(character)}:</b> {text}", dialogue_style))
 
             story_elements.append(PageBreak())
 
