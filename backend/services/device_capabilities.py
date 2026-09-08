@@ -163,16 +163,22 @@ def detect_device() -> DeviceCapabilities:
 
 
 def _classify_tier(total_ram_mb: int, total_vram_mb: int) -> DeviceTier:
-    """Classify device into a tier based on available memory."""
-    # Low-end: very little RAM or very little VRAM
-    if total_ram_mb <= 6 * 1024 or (total_vram_mb > 0 and total_vram_mb <= 2 * 1024):
-        return DeviceTier.LOW_END
+    """Classify device into a tier based on available memory.
 
-    # High-end: plenty of both
-    if total_ram_mb > 16 * 1024 and total_vram_mb > 8 * 1024:
+    Tiers:
+      low_end   — ≤ 8 GB RAM (regardless of GPU)
+      mid_range — 8-16 GB RAM with ≤ 8 GB VRAM, or ≤ 8 GB VRAM alone
+      high_end  — > 16 GB RAM, or > 8 GB VRAM
+    """
+    # High-end: generous RAM or generous VRAM
+    if total_ram_mb > 16 * 1024 or total_vram_mb > 8 * 1024:
         return DeviceTier.HIGH_END
 
-    # Everything in between
+    # Low-end: tight RAM
+    if total_ram_mb <= 8 * 1024:
+        return DeviceTier.LOW_END
+
+    # Everything in between (8-16 GB RAM, ≤ 8 GB VRAM)
     return DeviceTier.MID_RANGE
 
 
