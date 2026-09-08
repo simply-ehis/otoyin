@@ -47,6 +47,29 @@ export function useAssistantChat({
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const streamingRef = useRef(false);
+	const streamingBufferRef = useRef<string>("");
+	const streamingFlushTimerRef = useRef<number | null>(null);
+	const lastAssistantIdxRef = useRef<number>(-1);
+
+	const flushStreamingBuffer = useCallback(() => {
+		if (streamingBufferRef.current) {
+			const content = streamingBufferRef.current;
+			streamingBufferRef.current = "";
+			setMessages((prev) => {
+				const idx = lastAssistantIdxRef.current;
+				if (idx >= 0 && idx < prev.length && prev[idx].role === "assistant") {
+					const next = [...prev];
+					next[idx] = { ...next[idx], content: next[idx].content + content };
+					return next;
+				}
+				return [...prev, { id: makeId(), role: "assistant", content }];
+			});
+		}
+		if (streamingFlushTimerRef.current) {
+			window.clearTimeout(streamingFlushTimerRef.current);
+			streamingFlushTimerRef.current = null;
+		}
+	}, []);
 
 	useEffect(() => {
 		endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -275,24 +298,21 @@ export function useAssistantChat({
 						}
 						const dataStr = line.slice(6).trim();
 						if (dataStr === "[DONE]") {
+							flushStreamingBuffer();
 							continue;
 						}
 						try {
 							const data = JSON.parse(dataStr);
 							if (data.type === "text") {
-								setMessages((prev) => {
-									const last = prev[prev.length - 1];
-									if (last?.role === "assistant") {
-										return [
-											...prev.slice(0, -1),
-											{ ...last, content: last.content + data.content },
-										];
-									}
-									return [
-										...prev,
-										{ id: makeId(), role: "assistant", content: data.content },
-									];
-								});
+								// Accumulate in ref, flush periodically to avoid per-chunk re-renders
+								streamingBufferRef.current += data.content;
+								if (streamingFlushTimerRef.current === null) {
+									// Schedule first flush in 50ms, subsequent flushes handled by flush function
+									streamingFlushTimerRef.current = window.setTimeout(
+										flushStreamingBuffer,
+										50,
+									);
+								}
 							} else if (data.type === "tool_call") {
 								setMessages((prev) => [
 									...prev,
@@ -380,6 +400,7 @@ export function useAssistantChat({
 					}
 				}
 			} catch (e: unknown) {
+				flushStreamingBuffer();
 				setMessages((prev) => [
 					...prev,
 					{
@@ -389,6 +410,7 @@ export function useAssistantChat({
 					},
 				]);
 			} finally {
+				flushStreamingBuffer();
 				if (convId) {
 					setMessages((prev) => {
 						const lastAssistant = [...prev]
@@ -419,6 +441,7 @@ export function useAssistantChat({
 			conversationId,
 			attachments,
 			uploadAttachments,
+			flushStreamingBuffer,
 		],
 	);
 

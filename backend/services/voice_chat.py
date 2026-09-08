@@ -20,6 +20,7 @@ import os
 import tempfile
 import time
 import uuid
+from collections import deque
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -68,7 +69,7 @@ class VoiceChatSession:
     stt_model: str = "base"
     tts_engine: str | None = None
     tts_voice_prompt: dict | None = None
-    audio_buffer: list[float] = field(default_factory=list)
+    audio_buffer: deque = field(default_factory=lambda: deque(maxlen=MAX_AUDIO_BUFFER_SAMPLES))
     silence_count: int = 0
     speech_frame_count: int = 0
     is_speaking: bool = False
@@ -83,6 +84,7 @@ class VoiceChatSession:
 
 
 MAX_AUDIO_BUFFER_SECONDS = 30
+MAX_AUDIO_BUFFER_SAMPLES = MAX_AUDIO_BUFFER_SECONDS * SAMPLE_RATE
 MAX_CONVERSATION_HISTORY = 100
 SESSION_TTL_SECONDS = 600  # 10 minutes idle before eviction
 
@@ -108,7 +110,7 @@ def _compute_energy(audio_chunk: list[float]) -> float:
     return float(np.sqrt(np.mean(arr**2)))
 
 
-async def _transcribe_audio(audio: list[float], session: VoiceChatSession) -> str:
+async def _transcribe_audio(audio: deque | list, session: VoiceChatSession) -> str:
     """Transcribe audio buffer to text using STT backend."""
     buf = np.array(audio, dtype=np.float32)
     if len(buf) == 0:
@@ -594,10 +596,7 @@ async def process_audio_chunk(
         session.silence_count += 1
 
     session.audio_buffer.extend(audio)
-    # Cap buffer to prevent unbounded growth
-    max_samples = MAX_AUDIO_BUFFER_SECONDS * SAMPLE_RATE
-    if len(session.audio_buffer) > max_samples:
-        session.audio_buffer = session.audio_buffer[-max_samples:]
+    # deque auto-evicts from left when maxlen is reached
 
     # Check if speech ended (silence after speech)
     if session.is_speaking and session.silence_count >= SILENCE_FRAMES_TRIGGER:

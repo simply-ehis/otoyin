@@ -646,11 +646,19 @@ def export_story_to_zip(story_id: str, db: Session) -> bytes:
     if missing_gens:
         raise ValueError(f"Story references missing generations: {', '.join(missing_gens[:3])}")
 
-    versions_by_gen: dict[str, list] = {}
-    for g in generations.values():
-        versions_by_gen[g.id] = (
-            db.query(DBGenerationVersion).filter_by(generation_id=g.id).order_by(DBGenerationVersion.created_at).all()
-        )
+    # Batch-fetch all versions for all generations (avoid N+1)
+    all_gen_ids = list(generations.keys())
+    all_versions = (
+        db.query(DBGenerationVersion)
+        .filter(DBGenerationVersion.generation_id.in_(all_gen_ids))
+        .order_by(DBGenerationVersion.created_at)
+        .all()
+        if all_gen_ids
+        else []
+    )
+    versions_by_gen: dict[str, list] = {gid: [] for gid in all_gen_ids}
+    for v in all_versions:
+        versions_by_gen[v.generation_id].append(v)
 
     profile_ids = sorted({g.profile_id for g in generations.values() if g.profile_id})
     profiles = (
@@ -702,9 +710,22 @@ def export_story_to_zip(story_id: str, db: Session) -> bytes:
             if main_stored is None and not manifest_versions:
                 logger.warning("Generation %s has no audio on disk", gen_id)
 
+        # Batch-fetch all profile samples (avoid N+1)
+        all_prof_ids = list(profiles.keys())
+        all_samples = (
+            db.query(DBProfileSample)
+            .filter(DBProfileSample.profile_id.in_(all_prof_ids))
+            .all()
+            if all_prof_ids
+            else []
+        )
+        samples_by_profile: dict[str, list] = {pid: [] for pid in all_prof_ids}
+        for s in all_samples:
+            samples_by_profile[s.profile_id].append(s)
+
         manifest_profiles: dict[str, dict] = {}
         for prof_id, prof in profiles.items():
-            samples = db.query(DBProfileSample).filter_by(profile_id=prof_id).all()
+            samples = samples_by_profile[prof_id]
             sample_entries = []
             avatar_arc = None
             if prof.avatar_path:
