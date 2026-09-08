@@ -165,7 +165,10 @@ async def batch_convert_audio(data: BatchConvertRequest):
             continue
 
         try:
+            tmp_wav_path = None
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_wav:
+                tmp_wav_path = tmp_wav.name
+
                 import soundfile as sf
 
                 from ...utils.async_audio import async_load_audio
@@ -184,7 +187,6 @@ async def batch_convert_audio(data: BatchConvertRequest):
                     audio = normalize_to_lufs(audio, sr, data.target_lufs)
 
                 sf.write(tmp_wav.name, audio, sr)
-                tmp_wav_path = tmp_wav.name
 
             output_path = convert_audio_file(
                 tmp_wav_path,
@@ -199,10 +201,11 @@ async def batch_convert_audio(data: BatchConvertRequest):
                     "storage_path": config.to_storage_path(output_path),
                 }
             )
-            Path(tmp_wav_path).unlink(missing_ok=True)
-
         except Exception as e:
             results.append({"input": audio_path, "error": str(e)})
+        finally:
+            if tmp_wav_path:
+                Path(tmp_wav_path).unlink(missing_ok=True)
 
     if data.zip_output:
         # Create ZIP archive

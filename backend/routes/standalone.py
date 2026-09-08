@@ -22,6 +22,7 @@ from ..services.standalone_project import (
     project_from_json,
     project_to_dict,
 )
+from ..utils.http import safe_content_disposition
 
 router = APIRouter()
 
@@ -140,7 +141,11 @@ async def import_script_file(
     if script_format == "plain" and filename.endswith((".md", ".markdown")):
         script_format = "markdown"
 
+    # Enforce 5 MB limit on script file uploads
+    MAX_SCRIPT_SIZE = 5 * 1024 * 1024
     content = await file.read()
+    if len(content) > MAX_SCRIPT_SIZE:
+        raise HTTPException(status_code=413, detail="Script file too large (max 5 MB)")
     try:
         text = content.decode("utf-8")
     except UnicodeDecodeError as e:
@@ -258,11 +263,11 @@ async def export_project(project_id: str, db: Session = Depends(get_db)):
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
     project = json.loads(db.query(StandaloneProjectRow).filter_by(id=project_id).first().project_json)
-    filename = f"{project.get('name', 'project').replace(' ', '_')}.zip"
+    filename = f"{project.get('name', 'project')}.zip"
     return Response(
         content=zip_bytes,
         media_type="application/zip",
-        headers={"Content-Disposition": f"attachment; filename={filename}"},
+        headers={"Content-Disposition": safe_content_disposition("attachment", filename)},
     )
 
 
@@ -278,8 +283,12 @@ async def import_project(file: UploadFile, db: Session = Depends(get_db)):
     if not file.filename or not file.filename.endswith(".zip"):
         raise HTTPException(status_code=400, detail="File must be a .zip archive")
 
+    # Enforce 50 MB limit on ZIP imports
+    MAX_ZIP_SIZE = 50 * 1024 * 1024
     try:
         file_bytes = await file.read()
+        if len(file_bytes) > MAX_ZIP_SIZE:
+            raise HTTPException(status_code=413, detail="ZIP file too large (max 50 MB)")
         if len(file_bytes) < 100:
             raise HTTPException(status_code=400, detail="Invalid ZIP file (too small)")
         result = await import_standalone_project_from_zip(file_bytes, db)
@@ -312,11 +321,11 @@ async def export_project_epub(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"EPUB export failed: {e}") from e
 
-    filename = f"{project_data.get('name', 'project').replace(' ', '_')}.epub"
+    filename = f"{project_data.get('name', 'project')}.epub"
     return StreamingResponse(
         io.BytesIO(epub_bytes),
         media_type="application/epub+zip",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": safe_content_disposition("attachment", filename)},
     )
 
 
@@ -341,9 +350,9 @@ async def export_project_pdf(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"PDF export failed: {e}") from e
 
-    filename = f"{project_data.get('name', 'project').replace(' ', '_')}.pdf"
+    filename = f"{project_data.get('name', 'project')}.pdf"
     return StreamingResponse(
         io.BytesIO(pdf_bytes),
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": safe_content_disposition("attachment", filename)},
     )

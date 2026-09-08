@@ -754,13 +754,13 @@ export class StoriesBMethods extends StoriesAMethods {
 	}
 
 	async importScript(
-		projectId: string,
+		projectJson: string,
 		text: string,
 		format: "plain" | "fountain" | "markdown",
 	) {
 		const response = await this.fetchWithAuth("/project/import-script", {
 			method: "POST",
-			body: JSON.stringify({ project_id: projectId, text, format }),
+			body: JSON.stringify({ project_json: projectJson, text, format }),
 		});
 		return response.json();
 	}

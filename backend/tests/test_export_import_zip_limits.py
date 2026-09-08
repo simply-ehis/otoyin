@@ -24,7 +24,7 @@ def _make_generation_zip(member_count: int = 2, audio_bytes: int = 100) -> bytes
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         manifest = {
-            "version": 1,
+            "version": "1.0",
             "generation": {"text": "hi", "language": "en", "duration": 0.5},
             "profile": {"name": "Someone"},
         }

@@ -103,7 +103,7 @@ class CaptureSettingsUpdate(BaseModel):
     stt_model: str | None = Field(default=None, pattern="^(tiny\\.en|base\\.en|cloud)$")
     language: str | None = None
     auto_refine: bool | None = None
-    llm_model: str | None = Field(default=None, pattern="^(0\\.6B|1\\.7B|4B)$")
+    llm_model: str | None = Field(default=None, pattern="^(0\\.6B|1\\.7B|2B-Q4_K_M|4B)$")
     smart_cleanup: bool | None = None
     self_correction: bool | None = None
     preserve_technical: bool | None = None

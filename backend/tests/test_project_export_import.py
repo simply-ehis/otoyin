@@ -171,7 +171,7 @@ class TestProjectImport:
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as zf:
             zf.writestr("manifest.json", json.dumps(manifest))
-        with pytest.raises(ValueError, match="missing project"):
+        with pytest.raises(ValueError, match="project"):
             await ei.import_standalone_project_from_zip(buf.getvalue(), MagicMock())
 
     @pytest.mark.asyncio

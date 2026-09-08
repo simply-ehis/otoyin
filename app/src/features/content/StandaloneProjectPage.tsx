@@ -163,14 +163,9 @@ export function StandaloneProjectPage() {
 	async function handleImport(file: File) {
 		try {
 			const result = await apiClient.importProject(file);
-			setProject({
-				id: result.id,
-				name: result.name,
-				description: "",
-				fps: 24,
-				sample_rate: 48000,
-				scenes: [],
-			} as Project);
+			// Load the full project after import to get scenes, fps, etc.
+			const loaded = await apiClient.loadProject(result.id);
+			setProject(loaded.project as Project);
 			setProjectId(result.id);
 			setUnsaved(false);
 			toast({
@@ -284,7 +279,7 @@ export function StandaloneProjectPage() {
 		setImporting(true);
 		try {
 			const result = await apiClient.importScript(
-				project.id,
+				JSON.stringify(project),
 				importText,
 				importFormat,
 			);

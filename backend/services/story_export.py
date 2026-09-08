@@ -70,7 +70,10 @@ def export_story_to_epub(
     book.add_item(epub.EpubNav())
 
     # Define CSS
-    style = "body { font-family: Georgia, serif; line-height: 1.6; margin: 2em; } h1 { margin-top: 2em; } p { margin: 1em 0; }"
+    style = (
+        "body { font-family: Georgia, serif; line-height: 1.6; margin: 2em; }"
+        " h1 { margin-top: 2em; } p { margin: 1em 0; }"
+    )
     nav_css = epub.EpubItem(
         uid="style_nav",
         file_name="style/nav.css",
@@ -251,7 +254,10 @@ def export_project_to_epub(
     book.add_item(epub.EpubNav())
 
     # CSS
-    style = "body { font-family: Georgia, serif; line-height: 1.6; margin: 2em; } h1 { margin-top: 2em; } p { margin: 1em 0; } strong { font-weight: bold; }"
+    style = (
+        "body { font-family: Georgia, serif; line-height: 1.6; margin: 2em; }"
+        " h1 { margin-top: 2em; } p { margin: 1em 0; } strong { font-weight: bold; }"
+    )
     nav_css = epub.EpubItem(
         uid="style_nav",
         file_name="style/nav.css",
