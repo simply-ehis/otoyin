@@ -80,7 +80,7 @@ class CaptureSettingsResponse(BaseModel):
     stt_model: str = Field(default="tiny.en", pattern="^(tiny\\.en|base\\.en|cloud)$")
     language: str = Field(default="auto")
     auto_refine: bool = True
-    llm_model: str = Field(default="0.6B", pattern="^(0\\.6B|1\\.7B|4B)$")
+    llm_model: str = Field(default="2B-Q4_K_M", pattern="^(0\\.6B|1\\.7B|2B-Q4_K_M|4B)$")
     smart_cleanup: bool = True
     self_correction: bool = True
     preserve_technical: bool = True
