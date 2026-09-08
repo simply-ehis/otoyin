@@ -229,14 +229,14 @@ def uninstall(db: Session, plugin_id: str) -> bool:
 
 
 def require_permission(row: InstalledPlugin, permission: str) -> bool:
-    """True iff the plugin is enabled and declares ``permission``."""
+    """True iff the plugin is enabled AND the user approved ``permission``."""
     if not row.enabled:
         return False
     try:
-        manifest = json.loads(row.manifest_json or "{}")
+        approved = json.loads(row.approved_permissions or "[]")
     except json.JSONDecodeError:
-        return False
-    return permission in (manifest.get("permissions") or [])
+        approved = []
+    return permission in approved
 
 
 # --------------------------------------------------------------------------- #

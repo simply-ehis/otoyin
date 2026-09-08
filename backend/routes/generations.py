@@ -363,10 +363,25 @@ async def generate_speech(
         voice_clean=data.voice_clean,
         streaming=data.streaming,
     )
+    from ..services.task_queue import DuplicateGenerationError, compute_generation_dedup_key
     from ..utils.model_lifecycle import lifecycle_manager
 
     lifecycle_manager.mark_model_used(engine)
-    enqueue_generation(generation_id, run_generation(ctx))
+    dedup_key = compute_generation_dedup_key(
+        text=data.text,
+        profile_id=data.profile_id,
+        engine=engine,
+        model_size=data.model_size,
+        seed=data.seed,
+        instruct=data.instruct,
+    )
+    try:
+        enqueue_generation(generation_id, run_generation(ctx), dedup_key=dedup_key)
+    except DuplicateGenerationError:
+        # Clean up the DB row we just created
+        db.delete(generation)
+        db.commit()
+        raise HTTPException(status_code=409, detail="Generation already in progress — please wait for the current one to finish") from None
 
     return generation
 

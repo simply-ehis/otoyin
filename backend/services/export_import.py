@@ -16,6 +16,7 @@ import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 
+from pydantic import BaseModel, ValidationError
 from sqlalchemy.orm import Session
 
 from .. import config
@@ -36,6 +37,64 @@ logger = logging.getLogger(__name__)
 # Tests may monkeypatch these to exercise the rejection paths cheaply.
 MAX_ZIP_MEMBERS = 200
 MAX_ZIP_UNCOMPRESSED = 500 * 1024 * 1024  # 500 MB total expanded
+
+
+# ── ZIP manifest Pydantic models ────────────────────────────────────────
+
+
+class _ProfileData(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    language: str = "en"
+
+
+class ProfileImportManifest(BaseModel):
+    version: str
+    profile: _ProfileData
+    has_avatar: bool = False
+
+
+class _GenerationData(BaseModel):
+    text: str
+    language: str
+    duration: float
+    seed: int | None = None
+    instruct: str | None = None
+
+
+class _GenerationProfileData(BaseModel):
+    id: str | None = None
+    name: str | None = None
+    description: str | None = None
+    language: str = "en"
+
+
+class GenerationImportManifest(BaseModel):
+    version: str
+    generation: _GenerationData
+    profile: _GenerationProfileData = _GenerationProfileData()
+    versions: list[dict] = []
+
+
+class _StoryData(BaseModel):
+    name: str | None = None
+    description: str | None = None
+
+
+class StoryImportManifest(BaseModel):
+    version: str
+    story: _StoryData
+    items: list[dict] = []
+    generations: dict = {}
+    versions: dict = {}
+    profiles: dict = {}
+
+
+class ProjectImportManifest(BaseModel):
+    version: str
+    project: dict
+    profiles: dict = {}
+    audio_files: list[dict] = []
 
 
 def _get_unique_profile_name(name: str, db: Session) -> str:
@@ -180,16 +239,13 @@ async def import_profile_from_zip(file_bytes: bytes, db: Session) -> VoiceProfil
                     f"ZIP expands to {total_uncompressed // (1024 * 1024)} MB (limit {max_uncompressed // (1024 * 1024)} MB)"
                 )
 
-            # Read manifest
-            manifest_data = json.loads(zip_file.read("manifest.json"))
+            # Read and validate manifest
+            try:
+                manifest = ProfileImportManifest.model_validate_json(zip_file.read("manifest.json"))
+            except ValidationError as e:
+                raise ValueError(f"Invalid manifest.json: {e}") from e
 
-            if "version" not in manifest_data:
-                raise ValueError("Invalid manifest.json: missing version")
-
-            if "profile" not in manifest_data:
-                raise ValueError("Invalid manifest.json: missing profile")
-
-            profile_data = manifest_data["profile"]
+            profile_data = manifest.profile
 
             # Read samples mapping
             samples_data = json.loads(zip_file.read("samples.json"))
@@ -198,14 +254,14 @@ async def import_profile_from_zip(file_bytes: bytes, db: Session) -> VoiceProfil
                 raise ValueError("Invalid samples.json: must be a dictionary")
 
             # Get unique profile name
-            original_name = profile_data.get("name", "Imported Profile")
+            original_name = profile_data.name or "Imported Profile"
             unique_name = _get_unique_profile_name(original_name, db)
 
             # Create profile
             profile_create = VoiceProfileCreate(
                 name=unique_name,
-                description=profile_data.get("description"),
-                language=profile_data.get("language", "en"),
+                description=profile_data.description,
+                language=profile_data.language,
             )
 
             profile = await create_profile(profile_create, db)
@@ -424,23 +480,14 @@ async def import_generation_from_zip(file_bytes: bytes, db: Session) -> dict:
                     f"ZIP expands to {total_uncompressed // (1024 * 1024)} MB (limit {max_uncompressed // (1024 * 1024)} MB)"
                 )
 
-            # Read manifest
-            manifest_data = json.loads(zip_file.read("manifest.json"))
+            # Read and validate manifest
+            try:
+                manifest = GenerationImportManifest.model_validate_json(zip_file.read("manifest.json"))
+            except ValidationError as e:
+                raise ValueError(f"Invalid manifest.json: {e}") from e
 
-            if "version" not in manifest_data:
-                raise ValueError("Invalid manifest.json: missing version")
-
-            if "generation" not in manifest_data:
-                raise ValueError("Invalid manifest.json: missing generation data")
-
-            generation_data = manifest_data["generation"]
-            profile_data = manifest_data.get("profile", {})
-
-            # Validate required fields
-            required_fields = ["text", "language", "duration"]
-            for field in required_fields:
-                if field not in generation_data:
-                    raise ValueError(f"Invalid manifest.json: missing generation.{field}")
+            generation_data = manifest.generation
+            profile_data = manifest.profile
 
             # Find audio file in archive
             audio_files = [f for f in namelist if f.startswith("audio/") and f.endswith(".wav")]
@@ -451,7 +498,7 @@ async def import_generation_from_zip(file_bytes: bytes, db: Session) -> dict:
 
             # Check if we should match an existing profile or create metadata
             profile_id = None
-            profile_name = profile_data.get("name", "Unknown Profile")
+            profile_name = profile_data.name or "Unknown Profile"
 
             # Try to find matching profile by name
             if profile_name and profile_name != "Unknown Profile":
@@ -490,12 +537,12 @@ async def import_generation_from_zip(file_bytes: bytes, db: Session) -> dict:
                 db_generation = DBGeneration(
                     id=new_generation_id,
                     profile_id=profile_id,
-                    text=generation_data["text"],
-                    language=generation_data["language"],
+                    text=generation_data.text,
+                    language=generation_data.language,
                     audio_path=config.to_storage_path(audio_dest),
-                    duration=generation_data["duration"],
-                    seed=generation_data.get("seed"),
-                    instruct=generation_data.get("instruct"),
+                    duration=generation_data.duration,
+                    seed=generation_data.seed,
+                    instruct=generation_data.instruct,
                     created_at=datetime.now(UTC),
                 )
 
@@ -770,19 +817,18 @@ async def import_story_from_zip(file_bytes: bytes, db: Session) -> dict:
             namelist = _check_story_zip_bounds(zip_file)
 
             try:
-                manifest_data = json.loads(zip_file.read("manifest.json"))
-            except json.JSONDecodeError as e:
-                raise ValueError(f"Invalid JSON in archive: {e}") from e
-            if manifest_data.get("version") not in ("1.0", 1):
-                raise ValueError("Unsupported story archive version")
-            if "story" not in manifest_data or not isinstance(manifest_data["story"], dict):
-                raise ValueError("Invalid manifest.json: missing story")
+                manifest = StoryImportManifest.model_validate_json(zip_file.read("manifest.json"))
+            except ValidationError as e:
+                raise ValueError(f"Invalid manifest.json: {e}") from e
 
-            story_data = manifest_data["story"]
-            items_data = manifest_data.get("items", [])
-            generations_data = manifest_data.get("generations", {})
-            versions_data = manifest_data.get("versions", {})
-            profiles_data = manifest_data.get("profiles", {})
+            if manifest.version not in ("1.0", 1):
+                raise ValueError("Unsupported story archive version")
+
+            story_data = manifest.story
+            items_data = manifest.items
+            generations_data = manifest.generations
+            versions_data = manifest.versions
+            profiles_data = manifest.profiles
             if not isinstance(items_data, list) or not items_data:
                 raise ValueError("Story archive has no items")
 
@@ -938,8 +984,8 @@ async def import_story_from_zip(file_bytes: bytes, db: Session) -> dict:
             db.add(
                 DBStory(
                     id=new_story_id,
-                    name=story_data.get("name") or "Imported Story",
-                    description=story_data.get("description"),
+                    name=story_data.name or "Imported Story",
+                    description=story_data.description,
                     created_at=datetime.now(UTC),
                     updated_at=datetime.now(UTC),
                 )
@@ -973,7 +1019,7 @@ async def import_story_from_zip(file_bytes: bytes, db: Session) -> dict:
 
             return {
                 "id": new_story_id,
-                "name": story_data.get("name") or "Imported Story",
+                "name": story_data.name or "Imported Story",
                 "items": item_count,
                 "generations": len(generation_id_map),
                 "profiles_reused": profiles_reused,
@@ -1116,17 +1162,16 @@ async def import_standalone_project_from_zip(file_bytes: bytes, db: Session) -> 
             namelist = _check_story_zip_bounds(zip_file)
 
             try:
-                manifest_data = json.loads(zip_file.read("manifest.json"))
-            except json.JSONDecodeError as e:
-                raise ValueError(f"Invalid JSON in archive: {e}") from e
-            if manifest_data.get("version") not in ("1.0", 1):
-                raise ValueError("Unsupported project archive version")
-            if "project" not in manifest_data:
-                raise ValueError("Invalid manifest.json: missing project")
+                manifest = ProjectImportManifest.model_validate_json(zip_file.read("manifest.json"))
+            except ValidationError as e:
+                raise ValueError(f"Invalid manifest.json: {e}") from e
 
-            project_data = manifest_data["project"]
-            profiles_data = manifest_data.get("profiles", {})
-            audio_files_data = manifest_data.get("audio_files", [])
+            if manifest.version not in ("1.0", 1):
+                raise ValueError("Unsupported project archive version")
+
+            project_data = manifest.project
+            profiles_data = manifest.profiles
+            audio_files_data = manifest.audio_files
 
             # ── Profiles: reuse by name, else import embedded copy ──
             profile_id_map: dict[str, str] = {}

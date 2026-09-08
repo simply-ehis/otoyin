@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+from html import escape as html_escape
 
 
 def export_story_to_epub(
@@ -43,15 +44,15 @@ def export_story_to_epub(
         chapter_title = item.get("title", f"Chapter {idx + 1}")
         chapter_text = item.get("text", "")
 
-        # Create chapter content
-        content = f"<h1>{chapter_title}</h1>\n"
+        # Create chapter content (HTML-escape all user content)
+        content = f"<h1>{html_escape(chapter_title)}</h1>\n"
         if chapter_text:
             # Convert plain text to paragraphs
             paragraphs = chapter_text.split("\n\n")
             for p in paragraphs:
                 p = p.strip()
                 if p:
-                    content += f"<p>{p}</p>\n"
+                    content += f"<p>{html_escape(p)}</p>\n"
 
         chapter = epub.EpubHtml(
             title=chapter_title,
@@ -166,8 +167,8 @@ def export_story_to_pdf(
             for p in paragraphs:
                 p = p.strip()
                 if p:
-                    # Escape HTML entities
-                    p = p.replace("&", "&").replace("<", "<").replace(">", ">")
+                    # Escape HTML entities for reportlab Paragraph
+                    p = html_escape(p)
                     story_elements.append(Paragraph(p, body_style))
 
         story_elements.append(PageBreak())
@@ -205,12 +206,12 @@ def export_project_to_epub(
         # Fallback: use script_text as single chapter
         script_text = project_data.get("script_text", "")
         if script_text:
-            content = f"<h1>{project_data.get('name', 'Untitled Project')}</h1>\n"
+            content = f"<h1>{html_escape(project_data.get('name', 'Untitled Project'))}</h1>\n"
             paragraphs = script_text.split("\n\n")
             for p in paragraphs:
                 p = p.strip()
                 if p:
-                    content += f"<p>{p}</p>\n"
+                    content += f"<p>{html_escape(p)}</p>\n"
 
             chapter = epub.EpubHtml(
                 title=project_data.get("name", "Untitled Project"),
@@ -227,12 +228,12 @@ def export_project_to_epub(
             scene_name = scene.get("name", f"Scene {idx + 1}")
             dialogue = scene.get("dialogue", [])
 
-            content = f"<h1>{scene_name}</h1>\n"
+            content = f"<h1>{html_escape(scene_name)}</h1>\n"
             for d in dialogue:
                 character = d.get("character", "Unknown")
                 text = d.get("text", "")
                 if text:
-                    content += f"<p><strong>{character}:</strong> {text}</p>\n"
+                    content += f"<p><strong>{html_escape(character)}:</strong> {html_escape(text)}</p>\n"
 
             chapter = epub.EpubHtml(
                 title=scene_name,

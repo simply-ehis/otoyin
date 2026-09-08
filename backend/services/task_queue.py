@@ -4,6 +4,7 @@ to avoid GPU contention.
 """
 
 import asyncio
+import hashlib
 import logging
 from collections.abc import Coroutine
 from dataclasses import dataclass
@@ -15,12 +16,21 @@ logger = logging.getLogger(__name__)
 _background_tasks: set = set()
 
 
+class DuplicateGenerationError(Exception):
+    """Raised when a generation with identical parameters is already in-flight."""
+
+    def __init__(self, dedup_key: str):
+        self.dedup_key = dedup_key
+        super().__init__(f"Generation already in progress (key={dedup_key})")
+
+
 @dataclass
 class GenerationJob:
     """Queued generation work plus the generation ID it belongs to."""
 
     generation_id: str
     coro: Coroutine
+    dedup_key: str | None = None
 
 
 # Generation queue — serializes TTS inference to avoid GPU contention
@@ -32,6 +42,7 @@ _generation_worker_task: asyncio.Task | None = None
 _queued_generation_ids: set[str] = set()
 _running_generation_tasks: dict[str, asyncio.Task] = {}
 _cancelled_generation_ids: set[str] = set()
+_inflight_dedup_keys: set[str] = set()
 
 
 def create_background_task(coro) -> asyncio.Task:
@@ -69,6 +80,8 @@ async def _generation_worker():
         finally:
             _running_generation_tasks.pop(job.generation_id, None)
             _queued_generation_ids.discard(job.generation_id)
+            if job.dedup_key:
+                _inflight_dedup_keys.discard(job.dedup_key)
             _generation_queue.task_done()
 
 
@@ -99,13 +112,22 @@ async def _force_fail_if_active(generation_id: str, error: str) -> None:
         logger.exception("_force_fail_if_active failed for %s", generation_id)
 
 
-def enqueue_generation(generation_id: str, coro):
-    """Add a generation coroutine to the serial queue."""
+def enqueue_generation(generation_id: str, coro, *, dedup_key: str | None = None):
+    """Add a generation coroutine to the serial queue.
+
+    If *dedup_key* is provided and an identical in-flight generation exists,
+    raises ``DuplicateGenerationError`` instead of enqueuing a duplicate.
+    """
     if _generation_queue is None:
         raise RuntimeError("Generation queue has not been initialized")
 
+    if dedup_key and dedup_key in _inflight_dedup_keys:
+        raise DuplicateGenerationError(dedup_key)
+    if dedup_key:
+        _inflight_dedup_keys.add(dedup_key)
+
     _queued_generation_ids.add(generation_id)
-    _generation_queue.put_nowait(GenerationJob(generation_id=generation_id, coro=coro))
+    _generation_queue.put_nowait(GenerationJob(generation_id=generation_id, coro=coro, dedup_key=dedup_key))
 
 
 def cancel_generation(generation_id: str) -> Literal["queued", "running"] | None:
@@ -129,7 +151,7 @@ def init_queue(force: bool = False):
     Must be called once during application startup (inside a running event loop).
     """
     global _generation_queue, _generation_worker_task
-    global _queued_generation_ids, _running_generation_tasks, _cancelled_generation_ids
+    global _queued_generation_ids, _running_generation_tasks, _cancelled_generation_ids, _inflight_dedup_keys
 
     if _generation_worker_task is not None and not _generation_worker_task.done():
         if not force:
@@ -142,4 +164,23 @@ def init_queue(force: bool = False):
     _queued_generation_ids = set()
     _running_generation_tasks = {}
     _cancelled_generation_ids = set()
+    _inflight_dedup_keys = set()
     _generation_worker_task = create_background_task(_generation_worker())
+
+
+def compute_generation_dedup_key(
+    text: str,
+    profile_id: str,
+    engine: str,
+    model_size: str | None = None,
+    seed: int | None = None,
+    instruct: str | None = None,
+) -> str:
+    """Compute a content-hash dedup key for generation parameters.
+
+    Identical inputs produce the same key, so duplicate sends within the same
+    in-flight window are rejected instead of queued twice.
+    """
+    normalised = " ".join(text.split()).strip().lower()
+    payload = f"{normalised}|{profile_id}|{engine}|{model_size or ''}|{seed or ''}|{instruct or ''}"
+    return hashlib.sha256(payload.encode()).hexdigest()[:16]

@@ -56,5 +56,6 @@ class InstalledPlugin(Base):
     verified = Column(Boolean, nullable=False, default=False)
     enabled = Column(Boolean, nullable=False, default=False)
     trust_external = Column(Boolean, nullable=False, default=False)
+    approved_permissions = Column(Text, nullable=True, default="[]")
     install_path = Column(String, nullable=True)
     installed_at = Column(DateTime, default=lambda: datetime.now(UTC))

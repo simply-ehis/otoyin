@@ -29,6 +29,7 @@ import json
 import logging
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel, Field
 
 from ..services.vad import SileroVAD
 from ..services.voice_chat import (
@@ -40,6 +41,59 @@ from ..services.voice_chat import (
     process_audio_chunk,
     resolve_tool_confirmation,
 )
+
+logger = logging.getLogger(__name__)
+
+
+# ── WebSocket message schemas ───────────────────────────────────────────
+class WSStartMessage(BaseModel):
+    type: str = Field(literal="start")
+    language: str = "en"
+    system_prompt: str | None = None
+    stt_model: str = "base"
+    tts_engine: str | None = None
+    enable_tools: bool = True
+
+
+class WSAudioMessage(BaseModel):
+    type: str = Field(literal="audio")
+    audio: str  # base64-encoded PCM
+
+
+class WSEndMessage(BaseModel):
+    type: str = Field(literal="end")
+
+
+class WSCancelMessage(BaseModel):
+    type: str = Field(literal="cancel")
+
+
+class WSToolConfirmMessage(BaseModel):
+    type: str = Field(literal="tool_confirm")
+    call_id: str
+    confirmed: bool
+
+
+WSMessage = WSStartMessage | WSAudioMessage | WSEndMessage | WSCancelMessage | WSToolConfirmMessage
+
+
+def _parse_ws_message(raw: str) -> WSMessage:
+    """Parse and validate a WebSocket JSON message."""
+    data = json.loads(raw)
+    msg_type = data.get("type")
+    match msg_type:
+        case "start":
+            return WSStartMessage(**data)
+        case "audio":
+            return WSAudioMessage(**data)
+        case "end":
+            return WSEndMessage(**data)
+        case "cancel":
+            return WSCancelMessage(**data)
+        case "tool_confirm":
+            return WSToolConfirmMessage(**data)
+        case _:
+            raise ValueError(f"Unknown message type: {msg_type!r}")
 
 logger = logging.getLogger(__name__)
 
@@ -142,17 +196,20 @@ async def voice_chat_websocket(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
-            message = json.loads(data)
-            msg_type = message.get("type")
+            try:
+                message = _parse_ws_message(data)
+            except (json.JSONDecodeError, ValueError) as e:
+                await websocket.send_json({"type": "error", "message": f"Invalid message: {e}"})
+                continue
 
-            if msg_type == "start":
+            if isinstance(message, WSStartMessage):
                 try:
                     session = await create_session(
-                        language=message.get("language", "en"),
-                        system_prompt=message.get("system_prompt"),
-                        stt_model=message.get("stt_model", "base"),
-                        tts_engine=message.get("tts_engine"),
-                        enable_tools=message.get("enable_tools", True),
+                        language=message.language,
+                        system_prompt=message.system_prompt,
+                        stt_model=message.stt_model,
+                        tts_engine=message.tts_engine,
+                        enable_tools=message.enable_tools,
                     )
                 except MissingModelError as missing:
                     # Preflight failed (no-downloads) — tell the client with
@@ -175,7 +232,7 @@ async def voice_chat_websocket(websocket: WebSocket):
                     }
                 )
 
-            elif msg_type == "audio":
+            elif isinstance(message, WSAudioMessage):
                 if not session_id:
                     await websocket.send_json(
                         {
@@ -185,7 +242,7 @@ async def voice_chat_websocket(websocket: WebSocket):
                     )
                     continue
 
-                audio_data = message.get("audio", [])
+                audio_data = message.audio
                 if not audio_data:
                     continue
 
@@ -259,10 +316,12 @@ async def voice_chat_websocket(websocket: WebSocket):
                                     websocket.receive_text(),
                                     timeout=0.1,
                                 )
-                                inner_msg = json.loads(inner_data)
-                                inner_type = inner_msg.get("type")
+                                try:
+                                    inner_msg = _parse_ws_message(inner_data)
+                                except (json.JSONDecodeError, ValueError):
+                                    continue
 
-                                if inner_type == "confirm_tool":
+                                if isinstance(inner_msg, WSToolConfirmMessage) and inner_msg.confirmed:
                                     sess = get_session(session_id) if session_id else None
                                     if sess and sess.tool_confirmation_future:
                                         resolve_tool_confirmation(sess, True)
@@ -274,7 +333,7 @@ async def voice_chat_websocket(websocket: WebSocket):
                                             }
                                         )
 
-                                elif inner_type == "deny_tool":
+                                elif isinstance(inner_msg, WSToolConfirmMessage) and not inner_msg.confirmed:
                                     sess = get_session(session_id) if session_id else None
                                     if sess and sess.tool_confirmation_future:
                                         resolve_tool_confirmation(sess, False)
@@ -286,7 +345,7 @@ async def voice_chat_websocket(websocket: WebSocket):
                                             }
                                         )
 
-                                elif inner_type == "cancel":
+                                elif isinstance(inner_msg, WSCancelMessage):
                                     sess = get_session(session_id) if session_id else None
                                     if sess and sess.playback_task:
                                         sess.playback_task.cancel()
@@ -338,7 +397,7 @@ async def voice_chat_websocket(websocket: WebSocket):
                     finally:
                         await limiter.unregister_processing()
 
-            elif msg_type == "cancel":
+            elif isinstance(message, WSCancelMessage):
                 # Cancel current response (barge-in from client side)
                 session = get_session(session_id) if session_id else None
                 if session and session.playback_task:
@@ -347,7 +406,7 @@ async def voice_chat_websocket(websocket: WebSocket):
                     session.playback_task = None
                     await websocket.send_json({"type": "cancelled"})
 
-            elif msg_type == "end":
+            elif isinstance(message, WSEndMessage):
                 if session_id:
                     await end_session(session_id)
                     await websocket.send_json({"type": "ended"})

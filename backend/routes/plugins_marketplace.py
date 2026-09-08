@@ -25,6 +25,10 @@ def _serialize(row) -> dict:
         manifest = json.loads(row.manifest_json or "{}")
     entry = manifest.get("entry") or {}
     external_command = entry.get("command") if manifest.get("kind") == "external-app" else None
+    try:
+        approved = json.loads(row.approved_permissions or "[]")
+    except json.JSONDecodeError:
+        approved = []
     return {
         "plugin_id": row.plugin_id,
         "name": row.name,
@@ -35,7 +39,8 @@ def _serialize(row) -> dict:
         "verified": row.verified,
         "trust_external": row.trust_external,
         "external_command": external_command,
-        "permissions": manifest.get("permissions", []),
+        "declared_permissions": manifest.get("permissions", []),
+        "approved_permissions": approved,
         "install_path": row.install_path,
     }
 
@@ -71,10 +76,31 @@ def get_plugin(plugin_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/{plugin_id}/enable")
-def enable_plugin(plugin_id: str, db: Session = Depends(get_db)):
-    if not svc.set_enabled(db, plugin_id, True):
+def enable_plugin(plugin_id: str, approved_permissions: list[str] | None = None, db: Session = Depends(get_db)):
+    """Enable a plugin. If the plugin declares permissions, the caller must
+    pass the list of permissions the user approved. Unapproved permissions
+    will not be granted at runtime."""
+    row = svc.get_installed(db, plugin_id)
+    if not row:
         raise HTTPException(status_code=404, detail="Plugin not found")
-    return {"plugin_id": plugin_id, "enabled": True}
+    # Validate approved permissions against declared ones
+    manifest = {}
+    with contextlib.suppress(json.JSONDecodeError):
+        manifest = json.loads(row.manifest_json or "{}")
+    declared = set(manifest.get("permissions") or [])
+    approved = set(approved_permissions or [])
+    # Only allow permissions that are actually declared
+    valid_approved = approved & declared
+    import json as _json
+
+    row.approved_permissions = _json.dumps(sorted(valid_approved))
+    svc.set_enabled(db, plugin_id, True)
+    return {
+        "plugin_id": plugin_id,
+        "enabled": True,
+        "approved_permissions": sorted(valid_approved),
+        "declared_permissions": sorted(declared),
+    }
 
 
 @router.post("/{plugin_id}/disable")
