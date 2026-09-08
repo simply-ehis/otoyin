@@ -4,7 +4,6 @@ import { useToast } from "@/components/ui/use-toast";
 import type { StoryItemDetail } from "@/lib/api/types";
 import { ERR_DESC_STORY_FAILED, ERR_TITLE_STORY } from "@/lib/errorMessages";
 import type { useTrimStoryItem } from "@/lib/hooks/useStories";
-import { LABEL_COL_WIDTH } from "./timeline";
 
 type TrimItem = ReturnType<typeof useTrimStoryItem>;
 
@@ -112,8 +111,7 @@ export function useStoryCrossfade({
 				return;
 			}
 			const rect = tracksRef.current.getBoundingClientRect();
-			const x =
-				e.clientX - rect.left + tracksRef.current.scrollLeft - LABEL_COL_WIDTH;
+			const x = e.clientX - rect.left + tracksRef.current.scrollLeft;
 			const dragMs = pixelsToMs(x);
 			const ref = crossfadeDragRef.current;
 

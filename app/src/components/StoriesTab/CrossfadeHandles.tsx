@@ -36,7 +36,8 @@ export function CrossfadeHandles({
 					<button
 						key={overlap.id}
 						type="button"
-						className="absolute z-25 w-3 h-5 cursor-ew-resize flex items-center justify-center rounded bg-strong hover:brightness-110 border border-primary/50 transition-[filter]"
+						data-crossfade-handle=""
+						className="absolute z-25 w-3 h-5 cursor-ew-resize flex items-center justify-center rounded bg-strong hover:brightness-110 border border-primary/50 transition-[filter] pointer-events-auto"
 						style={{ left: `${leftPx}px`, top: `${topPx}px` }}
 						onMouseDown={(e) => onDragStart(e, overlap)}
 						title="Drag to adjust crossfade"

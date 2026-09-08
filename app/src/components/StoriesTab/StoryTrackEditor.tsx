@@ -20,20 +20,10 @@ import {
 import { useStoryStore } from "@/stores/storyStore";
 import { AutomationControls } from "./AutomationControls";
 import { AutomationOverlay } from "./AutomationOverlay";
-import { ClipItem } from "./ClipItem";
 import { CrossfadeHandles } from "./CrossfadeHandles";
 import { EditorScrollbar } from "./EditorScrollbar";
 import { EditorToolbar } from "./EditorToolbar";
-import { Playhead } from "./Playhead";
-import { TimelineRuler } from "./TimelineRuler";
-import { TrackRow } from "./TrackRow";
-import {
-	DEFAULT_TRACKS,
-	LABEL_COL_WIDTH,
-	SCRUB_BAR_HEIGHT,
-	TRACK_HEIGHT,
-} from "./timeline";
-import { useEditorDrag } from "./useEditorDrag";
+import { DEFAULT_TRACKS, SCRUB_BAR_HEIGHT } from "./timeline";
 import { useEditorKeyboard } from "./useEditorKeyboard";
 import { useEditorResize } from "./useEditorResize";
 import { useEditorZoom } from "./useEditorZoom";
@@ -41,6 +31,8 @@ import { useStoryActions } from "./useStoryActions";
 import { useStoryCrossfade } from "./useStoryCrossfade";
 import { useStoryTrim } from "./useStoryTrim";
 import { useTimelineState } from "./useTimelineState";
+import type { PlaylistZoomHandle } from "./WaveformPlaylistEditor";
+import { WaveformPlaylistEditor } from "./WaveformPlaylistEditor";
 
 interface StoryTrackEditorProps {
 	storyId: string;
@@ -50,7 +42,10 @@ interface StoryTrackEditorProps {
 export function StoryTrackEditor({ storyId, items }: StoryTrackEditorProps) {
 	const [containerWidth, setContainerWidth] = useState(0);
 	const containerRef = useRef<HTMLDivElement>(null);
-	const tracksRef = useRef<HTMLDivElement>(null);
+	// Points at the playlist's own scroll container (assigned by ref callback
+	// on the WaveformPlaylistEditor's stage) so zoom/scroll helpers keep working.
+	const tracksRef = useRef<HTMLDivElement | null>(null);
+	const zoomHandleRef = useRef<PlaylistZoomHandle | null>(null);
 	const moveItem = useMoveStoryItem();
 	const trimItem = useTrimStoryItem();
 	const updateVolume = useUpdateStoryItemVolume();
@@ -69,6 +64,11 @@ export function StoryTrackEditor({ storyId, items }: StoryTrackEditorProps) {
 
 	const selectedClipId = useStoryStore((state) => state.selectedClipId);
 	const setSelectedClipId = useStoryStore((state) => state.setSelectedClipId);
+	const trackConfigs = useStoryStore((state) => state.trackConfigs);
+	const showAutomation = useStoryStore((state) => state.showAutomation);
+	const selectedAutomationParam = useStoryStore(
+		(state) => state.selectedAutomationParam,
+	);
 
 	const selectedItem = useMemo(
 		() =>
@@ -194,7 +194,7 @@ export function StoryTrackEditor({ storyId, items }: StoryTrackEditorProps) {
 	}, [items]);
 
 	useEffect(() => {
-		const container = tracksRef.current;
+		const container = containerRef.current;
 		if (!container) {
 			return;
 		}
@@ -215,55 +215,16 @@ export function StoryTrackEditor({ storyId, items }: StoryTrackEditorProps) {
 		minPps,
 		maxPps,
 		timelineWidth,
-		timeMarkers,
 		msToPixels,
 		pixelsToMs,
 	} = useTimelineState({ items, containerWidth });
 
-	const {
-		draggingItem,
-		dragPosition,
-		handleDragStart,
-		handleDragMove,
-		handleDragEnd,
-	} = useEditorDrag({
-		tracksRef,
-		items,
-		tracks,
-		pixelsToMs,
-		storyId,
-		moveItem,
-		batchUpdateTimes,
-		toast,
-	});
-
-	const handleZoomIn = () => {
-		setPixelsPerSecond((prev) => Math.min(prev * 1.5, maxPps));
-	};
-
-	const handleZoomOut = () => {
-		setPixelsPerSecond((prev) => Math.max(prev / 1.5, minPps));
-	};
-
-	const handleTimelineClick = (e: React.MouseEvent<HTMLElement>) => {
-		if (!tracksRef.current || draggingItem) {
-			return;
-		}
-		const rect = tracksRef.current.getBoundingClientRect();
-		const x =
-			e.clientX - rect.left + tracksRef.current.scrollLeft - LABEL_COL_WIDTH;
-		const timeMs = Math.max(0, pixelsToMs(x));
-		seek(timeMs);
-		setSelectedClipId(null);
-	};
-
-	const handleClipClick = (e: React.MouseEvent, item: StoryItemDetail) => {
-		e.stopPropagation();
-		if (draggingItem) {
-			return;
-		}
-		setSelectedClipId(item.id);
-	};
+	const handleZoomIn = useCallback(() => {
+		zoomHandleRef.current?.zoomIn();
+	}, []);
+	const handleZoomOut = useCallback(() => {
+		zoomHandleRef.current?.zoomOut();
+	}, []);
 
 	useEditorKeyboard({
 		selectedClipId,
@@ -309,23 +270,42 @@ export function StoryTrackEditor({ storyId, items }: StoryTrackEditorProps) {
 		timelineWidth,
 	});
 
-	const playheadLeft = msToPixels(currentTimeMs);
+	const handleMoveItem = useCallback(
+		(itemId: string, startTimeMs: number, track: number) => {
+			moveItem.mutate(
+				{ storyId, itemId, data: { start_time_ms: startTimeMs, track } },
+				{
+					onError: () => {
+						toast({
+							title: "Move failed",
+							description: "The clip could not be moved. Please try again.",
+							variant: "destructive",
+						});
+					},
+				},
+			);
+		},
+		[moveItem, storyId, toast],
+	);
 
-	useEffect(() => {
-		if (!isCurrentlyPlaying || !tracksRef.current) {
-			return;
-		}
-		const container = tracksRef.current;
-		const containerWidthEl = container.clientWidth;
-		const scrollLeft = container.scrollLeft;
-		const halfwayPoint = scrollLeft + containerWidthEl / 2;
-		if (playheadLeft > halfwayPoint) {
-			const targetScroll = playheadLeft - containerWidthEl / 2;
-			container.scrollLeft = targetScroll;
-		}
-	}, [isCurrentlyPlaying, playheadLeft]);
+	const handleSelectClip = useCallback(
+		(id: string | null) => {
+			setSelectedClipId(id);
+		},
+		[setSelectedClipId],
+	);
 
-	const tracksAreaHeight = tracks.length * TRACK_HEIGHT;
+	const handleSeekMs = useCallback(
+		(timeMs: number) => {
+			seek(timeMs);
+		},
+		[seek],
+	);
+
+	const handleScrollerRef = useCallback((el: HTMLDivElement | null) => {
+		tracksRef.current = el;
+	}, []);
+
 	const timelineContainerHeight = editorHeight - 40 - SCRUB_BAR_HEIGHT;
 
 	if (items.length === 0) {
@@ -381,89 +361,48 @@ export function StoryTrackEditor({ storyId, items }: StoryTrackEditorProps) {
 
 				<AutomationControls />
 
-				{/* biome-ignore lint/a11y/noStaticElementInteractions: Container handles drag events for child clips */}
 				<div
-					ref={tracksRef}
-					className="overflow-auto relative"
+					className="overflow-hidden relative"
 					style={{ height: `${timelineContainerHeight}px` }}
-					onMouseMove={draggingItem ? handleDragMove : undefined}
-					onMouseUp={draggingItem ? handleDragEnd : undefined}
-					onMouseLeave={draggingItem ? handleDragEnd : undefined}
 				>
-					<TimelineRuler
-						timelineWidth={timelineWidth}
-						timeMarkers={timeMarkers}
-						msToPixels={msToPixels}
-						onTimelineClick={handleTimelineClick}
-					/>
-
-					<div
-						className="relative"
-						style={{
-							width: `${timelineWidth + LABEL_COL_WIDTH}px`,
-							height: `${tracksAreaHeight}px`,
-						}}
-					>
-						{tracks.map((trackNumber, index) => (
-							<TrackRow
-								key={trackNumber}
-								index={index}
-								isFirst={index === 0}
-								isLast={index === tracks.length - 1}
-								onAddTrackAbove={handleAddTrackAbove}
-								onAddTrackBelow={handleAddTrackBelow}
-							/>
-						))}
-
-						<div
-							className="absolute top-0 bottom-0"
-							style={{
-								left: `${LABEL_COL_WIDTH}px`,
-								width: `${timelineWidth}px`,
-							}}
-						>
-							<button
-								type="button"
-								className="absolute inset-0 z-0 cursor-pointer"
-								onClick={handleTimelineClick}
-								aria-label="Seek timeline"
-							/>
-
-							{items.map((item) => (
-								<ClipItem
-									key={item.id}
-									item={item}
-									draggingItem={draggingItem}
-									selectedClipId={selectedClipId}
-									trimmingItem={trimmingItem}
-									tempTrimValues={tempTrimValues}
-									tracks={tracks}
-									dragPosition={dragPosition}
-									msToPixels={msToPixels}
-									onClipClick={handleClipClick}
-									onDragStart={handleDragStart}
-									onTrimStart={handleTrimStart}
-								/>
-							))}
-
+					<WaveformPlaylistEditor
+						storyId={storyId}
+						items={items}
+						pixelsPerSecond={pixelsPerSecond}
+						onPixelsPerSecondChange={setPixelsPerSecond}
+						currentTimeMs={currentTimeMs}
+						tracks={tracks}
+						selectedClipId={selectedClipId}
+						onSelectClip={handleSelectClip}
+						onSeekMs={handleSeekMs}
+						onMoveItem={handleMoveItem}
+						trackMutes={tracks.map((_, i) => trackConfigs[i]?.muted ?? false)}
+						trackSolos={tracks.map((_, i) => trackConfigs[i]?.solo ?? false)}
+						onAddTrackAbove={handleAddTrackAbove}
+						onAddTrackBelow={handleAddTrackBelow}
+						trimmingItem={trimmingItem}
+						tempTrimValues={tempTrimValues}
+						onTrimStart={handleTrimStart}
+						onScrollerRef={handleScrollerRef}
+						crossfadeHandles={
 							<CrossfadeHandles
 								overlaps={crossfadeOverlaps}
 								tracks={tracks}
 								msToPixels={msToPixels}
 								onDragStart={handleCrossfadeDragStart}
 							/>
-
+						}
+						automationOverlay={
 							<AutomationOverlay
-								show={useStoryStore.getState().showAutomation}
-								selectedParam={useStoryStore.getState().selectedAutomationParam}
+								show={showAutomation}
+								selectedParam={selectedAutomationParam}
 								tracks={tracks}
 								pixelsPerSecond={pixelsPerSecond}
 								timelineWidth={timelineWidth}
 							/>
-
-							<Playhead leftPx={playheadLeft} />
-						</div>
-					</div>
+						}
+						zoomHandleRef={zoomHandleRef}
+					/>
 				</div>
 
 				<EditorScrollbar
