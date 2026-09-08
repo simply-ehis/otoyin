@@ -3,6 +3,7 @@ import { useState } from "react";
 import type {
 	ActiveDownloadTask,
 	MarketplaceProduct,
+	ModelCompatibilityInfo,
 	ModelStatus,
 } from "@/lib/api/types";
 import { StoreProductCard } from "./StoreProductCard";
@@ -11,6 +12,7 @@ import { CATEGORY_LABELS, getProductModelStatus } from "./storeUtils";
 interface Props {
 	groups: [string, MarketplaceProduct[]][];
 	models: ModelStatus[] | undefined;
+	modelCompat: Map<string, ModelCompatibilityInfo>;
 	owned: Set<string>;
 	installed: Set<string>;
 	localStatusById: Map<string, "cached" | "not_downloaded">;
@@ -35,6 +37,7 @@ interface Props {
 export function ProductGrid({
 	groups,
 	models,
+	modelCompat,
 	owned,
 	installed,
 	localStatusById,
@@ -84,6 +87,7 @@ export function ProductGrid({
 											key={p.id}
 											p={p}
 											models={models}
+											modelCompat={modelCompat}
 											owned={owned}
 											installed={installed}
 											localStatusById={localStatusById}
@@ -118,6 +122,7 @@ export function ProductGrid({
 									key={p.id}
 									p={p}
 									models={models}
+									modelCompat={modelCompat}
 									owned={owned}
 									installed={installed}
 									localStatusById={localStatusById}
@@ -145,6 +150,7 @@ export function ProductGrid({
 function GridCard({
 	p,
 	models,
+	modelCompat,
 	owned,
 	installed,
 	localStatusById,
@@ -163,6 +169,7 @@ function GridCard({
 	p: MarketplaceProduct;
 	newIds: Set<string>;
 	models: ModelStatus[] | undefined;
+	modelCompat: Map<string, ModelCompatibilityInfo>;
 	owned: Set<string>;
 	installed: Set<string>;
 	localStatusById: Map<string, "cached" | "not_downloaded">;
@@ -179,10 +186,12 @@ function GridCard({
 }) {
 	const m = getProductModelStatus(p.id, models);
 	const dl = downloadProgressMap.get(p.id);
+	const compat = modelCompat.get(p.id) ?? undefined;
 	return (
 		<StoreProductCard
 			product={p}
 			model={m}
+			compatibility={compat}
 			owned={owned.has(p.id)}
 			installed={installed.has(p.id)}
 			localStatus={localStatusById.get(p.id)}

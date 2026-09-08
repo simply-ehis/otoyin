@@ -4,6 +4,7 @@ import type {
 	AssistantSettings,
 	AssistantSettingsUpdate,
 	CudaStatus,
+	DeviceCapabilitiesResponse,
 	MCPClientBinding,
 	MCPClientBindingListResponse,
 	MCPClientBindingUpsert,
@@ -24,6 +25,10 @@ export class ModelsMethods extends CapturesMethods {
 
 	async getRecommendedModels(): Promise<RecommendedModelsResponse> {
 		return this.request<RecommendedModelsResponse>("/models/recommended");
+	}
+
+	async getDeviceCapabilities(): Promise<DeviceCapabilitiesResponse> {
+		return this.request<DeviceCapabilitiesResponse>("/device/capabilities");
 	}
 
 	async getModelsCacheDir(): Promise<{ path: string }> {

@@ -10,6 +10,7 @@ import { Button } from "@/ui/button";
 import { PageTabs } from "@/ui/tabs";
 import { useToast } from "@/ui/use-toast";
 import { BrowseStates } from "./BrowseStates";
+import { useDeviceCapabilitiesStore } from "./deviceCapabilitiesStore";
 import { DonateCard } from "./DonateCard";
 import { HintBanner } from "./HintBanner";
 import { LicensesView } from "./LicensesView";
@@ -95,6 +96,11 @@ export function StorePage() {
 		queryFn: () => apiClient.getModelsCacheDir(),
 		staleTime: 1000 * 60 * 5,
 	});
+	// Device capabilities: RAM/VRAM/CPU + per-model compatibility
+	const deviceCaps = useDeviceCapabilitiesStore();
+	useEffect(() => {
+		void deviceCaps.fetch();
+	}, []);
 	const licensesQ = useQuery({
 		queryKey: ["marketplace", "licenses"],
 		queryFn: () => apiClient.getLicenses(),
@@ -565,6 +571,7 @@ export function StorePage() {
 								<ProductGrid
 									groups={groups}
 									models={models}
+									modelCompat={deviceCaps.modelCompat}
 									owned={owned}
 									installed={installed}
 									localStatusById={localStatusById}

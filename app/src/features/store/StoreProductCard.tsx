@@ -2,6 +2,7 @@ import {
 	ArrowDownTrayIcon,
 	BoltIcon,
 	CheckBadgeIcon,
+	ExclamationTriangleIcon,
 	HeartIcon,
 	KeyIcon,
 	SparklesIcon,
@@ -12,6 +13,7 @@ import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
 import type {
 	ActiveDownloadTask,
 	MarketplaceProduct,
+	ModelCompatibilityInfo,
 	ModelStatus,
 } from "@/lib/api/types";
 import { useRegionCurrency } from "@/lib/regionCurrency";
@@ -32,6 +34,7 @@ import {
 interface Props {
 	product: MarketplaceProduct;
 	model?: ModelStatus;
+	compatibility?: ModelCompatibilityInfo;
 	owned: boolean;
 	installed: boolean;
 	/** Catalog `local_status` annotation (cached | not_downloaded) — reads the
@@ -61,6 +64,7 @@ const chipClass = cn(
 export function StoreProductCard({
 	product,
 	model,
+	compatibility,
 	owned,
 	installed,
 	localStatus,
@@ -207,6 +211,15 @@ export function StoreProductCard({
 					)}
 					{sizeLabel && (
 						<span className="text-xs text-muted-foreground">{sizeLabel}</span>
+					)}
+					{compatibility && !compatibility.compatible && !cached && (
+						<span
+							className="inline-flex items-center gap-1 rounded-full border border-warning/40 bg-warning-soft px-1.5 py-0.5 text-xs font-medium text-warning-text"
+							title={compatibility.reason ?? "May not run on this device"}
+						>
+							<ExclamationTriangleIcon className="size-3" />
+							{compatibility.reason ?? "Heavy for this device"}
+						</span>
 					)}
 					{chips.map((c) => (
 						<span

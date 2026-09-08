@@ -519,6 +519,42 @@ export interface RecommendedModelsResponse {
 	current_tts_engine: string | null;
 }
 
+// ── Device capabilities ────────────────────────────────────────────────
+
+export interface ModelCompatibility {
+	model_name: string;
+	compatible: boolean;
+	reason: string | null;
+	estimated_ram_mb: number;
+	estimated_vram_mb: number;
+}
+
+export interface ModelCompatibilityInfo {
+	model_name: string;
+	display_name: string;
+	category: string;
+	size_mb: number;
+	gpu_only: boolean;
+	min_ram_mb: number;
+	min_vram_mb: number;
+	compatible: boolean;
+	reason: string | null;
+	estimated_ram_mb: number;
+	estimated_vram_mb: number;
+}
+
+export interface DeviceCapabilitiesResponse {
+	total_ram_mb: number;
+	available_ram_mb: number;
+	total_vram_mb: number;
+	free_vram_mb: number;
+	gpu_name: string | null;
+	gpu_type: string | null;
+	cpu_cores: number;
+	tier: "low_end" | "mid_range" | "high_end";
+	models: ModelCompatibilityInfo[];
+}
+
 export interface ModelDownloadRequest {
 	model_name: string;
 }

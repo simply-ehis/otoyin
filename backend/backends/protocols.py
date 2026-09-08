@@ -63,6 +63,8 @@ class ModelConfig:
     voice_design: bool = False  # describe a voice via text attributes (no reference audio)
     supports_editing: bool = False  # audio editing (in-the-wild) beyond plain TTS
     gpu_only: bool = False  # requires CUDA GPU (no CPU fallback) — UI disables on CPU hosts
+    min_ram_mb: int = 0  # minimum system RAM (MB) for comfortable use; 0 = auto-estimate from size_mb
+    min_vram_mb: int = 0  # minimum GPU VRAM (MB) for comfortable use; 0 = auto-estimate from size_mb
     quant: str | None = None  # quantization used for download/load (e.g. "Q8_0")
     supported_tags: list[str] = field(default_factory=list)  # inline [tag] vocabulary (paralinguistic/emotion)
     languages: list[str] = field(default_factory=lambda: ["en"])

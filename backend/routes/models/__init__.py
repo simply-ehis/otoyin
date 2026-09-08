@@ -11,6 +11,7 @@ from . import (
     always_on,
     cache,
     capabilities,
+    device,
     download,
     load_unload,
     migrations,
