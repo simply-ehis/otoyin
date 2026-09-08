@@ -371,14 +371,15 @@ async def generate_speech(
         text=data.text,
         profile_id=data.profile_id,
         engine=engine,
-        model_size=data.model_size,
+        model_size=model_size,
         seed=data.seed,
         instruct=data.instruct,
     )
     try:
         enqueue_generation(generation_id, run_generation(ctx), dedup_key=dedup_key)
     except DuplicateGenerationError:
-        # Clean up the DB row we just created
+        # Clean up the DB row and task_manager entry we just created
+        task_manager.complete_generation(generation_id)
         db.delete(generation)
         db.commit()
         raise HTTPException(status_code=409, detail="Generation already in progress — please wait for the current one to finish") from None

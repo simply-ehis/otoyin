@@ -7,6 +7,7 @@ import json
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..database.session import get_db
@@ -15,6 +16,11 @@ from ..services import plugin_install as svc
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/marketplace/plugins", tags=["plugins-marketplace"])
+
+
+class EnablePluginRequest(BaseModel):
+    """Request body for enabling a plugin with permission approval."""
+    approved_permissions: list[str] = []
 
 MAX_UPLOAD_BYTES = svc.MAX_BUNDLE_BYTES
 
@@ -76,7 +82,7 @@ def get_plugin(plugin_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/{plugin_id}/enable")
-def enable_plugin(plugin_id: str, approved_permissions: list[str] | None = None, db: Session = Depends(get_db)):
+def enable_plugin(plugin_id: str, data: EnablePluginRequest = EnablePluginRequest(), db: Session = Depends(get_db)):
     """Enable a plugin. If the plugin declares permissions, the caller must
     pass the list of permissions the user approved. Unapproved permissions
     will not be granted at runtime."""
@@ -88,12 +94,11 @@ def enable_plugin(plugin_id: str, approved_permissions: list[str] | None = None,
     with contextlib.suppress(json.JSONDecodeError):
         manifest = json.loads(row.manifest_json or "{}")
     declared = set(manifest.get("permissions") or [])
-    approved = set(approved_permissions or [])
+    approved = set(data.approved_permissions)
     # Only allow permissions that are actually declared
     valid_approved = approved & declared
-    import json as _json
 
-    row.approved_permissions = _json.dumps(sorted(valid_approved))
+    row.approved_permissions = json.dumps(sorted(valid_approved))
     svc.set_enabled(db, plugin_id, True)
     return {
         "plugin_id": plugin_id,

@@ -182,5 +182,5 @@ def compute_generation_dedup_key(
     in-flight window are rejected instead of queued twice.
     """
     normalised = " ".join(text.split()).strip().lower()
-    payload = f"{normalised}|{profile_id}|{engine}|{model_size or ''}|{seed or ''}|{instruct or ''}"
+    payload = f"{normalised}|{profile_id}|{engine}|{model_size or ''}|{seed if seed is not None else ''}|{instruct or ''}"
     return hashlib.sha256(payload.encode()).hexdigest()[:16]
