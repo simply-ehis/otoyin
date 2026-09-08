@@ -700,7 +700,7 @@ async def import_audio(
                         detail=ERR_FILE_TOO_LARGE_MB,
                     )
                 out.write(chunk)
-    except HTTPException:
+    except Exception:
         with contextlib.suppress(OSError):
             target.unlink()
         raise

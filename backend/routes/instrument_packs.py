@@ -95,7 +95,8 @@ async def upload_instrument_pack(
 
     def _write_pack():
         os.makedirs(pack_dir, exist_ok=True)
-        dest = os.path.join(pack_dir, filename)
+        safe_name = os.path.basename(filename)
+        dest = os.path.join(pack_dir, safe_name)
         with open(dest, "wb") as f:
             f.write(contents)
         instruments = _index_instruments(dest, fmt, pack_id)

@@ -34,13 +34,16 @@ async def get_word_timestamps(generation_id: str):
     from ..utils.model_lifecycle import lifecycle_manager
 
     db = next(get_db())
-    gen = db.query(DBGeneration).filter_by(id=generation_id).first()
-    if not gen:
-        raise HTTPException(status_code=404, detail="Generation not found")
+    try:
+        gen = db.query(DBGeneration).filter_by(id=generation_id).first()
+        if not gen:
+            raise HTTPException(status_code=404, detail="Generation not found")
 
-    resolved = config.resolve_storage_path(gen.audio_path)
-    if resolved is None or not resolved.exists():
-        raise HTTPException(status_code=404, detail="Audio file not found")
+        resolved = config.resolve_storage_path(gen.audio_path)
+        if resolved is None or not resolved.exists():
+            raise HTTPException(status_code=404, detail="Audio file not found")
+    finally:
+        db.close()
 
     stt = get_stt_backend("faster-whisper")
     lifecycle_manager.mark_model_used("faster-whisper")
@@ -83,13 +86,16 @@ async def delete_words(generation_id: str, request: DeleteWordsRequest):
     from ..utils.model_lifecycle import lifecycle_manager
 
     db = next(get_db())
-    gen = db.query(DBGeneration).filter_by(id=generation_id).first()
-    if not gen:
-        raise HTTPException(status_code=404, detail="Generation not found")
+    try:
+        gen = db.query(DBGeneration).filter_by(id=generation_id).first()
+        if not gen:
+            raise HTTPException(status_code=404, detail="Generation not found")
 
-    resolved = config.resolve_storage_path(gen.audio_path)
-    if resolved is None or not resolved.exists():
-        raise HTTPException(status_code=404, detail="Audio file not found")
+        resolved = config.resolve_storage_path(gen.audio_path)
+        if resolved is None or not resolved.exists():
+            raise HTTPException(status_code=404, detail="Audio file not found")
+    finally:
+        db.close()
 
     # Get word timestamps to map indices to time ranges
     stt = get_stt_backend("faster-whisper")

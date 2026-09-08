@@ -205,6 +205,8 @@ async def transcribe_file(req: TranscribeFileRequest) -> dict:
         )
     # Delegate to the existing /transcribe/path endpoint to avoid
     # duplicating model loading, caching, and cloud-fallback logic.
+    import asyncio
+
     import httpx
 
     from .. import config as _cfg
@@ -215,10 +217,15 @@ async def transcribe_file(req: TranscribeFileRequest) -> dict:
         "language": req.language,
         "model": req.model,
     }
+
+    def _call_transcribe():
+        with httpx.Client(timeout=300) as client:
+            resp = client.post(f"{base_url}/transcribe/path", json=payload)
+            resp.raise_for_status()
+            return resp.json()
+
     try:
-        resp = httpx.post(f"{base_url}/transcribe/path", json=payload, timeout=300)
-        resp.raise_for_status()
-        data = resp.json()
+        data = await asyncio.to_thread(_call_transcribe)
         text = data.get("text", "")
         truncated = False
         if req.compact:
