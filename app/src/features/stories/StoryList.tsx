@@ -18,6 +18,7 @@ import {
 	useUpdateStory,
 } from "@/lib/hooks/useStories";
 import { cn } from "@/lib/utils/cn";
+import { downloadBlob } from "@/lib/utils/download";
 import { formatDate } from "@/lib/utils/format";
 import { useStoryStore } from "@/stores/storyStore";
 import {
@@ -88,17 +89,6 @@ export function StoryList() {
 			s.name.toLowerCase().includes(q) ||
 			(s.description ?? "").toLowerCase().includes(q),
 	);
-
-	const downloadBlob = (blob: Blob, filename: string) => {
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = filename;
-		document.body.appendChild(a);
-		a.click();
-		a.remove();
-		URL.revokeObjectURL(url);
-	};
 
 	const exportOne = async (storyId: string, storyName: string) => {
 		setBusyStoryId(storyId);

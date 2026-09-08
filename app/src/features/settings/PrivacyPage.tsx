@@ -5,6 +5,7 @@ import {
 import { useCallback, useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import { showStudioErrorToast } from "@/lib/errors";
+import { downloadBlob } from "@/lib/utils/download";
 import { Button } from "@/ui/button";
 import { Card, CardBody, CardTitle } from "@/ui/card";
 import { ScreenHeader } from "@/ui/states";
@@ -22,12 +23,10 @@ export function PrivacyPage() {
 		setExporting(true);
 		try {
 			const blob = await apiClient.exportData();
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = `otoyin-export-${new Date().toISOString().slice(0, 10)}.zip`;
-			a.click();
-			URL.revokeObjectURL(url);
+			downloadBlob(
+				blob,
+				`otoyin-export-${new Date().toISOString().slice(0, 10)}.zip`,
+			);
 
 			toast({
 				title: "Data exported",

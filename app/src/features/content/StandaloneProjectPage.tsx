@@ -8,6 +8,7 @@ import {
 	ERR_TITLE_PROJECT,
 } from "@/lib/errorMessages";
 import { cn } from "@/lib/utils/cn";
+import { downloadBlob } from "@/lib/utils/download";
 import { Button } from "@/ui/button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/ui/card";
 import { Input, Textarea } from "@/ui/input";
@@ -23,20 +24,20 @@ import { ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
 
 const TEMPLATES = [
-	{ id: "blank", name: "Blank", description: "Start from scratch" },
+	{ id: "blank", name: "Blank Project", description: "Start from scratch" },
 	{
 		id: "dialogue",
-		name: "Dialogue",
+		name: "Dialogue Scene",
 		description: "Two-character dialogue scene",
 	},
 	{
 		id: "podcast",
-		name: "Podcast",
+		name: "Podcast Episode",
 		description: "Single-host podcast structure",
 	},
 	{
 		id: "audiobook",
-		name: "Audiobook",
+		name: "Audiobook Chapter",
 		description: "Narrator with character voices",
 	},
 	{
@@ -144,12 +145,7 @@ export function StandaloneProjectPage() {
 		}
 		try {
 			const blob = await apiClient.exportProject(projectId);
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = `${project?.name || "project"}.zip`;
-			a.click();
-			URL.revokeObjectURL(url);
+			downloadBlob(blob, `${project?.name || "project"}.zip`);
 			toast({ title: "Project exported" });
 		} catch {
 			toast({
@@ -187,12 +183,7 @@ export function StandaloneProjectPage() {
 		}
 		try {
 			const blob = await apiClient.exportProjectEpub(projectId);
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = `${project?.name || "project"}.epub`;
-			a.click();
-			URL.revokeObjectURL(url);
+			downloadBlob(blob, `${project?.name || "project"}.epub`);
 			toast({ title: "EPUB exported" });
 		} catch {
 			toast({
@@ -209,12 +200,7 @@ export function StandaloneProjectPage() {
 		}
 		try {
 			const blob = await apiClient.exportProjectPdf(projectId);
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = `${project?.name || "project"}.pdf`;
-			a.click();
-			URL.revokeObjectURL(url);
+			downloadBlob(blob, `${project?.name || "project"}.pdf`);
 			toast({ title: "PDF exported" });
 		} catch {
 			toast({
