@@ -180,7 +180,8 @@ async def notify_generation_status(generation_id: str, status: str, payload: dic
         for gid in stale_ids:
             _status_creation_time.pop(gid, None)
 
-        queues = _status_subscribers.get(generation_id, [])
+        # Snapshot the subscriber list under the lock to avoid iteration race
+        queues = list(_status_subscribers.get(generation_id, []))
     for q in queues:
         with contextlib.suppress(asyncio.QueueFull):
             q.put_nowait(payload)
@@ -456,10 +457,13 @@ async def cancel_generation(generation_id: str, db: Session = Depends(get_db)):
 
     cancellation_state = cancel_generation_job(generation_id)
     if cancellation_state is None:
-        # Row says active but the worker is no longer tracking it — the gen
-        # coroutine exited without writing a terminal status (most often a
-        # SQLite lock racing with the failed-status write inside the worker's
-        # exception handler). Fail the row here so the user can move on.
+        # Row says active but the worker is no longer tracking it.
+        # Re-check: the worker may have completed between our status check
+        # and the cancel call. If so, don't wrongly mark as failed.
+        db.refresh(gen)
+        if (gen.status or "completed") in ("completed", "failed"):
+            return {"message": f"Generation already {gen.status}"}
+        # Genuinely orphaned — fail the row so the user can move on.
         task_manager = get_task_manager()
         task_manager.complete_generation(generation_id)
         await history.update_generation_status(

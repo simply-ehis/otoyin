@@ -252,6 +252,7 @@ def is_model_downloaded(model_name: str) -> bool:
                 tgt_lang = next((lang for lang in langs if lang.code == tgt), None)
                 return src_lang is not None and tgt_lang is not None and src_lang.get_translation(tgt_lang) is not None
             except Exception:
+                logger.debug("Argos translate check failed for %s", model_name, exc_info=True)
                 return False
         return _hf_repo_cached(cfg.hf_repo_id)
     except Exception:

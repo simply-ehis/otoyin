@@ -408,6 +408,11 @@ def refresh_remote_catalog() -> str:
         return "failed"
     _REFRESHING = True
     try:
+        from ..utils.ssrf import is_url_safe
+
+        if not is_url_safe(REMOTE_CATALOG_URL):
+            logger.warning("Remote catalog URL failed SSRF check: %s", REMOTE_CATALOG_URL)
+            return "failed"
         req = urllib.request.Request(
             REMOTE_CATALOG_URL,
             headers={"Accept": "application/json", "User-Agent": "otoyin/0.1"},

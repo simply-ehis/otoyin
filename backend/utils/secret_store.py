@@ -28,7 +28,7 @@ _KEY_FILE_NAME = "twentylabs_secret.key"
 
 def _app_data_dir() -> Path:
     base = os.environ.get("TWENTYLABS_DATA_DIR") or os.path.join(os.path.expanduser("~"), ".cache", "twentylabs")
-    Path(base).mkdir(parents=True, exist_ok=True)
+    Path(base).mkdir(parents=True, exist_ok=True, mode=0o700)
     return Path(base)
 
 

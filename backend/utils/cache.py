@@ -77,6 +77,11 @@ def get_cached_voice_prompt(
         try:
             import torch
 
+            # weights_only=True only prevents pickle exploitation on PyTorch >= 2.4.
+            # On older versions, skip disk cache to avoid arbitrary code execution risk.
+            if torch.__version__ < "2.4":
+                logger.debug("PyTorch %s < 2.4, skipping disk voice cache (pickle risk)", torch.__version__)
+                return None
             prompt = torch.load(cache_file, weights_only=True)
             _memory_cache[cache_key] = prompt
             # Evict oldest entries if cache is full

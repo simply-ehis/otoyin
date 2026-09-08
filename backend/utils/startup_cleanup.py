@@ -137,10 +137,16 @@ def _purge_orphaned_story_items(db) -> int:
 
 def _purge_stale_autosave_snapshots(db) -> int:
     """Delete autosave snapshots whose parent session no longer exists."""
+    import re
+
     from sqlalchemy import text as sa_text
+
+    _ident_re = re.compile(r"^[a-z_][a-z0-9_]*$")
 
     count = 0
     for table, session_col in (("session_autosave_snapshots", "session_id"),):
+        if not _ident_re.match(table) or not _ident_re.match(session_col):
+            raise ValueError(f"Invalid identifier: table={table!r} col={session_col!r}")
         result = db.execute(
             sa_text(
                 f"DELETE FROM {table} "

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 import tempfile
@@ -29,11 +30,16 @@ def convert_audio_file(
     sample_rate: int | None = None,
 ) -> Path:
     """Convert `input_path` to `output_format` via ffmpeg. Returns output Path."""
+    import re
+
     fmt = output_format.lower().lstrip(".")
     if fmt not in SUPPORTED_FORMATS:
         raise ValueError(f"Unsupported format: {output_format} (supported: {', '.join(SUPPORTED_FORMATS)})")
     if not ffmpeg_available():
         raise RuntimeError("ffmpeg not found on PATH — cannot convert audio")
+    # Validate bitrate to prevent ffmpeg option injection
+    if not re.match(r"^\d+[kKmM]?$", bitrate):
+        raise ValueError(f"Invalid bitrate: {bitrate!r} (expected e.g. '128k', '64k', '320k')")
 
     inp = Path(input_path)
     if not inp.exists():
@@ -97,12 +103,14 @@ def build_m4b(
 
         cursor = 0
         for _idx, (dur, ctitle) in enumerate(zip(durations_ms, chapter_titles, strict=False)):
+            # Sanitize chapter title for FFmetadata — strip control chars and =, \n
+            safe_title = re.sub(r"[\x00-\x1f\x7f=]", "", ctitle).replace("\n", " ")[:200]
             lines.append("[CHAPTER]")
             lines.append("TIMEBASE=1/1000")
             lines.append(f"START={cursor}")
             cursor += dur
             lines.append(f"END={cursor}")
-            lines.append(f"title={ctitle}")
+            lines.append(f"title={safe_title}")
         meta.write_text("\n".join(lines), encoding="utf-8")
 
         # Intermediate concat wav

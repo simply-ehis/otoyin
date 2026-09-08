@@ -79,6 +79,14 @@ def _get_columns(inspector, table: str) -> set[str]:
 
 def _add_column(engine, table: str, column_sql: str, label: str) -> None:
     """Add a column if it doesn't already exist."""
+    import re
+
+    _ident_re = re.compile(r"^[a-z_][a-z0-9_]*$")
+    # Extract table name from "ALTER TABLE <table> ADD COLUMN ..."
+    parts = column_sql.split()
+    col_name = parts[0] if parts else ""
+    if not _ident_re.match(table) or not _ident_re.match(col_name):
+        raise ValueError(f"Invalid identifier: table={table!r} col={col_name!r}")
     with engine.connect() as conn:
         conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column_sql}"))
         conn.commit()
@@ -410,9 +418,12 @@ def _migrate_audio_studio_sessions(engine, inspector, tables: set[str]) -> None:
 
 def _normalize_storage_paths(engine, tables: set[str]) -> None:
     """Normalize stored file paths to be relative to the configured data dir."""
+    import re
     from pathlib import Path
 
     from ..config import get_data_dir, resolve_storage_path, to_storage_path
+
+    _ident_re = re.compile(r"^[a-z_][a-z0-9_]*$")
 
     get_data_dir()
 
@@ -426,6 +437,8 @@ def _normalize_storage_paths(engine, tables: set[str]) -> None:
     total_fixed = 0
     with engine.connect() as conn:
         for table, column in path_columns:
+            if not _ident_re.match(table) or not _ident_re.match(column):
+                raise ValueError(f"Invalid identifier: table={table!r} column={column!r}")
             if table not in tables:
                 continue
             rows = conn.execute(text(f"SELECT id, {column} FROM {table} WHERE {column} IS NOT NULL")).fetchall()

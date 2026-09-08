@@ -102,6 +102,11 @@ def refresh_remote_announcements() -> None:
     if not REMOTE_NOTICES_URL:
         return
     try:
+        from ..utils.ssrf import is_url_safe
+
+        if not is_url_safe(REMOTE_NOTICES_URL):
+            logger.warning("Remote notices URL failed SSRF check: %s", REMOTE_NOTICES_URL)
+            return
         req = urllib.request.Request(
             REMOTE_NOTICES_URL,
             headers={"Accept": "application/json", "User-Agent": "otoyin/0.1"},
