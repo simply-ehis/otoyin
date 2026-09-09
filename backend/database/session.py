@@ -141,6 +141,8 @@ def _create_missing_indexes(engine) -> None:
 
 def get_db():
     """Yield a database session (FastAPI dependency)."""
+    if SessionLocal is None:
+        raise RuntimeError("Database not initialized — call init_db() before using get_db()")
     db = SessionLocal()
     try:
         yield db

@@ -19,6 +19,7 @@ import datetime
 import json
 import logging
 import os
+import threading
 import time
 import urllib.request
 from typing import Any
@@ -201,33 +202,25 @@ PRODUCTS: list[dict[str, Any]] = [
         "quality_score": 8,
     },
     {
-        "id": "parler-tts-mini",
-        "name": "Parler-TTS Mini",
+        "id": "parler-tts-mini-gguf",
+        "name": "Parler-TTS Mini (GGUF)",
         "category": "tts",
         "price_usd": 18,
         "paid": True,
         "quality_score": 6,
     },
-    {"id": "zonos-v0.1", "name": "Zonos v0.1", "category": "tts", "price_usd": 32, "paid": True, "quality_score": 9},
+    {"id": "zonos-v0.1-gguf", "name": "Zonos v0.1 (GGUF)", "category": "tts", "price_usd": 32, "paid": True, "quality_score": 9},
     {
         "id": "qwen3-tts-1.7b",
-        "name": "Qwen3-TTS 12Hz 1.7B Base",
+        "name": "Qwen3-TTS 12Hz 1.7B Base (GGUF)",
         "category": "tts",
         "price_usd": 40,
-        "paid": True,
-        "quality_score": 8,
-    },
-    {
-        "id": "orpheus-q4-k-m",
-        "name": "Orpheus 3B (Q4)",
-        "category": "vc",
-        "price_usd": 50,
         "paid": True,
         "quality_score": 9,
     },
     {
         "id": "orpheus-q8-0",
-        "name": "Orpheus 3B (Q8)",
+        "name": "Orpheus 3B (Q8_0)",
         "category": "vc",
         "price_usd": 80,
         "paid": True,
@@ -312,25 +305,195 @@ PRODUCTS: list[dict[str, Any]] = [
         "special_offer": True,
         "note": "Limited-time special offer — LiquidAI LFM2.5-2.6B with Quantization-Aware-Distillation 4-bit weights (1.59 GB). 128K context, 24 languages, tool calling + thinking tags.",
     },
-    # --- Free extras (pre-installed / always allowed) ---
-    {
-        "id": "steam-audio",
-        "name": "Spatial Sound Engine (Steam Audio)",
-        "category": "extras",
-        "price_usd": 0,
-        "paid": False,
-        "quality_score": 5,
-        "note": "Pre-installed. Binaural spatial audio via Steam Audio SDK.",
-    },
-    # --- Free extras (always allowed) ---
+    # --- Free downloadable utilities (not bundled, install from Marketplace) ---
     {
         "id": "demucs_onnx",
         "name": "Demucs HTDemucs — Vocal Isolation",
-        "category": "extras",
+        "category": "utilities",
         "price_usd": 0,
         "paid": False,
         "quality_score": 8,
         "note": "MIT-licensed stem separation. Extracts vocals, drums, bass or other from any mix. ~316MB, runs on CPU.",
+    },
+    {
+        "id": "translate-en-es",
+        "name": "Translate English ↔ Spanish",
+        "category": "utilities",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "Offline translation pack. ~45 MB.",
+    },
+    {
+        "id": "translate-en-fr",
+        "name": "Translate English ↔ French",
+        "category": "utilities",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "Offline translation pack. ~45 MB.",
+    },
+    {
+        "id": "translate-en-de",
+        "name": "Translate English ↔ German",
+        "category": "utilities",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "Offline translation pack. ~45 MB.",
+    },
+    {
+        "id": "translate-en-ja",
+        "name": "Translate English ↔ Japanese",
+        "category": "utilities",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "Offline translation pack. ~45 MB.",
+    },
+    {
+        "id": "translate-en-zh",
+        "name": "Translate English ↔ Chinese",
+        "category": "utilities",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "Offline translation pack. ~45 MB.",
+    },
+    {
+        "id": "translate-en-pt",
+        "name": "Translate English ↔ Portuguese",
+        "category": "utilities",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "Offline translation pack. ~45 MB.",
+    },
+    {
+        "id": "translate-en-ru",
+        "name": "Translate English ↔ Russian",
+        "category": "utilities",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "Offline translation pack. ~45 MB.",
+    },
+    {
+        "id": "translate-en-ar",
+        "name": "Translate English ↔ Arabic",
+        "category": "utilities",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "Offline translation pack. ~45 MB.",
+    },
+    {
+        "id": "translate-en-hi",
+        "name": "Translate English ↔ Hindi",
+        "category": "utilities",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "Offline translation pack. ~45 MB.",
+    },
+    {
+        "id": "translate-en-it",
+        "name": "Translate English ↔ Italian",
+        "category": "utilities",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "Offline translation pack. ~45 MB.",
+    },
+    {
+        "id": "translate-es-en",
+        "name": "Translate Spanish → English",
+        "category": "utilities",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "Offline translation pack. ~45 MB.",
+    },
+    {
+        "id": "translate-fr-en",
+        "name": "Translate French → English",
+        "category": "utilities",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "Offline translation pack. ~45 MB.",
+    },
+    {
+        "id": "translate-de-en",
+        "name": "Translate German → English",
+        "category": "utilities",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "Offline translation pack. ~45 MB.",
+    },
+    {
+        "id": "translate-ja-en",
+        "name": "Translate Japanese → English",
+        "category": "utilities",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "Offline translation pack. ~45 MB.",
+    },
+    {
+        "id": "translate-zh-en",
+        "name": "Translate Chinese → English",
+        "category": "utilities",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "Offline translation pack. ~45 MB.",
+    },
+    {
+        "id": "translate-pt-en",
+        "name": "Translate Portuguese → English",
+        "category": "utilities",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "Offline translation pack. ~45 MB.",
+    },
+    {
+        "id": "translate-ru-en",
+        "name": "Translate Russian → English",
+        "category": "utilities",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "Offline translation pack. ~45 MB.",
+    },
+    {
+        "id": "translate-ar-en",
+        "name": "Translate Arabic → English",
+        "category": "utilities",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "Offline translation pack. ~45 MB.",
+    },
+    {
+        "id": "translate-hi-en",
+        "name": "Translate Hindi → English",
+        "category": "utilities",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "Offline translation pack. ~45 MB.",
+    },
+    {
+        "id": "translate-it-en",
+        "name": "Translate Italian → English",
+        "category": "utilities",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "Offline translation pack. ~45 MB.",
     },
     # --- Catalog gaps (G7): missing Store cards for downloadable configs ---
     {
@@ -380,7 +543,7 @@ def verify_catalog(catalog: dict) -> bool:
 # ── Remote catalog (07 Part B) ───────────────────────────────────────────
 
 _LAST_REMOTE_REFRESH: float = 0.0
-_REFRESHING = False
+_refresh_lock = threading.Lock()
 
 
 def refresh_remote_catalog() -> str:
@@ -401,12 +564,11 @@ def refresh_remote_catalog() -> str:
 
     Never raises.
     """
-    global _LAST_REMOTE_REFRESH, _REFRESHING, _PRODUCT_INDEX
+    global _LAST_REMOTE_REFRESH, _PRODUCT_INDEX
     if not REMOTE_CATALOG_URL:
         return "no_url"
-    if _REFRESHING:
+    if not _refresh_lock.acquire(blocking=False):
         return "failed"
-    _REFRESHING = True
     try:
         from ..utils.ssrf import is_url_safe
 
@@ -440,7 +602,7 @@ def refresh_remote_catalog() -> str:
         logger.debug("Remote catalog fetch failed; keeping bundled catalog", exc_info=True)
         return "failed"
     finally:
-        _REFRESHING = False
+        _refresh_lock.release()
 
 
 def remote_catalog_stale(age_s: float = REMOTE_REFRESH_INTERVAL_S) -> bool:

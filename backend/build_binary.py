@@ -149,18 +149,13 @@ def build_server(cuda=False):
             "backend.services.versions",
             "--hidden-import",
             "pedalboard",
-            # --- New TTS engine backends (Phase 1/2 consolidation) ---
-            # kokoro_backend REMOVED (bloat) — never bundled
+            # --- New TTS engine backends (GGUF/ONNX, no torch) ---
             "--hidden-import",
-            "backend.backends.zonos_backend",
+            "backend.backends.zonos_gguf_backend",
+            "--hidden-import",
+            "backend.backends.parler_tts_gguf_backend",
             "--hidden-import",
             "backend.backends.pocket_tts_backend",
-            "--hidden-import",
-            "backend.backends.parler_tts_backend",
-            "--hidden-import",
-            "torch",
-            "--hidden-import",
-            "transformers",
             # whisper.cpp STT backend (GGML, CPU-only, no PyTorch).
             "--hidden-import",
             "backend.backends.whisper_cpp_backend",

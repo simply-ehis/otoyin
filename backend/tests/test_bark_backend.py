@@ -287,7 +287,7 @@ def test_config_present():
     assert cfg is not None
     assert cfg.engine == "bark_small"
     assert cfg.clone_voice is False
-    assert cfg.quant == "q4_k"
+    assert cfg.quant == "q8_0"
     assert len(cfg.structured_preset_voices) == 26
     assert "en" in cfg.languages and "hi" in cfg.languages
 

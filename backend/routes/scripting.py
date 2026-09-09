@@ -1,9 +1,20 @@
 """REST API routes for the scripting/automation API."""
 
-from fastapi import APIRouter, HTTPException
+import logging
+
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(tags=["scripting"])
+
+
+def _require_localhost(request: Request) -> None:
+    """Allow only localhost clients."""
+    client = request.client
+    if client and client.host not in ("127.0.0.1", "::1", "localhost"):
+        raise HTTPException(status_code=403, detail="Access denied: localhost only")
 
 
 class ExecuteRequest(BaseModel):
@@ -19,7 +30,8 @@ async def list_functions():
 
 
 @router.post("/scripting/execute")
-async def execute_function(data: ExecuteRequest):
+async def execute_function(data: ExecuteRequest, request: Request):
+    _require_localhost(request)
     from ..services.scripting_api import execute_api
 
     result = execute_api(data.function, data.args)

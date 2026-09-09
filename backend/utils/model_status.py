@@ -78,9 +78,8 @@ def _onnxruntime_available() -> bool:
 #   10  ONNX-only, tiny model (< 100 MB)  — kitten_tts, moss_tts_nano
 #   20  ONNX-preferred, small model        — kokoro (82M)
 #   30  Subprocess one-shot, no resident   — qwen3_tts, bark_small
-#   40  GGUF singleton (llama.cpp sidecar) — neutts, neutts_2e, orpheus
+#   40  GGUF singleton (llama.cpp sidecar) — neutts, neutts_2e, orpheus, zonos_gguf, parler_tts_gguf
 #   50  Torch-only, small/medium model     — pocket_tts
-#   60  Torch-only, large model            — zonos, styletts2, parler_tts
 
 _ENGINE_WEIGHTS: dict[str, int] = {
     "kitten_tts": 10,
@@ -92,8 +91,12 @@ _ENGINE_WEIGHTS: dict[str, int] = {
     "neutts": 40,
     "neutts_2e": 40,
     "orpheus": 40,
-    "zonos": 60,
-    "parler_tts": 60,
+    "zonos_gguf": 30,
+    "parler_tts_gguf": 30,
+    "styletts2": 60,
+    "rvc_onnx": 30,
+    "openvoice_onnx": 30,
+    "acestep_gguf": 30,
 }
 
 # Engines whose *preferred* backend is ONNX (even if a torch fallback exists).
@@ -106,7 +109,7 @@ _ONNX_PREFERRED_ENGINES = {
 }
 
 # Engines that run as subprocesses — no GPU memory, no torch dependency.
-_SUBPROCESS_ENGINES = {"qwen3_tts", "bark_small"}
+_SUBPROCESS_ENGINES = {"qwen3_tts", "bark_small", "zonos_gguf", "parler_tts_gguf", "acestep_gguf", "rvc_onnx", "openvoice_onnx"}
 
 
 def _score_engine(engine: str, cached: bool) -> float:

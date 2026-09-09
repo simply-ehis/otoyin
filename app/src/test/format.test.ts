@@ -76,7 +76,7 @@ describe("formatDate", () => {
 describe("formatEngineName", () => {
 	it("formats known engines", () => {
 		expect(formatEngineName("kokoro")).toBe("Kokoro");
-		expect(formatEngineName("zonos")).toBe("Zonos");
+		expect(formatEngineName("zonos_gguf")).toBe("Zonos");
 		expect(formatEngineName("styletts2")).toBe("StyleTTS2");
 		expect(formatEngineName("orpheus")).toBe("Orpheus");
 	});

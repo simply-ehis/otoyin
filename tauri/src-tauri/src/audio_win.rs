@@ -23,7 +23,7 @@ fn pop_f32(bytes: &mut VecDeque<u8>) -> Option<f32> {
     }
     let mut buf = [0u8; 4];
     for b in buf.iter_mut() {
-        *b = bytes.pop_front().unwrap();
+        *b = bytes.pop_front()?;
     }
     Some(f32::from_le_bytes(buf))
 }
@@ -34,7 +34,9 @@ fn run(
     error: Arc<Mutex<Option<String>>>,
 ) {
     let fail = |msg: String| {
-        *error.lock().unwrap() = Some(msg);
+        if let Ok(mut guard) = error.lock() {
+            *guard = Some(msg);
+        }
     };
 
     if !initialize_mta().is_ok() {
@@ -103,7 +105,7 @@ fn run(
         if out.is_empty() {
             continue;
         }
-        let mut sink = samples.lock().unwrap();
+        let mut sink = samples.lock().unwrap_or_else(|e| e.into_inner());
         sink.extend_from_slice(&out);
         if sink.len() > MAX_SAMPLES {
             // Trim to the cap rather than erroring mid-capture.

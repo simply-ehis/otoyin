@@ -104,10 +104,11 @@ async def extract_audio_from_video_endpoint(data: ExtractAudioRequest):
     """Extract audio track from a video file."""
     from ..services.extended_import import extract_audio_from_video
 
+    _validate_path(Path(data.video_path))
     try:
         output = extract_audio_from_video(data.video_path, sample_rate=data.sample_rate, channels=data.channels)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
+        raise HTTPException(status_code=400, detail="Audio extraction failed") from e
     return {"audio_path": output}
 
 
@@ -121,6 +122,7 @@ async def convert_audio_endpoint(data: ConvertAudioRequest):
     """
     from ..services.extended_import import convert_audio
 
+    _validate_path(Path(data.input_path))
     try:
         output = convert_audio(
             data.input_path, target_format=data.target_format, sample_rate=data.sample_rate, channels=data.channels
@@ -135,7 +137,7 @@ async def convert_audio_endpoint(data: ConvertAudioRequest):
             cleaned = await asyncio.to_thread(reduce_noise_deepfilternet, audio, int(sr))
             await asyncio.to_thread(save_audio, cleaned, output, int(sr))
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
+        raise HTTPException(status_code=400, detail="Audio conversion failed") from e
     return {"audio_path": output}
 
 

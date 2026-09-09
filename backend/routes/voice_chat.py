@@ -160,6 +160,9 @@ async def voice_chat_websocket(websocket: WebSocket):
     playback, and streaming audio output.
     """
     from ..services.rate_limiter import get_voice_chat_limiter
+    from ..utils.startup_defer import ensure_vc_spawned
+
+    await ensure_vc_spawned()
 
     # Validate origin to prevent cross-site WebSocket hijacking
     origin = websocket.headers.get("origin", "")

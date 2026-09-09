@@ -280,16 +280,16 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 					{/* Voice dropdown */}
 					{voiceOpen ? (
 						<>
-						<div
-							aria-hidden="true"
-							className="fixed inset-0 z-40"
-							onClick={() => setVoiceOpen(false)}
-							onKeyDown={(e) => {
-								if (e.key === "Escape") {
-									setVoiceOpen(false);
-								}
-							}}
-						/>
+							<div
+								aria-hidden="true"
+								className="fixed inset-0 z-40"
+								onClick={() => setVoiceOpen(false)}
+								onKeyDown={(e) => {
+									if (e.key === "Escape") {
+										setVoiceOpen(false);
+									}
+								}}
+							/>
 							<div className="absolute left-0 top-full z-50 mt-1 w-72 rounded-md border border-border bg-card shadow-lg">
 								<div className="max-h-64 overflow-y-auto p-1.5">
 									{profiles && profiles.length === 0 ? (
@@ -440,8 +440,8 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 					onChange={(e) => {
 						const f = e.target.files?.[0];
 						if (f) {
-						handleFileDrop(f);
-					}
+							handleFileDrop(f);
+						}
 						e.target.value = "";
 					}}
 				/>

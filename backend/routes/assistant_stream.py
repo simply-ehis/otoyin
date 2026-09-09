@@ -99,6 +99,10 @@ async def stream_local(
     and compacts tool responses under pressure.  This is critical for 2B--4B
     models which have no native function-calling and limited context.
     """
+    from ..utils.startup_defer import ensure_planner_preloaded
+
+    await ensure_planner_preloaded()
+
     backend = get_llm_backend()
     from ..utils.model_lifecycle import lifecycle_manager
 

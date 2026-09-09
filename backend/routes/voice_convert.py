@@ -15,7 +15,7 @@ from pydantic import BaseModel
 
 from .. import config
 from ..backends import get_vc_backend
-from ..backends.rvc_backend import RVC_VOICE_PACKS
+from ..backends.rvc_onnx_backend import RVC_VOICE_PACKS
 from ..errors import ERR_AUDIO_NOT_FOUND, ERR_SEED_VC_NEEDS_REF, ERR_VOICE_CONVERSION_FAILED
 from ..utils.async_audio import async_load_audio
 from ..utils.model_lifecycle import lifecycle_manager
@@ -60,7 +60,7 @@ def _log_provenance(
 
 class VoiceConvertRequest(BaseModel):
     audio_path: str
-    engine: str = "rvc"  # "rvc" | "seed_vc" | "openvoice" | "cloud"
+    engine: str = "rvc_onnx"  # "rvc_onnx" | "seed_vc" | "openvoice_onnx" | "cloud"
     # Consent
     consent_given: bool = False
     # RVC fields
@@ -79,16 +79,16 @@ class VoiceConvertRequest(BaseModel):
 @router.get("/voice-packs")
 async def list_voice_packs():
     """List available RVC voice packs (installed + downloadable)."""
-    from ..backends.rvc_backend import rvc_backend
+    from ..backends.rvc_onnx_backend import rvc_onnx_backend
 
     installed = set()
-    models_dir = rvc_backend._get_models_dir()
+    models_dir = rvc_onnx_backend._get_models_dir()
     if models_dir.exists():
         for d in models_dir.iterdir():
-            if d.is_dir() and any(f.suffix == ".pth" for f in d.iterdir()):
+            if d.is_dir() and any(f.suffix == ".onnx" for f in d.iterdir()):
                 installed.add(d.name)
 
-    source = rvc_backend.pack_source
+    source = rvc_onnx_backend.pack_source
     packs = []
     for name in RVC_VOICE_PACKS:
         desc = source(name)
@@ -106,7 +106,7 @@ async def list_voice_packs():
 async def convert_voice(req: VoiceConvertRequest):
     """Convert a stored audio file into a target voice.
 
-    - engine="rvc": needs a downloaded ``voice_pack`` (pre-trained).
+    - engine="rvc_onnx": needs a downloaded ``voice_pack`` (pre-trained).
     - engine="seed_vc": needs a ``reference_audio_path`` (zero-shot clone).
     Returns WAV audio.
 

@@ -85,46 +85,6 @@ export class GenerationsMethods extends ProfilesMethods {
 		return resp.blob();
 	}
 
-	async searchFreesound(q: string, page = 1, pageSize = 20): Promise<{ results: Array<{ id: number; name: string; username: string; license: string; duration: number; previews: { "preview-hq-ogg": string; "preview-lq-ogg": string }; tags: string[] }>; count: number; next?: string }> {
-		return this.request(`/sounds/search?q=${encodeURIComponent(q)}&page=${page}&page_size=${pageSize}`);
-	}
-
-	async downloadFreesound(soundId: number | string, previewUrl: string): Promise<{ sound_id: string; path: string; cached: boolean }> {
-		return this.request(`/sounds/download/${soundId}`, {
-			method: "POST",
-			body: JSON.stringify({ preview_url: previewUrl }),
-		});
-	}
-
-	async getTelemetryStatus(): Promise<{ enabled: boolean }> {
-		return this.request("/telemetry/status");
-	}
-
-	async toggleTelemetry(enabled: boolean): Promise<{ enabled: boolean; message: string }> {
-		return this.request("/telemetry/toggle", { method: "POST", body: JSON.stringify({ enabled }) });
-	}
-
-	async getTelemetrySummary(): Promise<{ total_events: number; active_days: number; event_counts: Record<string, number> }> {
-		return this.request("/telemetry/summary");
-	}
-
-	async getTelemetryTimeline(params: { since?: string; bucket?: string }): Promise<{ timeline: Array<{ bucket: string; count: number }> }> {
-		const sp = new URLSearchParams();
-		if (params.since) sp.set("since", params.since);
-		if (params.bucket) sp.set("bucket", params.bucket);
-		const qs = sp.toString();
-		return this.request(`/telemetry/timeline${qs ? `?${qs}` : ""}`);
-	}
-
-	async getTelemetryEvents(params: { since?: string; limit?: number; event_type?: string }): Promise<{ events: Array<{ name: string; properties: Record<string, unknown>; timestamp: string }>; total: number }> {
-		const sp = new URLSearchParams();
-		if (params.since) sp.set("since", params.since);
-		if (params.limit) sp.set("limit", String(params.limit));
-		if (params.event_type) sp.set("event_type", params.event_type);
-		const qs = sp.toString();
-		return this.request(`/telemetry/events${qs ? `?${qs}` : ""}`);
-	}
-
 	async toggleFavorite(
 		generationId: string,
 	): Promise<{ is_favorited: boolean }> {

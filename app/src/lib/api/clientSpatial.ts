@@ -401,7 +401,7 @@ export class SpatialMethods extends ADRMethods {
 		return this.request("/voice-packs");
 	}
 
-	override async searchFreesound(
+	async searchFreesound(
 		query: string,
 		page: number = 1,
 		pageSize: number = 20,

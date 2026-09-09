@@ -155,7 +155,7 @@ class TestValidateProfileFields:
             preset_engine=None,
             preset_voice_id=None,
             design_prompt=None,
-            default_engine="fish_speech",
+            default_engine="zonos_gguf",
         )
         assert result is None
 
@@ -236,7 +236,7 @@ class TestValidateProfileEngine:
         profile.id = "p6"
         profile.voice_type = "cloned"
         profile.design_prompt = None
-        validate_profile_engine(profile, "fish_speech")
+        validate_profile_engine(profile, "zonos_gguf")
 
     def test_cloned_with_invalid_engine_raises(self):
         profile = MagicMock()
@@ -532,7 +532,7 @@ class TestVoiceAttributes:
                 voice_type="designed",
                 voice_attributes=attrs,
                 language="en",
-                default_engine="parler_tts",
+                default_engine="parler_tts_gguf",
             ),
             db,
         )
@@ -548,7 +548,7 @@ class TestVoiceAttributes:
                 voice_type="designed",
                 voice_attributes={"gender": "male", "accent": "american"},
                 language="en",
-                default_engine="parler_tts",
+                default_engine="parler_tts_gguf",
             ),
             db,
         )
@@ -565,7 +565,7 @@ class TestVoiceAttributes:
                 voice_type="designed",
                 design_prompt="Original prompt",
                 language="en",
-                default_engine="parler_tts",
+                default_engine="parler_tts_gguf",
             ),
             db,
         )
@@ -578,7 +578,7 @@ class TestVoiceAttributes:
                 voice_type="designed",
                 voice_attributes=new_attrs,
                 language="en",
-                default_engine="parler_tts",
+                default_engine="parler_tts_gguf",
             ),
             db,
         )

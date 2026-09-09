@@ -80,7 +80,9 @@ function SfxPanel() {
 					e.preventDefault();
 					setDragOver(false);
 					const file = e.dataTransfer.files[0];
-					if (file) handleFileDrop(file);
+					if (file) {
+						handleFileDrop(file);
+					}
 				}}
 				onDragOver={(e) => {
 					e.preventDefault();

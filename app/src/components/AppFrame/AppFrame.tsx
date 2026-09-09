@@ -6,6 +6,7 @@ import { useRouterState } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { AppBackground } from "@/components/AppFrame/AppBackground";
 import { AudioKeepAlive } from "@/components/AudioPlayer/AudioKeepAlive";
+import { ErrorBoundary } from "@/components/ErrorBoundary/ErrorBoundary";
 import { TitleBarDragRegion } from "@/components/TitleBarDragRegion";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TOP_SAFE_AREA_PADDING } from "@/lib/constants/ui";
@@ -142,11 +143,12 @@ export function AppFrame({ children }: AppFrameProps) {
 		};
 		window.addEventListener("keydown", onKeyDown);
 		window.addEventListener("keyup", onKeyUp);
-		window.addEventListener("open-help-center", () => setHelpOpen(true));
+		const onOpenHelp = () => setHelpOpen(true);
+		window.addEventListener("open-help-center", onOpenHelp);
 		return () => {
 			window.removeEventListener("keydown", onKeyDown);
 			window.removeEventListener("keyup", onKeyUp);
-			window.removeEventListener("open-help-center", () => setHelpOpen(true));
+			window.removeEventListener("open-help-center", onOpenHelp);
 		};
 	}, []);
 
@@ -215,42 +217,54 @@ export function AppFrame({ children }: AppFrameProps) {
 
 					{/* Assistant slide-in panel */}
 					<Suspense fallback={null}>
-						<AssistantPanel
-							open={assistantOpen}
-							onClose={() => setAssistantOpen(false)}
-						/>
+						<ErrorBoundary fallback={() => null}>
+							<AssistantPanel
+								open={assistantOpen}
+								onClose={() => setAssistantOpen(false)}
+							/>
+						</ErrorBoundary>
 					</Suspense>
 				</div>
 
 				{/* Help Center */}
 				<Suspense fallback={null}>
-					<HelpCenter open={helpOpen} onClose={() => setHelpOpen(false)} />
+					<ErrorBoundary fallback={() => null}>
+						<HelpCenter open={helpOpen} onClose={() => setHelpOpen(false)} />
+					</ErrorBoundary>
 				</Suspense>
 
 				{/* Command Palette */}
 				<Suspense fallback={null}>
-					<CommandPalette
-						open={commandPaletteOpen}
-						onClose={() => setCommandPaletteOpen(false)}
-					/>
+					<ErrorBoundary fallback={() => null}>
+						<CommandPalette
+							open={commandPaletteOpen}
+							onClose={() => setCommandPaletteOpen(false)}
+						/>
+					</ErrorBoundary>
 				</Suspense>
 
 				{/* First-run feature tour */}
 				<Suspense fallback={null}>
-					<FeatureTour open={tourOpen} onClose={() => setTourOpen(false)} />
+					<ErrorBoundary fallback={() => null}>
+						<FeatureTour open={tourOpen} onClose={() => setTourOpen(false)} />
+					</ErrorBoundary>
 				</Suspense>
 
 				{/* First-run use-case wizard */}
 				<Suspense fallback={null}>
-					<UseCaseWizard />
+					<ErrorBoundary fallback={() => null}>
+						<UseCaseWizard />
+					</ErrorBoundary>
 				</Suspense>
 
 				<Suspense fallback={null}>
-					{showTrackEditor ? (
-						<StoryTrackEditor storyId={story.id} items={story.items} />
-					) : (
-						<AudioPlayer />
-					)}
+					<ErrorBoundary fallback={() => null}>
+						{showTrackEditor ? (
+							<StoryTrackEditor storyId={story.id} items={story.items} />
+						) : (
+							<AudioPlayer />
+						)}
+					</ErrorBoundary>
 				</Suspense>
 			</div>
 		</TooltipProvider>

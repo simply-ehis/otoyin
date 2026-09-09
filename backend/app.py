@@ -100,49 +100,11 @@ def create_app() -> FastAPI:
     # ── Deferred MCP build ──────────────────────────────────────────
     # The MCP server + tool registration cost ~5 s of import time
     # (assistant_tools schema cascade, tool_dispatch, FastMCP).  We
-    # build it lazily during the ASGI lifespan so the HTTP server can
-    # start accepting /health probes immediately.
-    _mcp_app_holder: dict[str, object] = {}
+    # build it lazily on first /mcp request via MCPLazyBuildMiddleware.
 
     @asynccontextmanager
     async def otoyin_lifespan(app: FastAPI):
         _init_ready_event()
-
-        # Build MCP server in background so it doesn't block the
-        # readiness gate — /health and /health/ready are served while
-        # this runs.
-        try:
-            from .mcp_server.server import build_mcp_server, compose_lifespan
-
-            mcp = build_mcp_server()
-            mcp_app = mcp.http_app(path="/", transport="http")
-            _mcp_app_holder["app"] = mcp_app
-
-            # Mount the MCP sub-app *after* build so the OpenAPI spec
-            # is complete by the time /docs loads.
-            app.mount("/mcp", mcp_app)
-            logger.info("MCP: mounted at /mcp")
-
-            # Tool registry verification (also defers assistant_tools
-            # import until tools are actually registered).
-            try:
-                from .tool_registry_populate import startup_verify
-
-                tr_result = startup_verify(mcp)
-                if tr_result["errors"]:
-                    for err in tr_result["errors"][:5]:
-                        logger.warning("Tool registry: %s", err)
-                logger.info(
-                    "Tool registry: %d total (%d MCP, %d assistant, %d dual)",
-                    tr_result["total_tools"],
-                    tr_result["mcp_tools"],
-                    tr_result["assistant_tools"],
-                    tr_result["dual_surface"],
-                )
-            except Exception as e:
-                logger.debug("Tool registry verification skipped: %s", e)
-        except Exception:
-            logger.exception("MCP server build failed — MCP endpoint unavailable")
 
         try:
             await _run_startup(app)
@@ -230,8 +192,29 @@ def create_app() -> FastAPI:
         )
 
     register_routers(application)
-    # MCP mount deferred to lifespan (see above) — the /mcp endpoint
-    # returns 503 until the lifespan builds the MCP server.
+
+    # ── Lazy MCP mount ──────────────────────────────────────────────
+    # MCP server + tool registration costs ~5 s of import time.
+    # Instead of building at startup, we build on the first /mcp request
+    # via a middleware that mounts the sub-app on demand.
+    _mcp_app_holder: dict[str, object] = {}
+
+    from starlette.middleware.base import BaseHTTPMiddleware
+    import starlette.requests
+
+    class MCPLazyBuildMiddleware(BaseHTTPMiddleware):
+        """Build and mount the MCP sub-app on first /mcp request."""
+
+        async def dispatch(self, request: starlette.requests.Request, call_next):
+            path = request.url.path
+            if (path == "/mcp" or path.startswith("/mcp/")) and "app" not in _mcp_app_holder:
+                from .utils.startup_defer import ensure_mcp_built
+
+                await ensure_mcp_built(application)
+            return await call_next(request)
+
+    application.add_middleware(MCPLazyBuildMiddleware)
+
     _mount_frontend(application)
 
     return application
@@ -446,187 +429,6 @@ async def _run_startup(application: FastAPI) -> None:
     # On Windows, uvicorn doesn't handle SIGTERM, so we own it entirely.
     _install_signal_handlers()
 
-    # Defer heavy GPU/LLM imports to background so the HTTP server starts fast.
-    async def _bg_checks() -> None:
-        # Seed the download manifest from the HF cache on first launch so bundled
-        # installs are entitled without forcing a re-download. No-op after the
-        # first row exists. The drift backfill (below) heals the residual gap:
-        # files landing while rows already exist.
-        try:
-            from .services.model_registry import reconcile_cached_backfill, reconcile_downloads
-
-            reconcile_downloads()
-            reconcile_cached_backfill(min_interval_sec=0.0)
-        except Exception as e:
-            logger.warning("Model manifest reconciliation failed: %s", e)
-
-        # Populate the health endpoint GPU snapshot eagerly at startup so
-        # the first /health poll (Tauri frontend bootstrap) is instant.
-        # This also runs the CUDA compatibility check as a side effect.
-        try:
-            from .routes.health import _get_gpu_snapshot
-
-            # Thread-safe: uses double-checked locking inside _get_gpu_snapshot.
-            # Blocks the event loop briefly on first call (torch import),
-            # but runs in background so it doesn't delay server readiness.
-            snap = await asyncio.to_thread(_get_gpu_snapshot)
-            if snap.get("gpu_compatibility_warning"):
-                logger.warning("GPU COMPATIBILITY: %s", snap["gpu_compatibility_warning"])
-        except Exception as e:
-            logger.debug("GPU snapshot probe deferred: %s", e)
-
-        # CUDA binary auto-update disabled — users download via Settings > Models.
-
-        # STT self-check: load/unload each backend once to verify lifecycle.
-        # Catches import errors, model cache corruption, and interface mismatches.
-        # Best-effort: failures are logged, not fatal.
-        try:
-            from .utils.stt_self_check import run_stt_self_check
-
-            stt_results = await run_stt_self_check()
-            stt_errors = [k for k, v in stt_results.items() if v["status"] == "error"]
-            if stt_errors:
-                logger.warning("STT self-check errors: %s", stt_errors)
-        except Exception as e:
-            logger.debug("STT self-check deferred: %s", e)
-
-    create_background_task(_bg_checks())
-
-    # Register model engines with the lifecycle manager so heavy models are
-    # idle-unloaded; the planner LLM is pre-warmed above and also idle-unloads.
-    # See utils/model_lifecycle.py.
-    from .utils.model_lifecycle import lifecycle_manager
-
-    def _register_lifecycle_engines() -> None:
-        from .backends import get_llm_backend_for_engine, get_stt_backend, get_tts_backend, get_vc_backend
-
-        # Only register backends that have models available — skip if the
-        # backend getter fails (no models installed / cached).  This avoids
-        # instantiating heavy backend objects when the user has nothing to
-        # use yet, saving startup time and memory.
-        try:
-            tts = get_tts_backend()
-            lifecycle_manager.register("tts", tts.is_loaded, lambda: tts.unload_model())
-        except Exception:
-            logger.debug("TTS backend not registered (no model available)")
-
-        try:
-            stt = get_stt_backend()
-            lifecycle_manager.register("whisper", stt.is_loaded, lambda: stt.unload_model())
-        except Exception:
-            logger.debug("STT backend not registered (no model available)")
-
-        try:
-            llm = get_llm_backend_for_engine("gguf_llm")
-            lifecycle_manager.register(
-                "gguf_llm",
-                llm.is_loaded,
-                lambda: llm.unload_model(),
-            )
-        except Exception:
-            logger.debug("LLM backend not registered (no model available)")
-
-        try:
-            rvc_backend = get_vc_backend("rvc")
-            lifecycle_manager.register("rvc", rvc_backend.is_loaded, lambda: rvc_backend.unload_model())
-        except Exception:
-            logger.debug("RVC backend not registered (no model available)")
-
-        try:
-            seed_vc_backend = get_vc_backend("seed_vc")
-            lifecycle_manager.register(
-                "seed_vc",
-                seed_vc_backend.is_loaded,
-                lambda: seed_vc_backend.unload_model(),
-            )
-        except Exception:
-            logger.debug("Seed-VC backend not registered (no model available)")
-
-        try:
-            from .backends.stable_audio_backend import stable_audio_backend
-
-            lifecycle_manager.register(
-                "stable_audio",
-                stable_audio_backend.is_loaded,
-                lambda: stable_audio_backend.unload_model(),
-            )
-        except Exception:
-            logger.debug("Stable Audio backend not registered (no model available)")
-
-        # DeepFilter loads lazily on the first neural-cleanup use and must NOT
-        # stay resident: register it (not always-on) so the idle scheduler
-        # unloads it after cleanup, and so it never loads when cleanup isn't
-        # requested.
-        try:
-            from .services.deepfilter_onnx import _is_session_loaded, unload_deepfilter
-
-            lifecycle_manager.register("deepfilter", _is_session_loaded, unload_deepfilter)
-        except Exception:
-            logger.debug("DeepFilter not registered (no model available)")
-
-    async def _bg_register_engines_and_signal_ready() -> None:
-        try:
-            _register_lifecycle_engines()
-            lifecycle_manager.start()
-        except Exception as e:
-            logger.warning("Could not start model lifecycle scheduler: %s", e)
-        # Signal readiness after lifecycle registration — the server
-        # can now route requests to backends. Model preloading (Kokoro,
-        # planner LLM) happens lazily in background and doesn't block
-        # acceptance of generation requests.
-        _signal_ready()
-
-    create_background_task(_bg_register_engines_and_signal_ready())
-
-    # Best-effort merge of remote notices (push-style announcements) into the
-    # bundled content, then kept fresh by a periodic poll (NOTICES_POLL_S,
-    # default 1h — 08 decision: a mid-session user must see published notices
-    # without a restart). Offline-first: any failure is silent (see
-    # services/announcements.py refresh_remote_announcements). The loop is
-    # sleep-first: the immediate merge below covers startup, and each failure
-    # retries on the next tick instead of after a full interval.
-    async def _bg_refresh_remote_notices() -> None:
-        from .services.announcements import NOTICES_POLL_S, refresh_remote_announcements
-
-        try:
-            await asyncio.to_thread(refresh_remote_announcements)
-        except Exception:
-            logger.debug("Remote notices refresh failed", exc_info=True)
-        while True:
-            await asyncio.sleep(NOTICES_POLL_S)
-            try:
-                await asyncio.to_thread(refresh_remote_announcements)
-            except Exception:
-                logger.debug("Remote notices poll failed", exc_info=True)
-
-    create_background_task(_bg_refresh_remote_notices())
-
-    # Remote signed catalog (07 Part B): poll on a short tick (default 1h) and
-    # fetch only when stale (remote_catalog_stale) — the first tick runs
-    # immediately so startup still refreshes, failures retry next tick instead
-    # of after a full interval, and successful refreshes are spaced by
-    # REMOTE_REFRESH_INTERVAL_S (default 24h). Offline-first: the wrapper keeps
-    # the bundled catalog on any failure and never raises.
-    async def _bg_refresh_remote_catalog() -> None:
-        from .services.marketplace_catalog import (
-            REMOTE_CATALOG_POLL_S,
-            refresh_remote_catalog_if_stale,
-        )
-
-        while True:
-            try:
-                await asyncio.to_thread(refresh_remote_catalog_if_stale)
-            except Exception:
-                logger.debug("Remote catalog refresh failed", exc_info=True)
-            await asyncio.sleep(REMOTE_CATALOG_POLL_S)
-
-    create_background_task(_bg_refresh_remote_catalog())
-    try:
-        progress_manager = get_progress_manager()
-        progress_manager._set_main_loop(asyncio.get_running_loop())
-    except Exception as e:
-        logger.warning("Could not initialize progress manager event loop: %s", e)
-
     try:
         from huggingface_hub import constants as hf_constants
 
@@ -636,74 +438,28 @@ async def _run_startup(application: FastAPI) -> None:
     except Exception as e:
         logger.warning("Could not create HuggingFace cache directory: %s", e)
 
-    # Warm-start preload for the cached Kokoro ONNX engine so first
-    # generation has zero cold-start delay.  No-default-model policy: this
-    # only runs when the user already has Kokoro cached AND preload is
-    # enabled in generation settings — it never triggers a download.
-    async def _bg_preload_kokoro() -> None:
-        try:
-            from .services.settings import get_generation_settings
+    # ── Signal readiness ────────────────────────────────────────────────
+    # Server is ready to accept requests after DB + queue + cleanup.
+    # Engine registration, MCP build, preloads all happen lazily on first use.
+    _signal_ready()
 
-            db_gen = next(get_db())
-            try:
-                if not get_generation_settings(db_gen).preload_on_start:
-                    logger.info("Engine preload disabled in settings; skipping")
-                    return
-            finally:
-                db_gen.close()
-
-            from .backends.kokoro_onnx_backend import KokoroONNXBackend, is_onnx_available
-
-            if is_onnx_available():
-                _kokoro = KokoroONNXBackend()
-                if _kokoro._is_model_cached():
-                    await _kokoro.load_model()
-                    logger.info("Kokoro ONNX preloaded (cached engine)")
-                else:
-                    logger.info("Kokoro ONNX not cached; will download on first use")
-        except Exception as e:
-            logger.debug("Kokoro ONNX preload skipped: %s", e)
-
-    create_background_task(_bg_preload_kokoro())
-
-    # Pre-warm the planner LLM at user entry so the assistant is ready on first
-    # use. Background + non-blocking: if the GGUF isn't cached yet it downloads
-    # in the background and the first assistant call waits via the 202 path.
-    async def _bg_preload_planner() -> None:
-        try:
-            from .backends import get_llm_backend_for_engine
-
-            backend = get_llm_backend_for_engine("gguf_llm")
-            # Mirror the Kokoro preload (no-default-model policy): only warm if
-            # the planner GGUF is already cached. Never trigger a multi-GB
-            # download at startup — the first assistant use downloads via the
-            # 202 path instead.
-            if not backend._is_model_cached(backend.model_size):
-                logger.info("Planner GGUF not cached; will load on first assistant use")
-                return
-            await backend.load_model()
-            logger.info("Planner LLM pre-warmed")
-        except Exception as e:
-            logger.debug("Planner preload skipped: %s", e)
-
-    create_background_task(_bg_preload_planner())
-
-    # Auto-spawn voice-changer if enabled in settings
     try:
-        from .services.memory import get_voice_chat_settings
-
-        vc_settings = get_voice_chat_settings()
-        if vc_settings.get("voice_changer_enabled"):
-            from .voice_changer import spawn_voice_changer
-
-            vc_port = vc_settings.get("voice_changer_port", 17494)
-            spawn_voice_changer(port=vc_port)
+        progress_manager = get_progress_manager()
+        progress_manager._set_main_loop(asyncio.get_running_loop())
     except Exception as e:
-        logger.debug("Voice-changer auto-spawn skipped: %s", e)
+        logger.warning("Could not initialize progress manager event loop: %s", e)
+
+    # Lazy startup — services initialize on first use via startup_defer.
+    # Voice-changer spawn (already gated on settings, kept here for
+    # backward compat with the startup sequence).
+    from .utils.startup_defer import ensure_vc_spawned
+
+    create_background_task(ensure_vc_spawned())
 
     logger.info(
-        "Startup complete — 71 routers, DB ready, lifecycle registered. "
-        "Background tasks (GPU probe, STT check, model preload) running async."
+        "Startup complete — %d routers, DB ready. "
+        "Engine registration, MCP, and preloads deferred to first use.",
+        71,
     )
 
 

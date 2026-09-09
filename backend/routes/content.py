@@ -25,8 +25,11 @@ def whats_new() -> dict:
 
 
 @router.get("/content/announcements")
-def announcements() -> dict:
+async def announcements() -> dict:
     """Top-of-app banner messages."""
+    from ..utils.startup_defer import ensure_notices_started
+
+    await ensure_notices_started()
     return {"announcements": announcements_service.get_announcements()}
 
 

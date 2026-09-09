@@ -2,10 +2,7 @@
  * Instrument Library — manage installed instrument packs.
  * Ported from Resonant (© 2026 Calesthio, AGPL-3.0-only), UI on otoyin primitives.
  */
-import {
-	ArrowUpTrayIcon,
-	MusicalNoteIcon,
-} from "@heroicons/react/24/outline";
+import { ArrowUpTrayIcon, MusicalNoteIcon } from "@heroicons/react/24/outline";
 import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatBytes } from "@/features/instruments/types";
@@ -20,15 +17,26 @@ import {
 } from "./useInstrumentPacks";
 
 const SUPPORTED_FORMATS = [
-	{ ext: ".sf2", label: "SoundFont 2", desc: "Standard MIDI instrument format" },
+	{
+		ext: ".sf2",
+		label: "SoundFont 2",
+		desc: "Standard MIDI instrument format",
+	},
 	{ ext: ".sf3", label: "SoundFont 3", desc: "OGG-compressed SoundFont" },
 	{ ext: ".sfz", label: "SFZ", desc: "Text-based sampler format" },
-	{ ext: ".wav/.ogg/.mp3", label: "Audio samples", desc: "Individual instrument hits" },
+	{
+		ext: ".wav/.ogg/.mp3",
+		label: "Audio samples",
+		desc: "Individual instrument hits",
+	},
 ];
 
 const FREE_RESOURCES = [
 	{ label: "FreeSound.org", url: "https://freesound.org" },
-	{ label: "MuseScore SoundFonts", url: "https://musescore.org/en/handbook/soundfonts" },
+	{
+		label: "MuseScore SoundFonts",
+		url: "https://musescore.org/en/handbook/soundfonts",
+	},
 	{ label: "SF2 SoundFonts", url: "https://www.polyphone-soundfonts.com" },
 ];
 
@@ -201,7 +209,10 @@ export function InstrumentLibrary() {
 			{packs.length > 0 && dragOver ? (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80">
 					<div className="rounded-lg border-2 border-dashed border-accent bg-card p-12 text-center">
-						<ArrowUpTrayIcon className="mx-auto size-10 text-accent" aria-hidden="true" />
+						<ArrowUpTrayIcon
+							className="mx-auto size-10 text-accent"
+							aria-hidden="true"
+						/>
 						<p className="mt-3 text-sm font-medium text-foreground">
 							Drop to import instrument pack
 						</p>

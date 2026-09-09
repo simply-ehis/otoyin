@@ -264,5 +264,5 @@ class TestLLMResponseGeneration:
         session.conversation_history = [{"role": "user", "content": f"msg{i}"} for i in range(100)]
 
         await _generate_llm_response("test", session)
-        # MAX_CONVERSATION_HISTORY is 50, so after append we should have 50
-        assert len(session.conversation_history) <= 51  # 50 + the new pair
+        # MAX_CONVERSATION_HISTORY is 100; after append+trim we should have ≤100
+        assert len(session.conversation_history) <= 100

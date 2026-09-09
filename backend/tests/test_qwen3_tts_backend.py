@@ -193,7 +193,7 @@ def test_config_present():
     assert cfg is not None
     assert cfg.engine == "qwen3_tts"
     assert cfg.clone_voice is True
-    assert cfg.quant == "Q4_K_M"
+    assert cfg.quant == "Q8_0"
     assert "en" in cfg.languages
 
 

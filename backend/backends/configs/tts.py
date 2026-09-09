@@ -180,35 +180,6 @@ def _get_tts_configs() -> list[ModelConfig]:
             ],
             languages=["en", "zh", "ja", "ko", "de", "fr", "es", "pt", "ru", "it"],
         ),
-        # --- Zyphra Zonos v0.1: Apache-2.0, clone + emotion ------------
-        ModelConfig(
-            model_name="zonos-v0.1",
-            display_name="Zyphra Zonos v0.1",
-            engine="zonos",
-            hf_repo_id="Zyphra/Zonos-v0.1-transformer",
-            size_mb=2000,
-            min_ram_mb=2500,
-            min_vram_mb=0,
-            clone_voice=True,
-            quality_score=9,
-            category="tts",
-            emotion_control=True,
-            paralinguistic_tags=True,
-            pip_packages=["zonos>=0.1.0"],
-            supported_tags=[
-                "[angry]",
-                "[happy]",
-                "[sad]",
-                "[fearful]",
-                "[surprised]",
-                "[whisper]",
-                "[shout]",
-                "[laugh]",
-                "[cry]",
-                "[excited]",
-            ],
-            languages=["en", "ja", "zh", "fr", "de"],
-        ),
         # --- Pocket-TTS: 100M, CPU, clone + presets, CC-BY-4.0 -----
         ModelConfig(
             model_name="pocket-tts",
@@ -280,56 +251,6 @@ def _get_tts_configs() -> list[ModelConfig]:
             ],
             quant="int8",
         ),
-        # --- Parler-TTS Mini: Apache-2.0, text-described voice --------
-        ModelConfig(
-            model_name="parler-tts-mini",
-            display_name="Parler-TTS Mini",
-            engine="parler_tts",
-            hf_repo_id="parler-tts/parler-tts-mini-v1",
-            model_size="mini",
-            size_mb=880,
-            min_ram_mb=1100,
-            min_vram_mb=0,
-            voice_design=True,
-            quality_score=6,
-            category="tts",
-            pip_packages=["parler-tts>=0.1.0"],
-            preset_voices=[
-                "Jon",
-                "Lea",
-                "Gary",
-                "Jenna",
-                "Mike",
-                "Laura",
-                "Alex",
-                "Ella",
-                "Josh",
-                "Bill",
-                "Mia",
-                "Zoey",
-                "Tom",
-                "Lily",
-            ],
-            structured_preset_voices=[
-                PresetVoiceConfig(id="Jon", name="Jon", gender="male", language="en"),
-                PresetVoiceConfig(id="Lea", name="Lea", gender="female", language="en"),
-                PresetVoiceConfig(id="Gary", name="Gary", gender="male", language="en"),
-                PresetVoiceConfig(id="Jenna", name="Jenna", gender="female", language="en"),
-                PresetVoiceConfig(id="Mike", name="Mike", gender="male", language="en"),
-                PresetVoiceConfig(id="Laura", name="Laura", gender="female", language="en"),
-                PresetVoiceConfig(id="Alex", name="Alex", gender="male", language="en"),
-                PresetVoiceConfig(id="Ella", name="Ella", gender="female", language="en"),
-                PresetVoiceConfig(id="Josh", name="Josh", gender="male", language="en"),
-                PresetVoiceConfig(id="Bill", name="Bill", gender="male", language="en"),
-                PresetVoiceConfig(id="Mia", name="Mia", gender="female", language="en"),
-                PresetVoiceConfig(id="Zoey", name="Zoey", gender="female", language="en"),
-                PresetVoiceConfig(id="Tom", name="Tom", gender="male", language="en"),
-                PresetVoiceConfig(id="Lily", name="Lily", gender="female", language="en"),
-            ],
-            languages=["en"],
-            needs_trim=True,
-            quant="int8",
-        ),
         # --- KittenTTS mini: Apache-2.0, lightest TTS (no torch, CPU-only).
         # Checkpoint is selectable via KITTEN_SIZE env (mini=80MB / micro=40MB /
         # nano=15MB). 8 preset voices, no cloning, no voice mixing. Output 24kHz.
@@ -360,21 +281,21 @@ def _get_tts_configs() -> list[ModelConfig]:
         # --- Qwen3-TTS 12Hz 1.7B Base (GGUF): llama-tts sidecar ------------
         # Apache-2.0 weights, sellable (catalog id qwen3-tts-1.7b, $40).
         # Needs TWO files from ggml-org/Qwen3-TTS-12Hz-1.7B-Base-GGUF:
-        # backbone Q4_K_M (1.04 GB) + mmproj Q8_0 (446 MB). One-shot
+        # backbone Q8_0 (1.85 GB) + mmproj Q8_0 (446 MB). One-shot
         # subprocess per generation; batch TTS on weak CPUs (RTF ~3-6).
         ModelConfig(
             model_name="qwen3-tts-1.7b",
             display_name="Qwen3-TTS 12Hz 1.7B Base (GGUF)",
             engine="qwen3_tts",
             hf_repo_id="ggml-org/Qwen3-TTS-12Hz-1.7B-Base-GGUF",
-            size_mb=1486,
-            min_ram_mb=2000,
+            size_mb=2296,
+            min_ram_mb=3000,
             min_vram_mb=0,
             clone_voice=True,
             voice_design=True,
-            quality_score=8,
+            quality_score=9,
             category="tts",
-            quant="Q4_K_M",
+            quant="Q8_0",
             languages=["zh", "en", "de", "it", "pt", "es", "ja", "ko", "fr", "ru"],
         ),
         # --- Bark Small (GGUF): CrispASR sidecar ---------------------------
@@ -388,12 +309,52 @@ def _get_tts_configs() -> list[ModelConfig]:
             display_name="Bark Small (GGUF)",
             engine="bark_small",
             hf_repo_id="cstr/bark-small-GGUF",
-            size_mb=235,
-            quality_score=4,
+            size_mb=435,
+            quality_score=5,
             category="tts",
-            quant="q4_k",
+            quant="q8_0",
             preset_voices=[v.id for v in _BARK_STRUCTURED_VOICES],
             structured_preset_voices=_BARK_STRUCTURED_VOICES,
             languages=["en", "de", "es", "fr", "hi", "it", "ja", "ko", "pl", "pt", "ru", "tr", "zh"],
+        ),
+    ]
+
+
+def _get_tts_gguf_configs() -> list[ModelConfig]:
+    """Return GGUF/ONNX variant TTS configs (no torch required)."""
+    return [
+        # --- Zonos v0.1 GGUF (CrispASR CLI, no torch) ---
+        ModelConfig(
+            model_name="zonos-v0.1-gguf",
+            display_name="Zyphra Zonos v0.1 (GGUF)",
+            engine="zonos_gguf",
+            hf_repo_id="cstr/zonos-v0.1-transformer-GGUF",
+            size_mb=1700,
+            min_ram_mb=2000,
+            min_vram_mb=0,
+            clone_voice=True,
+            quality_score=9,
+            category="tts",
+            emotion_control=True,
+            paralinguistic_tags=False,
+            pip_packages=[],
+            languages=["en"],
+            quant="Q8_0",
+        ),
+        # --- Parler TTS Mini GGUF (CrispASR CLI, no torch) ---
+        ModelConfig(
+            model_name="parler-tts-mini-gguf",
+            display_name="Parler-TTS Mini (GGUF)",
+            engine="parler_tts_gguf",
+            hf_repo_id="cstr/parler-tts-mini-v1.1-GGUF",
+            size_mb=979,
+            min_ram_mb=1000,
+            min_vram_mb=0,
+            voice_design=True,
+            quality_score=6,
+            category="tts",
+            pip_packages=[],
+            languages=["en"],
+            quant="Q8_0",
         ),
     ]

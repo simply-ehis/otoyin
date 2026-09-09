@@ -50,11 +50,10 @@ function createInstrumentResolver(): InstrumentResolver {
 				sfDataCache.set(track.instrumentId, data);
 			}
 			const pack = await apiClient.getInstrumentPack(track.instrumentId);
-			const inst = pack.instruments.find(
-				(i) =>
-					i.program === (track.instrumentProgram ?? 0) &&
-					!i.percussion,
-			) ?? pack.instruments[0];
+			const inst =
+				pack.instruments.find(
+					(i) => i.program === (track.instrumentProgram ?? 0) && !i.percussion,
+				) ?? pack.instruments[0];
 			if (!inst) {
 				return null;
 			}
@@ -62,7 +61,11 @@ function createInstrumentResolver(): InstrumentResolver {
 				instrument: {
 					id: inst.id,
 					name: inst.name,
-					format: pack.format as "soundfont" | "webaudiofont" | "sfz" | "sample",
+					format: pack.format as
+						| "soundfont"
+						| "webaudiofont"
+						| "sfz"
+						| "sample",
 					program: inst.program,
 					bankMSB: inst.bankMSB,
 					bankLSB: inst.bankLSB,

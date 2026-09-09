@@ -185,7 +185,7 @@ function useProfileFormFields(): Pick<
 	>([]);
 	const [effectsDirty, setEffectsDirty] = useState(false);
 	const [defaultEngine, setDefaultEngine] = useState<string>("");
-	const [designEngine, setDesignEngine] = useState<string>("parler_tts");
+	const [designEngine, setDesignEngine] = useState<string>("parler_tts_gguf");
 
 	const form = useForm<ProfileFormValues>({
 		resolver: zodResolver(makeProfileSchema(t)),

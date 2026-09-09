@@ -47,6 +47,10 @@ def purge_stale_state(db, data_dir: Path) -> dict[str, int]:
     summary["orphaned_agent_memory"] = _purge_orphaned_agent_memory(db)
     summary["orphaned_entitlements"] = _purge_orphaned_entitlements(db)
 
+    # DB size cap — prevent unbounded SQLite growth by pruning old completed
+    # generations when the file exceeds the threshold.
+    summary["db_pruned"] = _enforce_db_size_cap(db, data_dir)
+
     total = sum(summary.values())
     if total > 0:
         items = ", ".join(f"{k}={v}" for k, v in summary.items() if v > 0)
@@ -345,3 +349,71 @@ def _purge_orphaned_entitlements(db) -> int:
 
     result = db.execute(sa_text("DELETE FROM entitlements WHERE license_id NOT IN (SELECT id FROM licenses)"))
     return result.rowcount
+
+
+# ---------------------------------------------------------------------------
+# 13. DB size cap
+# ---------------------------------------------------------------------------
+
+# 500 MB — generous enough for heavy users, small enough to prevent bloat.
+_DB_SIZE_CAP_BYTES = 500 * 1024 * 1024
+# Stop pruning once we've freed this much (avoids nuking the whole history).
+_DB_PRUNE_TARGET_BYTES = 100 * 1024 * 1024
+
+
+def _enforce_db_size_cap(db, data_dir: Path) -> int:
+    """If the SQLite file exceeds _DB_SIZE_CAP_BYTES, delete the oldest
+    completed generations (and their audio files) until we've freed
+    _DB_PRUNE_TARGET_BYTES or the file is under the cap.
+
+    Returns the number of generations pruned.
+    """
+    from sqlalchemy import text as sa_text
+
+    db_path = data_dir / "otoyin.db"
+    if not db_path.exists():
+        return 0
+
+    file_size = db_path.stat().st_size
+    if file_size <= _DB_SIZE_CAP_BYTES:
+        return 0
+
+    logger.info(
+        "DB size cap exceeded: %.1f MB > %.1f MB — pruning oldest completed generations",
+        file_size / (1024 * 1024),
+        _DB_SIZE_CAP_BYTES / (1024 * 1024),
+    )
+
+    # Find oldest completed generations (not favorited, not actively referenced).
+    rows = db.execute(
+        sa_text(
+            "SELECT id, audio_path FROM generations "
+            "WHERE status = 'completed' AND is_favorited = 0 "
+            "ORDER BY created_at ASC LIMIT 100"
+        )
+    ).fetchall()
+
+    pruned = 0
+    freed = 0
+    for gen_id, audio_path in rows:
+        if freed >= _DB_PRUNE_TARGET_BYTES:
+            break
+        # Delete the audio file if it exists.
+        if audio_path:
+            try:
+                p = Path(audio_path)
+                if p.exists():
+                    freed += p.stat().st_size
+                    p.unlink(missing_ok=True)
+            except OSError:
+                pass
+        # Delete the generation row (cascades to versions).
+        db.execute(sa_text("DELETE FROM generation_versions WHERE generation_id = :id"), {"id": gen_id})
+        db.execute(sa_text("DELETE FROM generations WHERE id = :id"), {"id": gen_id})
+        pruned += 1
+
+    if pruned > 0:
+        db.commit()
+        logger.info("DB size cap: pruned %d generations, freed ~%.1f MB", pruned, freed / (1024 * 1024))
+
+    return pruned

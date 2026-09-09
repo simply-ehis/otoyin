@@ -35,7 +35,12 @@ class DubPreviewRequest(BaseModel):
 @router.post("/dubbing/dub")
 async def start_dubbing(data: DubRequest, background_tasks: BackgroundTasks):
     """Start a full video dubbing job (async)."""
-    video = Path(data.video_path)
+    from ..config import resolve_storage_path
+
+    resolved = resolve_storage_path(data.video_path)
+    if resolved is None:
+        raise HTTPException(status_code=403, detail="Access denied: path outside allowed directory")
+    video = resolved
     if not video.is_file():
         raise HTTPException(status_code=404, detail=ERR_AUDIO_NOT_FOUND)
 
@@ -128,8 +133,13 @@ async def download_dubbed_video(job_id: str):
 
 @router.post("/dubbing/preview")
 async def preview_dubbing(data: DubPreviewRequest):
-    """Transcribe a video without translating or synthesizing (preview only)."""
-    video = Path(data.video_path)
+    """Preview dubbing for a short segment of a video."""
+    from ..config import resolve_storage_path
+
+    resolved = resolve_storage_path(data.video_path)
+    if resolved is None:
+        raise HTTPException(status_code=403, detail="Access denied: path outside allowed directory")
+    video = resolved
     if not video.is_file():
         raise HTTPException(status_code=404, detail=ERR_AUDIO_NOT_FOUND)
 

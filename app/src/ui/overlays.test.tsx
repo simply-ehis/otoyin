@@ -159,7 +159,7 @@ describe("Select", () => {
 				</SelectTrigger>
 				<SelectContent>
 					<SelectItem value="kokoro">Kokoro</SelectItem>
-					<SelectItem value="zonos">Zonos</SelectItem>
+					<SelectItem value="zonos_gguf">Zonos</SelectItem>
 				</SelectContent>
 			</Select>,
 		);
@@ -174,7 +174,7 @@ describe("Select", () => {
 		fireEvent.keyDown(trigger, { key: "ArrowDown" });
 		const option = await screen.findByRole("option", { name: "Zonos" });
 		fireEvent.click(option);
-		expect(onValueChange).toHaveBeenCalledWith("zonos");
+		expect(onValueChange).toHaveBeenCalledWith("zonos_gguf");
 	});
 
 	it("announces the placeholder before a choice exists", () => {

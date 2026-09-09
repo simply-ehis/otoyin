@@ -436,7 +436,7 @@ MCP_WIRED_TOOLS = [
                 "type": "object",
                 "properties": {
                     "audio_path": {"type": "string"},
-                    "engine": {"type": "string", "description": "VC engine (rvc, seed_vc, openvoice)"},
+                    "engine": {"type": "string", "description": "VC engine (rvc_onnx, seed_vc, openvoice_onnx)"},
                     "voice_pack": {"type": "string", "description": "Voice pack or model name"},
                     "reference_audio_path": {"type": "string", "description": "Reference audio for zero-shot cloning"},
                     "transpose": {"type": "integer", "description": "Pitch shift in semitones"},

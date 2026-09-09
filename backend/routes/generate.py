@@ -26,7 +26,7 @@ class SFXGenerateRequest(BaseModel):
 
 
 class MusicGenerateRequest(BaseModel):
-    engine: str = "acestep"
+    engine: str = "acestep_gguf"
     prompt: str = Field(..., min_length=1, max_length=1000)
     duration_seconds: float = Field(default=30.0, ge=1.0, le=300.0)
     genre: str = Field(default="pop", max_length=32)

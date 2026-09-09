@@ -30,6 +30,13 @@ async def run_recipe(body: RecipeRunRequest):
     Each segment is a generated clip (storage path) with optional cleanup effects.
     Returns the mastered export path + measured integrated LUFS.
     """
+    from ..config import resolve_storage_path
+
+    for seg in body.segments:
+        if resolve_storage_path(seg.audio_path) is None:
+            raise HTTPException(status_code=403, detail="Access denied: path outside allowed directory")
+    if body.music_path and resolve_storage_path(body.music_path) is None:
+        raise HTTPException(status_code=403, detail="Access denied: path outside allowed directory")
     try:
         from ..services.recipe_runner import recipe_run
 

@@ -281,7 +281,7 @@ pub async fn start_system_audio_capture(
     state: State<'_, AppState>,
     _max_duration_secs: Option<u32>,
 ) -> Result<(), String> {
-    let mut guard = state.audio.capture.lock().unwrap();
+    let mut guard = state.audio.capture.lock().map_err(|e| format!("lock poisoned: {e}"))?;
     if guard.is_some() {
         return Err("system audio capture already in progress".to_string());
     }
@@ -292,7 +292,7 @@ pub async fn start_system_audio_capture(
 
 #[tauri::command]
 pub async fn stop_system_audio_capture(state: State<'_, AppState>) -> Result<String, String> {
-    let mut guard = state.audio.capture.lock().unwrap();
+    let mut guard = state.audio.capture.lock().map_err(|e| format!("lock poisoned: {e}"))?;
     let mut capture = guard
         .take()
         .ok_or_else(|| "no capture in progress".to_string())?;
@@ -300,10 +300,10 @@ pub async fn stop_system_audio_capture(state: State<'_, AppState>) -> Result<Str
     if let Some(join) = capture.join.take() {
         let _ = join.join();
     }
-    if let Some(err) = capture.error.lock().unwrap().take() {
+    if let Some(err) = capture.error.lock().map_err(|e| format!("lock poisoned: {e}"))?.take() {
         return Err(err);
     }
-    let samples = std::mem::take(&mut *capture.samples.lock().unwrap());
+    let samples = std::mem::take(&mut *capture.samples.lock().map_err(|e| format!("lock poisoned: {e}"))?);
     samples_to_wav_base64(&samples, capture.sample_rate, capture.channels)
 }
 
@@ -478,9 +478,9 @@ pub async fn play_audio_to_devices(
         return Err(err);
     }
 
-    let mut active = state.audio.playback.active.lock().unwrap();
+    let mut active = state.audio.playback.active.lock().map_err(|e| format!("lock poisoned: {e}"))?;
     active.extend(spawned);
-    *state.audio.playback.stop.lock().unwrap() = Some(stop);
+    *state.audio.playback.stop.lock().map_err(|e| format!("lock poisoned: {e}"))? = Some(stop);
     Ok(())
 }
 
@@ -493,14 +493,22 @@ pub async fn stop_audio_playback(state: State<'_, AppState>) -> Result<(), Strin
 /// Signal all playback threads to stop and wait for them to drop their
 /// streams (dropping a cpal stream halts that device).
 fn stop_playback(playback: &PlaybackState) {
-    if let Some(stop) = playback.stop.lock().unwrap().as_ref() {
-        stop.store(true, Ordering::SeqCst);
+    if let Ok(guard) = playback.stop.lock() {
+        if let Some(stop) = guard.as_ref() {
+            stop.store(true, Ordering::SeqCst);
+        }
     }
-    let handles: Vec<JoinHandle<()>> = playback.active.lock().unwrap().drain(..).collect();
+    let handles: Vec<JoinHandle<()>> = playback
+        .active
+        .lock()
+        .map(|mut g| g.drain(..).collect())
+        .unwrap_or_default();
     for handle in handles {
         let _ = handle.join();
     }
-    *playback.stop.lock().unwrap() = None;
+    if let Ok(mut guard) = playback.stop.lock() {
+        *guard = None;
+    }
 }
 
 // ── Microphone capture ────────────────────────────────────────────────
@@ -544,7 +552,9 @@ fn spawn_mic_thread(
                 let err_fn = {
                     let failure = failure.clone();
                     move |e| {
-                        *failure.lock().unwrap() = Some(format!("microphone stream error: {e}"));
+                        if let Ok(mut guard) = failure.lock() {
+                            *guard = Some(format!("microphone stream error: {e}"));
+                        }
                     }
                 };
                 let config: cpal::StreamConfig = supported.config();
@@ -553,7 +563,7 @@ fn spawn_mic_thread(
                     cpal::SampleFormat::F32 => device.build_input_stream(
                         &config,
                         move |data: &[f32], _| {
-                            sink.lock().unwrap().extend_from_slice(data);
+                            sink.lock().map(|mut g| g.extend_from_slice(data)).ok();
                         },
                         err_fn,
                         None,
@@ -561,9 +571,7 @@ fn spawn_mic_thread(
                     cpal::SampleFormat::I16 => device.build_input_stream(
                         &config,
                         move |data: &[i16], _| {
-                            sink.lock()
-                                .unwrap()
-                                .extend(data.iter().map(|&v| v as f32 / i16::MAX as f32));
+                            sink.lock().map(|mut g| g.extend(data.iter().map(|&v| v as f32 / i16::MAX as f32))).ok();
                         },
                         err_fn,
                         None,
@@ -571,9 +579,9 @@ fn spawn_mic_thread(
                     cpal::SampleFormat::U16 => device.build_input_stream(
                         &config,
                         move |data: &[u16], _| {
-                            sink.lock().unwrap().extend(
+                            sink.lock().map(|mut g| g.extend(
                                 data.iter().map(|&v| v as f32 / u16::MAX as f32 * 2.0 - 1.0),
-                            );
+                            )).ok();
                         },
                         err_fn,
                         None,
@@ -593,7 +601,7 @@ fn spawn_mic_thread(
                 let _ = tx.send(Ok((sample_rate, channels)));
                 // Hold the stream until stopped or failed.
                 while !stop.load(Ordering::Relaxed)
-                    && failure.lock().unwrap().is_none()
+                    && failure.lock().map(|g| g.is_none()).unwrap_or(false)
                 {
                     std::thread::sleep(std::time::Duration::from_millis(20));
                 }
@@ -631,7 +639,7 @@ pub async fn start_mic_capture(
     state: State<'_, AppState>,
     device_id: Option<String>,
 ) -> Result<(), String> {
-    let mut guard = state.audio.mic.lock().unwrap();
+    let mut guard = state.audio.mic.lock().map_err(|e| format!("lock poisoned: {e}"))?;
     if guard.is_some() {
         return Err("microphone capture already in progress".to_string());
     }
@@ -665,7 +673,7 @@ pub async fn start_mic_capture(
 
 #[tauri::command]
 pub async fn stop_mic_capture(state: State<'_, AppState>) -> Result<String, String> {
-    let mut guard = state.audio.mic.lock().unwrap();
+    let mut guard = state.audio.mic.lock().map_err(|e| format!("lock poisoned: {e}"))?;
     let mut capture = guard
         .take()
         .ok_or_else(|| "no microphone capture in progress".to_string())?;
@@ -673,10 +681,10 @@ pub async fn stop_mic_capture(state: State<'_, AppState>) -> Result<String, Stri
     if let Some(join) = capture.join.take() {
         let _ = join.join();
     }
-    if let Some(err) = capture.error.lock().unwrap().take() {
+    if let Some(err) = capture.error.lock().map_err(|e| format!("lock poisoned: {e}"))?.take() {
         return Err(err);
     }
-    let samples = std::mem::take(&mut *capture.samples.lock().unwrap());
+    let samples = std::mem::take(&mut *capture.samples.lock().map_err(|e| format!("lock poisoned: {e}"))?);
     if samples.is_empty() {
         return Err("captured only silence — check the microphone level".to_string());
     }

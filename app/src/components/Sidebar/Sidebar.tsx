@@ -106,9 +106,11 @@ export function Sidebar({ isMacOS }: { isMacOS: boolean }) {
 			? 0
 			: NAV_GROUPS.reduce(
 					(acc, group) =>
-						acc + group.items.filter((item) => !visibleTabs.includes(item.path)).length,
+						acc +
+						group.items.filter((item) => !visibleTabs.includes(item.path))
+							.length,
 					0,
-			  );
+				);
 
 	useEffect(() => {
 		if (typeof window === "undefined") {

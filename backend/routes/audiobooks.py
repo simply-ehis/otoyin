@@ -227,8 +227,14 @@ async def preview_book(
     suffix = Path(file.filename or "").suffix.lower()
     if suffix not in (".pdf", ".epub"):
         raise HTTPException(status_code=400, detail=ERR_FORMAT_UNSUPPORTED_EPUB)
+    content = await file.read()
+    if len(content) > config.IMPORT_AUDIO_MAX_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large (max {config.IMPORT_AUDIO_MAX_BYTES // (1024 * 1024)} MB)",
+        )
     tmp = Path(tempfile.mktemp(suffix=suffix))
-    tmp.write_bytes(await file.read())
+    tmp.write_bytes(content)
     try:
         from ..utils.async_audio import async_parse_book
 
@@ -264,8 +270,14 @@ async def import_book(
     suffix = Path(file.filename or "").suffix.lower()
     if suffix not in (".pdf", ".epub"):
         raise HTTPException(status_code=400, detail=ERR_FORMAT_UNSUPPORTED_EPUB)
+    content = await file.read()
+    if len(content) > config.IMPORT_AUDIO_MAX_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large (max {config.IMPORT_AUDIO_MAX_BYTES // (1024 * 1024)} MB)",
+        )
     tmp = Path(tempfile.mktemp(suffix=suffix))
-    tmp.write_bytes(await file.read())
+    tmp.write_bytes(content)
     try:
         from ..services.book_import import save_cover
         from ..utils.async_audio import async_parse_book
@@ -321,7 +333,12 @@ class ImportPathRequest(BaseModel):
 @router.post("/audiobooks/import-path", response_model=AudiobookDetailResponse)
 async def import_book_from_path(data: ImportPathRequest, db: Session = Depends(get_db)):
     """Import an audiobook from a local file path (for assistant/MCP tools)."""
-    path = Path(data.file_path)
+    from ..config import resolve_storage_path
+
+    resolved = resolve_storage_path(data.file_path)
+    if resolved is None:
+        raise HTTPException(status_code=403, detail="Access denied: path outside allowed directory")
+    path = resolved
     if not path.exists():
         raise HTTPException(status_code=400, detail=ERR_AUDIO_NOT_FOUND)
     suffix = path.suffix.lower()
@@ -369,7 +386,7 @@ async def import_book_from_path(data: ImportPathRequest, db: Session = Depends(g
         raise
     except Exception as e:
         logger.exception("Audiobook import from path failed")
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise HTTPException(status_code=500, detail="Audiobook import failed") from e
 
 
 @router.post("/audiobooks/{book_id}/chapters", response_model=ChapterResponse)
@@ -426,12 +443,18 @@ async def upload_cover(book_id: str, file: UploadFile = File(...), db: Session =
     book = db.query(DBAudiobook).filter_by(id=book_id).first()
     if not book:
         raise HTTPException(status_code=404, detail=ERR_PROJECT_NOT_FOUND)
-    data = await file.read()
-    if len(data) > 5 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail=ERR_COVER_TOO_LARGE)
+    max_bytes = config.IMAGE_MAX_FILE_SIZE
+    data = bytearray()
+    while chunk := await file.read(65536):
+        data.extend(chunk)
+        if len(data) > max_bytes:
+            raise HTTPException(
+                status_code=413,
+                detail=f"Cover too large (max {max_bytes // (1024 * 1024)} MB)",
+            )
     from ..services.book_import import persist_uploaded_cover
 
-    cpath = persist_uploaded_cover(book_id, file.filename or "cover.png", data)
+    cpath = persist_uploaded_cover(book_id, file.filename or "cover.png", bytes(data))
     book.cover_path = cpath
     db.commit()
     return {"cover_path": cpath}

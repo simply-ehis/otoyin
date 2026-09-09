@@ -174,13 +174,10 @@ export function VoicePicker() {
 											{p.name}
 										</span>
 										<Badge
-											tone={
-												p.voice_type === "preset" ? "neutral" : "accent"
-											}
+											tone={p.voice_type === "preset" ? "neutral" : "accent"}
 											className="ml-auto shrink-0"
 										>
-											{VOICE_TYPE_LABELS[p.voice_type ?? ""] ??
-												p.voice_type}
+											{VOICE_TYPE_LABELS[p.voice_type ?? ""] ?? p.voice_type}
 										</Badge>
 									</span>
 									<span className="text-[11px] tabular-nums text-muted-foreground">

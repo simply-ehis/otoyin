@@ -75,7 +75,9 @@ export function UseCaseWizard() {
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogContent className="max-w-lg">
-				<DialogTitle>{t("onboarding.wizard.title", "What do you want to do?")}</DialogTitle>
+				<DialogTitle>
+					{t("onboarding.wizard.title", "What do you want to do?")}
+				</DialogTitle>
 				<DialogDescription>
 					{t(
 						"onboarding.wizard.description",
@@ -104,7 +106,9 @@ export function UseCaseWizard() {
 								<div
 									className={cn(
 										"mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md",
-										isSelected ? "bg-accent text-white" : "bg-secondary text-muted-foreground",
+										isSelected
+											? "bg-accent text-white"
+											: "bg-secondary text-muted-foreground",
 									)}
 								>
 									<Icon className="size-4" aria-hidden="true" />

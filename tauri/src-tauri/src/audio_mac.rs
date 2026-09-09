@@ -50,7 +50,7 @@ impl SCStreamOutputTrait for AudioHandler {
         let Some(list) = sample.audio_buffer_list() else {
             return;
         };
-        let mut sink = self.samples.lock().unwrap();
+        let mut sink = self.samples.lock().unwrap_or_else(|e| e.into_inner());
         if sink.len() >= MAX_SAMPLES {
             return;
         }
@@ -144,7 +144,9 @@ fn run(
         Ok(())
     })();
     if let Err(e) = result {
-        *error.lock().unwrap() = Some(e);
+        if let Ok(mut guard) = error.lock() {
+            *guard = Some(e);
+        }
     }
 }
 

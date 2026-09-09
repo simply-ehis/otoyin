@@ -103,7 +103,9 @@ export function ImportWizard({ onImported }: { onImported: () => void }) {
 	};
 
 	const importPastedText = async () => {
-		if (!pasteText.trim()) return;
+		if (!pasteText.trim()) {
+			return;
+		}
 		setBusy(true);
 		setError(null);
 		try {
@@ -307,7 +309,9 @@ export function ImportWizard({ onImported }: { onImported: () => void }) {
 							e.preventDefault();
 							setDragOver(false);
 							const f = e.dataTransfer.files[0];
-							if (f) void pick(f);
+							if (f) {
+								void pick(f);
+							}
 						}}
 						onDragOver={(e) => {
 							e.preventDefault();
@@ -388,7 +392,9 @@ function splitChapters(text: string): Array<{ title: string; text: string }> {
 		const chapterMatch = line.match(/^Chapter\s+(\d+)[:\s]*(.*)/i);
 
 		if (headingMatch || chapterMatch) {
-			if (current) chapters.push(current);
+			if (current) {
+				chapters.push(current);
+			}
 			const title = chapterMatch
 				? `Chapter ${chapterMatch[1]}${chapterMatch[2] ? `: ${chapterMatch[2].trim()}` : ""}`
 				: line.replace(/^#{1,3}\s+/, "").trim();
@@ -400,7 +406,9 @@ function splitChapters(text: string): Array<{ title: string; text: string }> {
 			current.text += (current.text ? "\n" : "") + line;
 		}
 	}
-	if (current) chapters.push(current);
+	if (current) {
+		chapters.push(current);
+	}
 
 	if (chapters.length <= 1 && text.trim()) {
 		const words = text.trim().split(/\s+/);

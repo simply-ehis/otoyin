@@ -12,6 +12,10 @@ from typing import Literal
 
 logger = logging.getLogger(__name__)
 
+# Hard cap on queued generations to prevent unbounded memory growth when
+# the user fires off many requests while one is still processing.
+_QUEUE_MAXSIZE = 20
+
 # Keep references to fire-and-forget background tasks to prevent GC
 _background_tasks: set = set()
 
@@ -71,6 +75,12 @@ async def _generation_worker():
             except asyncio.CancelledError:
                 if not task.cancelled():
                     raise
+        except MemoryError:
+            logger.exception("Out of memory during generation %s", job.generation_id)
+            await _force_fail_if_active(
+                job.generation_id,
+                "Out of memory — try a shorter text or restart the app",
+            )
         except Exception:
             logger.exception("Generation worker failed for job %s", job.generation_id)
             await _force_fail_if_active(
@@ -117,6 +127,8 @@ def enqueue_generation(generation_id: str, coro, *, dedup_key: str | None = None
 
     If *dedup_key* is provided and an identical in-flight generation exists,
     raises ``DuplicateGenerationError`` instead of enqueuing a duplicate.
+
+    Raises ``RuntimeError`` if the queue is full (backpressure).
     """
     if _generation_queue is None:
         raise RuntimeError("Generation queue has not been initialized")
@@ -127,7 +139,16 @@ def enqueue_generation(generation_id: str, coro, *, dedup_key: str | None = None
         _inflight_dedup_keys.add(dedup_key)
 
     _queued_generation_ids.add(generation_id)
-    _generation_queue.put_nowait(GenerationJob(generation_id=generation_id, coro=coro, dedup_key=dedup_key))
+    try:
+        _generation_queue.put_nowait(GenerationJob(generation_id=generation_id, coro=coro, dedup_key=dedup_key))
+    except asyncio.QueueFull:
+        _queued_generation_ids.discard(generation_id)
+        if dedup_key:
+            _inflight_dedup_keys.discard(dedup_key)
+        raise RuntimeError(
+            f"Generation queue is full ({_QUEUE_MAXSIZE} pending). "
+            "Wait for the current generation to finish before starting another."
+        )
 
 
 def cancel_generation(generation_id: str) -> Literal["queued", "running"] | None:
@@ -160,7 +181,7 @@ def init_queue(force: bool = False):
         for task in list(_running_generation_tasks.values()):
             task.cancel()
 
-    _generation_queue = asyncio.Queue()
+    _generation_queue = asyncio.Queue(maxsize=_QUEUE_MAXSIZE)
     _queued_generation_ids = set()
     _running_generation_tasks = {}
     _cancelled_generation_ids = set()

@@ -38,10 +38,10 @@ async def model_capabilities():
             "available": _safe_available(lambda: get_llm_backend_for_engine("gguf_llm")),
             "always_on": is_engine_always_on("gguf_llm"),
         },
-        "rvc": {
-            "label": "Voice Conversion — RVC",
-            "available": _safe_available(lambda: get_vc_backend("rvc")),
-            "always_on": is_engine_always_on("rvc"),
+        "rvc_onnx": {
+            "label": "Voice Conversion — RVC ONNX",
+            "available": _safe_available(lambda: get_vc_backend("rvc_onnx")),
+            "always_on": is_engine_always_on("rvc_onnx"),
         },
         "seed_vc": {
             "label": "Voice Conversion — Seed-VC",

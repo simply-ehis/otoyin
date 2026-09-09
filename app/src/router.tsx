@@ -435,14 +435,26 @@ function RootLayout() {
 		<AppFrame>
 			<div className="flex flex-1 min-h-0 overflow-hidden">
 				<Suspense fallback={<div className="w-16 bg-secondary shrink-0" />}>
-					<Sidebar isMacOS={isMacOS} />
+					<ErrorBoundary
+						fallback={() => <div className="w-16 bg-secondary shrink-0" />}
+					>
+						<Sidebar isMacOS={isMacOS} />
+					</ErrorBoundary>
 				</Suspense>
 
 				<main className="flex-1 overflow-hidden flex flex-col min-w-0">
-					<RecommendedModelsBanner />
-					<AnnouncementBanner />
-					<ServerStatusBanner />
-					<TabIntroMount />
+					<ErrorBoundary fallback={() => null}>
+						<RecommendedModelsBanner />
+					</ErrorBoundary>
+					<ErrorBoundary fallback={() => null}>
+						<AnnouncementBanner />
+					</ErrorBoundary>
+					<ErrorBoundary fallback={() => null}>
+						<ServerStatusBanner />
+					</ErrorBoundary>
+					<ErrorBoundary fallback={() => null}>
+						<TabIntroMount />
+					</ErrorBoundary>
 					<div className="container mx-auto px-8 max-w-[1800px] h-full overflow-hidden flex flex-col">
 						<Suspense fallback={<AppLoadingScreen />}>
 							<ErrorBoundary>
@@ -470,14 +482,20 @@ function RootLayout() {
 			{isGenerating && !miniGameOpen && (
 				<div className="relative z-40 float-right mr-4 mb-4">
 					<Suspense>
-						<GenerationGameNudge onOpen={() => setMiniGameOpen(true)} />
+						<ErrorBoundary fallback={() => null}>
+							<GenerationGameNudge onOpen={() => setMiniGameOpen(true)} />
+						</ErrorBoundary>
 					</Suspense>
 				</div>
 			)}
 			<Suspense>
-				<MiniGame />
+				<ErrorBoundary fallback={() => null}>
+					<MiniGame />
+				</ErrorBoundary>
 			</Suspense>
-			<AutoUpdateFlow />
+			<ErrorBoundary fallback={() => null}>
+				<AutoUpdateFlow />
+			</ErrorBoundary>
 			<Toaster />
 		</AppFrame>
 	);

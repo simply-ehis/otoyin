@@ -252,7 +252,7 @@ GENERATION_TOOLS = [
                 "type": "object",
                 "properties": {
                     "prompt": {"type": "string"},
-                    "engine": {"type": "string", "default": "acestep"},
+                    "engine": {"type": "string", "default": "acestep_gguf"},
                     "duration_seconds": {"type": "number", "default": 30.0},
                     "genre": {"type": "string", "default": "pop"},
                     "mood": {"type": "string", "default": "neutral"},

@@ -270,7 +270,7 @@ def register_speech_tools(mcp: FastMCP) -> None:
                     raise ValueError("design_prompt or voice_attributes is required for voice_type='designed'")
                 from ...services.profiles import DESIGN_CAPABLE_ENGINES
 
-                engine_for_design = default_engine or "parler_tts"
+                engine_for_design = default_engine or "parler_tts_gguf"
                 if engine_for_design not in DESIGN_CAPABLE_ENGINES:
                     raise ValueError(
                         f"Engine '{engine_for_design}' does not support voice design. "

@@ -26,7 +26,7 @@ class GenerationRequest(BaseModel):
     instruct: str | None = Field(None, max_length=500)
     engine: str | None = Field(
         default=None,
-        pattern="^(kokoro|fish_speech|fish_speech_s2|zonos|styletts2|chattts|f5_tts|pocket_tts|moss_tts_nano|parler_tts|kitten_tts|neutts|neutts_2e|orpheus|qwen3_tts|bark_small|cloud)$",
+        pattern="^(kokoro|fish_speech|fish_speech_s2|zonos_gguf|parler_tts_gguf|styletts2|chattts|f5_tts|pocket_tts|moss_tts_nano|kitten_tts|neutts|neutts_2e|orpheus|qwen3_tts|bark_small|cloud)$",
     )
     temperature: float | None = Field(
         default=None,

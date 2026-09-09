@@ -144,18 +144,22 @@ def compose_design_prompt(attrs: dict | None, fallback: str | None = None) -> st
 logger = logging.getLogger(__name__)
 
 CLONING_ENGINES = {
-    "zonos",
+    "zonos_gguf",
+    "styletts2",
     "qwen3_tts",
     "pocket_tts",
     "moss_tts_nano",
     "neutts",
     "neutts_2e",
+    "parler_tts_gguf",
+    "orpheus",
+    "bark_small",
 }
 
 # Engines that accept text-described voice design (Parler-TTS pattern:
 # a natural-language description controls gender, tone, accent, style).
 DESIGN_CAPABLE_ENGINES: dict[str, dict] = {
-    "parler_tts": {
+    "parler_tts_gguf": {
         "label": "Parler-TTS Mini",
         "design_mode": "text_description",
         "description": "Text-described voice design — compose a natural-language description of the speaker.",
@@ -169,14 +173,27 @@ DESIGN_CAPABLE_ENGINES: dict[str, dict] = {
             "pacing": "Speaking speed (slow/moderate/fast).",
         },
     },
+    "neutts_2e": {
+        "label": "NeuTTS-2E",
+        "design_mode": "text_description",
+        "description": "Emotion-aware voice design — compose a natural-language description of the speaker.",
+        "supported_attributes": ["gender", "age", "accent", "tone", "style", "pacing"],
+        "attributes_help": {
+            "gender": "Controls the speaker gender (male/female/non-binary).",
+            "age": "Controls apparent age (child/teen/young_adult/adult/middle_aged/senior).",
+            "accent": "Sets the speaker accent/nationality (american, british, french, etc.).",
+            "tone": "Voice quality (warm, bright, deep, husky, clear, smooth, etc.).",
+            "style": "Speaking delivery style (formal, casual, dramatic, narrative, etc.).",
+            "pacing": "Speaking speed (slow/moderate/fast).",
+        },
+    },
 }
-
 
 def get_voice_design_capabilities() -> dict:
     """Return per-engine voice design capability info for the frontend."""
     return {
         "engines": DESIGN_CAPABLE_ENGINES,
-        "default_engine": "parler_tts",
+        "default_engine": "parler_tts_gguf",
         "composed_prompt_preview": True,
     }
 

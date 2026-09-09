@@ -290,7 +290,10 @@ export function useAssistantChat({
 			const tabName = TAB_NAMES[currentPath] ?? currentPath;
 
 			const history = [
-				{ role: "system" as const, content: `The user is currently on the ${tabName} tab (${currentPath}). When they ask "what can I do here?" or similar, describe the features and actions available on this specific tab.` },
+				{
+					role: "system" as const,
+					content: `The user is currently on the ${tabName} tab (${currentPath}). When they ask "what can I do here?" or similar, describe the features and actions available on this specific tab.`,
+				},
 				...messages,
 				{ id: "", role: "user" as const, content: finalContent },
 			].map((m) => ({ role: m.role, content: m.content }));

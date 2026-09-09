@@ -13,10 +13,10 @@
 export const TTS_ENGINES = {
 	kokoro: "Kokoro 82M",
 	fish_speech_s2: "Fish Audio S2 Pro (GGUF)",
-	zonos: "Zyphra Zonos",
+	zonos_gguf: "Zyphra Zonos (GGUF)",
 	styletts2: "StyleTTS2",
 	pocket_tts: "Pocket-TTS",
-	parler_tts: "Parler-TTS Mini",
+	parler_tts_gguf: "Parler-TTS Mini (GGUF)",
 	moss_tts_nano: "MOSS-TTS-Nano",
 	kitten_tts: "KittenTTS (mini)",
 	neutts: "NeuTTS-Air",
@@ -49,12 +49,12 @@ export const ALL_ENGINES = Object.freeze([
 export const MODEL_NAME_MAP: Record<string, (size?: string) => string> = {
 	kokoro: () => "kokoro-onnx",
 	fish_speech_s2: () => "fish-speech-s2-pro",
-	zonos: () => "zonos-v0.1",
+	zonos_gguf: () => "zonos-v0.1",
 	qwen3_tts: () => "qwen3-tts-1.7b",
 	bark_small: () => "bark-small",
 	styletts2: () => "styletts2",
 	pocket_tts: () => "pocket-tts",
-	parler_tts: () => "parler-tts-mini",
+	parler_tts_gguf: () => "parler-tts-mini",
 	moss_tts_nano: () => "moss-tts-nano",
 	kitten_tts: () => "kitten-tts-mini",
 	neutts: () => "neutts-air",
@@ -68,7 +68,7 @@ export const MODEL_NAME_MAP: Record<string, (size?: string) => string> = {
 /** Engines that only support English and force language=en on select. */
 export const ENGLISH_ONLY_ENGINES = new Set([
 	"styletts2",
-	"parler_tts",
+	"parler_tts_gguf",
 	"neutts_2e",
 	"orpheus",
 ]);
@@ -76,7 +76,7 @@ export const ENGLISH_ONLY_ENGINES = new Set([
 /** Engines that support cloned (reference audio) profiles. */
 export const CLONING_ENGINES = new Set([
 	"fish_speech_s2",
-	"zonos",
+	"zonos_gguf",
 	"qwen3_tts",
 	"styletts2",
 	"pocket_tts",
@@ -86,7 +86,7 @@ export const CLONING_ENGINES = new Set([
 ]);
 
 /** Engines that expose built-in preset/designed voices (no reference audio needed). */
-export const PRESET_ONLY_ENGINES = new Set(["kokoro", "parler_tts"]);
+export const PRESET_ONLY_ENGINES = new Set(["kokoro", "parler_tts_gguf"]);
 
 // ── UI option lists (derived from TTS_ENGINES — never hardcoded separately) ───
 
@@ -102,12 +102,12 @@ export const DEFAULT_ENGINE_OPTIONS = Object.entries(TTS_ENGINES).map(
 export const DUB_ENGINES = [
 	"kokoro",
 	"fish_speech_s2",
-	"zonos",
+	"zonos_gguf",
 	"qwen3_tts",
 	"bark_small",
 	"styletts2",
 	"pocket_tts",
-	"parler_tts",
+	"parler_tts_gguf",
 	"moss_tts_nano",
 	"kitten_tts",
 	"neutts",

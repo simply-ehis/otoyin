@@ -49,15 +49,17 @@ export function GettingStarted() {
 		{
 			id: "generate",
 			title: "Generate your first voice",
-			body: hasEngine && hasProfile
-				? "Type in the prompt bar above and hit Generate."
-				: hasEngine
-					? "Complete step 2 first."
-					: "Complete step 1 first.",
+			body:
+				hasEngine && hasProfile
+					? "Type in the prompt bar above and hit Generate."
+					: hasEngine
+						? "Complete step 2 first."
+						: "Complete step 1 first.",
 			done: false,
-			link: hasEngine && hasProfile
-				? { to: "/", label: "Start typing above" }
-				: null,
+			link:
+				hasEngine && hasProfile
+					? { to: "/", label: "Start typing above" }
+					: null,
 		},
 	];
 

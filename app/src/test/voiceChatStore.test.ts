@@ -71,18 +71,20 @@ describe("stale store ref fix", () => {
 		// This is tested at the source level — the actual runtime test would
 		// require mocking WebSocket which is complex. The important thing is
 		// that the code reads fresh state.
-		const fs = require("fs");
-		const path = require("path");
+		const fs = require("node:fs");
+		const path = require("node:path");
 		const source = fs.readFileSync(
 			path.resolve(__dirname, "../stores/voiceChatStore.ts"),
 			"utf-8",
 		);
 
 		// Find the onclose handler
-		const oncloseMatch = source.match(/ws\.onclose\s*=\s*\(\)\s*=>\s*\{([\s\S]*?)\n\t\};/);
+		const oncloseMatch = source.match(
+			/ws\.onclose\s*=\s*\(\)\s*=>\s*\{([\s\S]*?)\n\t\};/,
+		);
 		expect(oncloseMatch).not.toBeNull();
 
-		const oncloseBody = oncloseMatch![1];
+		const oncloseBody = oncloseMatch?.[1];
 		// Should use fresh getState() — the fixed code
 		expect(oncloseBody).toContain("useVoiceChatStore.getState()");
 		// Should NOT use stale closure `store`

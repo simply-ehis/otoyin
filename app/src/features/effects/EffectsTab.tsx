@@ -106,10 +106,10 @@ export function EffectsTab() {
 
 	return (
 		<div className="flex h-full min-h-0 flex-col gap-4">
-		<ScreenHeader
-			title={t("effects.title")}
-			description="Stack, tune, and preview mastering chains."
-			helpPath="/effects"
+			<ScreenHeader
+				title={t("effects.title")}
+				description="Stack, tune, and preview mastering chains."
+				helpPath="/effects"
 				actions={
 					<div className="flex items-center gap-2">
 						<RecordTakeButton

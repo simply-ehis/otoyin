@@ -97,10 +97,9 @@ ENGINE_REGISTRY: list[_TTSBackendEntry] = [
         onnx_module=".kitten_tts_onnx_backend", onnx_class="KittenTTSOnnxBackend",
         onnx_only=True,
     ),
-    # --- Simple torch-only ---
-    _TTSBackendEntry(engine="zonos", torch_module=".zonos_backend", torch_class="ZonosBackend"),
-    _TTSBackendEntry(engine="parler_tts", torch_module=".parler_tts_backend", torch_class="ParlerTTSBackend"),
-    # --- Singleton pre-created instances ---
+    # --- Singleton pre-created instances (no torch needed) ---
+    _TTSBackendEntry(engine="zonos_gguf", singleton_module=".zonos_gguf_backend", singleton_attr="zonos_gguf_backend"),
+    _TTSBackendEntry(engine="parler_tts_gguf", singleton_module=".parler_tts_gguf_backend", singleton_attr="parler_tts_gguf_backend"),
     _TTSBackendEntry(engine="neutts", singleton_module=".neutts_backend", singleton_attr="neutts_backend"),
     _TTSBackendEntry(engine="neutts_2e", singleton_module=".neutts_backend", singleton_attr="neutts_2e_backend"),
     _TTSBackendEntry(engine="orpheus", singleton_module=".orpheus_backend", singleton_attr="orpheus_backend"),
@@ -110,6 +109,10 @@ ENGINE_REGISTRY: list[_TTSBackendEntry] = [
     _TTSBackendEntry(engine="bark_small", singleton_module=".bark_backend", singleton_attr="bark_backend"),
     # --- Subprocess one-shot (s2.cpp, Fish Audio S2 Pro GGUF) ---
     _TTSBackendEntry(engine="fish_speech_s2", singleton_module=".fish_speech_s2_backend", singleton_attr="fish_speech_s2_backend"),
+    # --- Subprocess one-shot (CrispASR zonos-tts GGUF, no torch) ---
+    _TTSBackendEntry(engine="zonos_gguf", singleton_module=".zonos_gguf_backend", singleton_attr="zonos_gguf_backend"),
+    # --- Subprocess one-shot (CrispASR parler-tts GGUF, no torch) ---
+    _TTSBackendEntry(engine="parler_tts_gguf", singleton_module=".parler_tts_gguf_backend", singleton_attr="parler_tts_gguf_backend"),
 ]
 # fmt: on
 
@@ -233,7 +236,7 @@ async def load_engine_model(engine: str, model_size: str = "default") -> None:
     # Check before offloading so we know the true memory state.
     # Subprocess engines (bark, qwen3) and ONNX-only CPU engines skip this
     # because they don't allocate GPU memory.
-    _subprocess_engines = {"qwen3_tts", "bark_small", "fish_speech_s2"}
+    _subprocess_engines = {"qwen3_tts", "bark_small", "fish_speech_s2", "zonos_gguf", "parler_tts_gguf", "acestep_gguf", "rvc_onnx", "openvoice_onnx"}
     estimated_mb = cfg.size_mb if cfg else 0
     skip_vram_check = engine in _subprocess_engines or (cfg is not None and not cfg.gpu_only and estimated_mb < 100)
     if not skip_vram_check and estimated_mb > 0:
@@ -376,11 +379,11 @@ def get_model_load_func(config: ModelConfig):
     if config.engine == "stable_audio":
         return lambda: get_music_backend("stable_audio").load_model()
 
-    if config.engine == "rvc":
+    if config.engine == "rvc_onnx":
         from .configs import get_vc_backend
 
-        voice_name = config.model_name.removeprefix("rvc-")
-        return lambda: get_vc_backend("rvc").load_model(voice_name)
+        voice_name = config.model_name.removeprefix("rvc-onnx-")
+        return lambda: get_vc_backend("rvc_onnx").load_model(voice_name)
 
     return lambda: get_tts_backend_for_engine(config.engine).load_model()
 
@@ -568,10 +571,10 @@ def get_music_backend(engine: str = "stable_audio") -> MusicBackend:
             from .stable_audio_backend import stable_audio_backend
 
             backend = stable_audio_backend
-        elif engine == "acestep":
-            from .acestep_backend import acestep_backend
+        elif engine == "acestep_gguf":
+            from .acestep_gguf_backend import acestep_gguf_backend
 
-            backend = acestep_backend
+            backend = acestep_gguf_backend
         elif engine == "heartmula":
             from .heartmula_backend import heartmula_backend
 

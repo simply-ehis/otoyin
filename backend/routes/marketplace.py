@@ -53,8 +53,11 @@ def _annotate_local_status(products: list[dict]) -> None:
 
 
 @router.get("/marketplace/catalog")
-def get_catalog() -> dict:
+async def get_catalog() -> dict:
     """Return the signed product catalog (prices per docs/PRICING_PLAN.md)."""
+    from ..utils.startup_defer import ensure_catalog_started
+
+    await ensure_catalog_started()
     catalog = build_catalog()
     if not verify_catalog(catalog):
         raise HTTPException(status_code=500, detail="Catalog failed self-verification")

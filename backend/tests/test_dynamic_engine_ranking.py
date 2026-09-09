@@ -34,14 +34,14 @@ class TestEngineWeights:
 
     def test_torch_only_engines_are_heaviest(self):
         """Torch-only engines should have the highest weights."""
-        torch_only = {"zonos", "parler_tts", "styletts2"}
-        for engine in torch_only:
-            assert _ENGINE_WEIGHTS[engine] >= _ENGINE_WEIGHTS["zonos"], f"{engine} should be >= zonos weight"
+        torch_only = {"styletts2"}
+        # styletts2 should be the heaviest (weight 60 in new scheme)
+        assert _ENGINE_WEIGHTS["styletts2"] == 60, "styletts2 should be the heaviest"
 
     def test_subprocess_engines_are_light(self):
         """Subprocess engines should be lighter than torch engines."""
         for engine in _SUBPROCESS_ENGINES:
-            assert _ENGINE_WEIGHTS[engine] < _ENGINE_WEIGHTS["zonos"], f"{engine} should be lighter than zonos"
+            assert _ENGINE_WEIGHTS[engine] < _ENGINE_WEIGHTS["styletts2"], f"{engine} should be lighter than styletts2"
 
     def test_onnx_preferred_set_matches_registry(self):
         """All ONNX-preferred engines should have entries in weights."""
@@ -56,7 +56,7 @@ class TestScoreEngine:
         """ONNX-only should always score lower than torch-only."""
         # ONNX available, both cached
         onnx_score = _score_engine("kitten_tts", cached=True)
-        torch_score = _score_engine("zonos", cached=True)
+        torch_score = _score_engine("styletts2", cached=True)
         assert onnx_score < torch_score
 
     def test_cached_engines_score_lower(self):
@@ -67,7 +67,7 @@ class TestScoreEngine:
 
     def test_cache_bonus_is_consistent(self):
         """The cache bonus should be exactly -10 points."""
-        for engine in ["kokoro", "zonos", "kitten_tts"]:
+        for engine in ["kokoro", "styletts2", "kitten_tts"]:
             cached = _score_engine(engine, cached=True)
             uncached = _score_engine(engine, cached=False)
             assert uncached - cached == 10.0, f"Cache bonus for {engine} should be 10"
@@ -109,8 +109,8 @@ class TestDynamicPreferenceOrder:
         """ONNX engines should rank above torch-heavy engines regardless of GPU."""
         order = dynamic_tts_preference_order()
         # Find positions of key engines
-        if "kitten_tts" in order and "zonos" in order:
-            assert order.index("kitten_tts") < order.index("zonos"), "kitten_tts should rank before zonos"
+        if "kitten_tts" in order and "styletts2" in order:
+            assert order.index("kitten_tts") < order.index("styletts2"), "kitten_tts should rank before styletts2"
 
     def test_order_is_stable_across_calls(self):
         """The dynamic order should be deterministic (cached after first call)."""
@@ -180,7 +180,7 @@ class TestPickCachedTEngineIntegration:
 
         # Mock is_engine_cached to pretend kitten_tts and zonos are both cached
         def fake_is_engine_cached(engine):
-            return engine in {"kitten_tts", "zonos"}
+            return engine in {"kitten_tts", "styletts2"}
 
         monkeypatch.setattr(model_status, "is_engine_cached", fake_is_engine_cached)
         # Reset preference cache so it recomputes
@@ -195,12 +195,12 @@ class TestPickCachedTEngineIntegration:
         from backend.utils import model_status
 
         def fake_is_engine_cached(engine):
-            return engine == "zonos"
+            return engine == "styletts2"
 
         monkeypatch.setattr(model_status, "is_engine_cached", fake_is_engine_cached)
 
-        result = model_status.pick_cached_tts_engine(preferred="zonos")
-        assert result == "zonos"
+        result = model_status.pick_cached_tts_engine(preferred="styletts2")
+        assert result == "styletts2"
 
     def test_returns_none_when_nothing_cached(self, monkeypatch):
         """Should return None when no engines are cached."""

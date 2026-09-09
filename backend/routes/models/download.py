@@ -34,16 +34,16 @@ _ENGINE_IMPORT_PROBES: dict[str, str] = {
     "kokoro": "kokoro",
     "faster-whisper": "faster_whisper",
     "pocket_tts": "pocket_tts",
-    "parler_tts": "parler_tts",
+    "parler_tts_gguf": "crispasr",
     "moss_tts_nano": "sentencepiece",
     "kitten_tts": "phonemizer",
     "neutts": "neutts",
     "neutts_2e": "neutts",
     "orpheus": "snac",
-    "zonos": "zonos",
+    "zonos_gguf": "crispasr",
     "whisper": "pywhispercpp",
-    "rvc": "rvc_python",
-    "openvoice": "openvoice",
+    "rvc_onnx": "onnxruntime",
+    "openvoice_onnx": "onnxruntime",
     "argos_translate": "argostranslate",
     "demucs_onnx": "demucs",
 }
@@ -217,12 +217,12 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
                     filename=MODEL_FILE,
                 ),
             )
-        elif config.engine == "rvc":
+        elif config.engine == "rvc_onnx":
             from ... import config as cfg_mod
-            from ...backends.rvc_backend import rvc_backend
+            from ...backends.rvc_onnx_backend import rvc_onnx_backend
 
             dest = cfg_mod.get_models_dir() / "rvc" / config.model_size
-            desc = rvc_backend.pack_source(config.model_size)
+            desc = rvc_onnx_backend.pack_source(config.model_size)
             repo_id = desc["repo"]
 
             def _download_rvc():
@@ -451,7 +451,7 @@ async def trigger_model_download(request: models.ModelDownloadRequest, db: Sessi
                 "f5_tts",
                 "pocket_tts",
                 "moss_tts_nano",
-                "parler_tts",
+                "parler_tts_gguf",
                 "kitten_tts",
                 "chattts",
                 "demucs_onnx",

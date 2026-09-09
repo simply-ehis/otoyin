@@ -191,7 +191,7 @@ def register_voice_changer_tools(mcp: FastMCP) -> None:
     )
     async def twentylabs_convert_voice(
         audio_path: str,
-        engine: str = "rvc",
+        engine: str = "rvc_onnx",
         consent_given: bool = False,
         voice_pack: str = "",
         reference_audio_path: str = "",

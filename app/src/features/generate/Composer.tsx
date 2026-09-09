@@ -307,9 +307,7 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 						onDragLeave={handleDragLeave}
 						className={cn(
 							"relative rounded-md border-2 border-dashed transition-colors",
-							dragOver
-								? "border-accent bg-accent/5"
-								: "border-transparent",
+							dragOver ? "border-accent bg-accent/5" : "border-transparent",
 						)}
 					>
 						<Field
@@ -347,9 +345,7 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 						) : null}
 					</div>
 					<p className="flex items-center justify-between text-xs text-muted-foreground/70">
-						<span>
-							Drop a .txt or .md file onto the text area
-						</span>
+						<span>Drop a .txt or .md file onto the text area</span>
 						<span className="tabular-nums">
 							{text.length.toLocaleString()} / 50,000
 						</span>
@@ -375,7 +371,10 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 						className="flex w-full items-center gap-2 rounded-md border border-border bg-secondary/50 px-3 py-2 text-left text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary"
 						aria-expanded={settingsOpen}
 					>
-						<AdjustmentsHorizontalIcon className="size-3.5" aria-hidden="true" />
+						<AdjustmentsHorizontalIcon
+							className="size-3.5"
+							aria-hidden="true"
+						/>
 						Settings
 						<span className="ml-auto">
 							{settingsOpen ? (
@@ -405,16 +404,26 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 											value={selectedProfileId ?? ""}
 											onValueChange={(v) => setSelectedProfileId(v || null)}
 										>
-											<SelectTrigger id="composer-voice" className="h-8 text-xs">
+											<SelectTrigger
+												id="composer-voice"
+												className="h-8 text-xs"
+											>
 												<SelectValue
-													placeholder={t("generation.voiceSelector.placeholder")}
+													placeholder={t(
+														"generation.voiceSelector.placeholder",
+													)}
 												/>
 											</SelectTrigger>
 											<SelectContent>
 												{profiles?.map((p) => (
-													<SelectItem key={p.id} value={p.id} className="text-xs">
+													<SelectItem
+														key={p.id}
+														value={p.id}
+														className="text-xs"
+													>
 														{p.name} ·{" "}
-														{VOICE_TYPE_LABELS[p.voice_type ?? ""] ?? p.voice_type}
+														{VOICE_TYPE_LABELS[p.voice_type ?? ""] ??
+															p.voice_type}
 													</SelectItem>
 												))}
 											</SelectContent>
@@ -445,9 +454,14 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 								<Field label="Emotion" htmlFor="composer-emotion">
 									<Select
 										value={form.watch("emotion") || ""}
-										onValueChange={(v) => form.setValue("emotion", v || undefined)}
+										onValueChange={(v) =>
+											form.setValue("emotion", v || undefined)
+										}
 									>
-										<SelectTrigger id="composer-emotion" className="h-8 text-xs">
+										<SelectTrigger
+											id="composer-emotion"
+											className="h-8 text-xs"
+										>
 											<SelectValue placeholder="Emotion" />
 										</SelectTrigger>
 										<SelectContent>
@@ -500,8 +514,8 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 							</div>
 							{installable.length > 0 ? (
 								<p className="text-xs text-muted-foreground">
-									{installable.length} engine{installable.length > 1 ? "s" : ""} not
-									installed —{" "}
+									{installable.length} engine{installable.length > 1 ? "s" : ""}{" "}
+									not installed —{" "}
 									<button
 										type="button"
 										onClick={() => navigate({ to: "/store" })}
@@ -546,7 +560,10 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 										value={presetId ?? "none"}
 										onValueChange={(v) => setPresetId(v === "none" ? null : v)}
 									>
-										<SelectTrigger id="composer-effects" className="h-8 text-xs">
+										<SelectTrigger
+											id="composer-effects"
+											className="h-8 text-xs"
+										>
 											<SelectValue placeholder={t("generation.effects.none")} />
 										</SelectTrigger>
 										<SelectContent>

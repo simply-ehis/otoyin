@@ -398,7 +398,7 @@ def test_health_models_lists_engines():
     data = resp.json()
     assert "engines" in data
     engines = data["engines"]
-    assert len(engines) == 13
+    assert len(engines) == 12
     names = {e["engine"] for e in engines}
     assert "fish_speech_s2" in names
     assert "kokoro" in names

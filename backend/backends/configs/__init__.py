@@ -10,13 +10,14 @@ from ...utils.model_lifecycle import lifecycle_manager
 from ..protocols import ModelConfig
 from .tts import (
     _get_tts_configs,
+    _get_tts_gguf_configs,
 )
 from .vc import (
     _get_neutts_2e_configs,
     _get_neutts_configs,
-    _get_openvoice_configs,
+    _get_openvoice_onnx_configs,
     _get_orpheus_configs,
-    _get_rvc_configs,
+    _get_rvc_onnx_configs,
     _get_seed_vc_configs,
 )
 
@@ -305,15 +306,15 @@ def _get_music_configs() -> list[ModelConfig]:
     """Return music-generation model configs (paid engines)."""
     return [
         ModelConfig(
-            model_name="acestep-1-5",
-            display_name="ACE-Step 1.5 (music generation)",
-            engine="acestep",
-            hf_repo_id="ACE-Step/Ace-Step1.5",
-            model_size="1.5-full",
-            size_mb=10300,
-            min_ram_mb=14000,
+            model_name="acestep-1-5-gguf",
+            display_name="ACE-Step 1.5 GGUF (music, no torch)",
+            engine="acestep_gguf",
+            hf_repo_id="Serveurperso/ACE-Step-1.5-GGUF",
+            model_size="turbo-Q8_0",
+            size_mb=7700,
+            min_ram_mb=10000,
             min_vram_mb=0,
-            quant="bf16",
+            quant="Q8_0",
             languages=["en"],
             quality_score=9,
             category="music",
@@ -419,9 +420,9 @@ def get_vc_backend(engine: str):
     """Return the voice-conversion backend for the requested engine.
 
     Engines:
-      - ``rvc``       → RVCBackend (pre-trained voice packs)
-      - ``seed_vc``   → SeedVCBackend (zero-shot from reference audio)
-      - ``openvoice`` → OpenVoiceBackend (zero-shot tone-color conversion)
+      - ``rvc_onnx``     → RVCOnnxBackend (pre-trained voice packs, ONNX, no torch)
+      - ``seed_vc``      → SeedVCBackend (zero-shot from reference audio)
+      - ``openvoice_onnx`` → OpenVoiceOnnxBackend (tone-color conversion, ONNX, no torch)
 
     Local engines require no factory-level manifest row: backends
     self-gate on cache presence at load, and ``cloud`` (BYOK, no local
@@ -432,22 +433,22 @@ def get_vc_backend(engine: str):
 
         lifecycle_manager.register("seed_vc", seed_vc_backend.is_loaded, seed_vc_backend.unload_model)
         return seed_vc_backend
-    if engine == "openvoice":
-        from ..openvoice_backend import openvoice_backend
+    if engine == "openvoice_onnx":
+        from ..openvoice_onnx_backend import openvoice_onnx_backend
 
-        lifecycle_manager.register("openvoice", openvoice_backend.is_loaded, openvoice_backend.unload_model)
-        return openvoice_backend
-    if engine == "rvc":
-        from ..rvc_backend import rvc_backend
+        lifecycle_manager.register("openvoice_onnx", openvoice_onnx_backend.is_loaded, openvoice_onnx_backend.unload_model)
+        return openvoice_onnx_backend
+    if engine == "rvc_onnx":
+        from ..rvc_onnx_backend import rvc_onnx_backend
 
-        lifecycle_manager.register("rvc", rvc_backend.is_loaded, rvc_backend.unload_model)
-        return rvc_backend
+        lifecycle_manager.register("rvc_onnx", rvc_onnx_backend.is_loaded, rvc_onnx_backend.unload_model)
+        return rvc_onnx_backend
     if engine == "cloud":
         from ..cloud_vc_backend import cloud_vc_backend
 
         lifecycle_manager.register("cloud", cloud_vc_backend.is_loaded, cloud_vc_backend.unload_model)
         return cloud_vc_backend
-    raise ValueError(f"Unknown voice-conversion engine: {engine!r} (expected rvc, seed_vc, openvoice, or cloud)")
+    raise ValueError(f"Unknown voice-conversion engine: {engine!r} (expected rvc_onnx, seed_vc, openvoice_onnx, or cloud)")
 
 
 def _get_cloud_vc_configs() -> list[ModelConfig]:
@@ -471,14 +472,15 @@ def get_all_model_configs() -> list[ModelConfig]:
     """Return the full list of model configs (TTS + STT + LLM + VC + music + spatial)."""
     return (
         _get_tts_configs()
+        + _get_tts_gguf_configs()
         + _get_faster_whisper_configs()
         + _get_whisper_configs()
         + _get_parakeet_configs()
         + _get_qwen3_asr_configs()
         + _get_gguf_llm_configs()
-        + _get_rvc_configs()
+        + _get_rvc_onnx_configs()
         + _get_seed_vc_configs()
-        + _get_openvoice_configs()
+        + _get_openvoice_onnx_configs()
         + _get_neutts_configs()
         + _get_neutts_2e_configs()
         + _get_orpheus_configs()
@@ -492,7 +494,7 @@ def get_all_model_configs() -> list[ModelConfig]:
 
 def get_tts_model_configs() -> list[ModelConfig]:
     """Return only TTS model configs."""
-    return _get_tts_configs() + _get_neutts_2e_configs() + _get_orpheus_configs()
+    return _get_tts_configs() + _get_tts_gguf_configs() + _get_neutts_2e_configs() + _get_orpheus_configs()
 
 
 def get_llm_model_configs() -> list[ModelConfig]:

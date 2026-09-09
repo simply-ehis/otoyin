@@ -378,9 +378,9 @@ class MusicBackend(Protocol):
 TTS_ENGINES = {
     "kokoro": "Kokoro 82M",
     "fish_speech_s2": "Fish Audio S2 Pro (GGUF)",
-    "zonos": "Zyphra Zonos",
+    "zonos_gguf": "Zyphra Zonos (GGUF)",
     "pocket_tts": "Pocket-TTS",
-    "parler_tts": "Parler-TTS Mini",
+    "parler_tts_gguf": "Parler-TTS Mini (GGUF)",
     "moss_tts_nano": "MOSS-TTS-Nano",
     "kitten_tts": "KittenTTS (mini)",
     "neutts": "NeuTTS-Air",
@@ -397,7 +397,7 @@ LLM_ENGINES = {
 # Supported music / SFX engines — keyed by engine name.
 MUSIC_ENGINES = {
     "stable_audio": "Stable Audio Open (sound effects)",
-    "acestep": "ACE-Step 1.5 (music generation)",
+    "acestep_gguf": "ACE-Step 1.5 GGUF (music generation)",
     "heartmula": "HeartMuLa 3B (music generation)",
     "sa3_sfx": "Stable Audio 3 Small SFX (sound effects)",
     "minimax_music3": "MiniMax Music 3 (music generation)",

@@ -55,7 +55,7 @@ class AppConfig:
     """
 
     host: str = field(default_factory=lambda: _env("OTOYIN_HOST", "TWENTYLABS_HOST", _DEFAULT_HOST))
-    port: int = field(default_factory=lambda: int(_env("OTOYIN_PORT", "TWENTYLABS_PORT", str(_DEFAULT_PORT))))
+    port: int = field(default_factory=lambda: get_server_port())
     data_dir: Path = field(default_factory=lambda: Path("data").resolve())
     default_tts_engine: str = DEFAULT_TTS_ENGINE
     default_music_engine: str = DEFAULT_MUSIC_ENGINE
@@ -84,7 +84,12 @@ def get_server_host() -> str:
 
 def get_server_port() -> int:
     """Return the server port (env override or default)."""
-    return int(_env("OTOYIN_PORT", "TWENTYLABS_PORT", str(_DEFAULT_PORT)))
+    raw = _env("OTOYIN_PORT", "TWENTYLABS_PORT", str(_DEFAULT_PORT))
+    try:
+        return int(raw)
+    except (ValueError, TypeError):
+        logger.warning("Invalid port %r, falling back to default %d", raw, _DEFAULT_PORT)
+        return _DEFAULT_PORT
 
 
 def get_server_base_url() -> str:

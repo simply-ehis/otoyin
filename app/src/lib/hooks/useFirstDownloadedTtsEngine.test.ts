@@ -68,7 +68,11 @@ describe("downloadedTtsEngines", () => {
 				downloaded: true,
 				category: "stt",
 			}),
-			model({ model_name: "zonos", engine: "zonos", downloaded: false }),
+			model({
+				model_name: "zonos_gguf",
+				engine: "zonos_gguf",
+				downloaded: false,
+			}),
 		]);
 		expect(downloadedTtsEngines(s)).toEqual(["kokoro", "xtts_v2"]);
 	});

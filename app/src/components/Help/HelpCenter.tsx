@@ -191,12 +191,36 @@ export function HelpCenter({
 										</h3>
 										<div className="flex flex-wrap gap-2">
 											{[
-												{ label: "Generate speech", path: "/", query: "how to generate speech" },
-												{ label: "Clone a voice", path: "/voices", query: "how to clone a voice" },
-												{ label: "Create a story", path: "/stories", query: "how to create a story" },
-												{ label: "Import SoundFonts", path: "/instruments", query: "how to import instruments" },
-												{ label: "Mix audio", path: "/workspace/mixer", query: "how to mix audio" },
-												{ label: "Record capture", path: "/captures", query: "how to record audio" },
+												{
+													label: "Generate speech",
+													path: "/",
+													query: "how to generate speech",
+												},
+												{
+													label: "Clone a voice",
+													path: "/voices",
+													query: "how to clone a voice",
+												},
+												{
+													label: "Create a story",
+													path: "/stories",
+													query: "how to create a story",
+												},
+												{
+													label: "Import SoundFonts",
+													path: "/instruments",
+													query: "how to import instruments",
+												},
+												{
+													label: "Mix audio",
+													path: "/workspace/mixer",
+													query: "how to mix audio",
+												},
+												{
+													label: "Record capture",
+													path: "/captures",
+													query: "how to record audio",
+												},
 											].map((action) => (
 												<button
 													key={action.label}
@@ -215,8 +239,7 @@ export function HelpCenter({
 									{/* Current page context */}
 									<div className="mb-4 rounded-md border border-accent/20 bg-accent/5 p-3">
 										<p className="text-xs font-medium text-accent">
-											You're on the{" "}
-											{(() => {
+											You're on the {(() => {
 												const path = window.location.pathname;
 												const names: Record<string, string> = {
 													"/": "Generate",
@@ -231,13 +254,14 @@ export function HelpCenter({
 													"/settings": "Settings",
 												};
 												return names[path] ?? path;
-											})()}{" "}
-											page.
+											})()} page.
 										</p>
 										<button
 											type="button"
 											onClick={() => {
-												setQuery(`what can I do on ${window.location.pathname}`);
+												setQuery(
+													`what can I do on ${window.location.pathname}`,
+												);
 											}}
 											className="mt-1 text-xs text-accent hover:underline"
 										>

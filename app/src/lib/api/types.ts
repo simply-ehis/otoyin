@@ -91,16 +91,19 @@ export interface GenerationRequest {
 	text: string;
 	language: LanguageCode;
 	seed?: number;
-	model_size?: "1.7B" | "0.6B";
+	model_size?: "1.7B" | "0.6B" | "0.5B" | "small" | "mini";
 	engine?:
 		| "kokoro"
+		| "fish_speech"
 		| "fish_speech_s2"
-		| "zonos"
+		| "chattts"
+		| "f5_tts"
+		| "zonos_gguf"
 		| "qwen3_tts"
 		| "bark_small"
 		| "styletts2"
 		| "pocket_tts"
-		| "parler_tts"
+		| "parler_tts_gguf"
 		| "moss_tts_nano"
 		| "kitten_tts"
 		| "neutts"
@@ -162,6 +165,7 @@ export interface GenerationResponse {
 	instruct?: string;
 	engine?: string;
 	model_size?: string;
+	source?: string;
 	status: "loading_model" | "generating" | "completed" | "failed";
 	error?: string;
 	is_favorited?: boolean;

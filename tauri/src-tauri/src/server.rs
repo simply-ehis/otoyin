@@ -86,7 +86,9 @@ fn resolve_binary(app: &AppHandle) -> Option<PathBuf> {
 /// Quick TCP-level probe so we never block on a hung HTTP response.
 fn probe_health() -> bool {
     std::net::TcpStream::connect_timeout(
-        &format!("{}:{}", SERVER_HOST, SERVER_PORT).parse().unwrap(),
+        &format!("{}:{}", SERVER_HOST, SERVER_PORT)
+            .parse()
+            .unwrap_or_else(|_| "127.0.0.1:8000".parse().unwrap()),
         Duration::from_millis(300),
     )
     .is_ok()
@@ -94,7 +96,7 @@ fn probe_health() -> bool {
 
 /// Kill the child we spawned (if any) and mark it stopped. Idempotent.
 pub fn stop_if_ours(state: &State<'_, AppState>) {
-    let mut guard = state.server.child.lock().unwrap();
+    let mut guard = state.server.child.lock().unwrap_or_else(|e| e.into_inner());
     if state.server.started_by_us.swap(false, Ordering::SeqCst) {
         if let Some(mut child) = guard.take() {
             let _ = child.kill();
@@ -163,7 +165,7 @@ fn spawn_bundled(app: &AppHandle, models_dir: Option<String>) -> Result<(), Stri
 
     let state = app.state::<AppState>();
     {
-        let mut guard = state.server.child.lock().unwrap();
+        let mut guard = state.server.child.lock().unwrap_or_else(|e| e.into_inner());
         *guard = Some(child);
     }
     state.server.started_by_us.store(true, Ordering::SeqCst);

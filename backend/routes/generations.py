@@ -276,6 +276,11 @@ async def generate_speech(
     db: Session = Depends(get_db),
 ):
     """Generate speech from text using a voice profile."""
+    from ..utils.startup_defer import ensure_engines_registered, ensure_manifest_synced
+
+    await ensure_manifest_synced()
+    await ensure_engines_registered()
+
     task_manager = get_task_manager()
     generation_id = str(uuid.uuid4())
 
@@ -294,6 +299,28 @@ async def generate_speech(
         raise HTTPException(status_code=400, detail=str(e)) from e
 
     model_size = (data.model_size or "default") if engine_has_model_sizes(engine) else None
+
+    # ── RAM pressure check ──────────────────────────────────────────────
+    # Prevent OOM by verifying system RAM can handle the requested model.
+    try:
+        from ..backends.configs import get_model_config
+        from ..services.device_capabilities import _get_system_ram_mb
+
+        cfg = get_model_config(engine, model_size)
+        if cfg and cfg.min_ram_mb > 0:
+            _total, available = _get_system_ram_mb()
+            if available > 0 and available < cfg.min_ram_mb:
+                raise HTTPException(
+                    status_code=507,
+                    detail=(
+                        f"Insufficient RAM: {engine} needs ~{cfg.min_ram_mb} MB "
+                        f"but only {available} MB available. Close other apps and retry."
+                    ),
+                )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.debug("RAM pressure check skipped (detection failed)", exc_info=True)
 
     text = data.text
     source = "manual"
