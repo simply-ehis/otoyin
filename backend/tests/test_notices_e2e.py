@@ -20,9 +20,12 @@ URL pointing at a dead port. The app must boot healthy, serve exactly the
 bundled announcements, and record the failure at debug level (the
 offline-first contract) — no crash, no user-visible error.
 
-Note: the merge is startup-only by design (no periodic poll, no nudge
-endpoint — unlike the 07 catalog); a notice published while the app runs
-appears on next launch. Documented in loop log 08.
+Flow C (mid-run publish via poll): the 08 decision — a periodic poll
+(NOTICES_POLL_S, mirroring 07's REMOTE_CATALOG_POLL_S) re-merges remote
+notices while the app runs, so a notice published mid-session arrives
+without a restart. A backend booted against an EMPTY fake publishes a
+notice after boot; the poll must deliver it on a later tick (real second
+HTTP fetch, same process).
 
 CI gating: marked ``e2e`` and excluded from the default run via
 ``addopts = -m "not e2e"`` in pyproject; opt in with
@@ -49,6 +52,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 APP_PORT = 18497
 FAKE_PORT = 8795
 APP_PORT_OFFLINE = 18498
+POLL_APP_PORT = 18499
 DEAD_PORT = 8799  # nothing listens here: connection refused
 BOOT_TIMEOUT_S = 240.0
 
@@ -65,6 +69,14 @@ REMOTE_REPLACEMENT = {
     "id": BUNDLED_ID,
     "kind": "info",
     "message": "REMOTE OVERRIDE: replaced without shipping an app update.",
+    "dismissible": True,
+    "scope": "global",
+}
+# Published only AFTER boot in the poll flow — the startup merge never sees it.
+REMOTE_POLL = {
+    "id": "e2e-midrun-notice-002",
+    "kind": "info",
+    "message": "Published while the app was running — delivered by the poll tick.",
     "dismissible": True,
     "scope": "global",
 }
@@ -127,9 +139,34 @@ def _boot_backend(app_port: int, notices_url: str, label: str) -> dict:
         {
             "OTOYIN_NOTICES_URL": notices_url,
             "OTOYIN_NOTICES_TIMEOUT_S": "2",
+            # E2E-only: the fake lives on loopback; without this the SSRF
+            # guard rejects the URL before any fetch (see utils/ssrf.py).
+            "OTOYIN_SSRF_ALLOW_LOOPBACK": "1",
             "PYTHONIOENCODING": "utf-8",
         }
     )
+    return _spawn_backend(app_port, notices_url, label, data_dir, env)
+
+
+def _boot_polling_backend(app_port: int, notices_url: str, label: str) -> dict:
+    """Boot the real backend with a SHORT notices poll tick (Flow C)."""
+    data_dir = tempfile.mkdtemp(prefix=f"otoyin-notices-{label}-")
+    env = dict(os.environ)
+    env.update(
+        {
+            "OTOYIN_NOTICES_URL": notices_url,
+            "OTOYIN_NOTICES_TIMEOUT_S": "2",
+            "OTOYIN_NOTICES_POLL_S": "3",
+            # E2E-only: the fake lives on loopback; without this the SSRF
+            # guard rejects the URL before any fetch (see utils/ssrf.py).
+            "OTOYIN_SSRF_ALLOW_LOOPBACK": "1",
+            "PYTHONIOENCODING": "utf-8",
+        }
+    )
+    return _spawn_backend(app_port, notices_url, label, data_dir, env)
+
+
+def _spawn_backend(app_port: int, notices_url: str, label: str, data_dir: str, env: dict) -> dict:
     log_path = Path(data_dir) / "app.log"
     log = log_path.open("wb")
     app = subprocess.Popen(
@@ -180,6 +217,21 @@ def offline_stack():
     stack = _boot_backend(APP_PORT_OFFLINE, f"http://127.0.0.1:{DEAD_PORT}/v1/notices", "offline")
     yield stack
     stack["teardown"]()
+
+
+@pytest.fixture(scope="module")
+def poll_stack():
+    """Backend with a 3s poll tick, booted against an EMPTY fake: the fake is
+    populated only AFTER boot, so only the periodic poll can observe it."""
+    fake = FakeNotices()
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", FAKE_PORT + 1), _make_handler(fake))
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    stack = _boot_polling_backend(POLL_APP_PORT, f"http://127.0.0.1:{FAKE_PORT + 1}/v1/notices", "poll")
+    stack["fake"] = fake
+    yield stack
+    stack["teardown"]()
+    server.shutdown()
 
 
 def _get_announcements(base: str) -> list[dict]:
@@ -276,3 +328,63 @@ class TestOfflineSilenceE2E:
         assert "Traceback" not in log_text, "no crash may reach the log"
         notice_errors = [line for line in log_text.splitlines() if "ERROR" in line and "notice" in line.lower()]
         assert not notice_errors, f"no user-visible error for the outage: {notice_errors}"
+
+
+@pytest.mark.timeout(420)
+@pytest.mark.e2e
+class TestMidRunPublishPollE2E:
+    def test_notice_published_midrun_arrives_via_poll_without_restart(self, poll_stack):
+        """The 08-decision flow: publish AFTER boot, assert the periodic poll
+        delivers it in the SAME process — no restart, no nudge."""
+        fake = poll_stack["fake"]
+        base = poll_stack["base"]
+
+        # Boot-time baseline: bundled content only — the fake was empty and
+        # both the startup merge and every poll so far fetched nothing.
+        baseline = _get_announcements(base)
+        assert BUNDLED_ID in [a["id"] for a in baseline]
+        assert REMOTE_POLL["id"] not in [a["id"] for a in baseline]
+        startup_served = fake.served
+        assert startup_served >= 1, "startup merge must have fetched the (empty) payload"
+
+        # Publish mid-run: only a background poll can discover this.
+        fake.notices = [dict(REMOTE_POLL)]
+
+        # Same-process convergence via the 3s tick (no restart, no nudge).
+        deadline = time.monotonic() + 90
+        delivered = baseline
+        while time.monotonic() < deadline:
+            delivered = _get_announcements(base)
+            if any(a.get("id") == REMOTE_POLL["id"] for a in delivered):
+                break
+            time.sleep(2)
+        by_id = {a["id"]: a for a in delivered}
+        assert REMOTE_POLL["id"] in by_id, (
+            f"poll never delivered the mid-run notice; served={fake.served} "
+            f"(startup only = {fake.served == startup_served}), got {[a['id'] for a in delivered]}"
+        )
+
+        # The merge contract holds for poll-delivered items too: remote-only
+        # id appends after bundled content; bundled content is intact.
+        assert delivered[-1]["id"] == REMOTE_POLL["id"]
+        baseline_by_id = {a["id"]: a for a in baseline}
+        assert by_id[BUNDLED_ID]["message"] == baseline_by_id[BUNDLED_ID]["message"], (
+            "the poll merge must not alter bundled items"
+        )
+
+        # Real HTTP: the fake served multiple fetches (startup + >=1 poll tick).
+        assert fake.served > startup_served, "at least one poll tick must have fetched after startup"
+        assert poll_stack["app"].poll() is None, "backend must still be running (no restart)"
+
+        # The other content surfaces stay untouched by the poll merge.
+        offers = _http_get_json(f"{base}/content/offers").get("offers", [])
+        assert any(o.get("id") == "free-starter" for o in offers)
+
+    def test_poll_with_unchanged_payload_is_a_stable_noop(self, poll_stack):
+        """Idempotency across ticks: repeated polls of the same payload leave
+        the served list byte-identical (same-id replace in place, no dupes)."""
+        base = poll_stack["base"]
+        first = _http_get_json(f"{base}/content/announcements")
+        time.sleep(7)  # > 2 poll ticks at 3s
+        second = _http_get_json(f"{base}/content/announcements")
+        assert first == second, "repeated polls must not duplicate or reorder notices"

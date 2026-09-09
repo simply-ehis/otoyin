@@ -215,6 +215,9 @@ def _boot_stack(fake_port: int, app_port: int, poll_s: str):
             "OTOYIN_CATALOG_URL": f"http://127.0.0.1:{fake_port}/v1/catalog",
             "OTOYIN_CATALOG_REFRESH_S": "2",
             "OTOYIN_CATALOG_POLL_S": poll_s,
+            # E2E-only: the fake lives on loopback; without this the SSRF
+            # guard rejects the URL before any fetch (see utils/ssrf.py).
+            "OTOYIN_SSRF_ALLOW_LOOPBACK": "1",
             "PYTHONIOENCODING": "utf-8",
         }
     )
@@ -282,6 +285,8 @@ def e2e_stack_outage():
             "OTOYIN_CATALOG_URL": f"http://127.0.0.1:{FAKE_PORT_OUTAGE}/v1/catalog",
             "OTOYIN_CATALOG_REFRESH_S": "2",
             "OTOYIN_CATALOG_POLL_S": "3600",
+            # E2E-only loopback allowance (see utils/ssrf.py).
+            "OTOYIN_SSRF_ALLOW_LOOPBACK": "1",
             "PYTHONIOENCODING": "utf-8",
         }
     )

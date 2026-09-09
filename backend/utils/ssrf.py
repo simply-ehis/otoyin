@@ -14,6 +14,7 @@ should only ever talk to a known domain (e.g. the Freesound preview CDN).
 from __future__ import annotations
 
 import ipaddress
+import os
 import socket
 from urllib.parse import urljoin, urlparse
 
@@ -39,6 +40,14 @@ _BLOCKED_NETWORKS = [
 ]
 
 
+def _scheme_ok(url: str, allowed_schemes: tuple[str, ...]) -> bool:
+    """Scheme-only validation for the test loopback allowance (no host check)."""
+    try:
+        return urlparse(url).scheme in allowed_schemes
+    except ValueError:
+        return False
+
+
 def _is_blocked(ip: object) -> bool:
     try:
         addr = ipaddress.ip_address(str(ip).split("%")[0])
@@ -51,8 +60,26 @@ def _is_blocked(ip: object) -> bool:
     return any(addr in net for net in _BLOCKED_NETWORKS)
 
 
+# Read once at import (see is_url_safe docstring): E2E-only loopback allowance.
+_ALLOW_LOOPBACK_FOR_TESTS = os.environ.get("OTOYIN_SSRF_ALLOW_LOOPBACK", "").strip() not in (
+    "",
+    "0",
+    "false",
+)
+
+
 def is_url_safe(url: str, *, allowed_schemes=("http", "https")) -> bool:
-    """Return True iff ``url`` uses an allowed scheme and resolves only to public IPs."""
+    """Return True iff ``url`` uses an allowed scheme and resolves only to public IPs.
+
+    Test escape hatch: when ``OTOYIN_SSRF_ALLOW_LOOPBACK`` is set to a truthy
+    value, loopback/private targets are permitted. This exists for the E2E
+    suites (test_marketplace_e2e, test_notices_e2e, ...) which boot fake
+    services on 127.0.0.1 and point ``OTOYIN_CATALOG_URL``/``OTOYIN_NOTICES_URL``
+    at them. The variable is read once at import; production builds never set
+    it, and the shipped app config never does either.
+    """
+    if _ALLOW_LOOPBACK_FOR_TESTS:
+        return _scheme_ok(url, allowed_schemes)
     try:
         parsed = urlparse(url)
     except ValueError:

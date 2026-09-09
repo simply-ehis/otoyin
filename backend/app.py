@@ -579,15 +579,25 @@ async def _run_startup(application: FastAPI) -> None:
     create_background_task(_bg_register_engines_and_signal_ready())
 
     # Best-effort merge of remote notices (push-style announcements) into the
-    # bundled content. Offline-first: any failure is silent (see
-    # services/announcements.py refresh_remote_announcements).
+    # bundled content, then kept fresh by a periodic poll (NOTICES_POLL_S,
+    # default 1h — 08 decision: a mid-session user must see published notices
+    # without a restart). Offline-first: any failure is silent (see
+    # services/announcements.py refresh_remote_announcements). The loop is
+    # sleep-first: the immediate merge below covers startup, and each failure
+    # retries on the next tick instead of after a full interval.
     async def _bg_refresh_remote_notices() -> None:
-        try:
-            from .services.announcements import refresh_remote_announcements
+        from .services.announcements import NOTICES_POLL_S, refresh_remote_announcements
 
+        try:
             await asyncio.to_thread(refresh_remote_announcements)
         except Exception:
             logger.debug("Remote notices refresh failed", exc_info=True)
+        while True:
+            await asyncio.sleep(NOTICES_POLL_S)
+            try:
+                await asyncio.to_thread(refresh_remote_announcements)
+            except Exception:
+                logger.debug("Remote notices poll failed", exc_info=True)
 
     create_background_task(_bg_refresh_remote_notices())
 

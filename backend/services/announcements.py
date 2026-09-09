@@ -30,6 +30,12 @@ logger = logging.getLogger(__name__)
 # any failure keeps the bundled content untouched.
 REMOTE_NOTICES_URL = os.environ.get("OTOYIN_NOTICES_URL", "").strip()
 REMOTE_NOTICES_TIMEOUT_S = float(os.environ.get("OTOYIN_NOTICES_TIMEOUT_S", "5"))
+# Periodic poll cadence (08 decision): the startup merge alone would keep a
+# mid-session user on stale notices until relaunch, so app.py's background
+# loop re-merges on this tick. Sleep-first: the startup task already fetched,
+# the first poll adds nothing. Mirrors 07's REMOTE_CATALOG_POLL_S but without
+# staleness/signature machinery — notices are tiny, unsigned, and idempotent.
+NOTICES_POLL_S = float(os.environ.get("OTOYIN_NOTICES_POLL_S", str(60 * 60)))
 
 _DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
@@ -96,7 +102,10 @@ def refresh_remote_announcements() -> None:
       is kept untouched and the failure is logged at debug level, so an
       offline app or a notices outage is completely invisible to the user.
 
-    Called once at app startup from a background task (see backend/app.py).
+    Called once at app startup and then re-run by app.py's periodic poll
+    (NOTICES_POLL_S, default 1h) so notices published mid-session arrive
+    without a restart. Idempotent: same-id merges replace in place, so
+    repeated polls are no-ops when nothing changed.
     """
     global _CONTENT
     if not REMOTE_NOTICES_URL:
