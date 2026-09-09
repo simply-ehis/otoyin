@@ -119,6 +119,9 @@ async def create_capture(
                 written_files.remove(raw_path)
 
         whisper = get_whisper_model()
+        from ..utils.model_lifecycle import lifecycle_manager
+
+        lifecycle_manager.mark_model_used("whisper")
         resolved_stt = stt_model or whisper.model_size
         transcript = await whisper.transcribe(str(audio_path), language, resolved_stt)
 

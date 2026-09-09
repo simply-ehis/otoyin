@@ -124,8 +124,10 @@ async def vocal_qa(data: VocalQARequest, db: Session = Depends(get_db)):
 
     try:
         from ..backends.registry import get_stt_backend
+        from ..utils.model_lifecycle import lifecycle_manager
 
         stt = get_stt_backend("faster-whisper")
+        lifecycle_manager.mark_model_used("faster-whisper")
         words_raw = await stt.transcribe_with_words(str(resolved), language=data.language, model_size=data.model)
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc

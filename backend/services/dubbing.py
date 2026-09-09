@@ -347,9 +347,11 @@ async def _synthesize_segments(
 ) -> list[DubbedSegment]:
     """Synthesize translated text for each segment using a voice profile."""
     from ..backends import get_tts_backend_for_engine, load_engine_model
+    from ..utils.model_lifecycle import lifecycle_manager
     from .profiles import create_voice_prompt_for_profile
 
     tts_backend = get_tts_backend_for_engine(engine)
+    lifecycle_manager.mark_model_used(engine)
     if not tts_backend.is_loaded():
         await load_engine_model(engine, tts_backend)
 

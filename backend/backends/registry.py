@@ -403,6 +403,21 @@ def get_tts_backend() -> TTSBackend:
     raise RuntimeError("No TTS engine is installed — download one from the Store first")
 
 
+def resolve_tts_engine_of(backend: TTSBackend) -> str:
+    """Reverse-lookup the engine name for a backend instance from ``_tts_backends``.
+
+    Needed by call sites that use the preference-ordered :func:`get_tts_backend`
+    (no explicit engine) but still must report the resolved engine to the
+    lifecycle manager so idle eviction measures real usage.
+    Returns an empty string when the instance isn't registered (e.g. created
+    directly in tests) — callers treat that as "no mark possible".
+    """
+    for eng, candidate in _tts_backends.items():
+        if candidate is backend:
+            return eng
+    return ""
+
+
 def get_tts_backend_for_engine(engine: str) -> TTSBackend:
     """
     Get or create a TTS backend for the given engine.

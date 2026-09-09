@@ -44,8 +44,10 @@ async def llm_extract_characters(chapters: list[dict], sample_chars: int = 6000)
 
     try:
         from ..backends import get_llm_backend_for_engine
+        from ..utils.model_lifecycle import lifecycle_manager
 
         backend = get_llm_backend_for_engine("gguf_llm")
+        lifecycle_manager.mark_model_used("gguf_llm")
         # Respect model_size None handling — use backend default
         size = getattr(backend, "model_size", None)
         try:

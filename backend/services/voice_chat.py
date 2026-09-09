@@ -324,6 +324,9 @@ async def _generate_llm_response(text: str, session: VoiceChatSession) -> str:
     t0 = time.perf_counter()
     try:
         llm = get_llm_backend()
+        from ..utils.model_lifecycle import lifecycle_manager
+
+        lifecycle_manager.mark_model_used("gguf_llm")
 
         kwargs = {
             "prompt": text,
@@ -409,6 +412,12 @@ async def _synthesize_speech(text: str, session: VoiceChatSession) -> bytes:
     t0 = time.perf_counter()
     try:
         tts = get_tts_backend()
+        from ..backends import resolve_tts_engine_of
+        from ..utils.model_lifecycle import lifecycle_manager
+
+        resolved_engine = resolve_tts_engine_of(tts)
+        if resolved_engine:
+            lifecycle_manager.mark_model_used(resolved_engine)
         voice_prompt = session.tts_voice_prompt or {}
         audio_array, sr = await tts.generate(
             text=text,
@@ -436,6 +445,12 @@ async def _synthesize_speech_streaming(text: str, session: VoiceChatSession):
     """
     try:
         tts = get_tts_backend()
+        from ..backends import resolve_tts_engine_of
+        from ..utils.model_lifecycle import lifecycle_manager
+
+        resolved_engine = resolve_tts_engine_of(tts)
+        if resolved_engine:
+            lifecycle_manager.mark_model_used(resolved_engine)
         voice_prompt = session.tts_voice_prompt or {}
 
         # Try streaming first

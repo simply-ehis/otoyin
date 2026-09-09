@@ -60,6 +60,7 @@ if TYPE_CHECKING:
         get_tts_backend_for_engine,
         load_engine_model,
         reset_backends,
+        resolve_tts_engine_of,
         unload_model_by_config,
     )
 
@@ -99,6 +100,7 @@ _LAZY_MAP: dict[str, tuple[str, str]] = {
     "get_stt_backend": (".registry", "get_stt_backend"),
     "get_tts_backend": (".registry", "get_tts_backend"),
     "get_tts_backend_for_engine": (".registry", "get_tts_backend_for_engine"),
+    "resolve_tts_engine_of": (".registry", "resolve_tts_engine_of"),
     "load_engine_model": (".registry", "load_engine_model"),
     "reset_backends": (".registry", "reset_backends"),
     "unload_model_by_config": (".registry", "unload_model_by_config"),
@@ -151,5 +153,6 @@ __all__ = [
     "get_vc_backend",
     "load_engine_model",
     "reset_backends",
+    "resolve_tts_engine_of",
     "unload_model_by_config",
 ]
