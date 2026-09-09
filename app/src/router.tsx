@@ -102,6 +102,11 @@ const MCPPage = lazy(() =>
 		default: m.MCPPage,
 	})),
 );
+const WorkspaceSettingsPage = lazy(() =>
+	import("@/features/settings/WorkspacePage").then((m) => ({
+		default: m.WorkspacePage,
+	})),
+);
 const SettingsLayout = lazy(() =>
 	import("@/features/settings/SettingsLayout").then((m) => ({
 		default: m.SettingsLayout,
@@ -679,6 +684,12 @@ const settingsApiKeysRoute = createRoute({
 	component: ApiKeysPage,
 });
 
+const settingsWorkspaceRoute = createRoute({
+	getParentRoute: () => settingsRoute,
+	path: "/workspace",
+	component: WorkspaceSettingsPage,
+});
+
 const settingsSystemRoute = createRoute({
 	getParentRoute: () => settingsRoute,
 	path: "/system",
@@ -1000,6 +1011,7 @@ const routeTree = rootRoute.addChildren([
 		settingsTelemetryRoute,
 		settingsPrivacyRoute,
 		settingsApiKeysRoute,
+		settingsWorkspaceRoute,
 		settingsSupportRoute,
 	]),
 	projectsRoute,

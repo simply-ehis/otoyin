@@ -74,7 +74,7 @@ export function LiveTranscriptView() {
 	}
 
 	return (
-		<div className="flex h-full flex-col gap-4 p-4">
+		<div className="flex h-full min-h-0 flex-col gap-4 p-4 overflow-hidden">
 			<ScreenHeader
 				title="Live Transcript"
 				description="Streaming speech-to-text while you talk"

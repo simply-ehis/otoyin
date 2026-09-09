@@ -1,6 +1,6 @@
 import { ArrowUpTrayIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { Suspense, lazy, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useImportProfile } from "@/lib/hooks/useProfiles";
 import { Button } from "@/ui/button";
@@ -12,14 +12,17 @@ import {
 	DialogTitle,
 } from "@/ui/dialog";
 import { useToast } from "@/ui/use-toast";
-import { Composer } from "./Composer";
 import { GettingStarted } from "./GettingStarted";
 import { HistoryList } from "./HistoryList";
-import { VoicePicker } from "./VoicePicker";
+import { PromptBar } from "./PromptBar";
+
+const TabHelp = lazy(() =>
+	import("@/components/Help/TabHelp").then((m) => ({ default: m.TabHelp })),
+);
 
 /**
- * Generate: pick a voice, compose text, generate, review history.
- * Two-pane studio layout: voice list + composer left, history right.
+ * Generate: pick a voice, type a script, generate, review history.
+ * Layout: getting-started checklist + compact prompt bar left, history right.
  */
 export function GeneratePage() {
 	const { t } = useTranslation();
@@ -67,24 +70,29 @@ export function GeneratePage() {
 					/>
 				</h1>
 				<div className="flex shrink-0 items-center gap-2">
+					<Suspense fallback={null}>
+						<TabHelp tabPath="/" />
+					</Suspense>
 					<Button
 						type="button"
 						variant="outline"
-						size="icon"
+						size="sm"
 						title={t("main.importVoice")}
 						aria-label={t("main.importVoice")}
 						onClick={() => fileRef.current?.click()}
 					>
-						<ArrowUpTrayIcon className="size-4" aria-hidden="true" />
+						<ArrowUpTrayIcon className="mr-1.5 size-3.5" aria-hidden="true" />
+						{t("main.importVoice")}
 					</Button>
 					<Button
 						type="button"
-						size="icon"
+						size="sm"
 						title={t("main.createVoice")}
 						aria-label={t("main.createVoice")}
 						onClick={() => navigate({ to: "/voices" })}
 					>
-						<SparklesIcon className="size-4" aria-hidden="true" />
+						<SparklesIcon className="mr-1.5 size-3.5" aria-hidden="true" />
+						{t("main.createVoice")}
 					</Button>
 				</div>
 			</div>
@@ -114,21 +122,18 @@ export function GeneratePage() {
 			<div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-hidden lg:grid-cols-[minmax(0,1fr)_400px]">
 				<div className="min-h-0 flex-1 overflow-y-auto pb-4">
 					<GettingStarted />
-					<section aria-label="Voices" className="mt-4">
-						<VoicePicker />
-					</section>
 					<div className="mt-4">
-						<Composer />
+						<PromptBar />
 					</div>
 				</div>
-			</div>
 
-			<aside
-				aria-label="Generation history"
-				className="flex min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card p-3"
-			>
-				<HistoryList />
-			</aside>
+				<aside
+					aria-label="Generation history"
+					className="flex min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card p-3 max-lg:order-3"
+				>
+					<HistoryList />
+				</aside>
+			</div>
 
 			<Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
 				<DialogContent>

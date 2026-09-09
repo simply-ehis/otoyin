@@ -211,7 +211,7 @@ dev-web: _ensure-venv
         Write-Host 'Waiting for backend readiness (up to 30s)...'; $ready=$false; for ($i=0; $i -lt 30; $i++) { try { $r=Invoke-WebRequest -Uri $readyUrl -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop; if ($r.Content -match '\"ready\"\s*:\s*true') { $ready=$true; break } } catch {}; Start-Sleep -Seconds 1; if ($backendJob.HasExited) { Write-Host ('Backend failed to start (port ' + $port + ' in use?)') -ForegroundColor Red; exit 1 } }; if ($ready) { Write-Host 'Backend ready' -ForegroundColor Green } \
     }; \
     Write-Host 'Starting web app...'; \
-    try { Set-Location "{{ web_dir }}"; npx vite } finally { if ($backendJob -and -not $backendJob.HasExited) { taskkill /PID $backendJob.Id /T /F 2>$null | Out-Null } }
+    try { Set-Location "{{ web_dir }}"; & node node_modules\vite\bin\vite.js } finally { if ($backendJob -and -not $backendJob.HasExited) { taskkill /PID $backendJob.Id /T /F 2>$null | Out-Null } }
 
 # Kill all dev processes
 [unix]

@@ -205,9 +205,10 @@ export function SongwriterTab() {
 
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader
-				title={t("songwriter.title", { defaultValue: "Songwriter" })}
-				description={t("songwriter.description", {
+		<ScreenHeader
+			title={t("songwriter.title", { defaultValue: "Songwriter" })}
+			helpPath="/songwriter"
+			description={t("songwriter.description", {
 					defaultValue:
 						"Shape the promise, story, hook, prosody, and generator direction before rendering a note.",
 				})}

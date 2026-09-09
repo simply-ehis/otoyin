@@ -28,9 +28,15 @@ const exceptions: Record<string, number> = {
 
 function englishSyllables(raw: string) {
 	const word = raw.toLowerCase().replace(/[^a-z']/g, "");
-	if (!word) return 0;
-	if (exceptions[word]) return exceptions[word];
-	if (word.length <= 3) return 1;
+	if (!word) {
+		return 0;
+	}
+	if (exceptions[word]) {
+		return exceptions[word];
+	}
+	if (word.length <= 3) {
+		return 1;
+	}
 	const reduced = word
 		.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/i, "")
 		.replace(/^y/, "");
@@ -39,7 +45,9 @@ function englishSyllables(raw: string) {
 
 function englishRhymeKey(raw: string) {
 	const word = raw.toLowerCase().replace(/[^a-z]/g, "");
-	if (!word) return "";
+	if (!word) {
+		return "";
+	}
 	const match = word.match(/[aeiouy][^aeiouy]*$/);
 	return match?.[0] ?? word.slice(-3);
 }

@@ -10,8 +10,8 @@ import { Button } from "@/ui/button";
 import { PageTabs } from "@/ui/tabs";
 import { useToast } from "@/ui/use-toast";
 import { BrowseStates } from "./BrowseStates";
-import { useDeviceCapabilitiesStore } from "./deviceCapabilitiesStore";
 import { DonateCard } from "./DonateCard";
+import { useDeviceCapabilitiesStore } from "./deviceCapabilitiesStore";
 import { HintBanner } from "./HintBanner";
 import { LicensesView } from "./LicensesView";
 import { OffersBanner } from "./OffersBanner";
@@ -100,7 +100,7 @@ export function StorePage() {
 	const deviceCaps = useDeviceCapabilitiesStore();
 	useEffect(() => {
 		void deviceCaps.fetch();
-	}, []);
+	}, [deviceCaps.fetch]);
 	const licensesQ = useQuery({
 		queryKey: ["marketplace", "licenses"],
 		queryFn: () => apiClient.getLicenses(),

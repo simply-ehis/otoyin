@@ -16,6 +16,7 @@ import type {
 	StoryItemVolumeUpdate,
 	StoryMatchLoudness,
 } from "@/lib/api/types";
+import { showStudioErrorToast } from "@/lib/errors";
 import { usePlatform } from "@/platform/PlatformContext";
 
 export function useStories() {
@@ -46,6 +47,7 @@ export function useCreateStory() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["stories"] });
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -61,6 +63,7 @@ export function useUpdateStory() {
 				queryKey: ["stories", variables.storyId],
 			});
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -72,6 +75,7 @@ export function useDeleteStory() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["stories"] });
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -92,6 +96,7 @@ export function useAddStoryItem() {
 				queryKey: ["stories", variables.storyId],
 			});
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -107,6 +112,7 @@ export function useRemoveStoryItem() {
 				queryKey: ["stories", variables.storyId],
 			});
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -127,6 +133,7 @@ export function useUpdateStoryItemTimes() {
 				queryKey: ["stories", variables.storyId],
 			});
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -147,6 +154,7 @@ export function useReorderStoryItems() {
 				queryKey: ["stories", variables.storyId],
 			});
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -169,6 +177,7 @@ export function useMoveStoryItem() {
 				queryKey: ["stories", variables.storyId],
 			});
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -191,6 +200,7 @@ export function useTrimStoryItem() {
 				queryKey: ["stories", variables.storyId],
 			});
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -213,6 +223,7 @@ export function useUpdateStoryItemVolume() {
 				queryKey: ["stories", variables.storyId],
 			});
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -235,6 +246,7 @@ export function useSplitStoryItem() {
 				queryKey: ["stories", variables.storyId],
 			});
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -250,6 +262,7 @@ export function useDuplicateStoryItem() {
 				queryKey: ["stories", variables.storyId],
 			});
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -272,6 +285,7 @@ export function useSetStoryItemVersion() {
 				queryKey: ["stories", variables.storyId],
 			});
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -304,6 +318,7 @@ export function useExportStoryAudio() {
 
 			return blob;
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -326,6 +341,7 @@ export function useSetStoryItemFade() {
 				queryKey: ["stories", variables.storyId],
 			});
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -348,6 +364,7 @@ export function useSetStoryItemGain() {
 				queryKey: ["stories", variables.storyId],
 			});
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -370,6 +387,7 @@ export function useSetStoryItemPan() {
 				queryKey: ["stories", variables.storyId],
 			});
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -395,6 +413,7 @@ export function useNormalizeStoryItem() {
 				queryKey: ["stories", variables.storyId],
 			});
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -410,6 +429,7 @@ export function useReverseStoryItem() {
 				queryKey: ["stories", variables.storyId],
 			});
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -425,6 +445,7 @@ export function useRemoveSilenceFromStoryItem() {
 				queryKey: ["stories", variables.storyId],
 			});
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -450,6 +471,7 @@ export function useMergeStoryItems() {
 		}) => apiClient.mergeStoryItems(storyId, data),
 		onSuccess: (_, variables) =>
 			invalidateStory(queryClient, variables.storyId),
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -468,6 +490,7 @@ export function useSetStoryItemSpeed() {
 		}) => apiClient.setStoryItemSpeed(storyId, itemId, data),
 		onSuccess: (_, variables) =>
 			invalidateStory(queryClient, variables.storyId),
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -484,6 +507,7 @@ export function useMatchStoryLoudness() {
 		}) => apiClient.matchStoryLoudness(storyId, data),
 		onSuccess: (_, variables) =>
 			invalidateStory(queryClient, variables.storyId),
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -502,6 +526,7 @@ export function useCrossfadeStoryItems() {
 		}) => apiClient.crossfadeStoryItems(storyId, itemId, data),
 		onSuccess: (_, variables) =>
 			invalidateStory(queryClient, variables.storyId),
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -522,6 +547,7 @@ export function useMoveStoryItemToStory() {
 			invalidateStory(queryClient, variables.storyId);
 			invalidateStory(queryClient, variables.data.target_story_id);
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -545,6 +571,7 @@ export function useUndoStoryEdit() {
 	return useMutation({
 		mutationFn: (storyId: string) => apiClient.undoStoryEdit(storyId),
 		onSuccess: (_, storyId) => invalidateStory(queryClient, storyId),
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -554,5 +581,6 @@ export function useRedoStoryEdit() {
 	return useMutation({
 		mutationFn: (storyId: string) => apiClient.redoStoryEdit(storyId),
 		onSuccess: (_, storyId) => invalidateStory(queryClient, storyId),
+		onError: showStudioErrorToast,
 	});
 }

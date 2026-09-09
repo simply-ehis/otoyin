@@ -14,6 +14,7 @@ mod audio_mac;
 #[cfg(windows)]
 mod audio_win;
 mod server;
+mod mic_webview;
 
 use std::sync::atomic::Ordering;
 use tauri::{Emitter, Listener, Manager, WindowEvent};
@@ -121,6 +122,9 @@ pub fn run() {
             #[cfg(desktop)]
             {
                 register_window_close_handling(app.handle());
+
+                // Log platform-specific mic permission guidance
+                mic_webview::init_mic_permission_handler();
 
                 // Start the bundled backend before the UI begins polling
                 // /health. Non-fatal: in dev the backend is usually already

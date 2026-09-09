@@ -75,7 +75,7 @@ export function VoiceConverterView() {
 	});
 
 	const profilesQuery = useQuery({
-		queryKey: ["voiceProfiles"],
+		queryKey: ["profiles"],
 		queryFn: () => apiClient.listProfiles(),
 		enabled: engine === "seed_vc" || engine === "openvoice",
 	});

@@ -24,7 +24,8 @@
 		"ariaLabel": "Main navigation",
 		"navigation": "Navigation",
 		"collapse": "Collapse sidebar",
-		"expand": "Expand sidebar"
+		"expand": "Expand sidebar",
+		"clipboard": "Clipboard"
 	},
 	"common": {
 		"cancel": "Cancel",

@@ -54,6 +54,10 @@ export interface Track {
 	mute: boolean;
 	solo: boolean;
 	sessionSlots: Array<string | null>;
+	/** Instrument pack ID — when set, the engine uses sample-based playback. */
+	instrumentId?: string;
+	/** Program number within the pack (GM program change). */
+	instrumentProgram?: number;
 }
 
 export interface LauncherSession {

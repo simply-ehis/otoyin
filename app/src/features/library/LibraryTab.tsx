@@ -171,7 +171,7 @@ export function LibraryTab() {
 	const total = libraryQuery.data?.total ?? 0;
 
 	return (
-		<div className="flex h-full flex-col gap-4">
+		<div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
 			<ScreenHeader
 				title="Library"
 				description="Every generation, capture, and sample. Search, tag, and batch-manage."

@@ -29,7 +29,8 @@
 		"collapse": "Collapse sidebar",
 		"expand": "Expand sidebar",
 		"launcher": "Launcher",
-		"songwriter": "Songwriter"
+		"songwriter": "Songwriter",
+		"clipboard": "Clipboard"
 	},
 	"common": {
 		"cancel": "Cancel",

@@ -34,7 +34,9 @@ function isVowel(character: string) {
 }
 
 function separatesVowels(left: string, right: string) {
-	if ("íú".includes(left) || "íú".includes(right)) return true;
+	if ("íú".includes(left) || "íú".includes(right)) {
+		return true;
+	}
 	return strongVowels.includes(left) && strongVowels.includes(right);
 }
 
@@ -45,7 +47,9 @@ function vowelNuclei(raw: string) {
 	let previousVowel = "";
 	for (let index = 0; index < word.length; index += 1) {
 		const character = word[index];
-		if (character === "h" && active && isVowel(word[index + 1] ?? "")) continue;
+		if (character === "h" && active && isVowel(word[index + 1] ?? "")) {
+			continue;
+		}
 		if (!isVowel(character)) {
 			active = null;
 			previousVowel = "";
@@ -54,7 +58,9 @@ function vowelNuclei(raw: string) {
 		if (!active || separatesVowels(previousVowel, character)) {
 			active = { start: index, end: index };
 			nuclei.push(active);
-		} else active.end = index;
+		} else {
+			active.end = index;
+		}
 		previousVowel = character;
 	}
 	return { word, nuclei };
@@ -92,9 +98,13 @@ function phoneticSpanish(raw: string) {
 /** Returns the Latin American rhyme tail beginning at the stressed vowel. */
 export function latinSpanishRhymeKey(raw: string) {
 	const token = raw.match(spanishWord)?.at(-1) ?? "";
-	if (!token) return "";
+	if (!token) {
+		return "";
+	}
 	const { word, nuclei } = vowelNuclei(token);
-	if (!nuclei.length) return phoneticSpanish(word).slice(-2);
+	if (!nuclei.length) {
+		return phoneticSpanish(word).slice(-2);
+	}
 	const accentedIndex = [...word].findIndex((character) =>
 		"áéíóú".includes(character),
 	);
@@ -105,10 +115,11 @@ export function latinSpanishRhymeKey(raw: string) {
 						accentedIndex >= nucleus.start && accentedIndex <= nucleus.end,
 				)
 			: -1;
-	if (stressedNucleus < 0)
+	if (stressedNucleus < 0) {
 		stressedNucleus = /[aeiouáéíóúü]$|[ns]$/.test(word)
 			? Math.max(0, nuclei.length - 2)
 			: nuclei.length - 1;
+	}
 	const nucleus = nuclei[stressedNucleus];
 	const nucleusText = [...word.slice(nucleus.start, nucleus.end + 1)];
 	const explicitAccent = nucleusText.findIndex((character) =>
@@ -186,50 +197,61 @@ function latinSpanishReview(
 		.filter(Boolean);
 	const crowdedLines = lineLengths.filter((length) => length > 16).length;
 
-	if (hasNativeVerse && hasNativeChorus)
+	if (hasNativeVerse && hasNativeChorus) {
 		strengths.push(
 			"The lyric uses clear Spanish section labels, so its narrative and hook returns are easy to preserve.",
 		);
-	if (hookLength >= 2 && hookLength <= 8)
+	}
+	if (hookLength >= 2 && hookLength <= 8) {
 		strengths.push(
 			"The Spanish hook is compact enough to remember and repeat without rushing its vowels.",
 		);
-	if (conversational >= 3)
+	}
+	if (conversational >= 3) {
 		strengths.push(
 			"The lyric uses contemporary spoken Spanish rather than translated literary prose.",
 		);
-	if ((usesTu ? 1 : 0) + (usesVos ? 1 : 0) + (usesUsted ? 1 : 0) > 1)
+	}
+	if ((usesTu ? 1 : 0) + (usesVos ? 1 : 0) + (usesUsted ? 1 : 0) > 1) {
 		suggestions.push(
 			"The lyric mixes tú, vos, and/or usted. Choose the relationship and regional voice, or make the change a deliberate shift in intimacy or respect.",
 		);
-	if (usesVosotros)
+	}
+	if (usesVosotros) {
 		suggestions.push(
 			"This pack defaults to Latin American Spanish, where ustedes normally replaces vosotros. Keep vosotros only if the narrator or target region is specifically from Spain.",
 		);
-	if (regionalSignals.length > 1)
+	}
+	if (regionalSignals.length > 1) {
 		suggestions.push(
 			`The slang points to several regions (${regionalSignals.join(", ")}). Choose one home base or make the mixed geography explicit in the story.`,
 		);
-	if (spanishCharacters > 100 && accentedCharacters === 0)
+	}
+	if (spanishCharacters > 100 && accentedCharacters === 0) {
 		suggestions.push(
 			"Check written accents and opening ¿/¡ marks. Missing diacritics can change stress, meaning, and the rhyme analysis.",
 		);
-	if (hookLength > 11)
+	}
+	if (hookLength > 11) {
 		suggestions.push(
 			"Shorten the Spanish hook to a phrase listeners can answer in one breath; move its explanation into the verso or pre-coro.",
 		);
-	if (clichés >= 3)
+	}
+	if (clichés >= 3) {
 		suggestions.push(
 			"Trade generic romance phrases for a local action, object, time, or place that only this narrator would notice.",
 		);
-	if (crowdedLines >= Math.max(2, Math.ceil(lineLengths.length / 3)))
+	}
+	if (crowdedLines >= Math.max(2, Math.ceil(lineLengths.length / 3))) {
 		suggestions.push(
 			"Several lines exceed sixteen approximate syllables. Shorten them or design the melody for deliberate rapid delivery and natural sinalefa.",
 		);
-	if (!hasNativeChorus)
+	}
+	if (!hasNativeChorus) {
 		suggestions.push(
 			"Tag a clear coro or estribillo and center it on the title payoff; each verso should change the scene, information, or emotional stakes.",
 		);
+	}
 	return { strengths, suggestions };
 }
 

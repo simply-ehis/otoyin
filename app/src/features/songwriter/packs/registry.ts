@@ -50,10 +50,11 @@ export function getSongwritingLanguage(id = "en") {
 				...(candidate.aliases ?? []),
 			].some((name) => languageKey(name) === requested),
 		);
-	if (!pack)
+	if (!pack) {
 		throw new Error(
 			`Songwriting language '${id}' is not installed. Available: ${[...packs.values()].map((candidate) => `${candidate.id} (${candidate.name})`).join(", ")}.`,
 		);
+	}
 	return pack;
 }
 

@@ -252,14 +252,18 @@ class ProgressManager:
         except (BrokenPipeError, ConnectionResetError, asyncio.CancelledError):
             logger.debug(f"SSE client disconnected from {model_name}")
         finally:
-            # Remove from listeners
-            if model_name in self._listeners:
-                self._listeners[model_name].remove(queue)
-                if not self._listeners[model_name]:
-                    del self._listeners[model_name]
-                logger.info(
-                    f"SSE client unsubscribed from {model_name}, remaining listeners: {len(self._listeners.get(model_name, []))}"
-                )
+            # Remove from listeners (under lock to avoid race with _notify_listeners_threadsafe)
+            with self._lock:
+                if model_name in self._listeners:
+                    try:
+                        self._listeners[model_name].remove(queue)
+                    except ValueError:
+                        pass  # already removed
+                    if not self._listeners[model_name]:
+                        del self._listeners[model_name]
+                    logger.info(
+                        f"SSE client unsubscribed from {model_name}, remaining listeners: {len(self._listeners.get(model_name, []))}"
+                    )
 
     def mark_complete(self, model_name: str):
         """Mark a model download as complete. Thread-safe."""

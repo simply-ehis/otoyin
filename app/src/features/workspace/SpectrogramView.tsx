@@ -20,7 +20,7 @@ export function SpectrogramView() {
 	}
 
 	return (
-		<div className="flex h-full flex-col gap-4 p-4">
+		<div className="flex h-full min-h-0 flex-col gap-4 p-4 overflow-hidden">
 			<div className="flex flex-wrap items-center justify-between gap-2">
 				<ScreenHeader
 					title="Spectrogram"

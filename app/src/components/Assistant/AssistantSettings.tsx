@@ -298,7 +298,7 @@ export const AssistantSettings = memo(function AssistantSettings({
 	};
 
 	return (
-		<div className="px-4 py-3 border-b border-border bg-secondary space-y-3">
+		<div className="px-4 py-3 bg-secondary space-y-3">
 			<div className="space-y-1.5">
 				<label
 					htmlFor="model-source"

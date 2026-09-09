@@ -94,6 +94,14 @@ async def delete_words(generation_id: str, request: DeleteWordsRequest):
         resolved = config.resolve_storage_path(gen.audio_path)
         if resolved is None or not resolved.exists():
             raise HTTPException(status_code=404, detail="Audio file not found")
+
+        # Snapshot fields before closing the session
+        gen_user_id = gen.user_id
+        gen_text = gen.text
+        gen_engine = gen.engine
+        gen_voice_id = gen.voice_id
+        gen_language = gen.language
+        gen_meta = gen.meta
     finally:
         db.close()
 
@@ -183,21 +191,25 @@ async def delete_words(generation_id: str, request: DeleteWordsRequest):
     await asyncio.to_thread(save_audio, new_audio, str(new_audio_path), sample_rate=sr)
     new_duration = len(new_audio) / sr
 
-    # Create new generation record
+    # Create new generation record (new session — old one was closed)
     new_gen = GenModel(
         id=new_generation_id,
-        user_id=gen.user_id,
-        text=gen.text,  # keep original text for reference
+        user_id=gen_user_id,
+        text=gen_text,  # keep original text for reference
         audio_path=str(new_audio_path.relative_to(config.get_data_dir())),
-        engine=gen.engine,
-        voice_id=gen.voice_id,
-        language=gen.language,
+        engine=gen_engine,
+        voice_id=gen_voice_id,
+        language=gen_language,
         duration=new_duration,
         sample_rate=sr,
-        meta=gen.meta,
+        meta=gen_meta,
     )
-    db.add(new_gen)
-    db.commit()
+    db2 = next(get_db())
+    try:
+        db2.add(new_gen)
+        db2.commit()
+    finally:
+        db2.close()
 
     return DeleteWordsResponse(
         new_generation_id=new_generation_id,

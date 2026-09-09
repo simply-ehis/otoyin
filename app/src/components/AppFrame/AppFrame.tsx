@@ -36,6 +36,11 @@ const FeatureTour = lazy(() =>
 		default: m.FeatureTour,
 	})),
 );
+const UseCaseWizard = lazy(() =>
+	import("@/features/onboarding/UseCaseWizard").then((m) => ({
+		default: m.UseCaseWizard,
+	})),
+);
 const HelpCenter = lazy(() =>
 	import("@/components/Help/HelpCenter").then((m) => ({
 		default: m.HelpCenter,
@@ -145,9 +150,13 @@ export function AppFrame({ children }: AppFrameProps) {
 		};
 	}, []);
 
-	// First-run tour — no longer auto-opens; use ? to open manually (qmark-ok: literal key)
+	// First-run tour — opens automatically on first visit, or via ? key (qmark-ok: literal key)
 	useEffect(() => {
-		localStorage.setItem("Otoyin-tour-seen", "true");
+		const seen = localStorage.getItem("Otoyin-tour-seen");
+		if (!seen) {
+			setTourOpen(true);
+			localStorage.setItem("Otoyin-tour-seen", "true");
+		}
 	}, []);
 
 	const selectedStoryId = useStoryStore((state) => state.selectedStoryId);
@@ -229,6 +238,11 @@ export function AppFrame({ children }: AppFrameProps) {
 				{/* First-run feature tour */}
 				<Suspense fallback={null}>
 					<FeatureTour open={tourOpen} onClose={() => setTourOpen(false)} />
+				</Suspense>
+
+				{/* First-run use-case wizard */}
+				<Suspense fallback={null}>
+					<UseCaseWizard />
 				</Suspense>
 
 				<Suspense fallback={null}>

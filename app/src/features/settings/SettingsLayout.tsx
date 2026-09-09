@@ -9,6 +9,7 @@ import {
 	InformationCircleIcon,
 	KeyIcon,
 	ShieldCheckIcon,
+	Squares2X2Icon,
 	WrenchIcon,
 } from "@heroicons/react/24/outline";
 import { Link, Outlet, useMatchRoute } from "@tanstack/react-router";
@@ -35,6 +36,11 @@ const TAB_GROUPS: { label: string; tabs: SettingsTab[] }[] = [
 				labelKey: "settings.tabs.general",
 				path: "/settings",
 				icon: Cog6ToothIcon,
+			},
+			{
+				labelKey: "settings.tabs.workspace",
+				path: "/settings/workspace",
+				icon: Squares2X2Icon,
 			},
 		],
 	},

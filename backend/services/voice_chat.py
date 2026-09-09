@@ -359,11 +359,11 @@ async def _generate_llm_response(text: str, session: VoiceChatSession) -> str:
                     ],
                 }
             )
-            for tr in tool_results:
+            for tc, tr in zip(response.tool_calls, tool_results):
                 session.conversation_history.append(
                     {
                         "role": "tool",
-                        "tool_call_id": tr["tool"],
+                        "tool_call_id": tc.id,
                         "content": tr["result"],
                     }
                 )
@@ -642,17 +642,40 @@ async def process_audio_chunk(
                     timeout=30.0,
                 )
 
-                # Synthesize speech (full WAV for backward compat)
-                audio_bytes = await asyncio.wait_for(
-                    _synthesize_speech(response_text, session),
-                    timeout=30.0,
-                )
-
-                # Also generate streaming chunks
+                # Synthesize speech (streaming only — no duplicate full WAV)
                 audio_chunks = []
                 async for chunk in _synthesize_speech_streaming(response_text, session):
                     if chunk:
                         audio_chunks.append(chunk)
+
+                # Assemble full WAV from streaming chunks for backward compat
+                audio_bytes = b""
+                if audio_chunks:
+                    import io as _io
+                    import soundfile as sf
+                    import numpy as np
+                    all_frames = []
+                    sample_rate = 24000
+                    for chunk_data in audio_chunks:
+                        if isinstance(chunk_data, dict):
+                            sample_rate = chunk_data.get("sample_rate", sample_rate)
+                            frames = chunk_data.get("frames")
+                            if frames is not None:
+                                all_frames.append(frames)
+                        elif isinstance(chunk_data, (bytes, bytearray)):
+                            buf = _io.BytesIO(chunk_data)
+                            try:
+                                data, sr = sf.read(buf)
+                                sample_rate = sr
+                                all_frames.append(data)
+                            except Exception:
+                                pass
+                    if all_frames:
+                        combined = np.concatenate(all_frames) if len(all_frames) > 1 else all_frames[0]
+                        buf = _io.BytesIO()
+                        sf.write(buf, combined, sample_rate, format="WAV")
+                        buf.seek(0)
+                        audio_bytes = buf.read()
 
                 proc_elapsed = (time.perf_counter() - proc_t0) * 1000
                 proc_metrics.processing_total_ms += proc_elapsed
@@ -671,14 +694,14 @@ async def process_audio_chunk(
                 session.silence_count = 0
                 session.speech_frame_count = 0
                 session.is_speaking = False
-                return {"type": "silence"}
+                return {"type": "error", "message": "Processing timed out — try speaking again"}
             except Exception as e:
                 logger.warning("Pipeline error for session %s: %s", session_id, e)
                 session.audio_buffer.clear()
                 session.silence_count = 0
                 session.speech_frame_count = 0
                 session.is_speaking = False
-                return {"type": "silence"}
+                return {"type": "error", "message": f"Processing failed: {e}"}
             finally:
                 session.is_processing = False
         else:

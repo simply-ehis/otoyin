@@ -1,8 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
+import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
 import { RecordTakeButton } from "@/features/capture/RecordTakeButton";
 import { InstrumentPreview } from "@/features/instruments/InstrumentPreview";
 import { apiClient } from "@/lib/api/client";
+import { cn } from "@/lib/utils/cn";
 import { ERR_DESC_SFX_FAILED, ERR_TITLE_SFX } from "@/lib/errorMessages";
 import { Button } from "@/ui/button";
 import { Textarea } from "@/ui/input";
@@ -39,6 +41,7 @@ function Section({
 function SfxPanel() {
 	const { toast } = useToast();
 	const [prompt, setPrompt] = useState("");
+	const [dragOver, setDragOver] = useState(false);
 	const mut = useMutation({
 		mutationFn: () => apiClient.generateSFX({ prompt, duration_seconds: 5 }),
 		onSuccess: (blob) => playPreviewBlob(blob),
@@ -50,16 +53,67 @@ function SfxPanel() {
 			}),
 	});
 
+	const handleFileDrop = (file: File) => {
+		if (!file.name.endsWith(".txt") && !file.name.endsWith(".md")) {
+			toast({
+				title: "Unsupported file type",
+				description: "Drop a .txt or .md file to use as the SFX prompt.",
+				variant: "destructive",
+			});
+			return;
+		}
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			const content = e.target?.result;
+			if (typeof content === "string") {
+				setPrompt(content.trim());
+			}
+		};
+		reader.readAsText(file);
+	};
+
 	return (
 		<div className="max-w-xl space-y-3">
 			<Label htmlFor="sfx-prompt">Describe the sound effect</Label>
-			<Textarea
-				id="sfx-prompt"
-				placeholder="Rain on a tin roof, distant thunder"
-				value={prompt}
-				onChange={(e) => setPrompt(e.target.value)}
-				className="min-h-24 text-sm"
-			/>
+			<div
+				onDrop={(e) => {
+					e.preventDefault();
+					setDragOver(false);
+					const file = e.dataTransfer.files[0];
+					if (file) handleFileDrop(file);
+				}}
+				onDragOver={(e) => {
+					e.preventDefault();
+					setDragOver(true);
+				}}
+				onDragLeave={(e) => {
+					e.preventDefault();
+					setDragOver(false);
+				}}
+				className={cn(
+					"relative rounded-md border-2 border-dashed transition-colors",
+					dragOver ? "border-accent bg-accent/5" : "border-transparent",
+				)}
+			>
+				<Textarea
+					id="sfx-prompt"
+					placeholder="Rain on a tin roof, distant thunder"
+					value={prompt}
+					onChange={(e) => setPrompt(e.target.value)}
+					className="min-h-24 text-sm"
+				/>
+				{dragOver ? (
+					<div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-md bg-accent/10">
+						<span className="flex items-center gap-2 text-sm font-medium text-accent">
+							<ArrowUpTrayIcon className="size-4" aria-hidden="true" />
+							Drop .txt or .md file
+						</span>
+					</div>
+				) : null}
+			</div>
+			<p className="text-xs text-muted-foreground/70">
+				Drop a .txt or .md file onto the text area
+			</p>
 			<Button
 				type="button"
 				size="sm"

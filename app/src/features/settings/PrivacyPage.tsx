@@ -54,7 +54,9 @@ export function PrivacyPage() {
 	}, [toast]);
 
 	const handleConfirmDelete = useCallback(async () => {
-		if (!confirmationToken) return;
+		if (!confirmationToken) {
+			return;
+		}
 		setDeleting(true);
 		try {
 			await apiClient.confirmDelete(confirmationToken);
@@ -71,7 +73,7 @@ export function PrivacyPage() {
 	}, [confirmationToken, toast]);
 
 	return (
-		<div className="flex flex-col h-full">
+		<div className="flex flex-col h-full min-h-0">
 			<ScreenHeader
 				title="Privacy"
 				description="Your data stays on your device"

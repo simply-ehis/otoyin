@@ -226,15 +226,15 @@ export function StoreProductCard({
 							key={c.label}
 							className={cn(
 								"rounded-full border border-border bg-secondary px-1.5 py-0.5 text-xs font-medium",
-							c.tone === "violet" && "text-accent border-accent/20",
-							c.tone === "amber" && "text-warning border-warning/20",
-							c.tone === "cyan" && "text-info border-info/20",
-							c.tone === "fuchsia" && "text-accent border-accent/20",
-							c.tone === "blue" && "text-info border-info/20",
-							c.tone === "teal" && "text-info border-info/20",
-							c.tone === "red" && "text-destructive border-destructive/20",
-							c.tone === "emerald" && "text-success border-success/20",
-							c.tone === "zinc" && "text-muted-foreground",
+								c.tone === "violet" && "text-accent border-accent/20",
+								c.tone === "amber" && "text-warning border-warning/20",
+								c.tone === "cyan" && "text-info border-info/20",
+								c.tone === "fuchsia" && "text-accent border-accent/20",
+								c.tone === "blue" && "text-info border-info/20",
+								c.tone === "teal" && "text-info border-info/20",
+								c.tone === "red" && "text-destructive border-destructive/20",
+								c.tone === "emerald" && "text-success border-success/20",
+								c.tone === "zinc" && "text-muted-foreground",
 							)}
 						>
 							{c.label}

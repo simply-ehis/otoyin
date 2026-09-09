@@ -1,5 +1,5 @@
-import type { VocalQAResult } from "./types";
 import { useServerStore } from "@/stores/serverStore";
+import type { VocalQAResult } from "./types";
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 
@@ -255,7 +255,7 @@ export class ApiClientCore {
 		return response;
 	}
 
-	async uploadAudio(file: File): Promise<{ path: string }> {
+	async uploadAudio(file: File): Promise<{ audio_path: string; size: number }> {
 		const formData = new FormData();
 		formData.append("file", file);
 		const resp = await this.fetchWithAuth("/dsp/upload", {

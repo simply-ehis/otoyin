@@ -37,59 +37,66 @@ interface DeviceCapabilitiesStore {
 
 const CACHE_TTL_MS = 30_000; // 30 seconds
 
-export const useDeviceCapabilitiesStore = create<DeviceCapabilitiesStore>((set, get) => ({
-	totalRamMb: 0,
-	availableRamMb: 0,
-	totalVramMb: 0,
-	freeVramMb: 0,
-	gpuName: null,
-	gpuType: null,
-	cpuCores: 0,
-	tier: null,
-	modelCompat: new Map(),
-	loading: false,
-	error: null,
-	lastFetchedAt: null,
+export const useDeviceCapabilitiesStore = create<DeviceCapabilitiesStore>(
+	(set, get) => ({
+		totalRamMb: 0,
+		availableRamMb: 0,
+		totalVramMb: 0,
+		freeVramMb: 0,
+		gpuName: null,
+		gpuType: null,
+		cpuCores: 0,
+		tier: null,
+		modelCompat: new Map(),
+		loading: false,
+		error: null,
+		lastFetchedAt: null,
 
-	fetch: async () => {
-		const state = get();
-		// Skip if recently fetched
-		if (state.lastFetchedAt && Date.now() - state.lastFetchedAt < CACHE_TTL_MS) {
-			return;
-		}
-		if (state.loading) return;
-
-		set({ loading: true, error: null });
-		try {
-			const resp = await apiClient.getDeviceCapabilities();
-			const modelCompat = new Map<string, ModelCompatibilityInfo>();
-			for (const m of resp.models) {
-				modelCompat.set(m.model_name, m);
+		fetch: async () => {
+			const state = get();
+			// Skip if recently fetched
+			if (
+				state.lastFetchedAt &&
+				Date.now() - state.lastFetchedAt < CACHE_TTL_MS
+			) {
+				return;
 			}
-			set({
-				totalRamMb: resp.total_ram_mb,
-				availableRamMb: resp.available_ram_mb,
-				totalVramMb: resp.total_vram_mb,
-				freeVramMb: resp.free_vram_mb,
-				gpuName: resp.gpu_name,
-				gpuType: resp.gpu_type,
-				cpuCores: resp.cpu_cores,
-				tier: resp.tier,
-				modelCompat,
-				loading: false,
-				lastFetchedAt: Date.now(),
-			});
-		} catch (e) {
-			set({ loading: false, error: String(e) });
-		}
-	},
+			if (state.loading) {
+				return;
+			}
 
-	getCompatibility: (modelName: string) => {
-		return get().modelCompat.get(modelName) ?? null;
-	},
+			set({ loading: true, error: null });
+			try {
+				const resp = await apiClient.getDeviceCapabilities();
+				const modelCompat = new Map<string, ModelCompatibilityInfo>();
+				for (const m of resp.models) {
+					modelCompat.set(m.model_name, m);
+				}
+				set({
+					totalRamMb: resp.total_ram_mb,
+					availableRamMb: resp.available_ram_mb,
+					totalVramMb: resp.total_vram_mb,
+					freeVramMb: resp.free_vram_mb,
+					gpuName: resp.gpu_name,
+					gpuType: resp.gpu_type,
+					cpuCores: resp.cpu_cores,
+					tier: resp.tier,
+					modelCompat,
+					loading: false,
+					lastFetchedAt: Date.now(),
+				});
+			} catch (e) {
+				set({ loading: false, error: String(e) });
+			}
+		},
 
-	isCompatible: (modelName: string) => {
-		const info = get().modelCompat.get(modelName);
-		return info?.compatible ?? true; // default to compatible if unknown
-	},
-}));
+		getCompatibility: (modelName: string) => {
+			return get().modelCompat.get(modelName) ?? null;
+		},
+
+		isCompatible: (modelName: string) => {
+			const info = get().modelCompat.get(modelName);
+			return info?.compatible ?? true; // default to compatible if unknown
+		},
+	}),
+);

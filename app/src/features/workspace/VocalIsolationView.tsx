@@ -89,7 +89,7 @@ export function VocalIsolationView() {
 	const [dragOver, setDragOver] = useState(false);
 
 	const modelStatus = useQuery({
-		queryKey: ["model-status", DEMUCS_MODEL_NAME],
+		queryKey: ["modelStatus"],
 		queryFn: () => apiClient.getModelStatus(),
 		refetchInterval: (query) =>
 			query.state.data?.models.find((m) => m.model_name === DEMUCS_MODEL_NAME)

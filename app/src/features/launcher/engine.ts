@@ -2,9 +2,15 @@
  * Ported from Resonant (https://github.com/calesthio/Resonant).
  * Copyright (c) 2026 Resonant and Calesthio. Licensed under AGPL-3.0-only.
  * WebAudio scheduling engine adapted for otoyin: session-mode only (no
- * arrangement), audio clips decoded from backend URLs, no instrument/SoundFont
- * support (Phase 3).
+ * arrangement), audio clips decoded from backend URLs, live instrument playback
+ * via instrumentPlayback.ts when an InstrumentResolver is provided.
  */
+import {
+	type PreparedInstrument,
+	prepareInstrument,
+	scheduleSamplerNote,
+} from "@/features/instruments/instrumentPlayback";
+import type { ResolvedInstrument } from "@/features/instruments/types";
 import type {
 	AudioClip,
 	Clip,
@@ -12,6 +18,10 @@ import type {
 	LauncherSession,
 	Track,
 } from "./types";
+
+export type InstrumentResolver = (
+	track: Track,
+) => Promise<ResolvedInstrument | PreparedInstrument | null>;
 
 interface EngineOptions {
 	activeClips: Record<string, string | null>;
@@ -34,6 +44,8 @@ export class LiveEngine {
 	private loopEnabled = true;
 	private loopStartBeat = 0;
 	private loopEndBeat = 16;
+	private instrumentResolver: InstrumentResolver | null = null;
+	private preparedInstruments = new Map<string, PreparedInstrument>();
 
 	async prepare() {
 		if (!this.context) {
@@ -56,11 +68,13 @@ export class LiveEngine {
 	async play(
 		project: LauncherSession,
 		activeClips: Record<string, string | null>,
+		resolver?: InstrumentResolver,
 	) {
 		const context = await this.prepare();
 		this.stop();
 		this.project = structuredClone(project);
 		this.options = { activeClips: { ...activeClips } };
+		this.instrumentResolver = resolver ?? null;
 		this.loopEnabled = true;
 		this.loopStartBeat = 0;
 		this.loopEndBeat = project.numScenes * 4;
@@ -71,6 +85,7 @@ export class LiveEngine {
 			this.master.gain.value = project.masterVolume;
 		}
 		await this.cacheAudio(project);
+		await this.prepareInstruments(project);
 		this.tick();
 		this.timer = window.setInterval(() => this.tick(), 25);
 	}
@@ -88,10 +103,40 @@ export class LiveEngine {
 			}
 		}
 		this.sources.clear();
+		this.instrumentResolver = null;
+		this.preparedInstruments.clear();
 	}
 
 	isPlaying() {
 		return this.timer !== null;
+	}
+
+	private async prepareInstruments(project: LauncherSession) {
+		if (!this.instrumentResolver || !this.context) {
+			return;
+		}
+		const anySolo = project.tracks.some((t) => t.solo);
+		for (const track of project.tracks) {
+			if (track.mute || (anySolo && !track.solo)) {
+				continue;
+			}
+			if (this.preparedInstruments.has(track.id)) {
+				continue;
+			}
+			try {
+				const resolved = await this.instrumentResolver(track);
+				if (!resolved) {
+					continue;
+				}
+				const prepared =
+					"kind" in resolved
+						? resolved
+						: await prepareInstrument(this.context, resolved);
+				this.preparedInstruments.set(track.id, prepared);
+			} catch {
+				// Fallback to basic oscillator if instrument resolution fails
+			}
+		}
 	}
 
 	getCurrentBeat(): number {
@@ -305,8 +350,35 @@ export class LiveEngine {
 		if (!context) {
 			throw new Error("Engine not prepared");
 		}
-		const output = this.trackOutput(track, when);
 		const duration = (durationSteps * 0.25 * 60) / bpm;
+		const output = this.trackOutput(track, when);
+
+		// Use prepared sampler instrument when available
+		const prepared = this.preparedInstruments.get(track.id);
+		if (prepared && prepared.kind === "sampler") {
+			const result = scheduleSamplerNote(
+				context,
+				prepared,
+				pitch,
+				velocity,
+				when,
+				duration,
+				output.input,
+				0.3,
+			);
+			if (result) {
+				this.sources.add(result.source);
+				result.source.onended = () => {
+					this.sources.delete(result.source);
+					output.dispose();
+				};
+			} else {
+				output.dispose();
+			}
+			return;
+		}
+
+		// Fallback: basic oscillator synthesis (drums, unmapped tracks)
 		const envelope = context.createGain();
 		const filter = context.createBiquadFilter();
 		envelope.gain.setValueAtTime(0.0001, when);

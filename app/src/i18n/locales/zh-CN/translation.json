@@ -1396,7 +1396,8 @@
 		"launcher": "Launcher",
 		"library": "Library",
 		"pitchMap": "Pitch Map",
-		"songwriter": "Songwriter"
+		"songwriter": "Songwriter",
+		"clipboard": "Clipboard"
 	},
 	"instruments": {
 		"description": "Install SoundFont packs (SF2/SF3), SFZ instruments, or audio samples for use in the launcher and studio.",

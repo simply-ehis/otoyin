@@ -81,6 +81,7 @@ export function StudioToolbar({
 		<ScreenHeader
 			title="Audio Studio"
 			description="Multitrack recording, mixing & effects"
+			helpPath="/audio-studio"
 			className="border-b border-border bg-sidebar shrink-0"
 			actions={
 				<>
@@ -88,7 +89,17 @@ export function StudioToolbar({
 						variant="ghost"
 						size="sm"
 						className="h-8 text-xs px-2"
-						onClick={onNew}
+						onClick={() => {
+							if (unsaved) {
+								const ok = window.confirm(
+									"You have unsaved changes. Start a new session? Unsaved work will be lost.",
+								);
+								if (!ok) {
+									return;
+								}
+							}
+							onNew();
+						}}
 						title="New session from template"
 					>
 						<Plus className="size-3 mr-1" />

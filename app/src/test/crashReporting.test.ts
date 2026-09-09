@@ -101,9 +101,8 @@ describe("reportCrashToBackend", () => {
 
 		const payload = vi.mocked(apiClient.reportCrash).mock.calls[0][0];
 		expect(payload.context).toBeDefined();
-		const componentStack = (
-			payload.context as { componentStack: string }
-		).componentStack;
+		const componentStack = (payload.context as { componentStack: string })
+			.componentStack;
 		expect(componentStack.length).toBeLessThanOrEqual(4000);
 	});
 
@@ -135,9 +134,8 @@ describe("reportCrashToBackend", () => {
 
 		const payload = vi.mocked(apiClient.reportCrash).mock.calls[0][0];
 		expect(payload.context).toBeDefined();
-		const scrubbed = (
-			payload.context as { componentStack: string }
-		).componentStack;
+		const scrubbed = (payload.context as { componentStack: string })
+			.componentStack;
 		expect(scrubbed).not.toContain("admin@company.com");
 		expect(scrubbed).toContain("<email>");
 	});

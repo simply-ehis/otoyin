@@ -24,6 +24,7 @@ Protocol:
 """
 
 import asyncio
+import base64
 import contextlib
 import json
 import logging
@@ -57,7 +58,7 @@ class WSStartMessage(BaseModel):
 
 class WSAudioMessage(BaseModel):
     type: str = Field(literal="audio")
-    audio: str  # base64-encoded PCM
+    audio: str | list[float]  # base64-encoded PCM or JSON array of float32 samples
 
 
 class WSEndMessage(BaseModel):
@@ -247,7 +248,13 @@ async def voice_chat_websocket(websocket: WebSocket):
                 # Run VAD on the chunk
                 import numpy as np
 
-                chunk = np.array(audio_data, dtype=np.float32)
+                if isinstance(audio_data, list):
+                    # Frontend sends JSON array of float32 samples
+                    chunk = np.array(audio_data, dtype=np.float32)
+                else:
+                    # Base64-encoded PCM int16
+                    raw_bytes = base64.b64decode(audio_data)
+                    chunk = np.frombuffer(raw_bytes, dtype=np.int16).astype(np.float32) / 32767.0
                 vad_result = vad.detect(chunk)
 
                 # Send VAD events
@@ -259,7 +266,7 @@ async def voice_chat_websocket(websocket: WebSocket):
 
                 # Accumulate audio during speech
                 if vad_result["is_speech"]:
-                    audio_buffer.extend(audio_data)
+                    audio_buffer.extend(chunk.tolist())
 
                     # Send partial transcripts periodically
                     if len(audio_buffer) - last_partial_transcript_pos >= PARTIAL_TRANSCRIPT_INTERVAL:

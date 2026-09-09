@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/client";
 import type { HistoryQuery } from "@/lib/api/types";
+import { showStudioErrorToast } from "@/lib/errors";
 import { usePlatform } from "@/platform/PlatformContext";
 
 export function useHistory(query?: HistoryQuery) {
@@ -27,6 +28,7 @@ export function useDeleteGeneration() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["history"] });
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -38,6 +40,7 @@ export function useClearFailedGenerations() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["history"] });
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -70,6 +73,7 @@ export function useExportGeneration() {
 
 			return blob;
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -102,6 +106,7 @@ export function useExportGenerationAudio() {
 
 			return blob;
 		},
+		onError: showStudioErrorToast,
 	});
 }
 
@@ -113,5 +118,6 @@ export function useImportGeneration() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["history"] });
 		},
+		onError: showStudioErrorToast,
 	});
 }

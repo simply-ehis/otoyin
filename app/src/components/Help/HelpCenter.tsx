@@ -184,6 +184,67 @@ export function HelpCenter({
 								</>
 							) : (
 								<>
+									{/* Popular actions */}
+									<div className="mb-4">
+										<h3 className="text-xs font-medium text-muted-foreground mb-2">
+											Popular actions
+										</h3>
+										<div className="flex flex-wrap gap-2">
+											{[
+												{ label: "Generate speech", path: "/", query: "how to generate speech" },
+												{ label: "Clone a voice", path: "/voices", query: "how to clone a voice" },
+												{ label: "Create a story", path: "/stories", query: "how to create a story" },
+												{ label: "Import SoundFonts", path: "/instruments", query: "how to import instruments" },
+												{ label: "Mix audio", path: "/workspace/mixer", query: "how to mix audio" },
+												{ label: "Record capture", path: "/captures", query: "how to record audio" },
+											].map((action) => (
+												<button
+													key={action.label}
+													type="button"
+													onClick={() => {
+														setQuery(action.query);
+													}}
+													className="rounded-md border border-border bg-secondary px-2.5 py-1 text-xs text-muted-foreground hover:bg-secondary-hover hover:text-foreground transition-colors"
+												>
+													{action.label}
+												</button>
+											))}
+										</div>
+									</div>
+
+									{/* Current page context */}
+									<div className="mb-4 rounded-md border border-accent/20 bg-accent/5 p-3">
+										<p className="text-xs font-medium text-accent">
+											You're on the{" "}
+											{(() => {
+												const path = window.location.pathname;
+												const names: Record<string, string> = {
+													"/": "Generate",
+													"/voices": "Voices",
+													"/stories": "Stories",
+													"/audiobooks": "Audiobooks",
+													"/audio-studio": "Audio Studio",
+													"/workspace": "Workspace",
+													"/instruments": "Instruments",
+													"/effects": "Effects",
+													"/captures": "Captures",
+													"/settings": "Settings",
+												};
+												return names[path] ?? path;
+											})()}{" "}
+											page.
+										</p>
+										<button
+											type="button"
+											onClick={() => {
+												setQuery(`what can I do on ${window.location.pathname}`);
+											}}
+											className="mt-1 text-xs text-accent hover:underline"
+										>
+											What can I do here?
+										</button>
+									</div>
+
 									<h3 className="text-xs font-medium text-muted-foreground mb-3">
 										Browse by category
 									</h3>

@@ -159,11 +159,11 @@ export function useAssistantChat({
 			);
 			try {
 				const res = await apiClient.uploadAudio(att.file);
-				uploaded.push(res.path);
+				uploaded.push(res.audio_path);
 				setAttachments((prev) =>
 					prev.map((a, i) =>
 						i === attachments.indexOf(att)
-							? { ...a, serverPath: res.path, uploading: false }
+							? { ...a, serverPath: res.audio_path, uploading: false }
 							: a,
 					),
 				);
@@ -268,7 +268,29 @@ export function useAssistantChat({
 			await uploadAttachments();
 			setAttachments([]);
 
+			const currentPath = window.location.pathname;
+			const TAB_NAMES: Record<string, string> = {
+				"/": "Generate",
+				"/voices": "Voices",
+				"/stories": "Stories",
+				"/audiobooks": "Audiobooks",
+				"/audio-studio": "Audio Studio",
+				"/workspace": "Workspace",
+				"/instruments": "Instruments",
+				"/effects": "Effects",
+				"/captures": "Captures",
+				"/dubbing": "Dubbing",
+				"/library": "Library",
+				"/store": "Store",
+				"/settings": "Settings",
+				"/songwriter": "Songwriter",
+				"/launcher": "Launcher",
+				"/sounds": "Sounds",
+			};
+			const tabName = TAB_NAMES[currentPath] ?? currentPath;
+
 			const history = [
+				{ role: "system" as const, content: `The user is currently on the ${tabName} tab (${currentPath}). When they ask "what can I do here?" or similar, describe the features and actions available on this specific tab.` },
 				...messages,
 				{ id: "", role: "user" as const, content: finalContent },
 			].map((m) => ({ role: m.role, content: m.content }));

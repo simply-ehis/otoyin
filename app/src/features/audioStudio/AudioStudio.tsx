@@ -247,7 +247,7 @@ export function AudioStudio() {
 		<div
 			ref={rootRef}
 			tabIndex={-1}
-			className="flex flex-col h-full outline-none"
+			className="flex flex-col h-full min-h-0 outline-none"
 		>
 			<StudioToolbar
 				unsaved={session.unsaved}

@@ -368,9 +368,7 @@ describe("StorePage failed-download hint + retry", () => {
 		expect(
 			await screen.findByText(/1 download failed: kokoro-onnx/),
 		).toBeInTheDocument();
-		expect(
-			screen.getByRole("button", { name: "Retry" }),
-		).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
 	});
 
 	it("Retry re-triggers the failed download through the download mutation", async () => {
@@ -433,6 +431,6 @@ describe("StorePage failed-download hint + retry", () => {
 		// And the failed-task hint survives beside it.
 		expect(
 			screen.getByText(/1 download failed: kokoro-onnx/),
-			).toBeInTheDocument();
+		).toBeInTheDocument();
 	});
 });

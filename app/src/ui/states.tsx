@@ -1,6 +1,11 @@
+import { Suspense, lazy } from "react";
 import type * as React from "react";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "./button";
+
+const TabHelp = lazy(() =>
+	import("@/components/Help/TabHelp").then((m) => ({ default: m.TabHelp })),
+);
 
 /**
  * Canonical content panel: discrete unit on the base surface.
@@ -53,11 +58,13 @@ export function ScreenHeader({
 	title,
 	description,
 	actions,
+	helpPath,
 	className,
 }: {
 	title: string;
 	description?: string;
 	actions?: React.ReactNode;
+	helpPath?: string;
 	className?: string;
 }) {
 	return (
@@ -72,9 +79,14 @@ export function ScreenHeader({
 					</p>
 				) : null}
 			</div>
-			{actions ? (
-				<div className="flex shrink-0 items-center gap-2">{actions}</div>
-			) : null}
+			<div className="flex shrink-0 items-center gap-2">
+				{helpPath ? (
+					<Suspense fallback={null}>
+						<TabHelp tabPath={helpPath} />
+					</Suspense>
+				) : null}
+				{actions}
+			</div>
 		</div>
 	);
 }

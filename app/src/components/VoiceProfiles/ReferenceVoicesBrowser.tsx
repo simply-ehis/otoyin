@@ -42,7 +42,7 @@ export function ReferenceVoicesBrowser() {
 			// biome-ignore lint/correctness/useHookAtTopLevel: false positive — this is an API client method, not a React hook
 			apiClient.useReferenceVoice(voiceId, name),
 		onSuccess: (res) => {
-			qc.invalidateQueries({ queryKey: ["voiceProfiles"] });
+			qc.invalidateQueries({ queryKey: ["profiles"] });
 			toast({
 				title: `Created profile "${res.profile_name}" from reference voice`,
 			});

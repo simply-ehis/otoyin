@@ -1,6 +1,6 @@
+import { act } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { isProductNew, useProductStore } from "./productStore";
-import { act } from "@testing-library/react";
 
 /**
  * productStore tests — the "New" badge bookkeeping.

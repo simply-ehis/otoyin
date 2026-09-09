@@ -30,6 +30,7 @@ import { getClip } from "@/lib/clip";
 import { useHistory } from "@/lib/hooks/useHistory";
 import {
 	useAddStoryItem,
+	useCreateStory,
 	useExportStoryAudio,
 	useMatchStoryLoudness,
 	useRedoStoryEdit,
@@ -42,10 +43,11 @@ import {
 import { useStoryPlayback } from "@/lib/hooks/useStoryPlayback";
 import { useGenerationStore } from "@/stores/generationStore";
 import { useStoryStore } from "@/stores/storyStore";
+import { useUIStore } from "@/stores/uiStore";
 import { Button } from "@/ui/button";
-import { SearchInput } from "@/ui/input";
+import { SearchInput, Textarea } from "@/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover";
-import { EmptyState, LoadingState } from "@/ui/states";
+import { LoadingState } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
 import { SortableStoryChatItem } from "./StoryChatItem";
 
@@ -66,6 +68,7 @@ export function StoryContent() {
 	const undoEdit = useUndoStoryEdit();
 	const redoEdit = useRedoStoryEdit();
 	const matchLoudness = useMatchStoryLoudness();
+	const createStory = useCreateStory();
 	const { data: historyDepth } = useStoryHistoryDepth(selectedId);
 	const addPendingGeneration = useGenerationStore(
 		(s) => s.addPendingGeneration,
@@ -78,6 +81,9 @@ export function StoryContent() {
 	const [addOpen, setAddOpen] = useState(false);
 	const [importing, setImporting] = useState(false);
 	const [dragging, setDragging] = useState(false);
+	const [scriptText, setScriptText] = useState("");
+	const [generatingText, setGeneratingText] = useState(false);
+	const selectedProfileId = useUIStore((s) => s.selectedProfileId);
 	const { data: historyData } = useHistory();
 
 	const isPlaying = useStoryStore((s) => s.isPlaying);
@@ -121,10 +127,32 @@ export function StoryContent() {
 		return (
 			<div className="flex h-full items-center justify-center text-muted-foreground">
 				<div className="text-center">
-					<p className="mb-2 text-lg font-medium text-foreground">
+					<div className="mx-auto mb-3 grid size-12 place-items-center rounded-full bg-secondary">
+						<BookOpenIcon
+							className="size-6 text-muted-foreground"
+							aria-hidden="true"
+						/>
+					</div>
+					<p className="mb-1 text-lg font-medium text-foreground">
 						{t("storyContent.selectStory.title")}
 					</p>
-					<p className="text-sm">{t("storyContent.selectStory.hint")}</p>
+					<p className="mb-4 text-sm">{t("storyContent.selectStory.hint")}</p>
+					<Button
+						size="sm"
+						onClick={() => {
+							createStory.mutate(
+								{ name: "New Story" },
+								{
+									onSuccess: (newStory) => {
+										useStoryStore.getState().setSelectedStoryId(newStory.id);
+									},
+								},
+							);
+						}}
+					>
+						<PlusIcon className="mr-1.5 size-3.5" aria-hidden="true" />
+						Create your first story
+					</Button>
 				</div>
 			</div>
 		);
@@ -196,6 +224,40 @@ export function StoryContent() {
 				description: error instanceof Error ? error.message : String(error),
 				variant: "destructive",
 			});
+		}
+	};
+
+	const generateFromText = async () => {
+		if (!scriptText.trim() || !selectedProfileId) {
+			return;
+		}
+		setGeneratingText(true);
+		try {
+			const lines = scriptText.split("\n").filter((l) => l.trim());
+			for (const line of lines) {
+				const gen = await apiClient.generateSpeech({
+					text: line.trim(),
+					profile_id: selectedProfileId,
+					language: "en" as never,
+				});
+				await addItem.mutateAsync({
+					storyId: story.id,
+					data: { generation_id: gen.id },
+				});
+			}
+			setScriptText("");
+			setAddOpen(false);
+			toast({
+				title: `${lines.length} line${lines.length > 1 ? "s" : ""} added to story`,
+			});
+		} catch (error: unknown) {
+			toast({
+				title: "Generation failed",
+				description: error instanceof Error ? error.message : String(error),
+				variant: "destructive",
+			});
+		} finally {
+			setGeneratingText(false);
 		}
 	};
 
@@ -402,6 +464,31 @@ export function StoryContent() {
 										? t("storyContent.importing")
 										: t("storyContent.importAudio")}
 								</Button>
+								{selectedProfileId ? (
+									<>
+										<Textarea
+											placeholder="Type or paste dialogue lines (one per line)"
+											value={scriptText}
+											onChange={(e) => setScriptText(e.target.value)}
+											rows={3}
+											className="min-h-[60px] resize-y text-xs"
+										/>
+										<Button
+											size="sm"
+											className="w-full"
+											disabled={!scriptText.trim() || generatingText}
+											onClick={() => void generateFromText()}
+										>
+											{generatingText
+												? "Generating…"
+												: `Generate & Add (${scriptText.split("\n").filter((l) => l.trim()).length} lines)`}
+										</Button>
+									</>
+								) : (
+									<p className="text-xs text-muted-foreground">
+										Select a voice in Generate to type dialogue here
+									</p>
+								)}
 							</div>
 							<ul className="max-h-60 overflow-y-auto">
 								{available.length === 0 ? (
@@ -477,10 +564,27 @@ export function StoryContent() {
 
 			<div className="relative z-0 min-h-0 flex-1 space-y-3 overflow-y-auto">
 				{sorted.length === 0 ? (
-					<EmptyState
-						title={t("storyContent.empty.title")}
-						body={t("storyContent.empty.hint")}
-					/>
+					<div className="flex flex-col items-center justify-center py-12 text-center">
+						<div className="mx-auto mb-3 grid size-12 place-items-center rounded-full bg-secondary">
+							<BookOpenIcon
+								className="size-6 text-muted-foreground"
+								aria-hidden="true"
+							/>
+						</div>
+						<p className="mb-1 text-sm font-medium text-foreground">
+							This story is empty
+						</p>
+						<p className="mb-4 text-xs text-muted-foreground">
+							Add dialogue lines by generating from text, importing audio, or
+							pasting from the clipboard.
+						</p>
+						<div className="flex gap-2">
+							<Button size="sm" onClick={() => setAddOpen(true)}>
+								<PlusIcon className="mr-1.5 size-3.5" aria-hidden="true" />
+								Add first line
+							</Button>
+						</div>
+					</div>
 				) : (
 					<DndContext
 						sensors={sensors}

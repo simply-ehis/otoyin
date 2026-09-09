@@ -68,12 +68,24 @@ const finalConsonants = [
 ];
 
 function spokenCoda(coda: string) {
-	if ("ㄱㄲㄳㄺㅋ".includes(coda)) return "ㄱ";
-	if ("ㄴㄵㄶ".includes(coda)) return "ㄴ";
-	if ("ㄷㅅㅆㅈㅊㅌㅎ".includes(coda)) return "ㄷ";
-	if ("ㄹㄼㄽㄾㅀ".includes(coda)) return "ㄹ";
-	if ("ㅁㄻ".includes(coda)) return "ㅁ";
-	if ("ㅂㅄㄿㅍ".includes(coda)) return "ㅂ";
+	if ("ㄱㄲㄳㄺㅋ".includes(coda)) {
+		return "ㄱ";
+	}
+	if ("ㄴㄵㄶ".includes(coda)) {
+		return "ㄴ";
+	}
+	if ("ㄷㅅㅆㅈㅊㅌㅎ".includes(coda)) {
+		return "ㄷ";
+	}
+	if ("ㄹㄼㄽㄾㅀ".includes(coda)) {
+		return "ㄹ";
+	}
+	if ("ㅁㄻ".includes(coda)) {
+		return "ㅁ";
+	}
+	if ("ㅂㅄㄿㅍ".includes(coda)) {
+		return "ㅂ";
+	}
 	return coda;
 }
 
@@ -100,7 +112,9 @@ export function koreanSyllables(raw: string) {
 
 function hangulRhymeParts(character: string) {
 	const offset = character.charCodeAt(0) - 0xac00;
-	if (offset < 0 || offset > 11171) return null;
+	if (offset < 0 || offset > 11171) {
+		return null;
+	}
 	return {
 		vowel: medialVowels[Math.floor((offset % 588) / 28)],
 		coda: finalConsonants[offset % 28],
@@ -114,7 +128,9 @@ export function koreanRhymeKey(raw: string) {
 		.find((character) => /[\uAC00-\uD7A3]/u.test(character));
 	if (lastHangul) {
 		const parts = hangulRhymeParts(lastHangul);
-		if (parts) return `${parts.vowel}-${spokenCoda(parts.coda) || "∅"}`;
+		if (parts) {
+			return `${parts.vowel}-${spokenCoda(parts.coda) || "∅"}`;
+		}
 	}
 	const word = raw.toLowerCase().replace(/[^a-z]/g, "");
 	const match = word.match(/[aeiouy][a-z]*$/);
@@ -177,50 +193,61 @@ function koreanReview(
 	const crowdedLines = lineLengths.filter((length) => length > 16).length;
 	const englishRatio = latinCount / Math.max(1, hangulCount + latinCount);
 
-	if (hasNativeVerse && hasNativeChorus)
+	if (hasNativeVerse && hasNativeChorus) {
 		strengths.push(
 			"The lyric uses recognizable Korean production labels, so its performance arc is easy to preserve.",
 		);
-	if (hookLength >= 3 && hookLength <= 10)
+	}
+	if (hookLength >= 3 && hookLength <= 10) {
 		strengths.push(
 			"The hook is compact enough to chant, repeat, and stage clearly in a K-pop arrangement.",
 		);
-	if (conversational >= 3)
+	}
+	if (conversational >= 3) {
 		strengths.push(
 			"The Korean reads like a speaking voice rather than a literal translation.",
 		);
-	if (englishRatio >= 0.04 && englishRatio <= 0.3)
+	}
+	if (englishRatio >= 0.04 && englishRatio <= 0.3) {
 		strengths.push(
 			"The Korean–English code-switching is proportionate enough to function as a deliberate color or hook device.",
 		);
-	if (!hangulCount)
+	}
+	if (!hangulCount) {
 		suggestions.push(
 			"Write the performance lyric in Hangul. Romanization can be an optional pronunciation aid, but it should not replace the sung Korean copy.",
 		);
-	if (englishRatio > 0.38)
+	}
+	if (englishRatio > 0.38) {
 		suggestions.push(
 			"English is starting to displace the Korean voice. Keep code-switches for a clear hook, slogan, rhyme, or character reason instead of scattering stock phrases.",
 		);
-	if (politeEndings >= 2 && casualEndings >= 2)
+	}
+	if (politeEndings >= 2 && casualEndings >= 2) {
 		suggestions.push(
 			"The lyric mixes polite and casual speech endings. Choose a relationship and speech level, or make the switch a clearly staged emotional turn.",
 		);
-	if (hookLength > 13)
+	}
+	if (hookLength > 13) {
 		suggestions.push(
 			"Shorten the Korean hook to one easy breath, then move explanation into the surrounding lines.",
 		);
-	if (clichés >= 4)
+	}
+	if (clichés >= 4) {
 		suggestions.push(
 			"Replace several universal K-pop abstractions with a physical action, location, prop, or private detail that belongs only to this narrator.",
 		);
-	if (crowdedLines >= Math.max(2, Math.ceil(lineLengths.length / 3)))
+	}
+	if (crowdedLines >= Math.max(2, Math.ceil(lineLengths.length / 3))) {
 		suggestions.push(
 			"Several lines exceed sixteen Hangul blocks. Split or simplify them so 받침-heavy words and consonant transitions remain singable.",
 		);
-	if (!hasNativeChorus)
+	}
+	if (!hasNativeChorus) {
 		suggestions.push(
 			"Tag a clear 후렴 or 코러스 and give it a title-centered payoff; let the 벌스 change scene or information before it returns.",
 		);
+	}
 	return { strengths, suggestions };
 }
 

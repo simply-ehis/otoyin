@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { apiClient } from "@/lib/api/client";
+import { useProfiles } from "@/lib/hooks/useProfiles";
 import { cn } from "@/lib/utils/cn";
 
 const DISMISS_KEY = "otoyin.getting-started.dismissed";
@@ -28,6 +29,8 @@ export function GettingStarted() {
 	const hasEngine = (status?.models ?? []).some(
 		(m) => m.category === "tts" && m.downloaded,
 	);
+	const { data: profiles } = useProfiles();
+	const hasProfile = (profiles ?? []).length > 0;
 	const steps = [
 		{
 			id: "engine",
@@ -40,15 +43,21 @@ export function GettingStarted() {
 			id: "profile",
 			title: "Create a voice profile",
 			body: "Clone a voice or pick a preset to make it yours.",
-			done: false,
+			done: hasProfile,
 			link: { to: "/voices", label: "Open Voices" },
 		},
 		{
 			id: "generate",
 			title: "Generate your first voice",
-			body: hasEngine ? "Use the composer below." : "Complete step 1 first.",
+			body: hasEngine && hasProfile
+				? "Type in the prompt bar above and hit Generate."
+				: hasEngine
+					? "Complete step 2 first."
+					: "Complete step 1 first.",
 			done: false,
-			link: null,
+			link: hasEngine && hasProfile
+				? { to: "/", label: "Start typing above" }
+				: null,
 		},
 	];
 

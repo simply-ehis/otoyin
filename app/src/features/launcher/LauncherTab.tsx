@@ -1,7 +1,7 @@
 /**
  * Clip Launcher Studio, ported from Resonant (© 2026 Calesthio, AGPL-3.0-only).
  * Grid + scenes + transport UI rewritten on otoyin primitives.
- * v1-OUT: MIDI step-sequencer (Phase 4), arrangement view.
+ * v1-OUT: arrangement view.
  */
 import {
 	MusicalNoteIcon,
@@ -26,7 +26,7 @@ import {
 } from "@/ui/select";
 import { ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
-import { liveEngine } from "./engine";
+import { liveEngine, type InstrumentResolver } from "./engine";
 import { StepSequencer } from "./StepSequencer";
 import type { Clip, LauncherSession, MidiClip, Track } from "./types";
 import {
@@ -35,6 +35,49 @@ import {
 	useLauncherSessions,
 	useUpdateLauncherSession,
 } from "./useLauncherSessions";
+
+const sfDataCache = new Map<string, ArrayBuffer>();
+
+function createInstrumentResolver(): InstrumentResolver {
+	return async (track) => {
+		if (!track.instrumentId) {
+			return null;
+		}
+		try {
+			let data = sfDataCache.get(track.instrumentId);
+			if (!data) {
+				data = await apiClient.getInstrumentPackFile(track.instrumentId);
+				sfDataCache.set(track.instrumentId, data);
+			}
+			const pack = await apiClient.getInstrumentPack(track.instrumentId);
+			const inst = pack.instruments.find(
+				(i) =>
+					i.program === (track.instrumentProgram ?? 0) &&
+					!i.percussion,
+			) ?? pack.instruments[0];
+			if (!inst) {
+				return null;
+			}
+			return {
+				instrument: {
+					id: inst.id,
+					name: inst.name,
+					format: pack.format as "soundfont" | "webaudiofont" | "sfz" | "sample",
+					program: inst.program,
+					bankMSB: inst.bankMSB,
+					bankLSB: inst.bankLSB,
+					percussion: inst.percussion,
+					packId: pack.id,
+					family: inst.family,
+					installed: true,
+				},
+				data,
+			};
+		} catch {
+			return null;
+		}
+	};
+}
 
 function createDefaultSession(name: string): LauncherSession {
 	const now = new Date().toISOString();
@@ -120,7 +163,7 @@ export function LauncherTab() {
 			setPlaying(false);
 			cancelAnimationFrame(animRef.current);
 		} else {
-			await liveEngine.play(session, activeClips);
+			await liveEngine.play(session, activeClips, createInstrumentResolver());
 			setPlaying(true);
 			animRef.current = requestAnimationFrame(tick);
 		}

@@ -14,6 +14,7 @@ Protocol summary:
 
 import asyncio
 import base64
+import contextlib
 import json
 import logging
 import uuid
@@ -98,6 +99,7 @@ async def _process_audio(
         return
 
     state.is_processing = True
+    session = None
 
     try:
         from ..services.voice_chat import VoiceChatSession
@@ -299,6 +301,10 @@ async def _process_audio(
         )
     finally:
         state.is_processing = False
+        if session:
+            from ..services.voice_chat import end_session
+            with contextlib.suppress(Exception):
+                end_session(session.session_id)
 
 
 @router.websocket("/realtime/ws")
@@ -313,6 +319,14 @@ async def realtime_ws(websocket: WebSocket) -> None:
     - response.cancel: cancel current generation
     """
     from ..services.rate_limiter import get_realtime_limiter
+
+    # Validate origin to prevent cross-site WebSocket hijacking
+    from .voice_chat import _is_allowed_origin
+
+    origin = websocket.headers.get("origin", "")
+    if origin and not _is_allowed_origin(origin):
+        await websocket.close(code=4403, reason="Origin not allowed")
+        return
 
     limiter = get_realtime_limiter()
 
@@ -340,7 +354,14 @@ async def realtime_ws(websocket: WebSocket) -> None:
     try:
         while True:
             raw = await websocket.receive_text()
-            msg = json.loads(raw)
+            try:
+                msg = json.loads(raw)
+            except json.JSONDecodeError as e:
+                await _send_event(
+                    websocket,
+                    {"type": "error", "error": {"type": "invalid_message", "message": str(e)}},
+                )
+                continue
             msg_type = msg.get("type", "")
 
             if msg_type == "session.update":
@@ -381,6 +402,8 @@ async def realtime_ws(websocket: WebSocket) -> None:
             elif msg_type == "response.cancel":
                 state.audio_buffer.clear()
                 state.is_processing = False
+                if state._process_task and not state._process_task.done():
+                    state._process_task.cancel()
 
             elif msg_type == "ping":
                 await _send_event(

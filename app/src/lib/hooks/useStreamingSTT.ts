@@ -221,7 +221,7 @@ registerProcessor("pcm-processor", PCMProcessor);
 					handlePCM(e.data as Float32Array);
 				};
 				source.connect(node);
-				node.connect(ctx.destination);
+				// Do NOT connect to ctx.destination — causes mic loopback feedback
 				return node;
 			} catch {
 				// Fallback for webviews without AudioWorklet support
@@ -230,7 +230,7 @@ registerProcessor("pcm-processor", PCMProcessor);
 					handlePCM(e.inputBuffer.getChannelData(0));
 				};
 				source.connect(processor);
-				processor.connect(ctx.destination);
+				// Do NOT connect to ctx.destination — causes mic loopback feedback
 				return processor;
 			}
 		},

@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { apiClient } from "@/lib/api/client";
+import { invalidateAllQueriesOnServerRestart } from "@/lib/queryClient";
 import { useServerStore } from "@/stores/serverStore";
 
 /**
@@ -10,7 +12,17 @@ import { useServerStore } from "@/stores/serverStore";
  */
 export function useServerHealth() {
 	const serverUrl = useServerStore((state) => state.serverUrl);
+	const isConnected = useServerStore((s) => s.isConnected);
 	const setIsConnected = useServerStore((s) => s.setIsConnected);
+	const wasDisconnected = useRef(!isConnected);
+
+	// Detect recovery: was disconnected → now connected → invalidate stale caches
+	useEffect(() => {
+		if (isConnected && wasDisconnected.current) {
+			invalidateAllQueriesOnServerRestart();
+		}
+		wasDisconnected.current = !isConnected;
+	}, [isConnected]);
 
 	return useQuery({
 		queryKey: ["server", "health", serverUrl],

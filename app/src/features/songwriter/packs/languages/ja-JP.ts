@@ -22,10 +22,14 @@ export function japaneseTokens(text: string) {
 function kanaMoras(raw: string) {
 	const moras: string[] = [];
 	for (const character of raw.normalize("NFKC")) {
-		if (!kanaPattern.test(character)) continue;
-		if (smallKana.includes(character) && moras.length)
+		if (!kanaPattern.test(character)) {
+			continue;
+		}
+		if (smallKana.includes(character) && moras.length) {
 			moras[moras.length - 1] += character;
-		else moras.push(character);
+		} else {
+			moras.push(character);
+		}
 	}
 	return moras;
 }
@@ -54,15 +58,31 @@ function hiragana(character: string) {
 
 function moraVowel(mora: string, previous = "") {
 	const value = [...mora].map(hiragana).join("");
-	if (value === "ー") return previous || "ー";
-	if (value === "ん") return "n";
-	if (value === "っ") return "q";
+	if (value === "ー") {
+		return previous || "ー";
+	}
+	if (value === "ん") {
+		return "n";
+	}
+	if (value === "っ") {
+		return "q";
+	}
 	const last = value.at(-1) ?? "";
-	if ("ぁあかがさざただなはばぱまゃやらゎわ".includes(last)) return "a";
-	if ("ぃいきぎしじちぢにひびぴみりゐ".includes(last)) return "i";
-	if ("ぅうくぐすずつづぬふぶぷむゅゆるゔ".includes(last)) return "u";
-	if ("ぇえけげせぜてでねへべぺめれゑ".includes(last)) return "e";
-	if ("ぉおこごそぞとどのほぼぽもょよろを".includes(last)) return "o";
+	if ("ぁあかがさざただなはばぱまゃやらゎわ".includes(last)) {
+		return "a";
+	}
+	if ("ぃいきぎしじちぢにひびぴみりゐ".includes(last)) {
+		return "i";
+	}
+	if ("ぅうくぐすずつづぬふぶぷむゅゆるゔ".includes(last)) {
+		return "u";
+	}
+	if ("ぇえけげせぜてでねへべぺめれゑ".includes(last)) {
+		return "e";
+	}
+	if ("ぉおこごそぞとどのほぼぽもょよろを".includes(last)) {
+		return "o";
+	}
 	return last;
 }
 
@@ -71,11 +91,15 @@ export function japaneseRhymeKey(raw: string) {
 	const moras = kanaMoras(raw);
 	if (moras.length) {
 		const sounds: string[] = [];
-		for (const mora of moras) sounds.push(moraVowel(mora, sounds.at(-1)));
+		for (const mora of moras) {
+			sounds.push(moraVowel(mora, sounds.at(-1)));
+		}
 		return sounds.slice(-2).join("-");
 	}
 	const lastHan = (raw.match(hanGlobal) ?? []).at(-1);
-	if (lastHan) return lastHan;
+	if (lastHan) {
+		return lastHan;
+	}
 	const word = raw.toLowerCase().replace(/[^a-z]/g, "");
 	const match = word.match(/[aeiouy][a-z]*$/);
 	return match?.[0] ?? word.slice(-2);
@@ -151,50 +175,61 @@ function japaneseReview(
 	const englishRatio =
 		latinCharacters / Math.max(1, japaneseCharacters + latinCharacters);
 
-	if (hasNativeVerse && hasNativeChorus)
+	if (hasNativeVerse && hasNativeChorus) {
 		strengths.push(
 			"The lyric uses the Aメロ/Bメロ/サビ vocabulary expected in Japanese pop production.",
 		);
-	if (hookMoras >= 4 && hookMoras <= 14)
+	}
+	if (hookMoras >= 4 && hookMoras <= 14) {
 		strengths.push(
 			"The hook occupies a practical mora range for a memorable Japanese melodic phrase.",
 		);
-	if (conversational >= 3)
+	}
+	if (conversational >= 3) {
 		strengths.push(
 			"The Japanese voice feels conversational rather than mechanically translated.",
 		);
-	if (!japaneseCharacters)
+	}
+	if (!japaneseCharacters) {
 		suggestions.push(
 			"Write the performance lyric in Japanese script. Rōmaji can be a separate rehearsal aid, but should not replace the sung copy.",
 		);
-	if (englishRatio > 0.32)
+	}
+	if (englishRatio > 0.32) {
 		suggestions.push(
 			"English is displacing the Japanese voice. Keep it for a deliberate title, hook, image, rhyme, or character reason instead of ornamental fragments.",
 		);
-	if (politeEndings >= 2 && plainEndings >= 2)
+	}
+	if (politeEndings >= 2 && plainEndings >= 2) {
 		suggestions.push(
 			"The lyric mixes polite です／ます endings with plain or intimate speech. Choose a narrator relationship, or stage the register change as part of the story.",
 		);
-	if (firstPersons.length > 1)
+	}
+	if (firstPersons.length > 1) {
 		suggestions.push(
 			`The narrator uses multiple first-person identities (${firstPersons.join("、")}). Choose one voice unless a character or perspective change is explicit.`,
 		);
-	if (hookMoras > 18)
+	}
+	if (hookMoras > 18) {
 		suggestions.push(
 			"Shorten the サビ hook to a clean mora phrase and let the surrounding lines explain its meaning.",
 		);
-	if (clichés >= 4)
+	}
+	if (clichés >= 4) {
 		suggestions.push(
 			"The lyric leans on familiar J-pop abstractions. Replace several with a mundane object, small action, season-specific texture, or exact place.",
 		);
-	if (crowdedLines >= Math.max(2, Math.ceil(lineLengths.length / 3)))
+	}
+	if (crowdedLines >= Math.max(2, Math.ceil(lineLengths.length / 3))) {
 		suggestions.push(
 			"Several lines exceed twenty estimated morae. Split them or reserve the density for a deliberate rapid passage; long vowels, っ, and ん still require time.",
 		);
-	if (!hasNativeChorus)
+	}
+	if (!hasNativeChorus) {
 		suggestions.push(
 			"Tag a clear サビ and give it a title-centered melodic payoff; use Aメロ and Bメロ to change information and pressure before each return.",
 		);
+	}
 	return { strengths, suggestions };
 }
 

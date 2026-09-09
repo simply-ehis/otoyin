@@ -104,46 +104,40 @@ function chineseReview(
 		.filter(Boolean);
 	const crowdedLines = lineLengths.filter((length) => length > 14).length;
 
-	if (hasNativeVerse && hasNativeChorus)
-		strengths.push(
-			"歌词使用了中文创作中常见的段落标签，便于保留歌曲结构。",
-		);
-	if (hookLength >= 3 && hookLength <= 8)
-		strengths.push(
-			"Hook 足够紧凑，容易记忆和传唱。",
-		);
-	if (conversational >= 3)
-		strengths.push(
-			"歌词读起来像日常说话，不像翻译腔。",
-		);
-	if (englishRatio >= 0.04 && englishRatio <= 0.25)
-		strengths.push(
-			"中英混搭比例恰当，可作为风格点缀。",
-		);
-	if (!hanCount)
-		suggestions.push(
-			"用中文写歌词。拼音注音可以另附，但不应该替代演唱文本。",
-		);
-	if (englishRatio > 0.3)
+	if (hasNativeVerse && hasNativeChorus) {
+		strengths.push("歌词使用了中文创作中常见的段落标签，便于保留歌曲结构。");
+	}
+	if (hookLength >= 3 && hookLength <= 8) {
+		strengths.push("Hook 足够紧凑，容易记忆和传唱。");
+	}
+	if (conversational >= 3) {
+		strengths.push("歌词读起来像日常说话，不像翻译腔。");
+	}
+	if (englishRatio >= 0.04 && englishRatio <= 0.25) {
+		strengths.push("中英混搭比例恰当，可作为风格点缀。");
+	}
+	if (!hanCount) {
+		suggestions.push("用中文写歌词。拼音注音可以另附，但不应该替代演唱文本。");
+	}
+	if (englishRatio > 0.3) {
 		suggestions.push(
 			"英文比例偏高，可能削弱中文表达。保留英文用于 Hook、口号或押韵即可。",
 		);
-	if (hookLength > 10)
-		suggestions.push(
-			"缩短 Hook 到一句话以内，把解释放在前后段落。",
-		);
-	if (cliches >= 4)
+	}
+	if (hookLength > 10) {
+		suggestions.push("缩短 Hook 到一句话以内，把解释放在前后段落。");
+	}
+	if (cliches >= 4) {
 		suggestions.push(
 			"替换掉几个通用的华语流行套话（永远、命运、星光），用具体的场景、动作或私密细节替代。",
 		);
-	if (crowdedLines >= Math.max(2, Math.ceil(lineLengths.length / 3)))
-		suggestions.push(
-			"几行歌词偏长，拆分或简化，让演唱时气息更自然。",
-		);
-	if (!hasNativeChorus)
-		suggestions.push(
-			"添加明确的副歌段落，让它承载歌曲的核心承诺。",
-		);
+	}
+	if (crowdedLines >= Math.max(2, Math.ceil(lineLengths.length / 3))) {
+		suggestions.push("几行歌词偏长，拆分或简化，让演唱时气息更自然。");
+	}
+	if (!hasNativeChorus) {
+		suggestions.push("添加明确的副歌段落，让它承载歌曲的核心承诺。");
+	}
 	return { strengths, suggestions };
 }
 
@@ -151,57 +145,97 @@ export const chineseSongwriting: SongwritingLanguagePack = {
 	id: "zh-CN",
 	name: "Mandarin Chinese",
 	locale: "zh-CN",
-	aliases: [
-		"zh",
-		"Chinese",
-		"Mandarin",
-		"中文",
-		"普通话",
-		"国语",
-	],
+	aliases: ["zh", "Chinese", "Mandarin", "中文", "普通话", "国语"],
 	description:
 		"Mandarin Chinese songwriting with Han-character syllable meter, pinyin-final rhyme, C-pop structure, and natural spoken detail.",
 	templates: [
 		{
 			id: "c-pop-ballad",
 			name: "华语抒情",
-			description: "Classic Mandopop ballad with verse–chorus arc and a bridge revelation.",
-			sections: ["前奏", "主歌 1", "副歌", "主歌 2", "副歌", "间奏", "桥段", "最终副歌", "尾奏"],
+			description:
+				"Classic Mandopop ballad with verse–chorus arc and a bridge revelation.",
+			sections: [
+				"前奏",
+				"主歌 1",
+				"副歌",
+				"主歌 2",
+				"副歌",
+				"间奏",
+				"桥段",
+				"最终副歌",
+				"尾奏",
+			],
 		},
 		{
 			id: "c-pop-upbeat",
 			name: "华语快歌",
-			description: "Upbeat C-pop with a hook-first intro and a danceable energy.",
-			sections: ["前奏 Hook", "主歌 1", "预副歌", "副歌", "主歌 2", "预副歌", "副歌", "间奏", "桥段", "最终副歌", "尾奏"],
+			description:
+				"Upbeat C-pop with a hook-first intro and a danceable energy.",
+			sections: [
+				"前奏 Hook",
+				"主歌 1",
+				"预副歌",
+				"副歌",
+				"主歌 2",
+				"预副歌",
+				"副歌",
+				"间奏",
+				"桥段",
+				"最终副歌",
+				"尾奏",
+			],
 		},
 		{
 			id: "rap-hip-hop",
 			name: "说唱 / 嘻哈",
-			description: "Narrative rap verses with internal rhyme, flow changes, and a compact hook.",
-			sections: ["前奏", "说唱主歌 1", "Hook", "说唱主歌 2", "Hook", "转换", "最终 Hook", "尾奏"],
+			description:
+				"Narrative rap verses with internal rhyme, flow changes, and a compact hook.",
+			sections: [
+				"前奏",
+				"说唱主歌 1",
+				"Hook",
+				"说唱主歌 2",
+				"Hook",
+				"转换",
+				"最终 Hook",
+				"尾奏",
+			],
 		},
 		{
 			id: "r-and-b",
 			name: "R&B",
-			description: "Conversational close-up verses, a smooth lift, and a melody-driven chorus.",
-			sections: ["前奏", "主歌 1", "预副歌", "副歌", "主歌 2", "副歌", "桥段", "副歌", "尾奏"],
+			description:
+				"Conversational close-up verses, a smooth lift, and a melody-driven chorus.",
+			sections: [
+				"前奏",
+				"主歌 1",
+				"预副歌",
+				"副歌",
+				"主歌 2",
+				"副歌",
+				"桥段",
+				"副歌",
+				"尾奏",
+			],
 		},
 		{
 			id: "folk-acoustic",
 			name: "民谣 / 原声",
-			description: "Intimate storytelling with simple structure and space for acoustic instruments.",
-			sections: ["前奏", "主歌 1", "主歌 2", "副歌", "主歌 3", "副歌", "间奏", "尾奏"],
+			description:
+				"Intimate storytelling with simple structure and space for acoustic instruments.",
+			sections: [
+				"前奏",
+				"主歌 1",
+				"主歌 2",
+				"副歌",
+				"主歌 3",
+				"副歌",
+				"间奏",
+				"尾奏",
+			],
 		},
 	],
-	quickSections: [
-		"主歌",
-		"预副歌",
-		"副歌",
-		"说唱主歌",
-		"桥段",
-		"间奏",
-		"尾奏",
-	],
+	quickSections: ["主歌", "预副歌", "副歌", "说唱主歌", "桥段", "间奏", "尾奏"],
 	lyricPlaceholder:
 		"[主歌 1]\n用具体的场景开始——时间、地点、动作……\n\n[预副歌]\n逐渐提升节奏和情绪……\n\n[副歌]\n用简短的中文表达核心承诺和标题……",
 	sectionAliases: {

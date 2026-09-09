@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from "react";
 import {
 	CircleStackIcon as Circle,
 	FlagIcon as Flag,
@@ -16,13 +15,20 @@ import {
 	MagnifyingGlassPlusIcon as ZoomIn,
 	MagnifyingGlassMinusIcon as ZoomOut,
 } from "@heroicons/react/24/outline";
+import { useEffect, useRef, useState } from "react";
 import { VoiceChatOverlay } from "@/components/VoiceChat/VoiceChatOverlay";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/ui/button";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/ui/select";
 import { Slider } from "@/ui/slider";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/ui/select";
-import { useAudioStudioStore } from "./AudioStudioStore";
 import type { StudioTrack } from "./AudioStudioStore";
+import { useAudioStudioStore } from "./AudioStudioStore";
 import { formatTime } from "./formatTime";
 import { MonitorPicker } from "./MonitorPicker";
 import { MonitorRecorder } from "./MonitorRecorder";
@@ -188,7 +194,10 @@ export function TransportControls({
 								}
 							}}
 						>
-							<SelectTrigger className="h-7 text-xs w-32" aria-label="Record destination track">
+							<SelectTrigger
+								className="h-7 text-xs w-32"
+								aria-label="Record destination track"
+							>
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>

@@ -22,8 +22,8 @@ import {
 } from "@/ui/select";
 import { LoadingState, ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
-import { UploadField } from "./UploadField";
 import { hueText } from "./hueIdentity";
+import { UploadField } from "./UploadField";
 
 // Hue lives in the text only — solid surfaces everywhere (design tokens).
 // Canonical hue-identity slots from hueIdentity.ts (the documented pattern).

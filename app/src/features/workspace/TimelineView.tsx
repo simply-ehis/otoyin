@@ -1,8 +1,6 @@
 import {
 	ArrowUpTrayIcon,
-	ArrowUturnLeftIcon,
 	BackwardIcon,
-	CircleStackIcon,
 	PauseIcon,
 	PlayIcon,
 	PlusIcon,
@@ -47,8 +45,6 @@ function clock(totalSeconds: number): string {
 export function TimelineView() {
 	const navigate = useNavigate();
 	const { toast } = useToast();
-	const [looping, setLooping] = useState(false);
-	const [recording, setRecording] = useState(false);
 	const [tracks, setTracks] = useState<Track[]>([]);
 	const [importOpen, setImportOpen] = useState(false);
 
@@ -127,7 +123,7 @@ export function TimelineView() {
 	const maxDuration = Math.max(1, ...tracks.map((t) => t.duration ?? 0));
 
 	return (
-		<div className="flex h-full flex-col gap-4">
+		<div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
 			<ScreenHeader
 				title="Timeline"
 				description="Arrange tracks and scrub your session."
@@ -243,32 +239,6 @@ export function TimelineView() {
 					}}
 				>
 					<StopIcon className="size-4" aria-hidden="true" />
-				</Button>
-				<Button
-					variant={looping ? "default" : "ghost"}
-					size="icon"
-					className="size-8"
-					title="Toggle loop"
-					aria-label="Toggle loop"
-					aria-pressed={looping}
-					onClick={() => setLooping((v) => !v)}
-				>
-					<ArrowUturnLeftIcon className="size-4" aria-hidden="true" />
-				</Button>
-				<span className="mx-1 h-6 w-px bg-border" aria-hidden="true" />
-				<Button
-					variant={recording ? "destructive" : "ghost"}
-					size="icon"
-					className="size-8"
-					title={recording ? "Stop recording" : "Record"}
-					aria-label={recording ? "Stop recording" : "Record"}
-					aria-pressed={recording}
-					onClick={() => setRecording((v) => !v)}
-				>
-					<CircleStackIcon
-						className={cn("size-4", recording && "animate-pulse")}
-						aria-hidden="true"
-					/>
 				</Button>
 				<span className="ml-auto flex items-center gap-2">
 					<SpeakerWaveIcon

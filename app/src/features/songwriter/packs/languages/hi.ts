@@ -21,16 +21,21 @@ function cleanDevanagari(raw: string) {
 
 /** Approximate pronounced aksharas, including the common word-final schwa deletion. */
 export function hindiSyllables(raw: string) {
-	if (!raw.trim()) return 0;
+	if (!raw.trim()) {
+		return 0;
+	}
 	if (devanagari.test(raw)) {
 		const characters = cleanDevanagari(raw);
 		let nuclei = 0;
 		for (let index = 0; index < characters.length; index += 1) {
 			const character = characters[index];
-			if (independentVowel.test(character)) nuclei += 1;
-			else if (devanagariConsonant.test(character)) {
+			if (independentVowel.test(character)) {
+				nuclei += 1;
+			} else if (devanagariConsonant.test(character)) {
 				const next = characters[index + 1] ?? "";
-				if (next === virama) continue;
+				if (next === virama) {
+					continue;
+				}
 				const hasWrittenVowel = vowelSign.test(next);
 				const isFinalImplicitSchwa =
 					!hasWrittenVowel && index === characters.length - 1;
@@ -38,9 +43,11 @@ export function hindiSyllables(raw: string) {
 					!hasWrittenVowel &&
 					devanagariConsonant.test(next) &&
 					vowelSign.test(characters[index + 2] ?? "");
-				if (!isFinalImplicitSchwa && !nextConsonantTakesWrittenVowel)
+				if (!isFinalImplicitSchwa && !nextConsonantTakesWrittenVowel) {
 					nuclei += 1;
-				else if (hasWrittenVowel) nuclei += 1;
+				} else if (hasWrittenVowel) {
+					nuclei += 1;
+				}
 			}
 		}
 		return Math.max(1, nuclei);
@@ -50,7 +57,9 @@ export function hindiSyllables(raw: string) {
 		.normalize("NFD")
 		.replace(/[\u0300-\u036f]/g, "")
 		.replace(/[^a-z]/g, "");
-	if (!word) return 0;
+	if (!word) {
+		return 0;
+	}
 	const nuclei = word.match(/aa|ai|au|ee|ii|oo|uu|[aeiou]/g);
 	return Math.max(1, nuclei?.length ?? 1);
 }
@@ -65,10 +74,13 @@ export function hindiRhymeKey(raw: string) {
 			if (
 				independentVowel.test(characters[index]) ||
 				vowelSign.test(characters[index])
-			)
+			) {
 				lastVowel = index;
+			}
 		}
-		if (lastVowel < 0) return characters.slice(-1).join("");
+		if (lastVowel < 0) {
+			return characters.slice(-1).join("");
+		}
 		const sound = new Map([
 			["अ", "a"],
 			["आ", "a"],
@@ -102,7 +114,9 @@ export function hindiRhymeKey(raw: string) {
 		.replace(/aa/g, "a")
 		.replace(/ee|ii/g, "i")
 		.replace(/oo|uu/g, "u");
-	if (!word) return "";
+	if (!word) {
+		return "";
+	}
 	const matches = [...word.matchAll(/ai|au|[aeiou]/g)];
 	return matches.length
 		? word.slice(matches.at(-1)?.index ?? Math.max(0, word.length - 2))
@@ -251,7 +265,9 @@ function hindiReview(
 			section.label.toLowerCase().includes("antara"),
 	);
 	const coupletHeavySections = sections.filter((section) => {
-		if (section.kind !== "verse" || section.lines.length < 6) return false;
+		if (section.kind !== "verse" || section.lines.length < 6) {
+			return false;
+		}
 		let matchingPairs = 0;
 		const pairCount = Math.floor(section.lines.length / 2);
 		for (let index = 0; index + 1 < section.lines.length; index += 2) {
@@ -262,47 +278,56 @@ function hindiReview(
 			if (
 				hindiRhymeKey(first) &&
 				hindiRhymeKey(first) === hindiRhymeKey(second)
-			)
+			) {
 				matchingPairs += 1;
+			}
 		}
 		return matchingPairs / Math.max(1, pairCount) >= 0.6;
 	});
 
-	if (hasMukhda && hasAntara)
+	if (hasMukhda && hasAntara) {
 		strengths.push(
 			"The lyric uses a native mukhda–antara song form: a recurring central thought with room for narrative development.",
 		);
-	if (conversational >= 3)
+	}
+	if (conversational >= 3) {
 		strengths.push(
 			"Conversational particles and direct verbs help the Hindi sound spoken and singable rather than formally recited.",
 		);
-	if (pronounFamilies.length > 1)
+	}
+	if (pronounFamilies.length > 1) {
 		suggestions.push(
 			`Choose one relationship register—${pronounFamilies.map((family) => family.label).join(", ")} currently mix—unless the change is a deliberate story event.`,
 		);
+	}
 	if (
 		devanagariWords.length &&
 		latinWords.length / Math.max(1, words.length) > 0.12
-	)
+	) {
 		suggestions.push(
 			"Make the Hinglish switches intentional: keep Hindi as the grammatical base and use English only where this narrator would naturally say it.",
 		);
-	if (literaryAbstractions >= 4)
+	}
+	if (literaryAbstractions >= 4) {
 		suggestions.push(
 			"This is drifting toward written poetry. Replace several abstract Urdu/Hindi nouns with something the singer does, notices, asks, or cannot bring themself to say.",
 		);
-	if (coupletHeavySections.length)
+	}
+	if (coupletHeavySections.length) {
 		suggestions.push(
 			"The antaras resolve too consistently as rhyming couplets, which can sound recited. Loosen one rhyme pair, add a plain spoken line, and use the final line to turn naturally back into the mukhda.",
 		);
-	if (!hasMukhda)
+	}
+	if (!hasMukhda) {
 		suggestions.push(
 			"For a contemporary Hindi song, consider a short mukhda that states the central thought and can return unchanged after each antara.",
 		);
-	if (devanagariWords.length)
+	}
+	if (devanagariWords.length) {
 		strengths.push(
 			"Devanagari gives the singer and generator clearer Hindi pronunciation than ad-hoc Romanization.",
 		);
+	}
 	return { strengths, suggestions };
 }
 

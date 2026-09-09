@@ -203,6 +203,9 @@ export function MultiTakeCompingView() {
 		}
 		try {
 			const res = await fetch(clip.audioUrl);
+			if (!res.ok) {
+				throw new Error(`Failed to fetch clip audio: ${res.status}`);
+			}
 			const blob = await res.blob();
 			const b64 = await blobToBase64(blob);
 			const regionId = newRegionId();

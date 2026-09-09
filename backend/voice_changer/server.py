@@ -268,7 +268,11 @@ async def voice_changer_ws(websocket: WebSocket) -> None:
     try:
         while True:
             raw = await websocket.receive_text()
-            msg = json.loads(raw)
+            try:
+                msg = json.loads(raw)
+            except json.JSONDecodeError as e:
+                await _send(websocket, {"type": "error", "error": {"type": "invalid_message", "message": str(e)}})
+                continue
             msg_type = msg.get("type", "")
 
             if msg_type == "session.update":

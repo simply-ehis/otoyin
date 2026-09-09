@@ -140,9 +140,10 @@ function scheduleReconnect(): void {
 	}
 
 	store.setConnectionQuality("degraded");
-	store.setReconnectAttempts(store.reconnectAttempts + 1);
+	const attempt = store.reconnectAttempts + 1;
+	store.setReconnectAttempts(attempt);
 
-	const delay = RECONNECT_DELAY_MS * 2 ** store.reconnectAttempts;
+	const delay = RECONNECT_DELAY_MS * 2 ** (attempt - 1);
 	reconnectTimer = setTimeout(() => {
 		if (savedMessageHandler) {
 			connectVoiceChat(savedMessageHandler, savedConfig).catch((e) => {
@@ -256,7 +257,7 @@ export function connectVoiceChat(
 			if (currentStore.isActive) {
 				scheduleReconnect();
 			} else {
-				store.reset();
+				currentStore.reset();
 			}
 			ws = null;
 		};

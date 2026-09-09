@@ -2,7 +2,6 @@ import {
 	BookOpenIcon as BookOpen,
 	ChevronDoubleLeftIcon,
 	ChevronLeftIcon,
-	CubeTransparentIcon as Cube,
 	FolderOpenIcon as FolderOpen,
 	HomeIcon as Home,
 	LanguageIcon as Language,
@@ -12,18 +11,20 @@ import {
 	PlayCircleIcon as PlayCircle,
 	PuzzlePieceIcon as PuzzlePiece,
 	RectangleStackIcon as RectangleStack,
-	Squares2X2Icon as Squares,
 	CogIcon as Settings,
 	ShoppingBagIcon as ShoppingBag,
 	SignalIcon as Signal,
 	SparklesIcon as Sparkles,
 	SpeakerWaveIcon as SpeakerWave,
+	Squares2X2Icon as Squares,
 } from "@heroicons/react/24/outline";
 import { Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils/cn";
 import { useUIStore } from "@/stores/uiStore";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
+import { ClipboardIndicator } from "@/features/clipboard/ClipboardIndicator";
 
 interface NavItem {
 	/** i18n key under "sidebar.*" */
@@ -46,9 +47,9 @@ const NAV_GROUPS: { items: NavItem[] }[] = [
 		items: [
 			{ path: "/stories", label: "sidebar.stories", icon: BookOpen },
 			{ path: "/songwriter", label: "sidebar.songwriter", icon: PenLine },
-		{ path: "/launcher", label: "sidebar.launcher", icon: Squares },
-		{ path: "/instruments", label: "sidebar.instruments", icon: Music },
-		{
+			{ path: "/launcher", label: "sidebar.launcher", icon: Squares },
+			{ path: "/instruments", label: "sidebar.instruments", icon: Music },
+			{
 				path: "/audiobooks",
 				label: "sidebar.audiobooks",
 				icon: RectangleStack,
@@ -65,7 +66,6 @@ const NAV_GROUPS: { items: NavItem[] }[] = [
 	{
 		items: [
 			{ path: "/effects", label: "sidebar.effects", icon: Sparkles },
-			{ path: "/instruments", label: "sidebar.instruments", icon: Cube },
 			{ path: "/workspace", label: "sidebar.workspace", icon: SpeakerWave },
 			{ path: "/sounds", label: "sidebar.sounds", icon: PlayCircle },
 		],
@@ -91,6 +91,24 @@ export function Sidebar({ isMacOS }: { isMacOS: boolean }) {
 	const setStoreSidebarWidth = useUIStore((s) => s.setSidebarWidth);
 	const [sidebarWidth, setSidebarWidth] = useState(() => storeSidebarWidth);
 	const isResizing = useRef(false);
+	const visibleTabs = useWorkspaceStore((s) => s.visibleTabs);
+
+	// Filter NAV_GROUPS by visible tabs. null = show all.
+	const filteredGroups =
+		visibleTabs === null
+			? NAV_GROUPS
+			: NAV_GROUPS.map((group) => ({
+					items: group.items.filter((item) => visibleTabs.includes(item.path)),
+				})).filter((group) => group.items.length > 0);
+
+	const hiddenCount =
+		visibleTabs === null
+			? 0
+			: NAV_GROUPS.reduce(
+					(acc, group) =>
+						acc + group.items.filter((item) => !visibleTabs.includes(item.path)).length,
+					0,
+			  );
 
 	useEffect(() => {
 		if (typeof window === "undefined") {
@@ -183,7 +201,7 @@ export function Sidebar({ isMacOS }: { isMacOS: boolean }) {
 					aria-label={t("sidebar.navigation")}
 				>
 					<div className="space-y-1">
-						{NAV_GROUPS.map((group, gi) => (
+						{filteredGroups.map((group, gi) => (
 							<div key={group.items[0]?.path ?? gi}>
 								{gi > 0 && (
 									<div
@@ -227,8 +245,26 @@ export function Sidebar({ isMacOS }: { isMacOS: boolean }) {
 								</ul>
 							</div>
 						))}
+						{hiddenCount > 0 && sidebarOpen && (
+							<Link
+								to="/settings/workspace"
+								className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+							>
+								<Squares className="size-3.5" aria-hidden="true" />
+								<span>
+									See {hiddenCount} more {hiddenCount === 1 ? "tab" : "tabs"}
+								</span>
+							</Link>
+						)}
 					</div>
 				</nav>
+
+				{/* Clipboard indicator — shows clip status + opens panel */}
+				{sidebarOpen && (
+					<div className="px-2 pb-1">
+						<ClipboardIndicator />
+					</div>
+				)}
 
 				{/* Mini-game — tiny access, smaller than a normal tab */}
 				<div className="border-t border-border/50 mx-2 pt-2 pb-1">

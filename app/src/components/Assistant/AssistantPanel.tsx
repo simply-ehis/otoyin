@@ -132,7 +132,7 @@ export function AssistantPanel({
 				))}
 			</nav>
 
-			<div className="flex-1 flex flex-col min-w-0">
+			<div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 				<div className="flex items-center justify-between px-4 py-3 border-b border-border bg-sidebar shrink-0">
 					<div className="flex items-center gap-2">
 						<Bot className="size-4 text-accent" />
@@ -167,97 +167,101 @@ export function AssistantPanel({
 				</div>
 
 				{showSettings && (
-					<AssistantSettings
-						localModels={localModels}
-						apiProviders={apiProviders}
-						selectedModel={selectedModel}
-						setSelectedModel={setSelectedModel}
-						selectedProvider={selectedProvider}
-						setSelectedProvider={setSelectedProvider}
-						apiKey={apiKey}
-						setApiKey={setApiKey}
-						apiBaseUrl={apiBaseUrl}
-						setApiBaseUrl={setApiBaseUrl}
-					/>
+					<div className="shrink-0 max-h-[50vh] overflow-y-auto border-b border-border">
+						<AssistantSettings
+							localModels={localModels}
+							apiProviders={apiProviders}
+							selectedModel={selectedModel}
+							setSelectedModel={setSelectedModel}
+							selectedProvider={selectedProvider}
+							setSelectedProvider={setSelectedProvider}
+							apiKey={apiKey}
+							setApiKey={setApiKey}
+							apiBaseUrl={apiBaseUrl}
+							setApiBaseUrl={setApiBaseUrl}
+						/>
+					</div>
 				)}
 
-				{view === "chat" && (
-					<AssistantChatView
-						messages={messages}
-						input={input}
-						setInput={setInput}
-						isStreaming={isStreaming}
-						attachments={attachments}
-						isRecording={isRecording}
-						inputRef={inputRef}
-						fileInputRef={fileInputRef}
-						sendMessage={sendMessage}
-						handleKeyDown={handleKeyDown}
-						editMessage={editMessage}
-						deleteMessage={deleteMessage}
-						branchMessage={branchMessage}
-						removeAttachment={removeAttachment}
-						startRecording={startRecording}
-						stopRecording={stopRecording}
-						handleFileSelect={handleFileSelect}
-						handleDragOver={handleDragOver}
-						handleDragLeave={handleDragLeave}
-						handleDrop={handleDrop}
-					/>
-				)}
+				<div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+					{view === "chat" && (
+						<AssistantChatView
+							messages={messages}
+							input={input}
+							setInput={setInput}
+							isStreaming={isStreaming}
+							attachments={attachments}
+							isRecording={isRecording}
+							inputRef={inputRef}
+							fileInputRef={fileInputRef}
+							sendMessage={sendMessage}
+							handleKeyDown={handleKeyDown}
+							editMessage={editMessage}
+							deleteMessage={deleteMessage}
+							branchMessage={branchMessage}
+							removeAttachment={removeAttachment}
+							startRecording={startRecording}
+							stopRecording={stopRecording}
+							handleFileSelect={handleFileSelect}
+							handleDragOver={handleDragOver}
+							handleDragLeave={handleDragLeave}
+							handleDrop={handleDrop}
+						/>
+					)}
 
-				{(view === "projects" || view === "plan") && (
-					<AssistantProjectPanel
-						projects={projects.projects}
-						activeProjectId={projects.activeProjectId}
-						sources={projects.sources}
-						plans={projects.plans}
-						newProjectName={projects.newProjectName}
-						setNewProjectName={projects.setNewProjectName}
-						newProjectDesc={projects.newProjectDesc}
-						setNewProjectDesc={projects.setNewProjectDesc}
-						newSource={projects.newSource}
-						setNewSource={projects.setNewSource}
-						newPlan={projects.newPlan}
-						setNewPlan={projects.setNewPlan}
-						creatingProject={projects.creatingProject}
-						addingSource={projects.addingSource}
-						creatingPlan={projects.creatingPlan}
-						selectingProject={projects.selectingProject}
-						selectProject={projects.selectProject}
-						createProject={projects.createProject}
-						addSource={projects.addSource}
-						removeSource={projects.removeSource}
-						createPlan={projects.createPlan}
-						setPlanStatus={projects.setPlanStatus}
-						showProjects={view === "projects"}
-						showPlan={view === "plan"}
-					/>
-				)}
+					{(view === "projects" || view === "plan") && (
+						<AssistantProjectPanel
+							projects={projects.projects}
+							activeProjectId={projects.activeProjectId}
+							sources={projects.sources}
+							plans={projects.plans}
+							newProjectName={projects.newProjectName}
+							setNewProjectName={projects.setNewProjectName}
+							newProjectDesc={projects.newProjectDesc}
+							setNewProjectDesc={projects.setNewProjectDesc}
+							newSource={projects.newSource}
+							setNewSource={projects.setNewSource}
+							newPlan={projects.newPlan}
+							setNewPlan={projects.setNewPlan}
+							creatingProject={projects.creatingProject}
+							addingSource={projects.addingSource}
+							creatingPlan={projects.creatingPlan}
+							selectingProject={projects.selectingProject}
+							selectProject={projects.selectProject}
+							createProject={projects.createProject}
+							addSource={projects.addSource}
+							removeSource={projects.removeSource}
+							createPlan={projects.createPlan}
+							setPlanStatus={projects.setPlanStatus}
+							showProjects={view === "projects"}
+							showPlan={view === "plan"}
+						/>
+					)}
 
-				{view === "assets" && (
-					<AssistantAssetsPanel
-						assetsSource={assets.assetsSource}
-						setAssetsSource={assets.setAssetsSource}
-						assetsQuery={assets.assetsQuery}
-						setAssetsQuery={assets.setAssetsQuery}
-						assetsResults={assets.assetsResults}
-						assetsBusy={assets.assetsBusy}
-						assetsMsg={assets.assetsMsg}
-						searchAssets={assets.searchAssets}
-						downloadAsset={assets.downloadAsset}
-					/>
-				)}
+					{view === "assets" && (
+						<AssistantAssetsPanel
+							assetsSource={assets.assetsSource}
+							setAssetsSource={assets.setAssetsSource}
+							assetsQuery={assets.assetsQuery}
+							setAssetsQuery={assets.setAssetsQuery}
+							assetsResults={assets.assetsResults}
+							assetsBusy={assets.assetsBusy}
+							assetsMsg={assets.assetsMsg}
+							searchAssets={assets.searchAssets}
+							downloadAsset={assets.downloadAsset}
+						/>
+					)}
 
-				{view === "skills" && <SkillBuilder />}
+					{view === "skills" && <SkillBuilder />}
 
-				{view === "history" && (
-					<AssistantHistoryPanel
-						historyConvs={projects.historyConvs}
-						loadingConversation={projects.loadingConversation}
-						loadHistoryConversation={projects.loadHistoryConversation}
-					/>
-				)}
+					{view === "history" && (
+						<AssistantHistoryPanel
+							historyConvs={projects.historyConvs}
+							loadingConversation={projects.loadingConversation}
+							loadHistoryConversation={projects.loadHistoryConversation}
+						/>
+					)}
+				</div>
 			</div>
 		</div>
 	);

@@ -1,5 +1,8 @@
 import {
 	AdjustmentsHorizontalIcon,
+	ArrowUpTrayIcon,
+	ChevronDownIcon,
+	ChevronUpIcon,
 	SparklesIcon,
 	Squares2X2Icon,
 } from "@heroicons/react/24/outline";
@@ -62,8 +65,11 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 	const [presetId, setPresetId] = useState<string | null>(null);
 	const [instructOpen, setInstructOpen] = useState(false);
 	const [expanded, setExpanded] = useState(false);
+	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [cancelling, setCancelling] = useState(false);
+	const [dragOver, setDragOver] = useState(false);
 	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+	const dropRef = useRef<HTMLDivElement | null>(null);
 
 	const { data: effectPresets } = useQuery({
 		queryKey: ["effect-presets"],
@@ -194,6 +200,48 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 		});
 	};
 
+	const handleFileDrop = (file: File) => {
+		if (!file.name.endsWith(".txt") && !file.name.endsWith(".md")) {
+			toast({
+				title: "Unsupported file type",
+				description: "Drop a .txt or .md file to use as script text.",
+				variant: "destructive",
+			});
+			return;
+		}
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			const content = e.target?.result;
+			if (typeof content === "string") {
+				form.setValue("text", content, {
+					shouldDirty: true,
+					shouldValidate: true,
+				});
+				setExpanded(true);
+			}
+		};
+		reader.readAsText(file);
+	};
+
+	const handleDrop = (e: React.DragEvent) => {
+		e.preventDefault();
+		setDragOver(false);
+		const file = e.dataTransfer.files[0];
+		if (file) {
+			handleFileDrop(file);
+		}
+	};
+
+	const handleDragOver = (e: React.DragEvent) => {
+		e.preventDefault();
+		setDragOver(true);
+	};
+
+	const handleDragLeave = (e: React.DragEvent) => {
+		e.preventDefault();
+		setDragOver(false);
+	};
+
 	const cancelLatest = async () => {
 		const ids = [...useGenerationStore.getState().pendingGenerationIds];
 		const latest = ids[ids.length - 1];
@@ -252,36 +300,59 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 						</ul>
 					) : null}
 
-					<Field
-						label="Text to speak"
-						htmlFor="composer-text"
-						error={form.formState.errors.text?.message}
+					<div
+						ref={dropRef}
+						onDrop={handleDrop}
+						onDragOver={handleDragOver}
+						onDragLeave={handleDragLeave}
+						className={cn(
+							"relative rounded-md border-2 border-dashed transition-colors",
+							dragOver
+								? "border-accent bg-accent/5"
+								: "border-transparent",
+						)}
 					>
-						<Textarea
-							id="composer-text"
-							{...textRest}
-							ref={(node) => {
-								textareaRef.current = node;
-								textRef(node);
-							}}
-							placeholder={
-								selectedProfile
-									? t("generation.placeholder.profile", {
-											name: selectedProfile.name,
-										})
-									: t("generation.placeholder.selectVoice")
-							}
-							disabled={!selectedProfileId}
-							onFocus={() => setExpanded(true)}
-							rows={expanded ? 5 : 2}
-							className="max-h-[300px] min-h-[64px] resize-y"
-						/>
-					</Field>
-					<p
-						className="text-right text-xs tabular-nums text-muted-foreground/70"
-						aria-live="off"
-					>
-						{text.length.toLocaleString()} / 50,000
+						<Field
+							label="Text to speak"
+							htmlFor="composer-text"
+							error={form.formState.errors.text?.message}
+						>
+							<Textarea
+								id="composer-text"
+								{...textRest}
+								ref={(node) => {
+									textareaRef.current = node;
+									textRef(node);
+								}}
+								placeholder={
+									selectedProfile
+										? t("generation.placeholder.profile", {
+												name: selectedProfile.name,
+											})
+										: t("generation.placeholder.selectVoice")
+								}
+								disabled={!selectedProfileId}
+								onFocus={() => setExpanded(true)}
+								rows={expanded ? 5 : 2}
+								className="max-h-[300px] min-h-[64px] resize-y"
+							/>
+						</Field>
+						{dragOver ? (
+							<div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-md bg-accent/10">
+								<span className="flex items-center gap-2 text-sm font-medium text-accent">
+									<ArrowUpTrayIcon className="size-4" aria-hidden="true" />
+									Drop .txt or .md file
+								</span>
+							</div>
+						) : null}
+					</div>
+					<p className="flex items-center justify-between text-xs text-muted-foreground/70">
+						<span>
+							Drop a .txt or .md file onto the text area
+						</span>
+						<span className="tabular-nums">
+							{text.length.toLocaleString()} / 50,000
+						</span>
 					</p>
 
 					{instructOpen && supportsInstruct ? (
@@ -297,244 +368,266 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 						</Field>
 					) : null}
 
-					<div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-						<Field label="Voice" htmlFor="composer-voice">
-							{profiles && profiles.length === 0 ? (
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									className="w-full"
-									onClick={() => navigate({ to: "/voices" })}
-								>
-									Create your first voice
-								</Button>
+					{/* Collapsible settings */}
+					<button
+						type="button"
+						onClick={() => setSettingsOpen((v) => !v)}
+						className="flex w-full items-center gap-2 rounded-md border border-border bg-secondary/50 px-3 py-2 text-left text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary"
+						aria-expanded={settingsOpen}
+					>
+						<AdjustmentsHorizontalIcon className="size-3.5" aria-hidden="true" />
+						Settings
+						<span className="ml-auto">
+							{settingsOpen ? (
+								<ChevronUpIcon className="size-3.5" />
 							) : (
-								<Select
-									value={selectedProfileId ?? ""}
-									onValueChange={(v) => setSelectedProfileId(v || null)}
-								>
-									<SelectTrigger id="composer-voice" className="h-8 text-xs">
-										<SelectValue
-											placeholder={t("generation.voiceSelector.placeholder")}
-										/>
-									</SelectTrigger>
-									<SelectContent>
-										{profiles?.map((p) => (
-											<SelectItem key={p.id} value={p.id} className="text-xs">
-												{p.name} ·{" "}
-												{VOICE_TYPE_LABELS[p.voice_type ?? ""] ?? p.voice_type}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								<ChevronDownIcon className="size-3.5" />
 							)}
-						</Field>
-						<Field label="Language" htmlFor="composer-lang">
-							<Select
-								value={form.watch("language")}
-								onValueChange={(v) => form.setValue("language", v as never)}
-							>
-								<SelectTrigger id="composer-lang" className="h-8 text-xs">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									{getLanguageOptionsForEngine(engine ?? "").map((l) => (
-										<SelectItem
-											key={l.value}
-											value={l.value}
-											className="text-xs"
-										>
-											{l.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</Field>
-						<Field label="Emotion" htmlFor="composer-emotion">
-							<Select
-								value={form.watch("emotion") || ""}
-								onValueChange={(v) => form.setValue("emotion", v || undefined)}
-							>
-								<SelectTrigger id="composer-emotion" className="h-8 text-xs">
-									<SelectValue placeholder="Emotion" />
-								</SelectTrigger>
-								<SelectContent>
-									{EMOTION_OPTIONS.map((o) => (
-										<SelectItem
-											key={o.value}
-											value={o.value}
-											className="text-xs"
-										>
-											{o.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</Field>
-						<Field label="Engine" htmlFor="composer-engine">
-							<Select
-								value={engine ?? ""}
-								onValueChange={(v) =>
-									applyEngineSelection(
-										(e) => form.setValue("engine", e),
-										(l) => form.setValue("language", l),
-										form.getValues("language"),
-										v,
-									)
-								}
-							>
-								<SelectTrigger id="composer-engine" className="h-8 text-xs">
-									<SelectValue placeholder="No engine installed" />
-								</SelectTrigger>
-								<SelectContent>
-									{engineOptions.length === 0 ? (
-										<p className="px-2 py-1.5 text-xs text-muted-foreground">
-											Download a TTS model to generate
-										</p>
-									) : (
-										engineOptions.map((o) => (
-											<SelectItem
-												key={o.value}
-												value={o.value}
-												className="text-xs"
-											>
-												{o.label}
-											</SelectItem>
-										))
-									)}
-								</SelectContent>
-							</Select>
-						</Field>
-					</div>
-					{installable.length > 0 ? (
-						<p className="text-xs text-muted-foreground">
-							{installable.length} engine{installable.length > 1 ? "s" : ""} not
-							installed —{" "}
-							<button
-								type="button"
-								onClick={() => navigate({ to: "/store" })}
-								className="text-accent hover:underline"
-							>
-								Get from Store
-							</button>
-						</p>
-					) : null}
+						</span>
+					</button>
 
-					<div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-						<div>
-							<Label className="mb-1.5 block text-xs">Creativity</Label>
-							<span className="flex items-center gap-2">
-								<Slider
-									min={0}
-									max={2}
-									step={0.1}
-									value={[tempAuto ? 0.7 : (temperature ?? 0.7)]}
-									onValueChange={([v]) => form.setValue("temperature", v)}
-									aria-label="Creativity (temperature)"
-									className="flex-1"
-								/>
-								<button
-									type="button"
-									title={
-										tempAuto
-											? "Engine default — click to set"
-											: "Click to reset to auto"
-									}
-									onClick={() =>
-										form.setValue("temperature", tempAuto ? 0.7 : undefined)
-									}
-									className="w-8 rounded-sm text-right text-xs tabular-nums text-muted-foreground transition-colors hover:text-foreground"
-								>
-									{tempAuto ? "auto" : (temperature ?? 0.7).toFixed(1)}
-								</button>
-							</span>
-						</div>
-						<Field label="Effects" htmlFor="composer-effects">
-							<Select
-								value={presetId ?? "none"}
-								onValueChange={(v) => setPresetId(v === "none" ? null : v)}
-							>
-								<SelectTrigger id="composer-effects" className="h-8 text-xs">
-									<SelectValue placeholder={t("generation.effects.none")} />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="none" className="text-xs">
-										{t("generation.effects.none")}
-									</SelectItem>
-									{selectedProfile?.effects_chain &&
-									selectedProfile.effects_chain.length > 0 ? (
-										<SelectItem value="_profile" className="text-xs">
-											{t("generation.effects.profileDefault")}
-										</SelectItem>
-									) : null}
-									{effectPresets?.map((p) => (
-										<SelectItem key={p.id} value={p.id} className="text-xs">
-											{p.name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</Field>
-						<div className="flex items-end pb-1">
-							<Switch
-								checked={!!form.watch("voiceClean")}
-								label="Clean up recording artifacts"
-								onCheckedChange={(v) => form.setValue("voiceClean", v)}
-							/>
-						</div>
-						<div className="flex items-end gap-1 pb-0.5">
-							{selectedProfile?.personality?.trim() ? (
-								<IconRailButton
-									label={
-										form.watch("personality") ? "Persona on" : "Persona off"
-									}
-									active={!!form.watch("personality")}
-									onClick={() =>
-										form.setValue("personality", !form.watch("personality"))
-									}
-								>
-									<SparklesIcon className="size-4" aria-hidden="true" />
-								</IconRailButton>
+					{settingsOpen ? (
+						<>
+							<div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+								<Field label="Voice" htmlFor="composer-voice">
+									{profiles && profiles.length === 0 ? (
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											className="w-full"
+											onClick={() => navigate({ to: "/voices" })}
+										>
+											Create your first voice
+										</Button>
+									) : (
+										<Select
+											value={selectedProfileId ?? ""}
+											onValueChange={(v) => setSelectedProfileId(v || null)}
+										>
+											<SelectTrigger id="composer-voice" className="h-8 text-xs">
+												<SelectValue
+													placeholder={t("generation.voiceSelector.placeholder")}
+												/>
+											</SelectTrigger>
+											<SelectContent>
+												{profiles?.map((p) => (
+													<SelectItem key={p.id} value={p.id} className="text-xs">
+														{p.name} ·{" "}
+														{VOICE_TYPE_LABELS[p.voice_type ?? ""] ?? p.voice_type}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									)}
+								</Field>
+								<Field label="Language" htmlFor="composer-lang">
+									<Select
+										value={form.watch("language")}
+										onValueChange={(v) => form.setValue("language", v as never)}
+									>
+										<SelectTrigger id="composer-lang" className="h-8 text-xs">
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											{getLanguageOptionsForEngine(engine ?? "").map((l) => (
+												<SelectItem
+													key={l.value}
+													value={l.value}
+													className="text-xs"
+												>
+													{l.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</Field>
+								<Field label="Emotion" htmlFor="composer-emotion">
+									<Select
+										value={form.watch("emotion") || ""}
+										onValueChange={(v) => form.setValue("emotion", v || undefined)}
+									>
+										<SelectTrigger id="composer-emotion" className="h-8 text-xs">
+											<SelectValue placeholder="Emotion" />
+										</SelectTrigger>
+										<SelectContent>
+											{EMOTION_OPTIONS.map((o) => (
+												<SelectItem
+													key={o.value}
+													value={o.value}
+													className="text-xs"
+												>
+													{o.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</Field>
+								<Field label="Engine" htmlFor="composer-engine">
+									<Select
+										value={engine ?? ""}
+										onValueChange={(v) =>
+											applyEngineSelection(
+												(e) => form.setValue("engine", e),
+												(l) => form.setValue("language", l),
+												form.getValues("language"),
+												v,
+											)
+										}
+									>
+										<SelectTrigger id="composer-engine" className="h-8 text-xs">
+											<SelectValue placeholder="No engine installed" />
+										</SelectTrigger>
+										<SelectContent>
+											{engineOptions.length === 0 ? (
+												<p className="px-2 py-1.5 text-xs text-muted-foreground">
+													Download a TTS model to generate
+												</p>
+											) : (
+												engineOptions.map((o) => (
+													<SelectItem
+														key={o.value}
+														value={o.value}
+														className="text-xs"
+													>
+														{o.label}
+													</SelectItem>
+												))
+											)}
+										</SelectContent>
+									</Select>
+								</Field>
+							</div>
+							{installable.length > 0 ? (
+								<p className="text-xs text-muted-foreground">
+									{installable.length} engine{installable.length > 1 ? "s" : ""} not
+									installed —{" "}
+									<button
+										type="button"
+										onClick={() => navigate({ to: "/store" })}
+										className="text-accent hover:underline"
+									>
+										Get from Store
+									</button>
+								</p>
 							) : null}
-							{supportsInstruct ? (
-								<IconRailButton
-									label={
-										instructOpen
-											? t("generation.instruct.hide")
-											: t("generation.instruct.show")
-									}
-									active={instructOpen}
-									onClick={() => setInstructOpen((v) => !v)}
-								>
-									<AdjustmentsHorizontalIcon
-										className="size-4"
-										aria-hidden="true"
+
+							<div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+								<div>
+									<Label className="mb-1.5 block text-xs">Creativity</Label>
+									<span className="flex items-center gap-2">
+										<Slider
+											min={0}
+											max={2}
+											step={0.1}
+											value={[tempAuto ? 0.7 : (temperature ?? 0.7)]}
+											onValueChange={([v]) => form.setValue("temperature", v)}
+											aria-label="Creativity (temperature)"
+											className="flex-1"
+										/>
+										<button
+											type="button"
+											title={
+												tempAuto
+													? "Engine default — click to set"
+													: "Click to reset to auto"
+											}
+											onClick={() =>
+												form.setValue("temperature", tempAuto ? 0.7 : undefined)
+											}
+											className="w-8 rounded-sm text-right text-xs tabular-nums text-muted-foreground transition-colors hover:text-foreground"
+										>
+											{tempAuto ? "auto" : (temperature ?? 0.7).toFixed(1)}
+										</button>
+									</span>
+								</div>
+								<Field label="Effects" htmlFor="composer-effects">
+									<Select
+										value={presetId ?? "none"}
+										onValueChange={(v) => setPresetId(v === "none" ? null : v)}
+									>
+										<SelectTrigger id="composer-effects" className="h-8 text-xs">
+											<SelectValue placeholder={t("generation.effects.none")} />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="none" className="text-xs">
+												{t("generation.effects.none")}
+											</SelectItem>
+											{selectedProfile?.effects_chain &&
+											selectedProfile.effects_chain.length > 0 ? (
+												<SelectItem value="_profile" className="text-xs">
+													{t("generation.effects.profileDefault")}
+												</SelectItem>
+											) : null}
+											{effectPresets?.map((p) => (
+												<SelectItem key={p.id} value={p.id} className="text-xs">
+													{p.name}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</Field>
+								<div className="flex items-end pb-1">
+									<Switch
+										checked={!!form.watch("voiceClean")}
+										label="Clean up recording artifacts"
+										onCheckedChange={(v) => form.setValue("voiceClean", v)}
 									/>
-								</IconRailButton>
-							) : null}
-							{selectedProfile?.personality?.trim() ? (
-								<IconRailButton
-									label="Compose from personality"
-									loading={composeMutation.isPending}
-									disabled={composeMutation.isPending || !selectedProfileId}
-									onClick={() => {
-										composeMutation.mutateAsync().then(
-											(result) => {
-												form.setValue("text", result.text, {
-													shouldDirty: true,
-												});
-												setExpanded(true);
-											},
-											() => {},
-										);
-									}}
-								>
-									<Squares2X2Icon className="size-4" aria-hidden="true" />
-								</IconRailButton>
-							) : null}
-						</div>
-					</div>
+								</div>
+								<div className="flex items-end gap-1 pb-0.5">
+									{selectedProfile?.personality?.trim() ? (
+										<IconRailButton
+											label={
+												form.watch("personality") ? "Persona on" : "Persona off"
+											}
+											active={!!form.watch("personality")}
+											onClick={() =>
+												form.setValue("personality", !form.watch("personality"))
+											}
+										>
+											<SparklesIcon className="size-4" aria-hidden="true" />
+										</IconRailButton>
+									) : null}
+									{supportsInstruct ? (
+										<IconRailButton
+											label={
+												instructOpen
+													? t("generation.instruct.hide")
+													: t("generation.instruct.show")
+											}
+											active={instructOpen}
+											onClick={() => setInstructOpen((v) => !v)}
+										>
+											<AdjustmentsHorizontalIcon
+												className="size-4"
+												aria-hidden="true"
+											/>
+										</IconRailButton>
+									) : null}
+									{selectedProfile?.personality?.trim() ? (
+										<IconRailButton
+											label="Compose from personality"
+											loading={composeMutation.isPending}
+											disabled={composeMutation.isPending || !selectedProfileId}
+											onClick={() => {
+												composeMutation.mutateAsync().then(
+													(result) => {
+														form.setValue("text", result.text, {
+															shouldDirty: true,
+														});
+														setExpanded(true);
+													},
+													() => {},
+												);
+											}}
+										>
+											<Squares2X2Icon className="size-4" aria-hidden="true" />
+										</IconRailButton>
+									) : null}
+								</div>
+							</div>
+						</>
+					) : null}
 
 					<div className="flex items-center justify-end gap-2 pt-1">
 						{isPending ? (

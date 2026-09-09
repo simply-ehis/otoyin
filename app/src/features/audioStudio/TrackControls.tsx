@@ -1,7 +1,13 @@
 import { DocumentTextIcon as Document } from "@heroicons/react/24/outline";
 import { cn } from "@/lib/utils/cn";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/ui/select";
 import { Slider } from "@/ui/slider";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/ui/select";
 import { type StudioTrack, useAudioStudioStore } from "./AudioStudioStore";
 import { TrackMeter } from "./TrackMeter";
 
@@ -238,7 +244,10 @@ export function TrackCrossfadeControls({
 					}
 				}}
 			>
-				<SelectTrigger className="h-6 text-xs w-full" aria-label="Crossfade target">
+				<SelectTrigger
+					className="h-6 text-xs w-full"
+					aria-label="Crossfade target"
+				>
 					<SelectValue placeholder="No crossfade" />
 				</SelectTrigger>
 				<SelectContent>

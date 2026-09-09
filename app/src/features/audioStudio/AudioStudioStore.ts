@@ -1,5 +1,5 @@
-import { create } from "zustand";
 import type { MutableRefObject } from "react";
+import { create } from "zustand";
 
 export interface AutomationPoint {
 	time: number;

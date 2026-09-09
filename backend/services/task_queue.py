@@ -93,7 +93,7 @@ async def _force_fail_if_active(generation_id: str, error: str) -> None:
         from ..database import Generation as DBGeneration, get_db
         from . import history
 
-        db = next(get_db())
+        db = await asyncio.to_thread(lambda: next(get_db()))
         try:
             gen = db.query(DBGeneration).filter_by(id=generation_id).first()
             if gen is None:
