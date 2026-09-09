@@ -29,5 +29,15 @@
 - [x] bun/pnpm removed, npm-only in CI
 → FILE IN PROGRESS (correct long-running state per protocol).
 
+## 2026-09-09 — DoD made explicit (fed from prompt 20)
+Per 20 scope item 2, "reachable and wired" is now an explicit per-screen DoD
+ criterion in this checklist: a screen is not done until (a) it is mounted in
+`app/src/router.tsx` where a user can actually reach it, and (b) its data
+flows through `app/src/lib/api/` client functions (directly or via `lib/hooks`)
+against real backend routes — never a mock, a TODO stub, or a hand-rolled
+`fetch` (blob/save-dialog downloads via an `apiClient` URL builder are the
+sanctioned exception). Spot-checked on 3 done screens 2026-09-09 — see loop
+log 20.
+
 ## 2026-09-07 — legacy-primitives teardown sweep (canonical-vs-legacy pins)
 Post-dual-toast-bug sweep of the ui/ vs components/ui/ fork: 12 dead copies deleted (alert, alert-dialog, drawer, multi-select, progress, scroll-area, table, checkbox, separator, star-rating, LoadingState, AppLoadingScreen — all 0 importers). Repointed to canonical: router.tsx AppLoadingScreen; 3 audioStudio files CircleButton→IconButton. New gate hazards in `check-dual-instances.py`: (4) twin freeze — a components/ui stem shared with ui/ must be a pure shim or on FROZEN_TWINS (13 live twins remain, imported only by old-tree screens pending port), (5) new-tree import pin — files outside components/ may not import `@/components/ui/*` (identity-pin test allowlisted). 8 new gate tests (20 total).

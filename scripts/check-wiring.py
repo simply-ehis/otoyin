@@ -162,17 +162,21 @@ def find_orphaned_pages() -> tuple[list[str], list[str]]:
 
 
 def self_test() -> int:
-    """Verify the script catches orphaned components and stranded endpoints.
+    """Deliberate catch-test for both failure modes (prompt 20, unit 3).
 
-    Creates a temporary orphaned .tsx file, runs detection, confirms it's
-    caught, then cleans up. Also verifies stranded detection finds routes.
+    Test 1 writes a temporary page component that nothing imports and
+    asserts orphan/UNWIRED classification catches it. Tests 2-4 inject a
+    CONTROLLED OpenAPI surface (via monkeypatching ``openapi_paths``) with
+    one uncalled route, one route a client calls, and one allowlisted
+    route — asserting each lands in the right bucket. Deterministic by
+    construction: no dependence on the mid-flight tree's stranded count.
     """
 
     print("=== Self-test: verifying wiring detection ===")
     passed = 0
     failed = 0
 
-    # Test 1: orphaned component detection
+    # Test 1: orphaned component detection (deliberate file on disk)
     selftest_dir = ROOT / "app" / "src" / "features" / "_selftest"
     selftest_file = selftest_dir / "OrphanTest.tsx"
     try:
@@ -181,11 +185,11 @@ def self_test() -> int:
             "export function OrphanTest() { return <div>self-test</div>; }\n",
             encoding="utf-8",
         )
-        _, not_in_router = find_orphaned_pages()
-        # The orphan should appear in not_in_router (UNWIRED) or nowhere (ORPHANED)
-        # Since it's a new file with a unique name, it should be caught
-        caught = any("OrphanTest" in p for p in not_in_router) or any(
-            "OrphanTest" in p for p in _
+        nowhere, not_in_router = find_orphaned_pages()
+        # A never-imported page must land in tier 1 (ORPHANED/dead file) or,
+        # if something references it, at least tier 2 (UNWIRED).
+        caught = any("OrphanTest" in p for p in nowhere) or any(
+            "OrphanTest" in p for p in not_in_router
         )
         if caught:
             print("  PASS  orphan detection — temporary file caught")
@@ -203,22 +207,46 @@ def self_test() -> int:
             except OSError:
                 pass
 
-    # Test 2: stranded endpoint detection
-    stranded, _ = find_stranded()
-    if stranded:
-        print(f"  PASS  stranded detection — {len(stranded)} routes found")
-        passed += 1
-    else:
-        print("  FAIL  stranded detection — no routes found (expected > 0)")
-        failed += 1
+    # Tests 2-4: deliberate stranded classification against a controlled
+    # route list (real detection machinery, synthetic inputs — deterministic,
+    # independent of the mid-flight tree's stranded count).
+    orig_openapi = globals()["openapi_paths"]
+    orig_client = globals()["client_literals"]
+    try:
+        globals()["openapi_paths"] = lambda: [
+            "/deliberate/strapped/route",  # no caller anywhere -> STRANDED
+            "/deliberate/covered/route",  # client layer calls it -> clean
+            "/mcp/deliberate/route",  # allowlisted -> never flagged
+        ]
+        globals()["client_literals"] = lambda: {"/deliberate/covered"}
+        stranded, handrolled_only = find_stranded()
 
-    # Test 3: allowlist works (MCP/webhook routes should not be stranded)
-    if "/mcp" not in stranded and "/webhook" not in stranded:
-        print("  PASS  allowlist — /mcp and /webhook correctly excluded")
-        passed += 1
-    else:
-        print("  FAIL  allowlist — /mcp or /webhook incorrectly flagged")
-        failed += 1
+        if "/deliberate/strapped/route" in stranded:
+            print("  PASS  stranded detection — deliberate uncalled route caught")
+            passed += 1
+        else:
+            print("  FAIL  stranded detection — deliberate uncalled route missed")
+            failed += 1
+
+        if (
+            "/deliberate/covered/route" not in stranded
+            and "/deliberate/covered/route" not in handrolled_only
+        ):
+            print("  PASS  client-covered route — deliberate caller recognized")
+            passed += 1
+        else:
+            print("  FAIL  client-covered route — flagged despite a client caller")
+            failed += 1
+
+        if "/mcp/deliberate/route" not in stranded:
+            print("  PASS  allowlist — deliberately allowlisted route excluded")
+            passed += 1
+        else:
+            print("  FAIL  allowlist — allowlisted route incorrectly flagged")
+            failed += 1
+    finally:
+        globals()["openapi_paths"] = orig_openapi
+        globals()["client_literals"] = orig_client
 
     print(f"=== Self-test: {passed} passed, {failed} failed ===")
     return 0 if failed == 0 else 1
