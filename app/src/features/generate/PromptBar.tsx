@@ -5,6 +5,7 @@ import {
 	SparklesIcon,
 } from "@heroicons/react/24/outline";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "@/lib/api/client";
@@ -49,6 +50,7 @@ import {
 export function PromptBar({ storyId }: { storyId?: string | null }) {
 	const { t } = useTranslation();
 	const { toast } = useToast();
+	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	const selectedProfileId = useUIStore((s) => s.selectedProfileId);
 	const setSelectedProfileId = useUIStore((s) => s.setSelectedProfileId);
@@ -70,6 +72,13 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 	const { data: effectPresets } = useQuery({
 		queryKey: ["effect-presets"],
 		queryFn: () => apiClient.listEffectPresets(),
+	});
+
+	// Fetch model status so useDownloadedEngines knows what's cached
+	useQuery({
+		queryKey: ["modelStatus"],
+		queryFn: () => apiClient.getModelStatus(),
+		staleTime: 60_000,
 	});
 
 	const { form, handleSubmit, isPending } = useGenerationForm({
@@ -350,8 +359,8 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 					) : null}
 				</div>
 
-				{/* Engine selector (only if multiple) */}
-				{engineOptions.length > 1 ? (
+				{/* Engine selector — always visible */}
+				{engineOptions.length > 0 ? (
 					<Select
 						value={engine ?? ""}
 						onValueChange={(v) =>
@@ -377,7 +386,15 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 							))}
 						</SelectContent>
 					</Select>
-				) : null}
+				) : (
+					<button
+						type="button"
+						onClick={() => navigate({ to: "/store" })}
+						className="flex items-center gap-1 rounded-md border border-dashed border-accent/40 bg-accent/5 px-2 py-1 text-xs text-accent transition-colors hover:bg-accent/10"
+					>
+						Get a TTS model
+					</button>
+				)}
 
 				{/* Language selector */}
 				<Select
@@ -460,7 +477,7 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 							dragOver && "bg-accent/5",
 						)}
 					>
-						<textarea
+						<						textarea
 							{...textRest}
 							ref={(node) => {
 								textareaRef.current = node;
@@ -469,9 +486,8 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 							placeholder={
 								selectedProfile
 									? `Type a script for ${selectedProfile.name}...`
-									: "Select a voice, then type your script..."
+									: "Select a voice first, then type your script..."
 							}
-							disabled={!selectedProfileId}
 							rows={1}
 							className="min-h-[36px] max-h-[200px] flex-1 resize-none rounded-md border-0 bg-transparent px-0 py-1 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-0"
 							onInput={(e) => {

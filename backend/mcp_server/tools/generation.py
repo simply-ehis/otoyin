@@ -6,11 +6,13 @@ from __future__ import annotations
 
 import base64
 import io
+import logging
 from typing import Any
 
 import soundfile as sf
+from fastmcp import FastMCP
 
-from .mcp_registry import mcp
+logger = logging.getLogger(__name__)
 
 
 def _wav_b64(audio, sr) -> str:
@@ -20,104 +22,105 @@ def _wav_b64(audio, sr) -> str:
     return base64.b64encode(buf.getvalue()).decode()
 
 
-@mcp.tool(
-    name="21labs.generate_music",
-    description=(
-        "Generate a music track from a text prompt using otoyin's local "
-        "music engines (genre/mood controllable, optional tempo). "
-        "engine: acestep_gguf (ACE-Step 1.5 GGUF) or heartmula (HeartMuLa 3B). "
-        "mode: generate (default), cover (cover of described style), "
-        "or repaint (reimagined version). "
-        "Returns the rendered WAV as base64."
-    ),
-)
-async def twentylabs_generate_music(
-    engine: str = "acestep_gguf",
-    prompt: str = "",
-    duration_seconds: float = 30.0,
-    genre: str = "pop",
-    mood: str = "neutral",
-    tempo: int | None = None,
-    seed: int | None = None,
-    mode: str = "generate",
-) -> dict[str, Any]:
-    from ...backends import get_music_backend
-    from ...backends.protocols import MUSIC_ENGINES
+def register_generation_tools(mcp: FastMCP) -> None:
+    """Register generation tools (music, models, bounce) with the MCP server."""
 
-    if engine not in MUSIC_ENGINES:
-        raise ValueError(f"Unknown music engine '{engine}'. Supported: {', '.join(MUSIC_ENGINES)}")
-    backend = get_music_backend(engine)
-    if not backend.is_available():
-        raise ValueError(f"Music engine '{engine}' not available.")
-    try:
-        audio, sr = backend.generate(
-            prompt=prompt,
-            duration_seconds=duration_seconds,
-            genre=genre,
-            mood=mood,
-            tempo=tempo,
-            seed=seed,
-            mode=mode,
-        )
-    except Exception as exc:
-        raise ValueError(f"Music generation failed: {exc}") from exc
-    return {
-        "audio_base64": _wav_b64(audio, sr),
-        "sample_rate": sr,
-        "duration": float(len(audio)) / sr,
-        "engine": engine,
-        "prompt": prompt,
-    }
+    @mcp.tool(
+        name="21labs.generate_music",
+        description=(
+            "Generate a music track from a text prompt using otoyin's local "
+            "music engines (genre/mood controllable, optional tempo). "
+            "engine: acestep_gguf (ACE-Step 1.5 GGUF) or heartmula (HeartMuLa 3B). "
+            "mode: generate (default), cover (cover of described style), "
+            "or repaint (reimagined version). "
+            "Returns the rendered WAV as base64."
+        ),
+    )
+    async def twentylabs_generate_music(
+        engine: str = "acestep_gguf",
+        prompt: str = "",
+        duration_seconds: float = 30.0,
+        genre: str = "pop",
+        mood: str = "neutral",
+        tempo: int | None = None,
+        seed: int | None = None,
+        mode: str = "generate",
+    ) -> dict[str, Any]:
+        from ...backends import get_music_backend
+        from ...backends.protocols import MUSIC_ENGINES
 
+        if engine not in MUSIC_ENGINES:
+            raise ValueError(f"Unknown music engine '{engine}'. Supported: {', '.join(MUSIC_ENGINES)}")
+        backend = get_music_backend(engine)
+        if not backend.is_available():
+            raise ValueError(f"Music engine '{engine}' not available.")
+        try:
+            audio, sr = backend.generate(
+                prompt=prompt,
+                duration_seconds=duration_seconds,
+                genre=genre,
+                mood=mood,
+                tempo=tempo,
+                seed=seed,
+                mode=mode,
+            )
+        except Exception as exc:
+            raise ValueError(f"Music generation failed: {exc}") from exc
+        return {
+            "audio_base64": _wav_b64(audio, sr),
+            "sample_rate": sr,
+            "duration": float(len(audio)) / sr,
+            "engine": engine,
+            "prompt": prompt,
+        }
 
-@mcp.tool(
-    name="21labs.list_models",
-    description=(
-        "List the local model engines otoyin can drive (TTS, STT, music, "
-        "SFX, LLM). Use this to discover which `engine=` values are valid for "
-        "the generate_* tools."
-    ),
-)
-async def twentylabs_list_models() -> dict[str, Any]:
-    from ...backends import LLM_ENGINES, MUSIC_ENGINES, TTS_ENGINES
+    @mcp.tool(
+        name="21labs.list_models",
+        description=(
+            "List the local model engines otoyin can drive (TTS, STT, music, "
+            "SFX, LLM). Use this to discover which `engine=` values are valid for "
+            "the generate_* tools."
+        ),
+    )
+    async def twentylabs_list_models() -> dict[str, Any]:
+        from ...backends import LLM_ENGINES, MUSIC_ENGINES, TTS_ENGINES
 
-    return {
-        "tts_engines": list(TTS_ENGINES.keys()),
-        "music_engines": list(MUSIC_ENGINES.keys()),
-        "llm_engines": list(LLM_ENGINES.keys()),
-        "stt": "whisper.cpp (tiny.en)",
-    }
+        return {
+            "tts_engines": list(TTS_ENGINES.keys()),
+            "music_engines": list(MUSIC_ENGINES.keys()),
+            "llm_engines": list(LLM_ENGINES.keys()),
+            "stt": "whisper.cpp (tiny.en)",
+        }
 
+    @mcp.tool(
+        name="21labs.bounce",
+        description=(
+            "Mix multiple audio tracks into one master WAV with volume / pan / "
+            "crossfade / effects / MIDI synthesis. Each track's `audio_data` is a "
+            "base64 WAV. Returns the mixed WAV as base64 so agents can orchestrate "
+            "full productions end-to-end."
+        ),
+    )
+    async def twentylabs_bounce(
+        tracks: list[dict[str, Any]],
+        sample_rate: int = 44100,
+        master_volume: float = 1.0,
+    ) -> dict[str, Any]:
+        from ...routes.audio_pipeline.bounce import BounceRequest, BounceTrackConfig, _bounce_mix
 
-@mcp.tool(
-    name="21labs.bounce",
-    description=(
-        "Mix multiple audio tracks into one master WAV with volume / pan / "
-        "crossfade / effects / MIDI synthesis. Each track's `audio_data` is a "
-        "base64 WAV. Returns the mixed WAV as base64 so agents can orchestrate "
-        "full productions end-to-end."
-    ),
-)
-async def twentylabs_bounce(
-    tracks: list[dict[str, Any]],
-    sample_rate: int = 44100,
-    master_volume: float = 1.0,
-) -> dict[str, Any]:
-    from ...routes.audio_pipeline.bounce import BounceRequest, BounceTrackConfig, _bounce_mix
+        try:
+            req = BounceRequest(
+                tracks=[BounceTrackConfig(**t) for t in tracks],
+                sample_rate=sample_rate,
+                master_volume=master_volume,
+            )
+        except Exception as exc:
+            raise ValueError(f"Invalid bounce request: {exc}") from exc
 
-    try:
-        req = BounceRequest(
-            tracks=[BounceTrackConfig(**t) for t in tracks],
-            sample_rate=sample_rate,
-            master_volume=master_volume,
-        )
-    except Exception as exc:
-        raise ValueError(f"Invalid bounce request: {exc}") from exc
-
-    mixed, sr = _bounce_mix(req)
-    return {
-        "audio_base64": _wav_b64(mixed, sr),
-        "sample_rate": sr,
-        "duration": float(len(mixed)) / sr,
-        "track_count": len(tracks),
-    }
+        mixed, sr = _bounce_mix(req)
+        return {
+            "audio_base64": _wav_b64(mixed, sr),
+            "sample_rate": sr,
+            "duration": float(len(mixed)) / sr,
+            "track_count": len(tracks),
+        }

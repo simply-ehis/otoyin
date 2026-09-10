@@ -76,6 +76,13 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 		queryFn: () => apiClient.listEffectPresets(),
 	});
 
+	// Fetch model status so useDownloadedEngines knows what's cached
+	useQuery({
+		queryKey: ["modelStatus"],
+		queryFn: () => apiClient.getModelStatus(),
+		staleTime: 60_000,
+	});
+
 	const composeMutation = useMutation({
 		mutationFn: async () => {
 			if (!selectedProfileId) {
@@ -181,6 +188,13 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 	const temperature = form.watch("temperature");
 	const tempAuto = temperature == null;
 	const { ref: textRef, ...textRest } = form.register("text");
+
+	// Auto-open settings when no engine is available so the picker is visible
+	useEffect(() => {
+		if (engineOptions.length === 0 && !settingsOpen) {
+			setSettingsOpen(true);
+		}
+	}, [engineOptions.length]);
 
 	const insertTag = (tag: string) => {
 		const cur = form.getValues("text") ?? "";
@@ -329,8 +343,6 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 											})
 										: t("generation.placeholder.selectVoice")
 								}
-								disabled={!selectedProfileId}
-								onFocus={() => setExpanded(true)}
 								rows={expanded ? 5 : 2}
 								className="max-h-[300px] min-h-[64px] resize-y"
 							/>

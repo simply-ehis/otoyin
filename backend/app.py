@@ -456,11 +456,23 @@ async def _run_startup(application: FastAPI) -> None:
 
     create_background_task(ensure_vc_spawned())
 
+    from .utils.memory import available_mb, get_system_total_mb
+
+    free_mb = available_mb()
+    total_mb = get_system_total_mb()
     logger.info(
         "Startup complete — %d routers, DB ready. "
-        "Engine registration, MCP, and preloads deferred to first use.",
+        "Engine registration, MCP, and preloads deferred to first use. "
+        "Memory: %dMB free / %dMB total",
         71,
+        free_mb,
+        total_mb,
     )
+    if free_mb > 0 and free_mb < 512:
+        logger.warning(
+            "LOW MEMORY at startup: %dMB free — model loads may be skipped to avoid OOM kill",
+            free_mb,
+        )
 
 
 async def _run_shutdown() -> None:

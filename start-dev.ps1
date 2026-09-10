@@ -1,8 +1,12 @@
-# Otoyin dev startup script — run once, survives shell exit
+# Otoyin dev startup script — auto-restarts backend on crash
+# Survives shell exit; backend watchdog keeps the server alive.
 $ErrorActionPreference = "SilentlyContinue"
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $venvPython = Join-Path $projectRoot "backend\venv\Scripts\python.exe"
 $viteJs = Join-Path $projectRoot "node_modules\vite\bin\vite.js"
+$maxRestarts = 10
+$restartDelay = 3
+$healthCheckInterval = 15
 
 # Kill any old instances
 Get-Process python -ErrorAction SilentlyContinue | Where-Object {
@@ -13,9 +17,60 @@ Get-Process node -ErrorAction SilentlyContinue | Where-Object {
 } | Stop-Process -Force -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 2
 
-# Start backend
-Write-Host "Starting backend on :17493..." -ForegroundColor Yellow
-Start-Process -FilePath $venvPython -ArgumentList "-m","uvicorn","backend.main:app","--port","17493","--host","127.0.0.1" -WorkingDirectory $projectRoot -WindowStyle Hidden
+# ── Backend with auto-restart watchdog ──────────────────────────────────
+$backendJob = Start-Job -ScriptBlock {
+    param($python, $root, $maxRestarts, $restartDelay, $healthCheckInterval)
+
+    function Test-BackendAlive {
+        try {
+            $r = Invoke-WebRequest -Uri "http://127.0.0.1:17493/health" -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
+            return $r.StatusCode -eq 200
+        } catch {
+            return $false
+        }
+    }
+
+    $restarts = 0
+    while ($restarts -le $maxRestarts) {
+        $proc = Start-Process -FilePath $python -ArgumentList "-m","uvicorn","backend.main:app","--port","17493","--host","127.0.0.1" -WorkingDirectory $root -PassThru -WindowStyle Hidden
+        Write-Output "[watchdog] Backend started (PID $($proc.Id)), restart #$restarts"
+
+        # Wait for ready
+        $ready = $false
+        for ($i = 0; $i -lt 30; $i++) {
+            Start-Sleep -Seconds 1
+            if (Test-BackendAlive) { $ready = $true; break }
+        }
+        if ($ready) {
+            Write-Output "[watchdog] Backend healthy on :17493"
+        } else {
+            Write-Output "[watchdog] Backend failed to become healthy"
+        }
+
+        # Monitor: poll health until process dies
+        while ($true) {
+            Start-Sleep -Seconds $healthCheckInterval
+            if ($proc.HasExited) {
+                Write-Output "[watchdog] Backend process exited (code $($proc.ExitCode))"
+                break
+            }
+            if (-not (Test-BackendAlive)) {
+                Write-Output "[watchdog] Backend health check failed — killing and restarting"
+                try { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue } catch {}
+                break
+            }
+        }
+
+        $restarts++
+        if ($restarts -le $maxRestarts) {
+            Write-Output "[watchdog] Restarting in ${restartDelay}s..."
+            Start-Sleep -Seconds $restartDelay
+        }
+    }
+    Write-Output "[watchdog] Max restarts ($maxRestarts) reached — giving up"
+} -ArgumentList $venvPython, $projectRoot, $maxRestarts, $restartDelay, $healthCheckInterval
+
+Write-Host "Backend watchdog started (job $($backendJob.Id))" -ForegroundColor Yellow
 
 # Wait for backend to be ready
 $ready = $false
@@ -42,6 +97,7 @@ if ($fp) { Write-Host "Frontend: OK on :21132" -ForegroundColor Green } else { W
 
 if ($bp -and $fp) {
     Write-Host "`nDev server ready at http://localhost:21132" -ForegroundColor Green
+    Write-Host "Backend watchdog is monitoring — server auto-restarts on crash" -ForegroundColor DarkGray
 } else {
     Write-Host "`nOne or more services failed to start" -ForegroundColor Red
 }

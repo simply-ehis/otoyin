@@ -14,6 +14,8 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
+from .memory import available_mb, check_memory
+
 if TYPE_CHECKING:
     from fastapi import FastAPI
 
@@ -81,6 +83,10 @@ async def ensure_kokoro_preloaded() -> None:
                     return
             finally:
                 db.close()
+            if not check_memory("kokoro ONNX preload", required_mb=300):
+                logger.warning("Kokoro preload skipped — low memory (%dMB free)", available_mb())
+                _kokoro_event.set()
+                return
             await _kokoro.load_model()
             _kokoro_event.set()
             logger.info("Kokoro ONNX preloaded (lazy)")
@@ -105,6 +111,10 @@ async def ensure_planner_preloaded() -> None:
             backend = get_llm_backend_for_engine("gguf_llm")
             if not backend._is_model_cached(backend.model_size):
                 logger.debug("Planner GGUF not cached — skipping preload")
+                _planner_event.set()
+                return
+            if not check_memory("planner LLM preload", required_mb=400):
+                logger.warning("Planner preload skipped — low memory (%dMB free)", available_mb())
                 _planner_event.set()
                 return
             await backend.load_model()
@@ -216,7 +226,10 @@ async def ensure_engines_registered() -> None:
 
             try:
                 tts = get_tts_backend()
-                lifecycle_manager.register("tts", tts.is_loaded, lambda: tts.unload_model())
+                if not check_memory("TTS engine registration", required_mb=200):
+                    logger.warning("TTS registration skipped — low memory (%dMB free)", available_mb())
+                else:
+                    lifecycle_manager.register("tts", tts.is_loaded, lambda: tts.unload_model())
             except Exception:
                 logger.debug("TTS backend not registered (no model available)")
 
