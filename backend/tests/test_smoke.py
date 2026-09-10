@@ -165,7 +165,7 @@ class TestBatchAndSession:
         name+func_name required, response uses ``id``, list is wrapped)."""
         r = client.post(
             "/batch/jobs",
-            json={"name": "smoke-test", "func_name": "noop", "func_args": {}},
+            json={"name": "smoke-test", "func_name": "tts_generate", "func_args": {}},
         )
         assert r.status_code == 200, f"Create failed: {r.status_code} {r.text[:200]}"
         job_id = r.json()["id"]

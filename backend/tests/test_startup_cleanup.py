@@ -548,6 +548,7 @@ class TestPurgeStaleStateIntegration:
             "orphaned_conv_messages",
             "orphaned_agent_memory",
             "orphaned_entitlements",
+            "db_pruned",
         }
         assert set(result.keys()) == expected_keys
 

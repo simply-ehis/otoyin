@@ -233,7 +233,7 @@ class TestVoiceChatSession:
         assert s.is_processing is False
         assert s.is_speaking is False
         assert s.enable_tools is True
-        assert s.audio_buffer == []
+        assert len(s.audio_buffer) == 0
 
     def test_last_activity_set_on_creation(self):
         from backend.services.voice_chat import VoiceChatSession
