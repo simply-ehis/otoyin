@@ -304,13 +304,16 @@ async def apply_audio_tags_route(data: AudioTagRequest):
     from ...database import get_db
     from ...database.models import GenerationSettings
 
-    db = get_db()
-    gen_settings = db.query(GenerationSettings).first()
-    if not gen_settings or not gen_settings.audio_tags_enabled:
-        raise HTTPException(
-            status_code=400,
-            detail=INFO_AUDIO_TAGS_DISABLED,
-        )
+    db = next(get_db())
+    try:
+        gen_settings = db.query(GenerationSettings).first()
+        if not gen_settings or not gen_settings.audio_tags_enabled:
+            raise HTTPException(
+                status_code=400,
+                detail=INFO_AUDIO_TAGS_DISABLED,
+            )
+    finally:
+        db.close()
 
     from ...services.audio_tags import apply_audio_tags, parse_tags
 
@@ -417,13 +420,16 @@ async def preview_tag_audio(data: TagPreviewRequest):
     from ...database import get_db
     from ...database.models import GenerationSettings
 
-    db = get_db()
-    gen_settings = db.query(GenerationSettings).first()
-    if not gen_settings or not gen_settings.audio_tags_enabled:
-        raise HTTPException(
-            status_code=400,
-            detail=INFO_AUDIO_TAGS_DISABLED,
-        )
+    db = next(get_db())
+    try:
+        gen_settings = db.query(GenerationSettings).first()
+        if not gen_settings or not gen_settings.audio_tags_enabled:
+            raise HTTPException(
+                status_code=400,
+                detail=INFO_AUDIO_TAGS_DISABLED,
+            )
+    finally:
+        db.close()
 
     from ...services.audio_sample_library import get_library
     from ...services.audio_tags import ParsedTag, generate_tag_audio

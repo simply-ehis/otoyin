@@ -110,7 +110,11 @@ def api_list_conversations(
     offset: int = 0,
 ):
     """List conversations."""
-    convs = list_conversations(agent_type=agent_type, limit=limit, offset=offset)
+    try:
+        convs = list_conversations(agent_type=agent_type, limit=limit, offset=offset)
+    except Exception as exc:
+        logger.debug("list_conversations failed", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to list conversations: {exc}") from exc
     return [
         ConversationResponse(
             id=c.id,
@@ -130,20 +134,28 @@ def api_list_conversations(
 @router.post("/conversations")
 def api_create_conversation(body: ConversationCreate):
     """Create a new conversation."""
-    conv = create_conversation(
-        agent_type=body.agent_type,
-        title=body.title,
-        model_id=body.model_id,
-        provider_id=body.provider_id,
-        system_prompt=body.system_prompt,
-    )
+    try:
+        conv = create_conversation(
+            agent_type=body.agent_type,
+            title=body.title,
+            model_id=body.model_id,
+            provider_id=body.provider_id,
+            system_prompt=body.system_prompt,
+        )
+    except Exception as exc:
+        logger.debug("create_conversation failed", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to create conversation: {exc}") from exc
     return {"id": conv.id, "agent_type": conv.agent_type}
 
 
 @router.get("/conversations/{conversation_id}")
 def api_get_conversation(conversation_id: str):
     """Get a conversation with its messages."""
-    conv = get_conversation(conversation_id)
+    try:
+        conv = get_conversation(conversation_id)
+    except Exception as exc:
+        logger.debug("get_conversation failed", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to get conversation: {exc}") from exc
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
     history = get_history(conversation_id)
@@ -163,7 +175,11 @@ def api_get_conversation(conversation_id: str):
 @router.delete("/conversations/{conversation_id}")
 def api_delete_conversation(conversation_id: str):
     """Delete a conversation."""
-    ok = delete_conversation(conversation_id)
+    try:
+        ok = delete_conversation(conversation_id)
+    except Exception as exc:
+        logger.debug("delete_conversation failed", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to delete conversation: {exc}") from exc
     if not ok:
         raise HTTPException(status_code=404, detail="Conversation not found")
     return {"deleted": True}
@@ -172,24 +188,36 @@ def api_delete_conversation(conversation_id: str):
 @router.post("/conversations/{conversation_id}/messages")
 def api_add_message(conversation_id: str, body: MessageAdd):
     """Add a message to a conversation."""
-    conv = get_conversation(conversation_id)
+    try:
+        conv = get_conversation(conversation_id)
+    except Exception as exc:
+        logger.debug("get_conversation failed", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to get conversation: {exc}") from exc
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
-    msg = add_message(
-        conversation_id=conversation_id,
-        role=body.role,
-        content=body.content,
-        tool_name=body.tool_name,
-        tool_args=body.tool_args,
-        tool_result=body.tool_result,
-    )
+    try:
+        msg = add_message(
+            conversation_id=conversation_id,
+            role=body.role,
+            content=body.content,
+            tool_name=body.tool_name,
+            tool_args=body.tool_args,
+            tool_result=body.tool_result,
+        )
+    except Exception as exc:
+        logger.debug("add_message failed", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to add message: {exc}") from exc
     return {"id": msg.id, "role": msg.role}
 
 
 @router.get("/conversations/{conversation_id}/history")
 def api_get_history(conversation_id: str, limit: int = 100):
     """Get message history for a conversation."""
-    conv = get_conversation(conversation_id)
+    try:
+        conv = get_conversation(conversation_id)
+    except Exception as exc:
+        logger.debug("get_conversation failed", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to get conversation: {exc}") from exc
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
     return get_history(conversation_id, limit=limit)
@@ -214,20 +242,28 @@ def api_recall_memory(
 @router.post("/store")
 def api_store_memory(body: MemoryStore):
     """Store or update a memory fact."""
-    memory = store_memory(
-        agent_type=body.agent_type,
-        category=body.category,
-        key=body.key,
-        value=body.value,
-        confidence=body.confidence,
-    )
+    try:
+        memory = store_memory(
+            agent_type=body.agent_type,
+            category=body.category,
+            key=body.key,
+            value=body.value,
+            confidence=body.confidence,
+        )
+    except Exception as exc:
+        logger.debug("store_memory failed", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to store memory: {exc}") from exc
     return {"id": memory.id, "key": memory.key}
 
 
 @router.delete("/forget/{memory_id}")
 def api_forget_memory(memory_id: str):
     """Mark a memory as stale."""
-    ok = forget_memory(memory_id)
+    try:
+        ok = forget_memory(memory_id)
+    except Exception as exc:
+        logger.debug("forget_memory failed", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to forget memory: {exc}") from exc
     if not ok:
         raise HTTPException(status_code=404, detail="Memory not found")
     return {"forgotten": True}
@@ -264,6 +300,10 @@ def api_get_voice_chat_settings():
 @router.post("/voice-chat-settings")
 def api_save_voice_chat_settings(body: VoiceChatSettingsUpdate):
     """Persist voice chat settings."""
-    settings = {k: v for k, v in body.model_dump().items() if v is not None}
-    save_voice_chat_settings(settings)
+    try:
+        settings = {k: v for k, v in body.model_dump().items() if v is not None}
+        save_voice_chat_settings(settings)
+    except Exception as exc:
+        logger.debug("save_voice_chat_settings failed", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to save settings: {exc}") from exc
     return {"saved": True}

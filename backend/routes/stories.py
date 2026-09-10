@@ -195,7 +195,7 @@ async def duplicate_story_item(
     db: Session = Depends(get_db),
 ):
     """Duplicate a story item."""
-    await stories.duplicate_story_item(story_id, item_id, db)
+    return await stories.duplicate_story_item(story_id, item_id, db)
 
 
 @router.put("/stories/{story_id}/items/{item_id}/fade", response_model=models.StoryItemDetail)

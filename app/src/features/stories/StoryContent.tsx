@@ -116,8 +116,8 @@ export function StoryContent() {
 			(gen) =>
 				gen.status === "completed" &&
 				!inStory.has(gen.id) &&
-				(gen.text.toLowerCase().includes(q) ||
-					gen.profile_name.toLowerCase().includes(q)),
+				(gen.text?.toLowerCase().includes(q) ||
+					gen.profile_name?.toLowerCase().includes(q)),
 		);
 	}, [historyData, story, search]);
 

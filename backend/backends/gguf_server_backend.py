@@ -1,12 +1,17 @@
 """Local GGUF assistant planner backend via llama.cpp ``server`` (OpenAI-compatible).
 
-Replaces the llama-cpp-python LFM backend. The planner stack (locked
-2026-08-16, see docs/ASSISTANT_ARCHITECTURE.md):
+Replaces the llama-cpp-python LFM backend. The planner stack (see
+docs/ASSISTANT_ARCHITECTURE.md):
 
     jackrong Qwen3.5-2B Opus-Distilled   (free default planner)
     jackrong Qwen3.5-0.8B Opus-Distilled (free low-RAM fallback)
-    Qwopus3.5-4B-v3                      (paid planner)
-    Ministral-3-3B-Reasoning-2512        (paid planner)
+    Unsloth Qwen3.5-4B                   (free premium planner)
+    LiquidAI LFM2-2.6B                   (free latest planner)
+    Qwopus3.5-4B-v3                      (paid planner, $40)
+    Spark-X 2.5-4B                       (paid planner, $40)
+    LiquidAI LFM2.5-2.6B QAD             (paid planner, $13 special offer)
+    MiniCPM5-2B                          (paid planner, $5 PROMO)
+    Qwen3.8-27B                          (paid planner, $5)
 
 All models are GGUF served by one native ``llama-server`` process spawned as
 a sidecar on a free localhost port. The backend keeps the same public surface
@@ -33,8 +38,13 @@ logger = logging.getLogger(__name__)
 GGUF_MODELS: dict[str, tuple[str, str]] = {
     "2B-Q4_K_M": ("Jackrong/Qwen3.5-2B-Claude-4.6-Opus-Reasoning-Distilled-GGUF", "q4_k_m"),
     "0.8B-Q5_K_M": ("Jackrong/Qwen3.5-0.8B-Claude-4.6-Opus-Reasoning-Distilled-GGUF", "q5_k_m"),
+    "4B-Q4_K_M": ("unsloth/Qwen3.5-4B-GGUF", "q4_k_m"),
     "4B-v3-Q4_K_M": ("Jackrong/Qwopus3.5-4B-v3-GGUF", "q4_k_m"),
-    "3B-Reasoning-Q4_K_M": ("mistralai/Ministral-3-3B-Reasoning-2512-GGUF", "q4_k_m"),
+    "2.6B-Q4_K_M": ("LiquidAI/LFM2-2.6B-GGUF", "q4_k_m"),
+    "2.6B-QAD-Q4_0": ("LiquidAI/LFM2.5-2.6B-GGUF", "q4_0"),
+    "minicpm5-2B-Q4_K_M": ("openbmb/MiniCPM5-2B-GGUF", "q4_k_m"),
+    "spark-4B-Q4_K_M": ("XHToken/Spark-X2.5-4B-GGUF", "q4_k_m"),
+    "27B-UD-Q2_K_XL": ("unsloth/Qwen3.8-27B-GGUF", "q2_k_xl"),
 }
 
 DEFAULT_MODEL_SIZE = "2B-Q4_K_M"

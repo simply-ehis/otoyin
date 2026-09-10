@@ -220,22 +220,52 @@
       "engine": "llm",
       "model_size": "4B",
       "checksum": { "sha256": "" },
-      "description": "Paid planner upgrade — 75.6% strict tool eval. GGUF Q4_K_M 2.8GB."
+      "description": "Claude-distilled 4B planner. Premium tier — highest-quality reasoning and tool calling for complex multi-step workflows. GGUF Q4_K_M 2.8GB."
     },
     {
-      "id": "llm.ministral-3b",
-      "name": "Ministral-3-3B-Reasoning-2512",
+      "id": "llm.minicpm5-2b",
+      "name": "MiniCPM5-2B",
       "category": "llm",
-      "price_usd": 30.00,
+      "price_usd": 5.00,
       "license": {
         "type": "apache-2.0",
         "sellable": true,
         "revenue_cap_usd": null
       },
       "engine": "llm",
-      "model_size": "3B",
+      "model_size": "2B",
       "checksum": { "sha256": "" },
-      "description": "2nd paid planner — 256K context, native function calling."
+      "description": "PROMO — normally $20. OpenBMB 2B SOTA: competes with 4B-class models. RL + On-Policy Distillation from 16 expert teachers. 128K context, code (LiveCodeBench 69.1%), math (AIME 86.5%), agentic tasks (SWE-bench 46.4%)."
+    },
+    {
+      "id": "llm.spark-x-2.5-4b",
+      "name": "Spark-X 2.5-4B",
+      "category": "llm",
+      "price_usd": 40.00,
+      "license": {
+        "type": "apache-2.0",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "llm",
+      "model_size": "4B",
+      "checksum": { "sha256": "" },
+      "description": "iFLYTEK 4B agentic king — 1M native context, 200+ languages. Beats Qwen3.5-9B on τ³-bench, BrowseComp, SWE-Bench Pro. Hybrid sliding-window attention."
+    },
+    {
+      "id": "llm.qwen3.8-27b",
+      "name": "Qwen3.8-27B",
+      "category": "llm",
+      "price_usd": 5.00,
+      "license": {
+        "type": "apache-2.0",
+        "sellable": true,
+        "revenue_cap_usd": null
+      },
+      "engine": "llm",
+      "model_size": "27B",
+      "checksum": { "sha256": "" },
+      "description": "Alibaba flagship dense 27B — native vision-language, 262K context (extensible to 1M). Gated DeltaNet + Attention hybrid. Top-tier coding, research, and agentic tasks."
     },
     {
       "id": "music.acestep-1.5",

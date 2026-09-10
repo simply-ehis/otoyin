@@ -1,9 +1,12 @@
 """Engine creation, initialization, and session management."""
 
 import logging
+import time
 import uuid
+from contextlib import contextmanager
 
 from sqlalchemy import create_engine, event
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 
 try:
@@ -151,3 +154,48 @@ def get_db():
         raise
     finally:
         db.close()
+
+
+@contextmanager
+def with_db_retry(max_attempts: int = 3, base_delay: float = 0.1):
+    """Context manager that retries on SQLite 'database is locked' errors.
+
+    Usage::
+
+        with with_db_retry():
+            db = next(get_db())
+            try:
+                db.add(obj)
+                db.commit()
+            finally:
+                db.close()
+    """
+    if SessionLocal is None:
+        raise RuntimeError("Database not initialized — call init_db() before using with_db_retry()")
+    last_exc: Exception | None = None
+    for attempt in range(max_attempts):
+        db = SessionLocal()
+        try:
+            yield db
+            return
+        except OperationalError as exc:
+            last_exc = exc
+            db.rollback()
+            if attempt < max_attempts - 1:
+                delay = base_delay * (2**attempt)
+                logger.warning(
+                    "Database locked (attempt %d/%d), retrying in %.1fs",
+                    attempt + 1,
+                    max_attempts,
+                    delay,
+                )
+                time.sleep(delay)
+            else:
+                raise
+        except Exception:
+            db.rollback()
+            raise
+        finally:
+            db.close()
+    if last_exc:
+        raise last_exc

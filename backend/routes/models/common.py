@@ -63,25 +63,29 @@ def _download_steam_audio_sdk(progress_manager, model_name: str) -> None:
     dest_dir.mkdir(parents=True, exist_ok=True)
 
     _ssl_ctx = ssl.create_default_context()
-    with urlopen(STEAMAUDIO_URL, context=_ssl_ctx) as resp:
-        total = int(resp.headers.get("Content-Length", 0))
-        downloaded = 0
-        chunk_size = 1024 * 1024  # 1MB chunks
-        with open(zip_path, "wb") as f:
-            while True:
-                chunk = resp.read(chunk_size)
-                if not chunk:
-                    break
-                f.write(chunk)
-                downloaded += len(chunk)
-                if total:
-                    progress_manager.update_progress(
-                        model_name=model_name,
-                        current=downloaded,
-                        total=total,
-                        filename="Downloading...",
-                        status="downloading",
-                    )
+    try:
+        with urlopen(STEAMAUDIO_URL, context=_ssl_ctx) as resp:
+            total = int(resp.headers.get("Content-Length", 0))
+            downloaded = 0
+            chunk_size = 1024 * 1024  # 1MB chunks
+            with open(zip_path, "wb") as f:
+                while True:
+                    chunk = resp.read(chunk_size)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    if total:
+                        progress_manager.update_progress(
+                            model_name=model_name,
+                            current=downloaded,
+                            total=total,
+                            filename="Downloading...",
+                            status="downloading",
+                        )
+    except Exception:
+        zip_path.unlink(missing_ok=True)
+        raise
 
     # Integrity verification: refuse to extract an unverified native binary.
     # Pin the expected SHA-256 via STEAMAUDIO_SHA256 (or fetch a companion

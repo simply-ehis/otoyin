@@ -18,9 +18,26 @@ import {
 	useRef,
 	useState,
 } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { debug } from "../../lib/utils/debug";
+
+// Lazy-load markdown renderer + plugins (~150KB) — only needed when messages contain markdown
+const MarkdownRenderer = lazy(() =>
+	Promise.all([
+		import("react-markdown"),
+		import("remark-gfm"),
+	]).then(([rm, gfm]) => {
+		const ReactMarkdown = rm.default;
+		const remarkGfmPlugin = gfm.default;
+		function MarkdownWrapper({ children, ...props }: { children: string; [key: string]: unknown }) {
+			return (
+				<ReactMarkdown remarkPlugins={[remarkGfmPlugin]} {...props}>
+					{children}
+				</ReactMarkdown>
+			);
+		}
+		return { default: MarkdownWrapper };
+	}),
+);
 
 // Lazy-load syntax highlighter (~200KB) — only needed when code blocks are rendered
 const SyntaxHighlighter = lazy(() =>
@@ -390,12 +407,11 @@ function TextBubble({
 			)}
 		>
 			<div className="flex items-start gap-2">
-				<ReactMarkdown
-					components={MARKDOWN_COMPONENTS}
-					remarkPlugins={[remarkGfm]}
-				>
-					{msg.content}
-				</ReactMarkdown>
+				<Suspense fallback={<span className="text-muted-foreground text-xs">Loading...</span>}>
+					<MarkdownRenderer components={MARKDOWN_COMPONENTS}>
+						{msg.content}
+					</MarkdownRenderer>
+				</Suspense>
 			</div>
 			<div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
 				{onEdit && (

@@ -493,6 +493,14 @@ async def _run_shutdown() -> None:
     except Exception:
         logger.debug("Voice-changer shutdown skipped (not running)", exc_info=True)
 
+    # Kill plugin subprocesses
+    try:
+        from .services.plugin_install import stop_all_plugins
+
+        stop_all_plugins()
+    except Exception:
+        logger.debug("Plugin shutdown skipped", exc_info=True)
+
     try:
         from .utils.model_lifecycle import lifecycle_manager
 

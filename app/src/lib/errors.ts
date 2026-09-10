@@ -16,7 +16,7 @@ const ERROR_MAP: Record<string, StudioError> = {
 		code: "SIGNAL_LOST",
 		title: "Signal Lost",
 		message:
-			"The connection to the audio engine dropped. Check your cables (network) and try again.",
+			"The connection to the audio engine dropped. Check your cords (network) and try again.",
 		severity: "critical",
 		retryable: true,
 	},

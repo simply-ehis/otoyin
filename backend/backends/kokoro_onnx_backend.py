@@ -157,12 +157,19 @@ class KokoroONNXBackend(BackendBase):
         """Stream-download ``url`` to ``dest`` with a stall-safe timeout."""
         import requests
 
-        with requests.get(url, stream=True, timeout=30, verify=True) as r:
-            r.raise_for_status()
-            with open(dest, "wb") as f:
-                for chunk in r.iter_content(chunk_size=1 << 20):
-                    if chunk:
-                        f.write(chunk)
+        tmp = dest + ".part"
+        try:
+            with requests.get(url, stream=True, timeout=30, verify=True) as r:
+                r.raise_for_status()
+                with open(tmp, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=1 << 20):
+                        if chunk:
+                            f.write(chunk)
+            os.replace(tmp, dest)
+        except Exception:
+            if os.path.exists(tmp):
+                os.unlink(tmp)
+            raise
 
     def is_loaded(self) -> bool:
         return self._model is not None

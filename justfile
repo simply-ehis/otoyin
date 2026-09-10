@@ -131,7 +131,7 @@ dev: _ensure-venv _ensure-sidecar
 dev: _ensure-venv _ensure-sidecar
     $port = if ($env:TWENTYLABS_PORT) { $env:TWENTYLABS_PORT } else { '17493' }; \
     $hostA = if ($env:TWENTYLABS_HOST) { $env:TWENTYLABS_HOST } else { '127.0.0.1' }; \
-    $healthUrl = 'http://' + $hostA + ':' + $port + '/health'; $readyUrl = 'http://' + $hostA + ':' + $port + '/health/ready'; \
+    $healthUrl = 'http://' + $hostA + ':' + $port + '/health'; $readyUrl = 'http://' + $hostA + ':' + $port + '/health/ready'; $shutdownUrl = 'http://' + $hostA + ':' + $port + '/shutdown'; \
     $backendJob = $null; \
     try { $null = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop; Write-Host ('Backend already running on http://' + $hostA + ':' + $port) } catch { \
         Write-Host ('Starting backend on http://' + $hostA + ':' + $port + ' ...'); \
@@ -142,7 +142,14 @@ dev: _ensure-venv _ensure-sidecar
         if ($ready) { Write-Host 'Backend ready' -ForegroundColor Green } else { Write-Host 'Warning: backend not yet ready — continuing (Tauri may retry)' -ForegroundColor Yellow } \
     }; \
     Write-Host 'Starting Tauri desktop app...'; \
-    try { Set-Location "{{ tauri_dir }}"; npm run tauri dev } finally { if ($backendJob -and -not $backendJob.HasExited) { taskkill /PID $backendJob.Id /T /F 2>$null | Out-Null } }
+    try { Set-Location "{{ tauri_dir }}"; npm run tauri dev } finally { \
+        if ($backendJob -and -not $backendJob.HasExited) { \
+            Write-Host 'Shutting down backend gracefully...' -ForegroundColor Yellow; \
+            try { $null = Invoke-WebRequest -Uri $shutdownUrl -Method POST -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop } catch {}; \
+            $backendJob.WaitForExit(8000); \
+            if (-not $backendJob.HasExited) { Write-Host 'Backend did not exit — force killing' -ForegroundColor Red; Stop-Process -Id $backendJob.Id -Force -ErrorAction SilentlyContinue } \
+        } \
+    }
 
 # Start backend only (checks port availability first for friendly error)
 [unix]
@@ -211,7 +218,14 @@ dev-web: _ensure-venv
         Write-Host 'Waiting for backend readiness (up to 30s)...'; $ready=$false; for ($i=0; $i -lt 30; $i++) { try { $r=Invoke-WebRequest -Uri $readyUrl -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop; if ($r.Content -match '\"ready\"\s*:\s*true') { $ready=$true; break } } catch {}; Start-Sleep -Seconds 1; if ($backendJob.HasExited) { Write-Host ('Backend failed to start (port ' + $port + ' in use?)') -ForegroundColor Red; exit 1 } }; if ($ready) { Write-Host 'Backend ready' -ForegroundColor Green } \
     }; \
     Write-Host 'Starting web app...'; \
-    try { Set-Location "{{ web_dir }}"; & node node_modules\vite\bin\vite.js } finally { if ($backendJob -and -not $backendJob.HasExited) { taskkill /PID $backendJob.Id /T /F 2>$null | Out-Null } }
+    try { Set-Location "{{ web_dir }}"; & node node_modules\vite\bin\vite.js } finally { \
+        if ($backendJob -and -not $backendJob.HasExited) { \
+            Write-Host 'Shutting down backend gracefully...' -ForegroundColor Yellow; \
+            try { $null = Invoke-WebRequest -Uri ('http://' + $hostA + ':' + $port + '/shutdown') -Method POST -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop } catch {}; \
+            $backendJob.WaitForExit(8000); \
+            if (-not $backendJob.HasExited) { Write-Host 'Backend did not exit — force killing' -ForegroundColor Red; Stop-Process -Id $backendJob.Id -Force -ErrorAction SilentlyContinue } \
+        } \
+    }
 
 # Kill all dev processes
 [unix]

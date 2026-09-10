@@ -64,16 +64,25 @@ async def speak(
 
     from .generations import generate_speech
 
-    generation = await generate_speech(
-        models.GenerationRequest(
-            profile_id=profile.id,
-            text=data.text,
-            language=data.language or "en",
-            engine=engine,
-            personality=bool(personality_flag),
-        ),
-        db,
-    )
+    try:
+        generation = await generate_speech(
+            models.GenerationRequest(
+                profile_id=profile.id,
+                text=data.text,
+                language=data.language or "en",
+                engine=engine,
+                personality=bool(personality_flag),
+            ),
+            db,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.debug("generate_speech failed", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Speech generation failed: {exc}",
+        ) from exc
 
     mcp_events.publish(
         "speak-start",

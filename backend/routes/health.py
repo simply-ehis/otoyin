@@ -234,6 +234,17 @@ async def watchdog_disable(request: Request):
     return {"message": "Watchdog disabled"}
 
 
+@router.get("/health/live")
+async def health_live():
+    """Liveness probe — lightweight endpoint for the process supervisor.
+
+    Returns 200 if the process is alive and the event loop is responsive.
+    No DB queries, no GPU probes, no imports — just a dict response.
+    The supervisor polls this every 5s to detect hangs.
+    """
+    return {"alive": True, "pid": os.getpid()}
+
+
 @router.get("/health/ready")
 async def health_ready():
     """Readiness probe — returns 200 when the server can accept traffic,

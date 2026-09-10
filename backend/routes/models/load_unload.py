@@ -72,6 +72,60 @@ async def unload_model_by_name(model_name: str):
         raise HTTPException(status_code=500, detail=ERR_MODEL_UNLOAD_FAILED) from e
 
 
+@router.post("/models/unload-all")
+async def unload_all_models():
+    """Unload all loaded models to free memory.
+
+    Used by the process supervisor when system memory is critically low.
+    This is a defense mechanism against Windows OOM killer — it's better to
+    gracefully unload models than have the entire process killed.
+    """
+    unloaded = []
+
+    # Unload TTS
+    try:
+        from ...services import tts
+
+        tts.unload_tts_model()
+        unloaded.append("tts")
+    except Exception as e:
+        logger.debug("TTS unload failed: %s", e)
+
+    # Unload Whisper/STT
+    try:
+        from ...services import transcribe
+
+        transcribe.unload_whisper_model()
+        unloaded.append("whisper")
+    except Exception as e:
+        logger.debug("Whisper unload failed: %s", e)
+
+    # Unload LLM
+    try:
+        from ...services import llm
+
+        llm.unload_llm_model()
+        unloaded.append("llm")
+    except Exception as e:
+        logger.debug("LLM unload failed: %s", e)
+
+    # Unload lifecycle-managed engines
+    try:
+        from ...utils.model_lifecycle import lifecycle_manager
+
+        for engine_name, handle in lifecycle_manager._engines.items():
+            if handle.is_loaded():
+                try:
+                    handle.unload_model()
+                    unloaded.append(engine_name)
+                except Exception as e:
+                    logger.debug("Engine %s unload failed: %s", engine_name, e)
+    except Exception as e:
+        logger.debug("Lifecycle unload failed: %s", e)
+
+    return {"message": f"Unloaded {len(unloaded)} models", "unloaded": unloaded}
+
+
 @router.get("/models/progress/{model_name}")
 async def get_model_progress(model_name: str):
     """Get model download progress via Server-Sent Events."""

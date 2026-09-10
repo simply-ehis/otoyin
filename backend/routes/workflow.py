@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from ..services.workflow import PLAN_TEMPLATES, WorkflowPlan, build_plan, execute_plan
@@ -33,11 +33,17 @@ class ExecutePlanRequest(BaseModel):
 @router.post("/workflow/plan")
 async def plan_workflow_route(data: PlanWorkflowRequest) -> dict:
     """Build a workflow plan from a description and step definitions."""
-    plan = build_plan(
-        description=data.description,
-        steps=data.steps,
-        template=data.template,
-    )
+    try:
+        plan = build_plan(
+            description=data.description,
+            steps=data.steps,
+            template=data.template,
+        )
+    except (ValueError, KeyError, TypeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.debug("build_plan failed", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to build plan: {exc}") from exc
     return {
         "plan_id": plan.plan_id,
         "description": plan.description,
@@ -51,17 +57,24 @@ async def plan_workflow_route(data: PlanWorkflowRequest) -> dict:
 @router.post("/workflow/execute")
 async def execute_plan_route(data: ExecutePlanRequest) -> dict:
     """Execute a workflow plan step-by-step."""
-    workflow = WorkflowPlan(**data.plan)
+    try:
+        workflow = WorkflowPlan(**data.plan)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid plan data: {exc}") from exc
 
     async def _noop_executor(tool_name: str, **params: Any) -> dict[str, Any]:
         """Placeholder executor for REST context — MCP tools use the real one."""
         return {"tool": tool_name, "params": params, "status": "delegated"}
 
-    result = await execute_plan(
-        plan=workflow,
-        tool_executor=_noop_executor,
-        stop_on_failure=data.stop_on_failure,
-    )
+    try:
+        result = await execute_plan(
+            plan=workflow,
+            tool_executor=_noop_executor,
+            stop_on_failure=data.stop_on_failure,
+        )
+    except Exception as exc:
+        logger.debug("execute_plan failed", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Plan execution failed: {exc}") from exc
     return {
         "plan_id": result.plan_id,
         "status": result.status.value,

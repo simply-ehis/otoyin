@@ -20,7 +20,7 @@ from ..history import _get_versions_for_generation
 def _build_item_detail(
     item: DBStoryItem,
     generation: DBGeneration,
-    profile_name: str,
+    profile_name: str | None,
     db: Session,
 ) -> StoryItemDetail:
     """Build a StoryItemDetail with version info from a story item and its generation."""
@@ -45,7 +45,7 @@ def _build_item_detail(
         trim_end_ms=getattr(item, "trim_end_ms", 0),
         created_at=item.created_at,
         profile_id=generation.profile_id,
-        profile_name=profile_name,
+        profile_name=profile_name or "(deleted)",
         text=generation.text,
         language=generation.language,
         audio_path=audio_path,

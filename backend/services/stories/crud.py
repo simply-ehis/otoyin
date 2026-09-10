@@ -82,7 +82,7 @@ async def get_story(
     items = (
         db.query(DBStoryItem, DBGeneration, DBVoiceProfile.name.label("profile_name"))
         .join(DBGeneration, DBStoryItem.generation_id == DBGeneration.id)
-        .join(DBVoiceProfile, DBGeneration.profile_id == DBVoiceProfile.id)
+        .outerjoin(DBVoiceProfile, DBGeneration.profile_id == DBVoiceProfile.id)
         .filter(DBStoryItem.story_id == story_id)
         .order_by(DBStoryItem.start_time_ms)
         .all()

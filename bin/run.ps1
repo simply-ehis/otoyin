@@ -4,17 +4,22 @@
 .DESCRIPTION
   Starts the backend (if not running), waits for /health, and reports status.
   Used by the agent to verify the app is actually running after a change.
+  Uses the process supervisor for auto-restart on crash.
 .PARAMETER BackendOnly
   Only start/check the backend, skip Tauri.
+.PARAMETER NoRestart
+  Disable auto-restart (single-shot mode).
 #>
 param(
-  [switch]$BackendOnly
+  [switch]$BackendOnly,
+  [switch]$NoRestart
 )
 
 $ErrorActionPreference = 'Stop'
 $healthUrl = 'http://127.0.0.1:17493/health'
+$liveUrl = 'http://127.0.0.1:17493/health/live'
 
-Write-Host "`n=== 21labs Smoke Test ===" -ForegroundColor Cyan
+Write-Host "`n=== otoyin Smoke Test ===" -ForegroundColor Cyan
 
 # ── Check if backend is already running ──
 $running = $false
@@ -33,7 +38,7 @@ try {
 }
 
 if (-not $running) {
-  Write-Host "Backend: not running. Starting..." -ForegroundColor Yellow
+  Write-Host "Backend: not running. Starting with supervisor..." -ForegroundColor Yellow
 
   $venvPython = Join-Path $PSScriptRoot '..\backend\venv\Scripts\python.exe'
   if (-not (Test-Path $venvPython)) {
@@ -41,18 +46,23 @@ if (-not $running) {
     exit 1
   }
 
-  $backendJob = Start-Process -PassThru -NoNewWindow -FilePath $venvPython `
-    -ArgumentList '-m','uvicorn','backend.main:app','--port','17493'
+  $supervisorArgs = @('-m', 'backend.supervisor', '--port', '17493')
+  if ($NoRestart) {
+    $supervisorArgs += '--no-restart'
+  }
 
-  Write-Host "Waiting for backend to start..." -ForegroundColor Yellow
+  $backendJob = Start-Process -PassThru -NoNewWindow -FilePath $venvPython `
+    -ArgumentList $supervisorArgs
+
+  Write-Host "Waiting for backend to start (supervisor PID: $($backendJob.Id))..." -ForegroundColor Yellow
   $maxWait = 30
   for ($i = 0; $i -lt $maxWait; $i++) {
     Start-Sleep -Seconds 1
     try {
-      $resp = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+      $resp = Invoke-WebRequest -Uri $liveUrl -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
       if ($resp.StatusCode -eq 200) {
         $running = $true
-        Write-Host "Backend: started (PID $($backendJob.Id))" -ForegroundColor Green
+        Write-Host "Backend: started and alive (PID $($backendJob.Id))" -ForegroundColor Green
         break
       }
     } catch {

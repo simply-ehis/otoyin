@@ -216,7 +216,7 @@ async def list_generations(
         HistoryListResponse with items and total count
     """
     # Build base query with join to get profile name
-    q = db.query(DBGeneration, DBVoiceProfile.name.label("profile_name")).join(
+    q = db.query(DBGeneration, DBVoiceProfile.name.label("profile_name")).outerjoin(
         DBVoiceProfile, DBGeneration.profile_id == DBVoiceProfile.id
     )
 
@@ -295,7 +295,7 @@ async def list_generations(
             HistoryResponse(
                 id=generation.id,
                 profile_id=generation.profile_id,
-                profile_name=profile_name,
+                profile_name=profile_name or "(deleted)",
                 text=generation.text,
                 language=generation.language,
                 audio_path=generation.audio_path,

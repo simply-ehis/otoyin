@@ -351,6 +351,15 @@ def stop_plugin(plugin_id: str) -> bool:
     return _stop(plugin_id)
 
 
+def stop_all_plugins() -> None:
+    """Terminate all running plugin subprocesses (called on server shutdown)."""
+    for plugin_id in list(_PROCESSES):
+        try:
+            _stop(plugin_id)
+        except Exception:
+            logger.debug("Failed to stop plugin %s during shutdown", plugin_id, exc_info=True)
+
+
 def plugin_status(plugin_id: str) -> dict:
     proc = _PROCESSES.get(plugin_id)
     running = proc is not None and proc.poll() is None

@@ -165,8 +165,8 @@ def _get_gguf_llm_configs() -> list[ModelConfig]:
 
     Lineup (see docs/ASSISTANT_ARCHITECTURE.md): jackrong Qwen3.5-2B is the
     FREE default planner; jackrong Qwen3.5-0.8B is the free low-RAM fallback;
-    Qwopus3.5-4B-v3 and Ministral-3-3B-Reasoning are PAID planners. All run
-    via llama.cpp server.exe (llama-cpp-python removed).
+    Qwopus3.5-4B-v3, Spark-X 2.5-4B, LFM2.5-2.6B QAD, MiniCPM5-2B, and
+    Qwen3.8-27B are PAID planners. All run via llama.cpp server.exe.
     """
     planner_languages = [
         "en",
@@ -222,16 +222,31 @@ def _get_gguf_llm_configs() -> list[ModelConfig]:
             category="llm",
         ),
         ModelConfig(
+            model_name="planner-4b-v3",
+            display_name="Qwopus3.5-4B-v3 (Premium — $40)",
+            engine="gguf_llm",
+            hf_repo_id="Jackrong/Qwopus3.5-4B-v3-GGUF",
+            model_size="4B-Q4_K_M",
+            size_mb=2800,
+            min_ram_mb=4000,
+            quant="Q4_K_M",
+            languages=planner_languages,
+            quality_score=10,
+            category="llm",
+            supports_instruct=True,
+            supported_tags=["thinking", "tool_call", "json_mode"],
+        ),
+        ModelConfig(
             model_name="planner-spark-x-2.5-4b",
-            display_name="Spark-X 2.5-4B (Precision — Free)",
+            display_name="Spark-X 2.5-4B (Agentic — $40)",
             engine="gguf_llm",
             hf_repo_id="XHToken/Spark-X2.5-4B-GGUF",
-            model_size="4B-Q4_K_M",
+            model_size="spark-4B-Q4_K_M",
             size_mb=2500,
             min_ram_mb=3500,
             quant="Q4_K_M",
             languages=planner_languages,
-            quality_score=8,
+            quality_score=9,
             category="llm",
         ),
         ModelConfig(
@@ -268,8 +283,24 @@ def _get_gguf_llm_configs() -> list[ModelConfig]:
             supported_tags=["thinking", "tool_call", "json_mode"],
         ),
         ModelConfig(
-            model_name="planner-qwen3-8-27b-iq2",
-            display_name="Qwen3.8-27B UD-Q2_K_XL (Dense 27B — 9.8 GB)",
+            model_name="planner-minicpm5-2b",
+            display_name="MiniCPM5-2B (2B SOTA — $5 PROMO)",
+            engine="gguf_llm",
+            hf_repo_id="openbmb/MiniCPM5-2B-GGUF",
+            model_size="2B-Q4_K_M",
+            size_mb=1600,
+            min_ram_mb=2500,
+            min_vram_mb=0,
+            quant="Q4_K_M",
+            languages=planner_languages,
+            quality_score=9,
+            category="llm",
+            supports_instruct=True,
+            supported_tags=["thinking", "tool_call", "json_mode"],
+        ),
+        ModelConfig(
+            model_name="planner-qwen3-8-27b",
+            display_name="Qwen3.8-27B (Dense 27B — 9.8 GB)",
             engine="gguf_llm",
             hf_repo_id="unsloth/Qwen3.8-27B-GGUF",
             model_size="27B-UD-Q2_K_XL",

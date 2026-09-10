@@ -35,6 +35,24 @@ def _get_neutts_2e_configs() -> list[ModelConfig]:
     ]
     return [
         ModelConfig(
+            model_name="neutts-2e-q4",
+            display_name="NeuTTS-2E (Q4 GGUF)",
+            engine="neutts_2e",
+            hf_repo_id="neuphonic/neutts-2e-q4-gguf",
+            model_size="q4",
+            size_mb=500,
+            min_ram_mb=1000,
+            min_vram_mb=0,
+            languages=["en"],
+            clone_voice=True,
+            emotion_control=True,
+            quality_score=7,
+            category="tts",
+            pip_packages=["neutts[llama,onnx]>=0.1.0"],
+            structured_preset_voices=neutts_2e_voices,
+            quant="Q4_0",
+        ),
+        ModelConfig(
             model_name="neutts-2e-q8",
             display_name="NeuTTS-2E (Q8_0 GGUF)",
             engine="neutts_2e",
