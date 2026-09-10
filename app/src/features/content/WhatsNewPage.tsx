@@ -25,7 +25,6 @@ export function WhatsNewPage() {
 		<div className="mx-auto flex h-full w-full max-w-2xl flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title="What's New"
-				description="Features, fixes, and model releases"
 			/>
 
 			{isLoading ? (

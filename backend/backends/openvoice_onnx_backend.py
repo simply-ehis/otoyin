@@ -74,9 +74,7 @@ class OpenVoiceOnnxBackend(BackendBase):
         color_path = model_dir / TONE_COLOR_FILE
 
         if not extract_path.exists() or not color_path.exists():
-            raise ModelNotCachedError(
-                "OpenVoice ONNX models are not downloaded. Use the Model Downloads page first."
-            )
+            raise ModelNotCachedError("OpenVoice ONNX models are not downloaded. Use the Model Downloads page first.")
 
         opts = ort.SessionOptions()
         opts.inter_op_num_threads = 2

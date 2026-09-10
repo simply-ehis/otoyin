@@ -142,9 +142,9 @@ async def import_script_file(
         script_format = "markdown"
 
     # Enforce 5 MB limit on script file uploads
-    MAX_SCRIPT_SIZE = 5 * 1024 * 1024
+    max_script_size = 5 * 1024 * 1024
     content = await file.read()
-    if len(content) > MAX_SCRIPT_SIZE:
+    if len(content) > max_script_size:
         raise HTTPException(status_code=413, detail="Script file too large (max 5 MB)")
     try:
         text = content.decode("utf-8")
@@ -284,10 +284,10 @@ async def import_project(file: UploadFile, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="File must be a .zip archive")
 
     # Enforce 50 MB limit on ZIP imports
-    MAX_ZIP_SIZE = 50 * 1024 * 1024
+    max_zip_size = 50 * 1024 * 1024
     try:
         file_bytes = await file.read()
-        if len(file_bytes) > MAX_ZIP_SIZE:
+        if len(file_bytes) > max_zip_size:
             raise HTTPException(status_code=413, detail="ZIP file too large (max 50 MB)")
         if len(file_bytes) < 100:
             raise HTTPException(status_code=400, detail="Invalid ZIP file (too small)")

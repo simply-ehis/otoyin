@@ -246,7 +246,6 @@ export function MixerView() {
 		<div className="flex h-full flex-col gap-3 overflow-y-auto p-4">
 			<ScreenHeader
 				title="Mixer"
-				description="Balance channels, save sessions, preview the mix"
 				actions={
 					<>
 						<Button

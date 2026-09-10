@@ -189,7 +189,6 @@ export function VoiceConverterView() {
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title="Voice Converter"
-				description="RVC packs, zero-shot clone, or cloud BYOK"
 			/>
 
 			<Separator />

@@ -23,7 +23,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils/cn";
 import { useUIStore } from "@/stores/uiStore";
-import { useWorkspaceStore } from "@/stores/workspaceStore";
+import { type TabPath, useWorkspaceStore } from "@/stores/workspaceStore";
 import { ClipboardIndicator } from "@/features/clipboard/ClipboardIndicator";
 
 interface NavItem {
@@ -32,7 +32,7 @@ interface NavItem {
 	/** Heroicon component */
 	icon: typeof Home;
 	/** Route path */
-	path: string;
+	path: TabPath;
 }
 
 /** Logical groups for visual separation in the sidebar. */

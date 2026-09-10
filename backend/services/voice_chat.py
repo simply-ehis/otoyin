@@ -359,7 +359,7 @@ async def _generate_llm_response(text: str, session: VoiceChatSession) -> str:
                     ],
                 }
             )
-            for tc, tr in zip(response.tool_calls, tool_results):
+            for tc, tr in zip(response.tool_calls, tool_results, strict=False):
                 session.conversation_history.append(
                     {
                         "role": "tool",
@@ -652,8 +652,10 @@ async def process_audio_chunk(
                 audio_bytes = b""
                 if audio_chunks:
                     import io as _io
-                    import soundfile as sf
+
                     import numpy as np
+                    import soundfile as sf
+
                     all_frames = []
                     sample_rate = 24000
                     for chunk_data in audio_chunks:

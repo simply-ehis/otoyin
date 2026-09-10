@@ -115,7 +115,6 @@ export function PlatformExportView() {
 		<div className="flex h-full max-w-2xl flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title="Platform Export"
-				description="One-tap mastering presets for every platform"
 			/>
 
 			<Separator />

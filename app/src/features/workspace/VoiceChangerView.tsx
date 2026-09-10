@@ -28,7 +28,6 @@ export function VoiceChangerView() {
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title="Voice Changer"
-				description="Real-time pitch and formant voice transformation"
 			/>
 
 			<div className="flex flex-wrap items-center gap-4">

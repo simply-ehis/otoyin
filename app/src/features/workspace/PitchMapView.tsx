@@ -169,7 +169,6 @@ export function PitchMapView() {
 			<div className="flex h-full flex-col items-center justify-center gap-4 p-8">
 				<ScreenHeader
 					title="Pitch Map"
-					description="Visualize detected pitch against a piano roll"
 				/>
 				<EmptyState
 					title="Analyze audio to view the pitch map"
@@ -191,7 +190,6 @@ export function PitchMapView() {
 		<div className="flex h-full flex-col gap-3 overflow-hidden p-4">
 			<ScreenHeader
 				title="Pitch Map"
-				description="Detected pitch on a piano roll"
 			/>
 			<div className="flex flex-wrap items-center gap-2">
 				<Select value={scale} onValueChange={setScale}>

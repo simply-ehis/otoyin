@@ -76,7 +76,6 @@ export function PrivacyPage() {
 		<div className="flex flex-col h-full min-h-0">
 			<ScreenHeader
 				title="Privacy"
-				description="Your data stays on your device"
 			/>
 
 			<div className="flex-1 overflow-y-auto p-4 space-y-4">

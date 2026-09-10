@@ -37,14 +37,14 @@ export function MonitorPicker({
 	);
 
 	return (
-		<div className="flex flex-col gap-2 rounded-md border border-border p-3">
+		<div className="flex flex-col gap-1.5 rounded-md border border-border p-2">
 			<div className="flex items-center justify-between">
-				<span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+				<span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
 					{title}
 				</span>
 				<button
 					type="button"
-					className="text-xs text-muted-foreground hover:text-foreground"
+					className="text-[10px] text-muted-foreground hover:text-foreground"
 					title="Clear monitor"
 					onClick={() => setMonitorSource(null)}
 				>
@@ -53,9 +53,8 @@ export function MonitorPicker({
 			</div>
 
 			{list.length === 0 ? (
-				<p className="text-xs text-muted-foreground">
-					No live sources yet. Play a voiceover, start the mic, or open the
-					video tab.
+				<p className="text-[10px] text-muted-foreground">
+					No live sources
 				</p>
 			) : (
 				<div className="flex flex-col gap-2">

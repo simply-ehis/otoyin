@@ -211,9 +211,8 @@ async def ensure_engines_registered() -> None:
         if _engines_event.is_set():
             return
         try:
-            from ..utils.model_lifecycle import lifecycle_manager
-
             from ..backends import get_llm_backend_for_engine, get_stt_backend, get_tts_backend, get_vc_backend
+            from ..utils.model_lifecycle import lifecycle_manager
 
             try:
                 tts = get_tts_backend()

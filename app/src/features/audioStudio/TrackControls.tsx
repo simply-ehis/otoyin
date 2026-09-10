@@ -1,4 +1,5 @@
 import { DocumentTextIcon as Document } from "@heroicons/react/24/outline";
+import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils/cn";
 import {
 	Select,
@@ -12,10 +13,56 @@ import { type StudioTrack, useAudioStudioStore } from "./AudioStudioStore";
 import { TrackMeter } from "./TrackMeter";
 
 export function TrackIdentity({ track }: { track: StudioTrack }) {
+	const updateTrack = useAudioStudioStore((s) => s.updateTrack);
+	const [editing, setEditing] = useState(false);
+	const [draft, setDraft] = useState(track.name);
+	const inputRef = useRef<HTMLInputElement>(null);
+
+	const commit = useCallback(() => {
+		const trimmed = draft.trim();
+		if (trimmed && trimmed !== track.name) {
+			updateTrack(track.id, { name: trimmed });
+		} else {
+			setDraft(track.name);
+		}
+		setEditing(false);
+	}, [draft, track.name, track.id, updateTrack]);
+
+	if (editing) {
+		return (
+			<input
+				ref={inputRef}
+				type="text"
+				value={draft}
+				onChange={(e) => setDraft(e.target.value)}
+				onBlur={commit}
+				onKeyDown={(e) => {
+					if (e.key === "Enter") {
+						commit();
+					} else if (e.key === "Escape") {
+						setDraft(track.name);
+						setEditing(false);
+					}
+				}}
+				className="text-xs font-medium text-foreground bg-background border border-border rounded px-1 w-full text-center outline-none focus:ring-1 focus:ring-ring"
+				autoFocus
+				aria-label="Track name"
+			/>
+		);
+	}
+
 	return (
-		<span className="text-xs font-medium text-foreground truncate w-full text-center">
+		<button
+			type="button"
+			onClick={() => {
+				setDraft(track.name);
+				setEditing(true);
+			}}
+			className="text-xs font-medium text-foreground truncate w-full text-center bg-transparent border-0 p-0 hover:text-accent cursor-text"
+			title="Click to rename"
+		>
 			{track.name}
-		</span>
+		</button>
 	);
 }
 
@@ -319,7 +366,7 @@ export function TrackControlsColumn({
 	onTranscribe: () => void;
 }) {
 	return (
-		<div className="flex w-24 shrink-0 flex-col items-center gap-1 border-r border-border bg-card p-2">
+		<div className="flex w-24 shrink-0 flex-col items-center gap-0.5 border-r border-border bg-card px-2 py-1.5">
 			<TrackIdentity track={track} />
 			{track.midiNotes.length > 0 && (
 				<span className="text-[8px] text-accent font-semibold">MIDI</span>
@@ -330,14 +377,14 @@ export function TrackControlsColumn({
 				</span>
 			)}
 			<TrackMuteSolo track={track} onMute={onMute} onSolo={onSolo} />
-			<div className="flex items-center gap-1 h-12">
+			<div className="flex items-center gap-1 h-8">
 				<Slider
 					min={0}
 					max={1}
 					step={0.01}
 					value={[track.volume]}
 					onValueChange={([v]) => onVolume(v)}
-					className="h-12 [&>div]:h-full [&>div]:flex-col [&>div]:items-center flex-1"
+					className="h-8 [&>div]:h-full [&>div]:flex-col [&>div]:items-center flex-1"
 					aria-label={`${track.name} volume`}
 				/>
 				<TrackMeter analyser={trackAnalysers.get(track.id) ?? null} />

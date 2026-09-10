@@ -141,7 +141,6 @@ export function LogsPage() {
 		<div className="flex h-full min-h-0 flex-col">
 			<ScreenHeader
 				title={t("settings.logs.title")}
-				description={t("settings.logs.lineCount", { count: entries.length })}
 				actions={
 					<>
 						{!autoScroll ? (

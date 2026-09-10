@@ -208,10 +208,6 @@ export function SongwriterTab() {
 			<ScreenHeader
 				title={t("songwriter.title", { defaultValue: "Songwriter" })}
 				helpPath="/songwriter"
-				description={t("songwriter.description", {
-					defaultValue:
-						"Shape the promise, story, hook, prosody, and generator direction before rendering a note.",
-				})}
 				actions={
 					<div className="flex items-center gap-2">
 						<Select

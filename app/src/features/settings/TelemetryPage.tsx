@@ -191,7 +191,6 @@ export function TelemetryPage() {
 		<div className="flex max-w-4xl flex-col gap-6">
 			<ScreenHeader
 				title="Telemetry"
-				description="Anonymous on-device usage data. Nothing leaves your machine."
 				actions={
 					<>
 						<Button

@@ -59,7 +59,6 @@ export function SoundEffectsView() {
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title="Sound Effects"
-				description="Freesound — curated, license-tagged SFX (needs a backend API key)"
 			/>
 
 			<Separator />

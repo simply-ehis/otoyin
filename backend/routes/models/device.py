@@ -58,19 +58,21 @@ async def get_device_capabilities():
             gpu_only=cfg.gpu_only,
             device=device,
         )
-        model_compat.append({
-            "model_name": cfg.model_name,
-            "display_name": cfg.display_name,
-            "category": cfg.category,
-            "size_mb": cfg.size_mb,
-            "gpu_only": cfg.gpu_only,
-            "min_ram_mb": cfg.min_ram_mb,
-            "min_vram_mb": cfg.min_vram_mb,
-            "compatible": compat.compatible,
-            "reason": compat.reason,
-            "estimated_ram_mb": compat.estimated_ram_mb,
-            "estimated_vram_mb": compat.estimated_vram_mb,
-        })
+        model_compat.append(
+            {
+                "model_name": cfg.model_name,
+                "display_name": cfg.display_name,
+                "category": cfg.category,
+                "size_mb": cfg.size_mb,
+                "gpu_only": cfg.gpu_only,
+                "min_ram_mb": cfg.min_ram_mb,
+                "min_vram_mb": cfg.min_vram_mb,
+                "compatible": compat.compatible,
+                "reason": compat.reason,
+                "estimated_ram_mb": compat.estimated_ram_mb,
+                "estimated_vram_mb": compat.estimated_vram_mb,
+            }
+        )
 
     return DeviceCapabilitiesResponse(
         total_ram_mb=device.total_ram_mb,

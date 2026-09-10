@@ -703,7 +703,6 @@ export function DspView() {
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title="Synth / DSP"
-				description="Offline synthesis and classical DSP — on-device, no AI"
 			/>
 			{capsQuery.isError ? (
 				<ErrorState

@@ -140,15 +140,15 @@ export function StoryList() {
 					setName("");
 					setDescription("");
 				},
-				onError: (e: Error) =>
-					toast({
-						title: t("common.error"),
-						description: e.message,
-						variant: "destructive",
-					}),
-			},
-		);
-	};
+			onError: (e: unknown) =>
+				toast({
+					title: t("common.error"),
+					description: e instanceof Error ? e.message : String(e),
+					variant: "destructive",
+				}),
+		},
+	);
+};
 
 	return (
 		<div className="flex h-full min-h-0 flex-col">
@@ -396,13 +396,13 @@ export function StoryList() {
 										},
 									},
 									{
-										onSuccess: () => setEditing(null),
-										onError: (e: Error) =>
-											toast({
-												title: t("common.error"),
-												description: e.message,
-												variant: "destructive",
-											}),
+									onSuccess: () => setEditing(null),
+									onError: (e: unknown) =>
+										toast({
+											title: t("common.error"),
+											description: e instanceof Error ? e.message : String(e),
+											variant: "destructive",
+										}),
 									},
 								);
 							}}
@@ -436,12 +436,12 @@ export function StoryList() {
 											}
 											setDeletingId(null);
 										},
-										onError: (e: Error) =>
-											toast({
-												title: t("common.error"),
-												description: e.message,
-												variant: "destructive",
-											}),
+									onError: (e: unknown) =>
+										toast({
+											title: t("common.error"),
+											description: e instanceof Error ? e.message : String(e),
+											variant: "destructive",
+										}),
 									});
 								}
 							}}

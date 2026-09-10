@@ -713,11 +713,7 @@ def export_story_to_zip(story_id: str, db: Session) -> bytes:
         # Batch-fetch all profile samples (avoid N+1)
         all_prof_ids = list(profiles.keys())
         all_samples = (
-            db.query(DBProfileSample)
-            .filter(DBProfileSample.profile_id.in_(all_prof_ids))
-            .all()
-            if all_prof_ids
-            else []
+            db.query(DBProfileSample).filter(DBProfileSample.profile_id.in_(all_prof_ids)).all() if all_prof_ids else []
         )
         samples_by_profile: dict[str, list] = {pid: [] for pid in all_prof_ids}
         for s in all_samples:

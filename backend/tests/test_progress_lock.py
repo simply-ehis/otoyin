@@ -7,10 +7,9 @@ Verifies that SSE listener removal is thread-safe and handles:
 """
 
 import asyncio
+import contextlib
 import threading
 import time
-
-import pytest
 
 from backend.utils.progress import ProgressManager
 
@@ -28,10 +27,8 @@ class TestListenerAtomicity:
         # Unsubscribe (simulating the SSE finally block under lock)
         with pm._lock:
             if "test-model-lock" in pm._listeners:
-                try:
+                with contextlib.suppress(ValueError):
                     pm._listeners["test-model-lock"].remove(queue)
-                except ValueError:
-                    pass
                 if not pm._listeners["test-model-lock"]:
                     del pm._listeners["test-model-lock"]
 
@@ -46,20 +43,16 @@ class TestListenerAtomicity:
         # First removal
         with pm._lock:
             if "test-double" in pm._listeners:
-                try:
+                with contextlib.suppress(ValueError):
                     pm._listeners["test-double"].remove(queue)
-                except ValueError:
-                    pass
                 if not pm._listeners["test-double"]:
                     del pm._listeners["test-double"]
 
         # Second removal — should be a no-op
         with pm._lock:
             if "test-double" in pm._listeners:
-                try:
+                with contextlib.suppress(ValueError):
                     pm._listeners["test-double"].remove(queue)
-                except ValueError:
-                    pass
                 if not pm._listeners["test-double"]:
                     del pm._listeners["test-double"]
 
@@ -87,10 +80,8 @@ class TestListenerAtomicity:
                 # Unsubscribe
                 with pm._lock:
                     if name in pm._listeners:
-                        try:
+                        with contextlib.suppress(ValueError):
                             pm._listeners[name].remove(queue)
-                        except ValueError:
-                            pass
                         if not pm._listeners[name]:
                             del pm._listeners[name]
             except Exception as e:
@@ -119,10 +110,8 @@ class TestListenerAtomicity:
         pm._listeners["notify-test"] = [queue]
         with pm._lock:
             if "notify-test" in pm._listeners:
-                try:
+                with contextlib.suppress(ValueError):
                     pm._listeners["notify-test"].remove(queue)
-                except ValueError:
-                    pass
                 if not pm._listeners["notify-test"]:
                     del pm._listeners["notify-test"]
 
@@ -137,10 +126,8 @@ class TestListenerAtomicity:
         pm._listeners["complete-test"] = [queue]
         with pm._lock:
             if "complete-test" in pm._listeners:
-                try:
+                with contextlib.suppress(ValueError):
                     pm._listeners["complete-test"].remove(queue)
-                except ValueError:
-                    pass
                 if not pm._listeners["complete-test"]:
                     del pm._listeners["complete-test"]
 

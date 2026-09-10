@@ -303,6 +303,7 @@ async def _process_audio(
         state.is_processing = False
         if session:
             from ..services.voice_chat import end_session
+
             with contextlib.suppress(Exception):
                 end_session(session.session_id)
 

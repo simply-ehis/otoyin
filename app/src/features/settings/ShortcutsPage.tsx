@@ -89,7 +89,6 @@ export function ShortcutsPage() {
 		<div className="flex max-w-3xl flex-col gap-6">
 			<ScreenHeader
 				title="Keyboard shortcuts"
-				description="Every shortcut in the active keymap, grouped by area."
 				actions={
 					<Select value={selected} onValueChange={setSelected}>
 						<SelectTrigger className="w-[200px]" aria-label="Keymap">

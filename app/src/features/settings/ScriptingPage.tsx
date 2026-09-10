@@ -97,7 +97,6 @@ export function ScriptingPage() {
 		<div className="flex max-w-4xl flex-col gap-6">
 			<ScreenHeader
 				title="Scripting API"
-				description="Run backend automation functions directly with JSON arguments."
 			/>
 			{loading ? (
 				<LoadingState label="Loading functions" lines={5} />

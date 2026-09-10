@@ -65,7 +65,6 @@ export function SupportPage() {
 		<div className="mx-auto max-w-3xl">
 			<ScreenHeader
 				title="Contact & support"
-				description="Reach the Otoyin team or browse help. We respond to every message."
 			/>
 			<div className="mb-6 mt-4 flex flex-wrap gap-2 text-sm">
 				{[
@@ -212,7 +211,6 @@ function CrashDiagnostics() {
 		<section aria-label="Diagnostics and crash reports" className="mt-10">
 			<ScreenHeader
 				title="Diagnostics"
-				description="Crash reports help fix bugs. Off by default, separate from usage telemetry. Reports are redacted before they are stored."
 			/>
 			<div className="mt-4 flex flex-wrap items-center gap-3">
 				<Button

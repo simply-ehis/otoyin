@@ -20,7 +20,9 @@ router = APIRouter(prefix="/marketplace/plugins", tags=["plugins-marketplace"])
 
 class EnablePluginRequest(BaseModel):
     """Request body for enabling a plugin with permission approval."""
+
     approved_permissions: list[str] = []
+
 
 MAX_UPLOAD_BYTES = svc.MAX_BUNDLE_BYTES
 

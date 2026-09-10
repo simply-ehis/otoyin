@@ -52,7 +52,6 @@ export function HelpCenter() {
 		<div className="flex min-h-0 flex-col gap-4">
 			<ScreenHeader
 				title="Help"
-				description="Every capability, searchable. Served from the local backend."
 			/>
 			<SearchInput
 				aria-label="Search help"

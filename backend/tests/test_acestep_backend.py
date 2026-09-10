@@ -8,11 +8,10 @@ No real model or binaries required - everything is monkeypatched.
 
 from __future__ import annotations
 
-import importlib
 import json
 import subprocess
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
@@ -118,9 +117,7 @@ def test_build_request_omits_tempo_when_none():
 
 
 def test_build_request_includes_lyrics():
-    req = ace.acestep_gguf_backend._build_request(
-        prompt="rock anthem", lyrics="verse one\nchorus"
-    )
+    req = ace.acestep_gguf_backend._build_request(prompt="rock anthem", lyrics="verse one\nchorus")
     assert req["lyrics"] == "verse one\nchorus"
 
 
@@ -149,7 +146,7 @@ async def test_generate_missing_binaries_raises(monkeypatch):
     monkeypatch.setattr(ace, "find_ace_synth", lambda: None)
     ace.acestep_gguf_backend.unload_model()
     await ace.acestep_gguf_backend.load_model()
-    with pytest.raises(RuntimeError, match="acestep.cpp binaries not found"):
+    with pytest.raises(RuntimeError, match=r"acestep\.cpp binaries not found"):
         await ace.acestep_gguf_backend.generate(prompt="piano")
 
 
@@ -175,6 +172,7 @@ async def test_generate_calls_cli_pipeline(monkeypatch, tmp_path):
         out_path = args[args.index("--out") + 1]
         # Write a minimal WAV file
         import wave
+
         with wave.open(out_path, "wb") as wf:
             wf.setnchannels(1)
             wf.setsampwidth(2)
@@ -194,7 +192,7 @@ async def test_generate_calls_cli_pipeline(monkeypatch, tmp_path):
 
     monkeypatch.setattr(subprocess, "run", patched_run)
 
-    audio, sr = await ace.acestep_gguf_backend.generate(
+    _audio, sr = await ace.acestep_gguf_backend.generate(
         prompt="warm guitar arpeggio",
         duration_seconds=45.0,
         genre="ambient",

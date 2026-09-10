@@ -127,7 +127,6 @@ export function SpatialView() {
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title="3D Spatializer"
-				description="Environmental convolution and source positioning"
 			/>
 
 			<Separator />

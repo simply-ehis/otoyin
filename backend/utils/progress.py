@@ -255,10 +255,8 @@ class ProgressManager:
             # Remove from listeners (under lock to avoid race with _notify_listeners_threadsafe)
             with self._lock:
                 if model_name in self._listeners:
-                    try:
+                    with contextlib.suppress(ValueError):
                         self._listeners[model_name].remove(queue)
-                    except ValueError:
-                        pass  # already removed
                     if not self._listeners[model_name]:
                         del self._listeners[model_name]
                     logger.info(

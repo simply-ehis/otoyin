@@ -199,8 +199,8 @@ def create_app() -> FastAPI:
     # via a middleware that mounts the sub-app on demand.
     _mcp_app_holder: dict[str, object] = {}
 
-    from starlette.middleware.base import BaseHTTPMiddleware
     import starlette.requests
+    from starlette.middleware.base import BaseHTTPMiddleware
 
     class MCPLazyBuildMiddleware(BaseHTTPMiddleware):
         """Build and mount the MCP sub-app on first /mcp request."""

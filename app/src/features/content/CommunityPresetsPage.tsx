@@ -77,7 +77,6 @@ export function CommunityPresetsPage() {
 		<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title="Community Presets"
-				description="Effect chains shared by the community"
 				actions={
 					<Badge tone="neutral">
 						{presets.length} preset{presets.length === 1 ? "" : "s"}

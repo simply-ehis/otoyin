@@ -281,9 +281,6 @@ export function AudioStudio() {
 				onIsolate={() => void handleIsolate()}
 				onProducePodcast={() => setPodcastProducerOpen(true)}
 			/>
-			<span className="text-xs text-muted-foreground/50 ml-2">
-				{tracks.length} track{tracks.length !== 1 ? "s" : ""}
-			</span>
 
 			<SessionDialogs
 				showSaveDialog={session.showSaveDialog}
@@ -339,15 +336,15 @@ export function AudioStudio() {
 				</div>
 			</div>
 
-			<div className="shrink-0 border-t border-border bg-card px-4 py-2">
-				<WaveformVisualizer
-					analyser={analyserRef.current}
-					playing={isPlaying}
-					progress={waveformProgress}
-					height={72}
-					className="w-full rounded-md"
-				/>
-			</div>
+		<div className="shrink-0 border-t border-border bg-card px-4 py-1">
+			<WaveformVisualizer
+				analyser={analyserRef.current}
+				playing={isPlaying}
+				progress={waveformProgress}
+				height={48}
+				className="w-full rounded-md"
+			/>
+		</div>
 
 			<TransportControls
 				isPlaying={isPlaying}

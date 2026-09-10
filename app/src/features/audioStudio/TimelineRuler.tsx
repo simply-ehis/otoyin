@@ -15,8 +15,8 @@ export function TimelineRuler({
 	onRemoveMarker,
 }: TimelineRulerProps) {
 	return (
-		<div className="relative h-6 border-b border-border bg-muted flex items-end px-[100px] shrink-0 overflow-hidden">
-			<div className="flex gap-1 text-xs font-mono text-muted-foreground/50">
+		<div className="relative h-5 border-b border-border bg-muted flex items-end px-[100px] shrink-0 overflow-hidden">
+			<div className="flex gap-1 text-[10px] font-mono text-muted-foreground/50">
 				{[...Array(20).keys()].map((i) => (
 					<span key={String(i)} className="w-16 shrink-0">
 						{formatTime(i * 5 * zoomLevel)}

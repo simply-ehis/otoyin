@@ -559,7 +559,6 @@ export function StandaloneProjectPage() {
 		<div className="mx-auto flex h-full w-full max-w-3xl flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title="Create New Project"
-				description="Standalone productions with scenes and scripts"
 			/>
 
 			<Card>

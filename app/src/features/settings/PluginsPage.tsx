@@ -134,7 +134,6 @@ export function PluginsPage() {
 		<div className="flex h-full min-h-0 flex-col gap-4">
 			<ScreenHeader
 				title="Plugins"
-				description="Audio effects browser and chain builder."
 				actions={
 					<>
 						{statusQuery.data ? (

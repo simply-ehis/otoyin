@@ -119,10 +119,6 @@ export function InstrumentLibrary() {
 				title={t("instruments.title", {
 					defaultValue: "Instrument Library",
 				})}
-				description={t("instruments.description", {
-					defaultValue:
-						"Install SoundFont packs (SF2/SF3), SFZ instruments, or audio samples for use in the launcher and studio.",
-				})}
 				helpPath="/instruments"
 			/>
 

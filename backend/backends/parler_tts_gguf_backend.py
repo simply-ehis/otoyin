@@ -68,11 +68,16 @@ def build_tts_args(
 ) -> list[str]:
     """Build the ``crispasr --backend parler-tts`` argument list."""
     args = [
-        "--backend", "parler-tts",
-        "-m", backbone,
-        "--tts", text,
-        "--tts-output", output,
-        "-tl", language,
+        "--backend",
+        "parler-tts",
+        "-m",
+        backbone,
+        "--tts",
+        text,
+        "--tts-output",
+        output,
+        "-tl",
+        language,
     ]
     if instruct:
         args += ["--instruct", instruct]
@@ -114,9 +119,7 @@ class ParlerTTSGGUFBackend:
             )
             raise RuntimeError(self.load_error)
         if not self._is_model_cached():
-            raise RuntimeError(
-                "Parler TTS GGUF is not downloaded. Use the Model Downloads page to download it first."
-            )
+            raise RuntimeError("Parler TTS GGUF is not downloaded. Use the Model Downloads page to download it first.")
         self.load_error = None
 
     def unload_model(self) -> None:
@@ -163,9 +166,7 @@ class ParlerTTSGGUFBackend:
                 "llama-server.exe in data/models/, or set TWENTYLABS_CRISPASR."
             )
         if not self._is_model_cached():
-            raise RuntimeError(
-                "Parler TTS GGUF is not downloaded. Use the Model Downloads page to download it first."
-            )
+            raise RuntimeError("Parler TTS GGUF is not downloaded. Use the Model Downloads page to download it first.")
 
         backbone = self._get_model_path()
         instruct_text = instruct or voice_prompt.get("instruct", DEFAULT_INSTRUCT)

@@ -101,7 +101,6 @@ export function VideoPreviewView() {
 		<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title="Video Preview"
-				description="Preview video and extract its audio to the studio"
 			/>
 
 			<div className="space-y-1">

@@ -34,7 +34,6 @@ class TestEngineWeights:
 
     def test_torch_only_engines_are_heaviest(self):
         """Torch-only engines should have the highest weights."""
-        torch_only = {"styletts2"}
         # styletts2 should be the heaviest (weight 60 in new scheme)
         assert _ENGINE_WEIGHTS["styletts2"] == 60, "styletts2 should be the heaviest"
 

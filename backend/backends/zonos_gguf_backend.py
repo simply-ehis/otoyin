@@ -71,12 +71,18 @@ def build_tts_args(
 ) -> list[str]:
     """Build the ``crispasr --backend zonos-tts`` argument list."""
     args = [
-        "--backend", "zonos-tts",
-        "-m", backbone,
-        "--tts-codec", codec,
-        "--tts", text,
-        "--tts-output", output,
-        "-tl", language,
+        "--backend",
+        "zonos-tts",
+        "-m",
+        backbone,
+        "--tts-codec",
+        codec,
+        "--tts",
+        text,
+        "--tts-output",
+        output,
+        "-tl",
+        language,
     ]
     if voice_wav:
         args += ["--voice", voice_wav, "--i-have-rights"]
@@ -123,9 +129,7 @@ class ZonosGGUFBackend:
             )
             raise RuntimeError(self.load_error)
         if not self._is_model_cached():
-            raise RuntimeError(
-                "Zonos GGUF is not downloaded. Use the Model Downloads page to download it first."
-            )
+            raise RuntimeError("Zonos GGUF is not downloaded. Use the Model Downloads page to download it first.")
         self.load_error = None
 
     def unload_model(self) -> None:
@@ -173,9 +177,7 @@ class ZonosGGUFBackend:
                 "llama-server.exe in data/models/, or set TWENTYLABS_CRISPASR."
             )
         if not self._is_model_cached():
-            raise RuntimeError(
-                "Zonos GGUF is not downloaded. Use the Model Downloads page to download it first."
-            )
+            raise RuntimeError("Zonos GGUF is not downloaded. Use the Model Downloads page to download it first.")
 
         backbone = self._get_backbone_path()
         codec = self._get_codec_path()

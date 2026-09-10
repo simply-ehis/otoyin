@@ -100,7 +100,6 @@ export function OffersPage() {
 		<div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title="Special Offers"
-				description="Limited-time deals and promo codes"
 			/>
 
 			{isLoading ? (

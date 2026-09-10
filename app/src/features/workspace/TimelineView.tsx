@@ -126,7 +126,6 @@ export function TimelineView() {
 		<div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
 			<ScreenHeader
 				title="Timeline"
-				description="Arrange tracks and scrub your session."
 			/>
 
 			{tracks.length === 0 ? (

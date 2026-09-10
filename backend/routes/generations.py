@@ -409,7 +409,9 @@ async def generate_speech(
         task_manager.complete_generation(generation_id)
         db.delete(generation)
         db.commit()
-        raise HTTPException(status_code=409, detail="Generation already in progress — please wait for the current one to finish") from None
+        raise HTTPException(
+            status_code=409, detail="Generation already in progress — please wait for the current one to finish"
+        ) from None
 
     return generation
 

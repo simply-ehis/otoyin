@@ -19,7 +19,6 @@ from .. import config
 from ..database import Audiobook as DBAudiobook, AudiobookChapter as DBChapter, AudiobookVoiceCast as DBCast, get_db
 from ..errors import (
     ERR_AUDIO_NOT_FOUND,
-    ERR_COVER_TOO_LARGE,
     ERR_EMPTY_CHAPTERS,
     ERR_EMPTY_RENDERED,
     ERR_EMPTY_UTTERANCES,
@@ -759,7 +758,9 @@ async def export_m4b(book_id: str, bitrate: str = "64k", db: Session = Depends(g
     cover_path = config.resolve_storage_path(book.cover_path) if book.cover_path else None
     out = Path(tempfile.mktemp(suffix=".m4b"))
     try:
-        await async_build_m4b(wav_paths, titles, out, cover_path=cover_path, author=book.author, title=book.title, bitrate=bitrate)
+        await async_build_m4b(
+            wav_paths, titles, out, cover_path=cover_path, author=book.author, title=book.title, bitrate=bitrate
+        )
         data = out.read_bytes()
         return StreamingResponse(
             io.BytesIO(data),

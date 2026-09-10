@@ -16,7 +16,7 @@ class TestForceFailIfActive:
     @pytest.mark.asyncio
     async def test_skips_non_active_generation(self):
         """Should not update status if generation is already terminal."""
-        from backend.services import history, task_queue
+        from backend.services import history
         from backend.services.task_queue import _force_fail_if_active
 
         mock_gen = MagicMock()
@@ -25,10 +25,12 @@ class TestForceFailIfActive:
         mock_db = MagicMock()
         mock_db.query.return_value.filter_by.return_value.first.return_value = mock_gen
 
-        with patch("backend.database.get_db", return_value=iter([mock_db])):
-            with patch.object(history, "update_generation_status") as mock_update:
-                await _force_fail_if_active("gen-123", "worker crashed")
-                mock_update.assert_not_called()
+        with (
+            patch("backend.database.get_db", return_value=iter([mock_db])),
+            patch.object(history, "update_generation_status") as mock_update,
+        ):
+            await _force_fail_if_active("gen-123", "worker crashed")
+            mock_update.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_skips_none_generation(self):
@@ -39,10 +41,12 @@ class TestForceFailIfActive:
         mock_db = MagicMock()
         mock_db.query.return_value.filter_by.return_value.first.return_value = None
 
-        with patch("backend.database.get_db", return_value=iter([mock_db])):
-            with patch.object(history, "update_generation_status") as mock_update:
-                await _force_fail_if_active("gen-nonexistent", "error")
-                mock_update.assert_not_called()
+        with (
+            patch("backend.database.get_db", return_value=iter([mock_db])),
+            patch.object(history, "update_generation_status") as mock_update,
+        ):
+            await _force_fail_if_active("gen-nonexistent", "error")
+            mock_update.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_updates_active_generation(self):
@@ -56,16 +60,18 @@ class TestForceFailIfActive:
         mock_db = MagicMock()
         mock_db.query.return_value.filter_by.return_value.first.return_value = mock_gen
 
-        with patch("backend.database.get_db", return_value=iter([mock_db])):
-            with patch.object(history, "update_generation_status") as mock_update:
-                await _force_fail_if_active("gen-active", "timeout")
-                mock_update.assert_called_once_with(
-                    generation_id="gen-active",
-                    status="failed",
-                    db=mock_db,
-                    error="timeout",
-                )
-                mock_db.close.assert_called_once()
+        with (
+            patch("backend.database.get_db", return_value=iter([mock_db])),
+            patch.object(history, "update_generation_status") as mock_update,
+        ):
+            await _force_fail_if_active("gen-active", "timeout")
+            mock_update.assert_called_once_with(
+                generation_id="gen-active",
+                status="failed",
+                db=mock_db,
+                error="timeout",
+            )
+            mock_db.close.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_uses_async_db_session(self):
@@ -79,13 +85,15 @@ class TestForceFailIfActive:
         def sync_get_db():
             return iter([mock_db])
 
-        with patch("backend.database.get_db", side_effect=sync_get_db):
-            with patch.object(history, "update_generation_status"):
-                # If this hangs, the old sync-in-async bug is present
-                await asyncio.wait_for(
-                    _force_fail_if_active("gen-async", "test"),
-                    timeout=2.0,
-                )
+        with (
+            patch("backend.database.get_db", side_effect=sync_get_db),
+            patch.object(history, "update_generation_status"),
+        ):
+            # If this hangs, the old sync-in-async bug is present
+            await asyncio.wait_for(
+                _force_fail_if_active("gen-async", "test"),
+                timeout=2.0,
+            )
 
         mock_db.close.assert_called_once()
 
@@ -95,7 +103,9 @@ class TestForceFailIfActive:
         from backend.services import history
         from backend.services.task_queue import _force_fail_if_active
 
-        with patch("backend.database.get_db", side_effect=RuntimeError("db down")):
-            with patch.object(history, "update_generation_status"):
-                # Should not raise — the function catches exceptions
-                await _force_fail_if_active("gen-db-fail", "error")
+        with (
+            patch("backend.database.get_db", side_effect=RuntimeError("db down")),
+            patch.object(history, "update_generation_status"),
+        ):
+            # Should not raise — the function catches exceptions
+            await _force_fail_if_active("gen-db-fail", "error")

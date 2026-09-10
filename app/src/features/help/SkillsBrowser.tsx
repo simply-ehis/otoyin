@@ -98,7 +98,6 @@ export function SkillsBrowser() {
 		<div className="flex min-h-0 flex-col gap-4">
 			<ScreenHeader
 				title="Skills"
-				description="Reusable recipes: triggers, steps, and the tools each may call."
 			/>
 			<div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
 				<Field label="Skill ID" htmlFor="skill-id">

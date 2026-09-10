@@ -24,7 +24,6 @@ export function SpectrogramView() {
 			<div className="flex flex-wrap items-center justify-between gap-2">
 				<ScreenHeader
 					title="Spectrogram"
-					description="Frequency content over time, rendered on-device"
 				/>
 				<UploadField
 					id="spec-upload"

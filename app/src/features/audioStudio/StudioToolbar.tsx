@@ -3,7 +3,6 @@ import {
 	FolderOpenIcon as FolderOpen,
 	CpuChipIcon as Gauge,
 	MicrophoneIcon as Mic,
-	PlayIcon,
 	PlusIcon as Plus,
 	ArrowUturnRightIcon as Redo2,
 	CheckIcon as Save,
@@ -80,7 +79,6 @@ export function StudioToolbar({
 	return (
 		<ScreenHeader
 			title="Audio Studio"
-			description="Multitrack recording, mixing & effects"
 			helpPath="/audio-studio"
 			className="border-b border-border bg-sidebar shrink-0"
 			actions={
@@ -88,7 +86,7 @@ export function StudioToolbar({
 					<Button
 						variant="ghost"
 						size="sm"
-						className="h-8 text-xs px-2"
+						className="h-7 text-xs px-2"
 						onClick={() => {
 							if (unsaved) {
 								const ok = window.confirm(
@@ -108,7 +106,7 @@ export function StudioToolbar({
 					<Button
 						variant="ghost"
 						size="sm"
-						className="h-8 text-xs px-2"
+						className="h-7 text-xs px-2"
 						onClick={onSave}
 						title="Save session (Ctrl+S)"
 					>
@@ -126,7 +124,7 @@ export function StudioToolbar({
 					<Button
 						variant="ghost"
 						size="sm"
-						className="h-8 text-xs px-2"
+						className="h-7 text-xs px-2"
 						onClick={onPaste}
 						title="Paste clip as track"
 					>
@@ -136,7 +134,7 @@ export function StudioToolbar({
 					<Button
 						variant="ghost"
 						size="sm"
-						className="h-8 text-xs px-2"
+						className="h-7 text-xs px-2"
 						onClick={onLoad}
 						title="Load session (Ctrl+O)"
 					>
@@ -146,7 +144,7 @@ export function StudioToolbar({
 					<Button
 						variant="ghost"
 						size="sm"
-						className="h-8 text-xs px-2"
+						className="h-7 text-xs px-2"
 						onClick={onUndoAutosave}
 						disabled={!canUndoAutosave}
 						title="Undo autosave (restore previous snapshot)"
@@ -154,11 +152,11 @@ export function StudioToolbar({
 						<UndoAuto className="size-3 mr-1" />
 						Undo Save
 					</Button>
-					<div className="w-px h-5 bg-border mx-1" />
+					<div className="w-px h-4 bg-border mx-0.5" />
 					<Button
 						variant="ghost"
 						size="sm"
-						className="h-8 text-xs px-2"
+						className="h-7 text-xs px-2"
 						onClick={onUndo}
 						disabled={undoStackLength === 0}
 						title="Undo (Ctrl+Z)"
@@ -169,7 +167,7 @@ export function StudioToolbar({
 					<Button
 						variant="ghost"
 						size="sm"
-						className="h-8 text-xs px-2"
+						className="h-7 text-xs px-2"
 						onClick={onRedo}
 						disabled={redoStackLength === 0}
 						title="Redo (Ctrl+Y)"
@@ -177,24 +175,24 @@ export function StudioToolbar({
 						<Redo2 className="size-3 mr-1" />
 						Redo
 					</Button>
-					<div className="w-px h-5 bg-border mx-1" />
+					<div className="w-px h-4 bg-border mx-0.5" />
 					<Button
 						variant="ghost"
 						size="sm"
-						className="h-8 text-xs px-2"
+						className="h-7 text-xs px-2"
 						onClick={onToggleAutomation}
 						title={showAutomation ? "Hide automation" : "Show automation"}
 					>
 						<Gauge className="size-3 mr-1" />
 						{showAutomation ? "Auto on" : "Auto off"}
 					</Button>
-					<div className="w-px h-5 bg-border mx-1" />
+					<div className="w-px h-4 bg-border mx-0.5" />
 					<Select
 						value={isolateStem}
 						onValueChange={(v) => onIsolateStemChange(v as IsolationStem)}
 					>
 						<SelectTrigger
-							className="h-8 text-xs w-[110px] px-2"
+							className="h-7 text-xs w-[100px] px-2"
 							title="Stem to isolate from the selected track"
 							aria-label="Stem to isolate"
 						>
@@ -210,7 +208,7 @@ export function StudioToolbar({
 					<Button
 						variant="ghost"
 						size="sm"
-						className="h-8 text-xs px-2"
+						className="h-7 text-xs px-2"
 						onClick={onIsolate}
 						disabled={isolating || !selectedTrackHasAudio}
 						title="Isolate stem from the selected track into a new track"
@@ -221,7 +219,7 @@ export function StudioToolbar({
 					<Button
 						variant="ghost"
 						size="sm"
-						className="h-8 text-xs px-2"
+						className="h-7 text-xs px-2"
 						onClick={onExport}
 						disabled={exporting || !tracksHaveAudio}
 						title="Export mixed audio"
@@ -232,7 +230,7 @@ export function StudioToolbar({
 					<Button
 						variant="ghost"
 						size="sm"
-						className="h-8 text-xs px-2"
+						className="h-7 text-xs px-2"
 						onClick={onExportWithPlugins}
 						disabled={exportWithPlugins || !tracksHaveAnyContent}
 						title="Export with effect chain (server bounce)"
@@ -243,18 +241,14 @@ export function StudioToolbar({
 					<Button
 						variant="default"
 						size="sm"
-						className="h-8 text-xs px-2"
+						className="h-7 text-xs px-2"
 						onClick={onProducePodcast}
 						disabled={!tracksHaveAnyContent}
 						title="Produce a podcast from conversation script"
 					>
-						<PlayIcon className="size-3 mr-1" />
 						<Mic className="size-3 mr-1" />
-						Produce Podcast
+						Podcast
 					</Button>
-					<span className="text-xs text-muted-foreground/50 ml-2">
-						{/* Track count passed as children instead */}
-					</span>
 				</>
 			}
 		/>

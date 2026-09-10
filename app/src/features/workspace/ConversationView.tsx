@@ -145,7 +145,6 @@ export function ConversationView() {
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title="Conversation Mode"
-				description="Multi-speaker dialogue arrangement"
 			/>
 
 			<div className="max-w-md space-y-1">

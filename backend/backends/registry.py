@@ -236,7 +236,16 @@ async def load_engine_model(engine: str, model_size: str = "default") -> None:
     # Check before offloading so we know the true memory state.
     # Subprocess engines (bark, qwen3) and ONNX-only CPU engines skip this
     # because they don't allocate GPU memory.
-    _subprocess_engines = {"qwen3_tts", "bark_small", "fish_speech_s2", "zonos_gguf", "parler_tts_gguf", "acestep_gguf", "rvc_onnx", "openvoice_onnx"}
+    _subprocess_engines = {
+        "qwen3_tts",
+        "bark_small",
+        "fish_speech_s2",
+        "zonos_gguf",
+        "parler_tts_gguf",
+        "acestep_gguf",
+        "rvc_onnx",
+        "openvoice_onnx",
+    }
     estimated_mb = cfg.size_mb if cfg else 0
     skip_vram_check = engine in _subprocess_engines or (cfg is not None and not cfg.gpu_only and estimated_mb < 100)
     if not skip_vram_check and estimated_mb > 0:

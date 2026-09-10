@@ -159,7 +159,6 @@ export function YouTubeDownloadView() {
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title="Download from URL"
-				description="Import audio/video from YouTube, SoundCloud, Vimeo, and 1000+ sites"
 			/>
 
 			<div className="flex max-w-2xl gap-2">

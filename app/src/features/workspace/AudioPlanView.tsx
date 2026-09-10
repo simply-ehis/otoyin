@@ -224,7 +224,6 @@ export function AudioPlanView() {
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title="Audio Plan"
-				description="Generate a full post-production plan"
 			/>
 			<fieldset
 				className="m-0 flex min-w-0 items-center gap-2 border-0 p-0"

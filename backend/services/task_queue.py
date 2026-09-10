@@ -141,14 +141,14 @@ def enqueue_generation(generation_id: str, coro, *, dedup_key: str | None = None
     _queued_generation_ids.add(generation_id)
     try:
         _generation_queue.put_nowait(GenerationJob(generation_id=generation_id, coro=coro, dedup_key=dedup_key))
-    except asyncio.QueueFull:
+    except asyncio.QueueFull as err:
         _queued_generation_ids.discard(generation_id)
         if dedup_key:
             _inflight_dedup_keys.discard(dedup_key)
         raise RuntimeError(
             f"Generation queue is full ({_QUEUE_MAXSIZE} pending). "
             "Wait for the current generation to finish before starting another."
-        )
+        ) from err
 
 
 def cancel_generation(generation_id: str) -> Literal["queued", "running"] | None:
@@ -203,5 +203,7 @@ def compute_generation_dedup_key(
     in-flight window are rejected instead of queued twice.
     """
     normalised = " ".join(text.split()).strip().lower()
-    payload = f"{normalised}|{profile_id}|{engine}|{model_size or ''}|{seed if seed is not None else ''}|{instruct or ''}"
+    payload = (
+        f"{normalised}|{profile_id}|{engine}|{model_size or ''}|{seed if seed is not None else ''}|{instruct or ''}"
+    )
     return hashlib.sha256(payload.encode()).hexdigest()[:16]

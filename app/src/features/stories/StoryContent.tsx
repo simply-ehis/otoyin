@@ -18,6 +18,7 @@ import {
 	ArrowUpTrayIcon,
 	ArrowUturnLeftIcon,
 	ArrowUturnRightIcon,
+	BookOpenIcon,
 	ClipboardDocumentIcon,
 	MusicalNoteIcon,
 	PlusIcon,
@@ -120,8 +121,8 @@ export function StoryContent() {
 		);
 	}, [historyData, story, search]);
 
-	const fail = (title: string) => (error: { message: string }) =>
-		toast({ title, description: error.message, variant: "destructive" });
+	const fail = (title: string) => (error: unknown) =>
+		toast({ title, description: error instanceof Error ? error.message : String(error), variant: "destructive" });
 
 	if (!selectedId) {
 		return (
@@ -210,12 +211,12 @@ export function StoryContent() {
 				{ storyId: story.id, data: { generation_id: clip.id } },
 				{
 					onSuccess: () => setAddOpen(false),
-					onError: (error) =>
-						toast({
-							title: t("storyContent.toast.pasteFailed"),
-							description: error.message,
-							variant: "destructive",
-						}),
+onError: (error: unknown) =>
+											toast({
+												title: t("storyContent.toast.pasteFailed"),
+												description: error instanceof Error ? error.message : String(error),
+												variant: "destructive",
+											}),
 				},
 			);
 		} catch (error: unknown) {
@@ -348,12 +349,12 @@ export function StoryContent() {
 						aria-label={t("storyContent.undo", { defaultValue: "Undo edit" })}
 						onClick={() =>
 							undoEdit.mutate(story.id, {
-								onError: (error) =>
+								onError: (error: unknown) =>
 									toast({
 										title: t("storyContent.toast.undoFailed", {
 											defaultValue: "Nothing to undo",
 										}),
-										description: error.message,
+										description: error instanceof Error ? error.message : String(error),
 										variant: "destructive",
 									}),
 							})
@@ -372,12 +373,12 @@ export function StoryContent() {
 						aria-label={t("storyContent.redo", { defaultValue: "Redo edit" })}
 						onClick={() =>
 							redoEdit.mutate(story.id, {
-								onError: (error) =>
+								onError: (error: unknown) =>
 									toast({
 										title: t("storyContent.toast.redoFailed", {
 											defaultValue: "Nothing to redo",
 										}),
-										description: error.message,
+										description: error instanceof Error ? error.message : String(error),
 										variant: "destructive",
 									}),
 							})
@@ -407,12 +408,12 @@ export function StoryContent() {
 													defaultValue: "Loudness matched across clips",
 												}),
 											}),
-										onError: (error) =>
+										onError: (error: unknown) =>
 											toast({
 												title: t("storyContent.toast.loudnessFailed", {
 													defaultValue: "Match loudness failed",
 												}),
-												description: error.message,
+												description: error instanceof Error ? error.message : String(error),
 												variant: "destructive",
 											}),
 									},
@@ -513,10 +514,10 @@ export function StoryContent() {
 																setAddOpen(false);
 																setSearch("");
 															},
-															onError: (error) =>
+															onError: (error: unknown) =>
 																toast({
 																	title: t("storyContent.toast.addFailed"),
-																	description: error.message,
+																	description: error instanceof Error ? error.message : String(error),
 																	variant: "destructive",
 																}),
 														},
@@ -607,12 +608,12 @@ export function StoryContent() {
 							reorderItems.mutate(
 								{ storyId: story.id, data: { generation_ids: order } },
 								{
-									onError: (error) =>
-										toast({
-											title: t("storyContent.toast.reorderFailed"),
-											description: error.message,
-											variant: "destructive",
-										}),
+								onError: (error: unknown) =>
+									toast({
+										title: t("storyContent.toast.reorderFailed"),
+										description: error instanceof Error ? error.message : String(error),
+										variant: "destructive",
+									}),
 								},
 							);
 						}}
@@ -632,10 +633,10 @@ export function StoryContent() {
 										removeItem.mutate(
 											{ storyId: story.id, itemId: item.id },
 											{
-												onError: (error) =>
+												onError: (error: unknown) =>
 													toast({
 														title: t("storyContent.toast.removeFailed"),
-														description: error.message,
+														description: error instanceof Error ? error.message : String(error),
 														variant: "destructive",
 													}),
 											},

@@ -112,7 +112,6 @@ export function ApiKeysPage() {
 		<div className="flex max-w-2xl flex-col gap-6">
 			<ScreenHeader
 				title="API keys"
-				description="Bring your own cloud providers. Keys are encrypted at rest and used automatically across the app."
 			/>
 			{loading ? (
 				<LoadingState label="Loading providers" lines={4} />

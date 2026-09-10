@@ -59,7 +59,7 @@ export function WorkspacePage() {
 							<Switch
 								checked={isTabVisible(tab)}
 								onCheckedChange={() => toggleTab(tab)}
-								aria-label={`Show ${TAB_LABELS[tab]} in sidebar`}
+								label={`Show ${TAB_LABELS[tab]} in sidebar`}
 							/>
 						}
 					/>

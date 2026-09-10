@@ -73,7 +73,6 @@ export function NoiseReductionView() {
 		<div className="flex h-full max-w-xl flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title="Noise Reduction"
-				description="RNNoise adaptive suppression — upload first, the server path is what gets processed"
 			/>
 
 			<Separator />

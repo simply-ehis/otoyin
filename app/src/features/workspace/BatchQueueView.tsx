@@ -157,7 +157,6 @@ export function BatchQueueView() {
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title="Batch Queue"
-				description="Run scripting functions across many files"
 				actions={
 					<div className="flex items-center gap-2">
 						<Button

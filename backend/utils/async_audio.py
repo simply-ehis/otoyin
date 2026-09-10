@@ -54,11 +54,15 @@ async def async_convert_audio_file(input_path, output_format, bitrate="128k", sa
     return await asyncio.to_thread(convert_audio_file, input_path, output_format, bitrate, sample_rate)
 
 
-async def async_build_m4b(chapter_wavs, chapter_titles, output_path, cover_path=None, author=None, title=None, bitrate="64k"):
+async def async_build_m4b(
+    chapter_wavs, chapter_titles, output_path, cover_path=None, author=None, title=None, bitrate="64k"
+):
     """Build .m4b off the event loop (3x ffmpeg subprocess)."""
     from ..services.audio_conversion import build_m4b
 
-    return await asyncio.to_thread(build_m4b, chapter_wavs, chapter_titles, output_path, cover_path, author, title, bitrate)
+    return await asyncio.to_thread(
+        build_m4b, chapter_wavs, chapter_titles, output_path, cover_path, author, title, bitrate
+    )
 
 
 async def async_apply_effects(audio, sample_rate, effects_chain):

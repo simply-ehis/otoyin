@@ -7,10 +7,8 @@ Covers:
 - Cancel message handling
 """
 
-import asyncio
 import base64
 import io
-import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import numpy as np
@@ -18,11 +16,8 @@ import pytest
 import soundfile as sf
 
 from backend.services.voice_chat import (
-    VoiceChatSession,
     _generate_llm_response,
     create_session,
-    end_session,
-    get_session,
     process_audio_chunk,
 )
 
@@ -95,6 +90,7 @@ class TestToolCallIdFix:
 
     def test_tool_call_id_uses_correct_field(self):
         """Reproduce the old bug: tool_call_id was set to tc.name instead of tc.id."""
+
         # Simulate the data structures
         class FakeToolCall:
             id = "call_abc123"
@@ -116,6 +112,7 @@ class TestToolCallIdFix:
 
     def test_conversation_history_tool_call_structure(self):
         """Verify the assistant message tool_calls array uses tc.id."""
+
         class FakeToolCall:
             id = "call_xyz789"
             name = "search_music"
@@ -195,7 +192,7 @@ class TestStreamingAssembly:
         audio_bytes = buf.read()
 
         assert len(audio_bytes) > 0
-        data, read_sr = sf.read(io.BytesIO(audio_bytes))
+        data, _read_sr = sf.read(io.BytesIO(audio_bytes))
         assert len(data) == sr
 
     def test_assemble_wav_empty_chunks_returns_empty(self):
@@ -233,7 +230,7 @@ class TestStreamingAssembly:
         assert response["audio_chunks"] is not None
         # Verify base64 decodes to valid WAV
         decoded = base64.b64decode(response["audio"])
-        data, read_sr = sf.read(io.BytesIO(decoded))
+        _data, read_sr = sf.read(io.BytesIO(decoded))
         assert read_sr == sr
 
 

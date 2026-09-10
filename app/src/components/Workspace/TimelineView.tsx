@@ -157,7 +157,6 @@ export function TimelineView() {
 			<ScreenHeader
 				icon={<AudioLines className="size-5" />}
 				title="Timeline"
-				description="Arrange tracks and scrub your session"
 			/>
 			<StudioVisualizer className="w-full shrink-0" />
 			{/* Empty state */}

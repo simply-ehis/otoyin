@@ -130,9 +130,7 @@ class AceStepGGUFBackend(BackendBase):
         if self.model is not None:
             return
         if not self._models_cached():
-            raise ModelNotCachedError(
-                "ACE-Step GGUF models are not downloaded. Use the Model Downloads page first."
-            )
+            raise ModelNotCachedError("ACE-Step GGUF models are not downloaded. Use the Model Downloads page first.")
         self.model = True  # Mark as loaded (models are on disk, server starts on demand)
         self.load_error = None
 
@@ -202,9 +200,7 @@ class AceStepGGUFBackend(BackendBase):
             )
 
         if not self._models_cached():
-            raise ModelNotCachedError(
-                "ACE-Step GGUF models are not downloaded. Use the Model Downloads page first."
-            )
+            raise ModelNotCachedError("ACE-Step GGUF models are not downloaded. Use the Model Downloads page first.")
 
         models_dir = self._models_dir()
         timeout_s = float(os.environ.get("TWENTYLABS_ACESTEP_TIMEOUT", DEFAULT_TIMEOUT_S))
@@ -232,8 +228,10 @@ class AceStepGGUFBackend(BackendBase):
             def _run_lm() -> None:
                 args = [
                     str(lm_bin),
-                    "--request", request_path,
-                    "--lm", str(models_dir / LM_FILE),
+                    "--request",
+                    request_path,
+                    "--lm",
+                    str(models_dir / LM_FILE),
                 ]
                 proc = subprocess.run(
                     args,
@@ -256,11 +254,16 @@ class AceStepGGUFBackend(BackendBase):
             def _run_synth() -> None:
                 args = [
                     str(synth_bin),
-                    "--request", enriched_path,
-                    "--embedding", str(models_dir / TEXT_ENCODER_FILE),
-                    "--dit", str(models_dir / DIT_FILE),
-                    "--vae", str(models_dir / VAE_FILE),
-                    "--out", out_wav,
+                    "--request",
+                    enriched_path,
+                    "--embedding",
+                    str(models_dir / TEXT_ENCODER_FILE),
+                    "--dit",
+                    str(models_dir / DIT_FILE),
+                    "--vae",
+                    str(models_dir / VAE_FILE),
+                    "--out",
+                    out_wav,
                 ]
                 proc = subprocess.run(
                     args,
@@ -298,6 +301,7 @@ class AceStepGGUFBackend(BackendBase):
         finally:
             try:
                 import shutil
+
                 shutil.rmtree(tmpdir, ignore_errors=True)
             except OSError:
                 pass

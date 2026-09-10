@@ -189,6 +189,7 @@ DESIGN_CAPABLE_ENGINES: dict[str, dict] = {
     },
 }
 
+
 def get_voice_design_capabilities() -> dict:
     """Return per-engine voice design capability info for the frontend."""
     return {

@@ -109,7 +109,15 @@ _ONNX_PREFERRED_ENGINES = {
 }
 
 # Engines that run as subprocesses — no GPU memory, no torch dependency.
-_SUBPROCESS_ENGINES = {"qwen3_tts", "bark_small", "zonos_gguf", "parler_tts_gguf", "acestep_gguf", "rvc_onnx", "openvoice_onnx"}
+_SUBPROCESS_ENGINES = {
+    "qwen3_tts",
+    "bark_small",
+    "zonos_gguf",
+    "parler_tts_gguf",
+    "acestep_gguf",
+    "rvc_onnx",
+    "openvoice_onnx",
+}
 
 
 def _score_engine(engine: str, cached: bool) -> float:

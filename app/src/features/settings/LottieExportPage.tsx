@@ -78,7 +78,6 @@ export function LottieExportPage() {
 		<div className="flex max-w-2xl flex-col gap-6">
 			<ScreenHeader
 				title="Lottie export"
-				description="Package generated audio for Lottie animations."
 			/>
 			<Card>
 				<CardTitle className="text-sm">Export settings</CardTitle>

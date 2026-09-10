@@ -181,7 +181,6 @@ export function StudioView() {
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title="Studio"
-				description="Synthesize, sequence, and design sound"
 			/>
 			<Tabs defaultValue="instruments">
 				<TabsList aria-label="Studio sections">

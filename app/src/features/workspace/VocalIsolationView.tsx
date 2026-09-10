@@ -272,7 +272,6 @@ export function VocalIsolationView() {
 		>
 			<ScreenHeader
 				title="Stem Separation"
-				description="Split any recording into vocals, drums, bass, and other — powered by Demucs HTDemucs"
 			/>
 
 			<Separator />

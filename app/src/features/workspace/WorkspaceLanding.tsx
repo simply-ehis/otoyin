@@ -52,7 +52,6 @@ export function WorkspaceLanding() {
 		<div className="flex h-full flex-col gap-6 overflow-y-auto">
 			<ScreenHeader
 				title="Workspace"
-				description="Audio production tools — pick one to get started."
 				helpPath="/workspace"
 			/>
 

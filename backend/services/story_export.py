@@ -30,7 +30,7 @@ def _build_epub_book(
 
     spine = ["nav"]
     toc = []
-    for idx, (chapter, link_title, link_id) in enumerate(chapters):
+    for _idx, (chapter, link_title, link_id) in enumerate(chapters):
         file_name = chapter.file_name
         book.add_item(chapter)
         spine.append(chapter)
@@ -143,8 +143,12 @@ def export_story_to_pdf(
 
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
-        buffer, pagesize=letter,
-        rightMargin=inch, leftMargin=inch, topMargin=inch, bottomMargin=inch,
+        buffer,
+        pagesize=letter,
+        rightMargin=inch,
+        leftMargin=inch,
+        topMargin=inch,
+        bottomMargin=inch,
     )
 
     styles, title_style, chapter_style, body_style = _get_pdf_styles()
@@ -214,9 +218,7 @@ def export_project_to_epub(
             ch = _make_chapter(scene_name, f"scene_{idx + 1}.xhtml", content)
             chapters.append((ch, scene_name, f"sc{idx + 1}"))
 
-    return _build_epub_book(
-        project_id, project_data.get("name", "Untitled Project"), chapters, [], extra_css=extra_css
-    )
+    return _build_epub_book(project_id, project_data.get("name", "Untitled Project"), chapters, [], extra_css=extra_css)
 
 
 def export_project_to_pdf(
@@ -235,14 +237,22 @@ def export_project_to_pdf(
 
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
-        buffer, pagesize=letter,
-        rightMargin=inch, leftMargin=inch, topMargin=inch, bottomMargin=inch,
+        buffer,
+        pagesize=letter,
+        rightMargin=inch,
+        leftMargin=inch,
+        topMargin=inch,
+        bottomMargin=inch,
     )
 
-    styles, title_style, scene_style, body_style = _get_pdf_styles()
+    styles, title_style, scene_style, _body_style = _get_pdf_styles()
     dialogue_style = ParagraphStyle(
-        "Dialogue", parent=styles["Normal"], fontSize=12, leading=16,
-        spaceAfter=8, leftIndent=36,
+        "Dialogue",
+        parent=styles["Normal"],
+        fontSize=12,
+        leading=16,
+        spaceAfter=8,
+        leftIndent=36,
     )
     elements = []
 
@@ -273,10 +283,12 @@ def export_project_to_pdf(
                 character = d.get("character", "Unknown")
                 text = d.get("text", "")
                 if text:
-                    elements.append(Paragraph(
-                        f"<b>{html_escape(character)}:</b> {html_escape(text)}",
-                        dialogue_style,
-                    ))
+                    elements.append(
+                        Paragraph(
+                            f"<b>{html_escape(character)}:</b> {html_escape(text)}",
+                            dialogue_style,
+                        )
+                    )
 
             elements.append(PageBreak())
 

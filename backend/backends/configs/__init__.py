@@ -436,7 +436,9 @@ def get_vc_backend(engine: str):
     if engine == "openvoice_onnx":
         from ..openvoice_onnx_backend import openvoice_onnx_backend
 
-        lifecycle_manager.register("openvoice_onnx", openvoice_onnx_backend.is_loaded, openvoice_onnx_backend.unload_model)
+        lifecycle_manager.register(
+            "openvoice_onnx", openvoice_onnx_backend.is_loaded, openvoice_onnx_backend.unload_model
+        )
         return openvoice_onnx_backend
     if engine == "rvc_onnx":
         from ..rvc_onnx_backend import rvc_onnx_backend
@@ -448,7 +450,9 @@ def get_vc_backend(engine: str):
 
         lifecycle_manager.register("cloud", cloud_vc_backend.is_loaded, cloud_vc_backend.unload_model)
         return cloud_vc_backend
-    raise ValueError(f"Unknown voice-conversion engine: {engine!r} (expected rvc_onnx, seed_vc, openvoice_onnx, or cloud)")
+    raise ValueError(
+        f"Unknown voice-conversion engine: {engine!r} (expected rvc_onnx, seed_vc, openvoice_onnx, or cloud)"
+    )
 
 
 def _get_cloud_vc_configs() -> list[ModelConfig]:

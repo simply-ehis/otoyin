@@ -76,7 +76,6 @@ export function ModelHealthPage() {
 		<div className="flex max-w-3xl flex-col gap-6">
 			<ScreenHeader
 				title="System"
-				description="Model health, VRAM, and gate status."
 			/>
 			<section className="rounded-md border border-border bg-card p-4">
 				<div className="flex items-center justify-between">

@@ -209,7 +209,14 @@ PRODUCTS: list[dict[str, Any]] = [
         "paid": True,
         "quality_score": 6,
     },
-    {"id": "zonos-v0.1-gguf", "name": "Zonos v0.1 (GGUF)", "category": "tts", "price_usd": 32, "paid": True, "quality_score": 9},
+    {
+        "id": "zonos-v0.1-gguf",
+        "name": "Zonos v0.1 (GGUF)",
+        "category": "tts",
+        "price_usd": 32,
+        "paid": True,
+        "quality_score": 9,
+    },
     {
         "id": "qwen3-tts-1.7b",
         "name": "Qwen3-TTS 12Hz 1.7B Base (GGUF)",

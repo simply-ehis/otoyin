@@ -139,7 +139,6 @@ export function TranscriptEditView() {
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title="Transcript Edit"
-				description="Click any word to play from it — select words to cut them"
 			/>
 
 			<div className="flex max-w-xl items-center gap-2">

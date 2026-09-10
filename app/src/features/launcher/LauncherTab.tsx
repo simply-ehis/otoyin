@@ -329,10 +329,6 @@ export function LauncherTab() {
 		<div className="flex h-full flex-col gap-3 overflow-y-auto p-4">
 			<ScreenHeader
 				title={t("launcher.title", { defaultValue: "Clip Launcher" })}
-				description={t("launcher.description", {
-					defaultValue:
-						"Trigger clips across tracks in real time. Launch scenes or individual clips.",
-				})}
 				actions={
 					<div className="flex items-center gap-2">
 						<Select

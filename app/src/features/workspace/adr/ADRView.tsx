@@ -245,7 +245,6 @@ export function ADRView() {
 			<div className="flex h-full flex-col items-center justify-center gap-4 p-8">
 				<ScreenHeader
 					title="ADR Studio"
-					description="Create a session to start recording dialogue replacement"
 				/>
 				<div className="flex w-full max-w-md items-center gap-2">
 					<Input
@@ -313,7 +312,6 @@ export function ADRView() {
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title="ADR Studio"
-				description="Dialogue replacement and take comping"
 			/>
 			<div className="flex flex-wrap items-center justify-between gap-2">
 				<div className="flex min-w-0 items-center gap-2">

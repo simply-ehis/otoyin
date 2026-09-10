@@ -96,6 +96,7 @@ def _parse_ws_message(raw: str) -> WSMessage:
         case _:
             raise ValueError(f"Unknown message type: {msg_type!r}")
 
+
 router = APIRouter(prefix="/voice-chat", tags=["voice-chat"])
 
 # Allowed WebSocket origins for local-first app
