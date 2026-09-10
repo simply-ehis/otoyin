@@ -60,9 +60,21 @@ def _resolve_gguf_filename(repo_id: str, quant_tag: str) -> str:
     list the repo and pick the one file matching the quant tag, excluding
     non-weight artifacts.
     """
+    import concurrent.futures
+
     from huggingface_hub import list_repo_files
 
-    files = list_repo_files(repo_id)
+    # list_repo_files has no built-in timeout; wrap it so a slow HF API
+    # response doesn't block the download executor indefinitely.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(list_repo_files, repo_id)
+        try:
+            files = future.result(timeout=30)
+        except concurrent.futures.TimeoutError:
+            raise TimeoutError(
+                f"HuggingFace API timed out listing files in {repo_id} — "
+                "check your network connection and retry."
+            ) from None
     candidates = [
         f
         for f in files

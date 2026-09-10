@@ -74,9 +74,12 @@ export class ModelsMethods extends CapturesMethods {
 	async loadModel(
 		engine: string,
 		modelSize = "default",
+		modelName?: string,
 	): Promise<{ message: string }> {
+		const params = new URLSearchParams({ engine, model_size: modelSize });
+		if (modelName) params.set("model_name", modelName);
 		return this.request<{ message: string }>(
-			`/models/load?engine=${encodeURIComponent(engine)}&model_size=${encodeURIComponent(modelSize)}`,
+			`/models/load?${params.toString()}`,
 		);
 	}
 

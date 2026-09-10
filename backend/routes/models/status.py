@@ -188,7 +188,7 @@ async def get_model_status():
     get_backend_type()
     task_manager = get_task_manager()
 
-    from ...services.model_registry import is_downloaded, reconcile_cached_backfill
+    from ...services.model_registry import is_downloaded
 
     active_downloads = task_manager.get_active_downloads()
     active_download_names = {t.model_name for t in active_downloads if t.status == "downloading"}
@@ -286,13 +286,6 @@ async def get_model_status():
                 logger.debug("Entitlement check failed for %s: %s", config["model_name"], e)
                 entitled = False
 
-            # The gap, exposed directly: files on disk (or in memory) but no
-            # manifest row — the Store would offer a download for a model that
-            # can already generate. The reconcile after the loop heals it;
-            # this response reports the honest pre-heal state so the UI can
-            # keep offering generate instead of a download.
-            manifest_backfill_pending = not entitled and not is_downloading and (downloaded or loaded)
-
             statuses.append(
                 _build_model_status(
                     config,
@@ -301,7 +294,6 @@ async def get_model_status():
                     size_mb,
                     loaded,
                     entitled,
-                    manifest_backfill_pending,
                 )
             )
         except Exception as e:
@@ -314,19 +306,6 @@ async def get_model_status():
 
             is_downloading = config["hf_repo_id"] in active_download_repos
             statuses.append(_build_model_status(config, False, is_downloading, None, loaded, False))
-
-    # Self-heal manifest↔disk drift (cached-but-unrecorded models), now that
-    # this response's truth is computed. TTL-gated inside; a no-op when
-    # nothing has drifted. Runs here (not only at startup) so a model that
-    # lands on disk while rows already exist flips from needs-download to
-    # cached on the next read without an app restart — and without inventing
-    # rows for genuinely absent models. This response reports the pre-heal
-    # state (gap flag set); the next read confirms the healed manifest.
-    if not has_active:
-        try:
-            reconcile_cached_backfill()
-        except Exception:
-            logger.warning("Cached-model backfill failed", exc_info=True)
 
     resp = models.ModelStatusListResponse(models=statuses)
     # Cache only when idle — downloads must be reflected immediately

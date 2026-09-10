@@ -335,6 +335,12 @@ export function buildFilteredProducts(
 		});
 	}
 	return list.sort((a, b) => {
+		// Translation always last (collapsed section at bottom)
+		const aTrans = a.category === "translation" ? 1 : 0;
+		const bTrans = b.category === "translation" ? 1 : 0;
+		if (aTrans !== bTrans) {
+			return aTrans - bTrans;
+		}
 		// Installed always first
 		const aInst = installed.has(a.id) || owned.has(a.id) ? 0 : 1;
 		const bInst = installed.has(b.id) || owned.has(b.id) ? 0 : 1;

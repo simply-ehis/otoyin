@@ -402,7 +402,7 @@ export function StorePage() {
 	const activateMut = useMutation({
 		mutationFn: async (id: string) => {
 			const m = models?.find((x) => x.model_name === id);
-			return apiClient.loadModel(m?.engine ?? id);
+			return apiClient.loadModel(m?.engine ?? id, "default", m?.model_name);
 		},
 		onMutate: (id) => setActivatingId(id),
 		onSuccess: async (_data, id) => {

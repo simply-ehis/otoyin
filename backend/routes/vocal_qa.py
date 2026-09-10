@@ -123,9 +123,15 @@ async def vocal_qa(data: VocalQARequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=ERR_AUDIO_NOT_FOUND)
 
     try:
+        from ..backends.configs import get_all_model_configs
         from ..backends.registry import get_stt_backend
+        from ..services.model_registry import is_downloaded
         from ..utils.model_lifecycle import lifecycle_manager
 
+        # Manifest gate: faster-whisper must be downloaded via the Store.
+        cfg = next((c for c in get_all_model_configs() if c.engine == "faster-whisper" and c.model_size == (data.model or "tiny.en")), None)
+        if cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size):
+            raise HTTPException(status_code=400, detail=f"Download this model from the Store first ({cfg.model_name})")
         stt = get_stt_backend("faster-whisper")
         lifecycle_manager.mark_model_used("faster-whisper")
         words_raw = await stt.transcribe_with_words(str(resolved), language=data.language, model_size=data.model)

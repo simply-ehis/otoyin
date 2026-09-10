@@ -65,8 +65,15 @@ def api_tts_generate(text: str, voice_profile_id: str, engine: str = "", languag
 
     from .. import config
     from ..backends import get_tts_backend_for_engine
+    from ..backends.configs import get_all_model_configs
     from ..database import Generation as DBGeneration, get_db
+    from ..services.model_registry import is_downloaded
     from ..utils.audio import save_audio
+
+    # Manifest gate: TTS engine must be downloaded via the Store.
+    cfg = next((c for c in get_all_model_configs() if c.engine == engine), None)
+    if cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size):
+        return {"error": f"Download this model from the Store first ({cfg.model_name})"}
 
     backend = get_tts_backend_for_engine(engine)
     if backend is None:

@@ -48,7 +48,13 @@ async def get_word_timestamps(generation_id: str):
     stt = get_stt_backend("faster-whisper")
     lifecycle_manager.mark_model_used("faster-whisper")
     if not stt.is_loaded():
-        # Try to load the default model (tiny.en)
+        # Manifest gate: whisper must be downloaded via the Store.
+        from ..backends.configs import get_all_model_configs
+        from ..services.model_registry import is_downloaded
+
+        cfg = next((c for c in get_all_model_configs() if c.engine == "faster-whisper" and c.model_size == "tiny.en"), None)
+        if cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size):
+            raise HTTPException(status_code=400, detail=f"Download this model from the Store first ({cfg.model_name})")
         if not stt._is_model_cached("tiny.en"):
             raise HTTPException(
                 status_code=400, detail="Whisper model not downloaded. Install 'whisper-tiny-en' from the Store."
@@ -109,6 +115,13 @@ async def delete_words(generation_id: str, request: DeleteWordsRequest):
     stt = get_stt_backend("faster-whisper")
     lifecycle_manager.mark_model_used("faster-whisper")
     if not stt.is_loaded():
+        # Manifest gate: whisper must be downloaded via the Store.
+        from ..backends.configs import get_all_model_configs
+        from ..services.model_registry import is_downloaded
+
+        cfg = next((c for c in get_all_model_configs() if c.engine == "faster-whisper" and c.model_size == "tiny.en"), None)
+        if cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size):
+            raise HTTPException(status_code=400, detail=f"Download this model from the Store first ({cfg.model_name})")
         if not stt._is_model_cached("tiny.en"):
             raise HTTPException(
                 status_code=400, detail="Whisper model not downloaded. Install 'whisper-tiny-en' from the Store."

@@ -18,7 +18,17 @@
           const resolved = theme === 'system'
             ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
             : theme;
-          if (resolved === 'dark') document.documentElement.classList.add('dark');
+          // Apply dark class for dark themes
+          const DARK_THEMES = ['dark', 'di-stefano', 'stripe', 'mesh-dark'];
+          if (DARK_THEMES.includes(resolved)) {
+            document.documentElement.classList.add('dark');
+          }
+          // Apply special theme class
+          if (resolved === 'di-stefano') {
+            document.documentElement.classList.add('di-stefano');
+          } else if (resolved !== 'light' && resolved !== 'dark') {
+            document.documentElement.classList.add('theme-' + resolved);
+          }
         } catch (_) {}
       })();
     </script>

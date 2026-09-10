@@ -247,10 +247,9 @@ export function StoreProductCard({
 						<div className="flex items-center gap-1 text-xs text-warning-text">
 							<Spinner size="xs" />
 							<span className="truncate">
-								{downloadTask.filename ?? "Downloading…"}{" "}
 								{downloadTask.progress
-									? `· ${downloadTask.progress.toFixed(0)}%`
-									: ""}
+									? `${downloadTask.filename ?? "Downloading"} · ${downloadTask.progress.toFixed(0)}%`
+									: "Preparing download…"}
 							</span>
 						</div>
 					</div>

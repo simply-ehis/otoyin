@@ -190,7 +190,12 @@ def _quantize_onnx_if_needed(config, model_dir: Path):
 
 async def _download_model_files(config, model_name: str, tracker: HFProgressTracker, progress_manager):
     """Fetch the model files for one config (single attempt)."""
+    import os
+
     from huggingface_hub import hf_hub_download, snapshot_download
+
+    # Prevent hf_hub_download from blocking indefinitely on slow networks.
+    os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "120")
 
     loop = asyncio.get_running_loop()
 
@@ -519,7 +524,7 @@ async def trigger_model_download(request: models.ModelDownloadRequest, db: Sessi
         model_name=request.model_name,
         current=0,
         total=0,
-        filename="Connecting to HuggingFace...",
+        filename="Preparing download…",
         status="downloading",
     )
 

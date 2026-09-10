@@ -44,10 +44,16 @@ async def llm_extract_characters(chapters: list[dict], sample_chars: int = 6000)
 
     try:
         from ..backends import get_llm_backend_for_engine
+        from ..backends.configs import get_all_model_configs
+        from ..services.model_registry import is_downloaded
         from ..utils.model_lifecycle import lifecycle_manager
 
         backend = get_llm_backend_for_engine("gguf_llm")
         lifecycle_manager.mark_model_used("gguf_llm")
+        # Manifest gate: planner must be downloaded via the Store.
+        cfg = next((c for c in get_all_model_configs() if c.engine == "gguf_llm"), None)
+        if cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size):
+            return heuristic_characters(sample)
         # Respect model_size None handling — use backend default
         size = getattr(backend, "model_size", None)
         try:

@@ -284,12 +284,12 @@ def is_engine_cached(engine: str) -> bool:
 
 
 def pick_cached_tts_engine(preferred: str | None = None) -> str | None:
-    """Resolve a TTS engine from downloaded models only — never a default.
+    """Resolve a TTS engine from manifest-entitled models only — never a default.
 
-    Returns ``preferred`` when it is cached; otherwise the first cached
-    engine in the *dynamic* hardware-aware preference order; otherwise
-    ``None`` (caller must surface a missing-model error with the
-    recommended pack).
+    Returns ``preferred`` when it is entitled (manifest row + on disk);
+    otherwise the first entitled engine in the *dynamic* hardware-aware
+    preference order; otherwise ``None`` (caller must surface a
+    missing-model error with the recommended pack).
 
     The dynamic ranking prefers:
     1. ONNX-only tiny engines (kitten_tts, moss_tts_nano) on any hardware
@@ -298,11 +298,23 @@ def pick_cached_tts_engine(preferred: str | None = None) -> str | None:
     4. Cached engines over non-cached ones
     5. Lighter torch engines over heavier ones, especially on CPU-only hosts
     """
-    if preferred and is_engine_cached(preferred):
+    from ..backends.configs import get_all_model_configs
+    from ..services.model_registry import is_downloaded
+
+    configs = get_all_model_configs()
+
+    def _entitled(eng: str) -> bool:
+        """True if the engine has at least one config with a manifest row."""
+        return any(
+            c.engine == eng and is_downloaded(c.model_name, c.model_size)
+            for c in configs
+        )
+
+    if preferred and _entitled(preferred):
         return preferred
     preference = get_tts_preference_order()
     for engine in preference:
-        if is_engine_cached(engine):
+        if _entitled(engine):
             return engine
     return None
 

@@ -9,12 +9,15 @@ import { AudioKeepAlive } from "@/components/AudioPlayer/AudioKeepAlive";
 import { ErrorBoundary } from "@/components/ErrorBoundary/ErrorBoundary";
 import { TitleBarDragRegion } from "@/components/TitleBarDragRegion";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useThemeSync } from "@/hooks/useThemeSync";
 import { TOP_SAFE_AREA_PADDING } from "@/lib/constants/ui";
+import { applyThemeAccent } from "@/lib/design-system";
 import { useServerErrorToast } from "@/lib/hooks/useServerErrorToast";
 import { useStory } from "@/lib/hooks/useStories";
 import { cn } from "@/lib/utils/cn";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useStoryStore } from "@/stores/storyStore";
+import { useUIStore } from "@/stores/uiStore";
 
 // Lazy-load heavy overlay components — only rendered when opened
 const AssistantPanel = lazy(() =>
@@ -64,6 +67,13 @@ interface AppFrameProps {
 
 export function AppFrame({ children }: AppFrameProps) {
 	useServerErrorToast();
+	useThemeSync();
+	const theme = useUIStore((s) => s.theme);
+
+	useEffect(() => {
+		applyThemeAccent(theme);
+	}, [theme]);
+
 	const [assistantOpen, setAssistantOpen] = useState(false);
 	const [helpOpen, setHelpOpen] = useState(false);
 	const [tourOpen, setTourOpen] = useState(false);

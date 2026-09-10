@@ -73,6 +73,15 @@ async def ensure_kokoro_preloaded() -> None:
                 logger.debug("Kokoro ONNX not cached — skipping preload")
                 _kokoro_event.set()
                 return
+            # Manifest gate: don't preload models not downloaded via the Store.
+            from ..backends.configs import get_all_model_configs
+            from ..services.model_registry import is_downloaded
+
+            cfg = next((c for c in get_all_model_configs() if c.engine == "kokoro"), None)
+            if cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size):
+                logger.debug("Kokoro ONNX not entitled — skipping preload")
+                _kokoro_event.set()
+                return
             from ..database import get_db
             from ..services.settings import get_generation_settings
 
@@ -111,6 +120,15 @@ async def ensure_planner_preloaded() -> None:
             backend = get_llm_backend_for_engine("gguf_llm")
             if not backend._is_model_cached(backend.model_size):
                 logger.debug("Planner GGUF not cached — skipping preload")
+                _planner_event.set()
+                return
+            # Manifest gate: don't preload models not downloaded via the Store.
+            from ..backends.configs import get_all_model_configs
+            from ..services.model_registry import is_downloaded
+
+            cfg = next((c for c in get_all_model_configs() if c.engine == "gguf_llm"), None)
+            if cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size):
+                logger.debug("Planner GGUF not entitled — skipping preload")
                 _planner_event.set()
                 return
             if not check_memory("planner LLM preload", required_mb=400):

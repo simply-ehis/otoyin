@@ -45,6 +45,13 @@ async def generate_music(data: MusicGenerateRequest):
             status_code=400,
             detail=f"That music engine isn't in the catalog. Supported: {', '.join(MUSIC_ENGINES)}",
         )
+    # Manifest gate: music engines must be downloaded via the Store.
+    from ..backends.configs import get_all_model_configs
+    from ..services.model_registry import is_downloaded
+
+    cfg = next((c for c in get_all_model_configs() if c.engine == data.engine), None)
+    if cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size):
+        raise HTTPException(status_code=400, detail=f"Download this model from the Store first ({cfg.model_name})")
     backend = get_music_backend(data.engine)
     if not backend.is_available():
         raise HTTPException(status_code=503, detail=ERR_ENGINE_NOT_AVAILABLE)
@@ -111,6 +118,13 @@ async def generate_sfx(data: SFXGenerateRequest):
             status_code=400,
             detail=f"That SFX engine isn't in the catalog. Supported: {', '.join(MUSIC_ENGINES)}",
         )
+    # Manifest gate: SFX engines must be downloaded via the Store.
+    from ..backends.configs import get_all_model_configs
+    from ..services.model_registry import is_downloaded
+
+    cfg = next((c for c in get_all_model_configs() if c.engine == data.engine), None)
+    if cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size):
+        raise HTTPException(status_code=400, detail=f"Download this model from the Store first ({cfg.model_name})")
     backend = get_music_backend(data.engine)
     if not backend.is_available():
         raise HTTPException(status_code=503, detail=ERR_ENGINE_NOT_AVAILABLE)

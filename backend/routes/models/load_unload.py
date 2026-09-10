@@ -8,12 +8,16 @@ from .common import logger, router
 
 
 @router.post("/models/load")
-async def load_model(engine: str | None = None, model_size: str = "default"):
+async def load_model(engine: str | None = None, model_size: str = "default", model_name: str | None = None):
     """Load a TTS model, offloading any other resident TTS engine first.
 
     Passing ``engine`` loads that specific provider; omit it to load the default
-    TTS engine. Switching the active provider frees the previous model
+    TTS engine. Switching the active provider frees the previous model's memory
     immediately (single resident TTS slot enforced in the registry).
+
+    ``model_name`` is optional but recommended: when multiple configs share the
+    same engine key (e.g. all LLM planners use ``gguf_llm``), the manifest gate
+    needs the exact model_name to verify the right config was downloaded.
     """
     from ...backends import load_engine_model
 
@@ -27,16 +31,32 @@ async def load_model(engine: str | None = None, model_size: str = "default"):
     from ...backends import get_all_model_configs
     from ...services.model_registry import MODEL_NOT_DOWNLOADED_MSG, is_downloaded
 
-    cfg = next((c for c in get_all_model_configs() if c.engine == target), None)
+    if model_name:
+        # Precise lookup: find the exact config by model_name
+        cfg = next((c for c in get_all_model_configs() if c.model_name == model_name), None)
+    else:
+        # Legacy fallback: find the first config matching engine + model_size
+        cfg = next(
+            (c for c in get_all_model_configs() if c.engine == target and c.model_size == model_size),
+            None,
+        )
+        if cfg is None:
+            # Broader fallback: first config matching engine only
+            cfg = next((c for c in get_all_model_configs() if c.engine == target), None)
     if cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size):
         raise HTTPException(status_code=400, detail=f"{MODEL_NOT_DOWNLOADED_MSG} ({cfg.model_name})")
 
     try:
-        await load_engine_model(target, model_size)
+        # Use the resolved config's model_size when available — the query
+        # param may be "default" but GGUF engines need the exact size tag
+        # (e.g. "4B-Q4_K_M") so the registry gate and backend load the
+        # right model variant.
+        resolved_size = cfg.model_size if cfg else model_size
+        await load_engine_model(target, resolved_size)
         from ...utils.model_lifecycle import lifecycle_manager
 
         lifecycle_manager.mark_model_used(target)
-        return {"message": f"Model {target} ({model_size}) loaded successfully"}
+        return {"message": f"Model {target} ({resolved_size}) loaded successfully"}
     except Exception as e:
         logger.exception("Failed to load model %s", target)
         raise HTTPException(status_code=500, detail=ERR_MODEL_LOAD_FAILED) from e

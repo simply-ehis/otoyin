@@ -47,10 +47,16 @@ def register_generation_tools(mcp: FastMCP) -> None:
         mode: str = "generate",
     ) -> dict[str, Any]:
         from ...backends import get_music_backend
+        from ...backends.configs import get_all_model_configs
         from ...backends.protocols import MUSIC_ENGINES
+        from ...services.model_registry import is_downloaded
 
         if engine not in MUSIC_ENGINES:
             raise ValueError(f"Unknown music engine '{engine}'. Supported: {', '.join(MUSIC_ENGINES)}")
+        # Manifest gate: music engines must be downloaded via the Store.
+        cfg = next((c for c in get_all_model_configs() if c.engine == engine), None)
+        if cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size):
+            raise ValueError(f"Download this model from the Store first ({cfg.model_name})")
         backend = get_music_backend(engine)
         if not backend.is_available():
             raise ValueError(f"Music engine '{engine}' not available.")

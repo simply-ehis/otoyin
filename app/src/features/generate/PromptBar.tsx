@@ -2,14 +2,19 @@ import {
 	ArrowUpTrayIcon,
 	ChevronDownIcon,
 	ChevronUpIcon,
+	FingerPrintIcon,
 	SparklesIcon,
 } from "@heroicons/react/24/outline";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "@/lib/api/client";
-import type { EffectPresetResponse } from "@/lib/api/types";
+import type {
+	EffectPresetResponse,
+	ModelStatusListResponse,
+	PresetVoice,
+} from "@/lib/api/types";
 import { getLanguageOptionsForEngine } from "@/lib/constants/languages";
 import { useGenerationForm } from "@/lib/hooks/useGenerationForm";
 import { useProfile, useProfiles } from "@/lib/hooks/useProfiles";
@@ -163,6 +168,71 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 		form.setValue("supportsInstruct", supportsInstruct);
 	}, [form, supportsInstruct]);
 
+	// Get model status for preset voices and engine capabilities
+	const { data: modelStatus } = useQuery<ModelStatusListResponse>({
+		queryKey: ["modelStatus"],
+		queryFn: () => apiClient.getModelStatus(),
+		staleTime: 60_000,
+	});
+
+	// Get preset voices for the current engine directly from model status
+	const enginePresetVoices: PresetVoice[] = (() => {
+		if (!engine || !modelStatus?.models) {
+			return [];
+		}
+		const model = modelStatus.models.find(
+			(m) => (m.engine ?? m.model_name) === engine,
+		);
+		return model?.preset_voices ?? [];
+	})();
+
+	// Check engine capabilities for clone/design buttons
+	const engineCaps = modelStatus?.models.find(
+		(m) => (m.engine ?? m.model_name) === engine,
+	);
+	const supportsClone = !!engineCaps?.clone_voice;
+	const supportsDesign = !!engineCaps?.voice_design;
+
+	// Auto-create a profile from a preset voice when selected from the dropdown
+	const handlePresetVoiceSelect = useCallback(
+		async (voice: PresetVoice) => {
+			try {
+				// Check if a profile already exists for this preset voice
+				const existing = profiles?.find(
+					(p) => p.preset_engine === engine && p.preset_voice_id === voice.id,
+				);
+				if (existing) {
+					setSelectedProfileId(existing.id);
+					setVoiceOpen(false);
+					return;
+				}
+				// Create a new profile for this preset voice
+				const created = await apiClient.createProfile({
+					name: voice.name,
+					language: (voice.language ?? "en") as never,
+					voice_type: "preset",
+					preset_engine: engine,
+					preset_voice_id: voice.id,
+				});
+				// Refresh profiles list and select the new one
+				await queryClient.invalidateQueries({ queryKey: ["profiles"] });
+				setSelectedProfileId(created.id);
+				setVoiceOpen(false);
+			} catch (error) {
+				toast({
+					title: "Failed to select voice",
+					description: error instanceof Error ? error.message : "Unknown error",
+					variant: "destructive",
+				});
+			}
+		},
+		[engine, profiles, queryClient, setSelectedProfileId, toast],
+	);
+
+	// Filter saved profiles: show all, but group by relevance to current engine
+	const filteredProfiles = profiles ?? [];
+	const hasPresetVoices = enginePresetVoices.length > 0;
+
 	const downloaded = useDownloadedEngines(selectedProfile);
 	const engineOptions = selectableEngines(selectedProfile, downloaded);
 	const text = form.watch("text") ?? "";
@@ -300,60 +370,152 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 								}}
 							/>
 							<div className="absolute left-0 top-full z-50 mt-1 w-72 rounded-md border border-border bg-card shadow-lg">
-								<div className="max-h-64 overflow-y-auto p-1.5">
-									{profiles && profiles.length === 0 ? (
+								<div className="max-h-72 overflow-y-auto p-1.5">
+									{/* Preset voices from the model — shown first */}
+									{hasPresetVoices && (
+										<>
+											<div className="px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+												Built-in voices
+											</div>
+											{enginePresetVoices.map((v) => {
+												const isUsed =
+													selectedProfile?.preset_engine === engine &&
+													selectedProfile?.preset_voice_id === v.id;
+												return (
+													<button
+														key={v.id}
+														type="button"
+														role="option"
+														aria-selected={isUsed}
+														onClick={() => handlePresetVoiceSelect(v)}
+														className={cn(
+															"flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs transition-colors",
+															isUsed
+																? "bg-accent/10 text-accent"
+																: "hover:bg-secondary",
+														)}
+													>
+														<span className="flex size-6 shrink-0 items-center justify-center rounded-sm bg-accent/20 text-[10px] font-medium text-accent">
+															{v.name.charAt(0).toUpperCase()}
+														</span>
+														<div className="min-w-0 flex-1">
+															<div className="flex items-center gap-1.5">
+																<span className="truncate font-medium">
+																	{v.name}
+																</span>
+																<span className="shrink-0 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
+																	Preset
+																</span>
+															</div>
+															{v.gender && (
+																<div className="text-[11px] text-muted-foreground">
+																	{v.gender}
+																</div>
+															)}
+														</div>
+													</button>
+												);
+											})}
+										</>
+									)}
+
+									{/* Saved profiles (cloned, designed, or previously created presets) */}
+									{filteredProfiles.length > 0 && (
+										<>
+											{hasPresetVoices && (
+												<div className="mx-2 my-1 border-t border-border" />
+											)}
+											<div className="px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+												Your voices
+											</div>
+											{filteredProfiles.map((p) => (
+												<button
+													key={p.id}
+													type="button"
+													role="option"
+													aria-selected={p.id === selectedProfileId}
+													onClick={() => {
+														setSelectedProfileId(p.id);
+														setVoiceOpen(false);
+													}}
+													className={cn(
+														"flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs transition-colors",
+														p.id === selectedProfileId
+															? "bg-accent/10 text-accent"
+															: "hover:bg-secondary",
+													)}
+												>
+													<span className="flex size-6 shrink-0 items-center justify-center rounded-sm bg-accent/20 text-[10px] font-medium text-accent">
+														{p.name.charAt(0).toUpperCase()}
+													</span>
+													<div className="min-w-0 flex-1">
+														<div className="flex items-center gap-1.5">
+															<span className="truncate font-medium">
+																{p.name}
+															</span>
+															<span className="shrink-0 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
+																{VOICE_TYPE_LABELS[p.voice_type ?? ""] ??
+																	p.voice_type}
+															</span>
+														</div>
+														<div className="text-[11px] text-muted-foreground">
+															{p.language} · {p.generation_count} gen
+														</div>
+													</div>
+												</button>
+											))}
+										</>
+									)}
+
+									{/* Empty state */}
+									{!hasPresetVoices && filteredProfiles.length === 0 && (
 										<p className="px-2 py-4 text-center text-xs text-muted-foreground">
 											No voices yet.{" "}
 											<button
 												type="button"
 												onClick={() => {
 													setVoiceOpen(false);
-													window.location.href = "/voices";
+													navigate({ to: "/voices" });
 												}}
 												className="text-accent hover:underline"
 											>
 												Create one
 											</button>
 										</p>
-									) : (
-										profiles?.map((p) => (
-											<button
-												key={p.id}
-												type="button"
-												role="option"
-												aria-selected={p.id === selectedProfileId}
-												onClick={() => {
-													setSelectedProfileId(p.id);
-													setVoiceOpen(false);
-												}}
-												className={cn(
-													"flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs transition-colors",
-													p.id === selectedProfileId
-														? "bg-accent/10 text-accent"
-														: "hover:bg-secondary",
-												)}
-											>
-												<span className="flex size-6 shrink-0 items-center justify-center rounded-sm bg-accent/20 text-[10px] font-medium text-accent">
-													{p.name.charAt(0).toUpperCase()}
-												</span>
-												<div className="min-w-0 flex-1">
-													<div className="flex items-center gap-1.5">
-														<span className="truncate font-medium">
-															{p.name}
-														</span>
-														<span className="shrink-0 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
-															{VOICE_TYPE_LABELS[p.voice_type ?? ""] ??
-																p.voice_type}
-														</span>
-													</div>
-													<div className="text-[11px] text-muted-foreground">
-														{p.language} · {p.generation_count} gen
-													</div>
-												</div>
-											</button>
-										))
 									)}
 								</div>
+
+								{/* Action buttons: Clone + Design (capability-gated) */}
+								{(supportsClone || supportsDesign) && (
+									<div className="border-t border-border p-1.5">
+										{supportsClone && (
+											<button
+												type="button"
+												onClick={() => {
+													setVoiceOpen(false);
+													navigate({ to: "/voices" });
+												}}
+												className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+											>
+												<FingerPrintIcon className="size-4" />
+												Clone a voice
+											</button>
+										)}
+										{supportsDesign && (
+											<button
+												type="button"
+												onClick={() => {
+													setVoiceOpen(false);
+													navigate({ to: "/voices" });
+												}}
+												className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+											>
+												<SparklesIcon className="size-4" />
+												Design a voice
+											</button>
+										)}
+									</div>
+								)}
 							</div>
 						</>
 					) : null}
@@ -477,7 +639,7 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 							dragOver && "bg-accent/5",
 						)}
 					>
-						<						textarea
+						<textarea
 							{...textRest}
 							ref={(node) => {
 								textareaRef.current = node;

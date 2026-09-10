@@ -57,7 +57,7 @@ export function useModelDownloadToast({
 			description: (
 				<div className="flex items-center gap-2">
 					<Spinner size="md" />
-					<span>Connecting to download…</span>
+					<span>Preparing download…</span>
 				</div>
 			),
 			duration: Infinity, // Don't auto-dismiss, we'll handle it manually

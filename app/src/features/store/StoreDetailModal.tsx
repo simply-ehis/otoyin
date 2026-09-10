@@ -169,35 +169,28 @@ export const StoreDetailModal = memo(function StoreDetailModal({
 									{c.label}
 								</Badge>
 							))}
-						</div>
-					)}
+					</div>
+				)}
 
-					{model?.hf_repo_id && (
-						<a
-							href={`https://huggingface.co/${model.hf_repo_id}`}
-							target="_blank"
-							rel="noopener noreferrer"
-							className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
-						>
-							{model.hf_repo_id} ↗
-						</a>
-					)}
-
-					{/* download progress */}
-					{isDownloading && downloadTask && (
-						<div className="space-y-2 rounded-lg border border-warning/20 bg-warning-soft p-3">
-							<div className="flex items-center gap-2 text-xs font-medium text-warning-text">
-								<Spinner size="xs" /> Downloading{" "}
-								{downloadTask.filename ?? product.name}…
-							</div>
-							<Progress value={downloadTask.progress ?? 0} className="h-1.5" />
-							<div className="text-xs text-muted-foreground">
-								{downloadTask.current && downloadTask.total
-									? `${(downloadTask.current / 1024 / 1024).toFixed(1)} / ${(downloadTask.total / 1024 / 1024).toFixed(1)} MB · ${(downloadTask.progress ?? 0).toFixed(0)}%`
-									: (downloadTask.filename ?? "Connecting…")}
-							</div>
+				{/* download progress */}
+				{isDownloading && downloadTask && (
+					<div className="space-y-2 rounded-lg border border-warning/20 bg-warning-soft p-3">
+						<div className="flex items-center gap-2 text-xs font-medium text-warning-text">
+							<Spinner size="xs" />{" "}
+							{downloadTask.progress
+								? `Downloading ${downloadTask.filename ?? product.name}`
+								: "Preparing download…"}
 						</div>
-					)}
+						<Progress value={downloadTask.progress ?? 0} className="h-1.5" />
+						<div className="text-xs text-muted-foreground">
+							{downloadTask.current && downloadTask.total
+								? `${(downloadTask.current / 1024 / 1024).toFixed(1)} / ${(downloadTask.total / 1024 / 1024).toFixed(1)} MB · ${(downloadTask.progress ?? 0).toFixed(0)}%`
+								: downloadTask.progress
+									? `${(downloadTask.progress ?? 0).toFixed(0)}%`
+									: "Preparing download…"}
+						</div>
+					</div>
+				)}
 
 					{/* actions — single place to activate/buy/download/delete */}
 					<div className="border-t pt-2">
