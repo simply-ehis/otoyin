@@ -80,6 +80,7 @@ export class ModelsMethods extends CapturesMethods {
 		if (modelName) params.set("model_name", modelName);
 		return this.request<{ message: string }>(
 			`/models/load?${params.toString()}`,
+			{ method: "POST" },
 		);
 	}
 

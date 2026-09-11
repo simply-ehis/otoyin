@@ -563,61 +563,60 @@ async def delete_model(model_name: str):
     if not config:
         raise HTTPException(status_code=400, detail=f"Unknown model: {model_name}")
 
+    # Best-effort unload — don't let a failed unload block deletion.
     try:
         unload_model_by_config(config)
+    except Exception:
+        logger.debug("Unload before delete failed (non-fatal)", exc_info=True)
 
-        if config.engine == "argos_translate":
-            # Uninstall is not supported by Argos — just forget the manifest;
-            # user can manually remove from ~/.local/share/argos-translate if needed.
-            from ...services.model_registry import forget_download
+    if config.engine == "argos_translate":
+        from ...services.model_registry import forget_download
 
-            forget_download(model_name, config.model_size)
-            return {"message": f"Translation pack {model_name} removed"}
-        if config.engine == "whisper":
-            from ... import config as cfg_mod
-            from ...backends.whisper_cpp_backend import WHISPER_CPP_FILES
+        forget_download(model_name, config.model_size)
+        return {"message": f"Translation pack {model_name} removed"}
+    if config.engine == "whisper":
+        from ... import config as cfg_mod
+        from ...backends.whisper_cpp_backend import WHISPER_CPP_FILES
 
-            filename = WHISPER_CPP_FILES.get(config.model_size, f"ggml-{config.model_size}.bin")
-            model_file = cfg_mod.get_models_dir() / filename
-            if not model_file.exists():
-                raise HTTPException(status_code=404, detail=f"Model {model_name} not found")
+        filename = WHISPER_CPP_FILES.get(config.model_size, f"ggml-{config.model_size}.bin")
+        model_file = cfg_mod.get_models_dir() / filename
+        if model_file.exists():
             model_file.unlink()
-            from ...services.model_registry import forget_download
+        from ...services.model_registry import forget_download
 
-            forget_download(model_name, config.model_size)
-            return {"message": f"Model {model_name} deleted successfully"}
-        if config.engine == "faster-whisper":
-            from ... import config as cfg_mod
+        forget_download(model_name, config.model_size)
+        return {"message": f"Model {model_name} deleted successfully"}
+    if config.engine == "faster-whisper":
+        from ... import config as cfg_mod
 
-            model_dir = cfg_mod.get_models_dir() / f"faster-whisper-{config.model_size}"
-            if not model_dir.exists():
-                raise HTTPException(status_code=404, detail=f"Model {model_name} not found")
+        model_dir = cfg_mod.get_models_dir() / f"faster-whisper-{config.model_size}"
+        if model_dir.exists():
             import shutil
 
-            await asyncio.to_thread(shutil.rmtree, model_dir)
-            from ...services.model_registry import forget_download
-
-            forget_download(model_name, config.model_size)
-            return {"message": f"Model {model_name} deleted successfully"}
-
-        hf_repo_id = config.hf_repo_id
-        cache_dir = hf_constants.HF_HUB_CACHE
-        repo_cache_dir = Path(cache_dir) / ("models--" + hf_repo_id.replace("/", "--"))
-
-        if not repo_cache_dir.exists():
-            raise HTTPException(status_code=404, detail=f"Model {model_name} not found in cache")
-
-        try:
-            await asyncio.to_thread(shutil.rmtree, repo_cache_dir)
-        except OSError as e:
-            raise HTTPException(status_code=500, detail=f"Failed to delete model cache directory: {e!s}") from e
-
+            await asyncio.to_thread(shutil.rmtree, model_dir, True)
         from ...services.model_registry import forget_download
 
         forget_download(model_name, config.model_size)
         return {"message": f"Model {model_name} deleted successfully"}
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete model: {e!s}") from e
+    hf_repo_id = config.hf_repo_id
+    cache_dir = hf_constants.HF_HUB_CACHE
+    repo_cache_dir = Path(cache_dir) / ("models--" + hf_repo_id.replace("/", "--"))
+
+    if not repo_cache_dir.exists():
+        from ...services.model_registry import forget_download
+
+        forget_download(model_name, config.model_size)
+        return {"message": f"Model {model_name} cache already gone; manifest cleaned"}
+
+    import shutil
+
+    try:
+        await asyncio.to_thread(shutil.rmtree, repo_cache_dir, True)
+    except OSError as e:
+        logger.warning("Failed to fully delete model cache for %s: %s", model_name, e)
+
+    from ...services.model_registry import forget_download
+
+    forget_download(model_name, config.model_size)
+    return {"message": f"Model {model_name} deleted successfully"}

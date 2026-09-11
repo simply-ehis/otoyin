@@ -218,7 +218,7 @@ dev-web: _ensure-venv
         Write-Host 'Waiting for backend readiness (up to 30s)...'; $ready=$false; for ($i=0; $i -lt 30; $i++) { try { $r=Invoke-WebRequest -Uri $readyUrl -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop; if ($r.Content -match '\"ready\"\s*:\s*true') { $ready=$true; break } } catch {}; Start-Sleep -Seconds 1; if ($backendJob.HasExited) { Write-Host ('Backend failed to start (port ' + $port + ' in use?)') -ForegroundColor Red; exit 1 } }; if ($ready) { Write-Host 'Backend ready' -ForegroundColor Green } \
     }; \
     Write-Host 'Starting web app...'; \
-    try { Set-Location "{{ web_dir }}"; & node node_modules\vite\bin\vite.js } finally { \
+    try { Set-Location "{{ web_dir }}"; & npx vite } finally { \
         if ($backendJob -and -not $backendJob.HasExited) { \
             Write-Host 'Shutting down backend gracefully...' -ForegroundColor Yellow; \
             try { $null = Invoke-WebRequest -Uri ('http://' + $hostA + ':' + $port + '/shutdown') -Method POST -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop } catch {}; \

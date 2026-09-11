@@ -166,18 +166,19 @@ async def run_generation(ctx: GenerationContext) -> None:
             {"id": ctx.generation_id, "status": "failed", "error": "Generation cancelled"},
         )
         _notify_speak_end(ctx.generation_id, status="cancelled")
-    except Exception:
+    except Exception as exc:
         logger.exception("Generation failed for %s", ctx.generation_id)
+        _err_detail = f"{type(exc).__name__}: {exc}"
         await history.update_generation_status(
             generation_id=ctx.generation_id,
             status="failed",
             db=bg_db,
-            error="Generation failed",
+            error=_err_detail[:500],
         )
         await notify_generation_status(
             ctx.generation_id,
             "failed",
-            {"id": ctx.generation_id, "status": "failed", "error": "Generation failed"},
+            {"id": ctx.generation_id, "status": "failed", "error": _err_detail[:500]},
         )
         _notify_speak_end(ctx.generation_id, status="failed")
     else:

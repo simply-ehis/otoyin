@@ -175,12 +175,14 @@ class KokoroONNXBackend(BackendBase):
         return self._model is not None
 
     def _is_model_cached(self, model_size: str = "default") -> bool:
-        """Check if the Kokoro ONNX files are present in the HF cache."""
+        """Check if the Kokoro ONNX model weights are in the HF cache.
+
+        The voices file is downloaded on-demand during ``load_model`` so it
+        does not need to be present for the engine to be considered cached.
+        """
         from .base import is_model_cached
 
-        if not is_model_cached(KOKORO_ONNX_REPO, required_files=[KOKORO_ONNX_MODEL_FILE]):
-            return False
-        return self._voices_cached_path() is not None
+        return is_model_cached(KOKORO_ONNX_REPO, required_files=[KOKORO_ONNX_MODEL_FILE])
 
     async def load_model(self, model_size: str = "default") -> None:
         if self._model is not None:
@@ -313,26 +315,9 @@ class KokoroONNXBackend(BackendBase):
         return audio, KOKORO_SAMPLE_RATE
 
     def _infer_chunk(self, text: str, voice_name: str, onnx_lang: str) -> np.ndarray:
-        """Run one inference through the ONNX session with correct dtypes.
-
-        The ``kokoro_onnx`` library's ``create()`` passes ``input_ids`` as a
-        Python list (→ int32) and ``speed`` as int32, which this model build
-        rejects (it expects int64 ids and float style/speed). We drive the
-        session directly, reusing the library's tokenizer and voice bank.
-        """
+        """Run one inference through the ONNX session."""
         model: Any = self._model
-        phonemes = model.tokenizer.phonemize(text, onnx_lang)
-        tokens = np.array(model.tokenizer.tokenize(phonemes), dtype=np.int64)
-        if len(tokens) == 0:
-            return np.zeros(KOKORO_SAMPLE_RATE, dtype=np.float32)
-        voice = np.asarray(model.voices[voice_name], dtype=np.float32)
-        style = voice.reshape(1, 256)
-        inputs = {
-            "input_ids": np.array([[0, *tokens, 0]], dtype=np.int64),
-            "style": style,
-            "speed": np.array([1.0], dtype=np.float32),
-        }
-        audio = model.sess.run(None, inputs)[0]
+        audio, _sr = model.create(text, voice=voice_name, lang=onnx_lang)
         return np.asarray(audio, dtype=np.float32).squeeze()
 
 

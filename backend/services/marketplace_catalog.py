@@ -148,15 +148,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "note": "Ultra-lightweight 0.8B fallback — runs on any device with <1GB RAM. Good enough for simple tool calls and quick responses when larger models aren't available.",
     },
     {
-        "id": "planner-4b",
-        "name": "Qwen3.5-4B (free planner)",
-        "category": "llm",
-        "price_usd": 0,
-        "paid": False,
-        "quality_score": 7,
-        "note": "Unsloth Qwen3.5-4B — free premium planner. Strong all-rounder for reasoning, tool calling, and multi-step workflows. 2.7GB, needs 3.5GB+ RAM.",
-    },
-    {
         "id": "planner-lfm2-2.6b",
         "name": "LiquidAI LFM2-2.6B (free planner)",
         "category": "llm",
