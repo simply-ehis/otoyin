@@ -129,11 +129,14 @@ async def run_generation(ctx: GenerationContext) -> None:
             audio, sample_rate = await _synthesize_local(ctx, bg_db)
 
         # --- Post-processing pipeline (shared by cloud + local) ----------
-        audio, sample_rate = _postprocess(ctx, audio, sample_rate)
+        # Wrap synchronous DSP + disk I/O in to_thread to avoid blocking the
+        # event loop (enhance_tts / normalize_audio / effects can be slow on
+        # large buffers, and WAV writes do disk I/O).
+        audio, sample_rate = await asyncio.to_thread(_postprocess, ctx, audio, sample_rate)
         duration = len(audio) / sample_rate
 
         # --- Persist audio and update status -----------------------------
-        final_path = _persist(ctx, audio, sample_rate, save_audio, bg_db)
+        final_path = await asyncio.to_thread(_persist, ctx, audio, sample_rate, save_audio, bg_db)
 
         await history.update_generation_status(
             generation_id=ctx.generation_id,

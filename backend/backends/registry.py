@@ -7,6 +7,7 @@ model loading/unloading helpers that bridge ModelConfig descriptors to live
 backend instances, plus :func:`reset_backends` for tests.
 """
 
+import asyncio
 import contextlib
 import logging
 import threading
@@ -270,20 +271,30 @@ async def load_engine_model(engine: str, model_size: str = "default") -> None:
     # We use a threading.Lock with a short hold; the heavy await is outside.
     # The lock is only for the offload decision; the backend's own load path
     # has its own internal lock for the model attribute.
-    with _load_lock:
-        # Single active TTS slot: offload any other currently-loaded TTS engine.
-        for other_engine, other_backend in list(_tts_backends.items()):
-            if other_engine != engine and other_backend.is_loaded():
-                try:
-                    other_backend.unload_model()
-                except (RuntimeError, OSError, AttributeError) as e:  # never block the new load on a failed offload
-                    logger.error(
-                        "Failed to offload TTS engine '%s' during switch to '%s': %s",
-                        other_engine,
-                        engine,
-                        e,
-                        exc_info=True,
-                    )
+    # Offload any other currently-loaded TTS engine before loading the new one.
+    # This must run under _load_lock to prevent concurrent load races, but the
+    # actual unload is offloaded to a thread via asyncio.to_thread so it doesn't
+    # block the event loop (unload can take 5+ seconds for subprocess backends).
+    async with asyncio.timeout(30):
+        # Acquire the lock in a thread to avoid blocking the event loop while
+        # waiting.  The critical section itself is fast (just the loop body)
+        # because the heavy unload work is delegated to to_thread below.
+        await asyncio.to_thread(_load_lock.acquire)
+        try:
+            for other_engine, other_backend in list(_tts_backends.items()):
+                if other_engine != engine and other_backend.is_loaded():
+                    try:
+                        await asyncio.to_thread(other_backend.unload_model)
+                    except (RuntimeError, OSError, AttributeError) as e:
+                        logger.error(
+                            "Failed to offload TTS engine '%s' during switch to '%s': %s",
+                            other_engine,
+                            engine,
+                            e,
+                            exc_info=True,
+                        )
+        finally:
+            _load_lock.release()
 
     backend = get_tts_backend_for_engine(engine)
     # Don't retry VRAM-insufficient errors — they are not transient
