@@ -175,13 +175,18 @@ class ModelLifecycleManager:
     async def _unload_if_idle(self) -> None:
         now = time.monotonic()
         for engine, handle in list(self._engines.items()):
-            # Per-engine override wins over global performance_mode
-            effective_keepalive = self._per_engine_keepalive.get(engine, self._performance_mode)
-            if effective_keepalive:
-                continue
-            if handle.always_on:
-                continue
-            if not handle.is_loaded():
+            try:
+                # Per-engine override wins over global performance_mode
+                effective_keepalive = self._per_engine_keepalive.get(engine, self._performance_mode)
+                if effective_keepalive:
+                    continue
+                if handle.always_on:
+                    continue
+                if not handle.is_loaded():
+                    continue
+            except Exception:
+                # One broken backend probe must not skip the whole sweep.
+                logger.debug("Lifecycle: load check failed for '%s'", engine, exc_info=True)
                 continue
             idle_for = now - handle.last_used
             if idle_for >= self.idle_timeout:

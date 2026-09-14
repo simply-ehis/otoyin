@@ -1,7 +1,8 @@
 import { ArrowUpTrayIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "@tanstack/react-router";
-import { Suspense, lazy, useRef, useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { RecordAudioButton } from "@/components/Recording/RecordAudioButton";
 import { useImportProfile } from "@/lib/hooks/useProfiles";
 import { Button } from "@/ui/button";
 import {
@@ -13,6 +14,7 @@ import {
 } from "@/ui/dialog";
 import { useToast } from "@/ui/use-toast";
 import { GettingStarted } from "./GettingStarted";
+import { GenerationProgressList } from "./GenerationProgressList";
 import { HistoryList } from "./HistoryList";
 import { PromptBar } from "./PromptBar";
 
@@ -73,6 +75,7 @@ export function GeneratePage() {
 					<Suspense fallback={null}>
 						<TabHelp tabPath="/" />
 					</Suspense>
+					<RecordAudioButton compact />
 					<Button
 						type="button"
 						variant="outline"
@@ -124,6 +127,9 @@ export function GeneratePage() {
 					<GettingStarted />
 					<div className="mt-4">
 						<PromptBar />
+					</div>
+					<div className="mt-2">
+						<GenerationProgressList />
 					</div>
 				</div>
 

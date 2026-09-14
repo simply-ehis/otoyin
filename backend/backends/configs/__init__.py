@@ -410,6 +410,11 @@ def _get_translation_configs() -> list[ModelConfig]:
         ("de", "en"),
         ("ja", "en"),
         ("zh", "en"),
+        ("pt", "en"),
+        ("ru", "en"),
+        ("ar", "en"),
+        ("hi", "en"),
+        ("it", "en"),
     ]
     configs: list[ModelConfig] = []
     for src, tgt in pairs:
@@ -524,6 +529,7 @@ def get_all_model_configs() -> list[ModelConfig]:
         + _get_audio_processing_configs()
         + _get_translation_configs()
         + _get_cloud_vc_configs()
+        + _get_cloud_stt_configs()
     )
 
 

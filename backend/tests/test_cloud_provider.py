@@ -74,6 +74,9 @@ def test_synthesize_via_cloud_tts_calls_speech_endpoint(monkeypatch):
         return FakeResp()
 
     monkeypatch.setattr(cloud.httpx, "post", fake_post)
+    # The SSRF guard would reject the fake host — httpx is faked, so bypass
+    # the gate to exercise the request-building path for real.
+    monkeypatch.setattr(cloud, "is_url_safe", lambda *a, **k: True)
     monkeypatch.setattr(
         cloud,
         "get_cloud_provider",
@@ -117,6 +120,7 @@ def test_call_openai_chat_parses_content(monkeypatch):
         return FakeResp()
 
     monkeypatch.setattr(cloud.httpx, "post", fake_post)
+    monkeypatch.setattr(cloud, "is_url_safe", lambda *a, **k: True)
     out = cloud.call_openai_chat("https://llm.example/v1", "k", "gpt", [{"role": "user", "content": "yo"}])
     assert out == "hi there"
     assert captured["url"].endswith("/chat/completions")

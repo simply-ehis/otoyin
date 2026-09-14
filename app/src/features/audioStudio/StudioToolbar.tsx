@@ -31,6 +31,8 @@ interface StudioToolbarProps {
 	tracksHaveAudio: boolean;
 	tracksHaveAnyContent: boolean;
 	canUndoAutosave: boolean;
+	canExportReaper: boolean;
+	exportingReaper: boolean;
 	isolating: boolean;
 	isolateStem: IsolationStem;
 	selectedTrackHasAudio: boolean;
@@ -44,6 +46,7 @@ interface StudioToolbarProps {
 	onToggleAutomation: () => void;
 	onExport: () => void;
 	onExportWithPlugins: () => void;
+	onExportReaper: () => void;
 	onIsolateStemChange: (stem: IsolationStem) => void;
 	onIsolate: () => void;
 	onProducePodcast: () => void;
@@ -59,6 +62,8 @@ export function StudioToolbar({
 	tracksHaveAudio,
 	tracksHaveAnyContent,
 	canUndoAutosave,
+	canExportReaper,
+	exportingReaper,
 	isolating,
 	isolateStem,
 	selectedTrackHasAudio,
@@ -72,6 +77,7 @@ export function StudioToolbar({
 	onToggleAutomation,
 	onExport,
 	onExportWithPlugins,
+	onExportReaper,
 	onIsolateStemChange,
 	onIsolate,
 	onProducePodcast,
@@ -237,6 +243,21 @@ export function StudioToolbar({
 					>
 						<Download className="size-3 mr-1" />
 						{exportWithPlugins ? "Bouncing..." : "Export+FX"}
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-7 text-xs px-2"
+						onClick={onExportReaper}
+						disabled={exportingReaper || !canExportReaper}
+						title={
+							canExportReaper
+								? "Export Reaper project (.rpp) for DAW handoff"
+								: "Save the session first, then export Reaper"
+						}
+					>
+						<Download className="size-3 mr-1" />
+						{exportingReaper ? "Exporting..." : "Reaper"}
 					</Button>
 					<Button
 						variant="default"

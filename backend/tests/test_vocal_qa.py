@@ -137,6 +137,9 @@ def test_vocal_qa_with_mock_stt():
         with (
             patch("backend.routes.vocal_qa.history") as mock_hist,
             patch("backend.backends.registry.get_stt_backend", return_value=mock_stt),
+            # The route's manifest gate checks the real download DB — the
+            # STT backend is mocked, so pretend the model is downloaded.
+            patch("backend.services.model_registry.is_downloaded", return_value=True),
         ):
             mock_hist.get_generation = AsyncMock(return_value=mock_generation)
             res = client.post(

@@ -9,6 +9,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { PreviewPlayButton } from "@/features/voices/PresetVoiceAuditionList";
 import { apiClient } from "@/lib/api/client";
 import type {
 	EffectPresetResponse,
@@ -20,6 +21,7 @@ import { useGenerationForm } from "@/lib/hooks/useGenerationForm";
 import { useProfile, useProfiles } from "@/lib/hooks/useProfiles";
 import { cn } from "@/lib/utils/cn";
 import { useGenerationStore } from "@/stores/generationStore";
+import { usePlayerStore } from "@/stores/playerStore";
 import { useUIStore } from "@/stores/uiStore";
 import { Button } from "@/ui/button";
 import { Switch } from "@/ui/controls";
@@ -35,8 +37,10 @@ import {
 import { Slider } from "@/ui/slider";
 import { useToast } from "@/ui/use-toast";
 import { buildEffectsChain } from "./buildEffectsChain";
+import { usePresetAudition } from "./usePresetAudition";
 import {
 	applyEngineSelection,
+	resolveEngineLanguage,
 	selectableEngines,
 	useDownloadedEngines,
 	useEngineCapabilities,
@@ -50,7 +54,10 @@ import {
  * Layout:
  *   Row 1: [Voice ▾] [Engine ▾] [Language ▾]         [Attach +]
  *   Row 2: [Textarea........................] [Generate ▶]
- *   Row 3: [More ▾] → Effects, Temp, Cleanup, Persona
+ *   Row 3: [More ▾] → Effects, Temp, Speed, Cleanup, Persona
+ *
+ * Speed is the shared listening speed (playerStore.playbackRate) — it
+ * changes how previews play, not how voices are synthesized.
  */
 export function PromptBar({ storyId }: { storyId?: string | null }) {
 	const { t } = useTranslation();
@@ -59,6 +66,10 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 	const queryClient = useQueryClient();
 	const selectedProfileId = useUIStore((s) => s.selectedProfileId);
 	const setSelectedProfileId = useUIStore((s) => s.setSelectedProfileId);
+	const playbackRate = usePlayerStore((s) => s.playbackRate);
+	const setPlaybackRate = usePlayerStore((s) => s.setPlaybackRate);
+	const languageByEngine = useUIStore((s) => s.languageByEngine);
+	const setLanguageForEngine = useUIStore((s) => s.setLanguageForEngine);
 	const setSelectedEngine = useUIStore((s) => s.setSelectedEngine);
 	const addPendingStoryAdd = useGenerationStore((s) => s.addPendingStoryAdd);
 	const { data: profiles } = useProfiles();
@@ -70,6 +81,7 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 	const [cancelling, setCancelling] = useState(false);
 	const [dragOver, setDragOver] = useState(false);
 	const [voiceOpen, setVoiceOpen] = useState(false);
+	const [presetQuery, setPresetQuery] = useState("");
 	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 	const fileRef = useRef<HTMLInputElement | null>(null);
 	const voiceRef = useRef<HTMLDivElement | null>(null);
@@ -79,8 +91,9 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 		queryFn: () => apiClient.listEffectPresets(),
 	});
 
-	// Fetch model status so useDownloadedEngines knows what's cached
-	useQuery({
+	// Model status (single subscription — useDownloadedEngines and the
+	// preset list below both read this same cache entry).
+	const { data: modelStatus } = useQuery<ModelStatusListResponse>({
 		queryKey: ["modelStatus"],
 		queryFn: () => apiClient.getModelStatus(),
 		staleTime: 60_000,
@@ -121,7 +134,9 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 		}
 	}, [selectedProfileId, profiles, setSelectedProfileId]);
 
-	// Sync form language/engine when profile changes
+	// Sync form language/engine when profile changes. Language precedence:
+	// explicit per-engine memory beats the profile default beats English —
+	// every step validated against what the engine actually supports.
 	const lastSynced = useRef<string | null | undefined>(undefined);
 	useEffect(() => {
 		const id = selectedProfile?.id;
@@ -129,14 +144,18 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 			return;
 		}
 		lastSynced.current = id;
-		if (selectedProfile?.language) {
-			form.setValue("language", selectedProfile.language as never);
-		}
-		const engine =
+		const nextEngine =
 			selectedProfile?.default_engine ?? selectedProfile?.preset_engine;
-		if (engine) {
-			form.setValue("engine", engine as never);
+		if (nextEngine) {
+			form.setValue("engine", nextEngine as never);
 		}
+		const eng =
+			nextEngine ?? (form.getValues("engine") as string | undefined);
+		const remembered = eng ? languageByEngine[eng] : undefined;
+		form.setValue(
+			"language",
+			resolveEngineLanguage(eng, remembered ?? selectedProfile?.language) as never,
+		);
 		if (
 			selectedProfile?.effects_chain &&
 			selectedProfile.effects_chain.length > 0
@@ -153,7 +172,7 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 		if (selectedProfile && !selectedProfile.personality?.trim()) {
 			form.setValue("personality", false);
 		}
-	}, [selectedProfile, effectPresets, form]);
+	}, [selectedProfile, effectPresets, form, languageByEngine]);
 
 	const engine = form.watch("engine") as string | undefined;
 	const caps = useEngineCapabilities()[engine ?? ""];
@@ -168,30 +187,57 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 		form.setValue("supportsInstruct", supportsInstruct);
 	}, [form, supportsInstruct]);
 
-	// Get model status for preset voices and engine capabilities
-	const { data: modelStatus } = useQuery<ModelStatusListResponse>({
-		queryKey: ["modelStatus"],
-		queryFn: () => apiClient.getModelStatus(),
-		staleTime: 60_000,
-	});
-
-	// Get preset voices for the current engine directly from model status
-	const enginePresetVoices: PresetVoice[] = (() => {
+	// Preset voices and engine capabilities come from the model-status
+	// cache above (no second fetch for the same key). Aggregate across ALL
+	// models sharing this engine key (e.g. every gguf_llm planner, every
+	// kokoro variant) — picking only the first match hid most preset
+	// voices and mis-gated Clone/Design.
+	const engineModels = (() => {
 		if (!engine || !modelStatus?.models) {
 			return [];
 		}
-		const model = modelStatus.models.find(
+		return modelStatus.models.filter(
 			(m) => (m.engine ?? m.model_name) === engine,
 		);
-		return model?.preset_voices ?? [];
+	})();
+	const enginePresetVoices: PresetVoice[] = (() => {
+		const seen = new Set<string>();
+		const out: PresetVoice[] = [];
+		for (const m of engineModels) {
+			for (const v of m.preset_voices ?? []) {
+				if (!seen.has(v.id)) {
+					seen.add(v.id);
+					out.push(v);
+				}
+			}
+		}
+		return out;
 	})();
 
-	// Check engine capabilities for clone/design buttons
-	const engineCaps = modelStatus?.models.find(
-		(m) => (m.engine ?? m.model_name) === engine,
+	// Check engine capabilities for clone/design buttons — true when ANY
+	// model behind this engine supports it, so capable engines are never
+	// hidden because the first sibling lacks the flag.
+	const supportsClone = engineModels.some((m) => !!m.clone_voice);
+	const supportsDesign = engineModels.some((m) => !!m.voice_design);
+	const engineDownloaded = engineModels.some((m) => m.downloaded);
+
+	// Audition + search for the preset list. Snippets need the model on
+	// disk, so the play buttons stay disabled until it is downloaded.
+	const { audition, loadingVoiceId, isPreviewPlaying } = usePresetAudition(
+		engine ?? "",
 	);
-	const supportsClone = !!engineCaps?.clone_voice;
-	const supportsDesign = !!engineCaps?.voice_design;
+	const visiblePresetVoices = (() => {
+		const q = presetQuery.trim().toLowerCase();
+		if (!q) {
+			return enginePresetVoices;
+		}
+		return enginePresetVoices.filter((v) =>
+			`${v.name} ${v.id} ${v.language ?? ""} ${v.gender ?? ""}`
+				.toLowerCase()
+				.includes(q),
+		);
+	})();
+	const showPresetSearch = enginePresetVoices.length > 8;
 
 	// Auto-create a profile from a preset voice when selected from the dropdown
 	const handlePresetVoiceSelect = useCallback(
@@ -331,7 +377,12 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 				<div className="relative">
 					<button
 						type="button"
-						onClick={() => setVoiceOpen((v) => !v)}
+						onClick={() => {
+							if (!voiceOpen) {
+								setPresetQuery("");
+							}
+							setVoiceOpen((v) => !v);
+						}}
 						className="flex items-center gap-1.5 rounded-md border border-border bg-secondary/50 px-2 py-1 text-xs transition-colors hover:bg-secondary"
 						aria-expanded={voiceOpen}
 						aria-haspopup="listbox"
@@ -371,53 +422,94 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 							/>
 							<div className="absolute left-0 top-full z-50 mt-1 w-72 rounded-md border border-border bg-card shadow-lg">
 								<div className="max-h-72 overflow-y-auto p-1.5">
-									{/* Preset voices from the model — shown first */}
-									{hasPresetVoices && (
-										<>
-											<div className="px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-												Built-in voices
+								{/* Preset voices from the model — shown first */}
+								{hasPresetVoices && (
+									<>
+										<div className="px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+											Built-in voices · {enginePresetVoices.length}
+										</div>
+										{showPresetSearch && (
+											<div className="px-1.5 pb-1">
+												<input
+													type="search"
+													value={presetQuery}
+													onChange={(e) => setPresetQuery(e.target.value)}
+													placeholder="Search voices…"
+													aria-label="Search built-in voices"
+													className="w-full rounded-sm border border-border bg-secondary/50 px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-ring"
+												/>
 											</div>
-											{enginePresetVoices.map((v) => {
-												const isUsed =
-													selectedProfile?.preset_engine === engine &&
-													selectedProfile?.preset_voice_id === v.id;
-												return (
-													<button
-														key={v.id}
-														type="button"
-														role="option"
-														aria-selected={isUsed}
-														onClick={() => handlePresetVoiceSelect(v)}
-														className={cn(
-															"flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs transition-colors",
-															isUsed
-																? "bg-accent/10 text-accent"
-																: "hover:bg-secondary",
-														)}
-													>
-														<span className="flex size-6 shrink-0 items-center justify-center rounded-sm bg-accent/20 text-[10px] font-medium text-accent">
-															{v.name.charAt(0).toUpperCase()}
-														</span>
-														<div className="min-w-0 flex-1">
-															<div className="flex items-center gap-1.5">
-																<span className="truncate font-medium">
-																	{v.name}
-																</span>
-																<span className="shrink-0 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
-																	Preset
-																</span>
-															</div>
-															{v.gender && (
-																<div className="text-[11px] text-muted-foreground">
-																	{v.gender}
-																</div>
-															)}
+										)}
+										{visiblePresetVoices.map((v) => {
+											const isUsed =
+												selectedProfile?.preset_engine === engine &&
+												selectedProfile?.preset_voice_id === v.id;
+											const auditioning = loadingVoiceId === v.id;
+											const playing = isPreviewPlaying(v.id);
+											return (
+												<div
+													key={v.id}
+													role="option"
+													tabIndex={0}
+													aria-selected={isUsed}
+													aria-label={`${v.name} preset voice. Press Enter to select.`}
+													onClick={() => handlePresetVoiceSelect(v)}
+													onKeyDown={(e) => {
+														if (e.key === "Enter" || e.key === " ") {
+															e.preventDefault();
+															void handlePresetVoiceSelect(v);
+														}
+													}}
+													className={cn(
+														"flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+														isUsed
+															? "bg-accent/10 text-accent"
+															: "hover:bg-secondary",
+													)}
+												>
+													<span className="flex size-6 shrink-0 items-center justify-center rounded-sm bg-accent/20 text-[10px] font-medium text-accent">
+														{v.name.charAt(0).toUpperCase()}
+													</span>
+													<div className="min-w-0 flex-1">
+														<div className="flex items-center gap-1.5">
+															<span className="truncate font-medium">
+																{v.name}
+															</span>
+															<span className="shrink-0 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
+																Preset
+															</span>
 														</div>
-													</button>
-												);
-											})}
-										</>
-									)}
+														{v.gender || v.language ? (
+															<div className="text-[11px] text-muted-foreground">
+																{[v.gender, v.language]
+																	.filter(Boolean)
+																	.join(" · ")}
+															</div>
+														) : null}
+													</div>
+													<PreviewPlayButton
+														state={
+															auditioning
+																? "loading"
+																: playing
+																	? "playing"
+																	: "idle"
+														}
+														voiceName={v.name}
+														disabled={!engineDownloaded}
+														disabledTitle="Download this model from the Store first"
+														onPlay={() => audition(v)}
+													/>
+												</div>
+											);
+										})}
+										{visiblePresetVoices.length === 0 && (
+											<p className="px-2 py-3 text-center text-xs text-muted-foreground">
+												No voices match “{presetQuery.trim()}”.
+											</p>
+										)}
+									</>
+								)}
 
 									{/* Saved profiles (cloned, designed, or previously created presets) */}
 									{filteredProfiles.length > 0 && (
@@ -525,14 +617,24 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 				{engineOptions.length > 0 ? (
 					<Select
 						value={engine ?? ""}
-						onValueChange={(v) =>
+						onValueChange={(v) => {
 							applyEngineSelection(
 								(e) => form.setValue("engine", e),
 								(l) => form.setValue("language", l),
 								form.getValues("language"),
 								v,
-							)
-						}
+							);
+							// Explicit per-engine memory wins over the
+							// constraint fallback above (same tick, last write wins).
+							const remembered = languageByEngine[v];
+							form.setValue(
+								"language",
+								resolveEngineLanguage(
+									v,
+									remembered ?? form.getValues("language"),
+								) as never,
+							);
+						}}
 					>
 						<SelectTrigger
 							className="h-7 w-auto min-w-[80px] text-xs"
@@ -558,14 +660,20 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 					</button>
 				)}
 
-				{/* Language selector */}
+				{/* Language selector — choice is remembered per engine */}
 				<Select
 					value={form.watch("language")}
-					onValueChange={(v) => form.setValue("language", v as never)}
+					onValueChange={(v) => {
+						form.setValue("language", v as never);
+						if (engine) {
+							setLanguageForEngine(engine, v);
+						}
+					}}
 				>
 					<SelectTrigger
 						className="h-7 w-auto min-w-[70px] text-xs"
 						aria-label="Language"
+						title="Generation language — remembered per engine"
 					>
 						<SelectValue />
 					</SelectTrigger>
@@ -774,6 +882,29 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 							</div>
 
 							<div className="flex items-center gap-2">
+								<Label className="text-[11px]">Speed</Label>
+								<Select
+									value={String(playbackRate)}
+									onValueChange={(v) => setPlaybackRate(Number(v))}
+								>
+									<SelectTrigger
+										className="h-7 w-[76px] text-xs"
+										aria-label="Listening speed"
+										title="Listening speed — how fast previews play (does not change the generated voice)"
+									>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{["0.75", "1", "1.25", "1.5", "2"].map((r) => (
+											<SelectItem key={r} value={r} className="text-xs">
+												{r}×
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+
+							<div className="flex items-center gap-2">
 								<Switch
 									checked={!!form.watch("voiceClean")}
 									label="Clean"
@@ -825,7 +956,7 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 								placeholder={t("generation.instruct.placeholder")}
 								rows={2}
 								maxLength={500}
-								className="w-full resize-none rounded-md border border-border bg-secondary/30 px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-ring"
+								className="w-full resize-none max-h-[100px] overflow-y-auto rounded-md border border-border bg-secondary/30 px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-ring"
 							/>
 						) : null}
 					</div>

@@ -341,6 +341,15 @@ async def health():
     # ── Subsystem health ──
     subsystems = _probe_subsystems()
 
+    # ── System RAM ──
+    try:
+        from ..utils.memory import available_mb, get_system_total_mb
+
+        ram_total = get_system_total_mb()
+        ram_free = available_mb()
+    except Exception:
+        ram_total = ram_free = None
+
     return models.HealthResponse(
         status="healthy",
         model_loaded=model_loaded,
@@ -352,6 +361,8 @@ async def health():
         vram_total_mb=vram_total,
         vram_free_mb=vram_free,
         vram_pressure=vram_pressure,
+        ram_total_mb=ram_total,
+        ram_free_mb=ram_free,
         backend_type=snap["backend_type"],
         backend_variant=snap["backend_variant"],
         gpu_compatibility_warning=snap["gpu_compatibility_warning"],

@@ -165,9 +165,11 @@ export function SupportPage() {
 }
 
 /**
- * Diagnostics & crash reports: the opt-in toggle (separate from usage
- * telemetry), local counts, and a clear button. Reports stay on-device
- * unless forwarding is configured; nothing here sends anything directly.
+ * Diagnostics & crash reports: crashes are ALWAYS logged locally on-device
+ * (scrubbed of emails/keys/paths) so a dead backend stays diagnosable.
+ * The toggle below only controls SHARING reports with 21labs — separate
+ * from usage telemetry. Nothing is sent unless sharing is on AND a
+ * reporting endpoint is configured.
  */
 function CrashDiagnostics() {
 	const [status, setStatus] = useState<{
@@ -212,6 +214,11 @@ function CrashDiagnostics() {
 			<ScreenHeader
 				title="Diagnostics"
 			/>
+			<p className="mt-3 max-w-prose text-xs text-muted-foreground">
+				Crashes are always logged privately on this device (scrubbed of emails, keys,
+				and file paths). Sharing only sends new reports to 21labs to help fix bugs —
+				nothing leaves the device while sharing is off.
+			</p>
 			<div className="mt-4 flex flex-wrap items-center gap-3">
 				<Button
 					variant={status?.enabled ? "destructive" : "default"}
@@ -219,7 +226,7 @@ function CrashDiagnostics() {
 					disabled={busy || status === null}
 					onClick={() => void toggle(!(status?.enabled ?? false))}
 				>
-					{status?.enabled ? "Disable crash reports" : "Enable crash reports"}
+					{status?.enabled ? "Stop sharing crash reports" : "Share crash reports"}
 				</Button>
 				<Button
 					variant="outline"

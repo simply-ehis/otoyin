@@ -73,6 +73,9 @@ class AssistantSettings(Base):
     thinking_enabled = Column(Boolean, nullable=False, default=False)
     system_prompt = Column(Text, nullable=True, default=None)
     kv_quant = Column(String, nullable=False, default="q8_0")
+    # Layers offloaded to GPU (llama-server -ngl). NULL = CPU-only (0),
+    # matching historical behavior. Applies at planner load time.
+    gpu_layers = Column(Integer, nullable=True, default=None)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 

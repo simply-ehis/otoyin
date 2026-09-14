@@ -104,15 +104,19 @@ export function VocalIsolationView() {
 	const modelReady = !!demucs?.downloaded;
 
 	useEffect(() => {
+		const current = results;
+		const currentSource = sourceUrl;
 		return () => {
-			for (const r of results) {
+			for (const r of current) {
 				URL.revokeObjectURL(r.url);
 			}
-			if (sourceUrl) {
-				URL.revokeObjectURL(sourceUrl);
+			if (currentSource) {
+				URL.revokeObjectURL(currentSource);
 			}
 		};
-	}, [results, sourceUrl]);
+		// Unmount only — revoking on every result change kills live URLs.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	const handleFile = useCallback(
 		async (file: File) => {
@@ -177,6 +181,10 @@ export function VocalIsolationView() {
 		mutationFn: () => apiClient.separateAudio(audioPath, stem),
 		onSuccess: (blob) => {
 			setResults((prev) => {
+				const replaced = prev.find((r) => r.stem === stem);
+				if (replaced) {
+					URL.revokeObjectURL(replaced.url);
+				}
 				const filtered = prev.filter((r) => r.stem !== stem);
 				return [
 					...filtered,

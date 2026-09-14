@@ -22,6 +22,41 @@ from .text_preprocessing import normalize_text, split_sentences
 
 logger = logging.getLogger("otoyin.chunked-tts")
 
+
+async def _generate_one_chunk(
+    backend,
+    chunk_text: str,
+    voice_prompt,
+    language: str,
+    chunk_seed,
+    instruct,
+    temperature,
+    trim_fn=None,
+) -> tuple:
+    """Generate a single chunk with one retry on transient failure.
+
+    A transient failure on chunk N used to re-infer all N chunks via the
+    outer whole-synthesis retry; per-chunk retry (default fail-fast predicate
+    skips permanent 4xx/validation errors) bounds the cost to one chunk.
+    """
+    from .rate_limiter import with_retry
+
+    async def _once():
+        chunk_audio, chunk_sr = await backend.generate(
+            chunk_text,
+            voice_prompt,
+            language,
+            chunk_seed,
+            instruct,
+            temperature,
+        )
+        if trim_fn is not None:
+            chunk_audio = trim_fn(chunk_audio, chunk_sr)
+        return chunk_audio, chunk_sr
+
+    return await with_retry(_once, attempts=2, label="tts.chunk")
+
+
 # Default chunk size in characters.  Can be overridden per-request via
 # the ``max_chunk_chars`` field on GenerationRequest.
 DEFAULT_MAX_CHUNK_CHARS = 800
@@ -195,11 +230,6 @@ def _precompute_tag_spans(text: str) -> list[tuple[int, int]]:
 def _spans_contain(spans: list[tuple[int, int]], pos: int) -> bool:
     """Check if *pos* falls inside any pre-computed tag span."""
     return any(start < pos < end for start, end in spans)
-
-
-def _inside_bracket_tag(text: str, pos: int) -> bool:
-    """Return True if *pos* falls inside a ``[...]`` tag."""
-    return _spans_contain(_precompute_tag_spans(text), pos)
 
 
 def _safe_hard_cut(segment: str, max_chars: int) -> int:
@@ -396,7 +426,7 @@ async def generate_chunked(
     max_chunk_chars: int = DEFAULT_MAX_CHUNK_CHARS,
     crossfade_ms: int = 50,
     trim_fn=None,
-    max_parallel_chunks: int = 4,
+    max_parallel_chunks: int = 1,
     on_chunk=None,
 ) -> tuple[np.ndarray, int]:
     """Generate audio with automatic chunking for long text.
@@ -409,10 +439,11 @@ async def generate_chunked(
     Chatterbox engines that hallucinate trailing noise), and the results
     are concatenated with a crossfade (or hard cut if *crossfade_ms* is 0).
 
-    When *crossfade_ms* is 0 (hard cut), chunks are generated in parallel
+    When *crossfade_ms* is 0 (hard cut), chunks may be generated in parallel
     using a bounded semaphore — each chunk is independent so there is no
-    data dependency.  This can reduce wall-clock latency by up to
-    ``max_parallel_chunks``× for multi-chunk text.
+    data dependency.  Parallelism defaults OFF (1): concurrent inferences
+    multiply VRAM/RAM pressure and can OOM constrained devices.  Opt in
+    explicitly with ``max_parallel_chunks`` > 1 only for light CPU engines.
 
     Parameters
     ----------
@@ -446,7 +477,8 @@ async def generate_chunked(
     """
     import asyncio
 
-    chunks = split_text_into_chunks(text, max_chunk_chars, language)
+    # CPU-bound split (regex + optional spaCy first-load) stays off the loop.
+    chunks = await asyncio.to_thread(split_text_into_chunks, text, max_chunk_chars, language)
 
     if len(chunks) <= 1:
         # Short text — single-shot fast path
@@ -490,16 +522,9 @@ async def generate_chunked(
                     len(chunks),
                     len(chunk_text),
                 )
-                chunk_audio, chunk_sr = await backend.generate(
-                    chunk_text,
-                    voice_prompt,
-                    language,
-                    chunk_seed,
-                    instruct,
-                    temperature,
+                chunk_audio, chunk_sr = await _generate_one_chunk(
+                    backend, chunk_text, voice_prompt, language, chunk_seed, instruct, temperature, trim_fn
                 )
-            if trim_fn is not None:
-                chunk_audio = trim_fn(chunk_audio, chunk_sr)
             return idx, np.asarray(chunk_audio, dtype=np.float32), chunk_sr
 
         tasks = [_gen_one(i, ct) for i, ct in enumerate(chunks)]
@@ -544,16 +569,9 @@ async def generate_chunked(
             )
             chunk_seed = (seed + i) if seed is not None else None
 
-            chunk_audio, chunk_sr = await backend.generate(
-                chunk_text,
-                voice_prompt,
-                language,
-                chunk_seed,
-                instruct,
-                temperature,
+            chunk_audio, chunk_sr = await _generate_one_chunk(
+                backend, chunk_text, voice_prompt, language, chunk_seed, instruct, temperature, trim_fn
             )
-            if trim_fn is not None:
-                chunk_audio = trim_fn(chunk_audio, chunk_sr)
 
             if sample_rate is None:
                 sample_rate = chunk_sr
@@ -582,16 +600,9 @@ async def generate_chunked(
         )
         chunk_seed = (seed + i) if seed is not None else None
 
-        chunk_audio, chunk_sr = await backend.generate(
-            chunk_text,
-            voice_prompt,
-            language,
-            chunk_seed,
-            instruct,
-            temperature,
+        chunk_audio, chunk_sr = await _generate_one_chunk(
+            backend, chunk_text, voice_prompt, language, chunk_seed, instruct, temperature, trim_fn
         )
-        if trim_fn is not None:
-            chunk_audio = trim_fn(chunk_audio, chunk_sr)
 
         chunk_f32 = np.asarray(chunk_audio, dtype=np.float32)
         audio_chunks.append(chunk_f32)

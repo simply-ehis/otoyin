@@ -215,3 +215,22 @@ export function applyEngineSelection(
 		);
 	}
 }
+
+/**
+ * Pick the generation language for an engine: explicit choice first
+ * (per-engine memory, profile default), English fallback. The preference is
+ * only honored when the engine actually supports it.
+ */
+export function resolveEngineLanguage(
+	engine: string | undefined,
+	preferred?: string | null,
+): string {
+	const available = getLanguageOptionsForEngine(engine ?? "");
+	if (preferred && available.some((l) => l.value === preferred)) {
+		return preferred;
+	}
+	if (available.some((l) => l.value === "en")) {
+		return "en";
+	}
+	return available[0]?.value ?? "en";
+}

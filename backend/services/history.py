@@ -144,10 +144,21 @@ async def update_generation_status(
     duration: float | None = None,
     error: str | None = None,
 ) -> GenerationResponse | None:
-    """Update the status of a generation (used by async generation flow)."""
+    """Update the status of a generation (used by async generation flow).
+
+    Terminal states are sticky: once a row is 'completed' or 'failed', only
+    another terminal write may replace it. This stops a stale worker from
+    resurrecting a cancelled row back to 'completed' (and vice versa) in the
+    cancel-vs-complete race. Retry/regenerate bypass this via their own
+    atomic status flips.
+    """
     generation = db.query(DBGeneration).filter_by(id=generation_id).first()
     if not generation:
         return None
+
+    _terminal = ("completed", "failed")
+    if (generation.status or "completed") in _terminal and status != generation.status:
+        return GenerationResponse.model_validate(generation)
 
     generation.status = status
     if audio_path is not None:
@@ -342,11 +353,26 @@ async def delete_generation(
 
     versions_mod.delete_versions_for_generation(generation_id, db)
 
-    # Delete main audio file (if not already removed by version cleanup)
+    # Audiobook chapters/utterances may reference this generation (nullable FK
+    # without cascade). With foreign_keys=ON the delete below would raise
+    # IntegrityError — null the refs first so history delete always works.
+    try:
+        from ..database import AudiobookChapter as DBAudiobookChapter, AudiobookUtterance as DBAudiobookUtterance
+
+        db.query(DBAudiobookChapter).filter_by(generation_id=generation_id).update({"generation_id": None})
+        db.query(DBAudiobookUtterance).filter_by(generation_id=generation_id).update({"generation_id": None})
+    except Exception:
+        logging.debug("Audiobook ref cleanup skipped for %s", generation_id, exc_info=True)
+
+    # Delete main audio file (if not already removed by version cleanup).
+    # A locked/missing file must not fail the whole delete (Windows locks).
     if generation.audio_path:
-        audio_path = config.resolve_storage_path(generation.audio_path)
-        if audio_path is not None and audio_path.exists():
-            audio_path.unlink()
+        try:
+            audio_path = config.resolve_storage_path(generation.audio_path)
+            if audio_path is not None and audio_path.exists():
+                audio_path.unlink()
+        except OSError as e:
+            logging.debug("Could not delete generation audio file %s: %s", generation.audio_path, e)
 
     # Delete from database
     db.delete(generation)
@@ -372,6 +398,20 @@ async def delete_failed_generations(db: Session) -> int:
         return 0
 
     failed_ids = [g.id for g in failed]
+
+    # Same FK guard as delete_generation: audiobook refs would block the
+    # row deletes below once foreign_keys=ON is enforced.
+    try:
+        from ..database import AudiobookChapter as DBAudiobookChapter, AudiobookUtterance as DBAudiobookUtterance
+
+        db.query(DBAudiobookChapter).filter(DBAudiobookChapter.generation_id.in_(failed_ids)).update(
+            {"generation_id": None}, synchronize_session=False
+        )
+        db.query(DBAudiobookUtterance).filter(DBAudiobookUtterance.generation_id.in_(failed_ids)).update(
+            {"generation_id": None}, synchronize_session=False
+        )
+    except Exception:
+        logging.debug("Audiobook ref cleanup skipped for failed generations", exc_info=True)
 
     # Batch-load all versions for failed generations (single query)
     all_versions = db.query(DBGenerationVersion).filter(DBGenerationVersion.generation_id.in_(failed_ids)).all()
@@ -425,6 +465,19 @@ async def delete_generations_by_profile(profile_id: str, db: Session) -> int:
         return 0
 
     generation_ids = [g.id for g in generations]
+
+    # Same FK guard as delete_generation (audiobook refs lack cascade).
+    try:
+        from ..database import AudiobookChapter as DBAudiobookChapter, AudiobookUtterance as DBAudiobookUtterance
+
+        db.query(DBAudiobookChapter).filter(DBAudiobookChapter.generation_id.in_(generation_ids)).update(
+            {"generation_id": None}, synchronize_session=False
+        )
+        db.query(DBAudiobookUtterance).filter(DBAudiobookUtterance.generation_id.in_(generation_ids)).update(
+            {"generation_id": None}, synchronize_session=False
+        )
+    except Exception:
+        logging.debug("Audiobook ref cleanup skipped for profile %s", profile_id, exc_info=True)
 
     # Batch-load all versions for these generations (single query)
     all_versions = db.query(DBGenerationVersion).filter(DBGenerationVersion.generation_id.in_(generation_ids)).all()

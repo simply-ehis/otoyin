@@ -236,24 +236,3 @@ def reconcile_downloads() -> int:
         return added
     finally:
         db.close()
-
-
-# How often /models/status may re-run the cached-model backfill. The check is
-# one cheap SQL query ("does the manifest have any rows at all?") per window;
-# the reconcile body itself only does disk I/O when drift is detected.
-_RECONCILE_INTERVAL_SEC = 60.0
-_reconcile_last_attempt: float | None = None
-
-
-def reconcile_cached_backfill(min_interval_sec: float = _RECONCILE_INTERVAL_SEC) -> int:
-    """No-op — kept for call-site compatibility.
-
-    Previously this auto-created manifest rows for any model found on disk,
-    which bypassed the marketplace purchase gate (any copied HF cache file
-    became usable).  The download endpoint now creates rows atomically on
-    completion, and ``reconcile_downloads()`` seeds bundled models on first
-    launch.  This function is retained as a no-op so existing callers
-    (``/models/status``, startup defer) don't break, but it no longer
-    invents entitlement rows.
-    """
-    return 0

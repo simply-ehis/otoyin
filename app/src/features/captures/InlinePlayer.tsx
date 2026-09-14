@@ -40,10 +40,15 @@ export function InlinePlayer({
 		if (!container) {
 			return;
 		}
+		const root = document.documentElement;
+		const cssVar = (name: string, fallback: string) => {
+			const v = getComputedStyle(root).getPropertyValue(name).trim();
+			return v ? `hsl(${v})` : fallback;
+		};
 		const ws = WaveSurfer.create({
 			container,
-			waveColor: "hsl(30 6% 45%)",
-			progressColor: "hsl(348 68% 58%)",
+			waveColor: cssVar("--muted", "hsl(30 6% 45%)"),
+			progressColor: cssVar("--accent", "hsl(348 68% 58%)"),
 			cursorColor: "transparent",
 			barWidth: 2,
 			barRadius: 2,

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 interface PlayerState {
 	audioUrl: string | null;
@@ -10,6 +11,8 @@ interface PlayerState {
 	duration: number;
 	volume: number;
 	isMuted: boolean;
+	/** Listening speed multiplier (0.5–2). Applies to WaveSurfer + fallback. */
+	playbackRate: number;
 	isLooping: boolean;
 	shouldRestart: boolean;
 	shouldAutoPlay: boolean;
@@ -33,6 +36,7 @@ interface PlayerState {
 	setDuration: (duration: number) => void;
 	setVolume: (volume: number) => void;
 	setIsMuted: (muted: boolean) => void;
+	setPlaybackRate: (rate: number) => void;
 	toggleLoop: () => void;
 	restartCurrentAudio: () => void;
 	clearRestartFlag: () => void;
@@ -42,7 +46,16 @@ interface PlayerState {
 	reset: () => void;
 }
 
-export const usePlayerStore = create<PlayerState>((set) => ({
+/** Listening preferences restored across reloads (never the track itself). */
+export interface PlayerPrefs {
+	volume: number;
+	isMuted: boolean;
+	playbackRate: number;
+}
+
+export const usePlayerStore = create<PlayerState>()(
+	persist<PlayerState, [], [], PlayerPrefs>(
+		(set) => ({
 	audioUrl: null,
 	audioId: null,
 	profileId: null,
@@ -52,6 +65,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
 	duration: 0,
 	volume: 1,
 	isMuted: false,
+	playbackRate: 1,
 	isLooping: false,
 	shouldRestart: false,
 	shouldAutoPlay: false,
@@ -85,6 +99,8 @@ export const usePlayerStore = create<PlayerState>((set) => ({
 	setDuration: (duration) => set({ duration }),
 	setVolume: (volume) => set({ volume }),
 	setIsMuted: (muted) => set({ isMuted: muted }),
+	setPlaybackRate: (rate) =>
+		set({ playbackRate: Math.min(2, Math.max(0.5, rate)) }),
 	toggleLoop: () => set((state) => ({ isLooping: !state.isLooping })),
 	restartCurrentAudio: () => set({ shouldRestart: true }),
 	clearRestartFlag: () => set({ shouldRestart: false }),
@@ -107,4 +123,16 @@ export const usePlayerStore = create<PlayerState>((set) => ({
 			onFinish: null,
 			masterAnalyser: null,
 		}),
-}));
+		}),
+		{
+			name: "otoyin-player",
+			// Persist listening preferences only — never the current track or
+			// transient playback state (a reload must not resurrect audio).
+			partialize: (s) => ({
+				volume: s.volume,
+				isMuted: s.isMuted,
+				playbackRate: s.playbackRate,
+			}),
+		},
+	),
+);

@@ -283,7 +283,10 @@ class TestGenerationContextFromDB:
         ctx = GenerationContext.from_db(MockGen(), mode="retry")
         assert ctx.text == ""
         assert ctx.language == "en"
-        assert ctx.engine == "kokoro"
+        # No silent default engine: an engine-less record keeps "" so the
+        # retry fails loudly at backend resolution instead of generating
+        # with a model the user never picked.
+        assert ctx.engine == ""
         assert ctx.model_size == "default"
         assert ctx.seed is None
 

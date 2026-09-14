@@ -40,6 +40,7 @@ interface PodcastProducerProps {
 	onOpenChange: (open: boolean) => void;
 	profiles: VoiceProfile[];
 	engines: string[];
+	onAddToTimeline?: (blob: Blob) => void;
 }
 
 interface ProductionState {
@@ -57,6 +58,7 @@ export function PodcastProducer({
 	onOpenChange,
 	profiles,
 	engines,
+	onAddToTimeline,
 }: PodcastProducerProps) {
 	const { t } = useTranslation();
 	const { toast } = useToast();
@@ -407,6 +409,20 @@ export function PodcastProducer({
 							>
 								{t("podcast.producer.newPodcast")}
 							</Button>
+							{onAddToTimeline && state.exportBlob ? (
+								<Button
+									variant="outline"
+									className="flex-1"
+									onClick={() => {
+										if (state.exportBlob) {
+											onAddToTimeline(state.exportBlob);
+											onOpenChange(false);
+										}
+									}}
+								>
+									Add to timeline
+								</Button>
+							) : null}
 							<Button className="flex-1" onClick={downloadExport}>
 								<ArrowDownTrayIcon className="size-4 mr-2" />
 								{t("podcast.producer.download")}

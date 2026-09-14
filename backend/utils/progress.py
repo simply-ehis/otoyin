@@ -40,20 +40,46 @@ class ProgressManager:
         if model_name not in self._listeners:
             return
 
-        for queue in self._listeners[model_name]:
+        # Terminal payloads (complete/error) must always be delivered: the
+        # SSE subscriber only exits on them, so a dropped terminal hangs the
+        # client on heartbeats forever. Non-terminal updates may drop.
+        is_terminal = progress_data.get("status") in ("complete", "error")
+
+        # Snapshot under the lock: subscribe/unsubscribe mutate this list
+        # from other threads/tasks while we iterate.
+        with self._lock:
+            queues = list(self._listeners.get(model_name, []))
+        for queue in queues:
             try:
                 # Check if we're in the main event loop thread
                 try:
                     asyncio.get_running_loop()
                     # We're in an async context, can use put_nowait directly
-                    queue.put_nowait(progress_data.copy())
+                    try:
+                        queue.put_nowait(progress_data.copy())
+                    except asyncio.QueueFull:
+                        if not is_terminal:
+                            raise
+                        with contextlib.suppress(asyncio.QueueEmpty):
+                            queue.get_nowait()
+                        queue.put_nowait(progress_data.copy())
                 except RuntimeError:
                     # Not in async context (running in background thread)
                     # Use call_soon_threadsafe to safely put on queue
                     if self._main_loop and self._main_loop.is_running():
-                        self._main_loop.call_soon_threadsafe(
-                            lambda q=queue, d=progress_data.copy(): q.put_nowait(d) if not q.full() else None
-                        )
+
+                        def _deliver(q=queue, d=progress_data.copy(), terminal=is_terminal):
+                            try:
+                                q.put_nowait(d)
+                            except asyncio.QueueFull:
+                                if not terminal:
+                                    return
+                                with contextlib.suppress(asyncio.QueueEmpty):
+                                    q.get_nowait()
+                                with contextlib.suppress(asyncio.QueueFull):
+                                    q.put_nowait(d)
+
+                        self._main_loop.call_soon_threadsafe(_deliver)
                     else:
                         logger.debug(f"No main loop available for {model_name}, skipping notification")
             except asyncio.QueueFull:
@@ -205,10 +231,11 @@ class ProgressManager:
 
         queue = asyncio.Queue(maxsize=10)
 
-        # Add to listeners
-        if model_name not in self._listeners:
-            self._listeners[model_name] = []
-        self._listeners[model_name].append(queue)
+        # Add to listeners (under lock — notify iterates this list).
+        with self._lock:
+            if model_name not in self._listeners:
+                self._listeners[model_name] = []
+            self._listeners[model_name].append(queue)
 
         logger.info(f"SSE client subscribed to {model_name}, total listeners: {len(self._listeners[model_name])}")
 
@@ -266,6 +293,7 @@ class ProgressManager:
     def mark_complete(self, model_name: str):
         """Mark a model download as complete. Thread-safe."""
         import logging
+        import time as _time
 
         logger = logging.getLogger(__name__)
 
@@ -273,6 +301,7 @@ class ProgressManager:
             if model_name in self._progress:
                 self._progress[model_name]["status"] = "complete"
                 self._progress[model_name]["progress"] = 100.0
+                self._progress[model_name]["completed_at"] = _time.time()
                 progress_data = self._progress[model_name].copy()
             else:
                 logger.warning(f"Cannot mark {model_name} as complete: not found in progress")
@@ -281,10 +310,12 @@ class ProgressManager:
         logger.info(f"Marked {model_name} as complete")
         # Notify listeners (thread-safe)
         self._notify_listeners_threadsafe(model_name, progress_data)
+        self.prune_finished(max_age_sec=300)
 
     def mark_error(self, model_name: str, error: str):
         """Mark a model download as failed. Thread-safe."""
         import logging
+        import time as _time
 
         logger = logging.getLogger(__name__)
 
@@ -292,6 +323,7 @@ class ProgressManager:
             if model_name in self._progress:
                 self._progress[model_name]["status"] = "error"
                 self._progress[model_name]["error"] = error
+                self._progress[model_name]["completed_at"] = _time.time()
                 progress_data = self._progress[model_name].copy()
             else:
                 # Create new progress entry for error
@@ -304,12 +336,48 @@ class ProgressManager:
                     "status": "error",
                     "error": error,
                     "timestamp": datetime.now().isoformat(),
+                    "completed_at": _time.time(),
                 }
                 self._progress[model_name] = progress_data
 
         logger.error(f"Marked {model_name} as error: {error}")
         # Notify listeners (thread-safe)
         self._notify_listeners_threadsafe(model_name, progress_data)
+        self.prune_finished(max_age_sec=300)
+
+    def prune_finished(self, max_age_sec: float = 300) -> int:
+        """Evict terminal (complete/error) entries older than *max_age_sec*.
+
+        Prevents unbounded growth of _progress/_last_notify_* when many
+        models are downloaded over a long session.
+        """
+        import time as _time
+
+        now = _time.time()
+        removed = 0
+        with self._lock:
+            for name in list(self._progress.keys()):
+                entry = self._progress.get(name, {})
+                if entry.get("status") not in ("complete", "error"):
+                    continue
+                done_at = entry.get("completed_at")
+                try:
+                    age = now - float(done_at) if done_at is not None else 0
+                except (TypeError, ValueError):
+                    age = 0
+                if age >= max_age_sec:
+                    self._progress.pop(name, None)
+                    self._last_notify_time.pop(name, None)
+                    self._last_notify_progress.pop(name, None)
+                    removed += 1
+        return removed
+
+    def dismiss(self, model_name: str) -> None:
+        """Drop all state for *model_name* (cancel/delete path)."""
+        with self._lock:
+            self._progress.pop(model_name, None)
+            self._last_notify_time.pop(model_name, None)
+            self._last_notify_progress.pop(model_name, None)
 
 
 # Global progress manager instance

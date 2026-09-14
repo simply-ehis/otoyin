@@ -1,6 +1,6 @@
 import { PauseIcon, PlayIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import { showStudioErrorToast } from "@/lib/errors";
 import { Button } from "@/ui/button";
@@ -29,7 +29,19 @@ export function ReferenceVoicesBrowser() {
 	const [playingId, setPlayingId] = useState<string | null>(null);
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 
-	const { data, isLoading } = useQuery({
+	useEffect(
+		() => () => {
+			if (audioRef.current) {
+				audioRef.current.pause();
+				audioRef.current.removeAttribute("src");
+				audioRef.current.load();
+				audioRef.current = null;
+			}
+		},
+		[],
+	);
+
+	const { data, isLoading, isError, refetch } = useQuery({
 		queryKey: ["reference-voices", language, category],
 		queryFn: () =>
 			apiClient.getReferenceVoices(
@@ -66,8 +78,12 @@ export function ReferenceVoicesBrowser() {
 			setPlayingId(null);
 			return;
 		}
-		audioRef.current?.pause();
-		audioRef.current = null;
+		if (audioRef.current) {
+			audioRef.current.pause();
+			audioRef.current.removeAttribute("src");
+			audioRef.current.load();
+			audioRef.current = null;
+		}
 		try {
 			const url = await apiClient.getReferenceVoiceAudioUrl(voiceId);
 			const audio = new Audio(url);
@@ -83,6 +99,23 @@ export function ReferenceVoicesBrowser() {
 
 	if (isLoading) {
 		return <LoadingState label="Loading reference voices" lines={4} />;
+	}
+
+	if (isError) {
+		return (
+			<div className="flex flex-col items-center gap-2 py-8 text-center">
+				<p className="text-xs text-destructive">
+					Couldn&apos;t load reference voices — is the server running?
+				</p>
+				<button
+					type="button"
+					onClick={() => void refetch()}
+					className="rounded-md border border-border px-2 py-1 text-xs text-foreground hover:bg-secondary"
+				>
+					Retry
+				</button>
+			</div>
+		);
 	}
 
 	const packInfo = data as unknown as {

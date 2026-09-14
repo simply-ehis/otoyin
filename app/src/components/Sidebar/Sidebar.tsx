@@ -3,6 +3,7 @@ import {
 	ChevronDoubleLeftIcon,
 	ChevronLeftIcon,
 	FolderOpenIcon as FolderOpen,
+	GlobeAltIcon as Translate,
 	HomeIcon as Home,
 	LanguageIcon as Language,
 	MicrophoneIcon as Mic,
@@ -68,6 +69,7 @@ const NAV_GROUPS: { items: NavItem[] }[] = [
 			{ path: "/effects", label: "sidebar.effects", icon: Sparkles },
 			{ path: "/workspace", label: "sidebar.workspace", icon: SpeakerWave },
 			{ path: "/sounds", label: "sidebar.sounds", icon: PlayCircle },
+			{ path: "/translate", label: "sidebar.translate", icon: Translate },
 		],
 	},
 	{
@@ -81,7 +83,7 @@ const NAV_GROUPS: { items: NavItem[] }[] = [
 	},
 ];
 
-export function Sidebar({ isMacOS }: { isMacOS: boolean }) {
+export function Sidebar() {
 	const { t } = useTranslation();
 	const router = useRouter();
 	const location = router.state.location;
@@ -139,10 +141,7 @@ export function Sidebar({ isMacOS }: { isMacOS: boolean }) {
 	return (
 		<aside
 			className={cn(
-				"shrink-0 flex flex-col h-full bg-background border-r border-border sticky top-0 z-30 transition-[width] duration-200 relative",
-				// Collapsed rail: no brand row, minimal top pad so the icons
-				// ride up and fill the space.
-				sidebarOpen ? (isMacOS ? "pt-7" : "pt-8") : "pt-2",
+				"shrink-0 flex flex-col h-full bg-background border-r border-border sticky top-0 z-30 transition-[width] duration-200 relative pt-2",
 			)}
 			style={{ width: sidebarOpen ? sidebarWidth : 64 }}
 			aria-label={t("sidebar.ariaLabel")}
@@ -178,25 +177,6 @@ export function Sidebar({ isMacOS }: { isMacOS: boolean }) {
 				/>
 			)}
 			<div className="flex h-full flex-col">
-				{/* Logo / Brand (expanded only — the collapsed rail skips it
-				    so the nav rides up instead of leaving a blank row). */}
-				{sidebarOpen ? (
-					<div className="flex h-16 items-center justify-center border-b border-border px-3">
-						<Link
-							to="/"
-							className="flex items-center gap-2.5 text-foreground transition-opacity"
-							aria-label="Otoyin"
-						>
-							<div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-accent-muted">
-								<Sparkles className="size-4 text-accent" />
-							</div>
-							<span className="font-medium text-sm tracking-tight whitespace-nowrap text-muted-foreground">
-								Otoyin
-							</span>
-						</Link>
-					</div>
-				) : null}
-
 				{/* Navigation */}
 				<nav
 					className="flex-1 overflow-y-auto py-4 px-2 scrollbar-thin"
@@ -254,7 +234,7 @@ export function Sidebar({ isMacOS }: { isMacOS: boolean }) {
 							>
 								<Squares className="size-3.5" aria-hidden="true" />
 								<span>
-									See {hiddenCount} more {hiddenCount === 1 ? "tab" : "tabs"}
+									{t("sidebar.showMoreTabs", { count: hiddenCount })}
 								</span>
 							</Link>
 						)}

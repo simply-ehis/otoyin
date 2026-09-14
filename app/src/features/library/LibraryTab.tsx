@@ -9,6 +9,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
+import { RecordAudioButton } from "@/components/Recording/RecordAudioButton";
 import { ClipboardPanel } from "@/features/clipboard/ClipboardPanel";
 import { apiClient } from "@/lib/api/client";
 import { copyClip } from "@/lib/clip";
@@ -175,18 +176,21 @@ export function LibraryTab() {
 			<ScreenHeader
 				title="Library"
 				actions={
-					<Button
-						type="button"
-						size="sm"
-						variant={showClips ? "default" : "outline"}
-						onClick={() => setShowClips((v) => !v)}
-						title="Show copied clips — everything on the clipboard lives here"
-						aria-label="Toggle clips library"
-						aria-pressed={showClips}
-					>
-						<ClipboardDocumentIcon className="size-4" aria-hidden="true" />
-						Clips
-					</Button>
+					<span className="flex items-center gap-2">
+						<RecordAudioButton compact />
+						<Button
+							type="button"
+							size="sm"
+							variant={showClips ? "default" : "outline"}
+							onClick={() => setShowClips((v) => !v)}
+							title="Show copied clips — everything on the clipboard lives here"
+							aria-label="Toggle clips library"
+							aria-pressed={showClips}
+						>
+							<ClipboardDocumentIcon className="size-4" aria-hidden="true" />
+							Clips
+						</Button>
+					</span>
 				}
 			/>
 			{showClips ? <ClipboardPanel /> : null}

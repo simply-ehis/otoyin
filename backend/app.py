@@ -81,10 +81,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from . import __version__, config, database
 from .database import get_db
+from .fatal_handlers import install_fatal_handlers
 from .routes import register_routers
 from .services.task_queue import create_background_task, init_queue
 from .utils.platform_detect import get_backend_type
 from .utils.progress import get_progress_manager
+
+# Process-level safety net (faulthandler + exception hooks) for every entry
+# point that imports this module: frozen server.py, uvicorn backend.main:app.
+install_fatal_handlers()
 
 
 def create_app() -> FastAPI:
@@ -166,6 +171,40 @@ def create_app() -> FastAPI:
 
     application.add_middleware(ReadinessMiddleware)
 
+    # Request-ID + access log: every response carries X-Request-ID so a
+    # frontend console error can be correlated with one backend log line.
+    # Failures are logged with exc_info (production-grade triage) instead of
+    # vanishing into "backend died midway" silence.
+    import time as _time
+    import uuid as _uuid
+
+    import starlette.requests as _requests
+
+    class RequestIdMiddleware(starlette.middleware.base.BaseHTTPMiddleware):
+        async def dispatch(self, request: _requests.Request, call_next):
+            rid = request.headers.get("X-Request-ID") or _uuid.uuid4().hex[:12]
+            start = _time.monotonic()
+            try:
+                response = await call_next(request)
+            except Exception:
+                logger.exception("request %s %s failed (rid=%s)", request.method, request.url.path, rid)
+                raise
+            elapsed_ms = (_time.monotonic() - start) * 1000
+            response.headers["X-Request-ID"] = rid
+            # Slow-request line: the "backend dying midway" reports were
+            # almost always a >30s model load blocking the loop.
+            if elapsed_ms > 5000:
+                logger.warning(
+                    "slow request %s %s took %.0fms (rid=%s)",
+                    request.method,
+                    request.url.path,
+                    elapsed_ms,
+                    rid,
+                )
+            return response
+
+    application.add_middleware(RequestIdMiddleware)
+
     # Crash capture: observes unhandled exceptions into the opt-in crash
     # log and re-raises, so error responses are unchanged. Outermost so it
     # also sees failures from the middleware above.
@@ -184,6 +223,18 @@ def create_app() -> FastAPI:
     @application.exception_handler(Exception)
     async def unhandled_exception_handler(request, exc):
         logger.exception("Unhandled exception on %s %s", request.method, request.url.path)
+        # NOTE: @exception_handler converts to a response INSIDE the app, so
+        # CrashCaptureMiddleware never sees this exception — capture here.
+        # Local-only store; never raises out of the error path.
+        try:
+            from .services import crash_reports as _crash_reports
+
+            _crash_reports.capture_exception(
+                exc,
+                context={"path": request.url.path, "method": request.method},
+            )
+        except Exception:
+            pass
         from fastapi.responses import JSONResponse
 
         return JSONResponse(
@@ -521,6 +572,15 @@ async def _run_shutdown() -> None:
         _llm.unload_llm_model()
     except Exception:
         logger.exception("Failed to unload LLM model")
+
+    # Stop the download executor so a mid-download shutdown does not hang
+    # the loop (or strand a partial HF cache that later looks "installed").
+    try:
+        from .routes.models.common import _download_executor
+
+        _download_executor.shutdown(wait=False, cancel_futures=True)
+    except Exception:
+        logger.debug("Download executor shutdown skipped", exc_info=True)
 
 
 # ---------------------------------------------------------------------------

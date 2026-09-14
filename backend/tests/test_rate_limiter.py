@@ -42,12 +42,74 @@ async def test_with_retry_succeeds_after_failures():
     async def flaky():
         state["tries"] += 1
         if state["tries"] < 3:
-            raise ValueError("transient")
+            raise RuntimeError("transient")
         return "ok"
 
     result = await with_retry(flaky, attempts=3, base_delay=0.01, label="test")
     assert result == "ok"
     assert state["tries"] == 3
+
+
+@pytest.mark.asyncio
+async def test_with_retry_fails_fast_on_client_errors():
+    """Permanent errors (ValueError, HTTP 4xx) must not burn retries."""
+    from fastapi import HTTPException
+
+    state = {"tries": 0}
+
+    async def bad_request():
+        state["tries"] += 1
+        raise ValueError("bad params")
+
+    with pytest.raises(ValueError):
+        await with_retry(bad_request, attempts=3, base_delay=0.01, label="test")
+    assert state["tries"] == 1
+
+    state["tries"] = 0
+
+    async def not_found():
+        state["tries"] += 1
+        raise HTTPException(status_code=404, detail="missing")
+
+    with pytest.raises(HTTPException):
+        await with_retry(not_found, attempts=3, base_delay=0.01, label="test")
+    assert state["tries"] == 1
+
+
+@pytest.mark.asyncio
+async def test_with_retry_still_retries_server_errors():
+    from fastapi import HTTPException
+
+    state = {"tries": 0}
+
+    async def flaky_server():
+        state["tries"] += 1
+        if state["tries"] < 2:
+            raise HTTPException(status_code=503, detail="busy")
+        return "ok"
+
+    result = await with_retry(flaky_server, attempts=3, base_delay=0.01, label="test")
+    assert result == "ok"
+    assert state["tries"] == 2
+
+
+@pytest.mark.asyncio
+async def test_with_retry_custom_predicate_wins():
+    state = {"tries": 0}
+
+    async def always_value_error():
+        state["tries"] += 1
+        raise ValueError("retry me anyway")
+
+    with pytest.raises(ValueError):
+        await with_retry(
+            always_value_error,
+            attempts=2,
+            base_delay=0.01,
+            label="test",
+            retryable=lambda e: True,
+        )
+    assert state["tries"] == 2
 
 
 @pytest.mark.asyncio

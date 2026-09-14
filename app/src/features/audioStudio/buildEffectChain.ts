@@ -26,12 +26,24 @@ export function buildEffectChain(
 			input.connect(conv).connect(wet).connect(output);
 			nodes.push(input, output);
 		} else if (id === "eq" || id === "equalizer") {
-			const eq = ctx.createBiquadFilter();
-			eq.type = "peaking";
-			eq.frequency.value = p.params.frequency ?? 1000;
-			eq.gain.value = p.params.gain ?? 0;
-			eq.Q.value = p.params.q ?? 1;
-			nodes.push(eq);
+			const lowGain = p.params.low_gain ?? 0;
+			const midGain = p.params.mid_gain ?? 0;
+			const highGain = p.params.high_gain ?? 0;
+			const low = ctx.createBiquadFilter();
+			low.type = "lowshelf";
+			low.frequency.value = 300;
+			low.gain.value = lowGain;
+			const mid = ctx.createBiquadFilter();
+			mid.type = "peaking";
+			mid.frequency.value = 2650;
+			mid.gain.value = midGain;
+			mid.Q.value = 0.7;
+			const high = ctx.createBiquadFilter();
+			high.type = "highshelf";
+			high.frequency.value = 5000;
+			high.gain.value = highGain;
+			low.connect(mid).connect(high);
+			nodes.push(low, mid, high);
 		} else if (id === "delay") {
 			// Parallel wet/dry: `mix` balances dry vs delayed (feedback) signal.
 			const mix = p.params.mix ?? 0.5;

@@ -6,17 +6,6 @@ import type { StudioTrack } from "./AudioStudioStore";
 import { TrackControlsColumn } from "./TrackControls";
 import { TrackVisuals } from "./TrackVisuals";
 
-// Re-export controls/visuals for backward compat
-export {
-	TrackControlsColumn,
-	TrackCrossfadeControls,
-	TrackIdentity,
-	TrackMuteSolo,
-	TrackPan,
-	TrackToolButtons,
-} from "./TrackControls";
-export { TrackVisuals } from "./TrackVisuals";
-
 export function TrackRow({
 	track,
 	dragHandleProps,
@@ -33,6 +22,7 @@ export function TrackRow({
 	onVolume,
 	onPan,
 	onAddAutomation,
+	onAddPanAutomation,
 	onClearAutomation,
 	updateTrack,
 	removeTrack,
@@ -54,6 +44,7 @@ export function TrackRow({
 	onVolume: (v: number) => void;
 	onPan: (pan: number) => void;
 	onAddAutomation: () => void;
+	onAddPanAutomation: () => void;
 	onClearAutomation: () => void;
 	updateTrack: (id: string, patch: Partial<StudioTrack>) => void;
 	removeTrack: (id: string) => void;
@@ -85,6 +76,7 @@ export function TrackRow({
 				onVolume={onVolume}
 				onPan={onPan}
 				onAddAutomation={onAddAutomation}
+				onAddPanAutomation={onAddPanAutomation}
 				onClearAutomation={onClearAutomation}
 				updateTrack={updateTrack}
 				onTranscribe={onTranscribe}

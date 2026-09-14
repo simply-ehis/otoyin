@@ -1,3 +1,8 @@
+/**
+ * Intentional public barrel (verified 2026-09-11: no `@/components` deep
+ * imports exist yet, but external tooling/docs reference these names).
+ * Keep — do not delete as "dead code".
+ */
 export { AudioStudio } from "../features/audioStudio/AudioStudio";
 export { CommunityPresetsPage } from "../features/content/CommunityPresetsPage";
 export { StandaloneProjectPage } from "../features/content/StandaloneProjectPage";

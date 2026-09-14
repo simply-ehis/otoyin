@@ -72,6 +72,9 @@ The Generate tab is the primary interface for creating audio from text. It consi
 | Enter | Submit generation (when text field focused) |
 | Space | Play/pause selected generation |
 
+## Language memory
+The language dropdown defaults to English and remembers each explicit choice per engine (`uiStore.languageByEngine`, persisted). Precedence on profile/engine switch: remembered → profile default → English, always validated via `resolveEngineLanguage` against what the engine supports.
+
 ## Agent Callable
 - **MCP Tools:** `21labs.speak`, `21labs.list_profiles`, `21labs.list_models`, `21labs.list_captures`
 - **REST Endpoints:** `POST /generate`, `GET /history`, `GET /history/{id}`, `DELETE /history/{id}`, `POST /generate/{id}/retry`, `POST /generate/{id}/regenerate`, `GET /generate/{id}/status`, `POST /generate/stream`

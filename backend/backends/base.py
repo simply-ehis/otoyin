@@ -19,6 +19,12 @@ from ..utils.tasks import get_task_manager
 
 logger = logging.getLogger(__name__)
 
+# Short-TTL cache for is_model_cached: the snapshots rglob walk is O(files)
+# and runs on load/generate hot paths. Cache positive AND negative results
+# for a few seconds; downloads invalidate by completing outside this window.
+_cache_check_cache: dict[tuple, tuple[float, bool]] = {}
+_CACHE_CHECK_TTL_SEC = 5.0
+
 
 def is_model_cached(
     hf_repo: str,
@@ -38,6 +44,29 @@ def is_model_cached(
     Returns:
         True if model is fully cached, False if missing or incomplete.
     """
+    import time as _time
+
+    key = (hf_repo, weight_extensions, tuple(required_files or ()))
+    now = _time.monotonic()
+    hit = _cache_check_cache.get(key)
+    if hit is not None and (now - hit[0]) < _CACHE_CHECK_TTL_SEC:
+        return hit[1]
+    result = _is_model_cached_uncached(hf_repo, weight_extensions=weight_extensions, required_files=required_files)
+    _cache_check_cache[key] = (now, result)
+    # Bound growth: drop oldest entries beyond 256 repos.
+    if len(_cache_check_cache) > 256:
+        oldest = min(_cache_check_cache, key=lambda k: _cache_check_cache[k][0])
+        _cache_check_cache.pop(oldest, None)
+    return result
+
+
+def _is_model_cached_uncached(
+    hf_repo: str,
+    *,
+    weight_extensions: tuple[str, ...] = (".safetensors", ".bin"),
+    required_files: list[str] | None = None,
+) -> bool:
+    """Uncached body of is_model_cached (see TTL wrapper above)."""
     try:
         from huggingface_hub import constants as hf_constants
 

@@ -149,7 +149,6 @@ def _build_model_status(
     size_mb: float | None,
     loaded: bool,
     entitled: bool,
-    manifest_backfill_pending: bool = False,
 ) -> models.ModelStatus:
     """Build a ModelStatus response object from config and computed state."""
     return models.ModelStatus(
@@ -157,6 +156,8 @@ def _build_model_status(
         display_name=config["display_name"],
         engine=config["engine"],
         hf_repo_id=config["hf_repo_id"],
+        quant=config.get("quant"),
+        model_size=config.get("model_size"),
         downloaded=downloaded,
         downloading=is_downloading,
         size_mb=size_mb,
@@ -177,7 +178,6 @@ def _build_model_status(
         supports_voice_mixing=config["supports_voice_mixing"],
         quality_score=config["quality_score"],
         category=config["category"],
-        manifest_backfill_pending=manifest_backfill_pending,
     )
 
 
@@ -216,6 +216,7 @@ async def get_model_status():
             "engine": cfg.engine,
             "hf_repo_id": cfg.hf_repo_id,
             "model_size": cfg.model_size,
+            "quant": getattr(cfg, "quant", None),
             "gpu_only": cfg.gpu_only,
             "clone_voice": cfg.clone_voice,
             "emotion_control": cfg.emotion_control,

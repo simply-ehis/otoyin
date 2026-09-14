@@ -91,6 +91,8 @@ from .settings import (
     MCPClientBindingUpsert,
     PerformanceSettingsResponse,
     PerformanceSettingsUpdate,
+    ServerPortResponse,
+    ServerPortUpdate,
 )
 from .speak import SpeakRequest
 from .stories import (
@@ -211,6 +213,8 @@ __all__ = [
     "ProfileSampleResponse",
     "ProfileSampleUpdate",
     "RefinementFlagsModel",
+    "ServerPortResponse",
+    "ServerPortUpdate",
     "SongDraftCreate",
     "SongDraftPayload",
     "SongDraftResponse",

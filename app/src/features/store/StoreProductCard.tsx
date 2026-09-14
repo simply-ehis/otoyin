@@ -22,9 +22,11 @@ import { Button } from "@/ui/button";
 import { Card } from "@/ui/card";
 import { Spinner } from "@/ui/primitives";
 import { Progress } from "@/ui/progress";
+import { PresetVoiceAuditionList } from "@/features/voices/PresetVoiceAuditionList";
 import { StarRating } from "./StarRating";
 import {
 	CATEGORY_ACCENT,
+	CATEGORY_LABELS,
 	formatPrice,
 	formatSize,
 	getCapabilityChips,
@@ -203,11 +205,16 @@ export function StoreProductCard({
 				)}
 				{/* meta chips + rating */}
 				<div className="mt-1 flex flex-wrap items-center gap-2">
-					<span className="inline-flex items-center rounded-full border border-border bg-secondary px-2 py-0.5 text-xs font-medium capitalize text-muted-foreground">
-						{product.category}
+					<span
+						className="inline-flex items-center rounded-full border border-border bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground"
+						title={`Capability: ${CATEGORY_LABELS[product.category] ?? product.category}`}
+					>
+						{CATEGORY_LABELS[product.category] ?? product.category}
 					</span>
 					{product.quality_score != null && (
-						<StarRating score={product.quality_score} size="xs" />
+						<span title="Curated quality score for its category — capability, quality and value compared with similar models">
+							<StarRating score={product.quality_score} size="xs" />
+						</span>
 					)}
 					{sizeLabel && (
 						<span className="text-xs text-muted-foreground">{sizeLabel}</span>
@@ -252,6 +259,15 @@ export function StoreProductCard({
 									: "Preparing download…"}
 							</span>
 						</div>
+					</div>
+				)}
+				{model?.engine && (model?.preset_voices?.length ?? 0) > 0 && (
+					<div className="mt-2 w-full">
+						<PresetVoiceAuditionList
+							engine={model.engine}
+							voices={model.preset_voices ?? []}
+							downloaded={!!model.downloaded}
+						/>
 					</div>
 				)}
 			</div>

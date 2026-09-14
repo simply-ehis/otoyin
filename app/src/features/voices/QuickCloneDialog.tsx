@@ -5,11 +5,10 @@ import {
 	PauseIcon,
 	PlayIcon,
 } from "@heroicons/react/24/outline";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "@/lib/api/client";
-import type { ModelStatusListResponse } from "@/lib/api/types";
 import { useAddSample, useCreateProfile } from "@/lib/hooks/useProfiles";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/ui/button";
@@ -38,7 +37,6 @@ export function QuickCloneDialog({
 }) {
 	const { t } = useTranslation();
 	const { toast } = useToast();
-	const queryClient = useQueryClient();
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 
 	const [step, setStep] = useState<Step>("upload");
@@ -52,12 +50,17 @@ export function QuickCloneDialog({
 
 	const createProfile = useCreateProfile();
 	const addSample = useAddSample();
+	const previewUrlRef = useRef<string | null>(null);
 
-	const bestEngine = useCallback((): string => {
-		const data = queryClient.getQueryData<ModelStatusListResponse>([
-			"modelStatus",
-		]);
-		const models = data?.models ?? [];
+	const { data: modelStatus } = useQuery({
+		queryKey: ["modelStatus"],
+		queryFn: () => apiClient.getModelStatus(),
+		staleTime: 30_000,
+		enabled: open,
+	});
+
+	const bestEngine = useCallback((): string | null => {
+		const models = modelStatus?.models ?? [];
 		const clones = models.filter((m) => m.clone_voice);
 		const loaded = clones.filter((m) => m.loaded);
 		if (loaded[0]) {
@@ -67,33 +70,30 @@ export function QuickCloneDialog({
 		if (downloaded[0]) {
 			return downloaded[0].engine ?? downloaded[0].model_name;
 		}
-		if (clones[0]) {
-			return clones[0].engine ?? clones[0].model_name;
-		}
-		return "zonos_gguf";
-	}, [queryClient]);
+		return null;
+	}, [modelStatus]);
 
-	useEffect(
-		() => () => {
-			audioRef.current?.pause();
-			audioRef.current = null;
-		},
-		[],
-	);
+	const releasePreview = useCallback(() => {
+		audioRef.current?.pause();
+		audioRef.current = null;
+		if (previewUrlRef.current) {
+			URL.revokeObjectURL(previewUrlRef.current);
+			previewUrlRef.current = null;
+		}
+		setPlaying(false);
+	}, []);
+
+	useEffect(() => releasePreview, [releasePreview]);
 	useEffect(() => {
 		if (step !== "naming") {
-			audioRef.current?.pause();
-			audioRef.current = null;
-			setPlaying(false);
+			releasePreview();
 		}
-	}, [step]);
+	}, [step, releasePreview]);
 
 	const close = useCallback(
 		(next: boolean) => {
 			if (!next) {
-				audioRef.current?.pause();
-				audioRef.current = null;
-				setPlaying(false);
+				releasePreview();
 				setStep("upload");
 				setFile(null);
 				setName("");
@@ -104,7 +104,7 @@ export function QuickCloneDialog({
 			}
 			onOpenChange(next);
 		},
-		[onOpenChange],
+		[onOpenChange, releasePreview],
 	);
 
 	const transcribe = useCallback(async (f: File) => {
@@ -127,16 +127,32 @@ export function QuickCloneDialog({
 			setName(base.charAt(0).toUpperCase() + base.slice(1));
 			setFile(f);
 			setReferenceText("");
-			const audio = new Audio(URL.createObjectURL(f));
+			const url = URL.createObjectURL(f);
+			const audio = new Audio(url);
 			audio.onloadedmetadata = () => {
+				URL.revokeObjectURL(url);
 				setDuration(audio.duration);
 				if (audio.duration >= MIN_SECONDS) {
 					setStep("naming");
 					void transcribe(f);
+				} else {
+					toast({
+						title: "Clip too short",
+						description: `Use at least ${MIN_SECONDS}s of clear speech for a reliable clone.`,
+						variant: "destructive",
+					});
 				}
 			};
+			audio.onerror = () => {
+				URL.revokeObjectURL(url);
+				toast({
+					title: "Unreadable audio",
+					description: "That file could not be decoded. Try WAV or MP3.",
+					variant: "destructive",
+				});
+			};
 		},
-		[transcribe],
+		[transcribe, toast],
 	);
 
 	const togglePreview = useCallback(() => {
@@ -149,16 +165,46 @@ export function QuickCloneDialog({
 			return;
 		}
 		if (!audioRef.current) {
-			const audio = new Audio(URL.createObjectURL(file));
+			if (previewUrlRef.current) {
+				URL.revokeObjectURL(previewUrlRef.current);
+				previewUrlRef.current = null;
+			}
+			const url = URL.createObjectURL(file);
+			previewUrlRef.current = url;
+			const audio = new Audio(url);
 			audio.onended = () => setPlaying(false);
+			audio.onerror = () => {
+				setPlaying(false);
+				toast({
+					title: "Preview failed",
+					description: "That file could not be played.",
+					variant: "destructive",
+				});
+			};
 			audioRef.current = audio;
 		}
-		void audioRef.current.play();
+		audioRef.current.play().catch(() => {
+			setPlaying(false);
+			toast({
+				title: "Preview failed",
+				description: "Playback was blocked. Try again.",
+				variant: "destructive",
+			});
+		});
 		setPlaying(true);
-	}, [file, playing]);
+	}, [file, playing, toast]);
 
 	const clone = useCallback(async () => {
 		if (!file || !name.trim()) {
+			return;
+		}
+		const engine = bestEngine();
+		if (!engine) {
+			toast({
+				title: "No clone engine",
+				description: "Download a cloning voice model from the Store first.",
+				variant: "destructive",
+			});
 			return;
 		}
 		setStep("creating");
@@ -167,7 +213,7 @@ export function QuickCloneDialog({
 				name: name.trim(),
 				language: "en",
 				voice_type: "cloned",
-				default_engine: bestEngine(),
+				default_engine: engine,
 			});
 			await addSample.mutateAsync({
 				profileId: profile.id,

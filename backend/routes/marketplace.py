@@ -52,6 +52,27 @@ def _annotate_local_status(products: list[dict]) -> None:
         product["local_status"] = local_status_for(product.get("id", ""))
 
 
+def _annotate_rating_summary(products: list[dict]) -> None:
+    """Add per-product ``avg_rating`` / ``review_count`` in place.
+
+    Same response-only enrichment as above: user feedback grounds the
+    storefront's quality display without touching the signed document.
+    A lookup failure for one product must not break the whole catalog.
+    """
+    from ..services.marketplace_catalog import get_all_rating_summaries
+
+    try:
+        summaries = get_all_rating_summaries()
+    except Exception:
+        return
+    for product in products:
+        summary = summaries.get(product.get("id", ""))
+        if summary:
+            avg, count = summary
+            product["avg_rating"] = avg
+            product["review_count"] = count
+
+
 @router.get("/marketplace/catalog")
 async def get_catalog() -> dict:
     """Return the signed product catalog (prices per docs/PRICING_PLAN.md)."""
@@ -62,6 +83,7 @@ async def get_catalog() -> dict:
     if not verify_catalog(catalog):
         raise HTTPException(status_code=500, detail="Catalog failed self-verification")
     _annotate_local_status(catalog.get("products", []))
+    _annotate_rating_summary(catalog.get("products", []))
     return catalog
 
 
@@ -196,6 +218,8 @@ async def post_review(product_id: str, data: ReviewRequest) -> dict:
 
     if not (1 <= data.rating <= 5):
         raise HTTPException(status_code=400, detail="Rating must be 1-5")
+    if len(data.comment or "") > 2000:
+        raise HTTPException(status_code=400, detail="Comment is too long (max 2000 characters)")
 
     add_product_review(product_id, data.rating, data.comment, data.device_id)
     return {"message": "Review submitted"}
@@ -247,6 +271,7 @@ async def get_local_catalog(request: Request) -> dict:
         raise HTTPException(status_code=500, detail="Catalog failed self-verification")
 
     _annotate_local_status(catalog.get("products", []))
+    _annotate_rating_summary(catalog.get("products", []))
 
     # Add local prices to each product
     products = catalog.get("products", [])

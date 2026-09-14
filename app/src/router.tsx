@@ -6,7 +6,7 @@ import {
 	redirect,
 	useLocation,
 } from "@tanstack/react-router";
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import { AppFrame } from "@/components/AppFrame/AppFrame";
 import { AnnouncementBanner } from "@/components/Banner/AnnouncementBanner";
 import { ServerStatusBanner } from "@/components/Banner/ServerStatusBanner";
@@ -232,11 +232,16 @@ const VoiceConverterView = lazy(() =>
 		default: m.VoiceConverterView,
 	})),
 );
-const SoundEffectsView = lazy(() =>
-	import("@/features/workspace/SoundEffectsView").then((m) => ({
-		default: m.SoundEffectsView,
-	})),
-);
+  const SoundEffectsView = lazy(() =>
+  	import("@/features/workspace/SoundEffectsView").then((m) => ({
+  		default: m.SoundEffectsView,
+  	})),
+  );
+  const TranslateView = lazy(() =>
+  	import("@/features/translate/TranslateView").then((m) => ({
+  		default: m.TranslateView,
+  	})),
+  );
 const AudioEnhanceView = lazy(() =>
 	import("@/features/workspace/AudioEnhanceView").then((m) => ({
 		default: m.AudioEnhanceView,
@@ -376,35 +381,7 @@ const ModelHealthPage = lazy(() =>
 
 // Platform check that works in both web and Tauri
 // navigator.platform is deprecated; prefer userAgentData with fallback
-function getIsMacOS(): boolean {
-	if (typeof navigator === "undefined") {
-		return false;
-	}
-	// Modern API
-	if ("userAgentData" in navigator) {
-		const uaData = (navigator as { userAgentData?: { platform?: string } })
-			.userAgentData;
-		return uaData?.platform?.toLowerCase().includes("mac") ?? false;
-	}
-	// Fallback for older browsers
-	return navigator.platform?.toLowerCase().includes("mac") ?? false;
-}
-
-function useIsMacOS(): boolean {
-	const [isMac, setIsMac] = useState(getIsMacOS);
-	useEffect(() => {
-		const mq = window.matchMedia("(prefers-color-scheme: dark)");
-		// Re-check on any media change (covers platform changes in Tauri)
-		const handler = () => setIsMac(getIsMacOS());
-		mq.addEventListener("change", handler);
-		return () => mq.removeEventListener("change", handler);
-	}, []);
-	return isMac;
-}
-
-// Root layout component
 function RootLayout() {
-	const isMacOS = useIsMacOS();
 	// Monitor active downloads/generations and show toasts for them
 	const activeDownloads = useRestoreActiveTasks();
 
@@ -438,7 +415,7 @@ function RootLayout() {
 					<ErrorBoundary
 						fallback={() => <div className="w-16 bg-secondary shrink-0" />}
 					>
-						<Sidebar isMacOS={isMacOS} />
+						<Sidebar />
 					</ErrorBoundary>
 				</Suspense>
 
@@ -899,6 +876,13 @@ const soundEffectsRoute = createRoute({
 	component: SoundEffectsView,
 });
 
+// Translation route (text ↔ text, offline packs via Store)
+const translateRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/translate",
+	component: TranslateView,
+});
+
 // Projects route
 const projectsRoute = createRoute({
 	getParentRoute: () => rootRoute,
@@ -1010,6 +994,7 @@ const routeTree = rootRoute.addChildren([
 	voiceChangerRoute,
 	voiceConverterRoute,
 	soundEffectsRoute,
+	translateRoute,
 	audioStudioRoute,
 	helpRoute,
 	settingsRoute.addChildren([

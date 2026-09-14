@@ -190,12 +190,109 @@ DESIGN_CAPABLE_ENGINES: dict[str, dict] = {
 }
 
 
+# Accent / nationality groups shown in the voice-design picker, grouped by
+# region so users can browse instead of scrolling a flat 22-item list.
+# Keys match _ACCENT_MAP; labels are display names.
+ACCENT_GROUPS: dict[str, dict] = {
+    "americas": {
+        "label": "Americas",
+        "accents": ["american", "canadian", "brazilian", "mexican", "caribbean"],
+    },
+    "british_isles": {
+        "label": "British Isles",
+        "accents": ["british", "irish", "scottish"],
+    },
+    "europe": {
+        "label": "Europe",
+        "accents": ["french", "german", "spanish", "italian", "russian"],
+    },
+    "asia_pacific": {
+        "label": "Asia-Pacific",
+        "accents": ["indian", "japanese", "chinese", "korean", "australian", "new_zealand"],
+    },
+    "africa_middle_east": {
+        "label": "Africa & Middle East",
+        "accents": ["arabic", "african", "south_african"],
+    },
+}
+
+# Speaking-style groups with one-line guidance, so the style picker shows
+# what each style is for instead of a bare word.
+STYLE_GROUPS: dict[str, dict] = {
+    "narrative": {
+        "label": "Narrative",
+        "styles": ["narrative", "storytelling", "newsreader", "formal"],
+        "help": "Long-form reads: audiobooks, news, documentaries.",
+    },
+    "conversational": {
+        "label": "Conversational",
+        "styles": ["conversational", "casual", "friendly", "gentle"],
+        "help": "Dialogue and assistants: podcasts, chats, explainers.",
+    },
+    "expressive": {
+        "label": "Expressive",
+        "styles": ["dramatic", "enthusiastic", "energetic", "commanding", "authoritative"],
+        "help": "High-energy delivery: trailers, ads, announcements.",
+    },
+    "calm": {
+        "label": "Calm",
+        "styles": ["calm", "soothing", "whispered"],
+        "help": "Low-energy delivery: meditation, bedtime, ASMR-adjacent.",
+    },
+}
+
+
 def get_voice_design_capabilities() -> dict:
-    """Return per-engine voice design capability info for the frontend."""
+    """Return per-engine voice design capability info for the frontend.
+
+    Besides the two text-described design engines, this now includes
+    ``all_models`` — what every TTS model offers (preset voices,
+    languages, clone/design/mixing/emotion/tags) — so the voice-design
+    section can show the full menu instead of only the design-capable
+    subset. Backward compatible: existing ``engines`` etc. unchanged.
+    """
+    all_models: list[dict] = []
+    try:
+        from ..backends import get_all_model_configs
+
+        for cfg in get_all_model_configs():
+            if cfg.category != "tts":
+                continue
+            all_models.append(
+                {
+                    "model_name": cfg.model_name,
+                    "display_name": cfg.display_name,
+                    "engine": cfg.engine,
+                    "languages": list(cfg.languages or ["en"]),
+                    "preset_voice_count": len(cfg.structured_preset_voices or []),
+                    "preset_voices": [
+                        {
+                            "id": v.id,
+                            "name": v.name,
+                            "gender": v.gender,
+                            "language": v.language,
+                        }
+                        for v in (cfg.structured_preset_voices or [])
+                    ],
+                    "clone_voice": bool(cfg.clone_voice),
+                    "voice_design": bool(cfg.voice_design),
+                    "supports_voice_mixing": bool(cfg.supports_voice_mixing),
+                    "emotion_control": bool(cfg.emotion_control),
+                    "paralinguistic_tags": bool(cfg.paralinguistic_tags),
+                    "supports_instruct": bool(cfg.supports_instruct),
+                    "supported_tags": list(cfg.supported_tags or []),
+                    "quality_score": int(cfg.quality_score or 0),
+                }
+            )
+    except Exception:
+        logger.debug("all_models offering list skipped", exc_info=True)
     return {
         "engines": DESIGN_CAPABLE_ENGINES,
         "default_engine": "parler_tts_gguf",
         "composed_prompt_preview": True,
+        "accent_groups": ACCENT_GROUPS,
+        "style_groups": STYLE_GROUPS,
+        "all_models": all_models,
     }
 
 

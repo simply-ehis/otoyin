@@ -12,6 +12,7 @@ import {
 	RECORDING_MIME_TYPE_WAV,
 	RECORDING_TIMESLICE_MS,
 } from "@/lib/constants/audio";
+import { debug } from "@/lib/utils/debug";
 import { usePlatform } from "@/platform/PlatformContext";
 
 interface UseAudioRecordingOptions {
@@ -123,7 +124,7 @@ export function useAudioRecording({
 					}
 				} catch (nativeError) {
 					nativeRef.current = false;
-					console.warn(
+					debug.warn(
 						"[recording] native mic unavailable, trying webview:",
 						nativeError,
 					);
@@ -152,7 +153,7 @@ export function useAudioRecording({
 				}
 
 				if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-					console.error("MediaDevices check:", {
+					debug.error("MediaDevices check:", {
 						hasNavigator: typeof navigator !== "undefined",
 						hasMediaDevices: !!navigator?.mediaDevices,
 						hasGetUserMedia: !!navigator?.mediaDevices?.getUserMedia,
@@ -266,7 +267,7 @@ export function useAudioRecording({
 				streamRef.current = null;
 				const detail = event instanceof ErrorEvent ? event.message : undefined;
 				setError(detail || "Recording error occurred");
-				console.error("MediaRecorder error:", event);
+				debug.error("MediaRecorder error:", event);
 				onRecordingError?.();
 			};
 

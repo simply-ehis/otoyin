@@ -349,7 +349,7 @@ export function ImportWizard({ onImported }: { onImported: () => void }) {
 						value={pasteText}
 						onChange={(e) => setPasteText(e.target.value)}
 						rows={6}
-						className="min-h-[120px] resize-y text-sm"
+						className="min-h-[120px] max-h-[300px] overflow-y-auto resize-none text-sm"
 					/>
 					<p className="text-xs text-muted-foreground">
 						{pasteText

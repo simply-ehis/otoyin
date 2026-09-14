@@ -38,9 +38,23 @@ export function RecordTakeButton({
 
 	if (recording.error) {
 		return (
-			<p role="alert" className="text-xs text-destructive">
-				{recording.error}
-			</p>
+			<span className="flex flex-wrap items-center gap-2">
+				<p role="alert" className="text-xs text-destructive">
+					{recording.error}
+				</p>
+				<Button
+					type="button"
+					size="sm"
+					variant="outline"
+					onClick={() => void recording.startRecording()}
+					title="Retry recording"
+					aria-label="Retry recording"
+					className={className}
+				>
+					<MicrophoneIcon className="size-4" aria-hidden="true" />
+					Retry
+				</Button>
+			</span>
 		);
 	}
 

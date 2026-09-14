@@ -5,6 +5,7 @@ Covers story lifecycle (create/list/get/update/delete) and the basic
 add / move / remove operations on story items.
 """
 
+import logging
 import uuid
 from datetime import UTC, datetime
 
@@ -27,6 +28,8 @@ from ...models import (
 )
 from .helpers import _build_item_detail, _resolve_profile_name
 from .history import push_undo
+
+logger = logging.getLogger(__name__)
 
 
 async def create_story(
@@ -131,6 +134,12 @@ async def delete_story(
         return False
 
     db.query(DBStoryItem).filter_by(story_id=story_id).delete()
+    try:
+        from ...database.stories import StoryEditSnapshot as DBSnapshot
+
+        db.query(DBSnapshot).filter_by(story_id=story_id).delete()
+    except Exception:
+        logger.debug("Snapshot cleanup skipped for story %s", story_id, exc_info=True)
     db.delete(story)
     db.commit()
 

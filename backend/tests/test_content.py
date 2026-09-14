@@ -34,18 +34,18 @@ class TestContentEndpoints:
         assert entries[0]["version"] == "1.0.0"
         assert any("offline" in h.lower() for h in entries[0]["highlights"])
 
-    def test_announcements_include_launch_promo(self, client):
+    def test_announcements_include_offline_promise(self, client):
         resp = client.get("/content/announcements")
         assert resp.status_code == 200
         items = resp.json()["announcements"]
         ids = {a["id"] for a in items}
-        assert {"offline-promise", "launch-week"} <= ids
+        assert "offline-promise" in ids
 
-    def test_offers_include_launch_discount(self, client):
+    def test_offers_include_free_starter(self, client):
         resp = client.get("/content/offers")
         assert resp.status_code == 200
         offers = resp.json()["offers"]
-        assert any(o.get("code") == "LAUNCH20" for o in offers)
+        assert any(o.get("id") == "free-starter" for o in offers)
 
 
 class TestContentFile:

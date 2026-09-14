@@ -1,17 +1,19 @@
 # 68 — Translation Service
 
-> PURPOSE: How otoyin text translation works via local LLM.
+> PURPOSE: How otoyin text translation works (cloud API today; Argos packs pending).
 > OWNS: backend/services/translation.py, backend/mcp_server/tools/studio_domains.py
 > READ-WHEN: translating text, integrating translation into dubbing/recipes
-> KEY-FILES: backend/services/translation.py (service), backend/routes/translate.py (REST), backend/mcp_server/tools/studio_domains.py (MCP tools)
-> INVARIANTS: translation uses the local gguf_llm backend; requires a loaded LLM model
-> GOTCHAS: quality depends on the loaded LLM model; Qwen3-4B is recommended for translation
-> UPDATED: 2026-08-21
+> KEY-FILES: backend/services/translation.py (service), backend/routes/translate.py (REST), backend/mcp_server/tools/studio_domains.py (MCP tools), app/src/features/translate/TranslateView.tsx (UI, /translate tab)
+> INVARIANTS: /translate currently uses Google via deep-translator (network required, NOT offline) — the 20 Argos offline packs in the Store are installed but not yet consulted by this path (tracked follow-up). Dubbing has its own Argos path.
+> GOTCHAS: quality depends on the upstream API; translate failures surface HTTP 400 with the provider message. The TranslateView error box links to the Store for offline packs.
+> UPDATED: 2026-09-12
 
 ## Overview
 
-otoyin provides text translation powered by the local LLM engine. This is used
-internally by the dubbing pipeline and exposed as MCP tools for agent use.
+otoyin exposes text translation over REST (`/translate`), MCP tools, and —
+since P5 — a dedicated Translate tab (`/translate`, `TranslateView.tsx`).
+The service path is currently cloud-backed (see INVARIANTS); the tab shows
+the provider error plus a Store link for offline packs when it fails.
 
 ## MCP tools
 

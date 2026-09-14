@@ -19,10 +19,10 @@ import pytest
 # engine -> (onnx_module, onnx_symbol, torch_module, torch_symbol)
 # moss_tts_nano has NO torch fallback: the tuple uses None for the torch side,
 # and the factory raises (no ONNX assets) rather than silently picking torch.
-# (fish_speech/chattts/f5_tts were removed 2026-09-05: CC-BY-NC weights.)
+# (fish_speech/chattts/f5_tts were removed 2026-09-05: CC-BY-NC weights.
+# styletts2 was removed 2026-09-06 with the design-system rollout.)
 ENGINE_MAP = {
     "pocket_tts": ("pocket_tts_onnx_backend", "PocketTTSOnnxBackend", "pocket_tts_backend", "PocketTTSBackend"),
-    "styletts2": ("styletts2_onnx_backend", "StyleTTS2OnnxBackend", "styletts2_backend", "StyleTTS2Backend"),
     "kokoro": ("kokoro_onnx_backend", "KokoroONNXBackend", "kokoro_backend", "KokoroTTSBackend"),
     "moss_tts_nano": ("moss_tts_nano_onnx_backend", "MossTTSNanoOnnxBackend", None, None),
 }
@@ -62,12 +62,12 @@ def test_removed_nc_engines_rejected():
     """fish_speech/chattts/f5_tts were removed (CC-BY-NC) — unknown engine."""
     from backend.backends import get_tts_backend_for_engine
 
-    for engine in ("fish_speech", "chattts", "f5_tts"):
+    for engine in ("fish_speech", "chattts", "f5_tts", "styletts2"):
         with pytest.raises(ValueError, match="Unknown TTS engine"):
             get_tts_backend_for_engine(engine)
 
 
-@pytest.mark.parametrize("engine", ["pocket_tts", "styletts2", "kokoro"])
+@pytest.mark.parametrize("engine", ["pocket_tts", "kokoro"])
 def test_factory_resolves_without_raising(engine):
     from backend.backends import get_tts_backend_for_engine
 
@@ -83,5 +83,5 @@ def test_factory_raises_for_moss_without_assets():
 
     if is_onnx_available():
         pytest.skip("ONNX assets present — factory would return the backend")
-    with pytest.raises(ValueError, match="MOSS-TTS-Nano requires the ONNX assets"):
+    with pytest.raises(ValueError, match="moss_tts_nano requires the ONNX assets"):
         get_tts_backend_for_engine("moss_tts_nano")

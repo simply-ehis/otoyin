@@ -63,9 +63,16 @@ export interface ServerError {
 }
 
 export interface PlatformLifecycle {
-	startServer(remote?: boolean, modelsDir?: string | null): Promise<string>;
+	startServer(
+		remote?: boolean,
+		modelsDir?: string | null,
+		port?: number | null,
+	): Promise<string>;
 	stopServer(): Promise<void>;
-	restartServer(modelsDir?: string | null): Promise<string>;
+	restartServer(
+		modelsDir?: string | null,
+		port?: number | null,
+	): Promise<string>;
 	setKeepServerRunning(keep: boolean): Promise<void>;
 	setupWindowCloseHandler(): Promise<void>;
 	subscribeToServerLogs(callback: (entry: ServerLogEntry) => void): () => void;

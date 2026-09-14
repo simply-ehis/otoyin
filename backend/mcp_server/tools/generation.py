@@ -81,6 +81,46 @@ def register_generation_tools(mcp: FastMCP) -> None:
         }
 
     @mcp.tool(
+        name="21labs.generate_sfx",
+        description=(
+            "Generate a sound effect from a text prompt using otoyin's local "
+            "SFX engines. Accepts an ``engine`` param (``stable_audio`` "
+            "or ``sa3_sfx``). Returns the rendered WAV as base64."
+        ),
+    )
+    async def twentylabs_generate_sfx(
+        prompt: str,
+        duration_seconds: float = 5.0,
+        seed: int | None = None,
+        engine: str = "stable_audio",
+    ) -> dict[str, Any]:
+        from ...backends import get_music_backend
+        from ...backends.configs import get_all_model_configs
+        from ...backends.protocols import MUSIC_ENGINES
+        from ...services.model_registry import is_downloaded
+
+        if engine not in MUSIC_ENGINES:
+            raise ValueError(f"Unknown SFX engine '{engine}'. Supported: {', '.join(MUSIC_ENGINES)}")
+        # Manifest gate (same remote-only exemption as /generate/sfx).
+        cfg = next((c for c in get_all_model_configs() if c.engine == engine), None)
+        if cfg is not None and cfg.hf_repo_id and not is_downloaded(cfg.model_name, cfg.model_size):
+            raise ValueError(f"Download this model from the Store first ({cfg.model_name})")
+        backend = get_music_backend(engine)
+        if not backend.is_available():
+            raise ValueError(f"SFX engine '{engine}' not available.")
+        try:
+            audio, sr = backend.generate(prompt=prompt, duration_seconds=duration_seconds, seed=seed)
+        except Exception as exc:
+            raise ValueError(f"SFX generation failed: {exc}") from exc
+        return {
+            "audio_base64": _wav_b64(audio, sr),
+            "sample_rate": sr,
+            "duration": float(len(audio)) / sr,
+            "engine": engine,
+            "prompt": prompt,
+        }
+
+    @mcp.tool(
         name="21labs.list_models",
         description=(
             "List the local model engines otoyin can drive (TTS, STT, music, "

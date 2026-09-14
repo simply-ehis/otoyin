@@ -16,7 +16,7 @@ export const TTS_ENGINES = {
 	zonos_gguf: "Zyphra Zonos (GGUF)",
 	styletts2: "StyleTTS2",
 	pocket_tts: "Pocket-TTS",
-	parler_tts_gguf: "Parler-TTS Mini (GGUF)",
+	parler_tts_gguf: "Parler-TTS Mini",
 	moss_tts_nano: "MOSS-TTS-Nano",
 	kitten_tts: "KittenTTS (mini)",
 	neutts: "NeuTTS-Air",

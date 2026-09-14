@@ -11,13 +11,11 @@ import {
 	memo,
 	useCallback,
 	useEffect,
-	useId,
 	useMemo,
 	useRef,
 	useState,
 } from "react";
 import WaveSurfer from "wavesurfer.js";
-import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { apiClient } from "@/lib/api/client";
 import { useThrottledTimeUpdate } from "@/lib/hooks/useThrottledTimeUpdate";
@@ -28,23 +26,26 @@ import { usePlayerStore } from "@/stores/playerStore";
 
 function AudioPlayerInner() {
 	const platform = usePlatform();
-	const volumeLabelId = useId();
 	// Individual selectors to avoid re-rendering on unrelated state changes.
 	// Only the specific fields used by this component trigger re-renders.
 	const audioUrl = usePlayerStore((s) => s.audioUrl);
 	const audioId = usePlayerStore((s) => s.audioId);
 	const profileId = usePlayerStore((s) => s.profileId);
+	const title = usePlayerStore((s) => s.title);
 	const isPlaying = usePlayerStore((s) => s.isPlaying);
 	const currentTime = usePlayerStore((s) => s.currentTime);
 	const duration = usePlayerStore((s) => s.duration);
 	const volume = usePlayerStore((s) => s.volume);
 	const isMuted = usePlayerStore((s) => s.isMuted);
+	const playbackRate = usePlayerStore((s) => s.playbackRate);
 	const isLooping = usePlayerStore((s) => s.isLooping);
 	const shouldRestart = usePlayerStore((s) => s.shouldRestart);
 	const setIsPlaying = usePlayerStore((s) => s.setIsPlaying);
 	const setCurrentTime = usePlayerStore((s) => s.setCurrentTime);
 	const setDuration = usePlayerStore((s) => s.setDuration);
 	const setVolume = usePlayerStore((s) => s.setVolume);
+	const setIsMuted = usePlayerStore((s) => s.setIsMuted);
+	const setPlaybackRate = usePlayerStore((s) => s.setPlaybackRate);
 	const toggleLoop = usePlayerStore((s) => s.toggleLoop);
 	const clearRestartFlag = usePlayerStore((s) => s.clearRestartFlag);
 	const reset = usePlayerStore((s) => s.reset);
@@ -91,6 +92,9 @@ function AudioPlayerInner() {
 
 	const waveformRef = useRef<HTMLDivElement>(null);
 	const wavesurferRef = useRef<WaveSurfer | null>(null);
+	const fallbackAudioRef = useRef<HTMLAudioElement | null>(null);
+	// Latest seek helper for the MediaSession effect (avoids stale closures).
+	const seekBySecondsRef = useRef<((delta: number) => void) | null>(null);
 	const loadingRef = useRef(false);
 	const previousAudioIdRef = useRef<string | null>(null);
 	const hasInitializedRef = useRef(false);
@@ -98,6 +102,7 @@ function AudioPlayerInner() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [wsReady, setWsReady] = useState(false);
+	const [useFallback, setUseFallback] = useState(false);
 
 	// Create WaveSurfer once when the player becomes visible (audioUrl is set).
 	// This instance is reused for all subsequent audio loads - never destroyed until unmount.
@@ -149,7 +154,7 @@ function AudioPlayerInner() {
 					cursorWidth: 3,
 					barWidth: 2,
 					barRadius: 2,
-					height: 80,
+					height: 36,
 					normalize: true,
 					interact: true,
 					dragToSeek: { debounceTime: 0 },
@@ -191,13 +196,30 @@ function AudioPlayerInner() {
 					const st = usePlayerStore.getState();
 					wavesurfer.setMuted(st.isMuted);
 					wavesurfer.setVolume(st.isMuted ? 0 : st.volume);
+					try {
+						wavesurfer.setPlaybackRate(st.playbackRate);
+					} catch (err) {
+						debug.error("Failed to set playback rate:", err);
+					}
 
-					// Auto-play if the flag is set (story mode advance or explicit play)
+					// Auto-play if the flag is set (story mode advance or explicit play).
+					// Note: the flag is usually consumed async after fetch+decode,
+					// so the click gesture is gone and the browser may refuse
+					// with NotAllowedError. That's normal — stay silent and let
+					// the user tap play (a real gesture).
 					const shouldAutoPlayNow = usePlayerStore.getState().shouldAutoPlay;
 					if (shouldAutoPlayNow) {
 						usePlayerStore.getState().clearAutoPlayFlag();
 						wavesurfer.play().catch((err) => {
+							const name = err instanceof Error ? err.name : "";
+							if (name === "NotAllowedError") {
+								debug.log("Autoplay blocked — waiting for user gesture");
+								return;
+							}
 							debug.error("Failed to autoplay:", err);
+							setError(
+								`Playback error: ${err instanceof Error ? err.message : String(err)}`,
+							);
 						});
 					} else {
 						debug.log("Skipping auto-play - shouldAutoPlay is false");
@@ -353,6 +375,11 @@ function AudioPlayerInner() {
 		setError(null);
 		setCurrentTime(0);
 		setDuration(0);
+		// Retry WaveSurfer first on every new URL — a prior decode failure
+		// must not pin all later tracks to the fallback.
+		if (useFallback) {
+			setUseFallback(false);
+		}
 
 		wavesurfer
 			.load(audioUrl)
@@ -364,11 +391,14 @@ function AudioPlayerInner() {
 				debug.error("Failed to load audio:", err);
 				loadingRef.current = false;
 				setIsLoading(false);
-				setError(
-					`Failed to load audio: ${err instanceof Error ? err.message : String(err)}`,
-				);
+				// WaveSurfer WebAudio decode failed (common on Tauri webviews
+				// and for MP3/WebM without codecs) — fall back to a plain
+				// <audio> element so playback still works instead of showing
+				// a dead player.
+				setUseFallback(true);
+				setError(null);
 			});
-	}, [audioUrl, wsReady, setCurrentTime, setDuration]);
+	}, [audioUrl, wsReady, setCurrentTime, setDuration, useFallback]);
 
 	// Sync play/pause state (only when user clicks play/pause button, not auto-sync)
 	// This effect is kept for external state changes but should be minimal
@@ -390,15 +420,26 @@ function AudioPlayerInner() {
 		}
 	}, [isPlaying, setIsPlaying, duration]);
 
-	// Sync volume
+	// Sync volume + listening speed (both engines)
 	useEffect(() => {
+		const fallback = fallbackAudioRef.current;
+		if (fallback) {
+			fallback.volume = volume;
+			fallback.muted = isMuted;
+			fallback.playbackRate = playbackRate;
+		}
 		const ws = wavesurferRef.current;
 		if (!ws) {
 			return;
 		}
 		ws.setMuted(isMuted);
 		ws.setVolume(isMuted ? 0 : volume);
-	}, [volume, isMuted]);
+		try {
+			ws.setPlaybackRate(playbackRate);
+		} catch (err) {
+			debug.error("Failed to set playback rate:", err);
+		}
+	}, [volume, isMuted, playbackRate]);
 
 	// Mark as initialized when audio is ready, reset when audioId changes
 	useEffect(() => {
@@ -419,12 +460,25 @@ function AudioPlayerInner() {
 
 	// Handle restart flag - when history item is clicked again, restart from beginning
 	useEffect(() => {
-		const wavesurfer = wavesurferRef.current;
-		if (!wavesurfer || !shouldRestart || duration === 0) {
+		if (!shouldRestart || duration === 0) {
 			return;
 		}
 
 		debug.log("Restarting current audio from beginning");
+		const fallback = useFallback ? fallbackAudioRef.current : null;
+		if (fallback) {
+			fallback.currentTime = 0;
+			fallback.play().catch((error) => {
+				debug.error("Failed to play after restart:", error);
+				setIsPlaying(false);
+			});
+			clearRestartFlag();
+			return;
+		}
+		const wavesurfer = wavesurferRef.current;
+		if (!wavesurfer) {
+			return;
+		}
 		wavesurfer.seekTo(0);
 		wavesurfer.play().catch((error) => {
 			debug.error("Failed to play after restart:", error);
@@ -435,7 +489,7 @@ function AudioPlayerInner() {
 		});
 
 		clearRestartFlag();
-	}, [shouldRestart, duration, setIsPlaying, clearRestartFlag]);
+	}, [shouldRestart, duration, setIsPlaying, clearRestartFlag, useFallback]);
 
 	// Auto-play is handled exclusively in the WaveSurfer 'ready' event handler.
 	// A separate effect here would race with the ready event since the WebAudio
@@ -443,22 +497,30 @@ function AudioPlayerInner() {
 
 	// Spacebar to play/pause (capture phase so it fires before focused elements)
 	useEffect(() => {
-		const onKeyDown = (e: KeyboardEvent) => {
-			if (e.code !== "Space") {
-				return;
+		const isTypingTarget = (t: EventTarget | null) => {
+			const el = t as HTMLElement | null;
+			if (!el || typeof el !== "object") {
+				return false;
 			}
-			// Ignore if user is typing in an input/textarea
-			const tag = (e.target as HTMLElement)?.tagName;
-			if (
+			const tag = (el as HTMLElement)?.tagName;
+			return (
 				tag === "INPUT" ||
 				tag === "TEXTAREA" ||
-				(e.target as HTMLElement)?.isContentEditable
-			) {
-				return;
-			}
-			if (audioUrl && duration > 0 && wavesurferRef.current) {
-				e.preventDefault();
-				e.stopPropagation();
+				tag === "SELECT" ||
+				(el as HTMLElement)?.isContentEditable
+			);
+		};
+		const togglePlayback = () => {
+			if (useFallback && fallbackAudioRef.current) {
+				const el = fallbackAudioRef.current;
+				if (el.paused) {
+					el.play().catch((err) =>
+						debug.error("Spacebar play failed:", err),
+					);
+				} else {
+					el.pause();
+				}
+			} else if (wavesurferRef.current) {
 				if (wavesurferRef.current.isPlaying()) {
 					wavesurferRef.current.pause();
 				} else {
@@ -468,11 +530,119 @@ function AudioPlayerInner() {
 				}
 			}
 		};
+		// Shared seek helper for keyboard + OS media keys (seconds, clamped).
+		const seekBySeconds = (delta: number) => {
+			const dur = usePlayerStore.getState().duration;
+			if (dur <= 0) {
+				return;
+			}
+			const cur = useFallback
+				? (fallbackAudioRef.current?.currentTime ?? 0)
+				: (wavesurferRef.current?.getCurrentTime() ?? 0);
+			const next = Math.min(dur, Math.max(0, cur + delta));
+			if (useFallback && fallbackAudioRef.current) {
+				fallbackAudioRef.current.currentTime = next;
+				return;
+			}
+			wavesurferRef.current?.seekTo(next / dur);
+		};
+		seekBySecondsRef.current = seekBySeconds;
+		const onKeyDown = (e: KeyboardEvent) => {
+			if (isTypingTarget(e.target)) {
+				return;
+			}
+			if (e.code === "Space") {
+				if (audioUrl && duration > 0) {
+					e.preventDefault();
+					e.stopPropagation();
+					togglePlayback();
+				}
+				return;
+			}
+			// Arrow seek: ±10s (Shift: ±30s). Pill has no room for skip
+			// buttons, so the keyboard carries this.
+			if (e.code === "ArrowLeft" || e.code === "ArrowRight") {
+				if (!audioUrl || duration <= 0) {
+					return;
+				}
+				e.preventDefault();
+				const step = (e.shiftKey ? 30 : 10) * (e.code === "ArrowRight" ? 1 : -1);
+				seekBySeconds(step);
+			}
+		};
 		document.addEventListener("keydown", onKeyDown, true);
 		return () => document.removeEventListener("keydown", onKeyDown, true);
-	}, [audioUrl, duration]);
+	}, [audioUrl, duration, useFallback]);
+
+	// OS-level media keys + lock-screen metadata (no-op where unsupported).
+	useEffect(() => {
+		if (typeof navigator === "undefined" || !("mediaSession" in navigator)) {
+			return;
+		}
+		try {
+			navigator.mediaSession.metadata = audioUrl
+				? new MediaMetadata({ title: title ?? "otoyin playback" })
+				: null;
+			navigator.mediaSession.setActionHandler("play", () => {
+				if (useFallback && fallbackAudioRef.current) {
+					fallbackAudioRef.current.play().catch(() => {});
+				} else {
+					wavesurferRef.current?.play().catch(() => {});
+				}
+			});
+			navigator.mediaSession.setActionHandler("pause", () => {
+				if (useFallback && fallbackAudioRef.current) {
+					fallbackAudioRef.current.pause();
+				} else {
+					wavesurferRef.current?.pause();
+				}
+			});
+			navigator.mediaSession.setActionHandler("seekbackward", (d) => {
+				seekBySecondsRef.current?.(-(d.seekOffset ?? 10));
+			});
+			navigator.mediaSession.setActionHandler("seekforward", (d) => {
+				seekBySecondsRef.current?.(d.seekOffset ?? 10);
+			});
+		} catch (err) {
+			debug.log("MediaSession unavailable:", err);
+		}
+		return () => {
+			try {
+				navigator.mediaSession.metadata = null;
+				for (const a of ["play", "pause", "seekbackward", "seekforward"] as const) {
+					navigator.mediaSession.setActionHandler(a, null);
+				}
+			} catch {
+				// Teardown best-effort.
+			}
+		};
+	}, [audioUrl, title, useFallback]);
 
 	const handlePlayPause = useCallback(async () => {
+		// Fallback <audio> path (WaveSurfer decode unsupported) — plain
+		// HTMLAudio always works in the webview, including autoplay-policy
+		// edge cases, because this handler IS a user gesture.
+		if (useFallback) {
+			const el = fallbackAudioRef.current;
+			if (!el) {
+				return;
+			}
+			try {
+				if (el.paused) {
+					await el.play();
+					setIsPlaying(true);
+				} else {
+					el.pause();
+					setIsPlaying(false);
+				}
+			} catch (error) {
+				debug.error("Fallback playback failed:", error);
+				setError(
+					`Playback error: ${error instanceof Error ? error.message : String(error)}`,
+				);
+			}
+			return;
+		}
 		// Standard WaveSurfer playback (works for both normal and native playback modes)
 		// When using native playback, WaveSurfer is muted but still controls visualization
 		if (!wavesurferRef.current) {
@@ -582,25 +752,62 @@ function AudioPlayerInner() {
 		audioUrl,
 		duration,
 		isLoading,
+		useFallback,
 	]);
 
 	const handleSeek = useCallback(
 		(value: number[]) => {
-			if (!wavesurferRef.current || duration === 0) {
+			if (duration === 0) {
 				return;
 			}
-			const progress = value[0] / 100;
+			const progress = (value[0] ?? 0) / 100;
+			if (useFallback && fallbackAudioRef.current) {
+				fallbackAudioRef.current.currentTime = progress * duration;
+				return;
+			}
+			if (!wavesurferRef.current) {
+				return;
+			}
 			wavesurferRef.current.seekTo(progress);
 		},
-		[duration],
+		[duration, useFallback],
 	);
 
 	const handleVolumeChange = useCallback(
 		(value: number[]) => {
-			setVolume(value[0] / 100);
+			setVolume((value[0] ?? 100) / 100);
 		},
 		[setVolume],
 	);
+
+	const retryLoad = useCallback(() => {
+		if (!audioUrl) {
+			return;
+		}
+		setError(null);
+		setIsLoading(true);
+		if (useFallback) {
+			fallbackAudioRef.current?.load();
+			return;
+		}
+		if (!wavesurferRef.current) {
+			setIsLoading(false);
+			setError("Player not ready — close and play again.");
+			return;
+		}
+		wavesurferRef.current
+			.load(audioUrl)
+			.then(() => {
+				loadingRef.current = false;
+			})
+			.catch((err) => {
+				debug.error("Retry load failed:", err);
+				loadingRef.current = false;
+				setIsLoading(false);
+				setUseFallback(true);
+				setError(null);
+			});
+	}, [audioUrl, useFallback]);
 
 	const handleClose = useCallback(() => {
 		// Stop any native playback
@@ -611,6 +818,12 @@ function AudioPlayerInner() {
 				debug.error("Failed to stop native playback:", error);
 			}
 		}
+		// Stop fallback audio
+		if (fallbackAudioRef.current) {
+			fallbackAudioRef.current.pause();
+			fallbackAudioRef.current.removeAttribute("src");
+		}
+		setUseFallback(false);
 		// Stop WaveSurfer
 		if (wavesurferRef.current) {
 			wavesurferRef.current.pause();
@@ -625,122 +838,190 @@ function AudioPlayerInner() {
 		return null;
 	}
 
-	return (
-		<div className="sticky bottom-0 left-0 right-0 border-t bg-background z-50">
-			<div className="container mx-auto px-4 py-3 max-w-7xl">
-				<div className="flex items-center gap-4">
-					{/* Play/Pause Button */}
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={handlePlayPause}
-						disabled={isLoading || duration === 0}
-						className={`shrink-0 -mt-2 ${isPlaying ? "bg-accent text-accent-foreground" : ""}`}
-						title={duration === 0 && !isLoading ? "Audio not loaded" : ""}
-						aria-label={
-							duration === 0 && !isLoading
-								? "Audio not loaded"
-								: isPlaying
-									? "Pause"
-									: "Play"
-						}
-					>
-						{isPlaying ? (
-							<Pause className="size-5 fill-current" />
-						) : (
-							<Play className="size-5 fill-current" />
-						)}
-					</Button>
+	const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+	const timeLabel = `${formatAudioDuration(currentTime)} / ${formatAudioDuration(duration)}`;
 
-					{/* Waveform */}
-					<div className="flex-1 min-w-0 flex flex-col gap-1">
-						<div
-							ref={waveformRef}
-							className="w-full min-h-[80px] select-none"
+	return (
+		<div className="pointer-events-none fixed inset-x-0 bottom-3 z-50 flex justify-center px-3">
+			<div className="pointer-events-auto flex h-12 w-full max-w-2xl items-center gap-1.5 rounded-full border border-border bg-card/95 py-1.5 pl-1.5 pr-2 shadow-xl backdrop-blur">
+				{/* Play/Pause Button */}
+				<button
+					type="button"
+					onClick={handlePlayPause}
+					disabled={isLoading || (duration === 0 && !useFallback)}
+					className="grid size-9 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground transition hover:brightness-110 disabled:opacity-40"
+					title={
+						duration === 0 && !isLoading && !useFallback
+							? "Audio not loaded"
+							: ""
+					}
+					aria-label={
+						duration === 0 && !isLoading && !useFallback
+							? "Audio not loaded"
+							: isPlaying
+								? "Pause"
+								: "Play"
+					}
+				>
+					{isLoading ? (
+						<span
+							className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+							aria-hidden="true"
 						/>
+					) : isPlaying ? (
+						<Pause className="size-4 fill-current" aria-hidden="true" />
+					) : (
+						<Play className="size-4 fill-current" aria-hidden="true" />
+					)}
+				</button>
+
+				{/* Title */}
+				{title ? (
+					<p className="hidden max-w-[120px] shrink-0 truncate text-xs font-medium text-foreground sm:block">
+						{title}
+					</p>
+				) : null}
+
+					{/* Waveform / seek / error */}
+				<div className="flex min-w-0 flex-1 items-center">
+					{error ? (
+						<div className="flex min-w-0 flex-1 items-center gap-2 px-1">
+							<p className="min-w-0 flex-1 truncate text-xs text-destructive">
+								{error}
+							</p>
+							<button
+								type="button"
+								onClick={retryLoad}
+								title="Retry loading audio"
+								aria-label="Retry loading audio"
+								className="shrink-0 rounded-full border border-border px-2 py-0.5 text-xs text-foreground transition-colors hover:bg-secondary"
+							>
+								Retry
+							</button>
+						</div>
+					) : useFallback ? (
 						<Slider
-							value={duration > 0 ? [(currentTime / duration) * 100] : [0]}
+							value={[progress]}
 							onValueChange={handleSeek}
 							max={100}
 							step={0.1}
 							className="w-full"
-							aria-label="Playback position"
-							aria-valuetext={`${formatAudioDuration(currentTime)} of ${formatAudioDuration(duration)}`}
+							aria-label="Seek"
+							aria-valuetext={timeLabel}
 						/>
-
-						{error && (
-							<div className="text-xs text-destructive text-center py-2">
-								{error}
-							</div>
-						)}
-					</div>
-
-					{/* Time Display */}
-					<div className="flex items-center gap-2 text-sm text-muted-foreground shrink-0 min-w-[100px]">
-						<span className="font-mono">
-							{formatAudioDuration(currentTime)}
-						</span>
-						<span>/</span>
-						<span className="font-mono">{formatAudioDuration(duration)}</span>
-					</div>
-
-					{/* Loop Button */}
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={toggleLoop}
-						className={isLooping ? "bg-accent text-accent-foreground" : ""}
-						title="Toggle loop"
-						aria-label={isLooping ? "Stop looping" : "Loop"}
-					>
-						<Repeat className="size-4" />
-					</Button>
-
-					{/* Volume Control */}
-					<fieldset
-						className="flex items-center gap-2 shrink-0 w-[120px]"
-						aria-label="Volume"
-					>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => setVolume(volume > 0 ? 0 : 1)}
-							className="size-8"
-							aria-label={volume > 0 ? "Mute" : "Unmute"}
-						>
-							{volume > 0 ? (
-								<Volume2 className="size-4" />
-							) : (
-								<VolumeX className="size-4" />
-							)}
-						</Button>
-						<span id={volumeLabelId} className="sr-only">
-							Volume level, {Math.round(volume * 100)}%
-						</span>
-						<Slider
-							value={[volume * 100]}
-							onValueChange={handleVolumeChange}
-							max={100}
-							step={1}
-							className="flex-1"
-							aria-labelledby={volumeLabelId}
-							aria-valuetext={`${Math.round(volume * 100)}%`}
+					) : (
+						<div
+							ref={waveformRef}
+							className="h-9 w-full select-none"
+							title="Click to seek"
 						/>
-					</fieldset>
-
-					{/* Close Button */}
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={handleClose}
-						className="shrink-0"
-						title="Close player"
-						aria-label="Close player"
-					>
-						<X className="size-5" />
-					</Button>
+					)}
 				</div>
+
+				{/* Time Display */}
+				<span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
+					{timeLabel}
+				</span>
+
+				{/* Listening speed */}
+				<button
+					type="button"
+					onClick={() => {
+						const steps = [1, 1.25, 1.5, 2, 0.75];
+						const idx = steps.indexOf(playbackRate);
+						setPlaybackRate(steps[(idx + 1) % steps.length] ?? 1);
+					}}
+					className="grid h-7 min-w-9 shrink-0 place-items-center rounded-full px-1.5 font-mono text-[11px] tabular-nums text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+					title={`Listening speed ${playbackRate}× — click to change`}
+					aria-label={`Listening speed ${playbackRate} times. Activate to change speed.`}
+				>
+					{playbackRate}×
+				</button>
+
+				{/* Loop Button */}
+				<button
+					type="button"
+					onClick={toggleLoop}
+					className={`grid size-7 shrink-0 place-items-center rounded-full transition-colors ${
+						isLooping
+							? "bg-accent text-accent-foreground"
+							: "text-muted-foreground hover:bg-secondary hover:text-foreground"
+					}`}
+					title="Toggle loop"
+					aria-label={isLooping ? "Stop looping" : "Loop"}
+					aria-pressed={isLooping}
+				>
+					<Repeat className="size-3.5" aria-hidden="true" />
+				</button>
+
+				{/* Volume Control */}
+				<button
+					type="button"
+					onClick={() => setIsMuted(!isMuted)}
+					className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+					title={isMuted || volume === 0 ? "Unmute" : "Mute"}
+					aria-label={isMuted || volume === 0 ? "Unmute" : "Mute"}
+					aria-pressed={isMuted}
+				>
+					{isMuted || volume === 0 ? (
+						<VolumeX className="size-3.5" aria-hidden="true" />
+					) : (
+						<Volume2 className="size-3.5" aria-hidden="true" />
+					)}
+				</button>
+				<div className="hidden w-16 shrink-0 md:block">
+					<Slider
+						value={[isMuted ? 0 : volume * 100]}
+						onValueChange={handleVolumeChange}
+						max={100}
+						step={1}
+						className="w-full"
+						aria-label="Volume"
+						aria-valuetext={`${Math.round((isMuted ? 0 : volume) * 100)}%`}
+					/>
+				</div>
+
+				{/* Close Button */}
+				<button
+					type="button"
+					onClick={handleClose}
+					className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+					title="Close player"
+					aria-label="Close player"
+				>
+					<X className="size-3.5" aria-hidden="true" />
+				</button>
 			</div>
+			{/* Hidden fallback engine (WaveSurfer decode unsupported) */}
+			{useFallback ? (
+				// biome-ignore lint/a11y/useMediaCaption: hidden playback engine, not user-facing media — captions don't apply
+				<audio
+					ref={fallbackAudioRef}
+					src={audioUrl}
+					preload="auto"
+					className="hidden"
+					onLoadedMetadata={(e) => {
+						const el = e.currentTarget;
+						const st = usePlayerStore.getState();
+						el.volume = st.volume;
+						el.muted = st.isMuted;
+						el.playbackRate = st.playbackRate;
+						setDuration(el.duration || 0);
+						setIsLoading(false);
+					}}
+					onTimeUpdate={(e) =>
+						throttledSetCurrentTime(e.currentTarget.currentTime)
+					}
+					onPlay={() => setIsPlaying(true)}
+					onPause={() => setIsPlaying(false)}
+					onEnded={() => setIsPlaying(false)}
+					onError={() =>
+						setError(
+							"Audio file could not be played — re-generate or check the backend.",
+						)
+					}
+				/>
+			) : null}
 		</div>
 	);
 }

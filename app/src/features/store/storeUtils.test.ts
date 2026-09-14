@@ -18,6 +18,8 @@ import {
 	buildErroredDownloads,
 	buildFilteredProducts,
 	bytesToProgress,
+	CATEGORIES,
+	CATEGORY_LABELS,
 	type CategoryId,
 	compareQualityDesc,
 	formatPrice,
@@ -789,5 +791,18 @@ describe("compareQualityDesc", () => {
 		expect(
 			compareQualityDesc({ name: "a", quality_score: 2 }, { name: "b" }),
 		).toBeLessThan(0);
+	});
+});
+
+describe("CATEGORY_LABELS", () => {
+	it("labels every browsable category (badges never show raw codes)", () => {
+		for (const c of CATEGORIES) {
+			if (c.id === "all") {
+				continue;
+			}
+			expect(CATEGORY_LABELS[c.id], `missing label for ${c.id}`).toMatch(
+				/\S/,
+			);
+		}
 	});
 });

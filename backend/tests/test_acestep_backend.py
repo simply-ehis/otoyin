@@ -37,8 +37,11 @@ def test_config_present():
 
 
 def test_catalog_id_matches_model_name():
-    product = marketplace_catalog.get_product("acestep-1-5")
+    # The license gate in routes/models/download.py resolves entitlements by
+    # model_name == catalog id - a mismatch would make the model undownloadable.
+    product = marketplace_catalog.get_product("acestep-1-5-gguf")
     assert product is not None
+    assert product["id"] == configs_mod.get_model_config("acestep-1-5-gguf").model_name
     assert product["paid"] is True
     assert product["category"] == "music"
 
@@ -267,6 +270,9 @@ def _fake_music_backend(monkeypatch, **attrs):
 
     fake = FakeBackend()
     monkeypatch.setattr("backend.routes.generate.get_music_backend", lambda engine: fake)
+    # The route's manifest gate checks the real download DB — these tests fake
+    # the backend, so pretend the model is downloaded to reach it.
+    monkeypatch.setattr("backend.services.model_registry.is_downloaded", lambda *a, **k: True)
     return fake
 
 

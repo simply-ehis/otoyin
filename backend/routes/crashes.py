@@ -40,17 +40,30 @@ class CrashCaptureMiddleware(BaseHTTPMiddleware):
 
     Re-raising preserves every existing error response (500s, handlers) —
     this layer only observes. Capture itself never raises: a broken capture
-    path must not turn a working request into a 500.
+    path must not turn a working request into a 500. Also feeds the
+    recent-request trail so the next record shows last actions.
     """
 
     async def dispatch(self, request, call_next):
+        try:
+            crash_reports.record_action(
+                request.method,
+                request.url.path,
+                request.headers.get("X-Request-ID"),
+            )
+        except Exception:
+            pass
         try:
             return await call_next(request)
         except Exception as exc:
             try:
                 crash_reports.capture_exception(
                     exc,
-                    context={"path": request.url.path, "method": request.method},
+                    context={
+                        "path": request.url.path,
+                        "method": request.method,
+                        "request_id": request.headers.get("X-Request-ID"),
+                    },
                 )
             except Exception as capture_error:
                 logger.debug("Crash capture failed: %s", capture_error)
@@ -65,7 +78,8 @@ def crash_status() -> dict:
 
 @router.post("/crashes/toggle")
 def toggle_crash_reporting(request: ToggleRequest) -> dict:
-    """Opt in/out of crash reporting. Independent of usage telemetry."""
+    """Opt in/out of crash report SHARING. Local on-device logging stays on
+    regardless; this only controls forwarding. Independent of usage telemetry."""
     if request.enabled:
         crash_reports.enable_crash_reporting()
     else:
@@ -87,7 +101,7 @@ def clear_crash_reports() -> dict:
 
 @router.post("/crashes/report")
 def submit_crash_report(report: ClientReport) -> dict:
-    """Accept a frontend/Rust crash report. Stored only when enabled."""
+    """Accept a frontend/Rust crash report. Always stored locally on-device."""
     record = crash_reports.capture_report(
         layer=report.layer,
         kind=report.kind,

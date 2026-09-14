@@ -344,9 +344,35 @@ export interface AssistantSettings {
 	system_prompt?: string | null;
 	/** KV-cache quantization for the GGUF planner (e.g. "q8_0"). */
 	kv_quant: string;
+	/** Layers offloaded to GPU (null = CPU-only). Applies at planner load. */
+	gpu_layers?: number | null;
+	/** Live planner state (not persisted): true while llama-server runs. */
+	planner_loaded?: boolean;
+	/** n_ctx the running server was started with (null when not loaded). */
+	loaded_n_ctx?: number | null;
+	/** Model size the running server holds (null when not loaded). */
+	loaded_model_size?: string | null;
+	/** n_ctx the next load will use under current settings. */
+	effective_n_ctx?: number | null;
+	/** kv_quant / gpu_layers the running server uses (null when not loaded). */
+	loaded_kv_quant?: string | null;
+	loaded_gpu_layers?: number | null;
+	/** gpu_layers the next load will use under current settings. */
+	effective_gpu_layers?: number | null;
+	/** True when the TWENTYLABS_LLAMA_GPU_LAYERS env var overrides the UI. */
+	gpu_layers_env_override?: boolean;
 }
 
 export type AssistantSettingsUpdate = Partial<AssistantSettings>;
+
+export interface ServerPortState {
+	/** Port persisted for the next backend start. */
+	port: number;
+	/** Port this backend process actually bound. */
+	current_port: number;
+	/** True when a restart is needed to apply the persisted port. */
+	needs_restart: boolean;
+}
 
 export interface PerformanceSettings {
 	/** When true, the app trades RAM for speed: models stay loaded and all UI renders immediately. */
@@ -395,6 +421,8 @@ export interface HealthResponse {
 	vram_total_mb?: number;
 	vram_free_mb?: number;
 	vram_pressure?: boolean | null;
+	ram_total_mb?: number;
+	ram_free_mb?: number;
 	gpu_compatibility_warning?: string | null;
 	backend_type?: string;
 	backend_variant?: string; // "cpu" or "cuda"
@@ -461,11 +489,10 @@ export interface ModelStatus {
 	display_name: string;
 	engine?: string; // backend engine key (e.g. "zonos")
 	hf_repo_id?: string; // HuggingFace repository ID
+	quant?: string | null; // quantization/format tag (e.g. "Q8_0") — technical detail
+	model_size?: string | null; // size variant tag (e.g. "Q8_0", "4B-Q4_K_M")
 	downloaded: boolean;
 	entitled?: boolean; // true when a manifest row exists (downloaded via the Models tab)
-	// true when files are on disk (or loaded) but the manifest has no row yet —
-	// the Store must not offer a download for a model that can already generate.
-	manifest_backfill_pending?: boolean;
 	downloading: boolean; // True if download in progress
 	size_mb?: number;
 	loaded: boolean;

@@ -116,7 +116,8 @@ class TestVoiceChatSession:
         assert session.is_playing_audio is False
         assert session.enable_tools is True
         assert session.conversation_history == []
-        assert session.audio_buffer == []
+        # Bounded deque (30s cap) — assert emptiness, not container type.
+        assert len(session.audio_buffer) == 0
 
     def test_custom_values(self):
         session = VoiceChatSession(

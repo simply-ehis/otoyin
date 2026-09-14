@@ -1,4 +1,4 @@
-import { ArrowPathIcon } from "@heroicons/react/24/outline";
+import { ArrowPathIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { useTranslation } from "react-i18next";
 import {
 	ALL_TAB_PATHS,
@@ -26,6 +26,7 @@ const TAB_LABELS: Record<TabPath, string> = {
 	"/effects": "Effects",
 	"/workspace": "Workspace",
 	"/sounds": "Sounds",
+	"/translate": "Translate",
 	"/library": "Library",
 	"/store": "Store",
 	"/settings": "Settings",
@@ -38,6 +39,7 @@ export function WorkspacePage() {
 	const toggleTab = useWorkspaceStore((s) => s.toggleTab);
 	const applyUseCases = useWorkspaceStore((s) => s.applyUseCases);
 	const resetToAll = useWorkspaceStore((s) => s.resetToAll);
+	const reopenOnboarding = useWorkspaceStore((s) => s.reopenOnboarding);
 
 	const isTabVisible = (tab: TabPath) =>
 		visibleTabs === null || visibleTabs.includes(tab);
@@ -96,7 +98,11 @@ export function WorkspacePage() {
 				</div>
 			</SettingSection>
 
-			<div className="flex justify-end">
+			<div className="flex justify-end gap-2">
+				<Button variant="outline" onClick={reopenOnboarding}>
+					<SparklesIcon className="mr-1.5 size-3.5" aria-hidden="true" />
+					{t("settings.workspace.replayTour", "Replay welcome tour")}
+				</Button>
 				<Button variant="outline" onClick={resetToAll}>
 					<ArrowPathIcon className="mr-1.5 size-3.5" aria-hidden="true" />
 					{t("settings.workspace.reset", "Show all tabs")}

@@ -169,7 +169,7 @@ PRODUCTS: list[dict[str, Any]] = [
     # --- Paid ONNX TTS (equation: params_b x $20) ---
     {
         "id": "pocket-tts-onnx",
-        "name": "Pocket-TTS ONNX",
+        "name": "Pocket-TTS",
         "category": "tts",
         "price_usd": 8,
         "paid": True,
@@ -178,7 +178,7 @@ PRODUCTS: list[dict[str, Any]] = [
     },
     {
         "id": "pocket-tts",
-        "name": "Pocket-TTS (torch)",
+        "name": "Pocket-TTS (PyTorch)",
         "category": "tts",
         "price_usd": 8,
         "paid": True,
@@ -188,7 +188,7 @@ PRODUCTS: list[dict[str, Any]] = [
     # --- Paid STT (equation: params_b x $20) ---
     {
         "id": "parakeet-v3-q8",
-        "name": "Parakeet v3 (Q8)",
+        "name": "Parakeet v3",
         "category": "stt",
         "price_usd": 12,
         "paid": True,
@@ -197,7 +197,7 @@ PRODUCTS: list[dict[str, Any]] = [
     },
     {
         "id": "parakeet-v3-f16",
-        "name": "Parakeet v3 (F16)",
+        "name": "Parakeet v3 (fast)",
         "category": "stt",
         "price_usd": 12,
         "paid": True,
@@ -227,10 +227,10 @@ PRODUCTS: list[dict[str, Any]] = [
     {"id": "vc-cloud", "name": "Cloud VC (BYOK)", "category": "vc", "price_usd": 0, "paid": False, "quality_score": 0, "note": "Bring your own API key. No local download."},
     # --- Paid TTS ---
     {"id": "bark-small", "name": "Bark Small", "category": "tts", "price_usd": 5, "paid": True, "quality_score": 4, "note": "235MB GGUF, 26 preset voices, 13 languages. MIT. CPU-friendly, no torch needed."},
-    {"id": "neutts-air-q8", "name": "NeuTTS-Air (Q8)", "category": "tts", "price_usd": 10, "paid": True, "quality_score": 6, "note": "803MB GGUF, zero-shot voice cloning, English only. Apache 2.0."},
+    {"id": "neutts-air-q8", "name": "NeuTTS-Air", "category": "tts", "price_usd": 10, "paid": True, "quality_score": 6, "note": "803MB GGUF, zero-shot voice cloning, English only. Apache 2.0."},
     {
         "id": "neutts-2e-q4",
-        "name": "NeuTTS-2E (Q4)",
+        "name": "NeuTTS-2E",
         "category": "tts",
         "price_usd": 10,
         "paid": True,
@@ -239,7 +239,7 @@ PRODUCTS: list[dict[str, Any]] = [
     },
     {
         "id": "neutts-2e-q8",
-        "name": "NeuTTS-2E (Q8)",
+        "name": "NeuTTS-2E (high fidelity)",
         "category": "tts",
         "price_usd": 15,
         "paid": True,
@@ -248,7 +248,7 @@ PRODUCTS: list[dict[str, Any]] = [
     },
     {
         "id": "parler-tts-mini-gguf",
-        "name": "Parler-TTS Mini (GGUF)",
+        "name": "Parler-TTS Mini",
         "category": "tts",
         "price_usd": 18,
         "paid": True,
@@ -257,7 +257,7 @@ PRODUCTS: list[dict[str, Any]] = [
     },
     {
         "id": "zonos-v0.1-gguf",
-        "name": "Zonos v0.1 (GGUF)",
+        "name": "Zonos v0.1",
         "category": "tts",
         "price_usd": 32,
         "paid": True,
@@ -266,7 +266,7 @@ PRODUCTS: list[dict[str, Any]] = [
     },
     {
         "id": "qwen3-tts-1.7b",
-        "name": "Qwen3-TTS 12Hz 1.7B Base (GGUF)",
+        "name": "Qwen3-TTS 1.7B",
         "category": "tts",
         "price_usd": 40,
         "paid": True,
@@ -275,7 +275,7 @@ PRODUCTS: list[dict[str, Any]] = [
     },
     {
         "id": "orpheus-q8-0",
-        "name": "Orpheus 3B (Q8_0)",
+        "name": "Orpheus 3B",
         "category": "tts",
         "price_usd": 80,
         "paid": True,
@@ -285,30 +285,33 @@ PRODUCTS: list[dict[str, Any]] = [
     # --- Paid VC ---
     {
         "id": "rvc-onnx-default",
-        "name": "RVC ONNX (default pack)",
+        "name": "RVC (default pack)",
         "category": "vc",
         "price_usd": 14,
         "paid": True,
         "quality_score": 5,
+        "note": "Base RVC voice-conversion model. Retarget any voice recording toward a new timbre, fully offline on CPU.",
     },
     {
         "id": "rvc-onnx-an-v2",
-        "name": "RVC ONNX Voice Pack — an-v2",
+        "name": "RVC Voice Pack — an-v2",
         "category": "vc",
         "price_usd": 14,
         "paid": True,
         "quality_score": 5,
+        "note": "Ready-to-use RVC character voice. Drop into voice conversion for instant results, no training needed.",
     },
     {
         "id": "rvc-onnx-coconut-v2",
-        "name": "RVC ONNX Voice Pack — coconut-v2",
+        "name": "RVC Voice Pack — coconut-v2",
         "category": "vc",
         "price_usd": 14,
         "paid": True,
         "quality_score": 5,
+        "note": "Ready-to-use RVC character voice. Drop into voice conversion for instant results, no training needed.",
     },
     {"id": "seed-vc", "name": "Seed-VC", "category": "vc", "price_usd": 20, "paid": True, "quality_score": 8, "note": "1.5GB, zero-shot voice cloning from reference audio. GPU required. High fidelity conversion."},
-    {"id": "openvoice-onnx-v2", "name": "OpenVoice V2 ONNX", "category": "vc", "price_usd": 10, "paid": True, "quality_score": 6, "note": "161MB, tone-color conversion, no torch. Fast CPU inference. MIT license."},
+    {"id": "openvoice-onnx-v2", "name": "OpenVoice V2", "category": "vc", "price_usd": 10, "paid": True, "quality_score": 6, "note": "161MB, tone-color conversion, no torch. Fast CPU inference. MIT license."},
     # --- Paid Music ---
     {
         "id": "acestep-1-5-gguf",
@@ -350,7 +353,7 @@ PRODUCTS: list[dict[str, Any]] = [
     },
     {
         "id": "planner-lfm2-2.6b-qad",
-        "name": "LFM2.5-2.6B QAD-Q4_0 (planner)",
+        "name": "LFM2.5-2.6B (planner)",
         "category": "llm",
         "price_usd": 13,
         "paid": True,
@@ -703,29 +706,98 @@ def refresh_remote_catalog_if_stale(force: bool = False) -> str:
     return refresh_remote_catalog()
 
 
-# ── Reviews (in-memory, production: use DB) ────────────────────────────
+# ── Reviews (SQLite-backed — survive restarts) ──────────────────────────
 
-_reviews: dict[str, list[dict]] = {}
+
+def _reviews_db():
+    """Open a session for review reads/writes (caller closes)."""
+    from ..database.session import SessionLocal
+
+    factory = SessionLocal
+    if factory is None:
+        raise RuntimeError("Database not initialized (init_db has not run yet)")
+    return factory()
 
 
 def get_product_reviews(product_id: str) -> list[dict]:
-    """Get reviews for a product."""
-    return _reviews.get(product_id, [])
+    """Reviews for a product, oldest first (matches the pre-DB ordering)."""
+    from ..database.models import ProductReview
+
+    db = _reviews_db()
+    try:
+        rows = (
+            db.query(ProductReview)
+            .filter(ProductReview.product_id == product_id)
+            .order_by(ProductReview.created_at.asc(), ProductReview.id.asc())
+            .all()
+        )
+        return [
+            {
+                "id": r.id,
+                "rating": r.rating,
+                "comment": r.comment,
+                "device_id": r.device_id,
+                "created_at": r.created_at.isoformat() if r.created_at else "",
+            }
+            for r in rows
+        ]
+    finally:
+        db.close()
 
 
 def add_product_review(product_id: str, rating: int, comment: str, device_id: str) -> None:
-    """Add a review for a product."""
-    if product_id not in _reviews:
-        _reviews[product_id] = []
-    _reviews[product_id].append(
-        {
-            "id": len(_reviews[product_id]) + 1,
-            "rating": rating,
-            "comment": comment,
-            "device_id": device_id,
-            "created_at": datetime.datetime.now(datetime.UTC).isoformat(),
-        }
-    )
+    """Add (or update, per device) a review. One row per (product, device)
+    so re-posting corrects instead of ballot-stuffing."""
+    from ..database.models import ProductReview
+
+    if not 1 <= int(rating) <= 5:
+        raise ValueError("Rating must be 1-5")
+    db = _reviews_db()
+    try:
+        row = (
+            db.query(ProductReview)
+            .filter(
+                ProductReview.product_id == product_id,
+                ProductReview.device_id == (device_id or ""),
+            )
+            .first()
+        )
+        if row is None:
+            row = ProductReview(product_id=product_id, device_id=device_id or "")
+            db.add(row)
+        row.rating = int(rating)
+        row.comment = (comment or "")[:2000]
+        db.commit()
+    finally:
+        db.close()
+
+
+def get_rating_summary(product_id: str) -> tuple[float | None, int]:
+    """(average rating 1-5, review count) for catalog annotation."""
+    summaries = get_all_rating_summaries()
+    return summaries.get(product_id, (None, 0))
+
+
+def get_all_rating_summaries() -> dict[str, tuple[float | None, int]]:
+    """One GROUP BY query for every product's (average, count)."""
+    from sqlalchemy import func
+
+    from ..database.models import ProductReview
+
+    db = _reviews_db()
+    try:
+        rows = (
+            db.query(
+                ProductReview.product_id,
+                func.avg(ProductReview.rating),
+                func.count(ProductReview.id),
+            )
+            .group_by(ProductReview.product_id)
+            .all()
+        )
+        return {pid: (round(float(avg), 2), count) for pid, avg, count in rows}
+    finally:
+        db.close()
 
 
 # ── Wishlist (in-memory, production: use DB) ───────────────────────────

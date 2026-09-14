@@ -55,11 +55,16 @@ function MiniPlayer({ audioUrl }: { audioUrl: string }) {
 		};
 		const onPlay = () => setPlaying(true);
 		const onPause = () => setPlaying(false);
+		const onError = () => {
+			setLoading(false);
+			setPlaying(false);
+		};
 		audio.addEventListener("loadedmetadata", onMeta);
 		audio.addEventListener("timeupdate", onTime);
 		audio.addEventListener("ended", onEnd);
 		audio.addEventListener("play", onPlay);
 		audio.addEventListener("pause", onPause);
+		audio.addEventListener("error", onError);
 		return () => {
 			audio.pause();
 			audio.removeEventListener("loadedmetadata", onMeta);
@@ -67,6 +72,7 @@ function MiniPlayer({ audioUrl }: { audioUrl: string }) {
 			audio.removeEventListener("ended", onEnd);
 			audio.removeEventListener("play", onPlay);
 			audio.removeEventListener("pause", onPause);
+			audio.removeEventListener("error", onError);
 			audio.src = "";
 		};
 	}, [audioUrl]);
@@ -87,7 +93,9 @@ function MiniPlayer({ audioUrl }: { audioUrl: string }) {
 						if (playing) {
 							audioRef.current.pause();
 						} else {
-							void audioRef.current.play();
+							audioRef.current.play().catch(() => {
+								// Blocked decode leaves spinner stale without this.
+							});
 						}
 					}}
 					aria-label={

@@ -31,8 +31,9 @@ interface Props {
 }
 
 /**
- * Category-grouped product grid. Translation packs stay collapsed behind a
- * section header (they are the only "pack" category in the catalog).
+ * Category-grouped product grid. Pack-type categories (translation packs and
+ * the utilities shelf) stay collapsed behind a section header at the bottom
+ * so core voices stay on top.
  */
 export function ProductGrid({
 	groups,
@@ -54,33 +55,42 @@ export function ProductGrid({
 	onToggleWishlist,
 }: Props) {
 	const [translationExpanded, setTranslationExpanded] = useState(false);
+	const [utilitiesExpanded, setUtilitiesExpanded] = useState(false);
 
 	return (
 		<div className="space-y-8">
 			{groups.map(([category, items]) => {
 				const isTranslation = category === "translation";
-				if (isTranslation) {
+				const isUtilities = category === "utilities";
+				const isCollapsed = isTranslation || isUtilities;
+				const expanded = isTranslation
+					? translationExpanded
+					: utilitiesExpanded;
+				const setExpanded = isTranslation
+					? setTranslationExpanded
+					: setUtilitiesExpanded;
+				if (isCollapsed) {
 					return (
 						<section key={category}>
 							<button
 								type="button"
-								onClick={() => setTranslationExpanded((v) => !v)}
+								onClick={() => setExpanded((v: boolean) => !v)}
 								className="flex w-full items-center justify-between rounded-lg border border-border bg-card px-3 py-3 text-left hover:bg-secondary/50 transition-colors"
-								aria-expanded={translationExpanded}
+								aria-expanded={expanded}
 							>
 								<span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
 									{CATEGORY_LABELS[category] ?? category} — {items.length} packs
 								</span>
 								<span className="text-xs text-muted-foreground">
-									{translationExpanded ? (
+									{expanded ? (
 										<ChevronDownIcon className="size-3.5" />
 									) : (
 										<ChevronRightIcon className="size-3.5" />
 									)}
-									{translationExpanded ? " Hide" : " Show"}
+									{expanded ? " Hide" : " Show"}
 								</span>
 							</button>
-							{translationExpanded && (
+							{expanded && (
 								<div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 									{items.map((p) => (
 										<GridCard

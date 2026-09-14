@@ -305,7 +305,17 @@ export function StorePage() {
 			arr.push(p);
 			map.set(p.category, arr);
 		}
-		return Array.from(map.entries());
+		// Utilities (and other pack categories) always render last,
+		// regardless of catalog input order.
+		const bottomRank = (c: string): number => {
+			if (c === "utilities") return 3;
+			if (c === "translation") return 2;
+			if (c === "extras" || c === "sfx") return 1;
+			return 0;
+		};
+		return Array.from(map.entries()).sort(
+			([a], [b]) => bottomRank(a) - bottomRank(b),
+		);
 	}, [
 		filtered,
 		activeCategory,
@@ -398,11 +408,22 @@ export function StorePage() {
 	});
 	// One-step Activate for cached models: load the engine so it becomes the
 	// active, ready-to-generate engine (engine name from model-status, the
-	// same resolution EngineModelSelector uses).
+	// same resolution EngineModelSelector uses). Fails loudly when status is
+	// stale instead of calling loadModel with the product id as engine
+	// (which 500s and looks like "activate does nothing").
 	const activateMut = useMutation({
 		mutationFn: async (id: string) => {
-			const m = models?.find((x) => x.model_name === id);
-			return apiClient.loadModel(m?.engine ?? id, "default", m?.model_name);
+			const m =
+				models?.find((x) => x.model_name === id) ??
+				(await apiClient.getModelStatus()).models.find(
+					(x) => x.model_name === id,
+				);
+			if (!m?.engine) {
+				throw new Error(
+					`Couldn't resolve an engine for ${id} — refresh the Store and retry.`,
+				);
+			}
+			return apiClient.loadModel(m.engine, "default", m.model_name);
 		},
 		onMutate: (id) => setActivatingId(id),
 		onSuccess: async (_data, id) => {

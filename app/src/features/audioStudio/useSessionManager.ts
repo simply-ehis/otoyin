@@ -178,7 +178,14 @@ export function useSessionManager() {
 				setIsAutosave(false);
 				setUnsaved(false);
 				setCanUndo(false);
-				toast({ title: "Session loaded", description: session.name });
+				const silent = (session.data.tracks ?? []).length > 0 &&
+					(session.data.tracks ?? []).every((t) => !t.audioUrl && !t.audioBlob);
+				toast({
+					title: "Session loaded",
+					description: silent
+						? `${session.name} — structure restored; re-import audio files (takes are not stored in sessions).`
+						: session.name,
+				});
 				setShowLoadDialog(false);
 			} catch (err) {
 				toast({
@@ -234,6 +241,7 @@ export function useSessionManager() {
 	);
 
 	return {
+		currentSessionId,
 		showSaveDialog,
 		setShowSaveDialog,
 		showLoadDialog,

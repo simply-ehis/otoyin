@@ -22,6 +22,7 @@ describe("PlayerStore", () => {
 			expect(s.currentTime).toBe(0);
 			expect(s.duration).toBe(0);
 			expect(s.volume).toBe(1);
+			expect(s.playbackRate).toBe(1);
 			expect(s.isLooping).toBe(false);
 		});
 	});
@@ -92,6 +93,43 @@ describe("PlayerStore", () => {
 			expect(usePlayerStore.getState().isLooping).toBe(true);
 			act(() => usePlayerStore.getState().toggleLoop());
 			expect(usePlayerStore.getState().isLooping).toBe(false);
+		});
+
+		it("setPlaybackRate sets and clamps to 0.5–2", () => {
+			act(() => usePlayerStore.getState().setPlaybackRate(1.5));
+			expect(usePlayerStore.getState().playbackRate).toBe(1.5);
+			act(() => usePlayerStore.getState().setPlaybackRate(5));
+			expect(usePlayerStore.getState().playbackRate).toBe(2);
+			act(() => usePlayerStore.getState().setPlaybackRate(0.1));
+			expect(usePlayerStore.getState().playbackRate).toBe(0.5);
+		});
+
+		it("setAudio and reset keep the listening speed", () => {
+			act(() => usePlayerStore.getState().setPlaybackRate(1.25));
+			act(() => {
+				usePlayerStore.getState().setAudio("u", "i", null);
+			});
+			expect(usePlayerStore.getState().playbackRate).toBe(1.25);
+			act(() => usePlayerStore.getState().reset());
+			expect(usePlayerStore.getState().playbackRate).toBe(1.25);
+		});
+
+		it("persists only listening prefs, never the track", () => {
+			act(() => {
+				usePlayerStore.getState().setVolume(0.4);
+				usePlayerStore.getState().setIsMuted(true);
+				usePlayerStore.getState().setPlaybackRate(1.5);
+				usePlayerStore.getState().setAudio("u", "i", null, "t");
+				usePlayerStore.getState().setIsPlaying(true);
+			});
+			const persisted = usePlayerStore.persist.getOptions().partialize?.(
+				usePlayerStore.getState(),
+			);
+			expect(persisted).toEqual({
+				volume: 0.4,
+				isMuted: true,
+				playbackRate: 1.5,
+			});
 		});
 	});
 

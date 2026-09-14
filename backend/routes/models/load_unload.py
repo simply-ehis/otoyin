@@ -34,6 +34,16 @@ async def load_model(engine: str | None = None, model_size: str = "default", mod
     if model_name:
         # Precise lookup: find the exact config by model_name
         cfg = next((c for c in get_all_model_configs() if c.model_name == model_name), None)
+        if cfg is None:
+            raise HTTPException(status_code=400, detail=f"Unknown model: {model_name}")
+        # The caller passed both engine + model_name: they must agree, or the
+        # frontend resolved the wrong engine (shared-engine bug) and Activate
+        # would load a sibling model and look like it "did nothing".
+        if cfg.engine != target:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Engine mismatch: {model_name} uses engine '{cfg.engine}', not '{target}'. Refresh the Store and retry.",
+            )
     else:
         # Legacy fallback: find the first config matching engine + model_size
         cfg = next(
@@ -43,8 +53,28 @@ async def load_model(engine: str | None = None, model_size: str = "default", mod
         if cfg is None:
             # Broader fallback: first config matching engine only
             cfg = next((c for c in get_all_model_configs() if c.engine == target), None)
-    if cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size):
+        if cfg is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown engine: {target} — download its model from the Store first",
+            )
+    if not is_downloaded(cfg.model_name, cfg.model_size):
         raise HTTPException(status_code=400, detail=f"{MODEL_NOT_DOWNLOADED_MSG} ({cfg.model_name})")
+
+    # Integrity gate: a tampered/partial cache must not load silently.
+    try:
+        from ...services.model_integrity import verify_model_hashes
+
+        verdict = verify_model_hashes(cfg.model_name)
+        if not verdict.get("ok", True):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Model files failed integrity check ({verdict.get('reason')}) — re-download {cfg.model_name} from the Store.",
+            )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.debug("Integrity check skipped for %s", cfg.model_name, exc_info=True)
 
     try:
         # Use the resolved config's model_size when available — the query
@@ -56,7 +86,24 @@ async def load_model(engine: str | None = None, model_size: str = "default", mod
         from ...utils.model_lifecycle import lifecycle_manager
 
         lifecycle_manager.mark_model_used(target)
-        return {"message": f"Model {target} ({resolved_size}) loaded successfully"}
+        # Confirm the backend actually reports loaded — otherwise the UI
+        # spinner stops but nothing is ready ("activate does nothing").
+        try:
+            from ...backends import check_model_loaded
+
+            if not check_model_loaded(cfg):
+                raise RuntimeError("backend did not report loaded after load")
+        except RuntimeError:
+            raise
+        except Exception:
+            logger.debug("Post-load check skipped for %s", cfg.model_name, exc_info=True)
+        return {
+            "message": f"Model {target} ({resolved_size}) loaded successfully",
+            "model_name": cfg.model_name,
+            "engine": target,
+        }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception("Failed to load model %s", target)
         raise HTTPException(status_code=500, detail=ERR_MODEL_LOAD_FAILED) from e
@@ -131,15 +178,24 @@ async def unload_all_models():
 
     # Unload lifecycle-managed engines
     try:
+        import inspect as _inspect
+
         from ...utils.model_lifecycle import lifecycle_manager
 
         for engine_name, handle in lifecycle_manager._engines.items():
-            if handle.is_loaded():
-                try:
-                    handle.unload_model()
-                    unloaded.append(engine_name)
-                except Exception as e:
-                    logger.debug("Engine %s unload failed: %s", engine_name, e)
+            try:
+                if not handle.is_loaded():
+                    continue
+            except Exception as e:
+                logger.debug("Engine %s load check failed: %s", engine_name, e)
+                continue
+            try:
+                res = handle.unload()
+                if _inspect.isawaitable(res):
+                    await res
+                unloaded.append(engine_name)
+            except Exception as e:
+                logger.debug("Engine %s unload failed: %s", engine_name, e)
     except Exception as e:
         logger.debug("Lifecycle unload failed: %s", e)
 

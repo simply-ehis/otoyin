@@ -45,6 +45,7 @@ from .marketplace import (  # noqa: F401
     Entitlement,
     InstalledPlugin,
     License,
+    ProductReview,
 )
 from .misc import (  # noqa: F401
     AgentProject,

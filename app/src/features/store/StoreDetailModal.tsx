@@ -16,14 +16,14 @@ import { ProductSpecs } from "./ProductSpecs";
 import { SimilarProducts } from "./SimilarProducts";
 import { StarRating } from "./StarRating";
 import {
+	CATEGORY_LABELS,
 	compareQualityDesc,
 	getCapabilityChips,
 	getDisplayDescription,
 } from "./storeUtils";
 
 interface Props {
-	product: MarketplaceProduct | null;
-	model?: ModelStatus;
+	product: MarketplaceProduct | null;	model?: ModelStatus;
 	owned: boolean;
 	installed: boolean;
 	/** Catalog `local_status` annotation — same disk manifest `installed` reads. */
@@ -41,8 +41,34 @@ interface Props {
 	onActivate?: (id: string) => void;
 }
 
-export const StoreDetailModal = memo(function StoreDetailModal({
-	product,
+function TechRow({
+	label,
+	value,
+	mono,
+}: {
+	label: string;
+	value?: string | null;
+	mono?: boolean;
+}) {
+	if (!value) {
+		return null;
+	}
+	return (
+		<div className="min-w-0">
+			<dt className="uppercase tracking-wider text-muted-foreground">{label}</dt>
+			<dd
+				className={cn(
+					"mt-0.5 break-all font-medium text-foreground",
+					mono && "font-mono text-[11px]",
+				)}
+			>
+				{value}
+			</dd>
+		</div>
+	);
+}
+
+export const StoreDetailModal = memo(function StoreDetailModal({	product,
 	model,
 	owned,
 	installed,
@@ -138,10 +164,12 @@ export const StoreDetailModal = memo(function StoreDetailModal({
 							</div>
 							<div className="mt-0.5 font-medium text-foreground">
 								{(product.quality_score ?? model?.quality_score) ? (
-									<StarRating
-										score={product.quality_score ?? model?.quality_score ?? 0}
-										size="sm"
-									/>
+									<span title="Curated quality score for its category — capability, quality and value compared with similar models">
+										<StarRating
+											score={product.quality_score ?? model?.quality_score ?? 0}
+											size="sm"
+										/>
+									</span>
 								) : (
 									"—"
 								)}
@@ -151,12 +179,12 @@ export const StoreDetailModal = memo(function StoreDetailModal({
 
 					{model && (
 						<div className="flex flex-wrap gap-2">
-							{model.engine && <Badge tone="neutral">{model.engine}</Badge>}
-							{model.category && (
-								<Badge tone="neutral" className="capitalize">
-									{model.category}
-								</Badge>
-							)}
+							<Badge tone="neutral" className="capitalize">
+								{CATEGORY_LABELS[model.category ?? ""] ??
+									model.category ??
+									CATEGORY_LABELS[product.category] ??
+									product.category}
+							</Badge>
 							{getCapabilityChips(model).map((c) => (
 								<Badge
 									key={c.label}
@@ -172,7 +200,28 @@ export const StoreDetailModal = memo(function StoreDetailModal({
 					</div>
 				)}
 
-				{/* download progress */}
+					{/* technical details — quantization, engine, repo. The headline
+					    stays selling-focused; porting trivia lives here. */}
+					{model && (
+						<details className="rounded-lg border border-border">
+							<summary className="cursor-pointer list-none px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+								Technical details
+							</summary>
+							<dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-border px-3 py-2 text-xs">
+								<TechRow label="Engine" value={model.engine} mono />
+								<TechRow label="Variant" value={model.model_size} mono />
+								<TechRow label="Quantization" value={model.quant} mono />
+								<TechRow label="Repository" value={model.hf_repo_id} mono />
+								<TechRow
+									label="Model ID"
+									value={model.model_name}
+									mono
+								/>
+							</dl>
+						</details>
+					)}
+
+					{/* download progress */}
 				{isDownloading && downloadTask && (
 					<div className="space-y-2 rounded-lg border border-warning/20 bg-warning-soft p-3">
 						<div className="flex items-center gap-2 text-xs font-medium text-warning-text">

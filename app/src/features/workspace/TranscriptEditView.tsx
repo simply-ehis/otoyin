@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import { showStudioErrorToast } from "@/lib/errors";
 import { cn } from "@/lib/utils/cn";
@@ -8,6 +8,7 @@ import { Input } from "@/ui/input";
 import { Badge, Separator, Spinner } from "@/ui/primitives";
 import { EmptyState, LoadingState, ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
+import { usePlatform } from "@/platform/PlatformContext";
 
 interface Word {
 	index: number;
@@ -38,8 +39,49 @@ function isFiller(word: string) {
 	return FILLERS.has(clean);
 }
 
+function formatSrtTime(ms: number): string {
+	const h = Math.floor(ms / 3600000);
+	const m = Math.floor((ms % 3600000) / 60000);
+	const s = Math.floor((ms % 60000) / 1000);
+	const ms3 = Math.floor(ms % 1000);
+	return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")},${String(ms3).padStart(3, "0")}`;
+}
+
+function formatVttTime(ms: number): string {
+	const h = Math.floor(ms / 3600000);
+	const m = Math.floor((ms % 3600000) / 60000);
+	const s = Math.floor((ms % 60000) / 1000);
+	const ms3 = Math.floor(ms % 1000);
+	return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${String(ms3).padStart(3, "0")}`;
+}
+
+function groupWordsIntoCues(wordList: Word[], maxDurationMs = 5000): Array<{ start: number; end: number; text: string }> {
+	const cues: Array<{ start: number; end: number; text: string }> = [];
+	let cueStart = 0;
+	let cueEnd = 0;
+	let cueText = "";
+	for (const w of wordList) {
+		if (!cueText) {
+			cueStart = w.start_ms;
+		}
+		const wouldEnd = w.end_ms;
+		if (cueText && wouldEnd - cueStart > maxDurationMs) {
+			cues.push({ start: cueStart, end: cueEnd, text: cueText.trim() });
+			cueStart = w.start_ms;
+			cueText = "";
+		}
+		cueText += (cueText ? " " : "") + w.word;
+		cueEnd = w.end_ms;
+	}
+	if (cueText) {
+		cues.push({ start: cueStart, end: cueEnd, text: cueText.trim() });
+	}
+	return cues;
+}
+
 export function TranscriptEditView() {
 	const { toast } = useToast();
+	const platform = usePlatform();
 	const [generationId, setGenerationId] = useState("");
 	const [activeId, setActiveId] = useState<string | null>(null);
 	const [words, setWords] = useState<Word[]>([]);
@@ -135,6 +177,38 @@ export function TranscriptEditView() {
 		);
 	}
 
+	const exportSubtitles = useCallback(
+		async (fmt: "srt" | "vtt") => {
+			if (words.length === 0) {
+				return;
+			}
+			const cues = groupWordsIntoCues(words);
+			let content: string;
+			if (fmt === "srt") {
+				content = cues
+					.map((c, i) => `${i + 1}\n${formatSrtTime(c.start)} --> ${formatSrtTime(c.end)}\n${c.text}`)
+					.join("\n\n");
+			} else {
+				const vttCues = cues
+					.map((c) => `${formatVttTime(c.start)} --> ${formatVttTime(c.end)}\n${c.text}`)
+					.join("\n\n");
+				content = `WEBVTT\n\n${vttCues}`;
+			}
+			const ext = fmt === "srt" ? "srt" : "vtt";
+			try {
+				await platform.filesystem.saveFile(
+					`transcript.${ext}`,
+					new Blob([content], { type: "text/plain" }),
+					[{ name: "Subtitles", extensions: [ext] }],
+				);
+				toast({ title: `Exported ${ext.toUpperCase()}` });
+			} catch {
+				toast({ title: `Failed to export ${ext.toUpperCase()}`, variant: "destructive" });
+			}
+		},
+		[words, platform, toast],
+	);
+
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
@@ -224,6 +298,29 @@ export function TranscriptEditView() {
 							{selected.size > 0
 								? `${selected.size} word${selected.size === 1 ? "" : "s"}`
 								: "words"}
+						</Button>
+						<span className="flex-1" />
+						<Button
+							type="button"
+							size="sm"
+							variant="outline"
+							className="h-7 text-xs"
+							title="Export transcript as SRT subtitles"
+							aria-label="Export SRT"
+							onClick={() => exportSubtitles("srt")}
+						>
+							Export SRT
+						</Button>
+						<Button
+							type="button"
+							size="sm"
+							variant="outline"
+							className="h-7 text-xs"
+							title="Export transcript as VTT subtitles"
+							aria-label="Export VTT"
+							onClick={() => exportSubtitles("vtt")}
+						>
+							Export VTT
 						</Button>
 					</div>
 

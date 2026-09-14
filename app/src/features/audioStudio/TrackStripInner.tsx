@@ -53,8 +53,15 @@ export function TrackStripInner({
 		updateTrack(track.id, { volumeAutomation: pts });
 	};
 
+	const addPanAutomationPoint = () => {
+		const currentTime = useAudioStudioStore.getState().currentTimeRef.current;
+		const pts = [...(track.panAutomation ?? [])];
+		pts.push({ time: currentTime, value: track.pan });
+		updateTrack(track.id, { panAutomation: pts });
+	};
+
 	const clearAutomation = () => {
-		updateTrack(track.id, { volumeAutomation: [] });
+		updateTrack(track.id, { volumeAutomation: [], panAutomation: [] });
 	};
 
 	const otherTracks = tracks.filter((t) => t.id !== track.id);
@@ -77,6 +84,7 @@ export function TrackStripInner({
 			onVolume={wrappedSetVolume}
 			onPan={wrappedSetPan}
 			onAddAutomation={addAutomationPoint}
+			onAddPanAutomation={addPanAutomationPoint}
 			onClearAutomation={clearAutomation}
 			updateTrack={updateTrack}
 			removeTrack={removeTrack}

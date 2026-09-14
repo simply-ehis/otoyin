@@ -60,6 +60,7 @@ def init_db() -> None:
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA busy_timeout=5000")
         cursor.execute("PRAGMA synchronous=NORMAL")  # safe with WAL
+        cursor.execute("PRAGMA foreign_keys=ON")  # enforce ondelete=CASCADE
         cursor.close()
 
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -162,13 +163,9 @@ def with_db_retry(max_attempts: int = 3, base_delay: float = 0.1):
 
     Usage::
 
-        with with_db_retry():
-            db = next(get_db())
-            try:
-                db.add(obj)
-                db.commit()
-            finally:
-                db.close()
+        with with_db_retry() as db:
+            db.add(obj)
+            db.commit()
     """
     if SessionLocal is None:
         raise RuntimeError("Database not initialized — call init_db() before using with_db_retry()")

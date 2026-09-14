@@ -19,8 +19,11 @@ router = APIRouter()
 # Dedicated executor for downloads so a (potentially long) snapshot_download
 # never competes for threads with the TTS generation pool (asyncio.to_thread
 # uses the default pool). Sharing the pool caused downloads to starve/block
-# live generations.
-_download_executor = ThreadPoolExecutor(max_workers=1)
+# live generations. Two workers allow a small file to start while a large
+# snapshot streams; CPU-heavy quantize/hash/pip runs on _cpu_executor so it
+# never head-of-line-blocks network I/O.
+_download_executor = ThreadPoolExecutor(max_workers=2)
+_cpu_executor = ThreadPoolExecutor(max_workers=1)
 
 # Steam Audio SDK version and GitHub release URL
 STEAMAUDIO_VERSION = "4.8.1"
@@ -64,7 +67,7 @@ def _download_steam_audio_sdk(progress_manager, model_name: str) -> None:
 
     _ssl_ctx = ssl.create_default_context()
     try:
-        with urlopen(STEAMAUDIO_URL, context=_ssl_ctx) as resp:
+        with urlopen(STEAMAUDIO_URL, context=_ssl_ctx, timeout=30) as resp:
             total = int(resp.headers.get("Content-Length", 0))
             downloaded = 0
             chunk_size = 1024 * 1024  # 1MB chunks
@@ -95,7 +98,7 @@ def _download_steam_audio_sdk(progress_manager, model_name: str) -> None:
     sha_url = os.environ.get("STEAMAUDIO_SHA256_URL", "").strip()
     if sha_url and not expected_sha:
         try:
-            with urlopen(sha_url, context=_ssl_ctx) as sha_resp:
+            with urlopen(sha_url, context=_ssl_ctx, timeout=30) as sha_resp:
                 expected_sha = sha_resp.read().decode().strip().split()[0]
         except Exception as e:
             raise RuntimeError(f"Failed to fetch Steam Audio SDK checksum: {e}") from e

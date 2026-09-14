@@ -16,6 +16,7 @@ export const ALL_TAB_PATHS = [
 	"/effects",
 	"/workspace",
 	"/sounds",
+	"/translate",
 	"/library",
 	"/store",
 	"/settings",
@@ -77,6 +78,8 @@ interface WorkspaceState {
 	resetToAll: () => void;
 	/** Mark onboarding as complete. */
 	markOnboarded: () => void;
+	/** Reopen the welcome tour (used by Settings → Workspace replay). */
+	reopenOnboarding: () => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceState>()(
@@ -128,6 +131,8 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 				set({ visibleTabs: null, selectedUseCases: [], onboarded: true }),
 
 			markOnboarded: () => set({ onboarded: true }),
+
+			reopenOnboarding: () => set({ onboarded: false }),
 		}),
 		{
 			name: "otoyin-workspace",

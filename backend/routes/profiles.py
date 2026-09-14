@@ -9,6 +9,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.tool_dispatch import PROFILE_TOOLS, make_route
@@ -25,16 +26,9 @@ router = APIRouter()
 
 
 def _media_type_for(path) -> str:
-    suffix = Path(path).suffix.lower()
-    return {
-        ".wav": "audio/wav",
-        ".mp3": "audio/mpeg",
-        ".ogg": "audio/ogg",
-        ".flac": "audio/flac",
-        ".m4a": "audio/mp4",
-        ".aac": "audio/aac",
-        ".webm": "audio/webm",
-    }.get(suffix, "audio/wav")
+    from ..utils.http import audio_media_type_for
+
+    return audio_media_type_for(path)
 
 
 @router.get("/samples/{sample_id}")
@@ -98,6 +92,22 @@ async def import_profile(
 # wildcard swallowing "presets" as a profile_id.
 
 
+def _preset_voices_payload(cfg) -> dict:
+    """Project a model config's structured voices to the API shape."""
+    return {
+        "engine": cfg.engine,
+        "voices": [
+            {
+                "id": v.id,
+                "name": v.name,
+                "gender": v.gender,
+                "language": v.language,
+            }
+            for v in cfg.structured_preset_voices
+        ],
+    }
+
+
 @router.get("/profiles/preset-voices")
 async def list_all_preset_voices(engine: str | None = None):
     """List preset voices across engines (optional engine filter)."""
@@ -109,20 +119,7 @@ async def list_all_preset_voices(engine: str | None = None):
             continue
         if engine and cfg.engine != engine:
             continue
-        out.append(
-            {
-                "engine": cfg.engine,
-                "voices": [
-                    {
-                        "id": v.id,
-                        "name": v.name,
-                        "gender": v.gender,
-                        "language": v.language,
-                    }
-                    for v in cfg.structured_preset_voices
-                ],
-            }
-        )
+        out.append(_preset_voices_payload(cfg))
     return {"engines": out}
 
 
@@ -139,18 +136,7 @@ async def list_preset_voices(engine: str):
 
     for cfg in get_all_model_configs():
         if cfg.engine == engine and cfg.structured_preset_voices:
-            return {
-                "engine": engine,
-                "voices": [
-                    {
-                        "id": v.id,
-                        "name": v.name,
-                        "gender": v.gender,
-                        "language": v.language,
-                    }
-                    for v in cfg.structured_preset_voices
-                ],
-            }
+            return _preset_voices_payload(cfg)
     return {"engine": engine, "voices": []}
 
 
@@ -164,6 +150,41 @@ async def voice_design_capabilities():
     from ..services.profiles import get_voice_design_capabilities
 
     return get_voice_design_capabilities()
+
+
+class PresetVoicePreviewRequest(BaseModel):
+    """Snthesize a short snippet for a built-in preset voice."""
+
+    engine: str
+    voice_id: str
+
+
+@router.post("/profiles/preset-voice-preview")
+async def preset_voice_preview(data: PresetVoicePreviewRequest):
+    """Synthesize (or serve cached) a snippet for a built-in preset voice.
+
+    Preset voices are synthesis parameters, not audio files, so hearing one
+    always costs a single inference run — cached on disk afterwards, so
+    repeat auditions are instant. No profile, history, or generation rows
+    are created. The model must already be downloaded (marketplace gate).
+    """
+    from ..services.preset_preview import PreviewBackpressureError, get_or_synthesize_preview
+
+    engine = data.engine.strip()
+    voice_id = data.voice_id.strip()
+    if not engine or not voice_id:
+        raise HTTPException(status_code=400, detail="Both 'engine' and 'voice_id' are required")
+
+    try:
+        cached = await get_or_synthesize_preview(engine, voice_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except PreviewBackpressureError as e:
+        raise HTTPException(status_code=429, detail=str(e)) from e
+    except RuntimeError as e:
+        # Generic message: raw engine errors leak paths/model internals.
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    return FileResponse(cached, media_type="audio/wav", filename=cached.name)
 
 
 @router.get("/profiles/{profile_id}", response_model=models.VoiceProfileResponse)

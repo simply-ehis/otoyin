@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import { useGenerationSettings } from "@/lib/hooks/useSettings";
 import { useGenerationStore } from "@/stores/generationStore";
+import { useGenerationProgressStore } from "@/stores/generationProgressStore";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useToast } from "@/ui/use-toast";
 
@@ -145,6 +146,7 @@ export function useGenerationProgress() {
 			chunkPlayingRef.current.delete(id);
 			delete currentChunkIdxRef.current[id];
 			finalAudioReadyRef.current.delete(id);
+			useGenerationProgressStore.getState().remove(id);
 		};
 
 		// ── Shared terminal handlers (SSE events + fallback poll) ──
@@ -297,6 +299,7 @@ export function useGenerationProgress() {
 				// S3: stream never opened (wrong host, blocked URL) — say so
 				// instead of vanishing silently.
 				removePendingGeneration(id);
+				useGenerationProgressStore.getState().remove(id);
 				queryClient.refetchQueries({ queryKey: ["history"] });
 				toast({
 					title: "Connection failed",
@@ -323,6 +326,12 @@ export function useGenerationProgress() {
 						}
 						queue[chunkIdx] = chunkFullUrl;
 						chunkQueueRef.current.set(id, queue);
+						useGenerationProgressStore.getState().upsert(id, {
+							stage: "streaming",
+							chunksReady: chunkIdx + 1,
+							chunksTotal: data.chunk_total ?? chunkIdx + 1,
+							previewUrl: chunkFullUrl,
+						});
 
 						// Auto-play the first chunk immediately (with retry for slow writes)
 						if (
@@ -334,8 +343,14 @@ export function useGenerationProgress() {
 							chunkPlayingRef.current.set(id, true);
 							currentChunkIdxRef.current[id] = 0;
 
-							// Chain next chunk when this one finishes
+							// Chain next chunk when this one finishes.
+							// Guard by audioId: the player has a single global
+							// onFinish slot, so a second generation must not
+							// hijack the first chain's callback.
 							usePlayerStore.getState().setOnFinish(() => {
+								if (usePlayerStore.getState().audioId !== id) {
+									return;
+								}
 								const curIdx = currentChunkIdxRef.current[id] ?? 0;
 								const nextIdx = curIdx + 1;
 								const q = chunkQueueRef.current.get(id);
@@ -349,12 +364,20 @@ export function useGenerationProgress() {
 											chunkPlayingRef.current.delete(id);
 											delete currentChunkIdxRef.current[id];
 											usePlayerStore.getState().setOnFinish(null);
-											toast({
-												title: "Streaming interrupted",
-												description:
-													"A streamed audio chunk could not be read. The finished audio will still play when ready.",
-												variant: "destructive",
-											});
+											// Silent when the generation already finished:
+											// the chunk janitor removes chunk files on
+											// terminal states, so a late fetch 404 is
+											// expected, not an interruption.
+											if (
+												useGenerationStore.getState().pendingGenerationIds.has(id)
+											) {
+												toast({
+													title: "Streaming interrupted",
+													description:
+														"A streamed audio chunk could not be read. The finished audio will still play when ready.",
+													variant: "destructive",
+												});
+											}
 										}
 									});
 								} else {
@@ -372,12 +395,18 @@ export function useGenerationProgress() {
 									chunkPlayingRef.current.delete(id);
 									delete currentChunkIdxRef.current[id];
 									usePlayerStore.getState().setOnFinish(null);
-									toast({
-										title: "Streaming interrupted",
-										description:
-											"A streamed audio chunk could not be read. The finished audio will still play when ready.",
-										variant: "destructive",
-									});
+									// Same janitor guard as above: no toast when the
+									// generation already reached a terminal state.
+									if (
+										useGenerationStore.getState().pendingGenerationIds.has(id)
+									) {
+										toast({
+											title: "Streaming interrupted",
+											description:
+												"A streamed audio chunk could not be read. The finished audio will still play when ready.",
+											variant: "destructive",
+										});
+									}
 								}
 							});
 						}
@@ -414,8 +443,15 @@ export function useGenerationProgress() {
 							notFound: data.status === "not_found",
 							error: data.error,
 						});
+						return;
 					}
-					// loading_model / generating → no action needed
+					// ── Model loading / synthesizing ─────────────────────────
+					if (data.status === "loading_model" || data.status === "generating") {
+						useGenerationProgressStore.getState().upsert(id, {
+							stage: data.status,
+						});
+					}
+					// Anything else (heartbeats etc.) → no action needed
 				} catch {
 					// Ignore parse errors from heartbeats etc
 				}
@@ -453,6 +489,9 @@ export function useGenerationProgress() {
 			};
 
 			currentSources.set(id, source);
+			useGenerationProgressStore
+				.getState()
+				.upsert(id, { stage: "connecting" });
 		}
 	}, [
 		removePendingGeneration,

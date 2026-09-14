@@ -8,7 +8,7 @@ import type { MarketplaceProduct, ModelStatus } from "@/lib/api/types";
 import { useRegionCurrency } from "@/lib/regionCurrency";
 import { Button } from "@/ui/button";
 import { DialogDescription, DialogHeader, DialogTitle } from "@/ui/dialog";
-import { formatPrice, formatSize } from "./storeUtils";
+import { CATEGORY_LABELS, formatPrice, formatSize } from "./storeUtils";
 
 interface Props {
 	product: MarketplaceProduct;
@@ -70,8 +70,8 @@ export function ProductSpecs({
 						<SparklesIcon className="size-3.5" /> Special offer
 					</span>
 				)}
-				<span className="rounded-full border border-border bg-secondary px-2 py-1 text-xs capitalize text-muted-foreground">
-					{product.category}
+				<span className="rounded-full border border-border bg-secondary px-2 py-1 text-xs text-muted-foreground">
+					{CATEGORY_LABELS[product.category] ?? product.category}
 				</span>
 				{model?.size_mb && (
 					<span className="text-xs text-muted-foreground">

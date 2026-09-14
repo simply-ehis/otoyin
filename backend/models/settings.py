@@ -22,6 +22,20 @@ class AssistantSettingsResponse(BaseModel):
     thinking_enabled: bool = False
     system_prompt: str | None = None
     kv_quant: str = "q8_0"
+    # Layers offloaded to GPU (None = CPU-only). Applies at planner load.
+    gpu_layers: int | None = None
+    # Live planner state (not persisted): n_ctx/kv_quant/gpu_layers only take effect
+    # when the llama-server (re)loads, so the UI can tell the user a reload
+    # is pending instead of pretending "saved" means "active".
+    planner_loaded: bool = False
+    loaded_n_ctx: int | None = None
+    loaded_model_size: str | None = None
+    effective_n_ctx: int | None = None
+    loaded_kv_quant: str | None = None
+    loaded_gpu_layers: int | None = None
+    effective_gpu_layers: int | None = None
+    # True when TWENTYLABS_LLAMA_GPU_LAYERS is set — the env wins over the UI.
+    gpu_layers_env_override: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -40,6 +54,7 @@ class AssistantSettingsUpdate(BaseModel):
     thinking_enabled: bool | None = None
     system_prompt: str | None = None
     kv_quant: str | None = None
+    gpu_layers: int | None = Field(default=None, ge=0, le=999)
 
 
 class PerformanceSettingsResponse(BaseModel):
@@ -60,6 +75,22 @@ class PerformanceSettingsUpdate(BaseModel):
 
     performance_mode: bool | None = None
     per_engine_keepalive: dict[str, bool] | None = Field(default=None)
+
+
+class ServerPortResponse(BaseModel):
+    """Serving port state: what the backend bound, what is persisted for
+    the next boot, and whether a restart is needed to apply a change."""
+
+    port: int
+    current_port: int
+    needs_restart: bool
+
+
+class ServerPortUpdate(BaseModel):
+    """Persisted serving port. Privileged ports (<1024) are rejected;
+    the port only takes effect after a backend restart."""
+
+    port: int = Field(ge=1024, le=65535)
 
 
 class MCPClientBindingResponse(BaseModel):

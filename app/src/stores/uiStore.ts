@@ -70,6 +70,11 @@ interface UIStore {
 	selectedEngine: string;
 	setSelectedEngine: (engine: string) => void;
 
+	// Last explicitly chosen generation language per engine. Explicit choice
+	// beats profile defaults and survives engine switches + sessions.
+	languageByEngine: Record<string, string>;
+	setLanguageForEngine: (engine: string, language: string) => void;
+
 	// Selected voice in Voices tab inspector
 	selectedVoiceId: string | null;
 	setSelectedVoiceId: (id: string | null) => void;
@@ -81,6 +86,8 @@ interface UIStore {
 	// Theme
 	theme: Theme;
 	setTheme: (theme: Theme) => void;
+	accentHue: number | null; // null = use theme default; 0-360 = custom hue
+	setAccentHue: (hue: number | null) => void;
 
 	// Mini-game overlay
 	miniGameOpen: boolean;
@@ -112,6 +119,12 @@ export const useUIStore = create<UIStore>()(
 			selectedEngine: "",
 			setSelectedEngine: (engine) => set({ selectedEngine: engine }),
 
+			languageByEngine: {},
+			setLanguageForEngine: (engine, language) =>
+				set((state) => ({
+					languageByEngine: { ...state.languageByEngine, [engine]: language },
+				})),
+
 			selectedVoiceId: null,
 			setSelectedVoiceId: (id) => set({ selectedVoiceId: id }),
 
@@ -121,9 +134,9 @@ export const useUIStore = create<UIStore>()(
 			theme: "system",
 			setTheme: (theme) => {
 				set({ theme });
-				// Class application is handled by useThemeSync hook —
-				// keeping it here caused double class toggling/flicker.
 			},
+			accentHue: null,
+			setAccentHue: (hue) => set({ accentHue: hue }),
 
 			miniGameOpen: false,
 			setMiniGameOpen: (open) => set({ miniGameOpen: open }),
@@ -135,8 +148,10 @@ export const useUIStore = create<UIStore>()(
 			partialize: (state) => ({
 				selectedProfileId: state.selectedProfileId,
 				theme: state.theme,
+				accentHue: state.accentHue,
 				sidebarOpen: state.sidebarOpen,
 				sidebarWidth: state.sidebarWidth,
+				languageByEngine: state.languageByEngine,
 			}),
 		},
 	),

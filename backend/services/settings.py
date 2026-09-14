@@ -364,3 +364,74 @@ def get_assistant_kv_quant() -> str:
         return row.kv_quant or "q8_0"
     finally:
         db.close()
+
+
+def resolve_gpu_layers(env_value: str | None, db_value: int | None) -> tuple[int, bool]:
+    """Resolve planner GPU offload layers: explicit env wins, else the DB
+    setting, else CPU-only (0). Returns ``(layers, from_env)`` so callers can
+    disclose when the UI value is being overridden.
+    """
+    if env_value is not None and str(env_value).strip() != "":
+        try:
+            layers = int(str(env_value).strip())
+            if layers >= 0:
+                return layers, True
+        except (TypeError, ValueError):
+            pass
+    if db_value is not None and int(db_value) >= 0:
+        return int(db_value), False
+    return 0, False
+
+
+def get_assistant_gpu_layers() -> int:
+    """GPU layers offloaded for the GGUF planner (llama-server ``-ngl``).
+
+    ``TWENTYLABS_LLAMA_GPU_LAYERS`` wins when set (ops escape hatch);
+    otherwise the assistant-settings ``gpu_layers`` value; 0 (CPU) default.
+    """
+    import os
+
+    from ..database.session import SessionLocal
+
+    db = SessionLocal()
+    try:
+        row = _get_or_create_assistant_row(db)
+        layers, _ = resolve_gpu_layers(os.environ.get("TWENTYLABS_LLAMA_GPU_LAYERS"), row.gpu_layers)
+        return layers
+    finally:
+        db.close()
+
+
+# ---------------------------------------------------------------------------
+# Serving port (persisted in app_settings; applies after backend restart)
+# ---------------------------------------------------------------------------
+
+
+def get_persisted_server_port(db: Session) -> int | None:
+    """Persisted serving port, or None when the user never customized it."""
+    from ..config import SERVER_PORT_SETTING_KEY
+    from ..database.models import AppSetting
+
+    row = db.get(AppSetting, SERVER_PORT_SETTING_KEY)
+    if row is None or row.value_json is None:
+        return None
+    try:
+        port = int(row.value_json)
+        return port if 1024 <= port <= 65535 else None
+    except (TypeError, ValueError):
+        return None
+
+
+def set_persisted_server_port(db: Session, port: int) -> int:
+    """Persist the serving port. Takes effect on the next backend start."""
+    from ..config import SERVER_PORT_SETTING_KEY
+    from ..database.models import AppSetting
+
+    row = db.get(AppSetting, SERVER_PORT_SETTING_KEY)
+    if row is None:
+        row = AppSetting(key=SERVER_PORT_SETTING_KEY, value_json=port)
+        db.add(row)
+    else:
+        row.value_json = port
+    db.commit()
+    return port

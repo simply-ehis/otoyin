@@ -1,10 +1,8 @@
-﻿import {
-	CpuChipIcon as Bot,
-	QuestionMarkCircleIcon,
-} from "@heroicons/react/24/outline";
-import { useRouterState } from "@tanstack/react-router";
+﻿import { useRouterState } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { AppBackground } from "@/components/AppFrame/AppBackground";
+import { AppHeader } from "@/components/AppFrame/AppHeader";
+import { BackendStatusBanner } from "@/components/AppFrame/BackendStatusBanner";
 import { AudioKeepAlive } from "@/components/AudioPlayer/AudioKeepAlive";
 import { ErrorBoundary } from "@/components/ErrorBoundary/ErrorBoundary";
 import { TitleBarDragRegion } from "@/components/TitleBarDragRegion";
@@ -13,6 +11,7 @@ import { useThemeSync } from "@/hooks/useThemeSync";
 import { TOP_SAFE_AREA_PADDING } from "@/lib/constants/ui";
 import { applyThemeAccent } from "@/lib/design-system";
 import { useServerErrorToast } from "@/lib/hooks/useServerErrorToast";
+import { useServerLifecycle } from "@/lib/hooks/useServerLifecycle";
 import { useStory } from "@/lib/hooks/useStories";
 import { cn } from "@/lib/utils/cn";
 import { usePlayerStore } from "@/stores/playerStore";
@@ -50,11 +49,6 @@ const HelpCenter = lazy(() =>
 		default: m.HelpCenter,
 	})),
 );
-const NotificationBell = lazy(() =>
-	import("@/components/Notifications/NotificationBell").then((m) => ({
-		default: m.NotificationBell,
-	})),
-);
 const StoryTrackEditor = lazy(() =>
 	import("@/components/StoriesTab/StoryTrackEditor").then((m) => ({
 		default: m.StoryTrackEditor,
@@ -67,6 +61,7 @@ interface AppFrameProps {
 
 export function AppFrame({ children }: AppFrameProps) {
 	useServerErrorToast();
+	useServerLifecycle();
 	useThemeSync();
 	const theme = useUIStore((s) => s.theme);
 
@@ -187,39 +182,14 @@ export function AppFrame({ children }: AppFrameProps) {
 			>
 				<TitleBarDragRegion />
 				<AudioKeepAlive />
+				<BackendStatusBanner />
 				<AppBackground />
 
-				{/* Utility buttons - top right */}
-				<div className="absolute top-0 right-0 z-40 flex items-center gap-1 p-2">
-					<Suspense fallback={null}>
-						<NotificationBell />
-					</Suspense>
-					<button
-						type="button"
-						onClick={() => setHelpOpen(true)}
-						data-tour="help"
-						className="size-8 rounded-lg flex items-center justify-center bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors duration-150"
-						title="Help (F1)"
-						aria-label="Open Help Center"
-					>
-						<QuestionMarkCircleIcon className="size-4" />
-					</button>
-					<button
-						type="button"
-						onClick={() => setAssistantOpen(!assistantOpen)}
-						data-tour="assistant"
-						className={cn(
-							"size-8 rounded-lg flex items-center justify-center transition-colors duration-150",
-							assistantOpen
-								? "bg-accent text-accent-foreground shadow-sm"
-								: "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground",
-						)}
-						title="AI Assistant (Ctrl+K for commands)"
-						aria-label="Toggle AI Assistant"
-					>
-						<Bot className="size-4" />
-					</button>
-				</div>
+				<AppHeader
+					assistantOpen={assistantOpen}
+					onToggleAssistant={() => setAssistantOpen(!assistantOpen)}
+					onOpenHelp={() => setHelpOpen(true)}
+				/>
 
 				{/* Main layout: sidebar + content + assistant panel */}
 				<div className="flex flex-1 min-h-0 overflow-hidden">

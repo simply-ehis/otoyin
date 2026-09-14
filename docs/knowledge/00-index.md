@@ -6,7 +6,15 @@ READ-WHEN: You touch a backend interface, an MCP tool, or need the contract for 
 KEY-FILES: backend/backends/__init__.py, backend/mcp_server/tools/, backend/routes/assistant_tools/
 INVARIANTS: Every tool/function shipped must have a doc listed here; headers are greppable 7-line blocks.
 GOTCHAS: Protocols are runtime_checkable (existence, not signature) — factories are the real contract. 00-index was stale (listed 3 docs); this rebuild catalogs all 50+.
-UPDATED: 2026-08-21
+UPDATED: 2026-09-11
+
+### Ops & integrity (2026-09-11 fix pass)
+- [82-model-integrity.md](82-model-integrity.md) — SHA-256 sidecars, dedup, marketplace-only manifest gate, download/verify/activate/delete contracts.
+- [83-audio-playback.md](83-audio-playback.md) — Shared player, WaveSurfer + native fallback, autoplay policy, troubleshooting.
+- [84-audio-recording.md](84-audio-recording.md) — Visible RecordAudioButton, native-vs-webview mic paths, capture upload.
+- [85-theme-switching.md](85-theme-switching.md) — Full-coverage light/dark/special tokens, `light`-class invariant.
+- [87-voice-design-offerings.md](87-voice-design-offerings.md) — All-model offerings menu, grouped accent/nationality + style pickers, shared options module.
+- [86-marketplace-utilities.md](86-marketplace-utilities.md) — Utilities shelf at the bottom, pack collapse, category ordering.
 
 ## Master Agent-Callable Reference
 

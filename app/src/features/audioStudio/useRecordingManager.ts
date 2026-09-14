@@ -37,13 +37,22 @@ export function useRecordingManager({
 
 	const handleRecordingComplete = useCallback(
 		async (blob: Blob, recordedDuration?: number) => {
-			const targetTrack = tracks.find(
-				(t) => t.id === recordingTrackIdRef.current,
-			);
+			// Monitor path never sets recordingTrackIdRef (only the mic path
+			// does) — fall back to the selected track instead of discarding
+			// the take silently.
+			const targetTrack =
+				tracks.find((t) => t.id === recordingTrackIdRef.current) ??
+				tracks[selectedTrackIndex] ??
+				tracks[0];
 			if (!targetTrack) {
 				setIsRecording(false);
 				setRecordingTrackIndex(null);
 				recordingTrackIdRef.current = null;
+				toast({
+					title: "Recording dropped",
+					description: "No track available — add a track and record again.",
+					variant: "destructive",
+				});
 				return;
 			}
 
@@ -51,19 +60,24 @@ export function useRecordingManager({
 			const duration =
 				recordedDuration || (await getAudioDuration(blob as File));
 
+			const audioCtx = new AudioContext();
 			try {
-				const audioCtx = new AudioContext();
 				const arrayBuffer = await blob.arrayBuffer();
 				const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
 				const peaks = getPeakWaveform(audioBuffer, 200);
-				await audioCtx.close();
 				audioBuffersRef.current.set(targetTrack.id, audioBuffer);
 				updateTrack(targetTrack.id, {
 					waveformData: peaks,
 					channels: audioBuffer.numberOfChannels,
 				});
-			} catch (err) {
-				console.error("Recording decode error:", err);
+			} catch {
+				toast({
+					title: "Take kept, waveform unavailable",
+					description: "The recording was saved but could not be decoded for display.",
+					variant: "destructive",
+				});
+			} finally {
+				await audioCtx.close().catch(() => undefined);
 			}
 
 			setTrackAudio(targetTrack.id, url, blob, duration);
@@ -75,6 +89,7 @@ export function useRecordingManager({
 		},
 		[
 			tracks,
+			selectedTrackIndex,
 			setIsRecording,
 			setRecordingTrackIndex,
 			updateTrack,

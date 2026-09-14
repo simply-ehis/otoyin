@@ -47,6 +47,7 @@ export function AudioStudio() {
 	const currentTimeRef = useAudioStudioStore((s) => s.currentTimeRef);
 
 	const [waveformProgress, setWaveformProgress] = useState(0);
+	const [liveAnalyser, setLiveAnalyser] = useState<AnalyserNode | null>(null);
 
 	const setIsPlaying = useAudioStudioStore((s) => s.setIsPlaying);
 	const setIsRecording = useAudioStudioStore((s) => s.setIsRecording);
@@ -71,6 +72,7 @@ export function AudioStudio() {
 
 	const [selectedTrackIndex, setSelectedTrackIndex] = useState(0);
 	const [exporting, setExporting] = useState(false);
+	const [exportingReaper, setExportingReaper] = useState(false);
 	const [isolateStem, setIsolateStem] = useState<IsolationStem>("vocals");
 	const [transcriptDrawerOpen, setTranscriptDrawerOpen] = useState(false);
 	const [transcriptTrackIndex, setTranscriptTrackIndex] = useState<
@@ -114,17 +116,32 @@ export function AudioStudio() {
 		trackAnalysers,
 	} = playback;
 
-	// Drive waveform progress from ref at rAF rate — avoids subscribing to currentTime in zustand
+	// Ref mutation never re-renders, so mirror the live analyser into state
+	// when playback starts/stops — otherwise the visualizer gets null forever.
 	useEffect(() => {
+		setLiveAnalyser(isPlaying ? (analyserRef.current ?? null) : null);
+	}, [isPlaying, analyserRef]);
+
+	// Drive waveform progress from ref at rAF rate — runs only while playing
+	// and the tab is visible; the old deps ([ref, ref.current]) never re-fired
+	// so the loop ran forever, even paused.
+	useEffect(() => {
+		if (!isPlaying) {
+			return;
+		}
 		let raf: number;
 		const tick = () => {
+			if (document.hidden) {
+				raf = requestAnimationFrame(tick);
+				return;
+			}
 			const dur = durationRef.current;
 			setWaveformProgress(dur ? Math.min(1, currentTimeRef.current / dur) : 0);
 			raf = requestAnimationFrame(tick);
 		};
 		raf = requestAnimationFrame(tick);
 		return () => cancelAnimationFrame(raf);
-	}, [currentTimeRef, durationRef.current]);
+	}, [isPlaying, currentTimeRef, durationRef]);
 
 	const { handleExportWithPlugins, exportWithPlugins } = usePluginExport({
 		tracks,
@@ -185,9 +202,16 @@ export function AudioStudio() {
 
 	const handleExport = useCallback(async () => {
 		setExporting(true);
-		await offlineExport(tracks, masterVolume);
+		const ok = await offlineExport(tracks, masterVolume);
+		if (!ok) {
+			toast({
+				title: "Export failed",
+				description: "The mix could not be rendered. Try again.",
+				variant: "destructive",
+			});
+		}
 		setExporting(false);
-	}, [tracks, masterVolume, offlineExport]);
+	}, [tracks, masterVolume, offlineExport, toast]);
 
 	const openTranscriptDrawer = useCallback(
 		(trackIndex: number) => {
@@ -254,6 +278,8 @@ export function AudioStudio() {
 				showAutomation={showAutomation}
 				exporting={exporting}
 				exportWithPlugins={exportWithPlugins}
+				canExportReaper={!!session.currentSessionId}
+				exportingReaper={exportingReaper}
 				undoStackLength={undoStack.length}
 				redoStackLength={redoStack.length}
 				tracksHaveAudio={tracks.some((t) => !!t.audioUrl)}
@@ -277,6 +303,34 @@ export function AudioStudio() {
 				onToggleAutomation={() => setShowAutomation(!showAutomation)}
 				onExport={handleExport}
 				onExportWithPlugins={() => void handleExportWithPlugins()}
+				onExportReaper={() => {
+					const id = session.currentSessionId;
+					if (!id) {
+						return;
+					}
+					setExportingReaper(true);
+					void apiClient
+						.exportReaper(id)
+						.then((blob) => {
+							const url = URL.createObjectURL(blob);
+							const a = document.createElement("a");
+							a.href = url;
+							a.download = "session.rpp";
+							document.body.appendChild(a);
+							a.click();
+							a.remove();
+							URL.revokeObjectURL(url);
+						})
+						.catch((err: unknown) => {
+							toast({
+								title: "Reaper export failed",
+								description:
+									err instanceof Error ? err.message : "Unknown error",
+								variant: "destructive",
+							});
+						})
+						.finally(() => setExportingReaper(false));
+				}}
 				onIsolateStemChange={setIsolateStem}
 				onIsolate={() => void handleIsolate()}
 				onProducePodcast={() => setPodcastProducerOpen(true)}
@@ -313,6 +367,36 @@ export function AudioStudio() {
 				onOpenChange={setPodcastProducerOpen}
 				profiles={podcastProfiles}
 				engines={podcastEngines}
+				onAddToTimeline={(blob) => {
+					void (async () => {
+						try {
+							const ctx = new AudioContext();
+							const buf = await ctx.decodeAudioData(await blob.arrayBuffer());
+							await ctx.close().catch(() => undefined);
+							const { getPeakWaveform } = await import("./getPeakWaveform");
+							const { getAudioDuration } = await import("@/lib/utils/audio");
+							const url = URL.createObjectURL(blob);
+							const id = addTrack("Podcast mix");
+							const duration = await getAudioDuration(
+								new File([blob], "podcast-mix.wav", { type: "audio/wav" }),
+							).catch(() => buf.duration);
+							audioBuffersRef.current.set(id, buf);
+							setTrackAudio(id, url, blob, duration);
+							updateTrack(id, {
+								waveformData: getPeakWaveform(buf, 200),
+								channels: buf.numberOfChannels,
+							});
+							pushUndo("Add podcast mix");
+							toast({ title: "Podcast added to timeline" });
+						} catch {
+							toast({
+								title: "Could not add to timeline",
+								description: "The mix downloaded fine — import it manually.",
+								variant: "destructive",
+							});
+						}
+					})();
+				}}
 			/>
 
 			<div className="flex-1 flex flex-col min-h-0">
@@ -338,7 +422,7 @@ export function AudioStudio() {
 
 		<div className="shrink-0 border-t border-border bg-card px-4 py-1">
 			<WaveformVisualizer
-				analyser={analyserRef.current}
+				analyser={liveAnalyser}
 				playing={isPlaying}
 				progress={waveformProgress}
 				height={48}

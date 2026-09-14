@@ -344,7 +344,7 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 										: t("generation.placeholder.selectVoice")
 								}
 								rows={expanded ? 5 : 2}
-								className="max-h-[300px] min-h-[64px] resize-y"
+								className="max-h-[300px] min-h-[64px] resize-none"
 							/>
 						</Field>
 						{dragOver ? (
@@ -371,7 +371,7 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 								placeholder={t("generation.instruct.placeholder")}
 								rows={2}
 								maxLength={500}
-								className="min-h-[60px]"
+								className="min-h-[60px] max-h-[120px] overflow-y-auto resize-none"
 							/>
 						</Field>
 					) : null}

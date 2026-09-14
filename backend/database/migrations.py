@@ -601,7 +601,7 @@ def _migrate_voice_chat_settings(engine, inspector, tables: set[str]) -> None:
 
 
 def _migrate_assistant_settings(engine, inspector, tables: set[str]) -> None:
-    """Add reviewable system prompt + KV-cache quant columns to assistant settings."""
+    """Add reviewable system prompt + KV-cache quant + GPU-layer columns."""
     if "assistant_settings" not in tables:
         return
     columns = _get_columns(inspector, "assistant_settings")
@@ -614,6 +614,8 @@ def _migrate_assistant_settings(engine, inspector, tables: set[str]) -> None:
             "kv_quant VARCHAR NOT NULL DEFAULT 'q8_0'",
             "kv_quant",
         )
+    if "gpu_layers" not in columns:
+        _add_column(engine, "assistant_settings", "gpu_layers INTEGER", "gpu_layers")
 
 
 def _migrate_performance_settings(engine, inspector, tables: set[str]) -> None:

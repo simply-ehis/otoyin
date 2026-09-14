@@ -327,7 +327,7 @@ export function SourceColumn({
 										{...field}
 										value={(field.value as string) ?? ""}
 										onChange={(e) => field.onChange(e.target.value)}
-										className="min-h-[100px] w-full resize-y rounded-sm border border-input bg-sunken px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-ring focus:outline-none"
+										className="min-h-[100px] max-h-[200px] w-full resize-none overflow-y-auto rounded-sm border border-input bg-sunken px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-ring focus:outline-none"
 									/>
 								</FormControl>
 								<FormDescription>

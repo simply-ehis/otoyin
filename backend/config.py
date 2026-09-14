@@ -97,6 +97,52 @@ def get_server_base_url() -> str:
     return f"http://{get_server_host()}:{get_server_port()}"
 
 
+# Port this process actually bound (set by main.py after resolving
+# CLI > env > persisted setting > default). Lets the settings API tell a
+# persisted-but-not-yet-applied port apart from the live one.
+_runtime_port: int | None = None
+
+
+def set_runtime_port(port: int) -> None:
+    """Record the bound serving port for this process."""
+    global _runtime_port
+    _runtime_port = port
+
+
+def get_runtime_port() -> int | None:
+    """The port this process bound, or None if not recorded (tests)."""
+    return _runtime_port
+
+
+SERVER_PORT_SETTING_KEY = "server_port"
+
+
+def read_persisted_port(data_dir: Path | None = None) -> int | None:
+    """Best-effort read of the persisted serving port (no ORM — stdlib only
+    so ``main.py`` can use it before the app boots). Returns None on any
+    failure (missing DB/table/row, bad value)."""
+    import json
+    import sqlite3
+
+    try:
+        db_path = (data_dir or get_data_dir()) / "otoyin.db"
+        if not db_path.exists():
+            return None
+        conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        try:
+            row = conn.execute(
+                "SELECT value_json FROM app_settings WHERE key = ?", (SERVER_PORT_SETTING_KEY,)
+            ).fetchone()
+        finally:
+            conn.close()
+        if not row or row[0] is None:
+            return None
+        port = int(json.loads(row[0]))
+        return port if 1024 <= port <= 65535 else None
+    except Exception:
+        return None
+
+
 # --- Data directory configuration ---
 
 # Allow users to override the HuggingFace model download directory.

@@ -420,6 +420,14 @@ export class StoriesBMethods extends StoriesAMethods {
 		});
 	}
 
+	async exportReaper(sessionId: string): Promise<Blob> {
+		const res = await this.fetchWithAuth(
+			`/audio-studio/sessions/${sessionId}/export-reaper`,
+			{ method: "POST" },
+		);
+		return res.blob();
+	}
+
 	// --- Noise Reduction ---
 
 	async noiseReduce(

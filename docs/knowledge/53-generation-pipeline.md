@@ -46,9 +46,16 @@ UPDATED: 2026-07-19
 ## Observations (not bugs — for later judgement)
 1. **Cloud voice mapping is naive**: cloud path falls back to `"alloy"` when `preset_voice_id` is absent, while local path builds a full `voice_prompt` from samples. A profile cloned for local use may not map cleanly to a cloud voice id — could yield unexpected timbre on cloud routing.
 2. **`assert effects_chain is not None`** (services/generation.py:313) in _save_generate — relies on a runtime assert rather than a typed guard; fine since `has_effects` already gated it, but an assert is unusual in this codebase (prefers explicit errors).
-3. **Regenerate always normalizes** regardless of `normalize` flag (services/generation.py:180) — intentional per docstring, but means regenerate output can differ in loudness from a plain `generate` with `normalize=False`. Worth a UI note.
+3. ~~Regenerate always normalizes~~ — FIXED 2026-09-11: `_postprocess` preserves the request flag; `from_db` restores temperature and defaults normalize to True (request default).
 4. **`generate_audio_sync` opens+closes its own DB session** just to build the voice_prompt, then closes — the actual inference runs outside any DB session. Correct (no DB needed mid-inference) but the session is only used for the profile lookup.
 5. **SSE subscriber dict is unbounded** (`_status_subscribers` never pruned on disconnect except via QueueFull suppression) — a slow/disconnected client could leak queues. Low risk at single-user local scale, but worth noting for multi-user/cloud deployments.
+
+## Execution (2026-09-11 hardening pass)
+- **Lanes:** one serial worker (single-inference invariant holds); `lane="preview"` jobs jump ahead of *waiting* default jobs, max 3 consecutive jumps, never preempting or parallel with the active job. Previews (`services/preset_preview.py`) run as preview-lane jobs; queue-full answers 429 via `PreviewBackpressureError`.
+- **Status bus:** `services/status_bus.py` owns SSE subscriber queues; routes/generations.py re-exports `notify_generation_status` (tests keep patching that name).
+- **Retries:** per-chunk retry (1 retry, fail-fast predicate) inside `generate_chunked`; whole-synthesis retry only for transient errors via `with_retry(..., retryable=)` (default skips HTTP<500/validation errors). Parallel chunks default to 1 (opt-in per call).
+- **Terminal hygiene:** completed/failed writes are sticky in `update_generation_status`; stream chunk wavs are deleted in the `run_generation` finally (narrow `{id}_chunk_*.wav` glob); cancel paths clean their own chunks.
+- **Cloud:** `synthesize_via_cloud_tts` runs in a worker thread (awaiting it directly always raised TypeError); empty synthesis output raises before `completed` is written.
 
 ## Agent Callable
 - **MCP Tools:** `21labs.speak`, `21labs.generate_sfx`, `21labs.generate_music`

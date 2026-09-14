@@ -16,6 +16,7 @@ def isolated_log(tmp_path, monkeypatch):
     monkeypatch.setattr(crash_reports, "_get_log_path", lambda: tmp_path / "crashes.jsonl")
     monkeypatch.setattr(crash_reports, "_config", crash_reports.CrashConfig())
     monkeypatch.setattr(crash_reports, "CRASH_URL", "")
+    crash_reports._recent_requests.clear()
     return
 
 
@@ -87,11 +88,13 @@ def test_scrub_depth_limit_truncates():
     assert out["a"]["b"]["c"]["d"] == {"e": "<truncated>"}
 
 
-def test_capture_disabled_is_noop(tmp_path):
-    with pytest.raises(ValueError):
-        raise ValueError("boom buyer@example.com")
-    assert crash_reports.capture_exception(ValueError("boom buyer@example.com")) is None
-    assert _read_all(tmp_path) == []
+def test_capture_always_stores_locally_when_sharing_off(tmp_path):
+    """Sharing off ≠ blind: the record is stored on-device, just not forwarded."""
+    record = crash_reports.capture_exception(ValueError("boom buyer@example.com"))
+    assert record is not None and record["forwarded"] is False
+    assert "buyer@example.com" not in record["message"]
+    stored = _read_all(tmp_path)
+    assert len(stored) == 1 and stored[0]["id"] == record["id"]
 
 
 def test_capture_enabled_stores_scrubbed_record(tmp_path):
@@ -112,6 +115,34 @@ def test_capture_report_rejects_unknown_layer(tmp_path):
     crash_reports.enable_crash_reporting()
     record = crash_reports.capture_report(layer="exploit", kind="X", message="m")
     assert record is not None and record["layer"] == "frontend"
+
+
+def test_record_carries_recent_requests_and_diagnostics(tmp_path):
+    """A capture shows the last actions + machine state (last-actions trail)."""
+    crash_reports.record_action("POST", "/generate", "rid-1")
+    crash_reports.record_action("GET", "/library", "rid-2")
+    try:
+        raise RuntimeError("with trail")
+    except RuntimeError as exc:
+        record = crash_reports.capture_exception(exc)
+    assert record is not None
+    trail = record["context"]["recent_requests"]
+    assert [r["path"] for r in trail] == ["/generate", "/library"]
+    assert record["context"]["diagnostics"]["ram_free_mb"] is not None or "ram_error" in record["context"][
+        "diagnostics"
+    ]
+
+
+def test_recent_requests_bounded():
+    for i in range(30):
+        crash_reports.record_action("GET", f"/x/{i}")
+    assert len(crash_reports._recent_requests) == 20
+    assert crash_reports._recent_requests[0]["path"] == "/x/10"
+
+
+def test_collect_diagnostics_never_raises():
+    diag = crash_reports.collect_diagnostics()
+    assert isinstance(diag, dict)
 
 
 def test_forward_called_when_configured(tmp_path, monkeypatch):
@@ -151,15 +182,18 @@ def test_forward_failure_keeps_local(tmp_path, monkeypatch):
     assert len(_read_all(tmp_path)) == 1
 
 
-def test_toggle_route_flips_status():
-    assert crashes_routes.toggle_crash_reporting(crashes_routes.ToggleRequest(enabled=True))["enabled"] is True
+def test_toggle_route_flips_sharing_status():
+    out = crashes_routes.toggle_crash_reporting(crashes_routes.ToggleRequest(enabled=True))
+    assert out["enabled"] is True and out["local_capture"] is True
     assert crash_reports.is_enabled() is True
     assert crashes_routes.toggle_crash_reporting(crashes_routes.ToggleRequest(enabled=False))["enabled"] is False
 
 
-def test_report_route_drops_when_disabled():
+def test_report_route_stores_locally_when_sharing_off(tmp_path):
     body = crashes_routes.ClientReport(layer="frontend", kind="Error", message="m")
-    assert crashes_routes.submit_crash_report(body) == {"stored": False, "id": None}
+    out = crashes_routes.submit_crash_report(body)
+    assert out["stored"] is True and out["id"] is not None
+    assert len(_read_all(tmp_path)) == 1
 
 
 def test_report_route_stores_when_enabled(tmp_path):
@@ -242,6 +276,7 @@ class TestMiddleware:
         class Req:
             url = type("U", (), {"path": "/boom"})()
             method = "GET"
+            headers = {}
 
         async def _raise(_request):
             raise RuntimeError("backend blew up")
@@ -261,5 +296,6 @@ class TestMiddleware:
         class Req:
             url = type("U", (), {"path": "/health"})()
             method = "GET"
+            headers = {}
 
         assert await mw.dispatch(Req(), _ok) is sentinel

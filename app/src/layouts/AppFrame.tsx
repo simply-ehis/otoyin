@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { TOP_SAFE_AREA_PADDING } from "@/lib/constants/ui";
-import { applyThemeAccent } from "@/lib/design-system";
+import { applyAccentHueOverride, applyThemeAccent } from "@/lib/design-system";
 import { useServerErrorToast } from "@/lib/hooks/useServerErrorToast";
 import { cn } from "@/lib/utils/cn";
 import { usePlayerStore } from "@/stores/playerStore";
@@ -45,6 +45,11 @@ export function AppFrame({
 	useEffect(() => {
 		applyThemeAccent(theme);
 	}, [theme]);
+
+	const accentHue = useUIStore((s) => s.accentHue);
+	useEffect(() => {
+		applyAccentHueOverride(accentHue);
+	}, [accentHue]);
 
 	useEffect(() => {
 		const onKeyDown = (e: KeyboardEvent) => {

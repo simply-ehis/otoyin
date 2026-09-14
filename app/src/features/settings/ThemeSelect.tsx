@@ -1,5 +1,6 @@
 import { CheckIcon } from "@heroicons/react/24/outline";
 import { cn } from "@/lib/utils/cn";
+import { Slider } from "@/ui/slider";
 import {
 	PLAIN_THEMES,
 	SPECIAL_THEMES,
@@ -27,12 +28,16 @@ function ThemeCard({
 	theme,
 	active,
 	onSelect,
+	customHue,
 }: {
 	theme: Theme;
 	active: boolean;
 	onSelect: () => void;
+	customHue: number | null;
 }) {
 	const meta = THEME_META[theme];
+	const accentColor =
+		customHue != null ? `hsl(${customHue} 65% 55%)` : meta.accent;
 	return (
 		<button
 			type="button"
@@ -53,7 +58,7 @@ function ThemeCard({
 			>
 				<span
 					className="grid size-6 place-items-center rounded-full"
-					style={{ background: meta.accent }}
+					style={{ background: accentColor }}
 				>
 					{active ? (
 						<CheckIcon className="size-3.5 text-white" aria-hidden="true" />
@@ -73,10 +78,55 @@ function ThemeCard({
 	);
 }
 
+function AccentHueSlider() {
+	const accentHue = useUIStore((s) => s.accentHue);
+	const setAccentHue = useUIStore((s) => s.setAccentHue);
+	const hue = accentHue ?? 348;
+
+	return (
+		<div className="space-y-1.5">
+			<div className="flex items-center justify-between">
+				<label htmlFor="accent-hue" className="text-xs text-muted-foreground">
+					Accent color
+				</label>
+				<span className="text-xs tabular-nums text-muted-foreground/60">
+					{accentHue != null ? `${hue}°` : "default"}
+				</span>
+			</div>
+			<div className="flex items-center gap-2">
+				<span
+					aria-hidden="true"
+					className="size-4 shrink-0 rounded-full border border-border"
+					style={{ background: `hsl(${hue} 65% 55%)` }}
+				/>
+				<Slider
+					min={0}
+					max={360}
+					step={1}
+					value={[hue]}
+					onValueChange={([v]) => setAccentHue(v)}
+					className="flex-1"
+					aria-label="Accent hue"
+				/>
+			</div>
+			{accentHue != null && (
+				<button
+					type="button"
+					onClick={() => setAccentHue(null)}
+					className="text-[10px] text-muted-foreground/60 hover:text-muted-foreground"
+				>
+					Reset to theme default
+				</button>
+			)}
+		</div>
+	);
+}
+
 /** Theme gallery: plain themes first, special looks below the fold line. */
 export function ThemeSelect() {
 	const theme = useUIStore((s) => s.theme);
 	const setTheme = useUIStore((s) => s.setTheme);
+	const accentHue = useUIStore((s) => s.accentHue);
 	return (
 		<div className="flex flex-col gap-3">
 			<fieldset className="grid grid-cols-4 gap-2">
@@ -87,12 +137,14 @@ export function ThemeSelect() {
 						theme={t}
 						active={theme === t}
 						onSelect={() => setTheme(t)}
+						customHue={accentHue}
 					/>
 				))}
 				<ThemeCard
 					theme="di-stefano"
 					active={theme === "di-stefano"}
 					onSelect={() => setTheme("di-stefano")}
+					customHue={accentHue}
 				/>
 			</fieldset>
 			<div className="relative" aria-hidden="true">
@@ -113,9 +165,13 @@ export function ThemeSelect() {
 						theme={t}
 						active={theme === t}
 						onSelect={() => setTheme(t)}
+						customHue={accentHue}
 					/>
 				))}
 			</fieldset>
+			<div className="pt-1 border-t border-border">
+				<AccentHueSlider />
+			</div>
 		</div>
 	);
 }

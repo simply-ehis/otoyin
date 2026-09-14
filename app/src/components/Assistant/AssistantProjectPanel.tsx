@@ -244,7 +244,7 @@ export function AssistantProjectPanel({
 								}
 								placeholder="Steps (one per line)"
 								rows={4}
-								className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+								className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm max-h-[200px] overflow-y-auto resize-none"
 							/>
 							<Button
 								size="sm"

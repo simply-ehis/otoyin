@@ -399,136 +399,103 @@ def test_manifest_flip_keeps_routes_in_agreement(dual_client):
 # ── manifest-backfill gap: drift detection, self-heal, /models/status flag ──
 
 
-def _backfill_session_factory(monkeypatch):
-    """Fresh manifest DB + registry seam, mirroring _seed_manifest but
-    returning the factory so tests can add/drop rows mid-test."""
+# ── manifest drift: physical files without a row are NEVER auto-entitled ──
+
+
+def test_physical_files_without_manifest_row_stay_unentitled(monkeypatch):
+    """Drift is never self-healed: physically present files with no manifest
+    row must NOT gain entitlement — auto-recording them would bypass the
+    marketplace purchase gate (any copied cache file would become usable).
+    Rows are created only by the download endpoint (record_download) or by
+    first-launch seeding of an EMPTY manifest (reconcile_downloads)."""
     import backend.services.model_registry as mr
+    import backend.utils.model_status as ums
 
     sess = _make_session_factory()
     monkeypatch.setattr(mr, "SessionLocal", sess)
-    return sess
-
-
-def _reset_reconcile_clock(monkeypatch):
-    """Reset the backfill's TTL gate so each test starts with a clean window."""
-    import backend.services.model_registry as mr
-
-    monkeypatch.setattr(mr, "_reconcile_last_attempt", None)
-
-
-def test_reconcile_cached_backfill_adds_missing_row(monkeypatch):
-    """The core drift heal: model physically present (utils check true), no
-    manifest row (non-empty manifest, so reconcile_downloads() no-ops) →
-    backfill records the row; genuinely absent models stay unrecorded."""
-    import backend.services.model_registry as mr
-
-    _reset_reconcile_clock(monkeypatch)
-    sess = _backfill_session_factory(monkeypatch)
-    # Non-empty manifest (one unrelated row) — the old reconcile would stop here.
+    # Non-empty manifest (one unrelated row).
     mr.record_download(sess(), "pocket-tts-free", None, "pocket_tts_onnx", None, None)
-
-    import backend.utils.model_status as ums
-
     monkeypatch.setattr(
         ums,
         "is_model_downloaded",
         lambda name: name == "kokoro-onnx",
     )
 
-    added = mr.reconcile_cached_backfill(min_interval_sec=0.0)
-    assert added == 1
-    # Size-aware: bare is_downloaded(name) misses sized rows; local_status_for
-    # resolves the size from the config like the routes do.
-    assert mr.local_status_for("kokoro-onnx") == "cached"
-
-
-def test_reconcile_cached_backfill_noop_when_no_drift(monkeypatch):
-    """Rows exist for every present model → 0 added, no writes."""
-    import backend.services.model_registry as mr
     from backend.backends import get_model_config
 
-    _reset_reconcile_clock(monkeypatch)
-    sess = _backfill_session_factory(monkeypatch)
     cfg = get_model_config("kokoro-onnx")
-    mr.record_download(sess(), cfg.model_name, cfg.model_size, cfg.engine, None, None)
+    assert mr.is_downloaded("kokoro-onnx", cfg.model_size) is False
+    assert mr.local_status_for("kokoro-onnx") == "not_downloaded"
 
+
+def test_reconcile_downloads_seeds_empty_manifest(monkeypatch):
+    """First-launch path: with an EMPTY manifest, physically present models
+    are recorded as entitled (bundled installs); a second run no-ops."""
+    import backend.services.model_registry as mr
     import backend.utils.model_status as ums
+    from backend.backends import get_model_config
 
+    sess = _make_session_factory()
+    monkeypatch.setattr(mr, "SessionLocal", sess)
     monkeypatch.setattr(ums, "is_model_downloaded", lambda name: name == "kokoro-onnx")
 
-    assert mr.reconcile_cached_backfill(min_interval_sec=0.0) == 0
-    assert mr.list_downloads_rows() if False else True  # no crash = enough
+    assert mr.reconcile_downloads() == 1
+    cfg = get_model_config("kokoro-onnx")
+    assert mr.is_downloaded("kokoro-onnx", cfg.model_size) is True
+    assert mr.local_status_for("kokoro-onnx") == "cached"
+    assert mr.reconcile_downloads() == 0
 
 
-def test_reconcile_cached_backfill_respects_ttl(monkeypatch):
-    """Inside the TTL window the backfill is a no-op (returns 0) even with
-    drift present; past the window it heals."""
+def test_reconcile_downloads_noop_when_manifest_nonempty(monkeypatch):
+    """With ANY manifest row present, physically present models are left
+    alone — seeding runs once, on first launch only."""
     import backend.services.model_registry as mr
-
-    _reset_reconcile_clock(monkeypatch)
-    _backfill_session_factory(monkeypatch)
-
     import backend.utils.model_status as ums
+    from backend.backends import get_model_config
 
-    monkeypatch.setattr(ums, "is_model_downloaded", lambda _name: True)
+    sess = _make_session_factory()
+    monkeypatch.setattr(mr, "SessionLocal", sess)
+    mr.record_download(sess(), "pocket-tts-free", None, "pocket_tts_onnx", None, None)
+    monkeypatch.setattr(ums, "is_model_downloaded", lambda name: name == "kokoro-onnx")
 
-    first = mr.reconcile_cached_backfill(min_interval_sec=3600.0)
-    assert first >= 1  # healed
-    second = mr.reconcile_cached_backfill(min_interval_sec=3600.0)
-    assert second == 0  # window not elapsed — even though more drift exists
+    assert mr.reconcile_downloads() == 0
+    cfg = get_model_config("kokoro-onnx")
+    assert mr.is_downloaded("kokoro-onnx", cfg.model_size) is False
 
 
-def test_models_status_flags_and_heals_backfill_gap(dual_client, monkeypatch):
+def test_models_status_reports_drift_without_healing(dual_client, monkeypatch):
     """HTTP level, both surfaces: with kokoro physically present but absent
     from the manifest, /models/status reports downloaded=True entitled=False
-    manifest_backfill_pending=True (the Store's no-download-needed signal),
-    the backfill heals the manifest, and the NEXT status read is clean while
-    the catalog flips to cached — the Store never renders needs-download for
-    a model that can already generate."""
+    and the catalog shows not_downloaded — and a second read is identical.
+    Nothing heals the gap behind the scenes (purchase-gate protection)."""
     import backend.routes.models.status as status_mod
     import backend.services.model_registry as mr
     import backend.utils.model_status as ums
-
-    _reset_reconcile_clock(monkeypatch)
 
     def _only_kitten(hf_repo_id, model_name):
         return (True, 123.4) if model_name == "kitten-tts-mini" else (False, None)
 
     # Route-level physical checks: only kitten-tts-mini looks present.
     monkeypatch.setattr(status_mod, "_check_filesystem_cache", _only_kitten)
-    # utils-level check (what the backfill consults): same story.
+    # utils-level check (what seeding consults): same story.
     monkeypatch.setattr(ums, "is_model_downloaded", lambda name: name == "kitten-tts-mini")
 
     products, statuses = _fetch_surfaces(dual_client)
     kitten = statuses["kitten-tts-mini"]
     assert kitten["downloaded"] is True
     assert kitten["entitled"] is False
-    assert kitten["manifest_backfill_pending"] is True
+    assert "manifest_backfill_pending" not in kitten
     assert products["kitten-tts-mini"]["local_status"] == "not_downloaded"
 
-    # The reconcile ran during that request; the row now exists (size-aware:
-    # kitten has a model_size, so a bare is_downloaded(name) would miss it).
+    # No row was invented behind the scenes (size-aware lookup).
     from backend.backends import get_model_config as _gmc
 
     _kitten_cfg = _gmc("kitten-tts-mini")
-    assert mr.is_downloaded("kitten-tts-mini", _kitten_cfg.model_size) is True
+    assert mr.is_downloaded("kitten-tts-mini", _kitten_cfg.model_size) is False
 
-    # Next read: gap closed on both surfaces.
+    # Next read: gap still open on both surfaces — nothing self-healed.
     products2, statuses2 = _fetch_surfaces(dual_client)
     kitten2 = statuses2["kitten-tts-mini"]
-    assert kitten2["entitled"] is True
-    assert kitten2["manifest_backfill_pending"] is False
-    assert products2["kitten-tts-mini"]["local_status"] == "cached"
-
-
-def test_models_status_no_flag_for_absent_models(dual_client, monkeypatch):
-    """A model that is genuinely absent (not downloaded, not loaded) never
-    carries the flag — only real drift does."""
-    import backend.utils.model_status as ums
-
-    _reset_reconcile_clock(monkeypatch)
-    monkeypatch.setattr(ums, "is_model_downloaded", lambda _name: False)
-
-    _products, statuses = _fetch_surfaces(dual_client)
-    for status in statuses.values():
-        assert status["manifest_backfill_pending"] is False
+    assert kitten2["downloaded"] is True
+    assert kitten2["entitled"] is False
+    assert products2["kitten-tts-mini"]["local_status"] == "not_downloaded"

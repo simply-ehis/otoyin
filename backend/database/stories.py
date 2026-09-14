@@ -31,9 +31,9 @@ class StoryItem(Base):
     )
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    story_id = Column(String, ForeignKey("stories.id"), nullable=False)
-    generation_id = Column(String, ForeignKey("generations.id"), nullable=False)
-    version_id = Column(String, ForeignKey("generation_versions.id"), nullable=True)
+    story_id = Column(String, ForeignKey("stories.id", ondelete="CASCADE"), nullable=False)
+    generation_id = Column(String, ForeignKey("generations.id", ondelete="CASCADE"), nullable=False)
+    version_id = Column(String, ForeignKey("generation_versions.id", ondelete="SET NULL"), nullable=True)
     start_time_ms = Column(Integer, nullable=False, default=0)
     track = Column(Integer, nullable=False, default=0)
     trim_start_ms = Column(Integer, nullable=False, default=0)
@@ -61,7 +61,7 @@ class StoryEditSnapshot(Base):
     HISTORY_LIMIT = 50
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    story_id = Column(String, ForeignKey("stories.id"), nullable=False)
+    story_id = Column(String, ForeignKey("stories.id", ondelete="CASCADE"), nullable=False)
     stack = Column(String, nullable=False, default="undo")  # "undo" | "redo"
     items_json = Column(Text, nullable=False, default="[]")
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))

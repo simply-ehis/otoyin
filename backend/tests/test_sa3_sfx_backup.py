@@ -333,6 +333,8 @@ def test_generate_music_route_heartmula(client, monkeypatch):
             return np.zeros(48000, dtype=np.float32), 48000
 
     monkeypatch.setattr("backend.routes.generate.get_music_backend", lambda engine: FakeBackend())
+    # Route's manifest gate checks the real download DB — pretend downloaded.
+    monkeypatch.setattr("backend.services.model_registry.is_downloaded", lambda *a, **k: True)
 
     resp = client.post(
         "/generate/music",

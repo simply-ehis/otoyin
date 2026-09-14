@@ -25,7 +25,6 @@ loads fail with a clear ``load_error`` surfaced by ``GET /llm/status``.
 
 import asyncio
 import logging
-import os
 
 from ..utils.llm_context import MIN_CTX as MIN_GEN_TOKENS
 from . import DEFAULT_LLM_TEMPERATURE
@@ -72,8 +71,7 @@ def _resolve_gguf_filename(repo_id: str, quant_tag: str) -> str:
             files = future.result(timeout=30)
         except concurrent.futures.TimeoutError:
             raise TimeoutError(
-                f"HuggingFace API timed out listing files in {repo_id} — "
-                "check your network connection and retry."
+                f"HuggingFace API timed out listing files in {repo_id} — check your network connection and retry."
             ) from None
     candidates = [
         f
@@ -146,6 +144,8 @@ class GGUFServerLLMBackend(BackendBase):
         self._server: GGUFServerProcess | None = None
         self._port: int | None = None
         self.n_ctx: int = 4096
+        self.kv_quant: str = "q8_0"
+        self.gpu_layers: int = 0
         self.load_error: str | None = None
 
     def is_loaded(self) -> bool:
@@ -174,8 +174,9 @@ class GGUFServerLLMBackend(BackendBase):
         if self.is_loaded():
             self.unload_model()
 
-        # Check if model is cached before attempting to load
-        if not self._is_model_cached(model_size):
+        # Check if model is cached before attempting to load (off the event
+        # loop — _is_model_cached does HF network/filesystem I/O).
+        if not await asyncio.to_thread(self._is_model_cached, model_size):
             raise FileNotFoundError(
                 f"Planner model '{model_size}' is not cached. "
                 f"Please download it first via the Models tab in the UI. "
@@ -200,9 +201,9 @@ class GGUFServerLLMBackend(BackendBase):
         with model_load_progress(progress_model_name, True), force_offline_if_cached(True, progress_model_name):
             model_path = hf_hub_download(repo_id=repo, filename=filename, local_files_only=True)
 
-        gpu_layers = int(os.environ.get("TWENTYLABS_LLAMA_GPU_LAYERS", "0"))
-        from ..services.settings import get_assistant_kv_quant
+        from ..services.settings import get_assistant_gpu_layers, get_assistant_kv_quant
 
+        gpu_layers = get_assistant_gpu_layers()
         kv_quant = get_assistant_kv_quant()
         self._server = GGUFServerProcess(
             model_path,
@@ -222,6 +223,8 @@ class GGUFServerLLMBackend(BackendBase):
         self._port = self._server.port
         self.load_error = None
         self.n_ctx = n_ctx
+        self.kv_quant = kv_quant
+        self.gpu_layers = gpu_layers
         self._current_model_size = model_size
         self.model_size = model_size
         logger.info("Planner %s loaded (n_ctx=%d)", model_size, n_ctx)

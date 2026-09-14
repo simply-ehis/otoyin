@@ -80,6 +80,54 @@ export const AssistantSettings = memo(function AssistantSettings({
 	const [kvQuantOptions, setKvQuantOptions] = useState<string[]>([]);
 	const [kvQuantSaving, setKvQuantSaving] = useState(false);
 
+	// GPU offload layers (Slice P2): null/0 = CPU-only. Same deferred-apply
+	// contract as n_ctx/kv_quant — takes effect at planner load.
+	const [gpuLayers, setGpuLayers] = useState<number | "">("");
+	const [gpuSaving, setGpuSaving] = useState(false);
+	const [gpuEnvOverride, setGpuEnvOverride] = useState(false);
+
+	// Live planner state: n_ctx/kv_quant apply at load time only. When the
+	// running server's n_ctx differs from the effective setting, show a
+	// reload notice instead of pretending "saved" means "active".
+	const [plannerLoaded, setPlannerLoaded] = useState(false);
+	const [loadedNCtx, setLoadedNCtx] = useState<number | null>(null);
+	const [effectiveNCtx, setEffectiveNCtx] = useState<number | null>(null);
+	const [loadedKvQuant, setLoadedKvQuant] = useState<string | null>(null);
+	const [loadedGpuLayers, setLoadedGpuLayers] = useState<number | null>(null);
+	const [effectiveGpuLayers, setEffectiveGpuLayers] = useState<number | null>(
+		null,
+	);
+	const [reloading, setReloading] = useState(false);
+
+	const applyPlannerState = (settings: {
+		planner_loaded?: boolean;
+		loaded_n_ctx?: number | null;
+		effective_n_ctx?: number | null;
+		loaded_kv_quant?: string | null;
+		loaded_gpu_layers?: number | null;
+		effective_gpu_layers?: number | null;
+		gpu_layers_env_override?: boolean;
+	}) => {
+		setPlannerLoaded(Boolean(settings.planner_loaded));
+		setLoadedNCtx(settings.loaded_n_ctx ?? null);
+		setEffectiveNCtx(settings.effective_n_ctx ?? null);
+		setLoadedKvQuant(settings.loaded_kv_quant ?? null);
+		setLoadedGpuLayers(settings.loaded_gpu_layers ?? null);
+		setEffectiveGpuLayers(settings.effective_gpu_layers ?? null);
+		setGpuEnvOverride(Boolean(settings.gpu_layers_env_override));
+	};
+	const reloadStale =
+		plannerLoaded &&
+		((loadedNCtx != null &&
+			effectiveNCtx != null &&
+			loadedNCtx !== effectiveNCtx) ||
+			(loadedKvQuant != null &&
+				kvQuant !== "" &&
+				loadedKvQuant !== kvQuant) ||
+			(loadedGpuLayers != null &&
+				effectiveGpuLayers != null &&
+				loadedGpuLayers !== effectiveGpuLayers));
+
 	useEffect(() => {
 		let cancelled = false;
 		(async () => {
@@ -96,6 +144,8 @@ export const AssistantSettings = memo(function AssistantSettings({
 				setThinkingEnabled(Boolean(settings.thinking_enabled));
 				setSystemPrompt(settings.system_prompt ?? "");
 				setKvQuant(settings.kv_quant || "q8_0");
+				setGpuLayers(settings.gpu_layers ?? "");
+				applyPlannerState(settings);
 				const bySize = caps.llm_context?.by_size ?? {};
 				const maxBySize = bySize;
 				const ramDefault =
@@ -146,7 +196,12 @@ export const AssistantSettings = memo(function AssistantSettings({
 				max_tokens: clampToken(maxOverride),
 			};
 			await apiClient.updateAssistantSettings(patch);
-			toast({ title: "Context & token budget saved" });
+			applyPlannerState(await apiClient.getAssistantSettings());
+			toast({
+				title: plannerLoaded
+					? "Saved — applies when the planner reloads"
+					: "Context & token budget saved",
+			});
 		} catch {
 			toast({
 				title: ERR_TITLE_SETTINGS,
@@ -244,6 +299,46 @@ export const AssistantSettings = memo(function AssistantSettings({
 			});
 		} finally {
 			setKvQuantSaving(false);
+		}
+	};
+
+	const handleGpuLayersSave = async () => {
+		const value =
+			gpuLayers === "" ? null : Math.max(0, Math.min(999, Math.round(gpuLayers)));
+		setGpuSaving(true);
+		try {
+			await apiClient.updateAssistantSettings({ gpu_layers: value });
+			setGpuLayers(value ?? "");
+			applyPlannerState(await apiClient.getAssistantSettings());
+			toast({
+				title: plannerLoaded
+					? "Saved — applies when the planner reloads"
+					: "GPU layers saved",
+			});
+		} catch {
+			toast({
+				title: ERR_TITLE_SETTINGS,
+				description: ERR_DESC_SETTINGS_FAILED,
+				variant: "destructive",
+			});
+		} finally {
+			setGpuSaving(false);
+		}
+	};
+
+	const handleReloadPlanner = async () => {		setReloading(true);
+		try {
+			const res = await apiClient.reloadPlanner();
+			applyPlannerState(await apiClient.getAssistantSettings());
+			toast({ title: res.message });
+		} catch {
+			toast({
+				title: ERR_TITLE_SETTINGS,
+				description: ERR_DESC_SETTINGS_FAILED,
+				variant: "destructive",
+			});
+		} finally {
+			setReloading(false);
 		}
 	};
 
@@ -466,7 +561,7 @@ export const AssistantSettings = memo(function AssistantSettings({
 							defaultPrompt ||
 							"You are otoyin' AI assistant for audio production."
 						}
-						className="w-full rounded-md border border-input bg-background px-2 py-1.5 font-mono text-xs leading-relaxed outline-none focus:border-accent resize-y"
+						className="w-full rounded-md border border-input bg-background px-2 py-1.5 font-mono text-xs leading-relaxed outline-none focus:border-accent resize-none max-h-[300px] overflow-y-auto"
 					/>
 					<div className="flex flex-wrap items-center gap-2">
 						<Button
@@ -537,6 +632,52 @@ export const AssistantSettings = memo(function AssistantSettings({
 			</div>
 
 			<div className="space-y-2 pt-2 border-t border-border">
+				<div className="space-y-1">
+					<Label
+						htmlFor="gpu-layers"
+						className="text-xs font-medium text-muted-foreground"
+					>
+						GPU layers offload
+					</Label>
+					<p className="text-xs text-muted-foreground/70">
+						How many model layers run on the GPU (llama-server -ngl). 0
+						uses the CPU only. Higher is faster but uses more VRAM.
+						Applies on next planner load.
+						{gpuEnvOverride
+							? " The TWENTYLABS_LLAMA_GPU_LAYERS environment variable is set and overrides this."
+							: ""}
+					</p>
+					<div className="flex gap-2">
+						<Input
+							id="gpu-layers"
+							type="number"
+							min={0}
+							max={999}
+							step={1}
+							value={gpuLayers}
+							onChange={(e) =>
+								setGpuLayers(
+									e.target.value === "" ? "" : Number(e.target.value),
+								)
+							}
+							placeholder="0 (CPU)"
+							disabled={gpuSaving || gpuEnvOverride}
+							className="h-8 text-xs"
+						/>
+						<Button
+							variant="outline"
+							size="sm"
+							className="h-8 shrink-0 px-2 text-xs"
+							onClick={handleGpuLayersSave}
+							disabled={gpuSaving || gpuEnvOverride}
+						>
+							{gpuSaving ? <Spinner size="xs" /> : "Save"}
+						</Button>
+					</div>
+				</div>
+			</div>
+
+			<div className="space-y-2 pt-2 border-t border-border">
 				<p className="text-xs font-medium text-muted-foreground">
 					Context &amp; Token Budget
 				</p>
@@ -599,6 +740,26 @@ export const AssistantSettings = memo(function AssistantSettings({
 						{ramDefault?.toLocaleString()} tokens). This uses more memory and
 						may stall or crash on low-RAM machines — your call.
 					</p>
+				)}
+				{reloadStale && (
+					<div className="flex items-center justify-between gap-2 rounded-md border border-warning/40 bg-warning-soft px-2 py-1.5">
+						<p className="text-xs text-warning-text">
+							Planner is running with older settings
+							{loadedNCtx != null && effectiveNCtx != null && loadedNCtx !== effectiveNCtx
+								? ` (n_ctx ${loadedNCtx?.toLocaleString()} → ${effectiveNCtx?.toLocaleString()})`
+								: ""}
+							— reload to apply.
+						</p>
+						<Button
+							variant="outline"
+							size="sm"
+							className="h-7 shrink-0 px-2 text-xs"
+							onClick={handleReloadPlanner}
+							disabled={reloading}
+						>
+							{reloading ? <Spinner size="xs" /> : "Reload planner"}
+						</Button>
+					</div>
 				)}
 				<div className="flex gap-2">
 					<Button

@@ -6,12 +6,15 @@ import {
 	ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Trans, useTranslation } from "react-i18next";
 import * as z from "zod";
 import { useAutoUpdater } from "@/hooks/useAutoUpdater";
 import { showStudioErrorToast } from "@/lib/errors";
+import { apiClient } from "@/lib/api/client";
+import { useBackendRestart } from "@/lib/hooks/useBackendRestart";
 import { useServerHealth } from "@/lib/hooks/useServer";
 import { usePerformanceSettings } from "@/lib/hooks/useSettings";
 import { debug } from "@/lib/utils/debug";
@@ -52,6 +55,75 @@ export function GeneralPage() {
 	const { toast } = useToast();
 	const { data: health, isLoading, error: healthError } = useServerHealth();
 	const { settings: perf, update: updatePerf } = usePerformanceSettings();
+	const {
+		phase: restartPhase,
+		error: restartError,
+		restart,
+	} = useBackendRestart();
+
+	const { data: serverPort, refetch: refetchServerPort } = useQuery({
+		queryKey: ["server-port"],
+		queryFn: () => apiClient.getServerPort(),
+		retry: 1,
+		enabled: !healthError,
+	});
+	const [portInput, setPortInput] = useState<string | null>(null);
+	const [portSaving, setPortSaving] = useState(false);
+	const shownPort = portInput ?? String(serverPort?.port ?? "");
+
+	const handleSavePort = async () => {
+		const port = Number(shownPort);
+		if (!Number.isInteger(port) || port < 1024 || port > 65535) {
+			toast({
+				title: t("settings.general.serverPort.invalid"),
+				variant: "destructive",
+			});
+			return;
+		}
+		setPortSaving(true);
+		try {
+			const state = await apiClient.updateServerPort(port);
+			setPortInput(null);
+			void refetchServerPort();
+			if (!state.needs_restart) {
+				toast({ title: t("settings.general.serverPort.updatedTitle") });
+				return;
+			}
+			if (platform.metadata.isTauri) {
+				// Backend restart binds the new port; the hook moves the
+				// client over to the returned URL and polls health.
+				await restart(port);
+				toast({
+					title: t("settings.general.serverPort.updatedTitle"),
+					description: t(
+						"settings.general.serverPort.updatedDescription",
+						{ port },
+					),
+				});
+				void refetchServerPort();
+			} else {
+				toast({
+					title: t("settings.general.serverPort.updatedTitle"),
+					description: t("settings.general.serverPort.devHint", { port }),
+				});
+			}
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "";
+			const busy = /already in use/.test(msg);
+			toast({
+				title: busy
+					? t("settings.general.serverPort.busy")
+					: t("settings.general.keepServerRunning.failedTitle"),
+				description: busy ? undefined : msg || undefined,
+				variant: "destructive",
+			});
+			if (!busy) {
+				showStudioErrorToast(err);
+			}
+		} finally {
+			setPortSaving(false);
+		}
+	};
 
 	const form = useForm<{ serverUrl: string }>({
 		resolver: useMemo(
@@ -170,6 +242,60 @@ export function GeneralPage() {
 							</Button>
 						) : null}
 					</form>
+				</SettingRow>
+
+				<SettingRow
+					title={t("settings.general.serverPort.title")}
+					description={t("settings.general.serverPort.description")}
+					action={
+						serverPort ? (
+							<span className="text-xs tabular-nums text-muted-foreground">
+								{t("settings.general.serverPort.servingNow", {
+									port: serverPort.current_port,
+								})}
+							</span>
+						) : undefined
+					}
+				>
+					<div className="flex gap-2">
+						<Field
+							label={t("settings.general.serverPort.title")}
+							htmlFor="server-port"
+						>
+							<Input
+								id="server-port"
+								type="number"
+								min={1024}
+								max={65535}
+								step={1}
+								value={shownPort}
+								onChange={(e) => setPortInput(e.target.value)}
+								placeholder="17493"
+							/>
+						</Field>
+						<Button
+							size="sm"
+							className="mt-[22px] shrink-0"
+							onClick={handleSavePort}
+							disabled={portSaving || restartPhase !== "idle"}
+						>
+							{portSaving || restartPhase !== "idle"
+								? t("settings.general.serverPort.restarting")
+								: platform.metadata.isTauri
+									? t("settings.general.serverPort.saveRestart")
+									: t("settings.general.serverPort.save")}
+						</Button>
+					</div>
+					{serverPort?.needs_restart ? (
+						<p className="mt-1.5 text-xs text-warning-text">
+							{t("settings.general.serverPort.pendingRestart", {
+								port: serverPort.port,
+							})}
+						</p>
+					) : null}
+					{restartError ? (
+						<p className="mt-1.5 text-xs text-destructive">{restartError}</p>
+					) : null}
 				</SettingRow>
 
 				<SettingRow

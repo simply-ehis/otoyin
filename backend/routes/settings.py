@@ -52,7 +52,36 @@ async def update_generation_settings_endpoint(
 
 @router.get("/assistant", response_model=models.AssistantSettingsResponse)
 async def get_assistant_settings_endpoint(db: Session = Depends(get_db)):
-    return settings_service.get_assistant_settings(db)
+    row = settings_service.get_assistant_settings(db)
+    payload = models.AssistantSettingsResponse.model_validate(row).model_dump()
+    # Live planner state: best-effort, never fails the settings read.
+    try:
+        from ..backends import get_llm_backend_for_engine
+
+        planner = get_llm_backend_for_engine("gguf_llm")
+        loaded = bool(planner.is_loaded())
+        payload["planner_loaded"] = loaded
+        payload["loaded_n_ctx"] = getattr(planner, "n_ctx", None) if loaded else None
+        payload["loaded_model_size"] = getattr(planner, "_current_model_size", None) if loaded else None
+        payload["loaded_kv_quant"] = getattr(planner, "kv_quant", None) if loaded else None
+        payload["loaded_gpu_layers"] = getattr(planner, "gpu_layers", None) if loaded else None
+    except Exception:
+        logger.debug("Planner live state unavailable", exc_info=True)
+    try:
+        import os
+
+        n_ctx, _ = settings_service.compute_effective_tokens(
+            row.model_size, row.context_tokens, row.max_tokens
+        )
+        payload["effective_n_ctx"] = n_ctx
+        layers, from_env = settings_service.resolve_gpu_layers(
+            os.environ.get("TWENTYLABS_LLAMA_GPU_LAYERS"), row.gpu_layers
+        )
+        payload["effective_gpu_layers"] = layers
+        payload["gpu_layers_env_override"] = from_env
+    except Exception:
+        logger.debug("Effective planner values unavailable", exc_info=True)
+    return payload
 
 
 @router.put("/assistant", response_model=models.AssistantSettingsResponse)
@@ -61,6 +90,66 @@ async def update_assistant_settings_endpoint(
     db: Session = Depends(get_db),
 ):
     return settings_service.update_assistant_settings(db, patch.model_dump(exclude_unset=True))
+
+
+@router.post("/assistant/reload-planner")
+async def reload_planner_endpoint():
+    """Unload the GGUF planner so the next chat reloads it with the current
+    settings (context_tokens / kv_quant only apply at load time).
+
+    Unloading is instantaneous and stateless (llama-server holds no
+    conversation state — history lives client-side), so this is safe to
+    call any time; the cost is one model load on the next request.
+    """
+    try:
+        from ..backends import get_llm_backend_for_engine
+
+        planner = get_llm_backend_for_engine("gguf_llm")
+        if planner.is_loaded():
+            planner.unload_model()
+            return {"unloaded": True, "message": "Planner unloaded — next chat loads with current settings."}
+        return {"unloaded": False, "message": "Planner was not loaded — settings already apply to the next chat."}
+    except Exception as e:
+        logger.debug("Planner reload failed", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Could not unload planner: {e}") from e
+
+
+# ---------------------------------------------------------------------------
+# Serving port (bind address for the next backend start)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/server", response_model=models.ServerPortResponse)
+async def get_server_port_endpoint(db: Session = Depends(get_db)):
+    """Serving port state: bound now vs persisted for the next boot."""
+    from .. import config
+
+    persisted = settings_service.get_persisted_server_port(db)
+    current = config.get_runtime_port() or config.get_server_port()
+    port = persisted if persisted is not None else current
+    return {"port": port, "current_port": current, "needs_restart": port != current}
+
+
+@router.put("/server", response_model=models.ServerPortResponse)
+async def update_server_port_endpoint(
+    patch: models.ServerPortUpdate,
+    db: Session = Depends(get_db),
+):
+    """Persist the serving port. Takes effect on the next backend start —
+    the response tells the UI whether a restart is needed, and the Tauri
+    sidecar / launcher resolves CLI > env > this setting > default.
+    """
+    from .. import config
+    from ..utils.port import is_port_free
+
+    current = config.get_runtime_port() or config.get_server_port()
+    if patch.port != current and not is_port_free("127.0.0.1", patch.port):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Port {patch.port} is already in use — pick a free port.",
+        )
+    settings_service.set_persisted_server_port(db, patch.port)
+    return {"port": patch.port, "current_port": current, "needs_restart": patch.port != current}
 
 
 # ---------------------------------------------------------------------------

@@ -147,7 +147,12 @@ export function VoiceCleanABToggle({
 					objectUrlRef.current = null;
 				}
 			};
-			audio.play();
+			audio.onerror = () => {
+				setPlayingSide(null);
+			};
+			audio.play().catch(() => {
+				setPlayingSide(null);
+			});
 			setPlayingSide(side);
 		},
 		[b64ToBlob, stopPlayback],

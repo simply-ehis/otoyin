@@ -52,7 +52,7 @@ class ProfileSample(Base):
     __table_args__ = (Index("ix_profile_samples_profile_id", "profile_id"),)
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    profile_id = Column(String, ForeignKey("profiles.id"), nullable=False)
+    profile_id = Column(String, ForeignKey("profiles.id", ondelete="CASCADE"), nullable=False)
     audio_path = Column(String, nullable=False)
     reference_text = Column(Text, nullable=False)
 
@@ -83,8 +83,8 @@ class ProfileChannelMapping(Base):
 
     __tablename__ = "profile_channel_mappings"
 
-    profile_id = Column(String, ForeignKey("profiles.id"), primary_key=True)
-    channel_id = Column(String, ForeignKey("audio_channels.id"), primary_key=True)
+    profile_id = Column(String, ForeignKey("profiles.id", ondelete="CASCADE"), primary_key=True)
+    channel_id = Column(String, ForeignKey("audio_channels.id", ondelete="CASCADE"), primary_key=True)
 
 
 class VoiceChatSettings(Base):

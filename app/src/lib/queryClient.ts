@@ -20,7 +20,26 @@ export const queryClient = new QueryClient({
 		queries: {
 			staleTime: 1000 * 60 * 5, // 5 minutes
 			gcTime: 1000 * 60 * 10, // 10 minutes (formerly cacheTime)
-			retry: 1,
+			// Retry transient backend-down states (network/503) with backoff,
+			// but never retry client errors (400/404/402) — those are final.
+			// This stops the "bunch of console errors" when the backend
+			// restarts mid-poll: polls back off quietly instead of erroring.
+			retry: (failureCount, error) => {
+				if (failureCount >= 2) {
+					return false;
+				}
+				const msg = error instanceof Error ? error.message : "";
+				if (
+					msg.includes("Signal lost") ||
+					msg.includes("initializing") ||
+					msg.includes("503") ||
+					msg.includes("Failed to fetch")
+				) {
+					return true;
+				}
+				return false;
+			},
+			retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
 			refetchOnWindowFocus: false,
 		},
 	},
@@ -28,6 +47,20 @@ export const queryClient = new QueryClient({
 		onError: (error, query) => {
 			if (query.meta?.skipGlobalErrorToast) {
 				return;
+			}
+			// Backend-down / initializing polls are handled by the global
+			// backend-status banner — toasting per query spams the UI and
+			// the console every 30s while the server restarts.
+			if (error instanceof Error) {
+				const msg = error.message.toLowerCase();
+				if (
+					msg.includes("signal lost") ||
+					msg.includes("initializing") ||
+					msg.includes("failed to fetch") ||
+					msg.includes("network")
+				) {
+					return;
+				}
 			}
 			showStudioErrorToast(error);
 		},

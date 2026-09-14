@@ -46,11 +46,14 @@ async def generate_music(data: MusicGenerateRequest):
             detail=f"That music engine isn't in the catalog. Supported: {', '.join(MUSIC_ENGINES)}",
         )
     # Manifest gate: music engines must be downloaded via the Store.
+    # Remote-only configs (empty hf_repo_id, e.g. cloud BYOK) have no Store
+    # artifact — gating them on "download first" would be a dead end. Their
+    # backends raise the actionable error (e.g. "No cloud provider").
     from ..backends.configs import get_all_model_configs
     from ..services.model_registry import is_downloaded
 
     cfg = next((c for c in get_all_model_configs() if c.engine == data.engine), None)
-    if cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size):
+    if cfg is not None and cfg.hf_repo_id and not is_downloaded(cfg.model_name, cfg.model_size):
         raise HTTPException(status_code=400, detail=f"Download this model from the Store first ({cfg.model_name})")
     backend = get_music_backend(data.engine)
     if not backend.is_available():
@@ -119,11 +122,12 @@ async def generate_sfx(data: SFXGenerateRequest):
             detail=f"That SFX engine isn't in the catalog. Supported: {', '.join(MUSIC_ENGINES)}",
         )
     # Manifest gate: SFX engines must be downloaded via the Store.
+    # Same remote-only exemption as /generate/music (see above).
     from ..backends.configs import get_all_model_configs
     from ..services.model_registry import is_downloaded
 
     cfg = next((c for c in get_all_model_configs() if c.engine == data.engine), None)
-    if cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size):
+    if cfg is not None and cfg.hf_repo_id and not is_downloaded(cfg.model_name, cfg.model_size):
         raise HTTPException(status_code=400, detail=f"Download this model from the Store first ({cfg.model_name})")
     backend = get_music_backend(data.engine)
     if not backend.is_available():

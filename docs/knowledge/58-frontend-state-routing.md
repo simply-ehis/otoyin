@@ -25,7 +25,7 @@ UPDATED: 2026-07-19
 - `MediaElementSource` can only be created ONCE per element — wrapped in try/catch (ignore if already connected). Blob URLs are revoked on `ended`/`error` to avoid leaks.
 
 ## Routing (router.tsx, TanStack Router)
-- `createRootRoute` → AppFrame (sidebar + outlet + Toaster). AppFrame mounts global hooks: `useAssistantCommands`, `useGenerationProgress`, `useModelDownloadToast`, `useRestoreActiveTasks`.
+- `createRootRoute` → AppFrame (AppHeader + sidebar + outlet + Toaster). The header holds the brand mark (→ Home) and utility actions; the sidebar sits flush beneath it with no brand row of its own. AppFrame mounts global hooks: `useAssistantCommands`, `useGenerationProgress`, `useModelDownloadToast`, `useRestoreActiveTasks`.
 - All page components are LAZY-IMPORTED (code-split): CapturesTab, EffectsTab, MainEditor, ModelsTab, AudioStudio, StoriesTab, VoicesTab, Workspace (Timeline/PitchMap/Mixer), ServerTab pages (About/General/GPU/Logs/MCP/Captures/Changelog/Generation), SettingsLayout.
 - Routes are nested under layouts (WorkspaceLayout, SettingsLayout, ServerTab). `redirect` used for default route. `useLocation` for active-nav highlighting.
 

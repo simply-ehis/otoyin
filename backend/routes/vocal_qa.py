@@ -135,6 +135,10 @@ async def vocal_qa(data: VocalQARequest, db: Session = Depends(get_db)):
         stt = get_stt_backend("faster-whisper")
         lifecycle_manager.mark_model_used("faster-whisper")
         words_raw = await stt.transcribe_with_words(str(resolved), language=data.language, model_size=data.model)
+    except HTTPException:
+        # The manifest gate above raises HTTPException (400) — it must
+        # surface as-is, not be swallowed into 500 below.
+        raise
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:

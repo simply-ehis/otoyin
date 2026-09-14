@@ -1,10 +1,14 @@
-"""Opt-in crash reporting — backend exceptions + forwarded client reports.
+"""Crash reporting — backend exceptions + forwarded client reports.
 
 Deliberately NOT a third-party SaaS (Sentry etc.): this app is
 offline-first and privacy-forward, and a crash-reporting SaaS would be a
 new data flow to disclose and justify. Instead this mirrors the telemetry
-service in this same package: disabled by default, local-first JSONL log,
-optional forward to our own marketplace service.
+service in this same package with one deliberate difference:
+
+- Local capture is ALWAYS on: crashes are appended to an on-device JSONL
+  log (scrubbed first) so a dead backend is diagnosable after the fact.
+- Remote forwarding is OPT-IN via the toggle below (and requires
+  OTOYIN_CRASH_URL to be configured — otherwise there is nowhere to send).
 
 Separate toggle from usage telemetry (``telemetry.py``): a crash report is
 "the app broke, here's a stack trace", not "the user clicked X". A user
@@ -23,6 +27,7 @@ import os
 import re
 import traceback
 import uuid
+from collections import deque
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -80,6 +85,8 @@ def scrub_value(value: Any, _depth: int = 0) -> Any:
 
 @dataclass
 class CrashConfig:
+    # Remote FORWARDING toggle (Settings → Support). Local capture below is
+    # always on — this flag only controls the POST to OTOYIN_CRASH_URL.
     enabled: bool = False
     last_sent: str = ""
     reports_stored_total: int = 0
@@ -87,6 +94,71 @@ class CrashConfig:
 
 
 _config = CrashConfig()
+
+# Recent request trail ("last actions"): appended per request by the crash
+# middleware, attached to every record. Bounded — never grows.
+_recent_requests: deque[dict] = deque(maxlen=20)
+
+
+def record_action(method: str, path: str, request_id: str | None = None) -> None:
+    """Note one handled request for the next crash record. Never raises."""
+    try:
+        _recent_requests.append(
+            {
+                "ts": datetime.now(UTC).isoformat(),
+                "method": method,
+                "path": path[:200],
+                "request_id": request_id,
+            }
+        )
+    except Exception:
+        pass
+
+
+def collect_diagnostics() -> dict:
+    """Snapshot memory + model residency + queue depths. Never raises."""
+    diag: dict[str, Any] = {}
+    try:
+        from ..utils.memory import available_mb, get_system_total_mb
+
+        diag["ram_free_mb"] = available_mb()
+        diag["ram_total_mb"] = get_system_total_mb()
+    except Exception as e:
+        diag["ram_error"] = str(e)[:120]
+    try:
+        from ..utils.vram_pressure import get_vram_status
+
+        vram = get_vram_status()
+        diag["vram"] = {
+            "available": bool(getattr(vram, "available", False)),
+            "used_mb": getattr(vram, "used_mb", None),
+            "total_mb": getattr(vram, "total_mb", None),
+            "pressure": str(getattr(vram, "pressure", ""))[:40],
+        }
+    except Exception as e:
+        diag["vram_error"] = str(e)[:120]
+    try:
+        from ..utils.model_lifecycle import lifecycle_manager
+
+        loaded = []
+        for name, handle in lifecycle_manager._engines.items():
+            try:
+                if handle.is_loaded():
+                    loaded.append(name)
+            except Exception:
+                continue
+        diag["loaded_engines"] = sorted(loaded)
+    except Exception as e:
+        diag["engines_error"] = str(e)[:120]
+    try:
+        from ..utils.tasks import get_task_manager
+
+        tm = get_task_manager()
+        diag["active_downloads"] = len(tm.get_active_downloads())
+        diag["active_generations"] = len(tm.get_active_generations())
+    except Exception as e:
+        diag["queue_error"] = str(e)[:120]
+    return diag
 
 
 def enable_crash_reporting() -> None:
@@ -105,7 +177,9 @@ def is_enabled() -> bool:
 
 def get_status() -> dict:
     return {
+        # "enabled" = remote forwarding toggle. Local capture is always on.
         "enabled": _config.enabled,
+        "local_capture": True,
         "reports_stored_total": _config.reports_stored_total,
         "reports_forwarded_total": _config.reports_forwarded_total,
         "last_sent": _config.last_sent,
@@ -170,11 +244,25 @@ def _build_record(
 
 
 def store_report(record: dict) -> dict:
-    """Persist an already-built record locally; forward if configured."""
+    """Persist an already-built record locally; forward only if opted in."""
     _append_to_log(record)
     _config.reports_stored_total += 1
-    record = {**record, "forwarded": _forward(record)}
+    record = {**record, "forwarded": _forward(record) if _config.enabled else False}
     return record
+
+
+def _with_diagnostics(context: dict | None) -> dict:
+    """Merge recent requests + machine state into a capture's context."""
+    merged = dict(context or {})
+    try:
+        merged.setdefault("recent_requests", list(_recent_requests)[-20:])
+    except Exception:
+        pass
+    try:
+        merged.setdefault("diagnostics", collect_diagnostics())
+    except Exception:
+        pass
+    return merged
 
 
 def capture_exception(
@@ -182,9 +270,7 @@ def capture_exception(
     *,
     context: dict | None = None,
 ) -> dict | None:
-    """Capture a backend exception. No-op (None) when disabled."""
-    if not _config.enabled:
-        return None
+    """Capture a backend exception. Always stored locally (scrubbed first)."""
     stack = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
     return store_report(
         _build_record(
@@ -192,7 +278,7 @@ def capture_exception(
             kind=type(exc).__name__,
             message=str(exc) or repr(exc),
             stack=stack,
-            context=context,
+            context=_with_diagnostics(context),
         )
     )
 
@@ -208,13 +294,15 @@ def capture_report(
     """Capture a client-built report (frontend/Rust via POST /crashes/report).
 
     Scrubbed again server-side — never trust the sender to have redacted.
-    No-op (None) when disabled.
+    Always stored locally; forwarded only when opted in.
     """
-    if not _config.enabled:
-        return None
     if layer not in ("frontend", "rust", "backend"):
         layer = "frontend"
-    return store_report(_build_record(layer=layer, kind=kind[:120], message=message, stack=stack, context=context))
+    return store_report(
+        _build_record(
+            layer=layer, kind=kind[:120], message=message, stack=stack, context=_with_diagnostics(context)
+        )
+    )
 
 
 def read_reports(limit: int = 100) -> list[dict]:

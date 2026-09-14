@@ -472,7 +472,7 @@ onError: (error: unknown) =>
 											value={scriptText}
 											onChange={(e) => setScriptText(e.target.value)}
 											rows={3}
-											className="min-h-[60px] resize-y text-xs"
+											className="min-h-[60px] max-h-[200px] overflow-y-auto resize-none text-xs"
 										/>
 										<Button
 											size="sm"

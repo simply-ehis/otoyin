@@ -92,6 +92,29 @@ def get_limiter(domain: str, config: RateLimitConfig | None = None) -> RateLimit
     return limiter
 
 
+# Default non-retryable failure names (duck-typed by class name so this
+# low-level module never imports HTTP or backend packages).
+_NON_RETRYABLE_NAMES = frozenset(
+    {
+        "ModelNotCachedError",
+        "ModelNotDownloadedError",
+        "ValueError",
+        "LookupError",
+        "KeyError",
+        "FileNotFoundError",
+    }
+)
+_NON_RETRYABLE_STATUS_CODES = frozenset({400, 401, 402, 403, 404, 409, 422})
+
+
+def _default_retryable(exc: Exception) -> bool:
+    """True unless the failure is clearly permanent (client error)."""
+    status = getattr(exc, "status_code", None)
+    if status in _NON_RETRYABLE_STATUS_CODES:
+        return False
+    return type(exc).__name__ not in _NON_RETRYABLE_NAMES
+
+
 async def with_retry(
     func: Callable[[], Awaitable[Any]],
     *,
@@ -100,6 +123,7 @@ async def with_retry(
     max_delay: float = 10.0,
     backoff_factor: float = 2.0,
     label: str = "call",
+    retryable: Callable[[Exception], bool] | None = None,
 ) -> Any:
     """Run ``func`` with bounded retries and exponential backoff.
 
@@ -110,12 +134,16 @@ async def with_retry(
         max_delay: Cap on a single backoff wait.
         backoff_factor: Multiplier applied to the delay each retry.
         label: Human-readable name for logs.
+        retryable: Predicate deciding whether an exception deserves another
+            attempt. Defaults to retrying everything except client errors
+            (HTTP 4xx by status code, plus known permanent model errors),
+            which fail fast instead of holding the queue through 3 attempts.
 
     Returns:
         The result of ``func`` on first success.
 
     Raises:
-        The last exception if all attempts fail.
+        The last exception if all attempts fail (or the first non-retryable one).
     """
     last_exc: Exception | None = None
     delay = base_delay
@@ -124,6 +152,9 @@ async def with_retry(
             return await func()
         except Exception as exc:  # retry is meant to be broad
             last_exc = exc
+            should_retry = _default_retryable(exc) if retryable is None else retryable(exc)
+            if not should_retry:
+                raise
             if attempt >= attempts:
                 break
             jitter = random.uniform(0, 0.3 * delay)

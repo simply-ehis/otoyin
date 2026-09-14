@@ -217,10 +217,9 @@ async def ensure_manifest_synced() -> None:
         if _manifest_event.is_set():
             return
         try:
-            from ..services.model_registry import reconcile_cached_backfill, reconcile_downloads
+            from ..services.model_registry import reconcile_downloads
 
             await asyncio.to_thread(reconcile_downloads)
-            await asyncio.to_thread(reconcile_cached_backfill, min_interval_sec=0.0)
             _manifest_event.set()
         except Exception:
             logger.debug("Manifest reconciliation skipped", exc_info=True)

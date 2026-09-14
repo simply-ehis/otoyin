@@ -67,13 +67,13 @@ class TestConversationAutoLevel:
 
 
 class TestExportPresets:
-    def test_returns_five_presets(self, client):
+    def test_returns_seven_presets(self, client):
         resp = client.get("/export/presets")
         assert resp.status_code == 200
         data = resp.json()
         assert isinstance(data, dict)
-        assert len(data) == 5
-        for key in ["podcast", "audiobook", "movie_audio", "voiceover", "social_media"]:
+        assert len(data) == 7
+        for key in ["podcast", "audiobook", "movie_audio", "voiceover", "social_media", "streaming_opus", "archive_aiff"]:
             assert key in data
 
 

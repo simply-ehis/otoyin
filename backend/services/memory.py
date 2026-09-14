@@ -55,6 +55,7 @@ def create_conversation(
         db.add(conv)
         db.commit()
         db.refresh(conv)
+        db.expunge(conv)
         return conv
     finally:
         db.close()
@@ -64,7 +65,10 @@ def get_conversation(conversation_id: str) -> Conversation | None:
     """Get a conversation by ID."""
     db = _get_db()
     try:
-        return db.query(Conversation).filter(Conversation.id == conversation_id).first()
+        conv = db.query(Conversation).filter(Conversation.id == conversation_id).first()
+        if conv is not None:
+            db.expunge(conv)
+        return conv
     finally:
         db.close()
 
@@ -80,7 +84,10 @@ def list_conversations(
         q = db.query(Conversation)
         if agent_type:
             q = q.filter(Conversation.agent_type == agent_type)
-        return q.order_by(Conversation.updated_at.desc()).limit(limit).offset(offset).all()
+        rows = q.order_by(Conversation.updated_at.desc()).limit(limit).offset(offset).all()
+        for r in rows:
+            db.expunge(r)
+        return rows
     finally:
         db.close()
 

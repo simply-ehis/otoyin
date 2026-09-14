@@ -330,7 +330,7 @@ function SkillForm({
 						value={description}
 						onChange={(e) => setDescription(e.target.value)}
 						placeholder="What does this skill do?"
-						className="text-xs min-h-[48px]"
+						className="text-xs min-h-[48px] max-h-[200px] overflow-y-auto resize-none"
 					/>
 				</div>
 				<div className="space-y-1">
@@ -348,7 +348,7 @@ function SkillForm({
 						value={stepsText}
 						onChange={(e) => setStepsText(e.target.value)}
 						placeholder={"Step 1\nStep 2\nStep 3"}
-						className="text-xs min-h-[72px]"
+						className="text-xs min-h-[72px] max-h-[200px] overflow-y-auto resize-none"
 					/>
 				</div>
 				<div className="space-y-1">
@@ -359,7 +359,7 @@ function SkillForm({
 						value={toolsText}
 						onChange={(e) => setToolsText(e.target.value)}
 						placeholder={"assistant: tool1, tool2\nmcp: tool1, tool2"}
-						className="text-xs min-h-[48px] font-mono"
+						className="text-xs min-h-[48px] max-h-[200px] overflow-y-auto resize-none font-mono"
 					/>
 				</div>
 				<div className="space-y-1">
@@ -368,7 +368,7 @@ function SkillForm({
 						value={pitfallsText}
 						onChange={(e) => setPitfallsText(e.target.value)}
 						placeholder={"Do not overwrite source files"}
-						className="text-xs min-h-[48px]"
+						className="text-xs min-h-[48px] max-h-[200px] overflow-y-auto resize-none"
 					/>
 				</div>
 			</div>

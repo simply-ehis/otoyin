@@ -162,7 +162,12 @@ def _load_session_data(session) -> dict[str, Any]:
 
 @router.post("/audio-studio/sessions/{session_id}/tracks", response_model=SessionResponse)
 async def add_track(session_id: str, body: TrackAddRequest, db: Session = Depends(get_db)):
-    """Append one track to a session's track list."""
+    """Append one track to a session's track list.
+
+    MCP-only today (no Studio UI caller yet — the Studio edits tracks
+    client-side and saves whole snapshots). Kept as the assistant contract;
+    do not delete.
+    """
     from ..database.models import AudioStudioSession
 
     session = db.query(AudioStudioSession).filter_by(id=session_id).first()
@@ -182,7 +187,11 @@ async def add_track(session_id: str, body: TrackAddRequest, db: Session = Depend
 
 @router.post("/audio-studio/sessions/{session_id}/master-volume", response_model=SessionResponse)
 async def set_master_volume(session_id: str, body: MasterVolumeRequest, db: Session = Depends(get_db)):
-    """Set the session master volume (0.0-1.5)."""
+    """Set the session master volume (0.0-1.5).
+
+    MCP-only today (Studio uses the client-side slider). Kept as the
+    assistant contract; do not delete.
+    """
     from ..database.models import AudioStudioSession
 
     if not 0.0 <= body.volume <= 1.5:
@@ -201,7 +210,11 @@ async def set_master_volume(session_id: str, body: MasterVolumeRequest, db: Sess
 
 @router.post("/audio-studio/sessions/import", response_model=SessionResponse)
 async def import_session(body: SessionCreate, db: Session = Depends(get_db)):
-    """Import a previously exported session payload as a new named session."""
+    """Import a previously exported session payload as a new named session.
+
+    MCP-only today (Studio has no import-JSON UI yet). Kept as the
+    assistant contract; do not delete.
+    """
     from ..database.models import AudioStudioSession
 
     session = AudioStudioSession(

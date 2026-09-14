@@ -182,6 +182,8 @@ class TestPickCachedTEngineIntegration:
             return engine in {"kitten_tts", "styletts2"}
 
         monkeypatch.setattr(model_status, "is_engine_cached", fake_is_engine_cached)
+        # pick_cached_tts_engine also requires manifest entitlement.
+        monkeypatch.setattr("backend.services.model_registry.is_downloaded", lambda *a, **k: True)
         # Reset preference cache so it recomputes
         monkeypatch.setattr(model_status, "_TTS_PREFERENCE_CACHE", None)
 
@@ -194,12 +196,14 @@ class TestPickCachedTEngineIntegration:
         from backend.utils import model_status
 
         def fake_is_engine_cached(engine):
-            return engine == "styletts2"
+            return engine == "kitten_tts"
 
         monkeypatch.setattr(model_status, "is_engine_cached", fake_is_engine_cached)
+        # pick_cached_tts_engine also requires manifest entitlement.
+        monkeypatch.setattr("backend.services.model_registry.is_downloaded", lambda *a, **k: True)
 
-        result = model_status.pick_cached_tts_engine(preferred="styletts2")
-        assert result == "styletts2"
+        result = model_status.pick_cached_tts_engine(preferred="kitten_tts")
+        assert result == "kitten_tts"
 
     def test_returns_none_when_nothing_cached(self, monkeypatch):
         """Should return None when no engines are cached."""

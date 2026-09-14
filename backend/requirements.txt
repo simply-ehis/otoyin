@@ -11,6 +11,9 @@ pydantic>=2.5.0
 
 # Database
 sqlalchemy>=2.0.0
+# Async SQLite driver for the cross-service buy-flow e2e test (the
+# marketplace_server package requires it; see marketplace/requirements.txt).
+aiosqlite>=0.20.0
 
 # ML framework
 torch==2.5.1

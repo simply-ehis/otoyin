@@ -1,3 +1,4 @@
+import { debug } from "@/lib/utils/debug";
 import { useServerStore } from "@/stores/serverStore";
 import type { VocalQAResult } from "./types";
 
@@ -196,7 +197,7 @@ export class ApiClientCore {
 						);
 					if (isCircuitOpen) return response;
 					const waitMs = getRetryAfterMs(response, 2);
-					console.warn(`[api] ${url} → 503 initializing, retry ${attempt + 1}/${maxRetries} in ${waitMs}ms`);
+					debug.log(`[api] ${url} → 503 initializing, retry ${attempt + 1}/${maxRetries} in ${waitMs}ms`);
 					await sleep(waitMs);
 					continue;
 				}
@@ -207,7 +208,7 @@ export class ApiClientCore {
 				if (err instanceof DOMException && err.name === "AbortError") throw err;
 				if (isNetworkError(err) && attempt < maxRetries) {
 					const backoff = 500 * 2 ** attempt; // 500, 1000, 2000
-					console.warn(`[api] ${url} → network error, retry ${attempt + 1}/${maxRetries} in ${backoff}ms:`, err);
+					debug.log(`[api] ${url} → network error, retry ${attempt + 1}/${maxRetries} in ${backoff}ms`);
 					await sleep(backoff);
 					continue;
 				}
@@ -235,7 +236,7 @@ export class ApiClientCore {
 		try {
 			return (await response.json()) as T;
 		} catch (err) {
-			console.error(`[api] Failed to parse JSON from ${url}:`, err);
+			debug.error(`[api] Failed to parse JSON from ${url}:`, err);
 			throw new Error(`Invalid JSON response from ${endpoint}`);
 		}
 	}

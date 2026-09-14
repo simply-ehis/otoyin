@@ -16,7 +16,7 @@ from ...utils.hf_progress import HFProgressTracker, create_hf_progress_callback
 from ...utils.progress import get_progress_manager
 from ...utils.rate_limiter import with_retry
 from ...utils.tasks import get_task_manager
-from .common import _download_executor, _download_steam_audio_sdk, router
+from .common import _cpu_executor, _download_executor, _download_steam_audio_sdk, router
 
 logger = logging.getLogger(__name__)
 
@@ -276,7 +276,9 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
             # snapshot-downloading several GB the app will never use.
             from ...backends.gguf_server_backend import _resolve_gguf_filename
 
-            filename = _resolve_gguf_filename(config.hf_repo_id, config.quant)
+            filename = await loop.run_in_executor(
+                _download_executor, lambda: _resolve_gguf_filename(config.hf_repo_id, config.quant)
+            )
 
             await loop.run_in_executor(
                 _download_executor,
@@ -291,7 +293,9 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
             from ...backends.gguf_server_backend import _resolve_gguf_filename
             from ...backends.qwen3_tts_backend import MMPROJ_FILENAME
 
-            backbone = _resolve_gguf_filename(config.hf_repo_id, config.quant)
+            backbone = await loop.run_in_executor(
+                _download_executor, lambda: _resolve_gguf_filename(config.hf_repo_id, config.quant)
+            )
             for filename in (backbone, MMPROJ_FILENAME):
                 await loop.run_in_executor(
                     _download_executor,
@@ -321,7 +325,9 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
             from ...backends.bark_backend import bark_backend
             from ...backends.gguf_server_backend import _resolve_gguf_filename
 
-            backbone = _resolve_gguf_filename(config.hf_repo_id, config.quant)
+            backbone = await loop.run_in_executor(
+                _download_executor, lambda: _resolve_gguf_filename(config.hf_repo_id, config.quant)
+            )
             await loop.run_in_executor(
                 _download_executor,
                 lambda: hf_hub_download(repo_id=config.hf_repo_id, filename=backbone),
@@ -430,27 +436,49 @@ async def trigger_model_download(request: models.ModelDownloadRequest, db: Sessi
             },
         )
 
+    # Dedup: never start a second worker for a model that is already
+    # downloading — the frontend polls /tasks/active and would show two
+    # spinners for one file. Return the in-flight state instead of 500.
+    if task_manager.is_download_active(request.model_name):
+        existing = next(
+            (t for t in task_manager.get_active_downloads() if t.model_name == request.model_name),
+            None,
+        )
+        if existing is not None and existing.status == "downloading":
+            return {"message": f"Model {request.model_name} download already in progress"}
+        # Stale error row — clear it so a retry starts clean.
+        task_manager.cancel_download(request.model_name)
+
+    # Snapshot the config fields the background worker needs. The request
+    # object and its DB session die with the HTTP request — the worker must
+    # not touch either (closed-session bug made downloads never record).
+    _model_name = request.model_name
+    _engine = config.engine
+    _model_size = config.model_size
+    _hf_repo_id = config.hf_repo_id
+    _config = config
+
     async def download_in_background(task):
         try:
             # On-demand pip deps for bloat engines (kokoro / faster-whisper).
             # Never bundled — installed only when the user actually downloads
             # that engine's model. No-op if already installed or frozen.
             loop = asyncio.get_running_loop()
-            await loop.run_in_executor(_download_executor, lambda: _ensure_engine_pip_deps(config.engine))
+            await loop.run_in_executor(_cpu_executor, lambda: _ensure_engine_pip_deps(_engine))
 
-            progress_callback = create_hf_progress_callback(request.model_name, progress_manager)
+            progress_callback = create_hf_progress_callback(_model_name, progress_manager)
             tracker = HFProgressTracker(progress_callback)
 
             # Transient HuggingFace failures (rate limits, dropped
             # connections) are common; retry with backoff before failing.
             await with_retry(
-                lambda: _download_model_files(config, request.model_name, tracker, progress_manager),
+                lambda: _download_model_files(_config, _model_name, tracker, progress_manager),
                 attempts=3,
-                label=f"download {request.model_name}",
+                label=f"download {_model_name}",
             )
 
             # Quantize ONNX models if needed (INT8 quantization for ONNX TTS/STT)
-            if config.engine in {
+            if _engine in {
                 "kokoro",
                 "styletts2",
                 "f5_tts",
@@ -463,11 +491,11 @@ async def trigger_model_download(request: models.ModelDownloadRequest, db: Sessi
                 "faster-whisper",
             }:
                 progress_manager.update_progress(
-                    model_name=request.model_name,
+                    model_name=_model_name,
                     current=0,
                     total=0,
                     filename="Quantizing model (INT8)...",
-                    status="quantizing",
+                    status="downloading",
                 )
                 try:
                     from ... import config as cfg_mod
@@ -478,45 +506,86 @@ async def trigger_model_download(request: models.ModelDownloadRequest, db: Sessi
                     # or directly as model.onnx / model.int8.onnx
                     loop = asyncio.get_running_loop()
                     await loop.run_in_executor(
-                        _download_executor,
-                        lambda: _quantize_onnx_if_needed(config, model_dir),
+                        _cpu_executor,
+                        lambda: _quantize_onnx_if_needed(_config, model_dir),
                     )
                 except Exception as e:
-                    logger.warning("ONNX quantization failed for %s: %s", request.model_name, e)
+                    logger.warning("ONNX quantization failed for %s: %s", _model_name, e)
                     # Non-fatal - model will still work with FP32
+
+            # Post-download integrity gate: refuse to record a manifest row
+            # when no weight file is actually on disk (partial/failed fetch
+            # that HF did not raise for). Without this the UI shows
+            # "Installed" for a broken cache and Activate then does nothing.
+            try:
+                from ...utils.model_status import is_model_downloaded
+
+                if not await loop.run_in_executor(_download_executor, lambda: is_model_downloaded(_model_name)):
+                    raise RuntimeError(
+                        "Download finished but no model weights were found on disk — check disk space and retry."
+                    )
+            except RuntimeError:
+                raise
+            except Exception as e:
+                logger.warning("Post-download verification skipped for %s: %s", _model_name, e)
 
             # Guard the cancel/complete race: if the user cancelled (or
             # restarted) this download, a stale worker must not overwrite
             # the newer task state.
-            if task_manager.is_active_download(request.model_name, task):
-                task_manager.complete_download(request.model_name)
+            if task_manager.is_active_download(_model_name, task):
+                task_manager.complete_download(_model_name)
+                progress_manager.mark_complete(_model_name)
 
                 from ...services.telemetry import track_event
 
                 track_event(
                     "model_downloaded",
-                    {"model_name": request.model_name, "engine": config.engine},
+                    {"model_name": _model_name, "engine": _engine},
                 )
 
                 # Record the entitlement in the download manifest so the gate
                 # allows loading this model (and the UI can show it). Idempotent:
-                # re-downloads just refresh the row.
+                # re-downloads just refresh the row. Uses a FRESH session —
+                # the request DB session is closed by now.
+                from ...database import session as _db_session
                 from ...services.model_registry import record_download
 
-                record_download(
-                    db,
-                    model_name=request.model_name,
-                    model_size=config.model_size,
-                    engine=config.engine,
-                    hf_repo_id=config.hf_repo_id,
-                    local_path=None,
-                )
+                _session_local = _db_session.SessionLocal
+                if _session_local is None:
+                    logger.error("Database not initialized — cannot record download for %s", _model_name)
+                    raise RuntimeError("Database not initialized")
+                fresh_db = _session_local()
+                try:
+                    # SHA-256 sidecar: hash the on-disk weight files so a
+                    # later /models/verify (or load) can detect tampering
+                    # without re-downloading. Best-effort — never blocks.
+                    file_size: int | None = None
+                    try:
+                        from ...services.model_integrity import snapshot_model_hashes
+
+                        snap = await loop.run_in_executor(_cpu_executor, lambda: snapshot_model_hashes(_model_name))
+                        file_size = snap.get("total_bytes")
+                    except Exception as e:
+                        logger.debug("Integrity snapshot skipped for %s: %s", _model_name, e, exc_info=True)
+                    record_download(
+                        fresh_db,
+                        model_name=_model_name,
+                        model_size=_model_size,
+                        engine=_engine,
+                        hf_repo_id=_hf_repo_id,
+                        local_path=None,
+                        file_size_bytes=file_size,
+                    )
+                finally:
+                    fresh_db.close()
             else:
-                logger.info("Download of %s finished after cancel; state left alone", request.model_name)
+                logger.info("Download of %s finished after cancel; state left alone", _model_name)
         except Exception as e:
-            logger.debug("Model download failed: %s", request.model_name, exc_info=True)
-            if task_manager.is_active_download(request.model_name, task):
-                task_manager.error_download(request.model_name, _friendly_download_error(e))
+            logger.debug("Model download failed: %s", _model_name, exc_info=True)
+            if task_manager.is_active_download(_model_name, task):
+                friendly = _friendly_download_error(e)
+                task_manager.error_download(_model_name, friendly)
+                progress_manager.mark_error(_model_name, friendly)
 
     task = task_manager.start_download(request.model_name)
 
@@ -554,14 +623,43 @@ async def cancel_model_download(request: models.ModelDownloadRequest):
 
 @router.delete("/models/{model_name}")
 async def delete_model(model_name: str):
-    """Delete a downloaded model from the HuggingFace cache."""
+    """Delete a downloaded model from the HuggingFace cache.
+
+    Always cleans the manifest + progress state, even when the on-disk
+    cache is already gone or locked (Windows file locks). Never 500s on
+    a missing file — that is the exact "delete does nothing" report.
+    """
     from huggingface_hub import constants as hf_constants
 
     from ...backends import get_model_config, unload_model_by_config
+    from ...services.model_registry import forget_download
+    from ...utils.progress import get_progress_manager
 
     config = get_model_config(model_name)
     if not config:
         raise HTTPException(status_code=400, detail=f"Unknown model: {model_name}")
+
+    # A model that is still downloading cannot be deleted — cancel first.
+    from ...utils.tasks import get_task_manager
+
+    task_manager = get_task_manager()
+    active = next(
+        (t for t in task_manager.get_active_downloads() if t.model_name == model_name),
+        None,
+    )
+    if active is not None and active.status == "downloading":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Model {model_name} is still downloading — cancel it first, then delete.",
+        )
+    # Dismiss any stale error row so status polls go clean immediately.
+    task_manager.cancel_download(model_name)
+    try:
+        progress_manager = get_progress_manager()
+        with progress_manager._lock:
+            progress_manager._progress.pop(model_name, None)
+    except Exception:
+        logger.debug("Progress cleanup skipped for %s", model_name, exc_info=True)
 
     # Best-effort unload — don't let a failed unload block deletion.
     try:
@@ -569,10 +667,21 @@ async def delete_model(model_name: str):
     except Exception:
         logger.debug("Unload before delete failed (non-fatal)", exc_info=True)
 
-    if config.engine == "argos_translate":
-        from ...services.model_registry import forget_download
+    def _forget() -> None:
+        try:
+            forget_download(model_name, config.model_size)
+        except Exception:
+            logger.debug("Manifest cleanup failed for %s", model_name, exc_info=True)
+        # Drop the integrity baseline so a re-download starts fresh.
+        try:
+            from ...services.model_integrity import _hashes_dir
 
-        forget_download(model_name, config.model_size)
+            (_hashes_dir() / f"{model_name}.json").unlink(missing_ok=True)
+        except Exception:
+            logger.debug("Hash sidecar cleanup skipped for %s", model_name, exc_info=True)
+
+    if config.engine == "argos_translate":
+        _forget()
         return {"message": f"Translation pack {model_name} removed"}
     if config.engine == "whisper":
         from ... import config as cfg_mod
@@ -580,11 +689,12 @@ async def delete_model(model_name: str):
 
         filename = WHISPER_CPP_FILES.get(config.model_size, f"ggml-{config.model_size}.bin")
         model_file = cfg_mod.get_models_dir() / filename
-        if model_file.exists():
-            model_file.unlink()
-        from ...services.model_registry import forget_download
-
-        forget_download(model_name, config.model_size)
+        try:
+            if model_file.exists():
+                model_file.unlink()
+        except OSError as e:
+            logger.warning("Could not delete whisper file for %s: %s", model_name, e)
+        _forget()
         return {"message": f"Model {model_name} deleted successfully"}
     if config.engine == "faster-whisper":
         from ... import config as cfg_mod
@@ -593,10 +703,11 @@ async def delete_model(model_name: str):
         if model_dir.exists():
             import shutil
 
-            await asyncio.to_thread(shutil.rmtree, model_dir, True)
-        from ...services.model_registry import forget_download
-
-        forget_download(model_name, config.model_size)
+            try:
+                await asyncio.to_thread(shutil.rmtree, model_dir, True)
+            except OSError as e:
+                logger.warning("Could not delete faster-whisper dir for %s: %s", model_name, e)
+        _forget()
         return {"message": f"Model {model_name} deleted successfully"}
 
     hf_repo_id = config.hf_repo_id
@@ -604,19 +715,63 @@ async def delete_model(model_name: str):
     repo_cache_dir = Path(cache_dir) / ("models--" + hf_repo_id.replace("/", "--"))
 
     if not repo_cache_dir.exists():
-        from ...services.model_registry import forget_download
-
-        forget_download(model_name, config.model_size)
+        _forget()
         return {"message": f"Model {model_name} cache already gone; manifest cleaned"}
 
     import shutil
 
+    # Windows holds file locks briefly after unload — retry a few times
+    # before giving up, but ALWAYS clean the manifest afterwards.
+    deleted = False
+    last_err: Exception | None = None
+    for attempt in range(3):
+        try:
+            await asyncio.to_thread(shutil.rmtree, repo_cache_dir, True)
+            deleted = not repo_cache_dir.exists()
+            if deleted:
+                break
+        except OSError as e:
+            last_err = e
+            logger.warning("Delete attempt %d for %s failed: %s", attempt + 1, model_name, e)
+            await asyncio.sleep(0.5 * (attempt + 1))
+    if not deleted and repo_cache_dir.exists():
+        # Last resort on Windows: schedule remaining files for removal is
+        # overkill — report honestly but still free the manifest slot so the
+        # user can re-download cleanly.
+        logger.warning("Failed to fully delete model cache for %s: %s", model_name, last_err)
+
+    _forget()
+    # Verify the manifest row is actually gone — the frontend keys its
+    # Installed badge off is_downloaded, so a lingering row looks like
+    # "delete did nothing".
     try:
-        await asyncio.to_thread(shutil.rmtree, repo_cache_dir, True)
-    except OSError as e:
-        logger.warning("Failed to fully delete model cache for %s: %s", model_name, e)
+        from ...services.model_registry import is_downloaded
 
-    from ...services.model_registry import forget_download
-
-    forget_download(model_name, config.model_size)
+        if is_downloaded(model_name, config.model_size):
+            raise HTTPException(
+                status_code=500,
+                detail=f"Delete removed files but the manifest row for {model_name} persists — restart the backend and retry.",
+            )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.debug("Post-delete manifest check skipped", exc_info=True)
     return {"message": f"Model {model_name} deleted successfully"}
+
+
+@router.get("/models/verify/{model_name}")
+async def verify_model(model_name: str):
+    """Re-hash on-disk weights against the download-time SHA-256 baseline."""
+    from ...backends import get_model_config
+
+    config = get_model_config(model_name)
+    if not config:
+        raise HTTPException(status_code=400, detail=f"Unknown model: {model_name}")
+    try:
+        from ...services.model_integrity import verify_model_hashes
+
+        result = await asyncio.to_thread(verify_model_hashes, model_name)
+        return {"model_name": model_name, **result}
+    except Exception as e:
+        logger.debug("Verify failed for %s", model_name, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Verify failed: {e}") from e

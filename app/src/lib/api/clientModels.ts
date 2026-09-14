@@ -12,6 +12,7 @@ import type {
 	ModelDownloadRequest,
 	ModelStatusListResponse,
 	RecommendedModelsResponse,
+	ServerPortState,
 } from "./types";
 
 export class ModelsMethods extends CapturesMethods {
@@ -147,6 +148,24 @@ export class ModelsMethods extends CapturesMethods {
 			"/assistant/system-prompt-default",
 		);
 		return data.default ?? "";
+	}
+
+	async reloadPlanner(): Promise<{ unloaded: boolean; message: string }> {
+		return this.request<{ unloaded: boolean; message: string }>(
+			"/settings/assistant/reload-planner",
+			{ method: "POST" },
+		);
+	}
+
+	async getServerPort(): Promise<ServerPortState> {
+		return this.request<ServerPortState>("/settings/server");
+	}
+
+	async updateServerPort(port: number): Promise<ServerPortState> {
+		return this.request<ServerPortState>("/settings/server", {
+			method: "PUT",
+			body: JSON.stringify({ port }),
+		});
 	}
 
 	// MCP bindings — per-MCP-client voice/engine/personality mapping.

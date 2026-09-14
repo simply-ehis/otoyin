@@ -6,6 +6,7 @@ import {
 	PuzzlePieceIcon,
 	SparklesIcon,
 	Squares2X2Icon,
+	WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
 import type {
 	ActiveDownloadTask,
@@ -23,6 +24,7 @@ export const CATEGORIES = [
 	{ id: "music", label: "Music & SFX", icon: MusicalNoteIcon },
 	{ id: "translation", label: "Translation", icon: ChatBubbleLeftRightIcon },
 	{ id: "extras", label: "Extras", icon: PuzzlePieceIcon },
+	{ id: "utilities", label: "Utilities", icon: WrenchScrewdriverIcon },
 ] as const;
 
 export const USE_CASES = [
@@ -47,6 +49,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
 	music: "Music & SFX",
 	translation: "Translation Packs",
 	extras: "Extras",
+	utilities: "Utilities",
 };
 
 /** Category hue identity — 3px top edge bar (hueLine pattern), solid card surface. */
@@ -59,6 +62,7 @@ export const CATEGORY_ACCENT: Record<string, string> = {
 	translation: "border-t-[3px] border-sky-400",
 	extras: "border-t-[3px] border-muted-foreground",
 	sfx: "border-t-[3px] border-muted-foreground",
+	utilities: "border-t-[3px] border-muted-foreground",
 };
 
 /** Rich per-model descriptions (ported from the old ServerSettings tree). */
@@ -335,11 +339,18 @@ export function buildFilteredProducts(
 		});
 	}
 	return list.sort((a, b) => {
-		// Translation always last (collapsed section at bottom)
-		const aTrans = a.category === "translation" ? 1 : 0;
-		const bTrans = b.category === "translation" ? 1 : 0;
-		if (aTrans !== bTrans) {
-			return aTrans - bTrans;
+		// Utility-type categories always sink to the bottom of the
+		// marketplace (utilities last of all) so core voices stay on top.
+		const bottomRank = (c: string): number => {
+			if (c === "utilities") return 3;
+			if (c === "translation") return 2;
+			if (c === "extras" || c === "sfx") return 1;
+			return 0;
+		};
+		const aBottom = bottomRank(a.category);
+		const bBottom = bottomRank(b.category);
+		if (aBottom !== bBottom) {
+			return aBottom - bBottom;
 		}
 		// Installed always first
 		const aInst = installed.has(a.id) || owned.has(a.id) ? 0 : 1;

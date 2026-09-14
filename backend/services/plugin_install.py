@@ -386,6 +386,9 @@ def get_installed_sync(plugin_id: str) -> InstalledPlugin | None:
 
     db = SessionLocal()
     try:
-        return db.query(InstalledPlugin).filter_by(plugin_id=plugin_id).first()
+        row = db.query(InstalledPlugin).filter_by(plugin_id=plugin_id).first()
+        if row is not None:
+            db.expunge(row)
+        return row
     finally:
         db.close()

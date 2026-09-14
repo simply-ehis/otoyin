@@ -23,7 +23,8 @@ async def test_run_generation_cloud_branch(monkeypatch):
     """When use_cloud=True, local model factory is never loaded; cloud is used."""
     calls = {"local": False, "cloud": False, "saved": False}
 
-    async def fake_synth(domain, text, voice="alloy"):
+    # Mirrors production: synthesize_via_cloud_tts is a sync def.
+    def fake_synth(domain, text, voice="alloy"):
         calls["cloud"] = True
         return _make_wav_bytes(), "audio/wav"
 

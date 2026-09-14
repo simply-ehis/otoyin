@@ -5,11 +5,12 @@ import {
 	ExclamationCircleIcon,
 	TrashIcon,
 } from "@heroicons/react/24/outline";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "@/lib/api/client";
 import type { CudaDownloadProgress, HealthResponse } from "@/lib/api/types";
+import { useBackendRestart } from "@/lib/hooks/useBackendRestart";
 import { useServerHealth } from "@/lib/hooks/useServer";
 import { usePlatform } from "@/platform/PlatformContext";
 import { useServerStore } from "@/stores/serverStore";
@@ -18,8 +19,6 @@ import { Badge, Spinner } from "@/ui/primitives";
 import { Progress } from "@/ui/progress";
 import { ScreenHeader } from "@/ui/states";
 import { SettingRow, SettingSection } from "./rows";
-
-type RestartPhase = "idle" | "stopping" | "waiting" | "ready";
 
 function GpuIcon({ className }: { className?: string }) {
 	return (
@@ -128,14 +127,11 @@ function formatBytes(bytes: number): string {
 export function GpuPage() {
 	const { t } = useTranslation();
 	const platform = usePlatform();
-	const queryClient = useQueryClient();
 	const serverUrl = useServerStore((s) => s.serverUrl);
 	const { data: health } = useServerHealth();
 
-	const [phase, setPhase] = useState<RestartPhase>("idle");
-	const [error, setError] = useState<string | null>(null);
 	const [progress, setProgress] = useState<CudaDownloadProgress | null>(null);
-	const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+	const { phase, error, setError, restart } = useBackendRestart();
 	const tRef = useRef(t);
 	useEffect(() => {
 		tRef.current = t;
@@ -153,15 +149,6 @@ export function GpuPage() {
 	const isCuda = health?.backend_variant === "cuda";
 	const cudaAvailable = cudaStatus?.available ?? false;
 	const cudaDownloading = cudaStatus?.downloading ?? false;
-
-	useEffect(
-		() => () => {
-			if (pollRef.current) {
-				clearInterval(pollRef.current);
-			}
-		},
-		[],
-	);
 
 	useEffect(() => {
 		if (!cudaDownloading || !serverUrl) {
@@ -190,43 +177,7 @@ export function GpuPage() {
 		};
 		source.onerror = () => source.close();
 		return () => source.close();
-	}, [cudaDownloading, serverUrl, refetchCuda]);
-
-	const stopPolling = useCallback(() => {
-		if (pollRef.current) {
-			clearInterval(pollRef.current);
-			pollRef.current = null;
-		}
-	}, []);
-
-	const restartWithPolling = useCallback(
-		async (errorMessage: string) => {
-			setPhase("stopping");
-			try {
-				await platform.lifecycle.restartServer();
-				setPhase("waiting");
-				stopPolling();
-				pollRef.current = setInterval(async () => {
-					try {
-						const result = await apiClient.getHealth();
-						if (result.status === "healthy") {
-							stopPolling();
-							setPhase("ready");
-							void queryClient.invalidateQueries();
-							window.setTimeout(() => setPhase("idle"), 2000);
-						}
-					} catch {
-						// Still down — keep polling.
-					}
-				}, 1000);
-			} catch (e: unknown) {
-				stopPolling();
-				setPhase("idle");
-				throw new Error(e instanceof Error ? e.message : errorMessage);
-			}
-		},
-		[platform, queryClient, stopPolling],
-	);
+	}, [cudaDownloading, serverUrl, refetchCuda, setError]);
 
 	if (!health) {
 		return null;
@@ -341,10 +292,7 @@ export function GpuPage() {
 										<Button
 											size="sm"
 											onClick={() => {
-												setError(null);
-												restartWithPolling(
-													t("settings.gpu.errors.restartFailed"),
-												).catch((e: unknown) => {
+												restart().catch((e: unknown) => {
 													setError(
 														e instanceof Error
 															? e.message
@@ -371,15 +319,9 @@ export function GpuPage() {
 											variant="outline"
 											size="sm"
 											onClick={() => {
-												setError(null);
-												setPhase("stopping");
 												apiClient
 													.deleteCudaBackend()
-													.then(() =>
-														restartWithPolling(
-															t("settings.gpu.errors.switchCpu"),
-														),
-													)
+													.then(() => restart())
 													.catch((e: unknown) => {
 														setError(
 															e instanceof Error

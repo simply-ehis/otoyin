@@ -234,6 +234,17 @@ export class GenerationsMethods extends ProfilesMethods {
 		return this.request(`/transcript/${generationId}/words`);
 	}
 
+	async exportSubtitles(
+		audioPath: string,
+		fmt: string,
+		language?: string,
+	): Promise<{ output_path: string; filename: string }> {
+		return this.request("/transcription/export-subtitles", {
+			method: "POST",
+			body: JSON.stringify({ audio_path: audioPath, fmt, language }),
+		});
+	}
+
 	async clickWord(
 		generationId: string,
 		word: { index: number; word: string; start_ms: number; end_ms: number },

@@ -69,6 +69,7 @@ export function useAudioPlayer() {
 	const [isPlaying, setIsPlaying] = useState(false);
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const blobUrlRef = useRef<string | null>(null);
+	const busRegRef = useRef<{ unregister: () => void } | null>(null);
 	const { toast } = useToast();
 
 	const clearAnalyser = useCallback(() => {
@@ -89,10 +90,18 @@ export function useAudioPlayer() {
 					audioRef.current.pause();
 					setIsPlaying(false);
 				} else {
-					audioRef.current.play();
-					setIsPlaying(true);
+					audioRef.current.play().catch(() => {
+						setIsPlaying(false);
+						toast({
+							title: ERR_TITLE_PLAYBACK,
+							description: ERR_DESC_PLAYBACK_FAILED,
+							variant: "destructive",
+						});
+					});
 				}
 			} else {
+				busRegRef.current?.unregister();
+				busRegRef.current = null;
 				if (blobUrlRef.current) {
 					URL.revokeObjectURL(blobUrlRef.current);
 					blobUrlRef.current = null;
@@ -120,9 +129,17 @@ export function useAudioPlayer() {
 				// (Audio Studio monitor, Video tab) can listen to it live.
 				const reg = registerFileSource(url, { label: "Voiceover" });
 				if (reg) {
-					audio.addEventListener("ended", () => reg.unregister(), {
-						once: true,
-					});
+					busRegRef.current = reg;
+					audio.addEventListener(
+						"ended",
+						() => {
+							reg.unregister();
+							busRegRef.current = null;
+						},
+						{
+							once: true,
+						},
+					);
 				}
 
 				audio.addEventListener("ended", () => {
@@ -138,6 +155,8 @@ export function useAudioPlayer() {
 				audio.addEventListener("error", () => {
 					setIsPlaying(false);
 					clearAnalyser();
+					busRegRef.current?.unregister();
+					busRegRef.current = null;
 					toast({
 						title: ERR_TITLE_PLAYBACK,
 						description: ERR_DESC_PLAYBACK_FAILED,
@@ -150,14 +169,28 @@ export function useAudioPlayer() {
 					audioRef.current = null;
 				});
 
-				audio.play();
-				setIsPlaying(true);
+				audio
+					.play()
+					.then(() => setIsPlaying(true))
+					.catch(() => {
+						setIsPlaying(false);
+						busRegRef.current?.unregister();
+						busRegRef.current = null;
+						clearAnalyser();
+						toast({
+							title: ERR_TITLE_PLAYBACK,
+							description: ERR_DESC_PLAYBACK_FAILED,
+							variant: "destructive",
+						});
+					});
 			}
 		},
 		[isPlaying, toast, clearAnalyser],
 	);
 
 	const cleanup = useCallback(() => {
+		busRegRef.current?.unregister();
+		busRegRef.current = null;
 		if (audioRef.current) {
 			audioRef.current.pause();
 			audioRef.current.removeAttribute("src");

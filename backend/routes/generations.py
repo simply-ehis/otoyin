@@ -32,6 +32,16 @@ from ..errors import (
 )
 from ..services import history, personality, profiles, versions
 from ..services.generation import GenerationContext, run_generation
+
+# Status fan-out lives in services/status_bus.py (single owner shared by
+# producers and the SSE consumer below). Re-exported here so existing imports
+# (tests, tooling) keep working.
+from ..services.status_bus import (
+    _status_creation_time,
+    _status_lock,
+    _status_subscribers,
+    notify_generation_status,
+)
 from ..services.task_queue import cancel_generation as cancel_generation_job, enqueue_generation
 from ..utils.audio import load_audio, save_audio
 from ..utils.model_status import pick_cached_tts_engine
@@ -50,15 +60,9 @@ router = APIRouter()
 
 def _media_type_for(path: Path) -> str:
     """Pick a Content-Type for an audio file by extension."""
-    return {
-        ".wav": "audio/wav",
-        ".mp3": "audio/mpeg",
-        ".ogg": "audio/ogg",
-        ".flac": "audio/flac",
-        ".m4a": "audio/mp4",
-        ".aac": "audio/aac",
-        ".webm": "audio/webm",
-    }.get(path.suffix.lower(), "audio/wav")
+    from ..utils.http import audio_media_type_for
+
+    return audio_media_type_for(path)
 
 
 @router.get("/audio/{generation_id}")
@@ -157,34 +161,6 @@ async def create_generation_from_audio(
     db.commit()
     db.refresh(generation)
     return models.GenerationResponse.model_validate(generation)
-
-
-_status_subscribers: dict[str, list[asyncio.Queue]] = {}
-_status_lock = asyncio.Lock()
-_status_creation_time: dict[str, float] = {}
-_SSE_TTL_SECONDS = 600  # Evict stale subscriber entries after 10 minutes
-
-
-async def notify_generation_status(generation_id: str, status: str, payload: dict) -> None:
-    """Push status update to all SSE subscribers for this generation."""
-    async with _status_lock:
-        # Lazy cleanup: evict stale entries
-        import time
-
-        now = time.monotonic()
-        stale_ids = [
-            gid
-            for gid, t in _status_creation_time.items()
-            if now - t > _SSE_TTL_SECONDS and gid not in _status_subscribers
-        ]
-        for gid in stale_ids:
-            _status_creation_time.pop(gid, None)
-
-        # Snapshot the subscriber list under the lock to avoid iteration race
-        queues = list(_status_subscribers.get(generation_id, []))
-    for q in queues:
-        with contextlib.suppress(asyncio.QueueFull):
-            q.put_nowait(payload)
 
 
 @router.get("/tts/status")
@@ -302,25 +278,9 @@ async def generate_speech(
 
     # ── RAM pressure check ──────────────────────────────────────────────
     # Prevent OOM by verifying system RAM can handle the requested model.
-    try:
-        from ..backends.configs import get_model_config
-        from ..services.device_capabilities import _get_system_ram_mb
+    from ..services.generation import ensure_ram_available
 
-        cfg = get_model_config(engine, model_size)
-        if cfg and cfg.min_ram_mb > 0:
-            _total, available = _get_system_ram_mb()
-            if available > 0 and available < cfg.min_ram_mb:
-                raise HTTPException(
-                    status_code=507,
-                    detail=(
-                        f"Insufficient RAM: {engine} needs ~{cfg.min_ram_mb} MB "
-                        f"but only {available} MB available. Close other apps and retry."
-                    ),
-                )
-    except HTTPException:
-        raise
-    except Exception:
-        logger.debug("RAM pressure check skipped (detection failed)", exc_info=True)
+    ensure_ram_available(engine, model_size)
 
     text = data.text
     source = "manual"
@@ -395,12 +355,18 @@ async def generate_speech(
 
     lifecycle_manager.mark_model_used(engine)
     dedup_key = compute_generation_dedup_key(
-        text=data.text,
+        text=text,
         profile_id=data.profile_id,
         engine=engine,
         model_size=model_size,
         seed=data.seed,
         instruct=data.instruct,
+        temperature=data.temperature,
+        normalize=data.normalize,
+        voice_clean=data.voice_clean,
+        emotion=data.emotion,
+        personality=source == "personality_speak",
+        use_cloud=data.use_cloud,
     )
     try:
         enqueue_generation(generation_id, run_generation(ctx), dedup_key=dedup_key)
@@ -412,6 +378,13 @@ async def generate_speech(
         raise HTTPException(
             status_code=409, detail="Generation already in progress — please wait for the current one to finish"
         ) from None
+    except RuntimeError as e:
+        # Full queue: fail the row now so it never sits in 'generating'
+        # forever with no worker watching it.
+        task_manager.complete_generation(generation_id)
+        db.delete(generation)
+        db.commit()
+        raise HTTPException(status_code=429, detail=str(e)) from e
 
     return generation
 
@@ -450,7 +423,13 @@ async def retry_generation(generation_id: str, db: Session = Depends(get_db)):
     from ..utils.model_lifecycle import lifecycle_manager
 
     lifecycle_manager.mark_model_used(ctx.engine)
-    enqueue_generation(generation_id, run_generation(ctx))
+    try:
+        enqueue_generation(generation_id, run_generation(ctx))
+    except RuntimeError as e:
+        # Full queue: roll the atomic flip back so the row is retryable again.
+        task_manager.complete_generation(generation_id)
+        await history.update_generation_status(generation_id=generation_id, status="failed", db=db, error=str(e))
+        raise HTTPException(status_code=429, detail=str(e)) from e
 
     return models.GenerationResponse.model_validate(gen)
 
@@ -461,16 +440,26 @@ async def retry_generation(generation_id: str, db: Session = Depends(get_db)):
 )
 async def regenerate_generation(generation_id: str, db: Session = Depends(get_db)):
     """Re-run TTS with the same parameters and save the result as a new version."""
-    gen = db.query(DBGeneration).filter_by(id=generation_id).first()
-    if not gen:
-        raise HTTPException(status_code=404, detail=ERR_GENERATION_NOT_FOUND)
-    if (gen.status or "completed") != "completed":
+    from sqlalchemy import update as sql_update
+
+    # Atomic status flip like retry: only transition from 'completed' →
+    # 'generating'. Two concurrent regenerates must not share one row (the
+    # second would overwrite the first's takes).
+    result = db.execute(
+        sql_update(DBGeneration)
+        .where(DBGeneration.id == generation_id, DBGeneration.status == "completed")
+        .values(status="generating", error=None)
+    )
+    db.commit()
+
+    if result.rowcount == 0:
+        gen = db.query(DBGeneration).filter_by(id=generation_id).first()
+        if not gen:
+            raise HTTPException(status_code=404, detail=ERR_GENERATION_NOT_FOUND)
         raise HTTPException(status_code=400, detail=ERR_REGENERATE_COMPLETED)
 
-    gen.status = "generating"
-    gen.error = None
-    db.commit()
-    db.refresh(gen)
+    db.expire_all()
+    gen = db.query(DBGeneration).filter_by(id=generation_id).first()
 
     task_manager = get_task_manager()
     task_manager.start_generation(
@@ -485,7 +474,13 @@ async def regenerate_generation(generation_id: str, db: Session = Depends(get_db
     from ..utils.model_lifecycle import lifecycle_manager
 
     lifecycle_manager.mark_model_used(ctx.engine)
-    enqueue_generation(generation_id, run_generation(ctx))
+    try:
+        enqueue_generation(generation_id, run_generation(ctx))
+    except RuntimeError as e:
+        # Full queue: roll the atomic flip back so the row is usable again.
+        task_manager.complete_generation(generation_id)
+        await history.update_generation_status(generation_id=generation_id, status="failed", db=db, error=str(e))
+        raise HTTPException(status_code=429, detail=str(e)) from e
 
     return models.GenerationResponse.model_validate(gen)
 
@@ -617,6 +612,7 @@ async def stream_speech(
 ):
     """Generate speech and stream the WAV audio directly without saving to disk."""
     from ..backends import (
+        engine_has_model_sizes,
         engine_needs_trim,
         ensure_model_cached_or_raise,
         get_tts_backend_for_engine,
@@ -635,7 +631,15 @@ async def stream_speech(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     tts_model = get_tts_backend_for_engine(engine)
-    model_size = data.model_size or "default"
+    model_size = data.model_size if engine_has_model_sizes(engine) else None
+
+    from ..services.generation import ensure_ram_available
+    from ..utils.rate_limiter import get_limiter
+
+    ensure_ram_available(engine, model_size)
+    # Pace + serialize against the queued path so a concurrent stream and
+    # queued job never contend the GPU/VRAM at the same time.
+    await get_limiter("tts").acquire()
 
     from ..utils.model_lifecycle import lifecycle_manager
 

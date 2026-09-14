@@ -245,7 +245,18 @@ export function HistoryList() {
 						<AlertDialogAction
 							onClick={() => {
 								if (deleteTarget) {
-									deleteMut.mutate(deleteTarget.id, {
+									const id = deleteTarget.id;
+									deleteMut.mutate(id, {
+										onSuccess: () => {
+											// The list is local append-only state — a bare
+											// query invalidation never removes the row, so
+											// strip it here or delete looks broken.
+											setItems((prev) => prev.filter((g) => g.id !== id));
+											setTotal((t) => Math.max(0, t - 1));
+											if (usePlayerStore.getState().audioId === id) {
+												usePlayerStore.getState().reset();
+											}
+										},
 										onError: (e: unknown) => showStudioErrorToast(e),
 									});
 									setDeleteTarget(null);
@@ -269,6 +280,31 @@ export function HistoryList() {
 						<AlertDialogAction
 							onClick={() => {
 								clearFailedMut.mutate(undefined, {
+									onSuccess: (res) => {
+										// Same append-only pitfall as single delete:
+										// drop failed rows locally and fix the total.
+										const removed = res?.deleted ?? 0;
+										if (removed > 0) {
+											const playingId = usePlayerStore.getState().audioId;
+											setItems((prev) => {
+												const gone = new Set(
+													prev.filter((g) => g.status === "failed").map((g) => g.id),
+												);
+												if (playingId && gone.has(playingId)) {
+													usePlayerStore.getState().reset();
+												}
+												return prev.filter((g) => g.status !== "failed");
+											});
+											setTotal((t) => Math.max(0, t - removed));
+										}
+										toast({
+											title: "Cleared failed generations",
+											description:
+												removed > 0
+													? `${removed} removed.`
+													: "Nothing failed to clear.",
+										});
+									},
 									onError: (e: unknown) => showStudioErrorToast(e),
 								});
 								setClearFailedOpen(false);
@@ -331,6 +367,7 @@ function HistoryRow({
 }) {
 	const audioId = usePlayerStore((s) => s.audioId);
 	const isPlaying = usePlayerStore((s) => s.isPlaying);
+	const playerDuration = usePlayerStore((s) => s.duration);
 	const setAudioWithAutoPlay = usePlayerStore((s) => s.setAudioWithAutoPlay);
 	const setIsPlaying = usePlayerStore((s) => s.setIsPlaying);
 	const queryClient = useQueryClient();
@@ -361,6 +398,16 @@ function HistoryRow({
 
 	const play = () => {
 		if (!playable) {
+			return;
+		}
+		// Same clip already loaded: just toggle (reloading loses position and
+		// the async load loses the click gesture, so autoplay gets blocked).
+		if (audioId === gen.id) {
+			if (playing) {
+				setIsPlaying(false);
+			} else if (playerDuration > 0) {
+				setIsPlaying(true);
+			}
 			return;
 		}
 		if (playing) {

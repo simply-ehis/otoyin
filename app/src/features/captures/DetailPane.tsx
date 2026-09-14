@@ -242,7 +242,7 @@ export function DetailPane({
 							? t("captures.transcript.refined")
 							: t("captures.transcript.raw")
 					}
-					className="min-h-[260px] w-full resize-y rounded-md border-0 bg-transparent p-6 text-[15px] leading-relaxed text-foreground focus:outline-none"
+					className="min-h-[260px] max-h-[500px] w-full resize-none overflow-y-auto rounded-md border-0 bg-transparent p-6 text-[15px] leading-relaxed text-foreground focus:outline-none"
 				/>
 			</div>
 

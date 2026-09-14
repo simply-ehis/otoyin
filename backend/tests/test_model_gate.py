@@ -322,7 +322,7 @@ def test_demucs_onnx_config_registered():
     product = get_product("demucs_onnx")
     assert product is not None
     assert product["paid"] is False
-    assert product["category"] == "extras"
+    assert product["category"] == "utilities"
 
 
 def test_stem_onnx_offline_and_gate(monkeypatch):

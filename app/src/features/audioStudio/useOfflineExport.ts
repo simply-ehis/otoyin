@@ -15,7 +15,7 @@ export function useOfflineExport(
 	const { toast } = useToast();
 
 	const handleExport = useCallback(
-		async (tracks: StudioTrack[], masterVolume: number) => {
+		async (tracks: StudioTrack[], masterVolume: number): Promise<boolean> => {
 			const buffers = audioBuffersRef.current;
 			try {
 				const activeTracks = tracks.filter(
@@ -26,7 +26,7 @@ export function useOfflineExport(
 						title: "Nothing to export",
 						description: "No tracks with audio or MIDI content",
 					});
-					return;
+					return false;
 				}
 
 				const hasSolo = tracks.some((t) => t.solo);
@@ -147,18 +147,23 @@ export function useOfflineExport(
 				const wavData = audioBufferToWav(renderedBuffer);
 				const blob = new Blob([wavData], { type: "audio/wav" });
 				const url = URL.createObjectURL(blob);
+				const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
 				const a = document.createElement("a");
 				a.href = url;
-				a.download = "audio-studio-export.wav";
+				a.download = `audio-studio-export-${stamp}.wav`;
+				document.body.appendChild(a);
 				a.click();
+				a.remove();
 				URL.revokeObjectURL(url);
 
 				toast({
 					title: "Export complete",
 					description: "Mixed audio downloaded",
 				});
+				return true;
 			} catch (err) {
 				showStudioErrorToast(err);
+				return false;
 			}
 		},
 		[toast, audioBuffersRef],

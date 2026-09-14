@@ -237,7 +237,7 @@ async def test_import_rejects_bad_manifest(db, data_dir, monkeypatch):
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w") as zf:
         zf.writestr("manifest.json", json.dumps({"version": "1.0"}))
-    with pytest.raises(ValueError, match="missing story"):
+    with pytest.raises(ValueError, match="Invalid manifest"):
         await ei.import_story_from_zip(buf.getvalue(), db)
 
 

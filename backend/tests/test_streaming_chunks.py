@@ -57,9 +57,10 @@ class TestSentenceSplitting:
         assert len(chunks) == 1
         assert chunks[0].strip() == text
 
-    def test_empty_text_returns_something(self):
-        chunks = split_sentences("")
-        assert len(chunks) >= 1
+    def test_empty_text_returns_no_chunks(self):
+        # Empty input has nothing to synthesize: callers (chunk_text_for_tts)
+        # guard on empty first, and [] here means "no work", not an error.
+        assert split_sentences("") == []
 
     def test_split_preserves_content(self):
         text = "Alpha. Beta. Gamma."

@@ -60,16 +60,61 @@ export function usePlaybackEngine({
 					"AudioStudio: source already stopped during playback teardown",
 				);
 			}
+			try {
+				source.disconnect();
+			} catch {
+				// Already disconnected.
+			}
 		});
 		sourceNodesRef.current.clear();
+		gainNodesRef.current.forEach((n) => {
+			try {
+				n.disconnect();
+			} catch {
+				// Already disconnected.
+			}
+		});
+		gainNodesRef.current.clear();
+		panNodesRef.current.forEach((n) => {
+			try {
+				n.disconnect();
+			} catch {
+				// Already disconnected.
+			}
+		});
+		panNodesRef.current.clear();
+		trackAnalysersRef.current.forEach((n) => {
+			try {
+				n.disconnect();
+			} catch {
+				// Already disconnected.
+			}
+		});
 		trackAnalysersRef.current.clear();
+		try {
+			analyserRef.current?.disconnect();
+		} catch {
+			// Already disconnected.
+		}
+		try {
+			duckNodeRef.current?.disconnect();
+		} catch {
+			// Already disconnected.
+		}
+		try {
+			duckMeterRef.current?.disconnect();
+		} catch {
+			// Already disconnected.
+		}
+		const oldAnalyser = analyserRef.current;
+		analyserRef.current = null;
 		duckNodeRef.current = null;
 		duckMeterRef.current = null;
 		setTrackAnalysers(new Map());
 		setIsPlaying(false);
 		if (
-			analyserRef.current &&
-			usePlayerStore.getState().masterAnalyser === analyserRef.current
+			oldAnalyser &&
+			usePlayerStore.getState().masterAnalyser === oldAnalyser
 		) {
 			usePlayerStore.getState().setMasterAnalyser(null);
 		}
@@ -235,7 +280,19 @@ export function usePlaybackEngine({
 			}
 
 			source.loop = isLooping;
-			source.start(0, startOffset);
+			const safeOffset =
+				Number.isFinite(startOffset) && startOffset >= 0
+					? Math.min(startOffset, Math.max(0, buffer.duration - 0.01))
+					: 0;
+			try {
+				source.start(0, safeOffset);
+			} catch {
+				try {
+					source.start();
+				} catch {
+					continue;
+				}
+			}
 			sourceNodesRef.current.set(track.id, source);
 			gainNodesRef.current.set(track.id, trackGain);
 		}
@@ -326,6 +383,17 @@ export function usePlaybackEngine({
 			startPlayback();
 		}
 	}, [stopPlayback, startPlayback]);
+
+	// Live speed: apply slider changes to running sources without restart.
+	useEffect(() => {
+		sourceNodesRef.current.forEach((s) => {
+			try {
+				s.playbackRate.value = playbackSpeed;
+			} catch {
+				// Source already stopped.
+			}
+		});
+	}, [playbackSpeed]);
 
 	const seekTo = useCallback(
 		(time: number) => {

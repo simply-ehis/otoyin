@@ -144,6 +144,7 @@ export function TrackToolButtons({
 	setShowCrossfade,
 	otherTracks,
 	onAddAutomation,
+	onAddPanAutomation,
 	onClearAutomation,
 	updateTrack,
 	onTranscribe,
@@ -156,6 +157,7 @@ export function TrackToolButtons({
 	setShowCrossfade: (v: boolean) => void;
 	otherTracks: StudioTrack[];
 	onAddAutomation: () => void;
+	onAddPanAutomation: () => void;
 	onClearAutomation: () => void;
 	updateTrack: (id: string, patch: Partial<StudioTrack>) => void;
 	onTranscribe: () => void;
@@ -204,22 +206,32 @@ export function TrackToolButtons({
 				<>
 					<button
 						type="button"
-						aria-label="Add keyframe"
+						aria-label="Add volume keyframe"
 						className="px-1.5 py-0.5 text-xs font-bold rounded transition-colors active:scale-[0.97] bg-muted text-muted-foreground hover:bg-secondary"
 						onClick={onAddAutomation}
-						title="Add keyframe at current time"
+						title="Add volume keyframe at current time"
 					>
-						K+
+						V+
 					</button>
-					{(track.volumeAutomation ?? []).length > 0 && (
+					<button
+						type="button"
+						aria-label="Add pan keyframe"
+						className="px-1.5 py-0.5 text-xs font-bold rounded transition-colors active:scale-[0.97] bg-muted text-muted-foreground hover:bg-secondary"
+						onClick={onAddPanAutomation}
+						title="Add pan keyframe at current time"
+					>
+						P+
+					</button>
+					{((track.volumeAutomation ?? []).length > 0 ||
+						(track.panAutomation ?? []).length > 0) && (
 						<button
 							type="button"
 							aria-label="Clear automation"
 							className="px-1.5 py-0.5 text-xs font-bold rounded transition-colors active:scale-[0.97] bg-danger-soft text-danger-text [@media(hover:hover)]:hover:brightness-110"
 							onClick={onClearAutomation}
-							title="Clear automation"
+							title="Clear all automation"
 						>
-							Kx
+							Clear
 						</button>
 					)}
 				</>
@@ -343,6 +355,7 @@ export function TrackControlsColumn({
 	onVolume,
 	onPan,
 	onAddAutomation,
+	onAddPanAutomation,
 	onClearAutomation,
 	updateTrack,
 	onTranscribe,
@@ -361,6 +374,7 @@ export function TrackControlsColumn({
 	onVolume: (v: number) => void;
 	onPan: (pan: number) => void;
 	onAddAutomation: () => void;
+	onAddPanAutomation: () => void;
 	onClearAutomation: () => void;
 	updateTrack: (id: string, patch: Partial<StudioTrack>) => void;
 	onTranscribe: () => void;
@@ -399,6 +413,7 @@ export function TrackControlsColumn({
 				setShowCrossfade={setShowCrossfade}
 				otherTracks={otherTracks}
 				onAddAutomation={onAddAutomation}
+				onAddPanAutomation={onAddPanAutomation}
 				onClearAutomation={onClearAutomation}
 				updateTrack={updateTrack}
 				onTranscribe={onTranscribe}

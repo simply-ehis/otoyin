@@ -185,6 +185,7 @@ export function useModelDownloadToast({
 				toastIdRef.current = null;
 				toastUpdateRef.current = null;
 			}
+			onError?.("Failed to track download progress");
 		};
 
 		eventSourceRef.current = eventSource;

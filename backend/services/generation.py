@@ -30,8 +30,49 @@ from ..database import get_db
 from ..utils.model_lifecycle import lifecycle_manager
 from ..utils.tasks import get_task_manager
 from . import history, profiles
+from .status_bus import notify_generation_status
 
 logger = logging.getLogger(__name__)
+
+
+def ensure_ram_available(engine: str, model_size: str | None) -> None:
+    """Raise HTTPException 507 when system RAM cannot hold the model.
+
+    Shared by /generate and /generate/stream so both fail fast instead of
+    OOM-killing the backend mid-inference. Detection failures skip the
+    check (never block generation on a broken probe).
+    """
+    try:
+        from fastapi import HTTPException as _HTTPException
+
+        from ..backends import get_all_model_configs
+        from ..services.device_capabilities import _get_system_ram_mb
+
+        cfg = next(
+            (
+                c
+                for c in get_all_model_configs()
+                if c.engine == engine and (model_size is None or c.model_size == model_size)
+            ),
+            None,
+        )
+        if cfg is None or not (cfg.min_ram_mb or 0) > 0:
+            return
+        _total, available = _get_system_ram_mb()
+        if available > 0 and available < cfg.min_ram_mb:
+            raise _HTTPException(
+                status_code=507,
+                detail=(
+                    f"Insufficient RAM: {engine} needs ~{cfg.min_ram_mb} MB "
+                    f"but only {available} MB available. Close other apps and retry."
+                ),
+            )
+    except Exception as exc:
+        from fastapi import HTTPException as _HTTPException
+
+        if isinstance(exc, _HTTPException):
+            raise
+        logger.debug("RAM pressure check skipped (detection failed)", exc_info=True)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -92,7 +133,10 @@ class GenerationContext:
         """Build a GenerationContext from a database Generation record.
 
         Handles missing or None fields gracefully — DB records may have
-        been created by older versions of the schema.
+        been created by older versions of the schema. normalize defaults
+        to True (the request default) since it is not a stored column;
+        effects/max_chunk_chars/crossfade_ms are generate-mode concerns
+        (retry/regenerate save single files) and stay None.
         """
         return cls(
             generation_id=gen.id,
@@ -103,7 +147,9 @@ class GenerationContext:
             model_size=gen.model_size or "default",
             seed=gen.seed,
             mode=mode,
+            normalize=True,
             instruct=gen.instruct,
+            temperature=getattr(gen, "temperature", None),
             version_id=version_id,
             use_cloud=bool(getattr(gen, "use_cloud", False)),
             voice_clean=bool(getattr(gen, "voice_clean", False)),
@@ -116,7 +162,6 @@ async def run_generation(ctx: GenerationContext) -> None:
     Orchestrator that dispatches to cloud or local synthesis, then
     persists and notifies. Sub-functions own the details.
     """
-    from ..routes.generations import notify_generation_status
     from ..utils.audio import save_audio
 
     task_manager = get_task_manager()
@@ -133,6 +178,8 @@ async def run_generation(ctx: GenerationContext) -> None:
         # event loop (enhance_tts / normalize_audio / effects can be slow on
         # large buffers, and WAV writes do disk I/O).
         audio, sample_rate = await asyncio.to_thread(_postprocess, ctx, audio, sample_rate)
+        if audio is None or len(audio) == 0 or not sample_rate:
+            raise RuntimeError("Synthesis produced no audio")
         duration = len(audio) / sample_rate
 
         # --- Persist audio and update status -----------------------------
@@ -154,9 +201,13 @@ async def run_generation(ctx: GenerationContext) -> None:
     except asyncio.CancelledError:
         import glob as _glob
 
-        for orphan in _glob.glob(str(config.get_generations_dir() / f"{ctx.generation_id}*.wav")):
-            with contextlib.suppress(OSError):
-                Path(orphan).unlink()
+        # Narrow globs: the main file plus this run's stream chunks only.
+        # A broad f"{id}*.wav" would also wipe prior committed takes
+        # ({id}_{suffix}.wav) and processed versions ({id}_processed.wav).
+        for pattern in (f"{ctx.generation_id}.wav", f"{ctx.generation_id}_chunk_*.wav"):
+            for orphan in _glob.glob(str(config.get_generations_dir() / pattern)):
+                with contextlib.suppress(OSError):
+                    Path(orphan).unlink()
         await history.update_generation_status(
             generation_id=ctx.generation_id,
             status="failed",
@@ -190,6 +241,12 @@ async def run_generation(ctx: GenerationContext) -> None:
         task_manager.complete_generation(ctx.generation_id)
         bg_db.close()
 
+        # Chunk janitor: streaming leaves {id}_chunk_*.wav files behind that
+        # nothing ever reaps (the player switches to the assembled file on
+        # completion). Narrow pattern only — never main/version files.
+        # The cancel path already removes its own chunks the same way.
+        delete_chunk_files(ctx.generation_id)
+
         # Proactive GPU memory cleanup after every generation outcome
         # (success, failure, cancellation).  gc.collect() must run first
         # so CUDA tensors held by dead Python objects are released before
@@ -212,13 +269,20 @@ async def _synthesize_cloud(ctx: GenerationContext, db) -> tuple:
     voice_name = voice_prompt.get("preset_voice_id", "alloy") if isinstance(voice_prompt, dict) else "alloy"
 
     await get_limiter("tts").acquire()
+    # synthesize_via_cloud_tts is sync — run it off the event loop (awaiting
+    # it directly raises TypeError and broke cloud TTS entirely). The
+    # awaitable guard keeps this working if the provider ever goes async.
+    import inspect as _inspect
+
     raw = await with_retry(
-        lambda: synthesize_via_cloud_tts("tts", ctx.text, voice=voice_name),
+        lambda: asyncio.to_thread(synthesize_via_cloud_tts, "tts", ctx.text, voice=voice_name),
         attempts=3,
         label="tts.cloud",
     )
+    if _inspect.isawaitable(raw):
+        raw = await raw
     audio_bytes, _ctype = raw
-    return decode_wav_bytes(audio_bytes)
+    return await asyncio.to_thread(decode_wav_bytes, audio_bytes)
 
 
 async def _synthesize_local(ctx: GenerationContext, db) -> tuple:
@@ -226,7 +290,6 @@ async def _synthesize_local(ctx: GenerationContext, db) -> tuple:
     import time
 
     from ..backends import engine_needs_trim, get_tts_backend_for_engine, load_engine_model
-    from ..routes.generations import notify_generation_status
     from ..utils.audio import save_audio, trim_tts_output
     from ..utils.chunked_tts import generate_chunked
     from ..utils.rate_limiter import get_limiter, with_retry
@@ -292,10 +355,15 @@ async def _synthesize_local(ctx: GenerationContext, db) -> tuple:
     _stream_chunks: list[tuple[int, np.ndarray, int]] = []
 
     async def _on_chunk(idx: int, total: int, chunk_audio, sr: int) -> None:
+        from ..utils.model_lifecycle import lifecycle_manager as _lifecycle
+
+        # Heartbeat so the idle-unload sweep never yanks the model
+        # underneath a long multi-chunk synthesis.
+        _lifecycle.mark_model_used(ctx.engine)
         _stream_chunks.append((idx, chunk_audio, sr))
         if ctx.streaming:
             chunk_path = config.get_generations_dir() / f"{ctx.generation_id}_chunk_{idx}.wav"
-            save_audio(chunk_audio, str(chunk_path), sr)
+            await asyncio.to_thread(save_audio, chunk_audio, str(chunk_path), sr)
             await notify_generation_status(
                 ctx.generation_id,
                 "chunk_ready",
@@ -351,10 +419,10 @@ def _postprocess(ctx: GenerationContext, audio, sample_rate: int) -> tuple:
             audio = enhance_tts(audio, sample_rate, engine=ctx.engine)
             logger.debug("Applied TTS voice-clean enhancement")
         except Exception as exc:
-            logger.debug("TTS voice-clean failed (%s); continuing without", exc)
+            logger.warning("TTS voice-clean requested but failed (%s); continuing without", exc)
 
-    # Normalize (generate/regenerate; retry skips)
-    if ctx.normalize or ctx.mode == "regenerate":
+    # Normalize (generate/regenerate preserve the request flag; retry skips)
+    if ctx.normalize:
         audio = normalize_audio(audio)
 
     # Emotion DSP (opt-in)
@@ -365,7 +433,7 @@ def _postprocess(ctx: GenerationContext, audio, sample_rate: int) -> tuple:
             audio = apply_emotion_dsp(audio, sample_rate, ctx.emotion)
             logger.debug("Applied emotion DSP preset: %s", ctx.emotion)
         except Exception as exc:
-            logger.debug("Emotion DSP failed (%s); continuing without", exc)
+            logger.warning("Emotion DSP '%s' requested but failed (%s); continuing without", ctx.emotion, exc)
 
     return audio, sample_rate
 
@@ -397,6 +465,20 @@ def _persist(ctx: GenerationContext, audio, sample_rate: int, save_audio, db) ->
         save_audio=save_audio,
         db=db,
     )
+
+
+def delete_chunk_files(generation_id: str) -> int:
+    """Remove streamed chunk wavs for a generation. Narrow pattern only.
+
+    Returns the number of files removed. Main audio and version takes
+    (``{id}.wav``, ``{id}_{suffix}.wav``) are never touched.
+    """
+    removed = 0
+    for orphan in sorted(config.get_generations_dir().glob(f"{generation_id}_chunk_*.wav")):
+        with contextlib.suppress(OSError):
+            orphan.unlink()
+            removed += 1
+    return removed
 
 
 def _notify_speak_end(generation_id: str, *, status: str) -> None:
@@ -455,7 +537,13 @@ def _save_generate(
             import logging
 
             logging.getLogger(__name__).warning("invalid effects chain, skipping: %s", error_msg)
-            versions_mod.set_default_version(versions_mod.list_versions(generation_id, db)[0].id, db)
+            existing = versions_mod.list_versions(generation_id, db)
+            if existing:
+                versions_mod.set_default_version(existing[0].id, db)
+            else:
+                logging.getLogger(__name__).warning(
+                    "no versions to mark default for %s after invalid chain", generation_id
+                )
         else:
             processed_audio = apply_effects(audio, sample_rate, effects_chain)
             processed_path = config.get_generations_dir() / f"{generation_id}_processed.wav"

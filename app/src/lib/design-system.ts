@@ -272,3 +272,23 @@ export function applyThemeAccent(theme: string): void {
 	root.style.setProperty("--theme-accent-muted", config.accentMuted);
 	root.style.setProperty("--theme-accent-subtle", config.accentSubtle);
 }
+
+/**
+ * Override the accent hue for the current theme. `null` clears the override
+ * and restores the theme's default accent.
+ */
+export function applyAccentHueOverride(hue: number | null): void {
+	const root = document.documentElement;
+	if (hue == null) {
+		root.style.removeProperty("--color-accent");
+		root.style.removeProperty("--color-primary");
+		root.style.removeProperty("--color-ring");
+		return;
+	}
+	const accent = `${hue} 65% 55%`;
+	const primary = `${hue} 65% 55%`;
+	const ring = `${hue} 65% 55%`;
+	root.style.setProperty("--color-accent", `hsl(${accent})`);
+	root.style.setProperty("--color-primary", `hsl(${primary})`);
+	root.style.setProperty("--color-ring", `hsl(${ring})`);
+}

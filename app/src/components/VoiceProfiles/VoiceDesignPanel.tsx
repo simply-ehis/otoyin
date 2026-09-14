@@ -14,119 +14,23 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { ModelOfferings } from "@/features/voices/ModelOfferings";
+import {
+	ACCENT_GROUPS,
+	ACCENT_LABEL_BY_VALUE,
+	AGE_OPTIONS,
+	ATTRIBUTE_LABELS,
+	ATTRIBUTE_OPTIONS,
+	GENDER_OPTIONS,
+	PACING_OPTIONS,
+	STYLE_GROUPS,
+	STYLE_OPTIONS,
+	TONE_OPTIONS,
+} from "@/features/voices/voiceDesignOptions";
 import { Textarea } from "@/components/ui/textarea";
 import { apiClient } from "@/lib/api/client";
 import type { VoiceAttributes } from "@/lib/api/types";
 import type { ProfileFormValues } from "./profileFormHelpers";
-
-// ── Option maps (matching backend _ACCENT_MAP / _GENDER_MAP / _AGE_MAP) ──
-
-const GENDER_OPTIONS = [
-	{ value: "female", label: "Female" },
-	{ value: "male", label: "Male" },
-	{ value: "non_binary", label: "Non-binary" },
-] as const;
-
-const AGE_OPTIONS = [
-	{ value: "child", label: "Child" },
-	{ value: "teen", label: "Teen" },
-	{ value: "young_adult", label: "Young adult" },
-	{ value: "adult", label: "Adult" },
-	{ value: "middle_aged", label: "Middle-aged" },
-	{ value: "senior", label: "Senior" },
-] as const;
-
-const ACCENT_OPTIONS = [
-	{ value: "american", label: "American" },
-	{ value: "british", label: "British" },
-	{ value: "australian", label: "Australian" },
-	{ value: "canadian", label: "Canadian" },
-	{ value: "indian", label: "Indian" },
-	{ value: "irish", label: "Irish" },
-	{ value: "scottish", label: "Scottish" },
-	{ value: "french", label: "French" },
-	{ value: "german", label: "German" },
-	{ value: "spanish", label: "Spanish" },
-	{ value: "italian", label: "Italian" },
-	{ value: "japanese", label: "Japanese" },
-	{ value: "chinese", label: "Chinese" },
-	{ value: "korean", label: "Korean" },
-	{ value: "brazilian", label: "Brazilian" },
-	{ value: "mexican", label: "Mexican" },
-	{ value: "russian", label: "Russian" },
-	{ value: "arabic", label: "Arabic" },
-	{ value: "african", label: "African" },
-	{ value: "caribbean", label: "Caribbean" },
-	{ value: "new_zealand", label: "New Zealand" },
-	{ value: "south_african", label: "South African" },
-] as const;
-
-const TONE_OPTIONS = [
-	{ value: "warm", label: "Warm" },
-	{ value: "bright", label: "Bright" },
-	{ value: "soft", label: "Soft" },
-	{ value: "deep", label: "Deep" },
-	{ value: "husky", label: "Husky" },
-	{ value: "clear", label: "Clear" },
-	{ value: "smooth", label: "Smooth" },
-	{ value: "rough", label: "Rough" },
-	{ value: "raspy", label: "Raspy" },
-	{ value: "silky", label: "Silky" },
-	{ value: "resonant", label: "Resonant" },
-	{ value: "breathy", label: "Breathy" },
-	{ value: "rich", label: "Rich" },
-	{ value: "light", label: "Light" },
-	{ value: "mellow", label: "Mellow" },
-	{ value: "crisp", label: "Crisp" },
-] as const;
-
-const STYLE_OPTIONS = [
-	{ value: "formal", label: "Formal" },
-	{ value: "casual", label: "Casual" },
-	{ value: "enthusiastic", label: "Enthusiastic" },
-	{ value: "calm", label: "Calm" },
-	{ value: "dramatic", label: "Dramatic" },
-	{ value: "whispered", label: "Whispered" },
-	{ value: "authoritative", label: "Authoritative" },
-	{ value: "friendly", label: "Friendly" },
-	{ value: "narrative", label: "Narrative" },
-	{ value: "conversational", label: "Conversational" },
-	{ value: "newsreader", label: "Newsreader" },
-	{ value: "storytelling", label: "Storytelling" },
-	{ value: "energetic", label: "Energetic" },
-	{ value: "soothing", label: "Soothing" },
-	{ value: "commanding", label: "Commanding" },
-	{ value: "gentle", label: "Gentle" },
-] as const;
-
-const PACING_OPTIONS = [
-	{ value: "slow", label: "Slow" },
-	{ value: "moderate", label: "Moderate" },
-	{ value: "fast", label: "Fast" },
-] as const;
-
-/** Map attribute keys to their option arrays. */
-const ATTRIBUTE_OPTIONS: Record<
-	string,
-	readonly { value: string; label: string }[]
-> = {
-	gender: GENDER_OPTIONS,
-	age: AGE_OPTIONS,
-	accent: ACCENT_OPTIONS,
-	tone: TONE_OPTIONS,
-	style: STYLE_OPTIONS,
-	pacing: PACING_OPTIONS,
-};
-
-/** Human-readable labels for attribute keys. */
-const ATTRIBUTE_LABELS: Record<string, string> = {
-	gender: "Gender",
-	age: "Age",
-	accent: "Accent / Nationality",
-	tone: "Tone",
-	style: "Speaking Style",
-	pacing: "Pacing",
-};
 
 interface VoiceDesignEngineCapabilities {
 	label: string;
@@ -140,6 +44,27 @@ interface VoiceDesignCapabilitiesResponse {
 	engines: Record<string, VoiceDesignEngineCapabilities>;
 	default_engine: string;
 	composed_prompt_preview: boolean;
+	all_models?: {
+		model_name: string;
+		display_name: string;
+		engine: string;
+		languages: string[];
+		preset_voice_count: number;
+		preset_voices: {
+			id: string;
+			name: string;
+			gender?: string | null;
+			language?: string | null;
+		}[];
+		clone_voice: boolean;
+		voice_design: boolean;
+		supports_voice_mixing: boolean;
+		emotion_control: boolean;
+		paralinguistic_tags: boolean;
+		supports_instruct: boolean;
+		supported_tags: string[];
+		quality_score: number;
+	}[];
 }
 
 interface VoiceDesignPanelProps {
@@ -182,6 +107,7 @@ export function VoiceDesignPanel({
 
 	return (
 		<div className="space-y-3">
+			<ModelOfferings models={capabilities?.all_models} />
 			<p className="text-xs text-muted-foreground/70">
 				{currentEngine?.description ??
 					"Configure the voice character. Attributes are composed into a description that design-capable engines use."}
@@ -225,6 +151,112 @@ export function VoiceDesignPanel({
 			{/* Dynamic attribute dropdowns — only show supported ones */}
 			<div className="space-y-2">
 				{supportedAttrs.map((attrKey) => {
+					if (attrKey === "accent") {
+						return (
+							<FormField
+								key={attrKey}
+								control={form.control}
+								name={"voiceAttributes.accent" as keyof ProfileFormValues}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel className="text-xs">Accent / Nationality</FormLabel>
+										{currentEngine?.attributes_help?.accent ? (
+											<p className="text-xs text-muted-foreground/50 -mt-1 mb-1">
+												{currentEngine.attributes_help.accent}
+											</p>
+										) : null}
+										<Select
+											value={(field.value as string) ?? ""}
+											onValueChange={(v) => {
+												const attrs =
+													(form.getValues(
+														"voiceAttributes",
+													) as VoiceAttributes) ?? {};
+												form.setValue("voiceAttributes", {
+													...attrs,
+													accent: v,
+												} as VoiceAttributes);
+											}}
+										>
+											<FormControl>
+												<SelectTrigger className="h-8 text-xs">
+													<SelectValue placeholder="Any accent / nationality" />
+												</SelectTrigger>
+											</FormControl>
+											<SelectContent className="max-h-[260px]">
+												{ACCENT_GROUPS.map((g) => (
+													<div key={g.label}>
+														<p className="px-2 pb-0.5 pt-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground/70">
+															{g.label}
+														</p>
+														{g.accents.map((o) => (
+															<SelectItem key={o.value} value={o.value}>
+																{o.label}
+															</SelectItem>
+														))}
+													</div>
+												))}
+											</SelectContent>
+										</Select>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						);
+					}
+					if (attrKey === "style") {
+						return (
+							<FormField
+								key={attrKey}
+								control={form.control}
+								name={"voiceAttributes.style" as keyof ProfileFormValues}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel className="text-xs">Speaking Style</FormLabel>
+										{currentEngine?.attributes_help?.style ? (
+											<p className="text-xs text-muted-foreground/50 -mt-1 mb-1">
+												{currentEngine.attributes_help.style}
+											</p>
+										) : null}
+										<Select
+											value={(field.value as string) ?? ""}
+											onValueChange={(v) => {
+												const attrs =
+													(form.getValues(
+														"voiceAttributes",
+													) as VoiceAttributes) ?? {};
+												form.setValue("voiceAttributes", {
+													...attrs,
+													style: v,
+												} as VoiceAttributes);
+											}}
+										>
+											<FormControl>
+												<SelectTrigger className="h-8 text-xs">
+													<SelectValue placeholder="Any speaking style" />
+												</SelectTrigger>
+											</FormControl>
+											<SelectContent className="max-h-[260px]">
+												{STYLE_GROUPS.map((g) => (
+													<div key={g.label}>
+														<p className="px-2 pb-0.5 pt-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground/70">
+															{g.label} — {g.help}
+														</p>
+														{g.styles.map((o) => (
+															<SelectItem key={o.value} value={o.value}>
+																{o.label}
+															</SelectItem>
+														))}
+													</div>
+												))}
+											</SelectContent>
+										</Select>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						);
+					}
 					const options = ATTRIBUTE_OPTIONS[attrKey];
 					const label = ATTRIBUTE_LABELS[attrKey] ?? attrKey;
 					const helpText = currentEngine?.attributes_help?.[attrKey];
@@ -344,7 +376,10 @@ function ComposedPreview({
 		}
 	}
 	if (supportedAttrs.includes("accent")) {
-		const accent = ACCENT_OPTIONS.find((o) => o.value === attrs.accent)?.label;
+		const accentValue = attrs.accent as string | undefined;
+		const accent = accentValue
+			? (ACCENT_LABEL_BY_VALUE[accentValue] ?? accentValue)
+			: undefined;
 		if (accent) {
 			parts.push(`${accent} accent`);
 		}

@@ -12,13 +12,9 @@ router = APIRouter()
 
 
 def _media_type_for(path: str) -> str:
-    suffix = Path(path).suffix.lower()
-    return {
-        ".wav": "audio/wav",
-        ".mp3": "audio/mpeg",
-        ".ogg": "audio/ogg",
-        ".flac": "audio/flac",
-    }.get(suffix, "audio/wav")
+    from ..utils.http import audio_media_type_for
+
+    return audio_media_type_for(path)
 
 
 @router.get("/reference-voices")

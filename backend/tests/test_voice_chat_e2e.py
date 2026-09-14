@@ -24,14 +24,27 @@ class MockWebSocket:
         self.accepted = True
 
     async def send_json(self, data: dict):
+        # Yield like a real socket write so background tasks (the processing
+        # task) actually get loop ticks while the queue is flooded.
+        await asyncio.sleep(0)
         self.sent.append(json.dumps(data))
 
     async def send_text(self, data: str):
+        await asyncio.sleep(0)
         self.sent.append(data)
 
     async def receive_text(self) -> str:
         if self._receive_queue.empty():
-            raise Exception("Connection closed")
+            # Behave like a real socket on close: Starlette raises
+            # WebSocketDisconnect, which the route handles as a clean
+            # disconnect. A generic Exception here would (correctly)
+            # surface as "Internal server error" and poison every test
+            # that drains the queue mid-processing.
+            from starlette.websockets import WebSocketDisconnect
+
+            raise WebSocketDisconnect()
+        # Yield like a real socket read for the same reason as send_json.
+        await asyncio.sleep(0)
         return await self._receive_queue.get()
 
     async def close(self):

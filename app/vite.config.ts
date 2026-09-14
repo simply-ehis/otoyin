@@ -88,7 +88,7 @@ export default defineConfig({
 					if (id.includes("react-syntax-highlighter")) return "vendor-syntax";
 					if (id.includes("wavesurfer")) return "vendor-wavesurfer";
 					if (id.includes("src/components/Store")) return "page-store";
-					if (id.includes("src/components/AudioStudio"))
+					if (id.includes("src/features/audioStudio"))
 						return "page-audio-studio";
 					if (id.includes("src/components/Workspace")) return "page-workspace";
 				},

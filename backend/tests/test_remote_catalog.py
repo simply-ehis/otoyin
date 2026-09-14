@@ -96,6 +96,9 @@ def test_remote_shaped_catalog_verifies(mc):
 def test_refresh_swaps_products_on_success(mc, monkeypatch):
     """A valid signed remote catalog replaces the bundled PRODUCTS."""
     monkeypatch.setattr(mc, "REMOTE_CATALOG_URL", "https://marketplace.test/v1/catalog")
+    # The SSRF gate would reject the fake host — these tests fake urlopen,
+    # so bypass the gate to exercise the fetch/verify/swap path for real.
+    monkeypatch.setattr("backend.utils.ssrf.is_url_safe", lambda *a, **k: True)
     payload = json.dumps(_signed_catalog(_remote_products())).encode()
     monkeypatch.setattr(mc.urllib.request, "urlopen", lambda *a, **k: _FakeResp(payload))
 
@@ -109,6 +112,7 @@ def test_refresh_keeps_bundled_on_network_failure(mc, monkeypatch):
     """Offline-first: any fetch failure leaves the bundled catalog intact."""
     bundled_ids = [p["id"] for p in mc.PRODUCTS]
     monkeypatch.setattr(mc, "REMOTE_CATALOG_URL", "https://marketplace.test/v1/catalog")
+    monkeypatch.setattr("backend.utils.ssrf.is_url_safe", lambda *a, **k: True)
 
     def _boom(*a, **k):
         raise OSError("no network")
@@ -123,6 +127,7 @@ def test_refresh_rejects_bad_signature(mc, monkeypatch):
     """A catalog that fails signature verification is never swapped in."""
     bundled_ids = [p["id"] for p in mc.PRODUCTS]
     monkeypatch.setattr(mc, "REMOTE_CATALOG_URL", "https://marketplace.test/v1/catalog")
+    monkeypatch.setattr("backend.utils.ssrf.is_url_safe", lambda *a, **k: True)
 
     unsigned = {
         "schema_version": 1,
@@ -156,6 +161,7 @@ def test_refresh_disabled_when_url_unset(mc, monkeypatch):
 def test_remote_catalog_stale(mc, monkeypatch):
     """Staleness: true before any refresh, false right after a success."""
     monkeypatch.setattr(mc, "REMOTE_CATALOG_URL", "https://marketplace.test/v1/catalog")
+    monkeypatch.setattr("backend.utils.ssrf.is_url_safe", lambda *a, **k: True)
     assert mc.remote_catalog_stale(age_s=1) is True  # never refreshed
 
     payload = json.dumps(_signed_catalog(_remote_products())).encode()

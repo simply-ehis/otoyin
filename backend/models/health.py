@@ -26,6 +26,8 @@ class HealthResponse(BaseModel):
     vram_total_mb: float | None = None  # Total GPU VRAM in MB
     vram_free_mb: float | None = None  # Free GPU VRAM in MB
     vram_pressure: bool | None = None  # True if VRAM below safe threshold
+    ram_total_mb: float | None = None  # Total system RAM in MB
+    ram_free_mb: float | None = None  # Free system RAM in MB
     backend_type: str | None = None  # Backend type (onnx or pytorch)
     backend_variant: str | None = None  # Binary variant (cpu or cuda)
     gpu_compatibility_warning: str | None = None  # Warning if GPU arch unsupported
@@ -66,16 +68,12 @@ class ModelStatus(BaseModel):
     display_name: str
     engine: str | None = None  # backend engine key (e.g. "zonos")
     hf_repo_id: str | None = None  # HuggingFace repository ID
+    quant: str | None = None  # quantization/format tag (e.g. "Q8_0") — technical detail
+    model_size: str | None = None  # size variant tag (e.g. "82M", "4B-Q4_K_M")
     downloaded: bool
     downloading: bool = False  # True if download is in progress
     size_mb: float | None = None
     loaded: bool = False
-    # True when the files are on disk (or the model is loaded) but the
-    # download manifest has no row yet — the Store must not offer a download
-    # for a model that can already generate. The backend self-heals this
-    # drift in the background (reconcile_cached_backfill); the flag lets the
-    # UI reflect reality immediately instead of one reconcile window late.
-    manifest_backfill_pending: bool = False
     gpu_only: bool = False  # requires CUDA GPU; unsupported on CPU/edge hosts
     # Capability flags — drive the engine-unique UI (clone / emotion / tags / design / editing)
     clone_voice: bool = False

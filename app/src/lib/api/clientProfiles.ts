@@ -50,6 +50,22 @@ export class ProfilesMethods extends CrashesMethods {
 		);
 	}
 
+	/**
+	 * Synthesize a short snippet for a built-in preset voice. The backend
+	 * caches the wav on disk, so repeat auditions are instant. Idempotent —
+	 * safe to call per click; callers should still cache the blob URL.
+	 */
+	async synthesizePresetVoicePreview(
+		engine: string,
+		voiceId: string,
+	): Promise<Blob> {
+		const resp = await this.fetchWithAuth("/profiles/preset-voice-preview", {
+			method: "POST",
+			body: JSON.stringify({ engine, voice_id: voiceId }),
+		}, 120_000);
+		return resp.blob();
+	}
+
 	async getVoiceDesignCapabilities(): Promise<{
 		engines: Record<
 			string,
@@ -63,6 +79,32 @@ export class ProfilesMethods extends CrashesMethods {
 		>;
 		default_engine: string;
 		composed_prompt_preview: boolean;
+		accent_groups?: Record<string, { label: string; accents: string[] }>;
+		style_groups?: Record<
+			string,
+			{ label: string; styles: string[]; help: string }
+		>;
+		all_models?: {
+			model_name: string;
+			display_name: string;
+			engine: string;
+			languages: string[];
+			preset_voice_count: number;
+			preset_voices: {
+				id: string;
+				name: string;
+				gender?: string | null;
+				language?: string | null;
+			}[];
+			clone_voice: boolean;
+			voice_design: boolean;
+			supports_voice_mixing: boolean;
+			emotion_control: boolean;
+			paralinguistic_tags: boolean;
+			supports_instruct: boolean;
+			supported_tags: string[];
+			quality_score: number;
+		}[];
 	}> {
 		return this.request("/profiles/voice-design-capabilities");
 	}

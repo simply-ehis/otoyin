@@ -17,6 +17,12 @@ interface TransportBarProps {
 	label?: string;
 }
 
+/**
+ * Generic media transport (NOT dead code — live in
+ * features/workspace/VideoPreviewView.tsx; AudioStudio uses the richer
+ * TransportControls instead. Keep here until a shared location is specced).
+ */
+
 function fmt(t: number): string {
 	if (!Number.isFinite(t) || t < 0) {
 		return "0:00";
