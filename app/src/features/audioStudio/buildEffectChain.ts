@@ -1,5 +1,11 @@
 ﻿import type { PluginChainItem } from "./AudioStudioStore";
 import { makeImpulseResponse } from "./makeImpulseResponse";
+
+interface EffectNode {
+	input: AudioNode;
+	output: AudioNode;
+}
+
 export function buildEffectChain(
 	ctx: BaseAudioContext,
 	pluginChain: PluginChainItem[],
@@ -8,11 +14,10 @@ export function buildEffectChain(
 	if (!enabled.length) {
 		return null;
 	}
-	const nodes: AudioNode[] = [];
+	const effects: EffectNode[] = [];
 	for (const p of enabled) {
 		const id = p.pluginId.replace(/^builtin-/, "");
 		if (id === "reverb") {
-			// Parallel wet/dry: `mix` is the wet/dry balance (0 = dry, 1 = full wet).
 			const mix = p.params.mix ?? 0.3;
 			const input = ctx.createGain();
 			const output = ctx.createGain();
@@ -24,7 +29,7 @@ export function buildEffectChain(
 			const wet = ctx.createGain();
 			wet.gain.value = mix;
 			input.connect(conv).connect(wet).connect(output);
-			nodes.push(input, output);
+			effects.push({ input, output });
 		} else if (id === "eq" || id === "equalizer") {
 			const lowGain = p.params.low_gain ?? 0;
 			const midGain = p.params.mid_gain ?? 0;
@@ -43,9 +48,8 @@ export function buildEffectChain(
 			high.frequency.value = 5000;
 			high.gain.value = highGain;
 			low.connect(mid).connect(high);
-			nodes.push(low, mid, high);
+			effects.push({ input: low, output: high });
 		} else if (id === "delay") {
-			// Parallel wet/dry: `mix` balances dry vs delayed (feedback) signal.
 			const mix = p.params.mix ?? 0.5;
 			const input = ctx.createGain();
 			const output = ctx.createGain();
@@ -60,20 +64,25 @@ export function buildEffectChain(
 			const wet = ctx.createGain();
 			wet.gain.value = mix;
 			input.connect(delay).connect(wet).connect(output);
-			nodes.push(input, output);
+			effects.push({ input, output });
 		} else if (id === "compressor") {
-			nodes.push(ctx.createDynamicsCompressor());
+			const comp = ctx.createDynamicsCompressor();
+			comp.threshold.value = p.params.threshold ?? -24;
+			comp.ratio.value = p.params.ratio ?? 12;
+			comp.attack.value = (p.params.attack ?? 3) / 1000;
+			comp.release.value = (p.params.release ?? 250) / 1000;
+			effects.push({ input: comp, output: comp });
 		} else if (id === "gain") {
 			const g = ctx.createGain();
 			g.gain.value = p.params.gain ?? 1.0;
-			nodes.push(g);
+			effects.push({ input: g, output: g });
 		}
 	}
-	if (!nodes.length) {
+	if (!effects.length) {
 		return null;
 	}
-	for (let i = 0; i < nodes.length - 1; i++) {
-		nodes[i].connect(nodes[i + 1]);
+	for (let i = 0; i < effects.length - 1; i++) {
+		effects[i].output.connect(effects[i + 1].input);
 	}
-	return { input: nodes[0], output: nodes[nodes.length - 1] };
+	return { input: effects[0].input, output: effects[effects.length - 1].output };
 }

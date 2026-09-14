@@ -45,6 +45,7 @@ export function TrackIdentity({ track }: { track: StudioTrack }) {
 					}
 				}}
 				className="text-xs font-medium text-foreground bg-background border border-border rounded px-1 w-full text-center outline-none focus:ring-1 focus:ring-ring"
+			// biome-ignore lint/a11y/noAutofocus: intentional — input appears on click-to-rename
 				autoFocus
 				aria-label="Track name"
 			/>

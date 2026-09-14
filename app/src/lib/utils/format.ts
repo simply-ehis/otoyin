@@ -47,16 +47,20 @@ export function formatAbsoluteDate(date: string | Date): string {
 const ENGINE_DISPLAY_NAMES: Record<string, string> = {
 	kokoro: "Kokoro",
 	zonos: "Zonos",
+	zonos_gguf: "Zonos",
 	qwen3_tts: "Qwen3-TTS",
 	bark_small: "Bark Small",
 	styletts2: "StyleTTS2",
 	pocket_tts: "Pocket-TTS",
 	parler_tts: "Parler-TTS",
+	parler_tts_gguf: "Parler-TTS",
 	moss_tts_nano: "MOSS Nano",
 	kitten_tts: "KittenTTS",
 	neutts: "NeuTTS",
 	neutts_2e: "NeuTTS-2E",
 	orpheus: "Orpheus",
+	fish_speech_s2: "Fish Audio S2",
+	heartmula: "HeartMuLa",
 };
 
 export function formatEngineName(engine?: string, modelSize?: string): string {

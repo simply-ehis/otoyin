@@ -7,6 +7,10 @@ set -uo pipefail
 root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 failed=0
 
+# Use Git Bash timeout, not Windows timeout.exe which prompts for keypress
+TIMEOUT="timeout"
+if [ -x /usr/bin/timeout ]; then TIMEOUT="/usr/bin/timeout"; fi
+
 echo ""
 echo "=== 21-labs Pre-Commit Gate ==="
 echo ""
@@ -41,9 +45,15 @@ trap 'rm -rf "$tmpdir"' EXIT
 
 echo "Phase 1: Fast checks (parallel)..."
 
-# [1] Biome lint
+# [1] Biome lint — only staged JS/TS files (avoids full-tree scan)
 (
-  cd "$root" && $BIOME lint app/src 2>&1 | tail -10
+  cd "$root"
+  staged_js=$(git diff --cached --name-only --diff-filter=ACM -- 'app/src/**/*.ts' 'app/src/**/*.tsx' 2>/dev/null)
+  if [ -n "$staged_js" ]; then
+    echo "$staged_js" | xargs $BIOME lint 2>&1 | tail -10
+  else
+    echo "skipped: no staged JS/TS files"
+  fi
   echo $? > "$tmpdir/biome.rc"
 ) > "$tmpdir/biome.log" 2>&1 &
 pid_biome=$!
@@ -67,25 +77,25 @@ pid_ruff=$!
 # [4] Each static check runs in its own subshell (parallel + isolated imports)
 #    Each has a 30s timeout so one slow check doesn't block the rest.
 (
-  cd "$root" && timeout 30 $PY -X utf8 -m backend.scripts.check_async_blocking backend/routes 2>&1 | tail -3
+  cd "$root" && $TIMEOUT 30 $PY -X utf8 -m backend.scripts.check_async_blocking backend/routes 2>&1 | tail -3
   echo $? > "$tmpdir/async.rc"
 ) > "$tmpdir/async.log" 2>&1 &
 pid_async=$!
 
 (
-  cd "$root" && timeout 30 $PY -c "import sys; sys.path.insert(0,'.'); from backend.scripts.check_name_map import main; sys.exit(main())" 2>&1 | tail -3
+  cd "$root" && $TIMEOUT 30 $PY -c "import sys; sys.path.insert(0,'.'); from backend.scripts.check_name_map import main; sys.exit(main())" 2>&1 | tail -3
   echo $? > "$tmpdir/namemap.rc"
 ) > "$tmpdir/namemap.log" 2>&1 &
 pid_namemap=$!
 
 (
-  cd "$root" && timeout 30 $PY -c "import sys; sys.path.insert(0,'.'); from backend.scripts.check_assistant_tools import main; sys.exit(main())" 2>&1 | tail -3
+  cd "$root" && $TIMEOUT 30 $PY -c "import sys; sys.path.insert(0,'.'); from backend.scripts.check_assistant_tools import main; sys.exit(main())" 2>&1 | tail -3
   echo $? > "$tmpdir/assist.rc"
 ) > "$tmpdir/assist.log" 2>&1 &
 pid_assist=$!
 
 (
-  cd "$root" && timeout 15 $PY -c "import sys; sys.path.insert(0,'.'); from backend.scripts.check_placeholders import main; sys.exit(main())" 2>&1 | tail -3
+  cd "$root" && $TIMEOUT 15 $PY -c "import sys; sys.path.insert(0,'.'); from backend.scripts.check_placeholders import main; sys.exit(main())" 2>&1 | tail -3
   echo $? > "$tmpdir/placeholders.rc"
 ) > "$tmpdir/placeholders.log" 2>&1 &
 pid_placeholders=$!
@@ -109,7 +119,7 @@ pid_import=$!
 #     (timeout generous: I/O-bound, and large rebuild commits stage 400+ files
 #     while nine other checks run in parallel — 30s caused timing false-positives)
 (
-  cd "$root" && timeout 120 $PY -X utf8 scripts/check-encoding.py --staged 2>&1 | tail -15
+  cd "$root" && $TIMEOUT 120 $PY -X utf8 scripts/check-encoding.py --staged 2>&1 | tail -15
   echo $? > "$tmpdir/mojibake.rc"
 ) > "$tmpdir/mojibake.log" 2>&1 &
 pid_mojibake=$!
@@ -118,7 +128,7 @@ pid_mojibake=$!
 #      Last-verified convention (see docs/reports/README.md). Whole-tree:
 #      reports change rarely and the scan is trivially fast.
 (
-  cd "$root" && timeout 15 $PY -X utf8 scripts/check-report-headers.py 2>&1 | tail -10
+  cd "$root" && $TIMEOUT 15 $PY -X utf8 scripts/check-report-headers.py 2>&1 | tail -10
   echo $? > "$tmpdir/reportheaders.rc"
 ) > "$tmpdir/reportheaders.log" 2>&1 &
 pid_reportheaders=$!
@@ -126,7 +136,7 @@ pid_reportheaders=$!
 # [11] Dual-instance hazards: no stateful module with a same-stem twin, no
 #      split-brain ui-tree imports (the toast-store bug class).
 (
-  cd "$root" && timeout 60 $PY -X utf8 scripts/check-dual-instances.py 2>&1 | tail -10
+  cd "$root" && $TIMEOUT 60 $PY -X utf8 scripts/check-dual-instances.py 2>&1 | tail -10
   echo $? > "$tmpdir/dualinst.rc"
 ) > "$tmpdir/dualinst.log" 2>&1 &
 pid_dualinst=$!
@@ -236,8 +246,8 @@ vitest_timeout=300
 
 (
   cd "$root" || exit 1
-  timeout 90 $PY -X utf8 -m pytest "${BACKEND_TEST_FILES[@]}" \
-      -q --tb=line --no-header --timeout=15 \
+  $TIMEOUT 90 $PY -X utf8 -m pytest "${BACKEND_TEST_FILES[@]}" \
+      -q --tb=line --no-header \
       2>&1 | tail -10
   echo $? > "$tmpdir/pytest.rc"
 ) > "$tmpdir/pytest.log" 2>&1 &
@@ -252,11 +262,11 @@ pid_pytest=$!
     scoped)
       echo "scoped: $frontend_files"
       # shellcheck disable=SC2086
-      timeout $vitest_timeout $VITEST run --reporter=dot $frontend_files \
+      $TIMEOUT $vitest_timeout $VITEST run --reporter=dot $frontend_files \
         2>&1 | tail -10
       echo $? > "$tmpdir/vitest.rc" ;;
     full)
-      timeout $vitest_timeout $VITEST run --reporter=dot \
+      $TIMEOUT $vitest_timeout $VITEST run --reporter=dot \
         2>&1 | tail -10
       echo $? > "$tmpdir/vitest.rc" ;;
   esac

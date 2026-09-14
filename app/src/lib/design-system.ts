@@ -283,12 +283,15 @@ export function applyAccentHueOverride(hue: number | null): void {
 		root.style.removeProperty("--color-accent");
 		root.style.removeProperty("--color-primary");
 		root.style.removeProperty("--color-ring");
+		root.style.removeProperty("--theme-accent-muted");
 		return;
 	}
 	const accent = `${hue} 65% 55%`;
 	const primary = `${hue} 65% 55%`;
 	const ring = `${hue} 65% 55%`;
+	const accentMuted = `${hue} 40% 25%`;
 	root.style.setProperty("--color-accent", `hsl(${accent})`);
 	root.style.setProperty("--color-primary", `hsl(${primary})`);
 	root.style.setProperty("--color-ring", `hsl(${ring})`);
+	root.style.setProperty("--theme-accent-muted", `hsl(${accentMuted})`);
 }

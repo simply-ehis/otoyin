@@ -47,6 +47,7 @@ export function TrackStripInner({
 	};
 
 	const addAutomationPoint = () => {
+		pushUndo(`Add volume keyframe at ${track.name}`);
 		const currentTime = useAudioStudioStore.getState().currentTimeRef.current;
 		const pts = [...(track.volumeAutomation ?? [])];
 		pts.push({ time: currentTime, value: track.volume });
@@ -54,6 +55,7 @@ export function TrackStripInner({
 	};
 
 	const addPanAutomationPoint = () => {
+		pushUndo(`Add pan keyframe at ${track.name}`);
 		const currentTime = useAudioStudioStore.getState().currentTimeRef.current;
 		const pts = [...(track.panAutomation ?? [])];
 		pts.push({ time: currentTime, value: track.pan });
@@ -61,6 +63,7 @@ export function TrackStripInner({
 	};
 
 	const clearAutomation = () => {
+		pushUndo(`Clear automation on ${track.name}`);
 		updateTrack(track.id, { volumeAutomation: [], panAutomation: [] });
 	};
 
