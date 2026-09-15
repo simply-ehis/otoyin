@@ -41,7 +41,9 @@ export function usePlaybackEngine({
 	const panNodesRef = useRef<Map<string, StereoPannerNode>>(new Map());
 	const sourceNodesRef = useRef<Map<string, AudioBufferSourceNode>>(new Map());
 	const trackAnalysersRef = useRef<Map<string, AnalyserNode>>(new Map());
-	const sidechainNodesRef = useRef<Map<string, { gain: GainNode; sourceId: string }>>(new Map());
+	const sidechainNodesRef = useRef<
+		Map<string, { gain: GainNode; sourceId: string }>
+	>(new Map());
 	const animFrameRef = useRef<number | null>(null);
 	const startTimeRef = useRef<number>(0);
 	const [trackAnalysers, setTrackAnalysers] = useState<
@@ -367,7 +369,7 @@ export function usePlaybackEngine({
 				duckNode.gain.value = cur + (target - cur) * coef;
 			}
 			// Sidechain modulation
-			sidechainNodesRef.current.forEach((sc, targetId) => {
+			sidechainNodesRef.current.forEach((sc, _targetId) => {
 				const sourceAnalyser = trackAnalysersRef.current.get(sc.sourceId);
 				if (!sourceAnalyser) {
 					return;

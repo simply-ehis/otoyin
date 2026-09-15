@@ -46,6 +46,9 @@ function track(
 		midiNotes: [],
 		submixId: null,
 		generationId: null,
+		groupId: null,
+		sidechainSourceId: null,
+		expanded: false,
 		...overrides,
 	};
 }
@@ -68,6 +71,9 @@ function snapshot(
 			duckGain: -12,
 		},
 		markers: [],
+		groups: [],
+		tempoMap: [{ time: 0, bpm: 120 }],
+		timeSignature: [4, 4],
 		...masterOverrides,
 	};
 }

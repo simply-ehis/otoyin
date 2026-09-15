@@ -263,8 +263,8 @@ export function PluginChainPanel({ track }: { track: StudioTrack }) {
 	const updateTrack = useAudioStudioStore((s) => s.updateTrack);
 	const pushUndo = useAudioStudioStore((s) => s.pushUndo);
 	const [abSlot, setAbSlot] = useState<"a" | "b">("a");
-	const [snapshotA, setSnapshotA] = useState<PluginChainSnapshot>(null);
-	const [snapshotB, setSnapshotB] = useState<PluginChainSnapshot>(null);
+	const [snapshotA, setSnapshotA] = useState<PluginChainSnapshot | null>(null);
+	const [snapshotB, setSnapshotB] = useState<PluginChainSnapshot | null>(null);
 
 	const toggleChainItem = (index: number) => {
 		pushUndo(`Toggle ${track.pluginChain[index]?.pluginName ?? "plugin"}`);

@@ -159,17 +159,20 @@ export function AudioStudio() {
 		masterVolume,
 	});
 
-	const { handleRecordingComplete: _handleRecordingComplete, handleStartRecording, handleStopRecording } =
-		useRecordingManager({
-			tracks,
-			selectedTrackIndex,
-			setRecordingTrackIndex,
-			setIsRecording,
-			updateTrack,
-			setTrackAudio,
-			pushUndo,
-			audioBuffersRef,
-		});
+	const {
+		handleRecordingComplete: _handleRecordingComplete,
+		handleStartRecording,
+		handleStopRecording,
+	} = useRecordingManager({
+		tracks,
+		selectedTrackIndex,
+		setRecordingTrackIndex,
+		setIsRecording,
+		updateTrack,
+		setTrackAudio,
+		pushUndo,
+		audioBuffersRef,
+	});
 
 	const sensors = useSensors(
 		useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -445,15 +448,15 @@ export function AudioStudio() {
 				</div>
 			</div>
 
-		<div className="shrink-0 border-t border-border bg-card px-4 py-1">
-			<WaveformVisualizer
-				analyser={liveAnalyser}
-				playing={isPlaying}
-				progress={waveformProgress}
-				height={48}
-				className="w-full rounded-md"
-			/>
-		</div>
+			<div className="shrink-0 border-t border-border bg-card px-4 py-1">
+				<WaveformVisualizer
+					analyser={liveAnalyser}
+					playing={isPlaying}
+					progress={waveformProgress}
+					height={48}
+					className="w-full rounded-md"
+				/>
+			</div>
 
 			<TransportControls
 				isPlaying={isPlaying}

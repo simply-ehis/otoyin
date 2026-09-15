@@ -55,7 +55,7 @@ interface TransportControlsProps {
 function MasterLufsMeter({ analyser }: { analyser: AnalyserNode | null }) {
 	const [lufs, setLufs] = useState("-inf");
 	const rafRef = useRef<number>(0);
-	const dataRef = useRef<Float32Array | null>(null);
+	const dataRef = useRef<Float32Array<ArrayBuffer> | null>(null);
 
 	useEffect(() => {
 		if (!analyser) {
