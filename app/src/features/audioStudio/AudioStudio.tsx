@@ -29,7 +29,6 @@ import { useSessionManager } from "./useSessionManager";
 import { useStudioClipPaste } from "./useStudioClipPaste";
 import { useStudioDrag } from "./useStudioDrag";
 import { useStudioIsolation } from "./useStudioIsolation";
-import { useStudioMidi } from "./useStudioMidi";
 
 export function AudioStudio() {
 	const { toast } = useToast();
@@ -48,6 +47,7 @@ export function AudioStudio() {
 
 	const [waveformProgress, setWaveformProgress] = useState(0);
 	const [liveAnalyser, setLiveAnalyser] = useState<AnalyserNode | null>(null);
+	const [displayTime, setDisplayTime] = useState(0);
 
 	const setIsPlaying = useAudioStudioStore((s) => s.setIsPlaying);
 	const setIsRecording = useAudioStudioStore((s) => s.setIsRecording);
@@ -69,6 +69,15 @@ export function AudioStudio() {
 	const pushUndo = useAudioStudioStore((s) => s.pushUndo);
 	const undo = useAudioStudioStore((s) => s.undo);
 	const redo = useAudioStudioStore((s) => s.redo);
+	const groups = useAudioStudioStore((s) => s.groups);
+	const addGroup = useAudioStudioStore((s) => s.addGroup);
+	const removeGroup = useAudioStudioStore((s) => s.removeGroup);
+	const toggleGroupCollapse = useAudioStudioStore((s) => s.toggleGroupCollapse);
+	const toggleGroupMute = useAudioStudioStore((s) => s.toggleGroupMute);
+	const toggleGroupSolo = useAudioStudioStore((s) => s.toggleGroupSolo);
+	const tempoMap = useAudioStudioStore((s) => s.tempoMap);
+	const timeSignature = useAudioStudioStore((s) => s.timeSignature);
+	const addTempoChange = useAudioStudioStore((s) => s.addTempoChange);
 
 	const [selectedTrackIndex, setSelectedTrackIndex] = useState(0);
 	const [exporting, setExporting] = useState(false);
@@ -136,7 +145,9 @@ export function AudioStudio() {
 				return;
 			}
 			const dur = durationRef.current;
-			setWaveformProgress(dur ? Math.min(1, currentTimeRef.current / dur) : 0);
+			const t = currentTimeRef.current;
+			setWaveformProgress(dur ? Math.min(1, t / dur) : 0);
+			setDisplayTime(t);
 			raf = requestAnimationFrame(tick);
 		};
 		raf = requestAnimationFrame(tick);
@@ -148,7 +159,7 @@ export function AudioStudio() {
 		masterVolume,
 	});
 
-	const { handleRecordingComplete, handleStartRecording, handleStopRecording } =
+	const { handleRecordingComplete: _handleRecordingComplete, handleStartRecording, handleStopRecording } =
 		useRecordingManager({
 			tracks,
 			selectedTrackIndex,
@@ -188,12 +199,6 @@ export function AudioStudio() {
 		pushUndo,
 		audioBuffersRef,
 	});
-	const handleAddMidiNote = useStudioMidi(
-		tracks,
-		selectedTrackIndex,
-		updateTrack,
-		pushUndo,
-	);
 	const { activeDragId, handleDragStart, handleDragEnd } = useStudioDrag(
 		tracks,
 		moveTrack,
@@ -286,7 +291,6 @@ export function AudioStudio() {
 				tracksHaveAnyContent={tracks.some(
 					(t) => !!t.audioUrl || !!t.audioBlob || t.midiNotes.length > 0,
 				)}
-				canUndoAutosave={session.canUndoAutosave}
 				isolating={isolating}
 				isolateStem={isolateStem}
 				selectedTrackHasAudio={
@@ -299,7 +303,6 @@ export function AudioStudio() {
 				onLoad={session.handleLoadSession}
 				onUndo={undo}
 				onRedo={redo}
-				onUndoAutosave={session.onUndoAutosave}
 				onToggleAutomation={() => setShowAutomation(!showAutomation)}
 				onExport={handleExport}
 				onExportWithPlugins={() => void handleExportWithPlugins()}
@@ -334,6 +337,18 @@ export function AudioStudio() {
 				onIsolateStemChange={setIsolateStem}
 				onIsolate={() => void handleIsolate()}
 				onProducePodcast={() => setPodcastProducerOpen(true)}
+				groups={groups}
+				onAddGroup={(name) => {
+					pushUndo(`Create group "${name}"`);
+					addGroup(name);
+				}}
+				onRemoveGroup={(id) => {
+					pushUndo("Remove group");
+					removeGroup(id);
+				}}
+				onToggleGroupCollapse={toggleGroupCollapse}
+				onToggleGroupMute={toggleGroupMute}
+				onToggleGroupSolo={toggleGroupSolo}
 			/>
 
 			<SessionDialogs
@@ -403,8 +418,18 @@ export function AudioStudio() {
 				<TimelineRuler
 					zoomLevel={zoomLevel}
 					markers={markers}
+					currentTime={displayTime}
+					tempoMap={tempoMap}
+					timeSignature={timeSignature}
 					onSeek={seekTo}
 					onRemoveMarker={removeMarker}
+					onAddTempoChange={(time) => {
+						const bpm = window.prompt("BPM:");
+						if (bpm && !Number.isNaN(Number(bpm))) {
+							pushUndo(`Set tempo to ${bpm} BPM`);
+							addTempoChange(time, Number(bpm));
+						}
+					}}
 				/>
 
 				<div className="flex-1 overflow-y-auto">
@@ -439,6 +464,7 @@ export function AudioStudio() {
 				zoomLevel={zoomLevel}
 				selectedTrackIndex={selectedTrackIndex}
 				tracks={tracks}
+				masterAnalyser={liveAnalyser}
 				onTogglePlayPause={togglePlayPause}
 				onStop={stopPlayback}
 				onToggleLoop={() => {
@@ -457,8 +483,6 @@ export function AudioStudio() {
 				onSetZoomLevel={setZoomLevel}
 				onImportAudio={handleImportAudio}
 				onAddTrack={wrappedAddTrack}
-				onAddMidiNote={handleAddMidiNote}
-				onRecordComplete={handleRecordingComplete}
 			/>
 		</div>
 	);

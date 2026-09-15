@@ -17,6 +17,7 @@ export function TrackRow({
 	otherTracks,
 	channelsCount,
 	trackAnalysers,
+	groups,
 	onMute,
 	onSolo,
 	onVolume,
@@ -28,6 +29,7 @@ export function TrackRow({
 	removeTrack,
 	pushUndo,
 	onTranscribe,
+	onAssignGroup,
 }: {
 	track: StudioTrack;
 	dragHandleProps: Record<string, unknown>;
@@ -39,6 +41,7 @@ export function TrackRow({
 	otherTracks: StudioTrack[];
 	channelsCount: number;
 	trackAnalysers: Map<string, AnalyserNode>;
+	groups: Array<{ id: string; name: string }>;
 	onMute: () => void;
 	onSolo: () => void;
 	onVolume: (v: number) => void;
@@ -50,6 +53,7 @@ export function TrackRow({
 	removeTrack: (id: string) => void;
 	pushUndo: (label: string) => void;
 	onTranscribe: () => void;
+	onAssignGroup: (trackId: string, groupId: string | null) => void;
 }) {
 	return (
 		<div className="flex items-stretch gap-0">
@@ -71,6 +75,7 @@ export function TrackRow({
 				otherTracks={otherTracks}
 				channelsCount={channelsCount}
 				trackAnalysers={trackAnalysers}
+				groups={groups}
 				onMute={onMute}
 				onSolo={onSolo}
 				onVolume={onVolume}
@@ -80,6 +85,7 @@ export function TrackRow({
 				onClearAutomation={onClearAutomation}
 				updateTrack={updateTrack}
 				onTranscribe={onTranscribe}
+				onAssignGroup={onAssignGroup}
 			/>
 			<TrackVisuals
 				track={track}

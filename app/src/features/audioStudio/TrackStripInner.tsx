@@ -23,8 +23,10 @@ export function TrackStripInner({
 	const setPan = useAudioStudioStore((s) => s.setPan);
 	const updateTrack = useAudioStudioStore((s) => s.updateTrack);
 	const tracks = useAudioStudioStore((s) => s.tracks);
+	const groups = useAudioStudioStore((s) => s.groups);
 	const showAutomation = useAudioStudioStore((s) => s.showAutomation);
 	const pushUndo = useAudioStudioStore((s) => s.pushUndo);
+	const assignTrackToGroup = useAudioStudioStore((s) => s.assignTrackToGroup);
 
 	const wrappedSetVolume = (v: number) => {
 		pushUndo(`Set ${track.name} volume`);
@@ -70,6 +72,11 @@ export function TrackStripInner({
 	const otherTracks = tracks.filter((t) => t.id !== track.id);
 	const channelsCount = track.channels;
 
+	const wrappedAssignGroup = (trackId: string, groupId: string | null) => {
+		pushUndo(`Assign ${track.name} to group`);
+		assignTrackToGroup(trackId, groupId);
+	};
+
 	return (
 		<TrackRow
 			track={track}
@@ -82,6 +89,7 @@ export function TrackStripInner({
 			otherTracks={otherTracks}
 			channelsCount={channelsCount}
 			trackAnalysers={trackAnalysers}
+			groups={groups}
 			onMute={wrappedToggleMute}
 			onSolo={wrappedToggleSolo}
 			onVolume={wrappedSetVolume}
@@ -93,6 +101,7 @@ export function TrackStripInner({
 			removeTrack={removeTrack}
 			pushUndo={pushUndo}
 			onTranscribe={onTranscribe}
+			onAssignGroup={wrappedAssignGroup}
 		/>
 	);
 }

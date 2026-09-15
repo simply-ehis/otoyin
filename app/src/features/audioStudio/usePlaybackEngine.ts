@@ -41,6 +41,7 @@ export function usePlaybackEngine({
 	const panNodesRef = useRef<Map<string, StereoPannerNode>>(new Map());
 	const sourceNodesRef = useRef<Map<string, AudioBufferSourceNode>>(new Map());
 	const trackAnalysersRef = useRef<Map<string, AnalyserNode>>(new Map());
+	const sidechainNodesRef = useRef<Map<string, { gain: GainNode; sourceId: string }>>(new Map());
 	const animFrameRef = useRef<number | null>(null);
 	const startTimeRef = useRef<number>(0);
 	const [trackAnalysers, setTrackAnalysers] = useState<
@@ -91,6 +92,14 @@ export function usePlaybackEngine({
 			}
 		});
 		trackAnalysersRef.current.clear();
+		sidechainNodesRef.current.forEach((sc) => {
+			try {
+				sc.gain.disconnect();
+			} catch {
+				// Already disconnected.
+			}
+		});
+		sidechainNodesRef.current.clear();
 		try {
 			analyserRef.current?.disconnect();
 		} catch {
@@ -267,16 +276,29 @@ export function usePlaybackEngine({
 			trackAnalyser.smoothingTimeConstant = 0.8;
 			trackAnalysersRef.current.set(track.id, trackAnalyser);
 
+			// Sidechain: insert a gain node that gets modulated by source track level
+			let postAnalyserNode: AudioNode = trackAnalyser;
+			if (track.sidechainSourceId) {
+				const sidechainGain = ctx.createGain();
+				sidechainGain.gain.value = 1;
+				sidechainNodesRef.current.set(track.id, {
+					gain: sidechainGain,
+					sourceId: track.sidechainSourceId,
+				});
+				trackAnalyser.connect(sidechainGain);
+				postAnalyserNode = sidechainGain;
+			}
+
 			if (ch <= 2) {
 				const panner = ctx.createStereoPanner();
 				panner.pan.value = track.pan;
 				nodeBeforePanner.connect(panner);
 				panner.connect(trackAnalyser);
-				trackAnalyser.connect(masterGain);
+				postAnalyserNode.connect(masterGain);
 				panNodesRef.current.set(track.id, panner);
 			} else {
 				nodeBeforePanner.connect(trackAnalyser);
-				trackAnalyser.connect(masterGain);
+				postAnalyserNode.connect(masterGain);
 			}
 
 			source.loop = isLooping;
@@ -344,6 +366,25 @@ export function usePlaybackEngine({
 				const coef = target < cur ? 0.3 : 0.02;
 				duckNode.gain.value = cur + (target - cur) * coef;
 			}
+			// Sidechain modulation
+			sidechainNodesRef.current.forEach((sc, targetId) => {
+				const sourceAnalyser = trackAnalysersRef.current.get(sc.sourceId);
+				if (!sourceAnalyser) {
+					return;
+				}
+				const sd = new Float32Array(sourceAnalyser.fftSize);
+				sourceAnalyser.getFloatTimeDomainData(sd);
+				let ssum = 0;
+				for (let i = 0; i < sd.length; i++) {
+					ssum += sd[i] * sd[i];
+				}
+				const srms = Math.sqrt(ssum / sd.length);
+				const sdb = 20 * Math.log10(Math.max(srms, 0.0001));
+				// Duck target when source exceeds -30dB threshold
+				const sidechainTarget = sdb > -30 ? 0.3 + (sdb + 30) * 0.02 : 1;
+				const clamped = Math.max(0.1, Math.min(1, sidechainTarget));
+				sc.gain.gain.value = clamped;
+			});
 			for (const track of tracks) {
 				const gainNode = gainNodesRef.current.get(track.id);
 				if (gainNode) {

@@ -1,10 +1,7 @@
 import {
 	CircleStackIcon as Circle,
 	FlagIcon as Flag,
-	CpuChipIcon as Gauge,
-	MicrophoneIcon as Mic,
 	PauseIcon as Pause,
-	MusicalNoteIcon as Piano,
 	PlayIcon as Play,
 	PlusIcon as Plus,
 	ArrowUturnLeftIcon as Repeat,
@@ -30,8 +27,6 @@ import { Slider } from "@/ui/slider";
 import type { StudioTrack } from "./AudioStudioStore";
 import { useAudioStudioStore } from "./AudioStudioStore";
 import { formatTime } from "./formatTime";
-import { MonitorPicker } from "./MonitorPicker";
-import { MonitorRecorder } from "./MonitorRecorder";
 
 interface TransportControlsProps {
 	isPlaying: boolean;
@@ -42,6 +37,7 @@ interface TransportControlsProps {
 	zoomLevel: number;
 	selectedTrackIndex: number;
 	tracks: StudioTrack[];
+	masterAnalyser: AnalyserNode | null;
 	onTogglePlayPause: () => void;
 	onStop: () => void;
 	onToggleLoop: () => void;
@@ -54,8 +50,45 @@ interface TransportControlsProps {
 	onSetZoomLevel: (v: number) => void;
 	onImportAudio: () => void;
 	onAddTrack: () => void;
-	onAddMidiNote: (note: number) => void;
-	onRecordComplete: (blob: Blob) => void;
+}
+
+function MasterLufsMeter({ analyser }: { analyser: AnalyserNode | null }) {
+	const [lufs, setLufs] = useState("-inf");
+	const rafRef = useRef<number>(0);
+	const dataRef = useRef<Float32Array | null>(null);
+
+	useEffect(() => {
+		if (!analyser) {
+			setLufs("-inf");
+			return undefined;
+		}
+		const tick = () => {
+			if (!dataRef.current || dataRef.current.length !== analyser.fftSize) {
+				dataRef.current = new Float32Array(analyser.fftSize);
+			}
+			analyser.getFloatTimeDomainData(dataRef.current);
+			let sum = 0;
+			for (let i = 0; i < dataRef.current.length; i++) {
+				sum += dataRef.current[i] * dataRef.current[i];
+			}
+			const rms = Math.sqrt(sum / dataRef.current.length);
+			const db = 20 * Math.log10(Math.max(rms, 0.0001));
+			setLufs(db === -Infinity ? "-inf" : db.toFixed(1));
+			rafRef.current = requestAnimationFrame(tick);
+		};
+		rafRef.current = requestAnimationFrame(tick);
+		return () => {
+			if (rafRef.current) {
+				cancelAnimationFrame(rafRef.current);
+			}
+		};
+	}, [analyser]);
+
+	return (
+		<span className="text-[10px] tabular-nums text-muted-foreground font-mono">
+			{lufs} dB
+		</span>
+	);
 }
 
 export function TransportControls({
@@ -67,6 +100,7 @@ export function TransportControls({
 	zoomLevel,
 	selectedTrackIndex,
 	tracks,
+	masterAnalyser,
 	onTogglePlayPause,
 	onStop,
 	onToggleLoop,
@@ -79,8 +113,6 @@ export function TransportControls({
 	onSetZoomLevel,
 	onImportAudio,
 	onAddTrack,
-	onAddMidiNote,
-	onRecordComplete,
 }: TransportControlsProps) {
 	const currentTimeRef = useAudioStudioStore((s) => s.currentTimeRef);
 	const [displayTime, setDisplayTime] = useState(0);
@@ -103,20 +135,15 @@ export function TransportControls({
 	}, [currentTimeRef]);
 
 	return (
-		<div className="border-t border-border bg-card px-3 py-1.5 shrink-0">
-			<div className="flex items-center gap-1.5 flex-wrap">
-				<span className="text-xs font-mono tabular-nums text-foreground min-w-[72px]">
-					{formatTime(displayTime)}
-				</span>
-
+		<div className="border-t border-border bg-card px-3 shrink-0">
+			<div className="flex items-center gap-2 h-9">
+				{/* Transport buttons */}
 				<div className="flex items-center gap-0.5">
 					<Button
 						variant="ghost"
 						size="icon"
 						className="size-7"
-						onClick={() => {
-							onStop();
-						}}
+						onClick={onStop}
 						title="Skip to start"
 						aria-label="Skip to start"
 					>
@@ -157,20 +184,16 @@ export function TransportControls({
 					>
 						<Repeat className="size-3.5" />
 					</Button>
-					<Button
-						variant="ghost"
-						size="icon"
-						className="size-7"
-						onClick={() => onAddMarker(displayTime)}
-						title="Add marker at playhead"
-						aria-label="Add marker at playhead"
-					>
-						<Flag className="size-3.5" />
-					</Button>
 				</div>
 
-				<div className="w-px h-5 bg-border mx-0.5" />
+				{/* Time display */}
+				<span className="text-xs font-mono tabular-nums text-foreground min-w-[72px] text-center">
+					{formatTime(displayTime)}
+				</span>
 
+				<div className="w-px h-5 bg-border" />
+
+				{/* Record */}
 				<Button
 					variant={isRecording ? "destructive" : "ghost"}
 					size="icon"
@@ -183,47 +206,34 @@ export function TransportControls({
 				</Button>
 
 				{!isRecording && tracks.length > 0 && (
-					<div className="flex items-center gap-1">
-						<span className="text-xs text-muted-foreground">to:</span>
-						<Select
-							value={tracks[selectedTrackIndex]?.id ?? ""}
-							onValueChange={(val) => {
-								const idx = tracks.findIndex((t) => t.id === val);
-								if (idx >= 0) {
-									onSetSelectedTrackIndex(idx);
-								}
-							}}
+					<Select
+						value={tracks[selectedTrackIndex]?.id ?? ""}
+						onValueChange={(val) => {
+							const idx = tracks.findIndex((t) => t.id === val);
+							if (idx >= 0) {
+								onSetSelectedTrackIndex(idx);
+							}
+						}}
+					>
+						<SelectTrigger
+							className="h-6 text-xs w-24"
+							aria-label="Record destination track"
 						>
-							<SelectTrigger
-								className="h-6 text-xs w-28"
-								aria-label="Record destination track"
-							>
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								{tracks.map((track) => (
-									<SelectItem key={track.id} value={track.id}>
-										{track.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-						<Button
-							variant="outline"
-							size="sm"
-							className="h-6 text-xs"
-							onClick={onStartRecording}
-							title="Start recording on selected track"
-							aria-label="Start recording"
-						>
-							<Mic className="size-3 mr-1" />
-							Rec
-						</Button>
-					</div>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{tracks.map((track) => (
+								<SelectItem key={track.id} value={track.id}>
+									{track.name}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
 				)}
 
-				<div className="w-px h-5 bg-border mx-0.5" />
+				<div className="w-px h-5 bg-border" />
 
+				{/* Actions */}
 				<Button
 					variant="ghost"
 					size="sm"
@@ -248,18 +258,21 @@ export function TransportControls({
 					</Button>
 				)}
 
-				{tracks.length > 0 && (
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-6 text-xs"
-						onClick={() => onAddMidiNote(60)}
-						title="Add MIDI note (middle C)"
-					>
-						<Piano className="size-3 mr-1" /> MIDI
-					</Button>
-				)}
+				<Button
+					variant="ghost"
+					size="icon"
+					className="size-7"
+					onClick={() => onAddMarker(displayTime)}
+					title="Add marker at playhead"
+					aria-label="Add marker at playhead"
+				>
+					<Flag className="size-3.5" />
+				</Button>
 
+				{/* Spacer */}
+				<div className="flex-1" />
+
+				{/* Zoom */}
 				<div className="flex items-center gap-1">
 					<ZoomOut className="h-3 w-3 text-muted-foreground" />
 					<Slider
@@ -274,10 +287,10 @@ export function TransportControls({
 					<ZoomIn className="h-3 w-3 text-muted-foreground" />
 				</div>
 
+				{/* Speed */}
 				<div className="flex items-center gap-1">
-					<Gauge className="h-3 w-3 text-muted-foreground" />
 					<span className="text-xs font-mono tabular-nums text-muted-foreground min-w-[28px]">
-						{playbackSpeed.toFixed(2)}x
+						{playbackSpeed.toFixed(1)}x
 					</span>
 					<Slider
 						min={0.25}
@@ -285,15 +298,17 @@ export function TransportControls({
 						step={0.05}
 						value={[playbackSpeed]}
 						onValueChange={([v]) => onSetPlaybackSpeed(v)}
-						className="w-14"
+						className="w-12"
 						aria-label="Playback speed"
 					/>
 				</div>
 
-				<div className="w-px h-5 bg-border mx-0.5" />
+				<div className="w-px h-5 bg-border" />
 
+				{/* Voice chat */}
 				<VoiceChatOverlay />
 
+				{/* Master volume */}
 				<div className="flex items-center gap-1">
 					<Volume2 className="size-3.5 text-muted-foreground" />
 					<Slider
@@ -305,13 +320,7 @@ export function TransportControls({
 						className="w-16"
 						aria-label="Master volume"
 					/>
-				</div>
-			</div>
-
-			<div className="w-[220px] shrink-0 border-l border-border pl-2">
-				<MonitorPicker title="Live monitor" />
-				<div className="mt-1">
-					<MonitorRecorder onRecordComplete={onRecordComplete} />
+					<MasterLufsMeter analyser={masterAnalyser} />
 				</div>
 			</div>
 		</div>

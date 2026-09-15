@@ -1,16 +1,14 @@
 import {
-	ArrowDownTrayIcon as Download,
-	FolderOpenIcon as FolderOpen,
-	CpuChipIcon as Gauge,
-	MicrophoneIcon as Mic,
-	PlusIcon as Plus,
-	ArrowUturnRightIcon as Redo2,
-	CheckIcon as Save,
-	ScissorsIcon as Scissors,
-	ArrowUturnLeftIcon as Undo2,
-	ArrowPathIcon as UndoAuto,
+	ArrowDownTrayIcon,
+	ArrowUturnLeftIcon,
+	ArrowUturnRightIcon,
+	FolderOpenIcon,
+	MusicalNoteIcon,
+	PlusIcon,
 } from "@heroicons/react/24/outline";
+import { useState } from "react";
 import type { IsolationStem } from "@/features/workspace/VocalIsolationView";
+import { cn } from "@/lib/utils/cn";
 import { Button } from "@/ui/button";
 import {
 	Select,
@@ -19,7 +17,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/ui/select";
-import { ScreenHeader } from "@/ui/states";
 
 interface StudioToolbarProps {
 	unsaved: boolean;
@@ -30,19 +27,18 @@ interface StudioToolbarProps {
 	redoStackLength: number;
 	tracksHaveAudio: boolean;
 	tracksHaveAnyContent: boolean;
-	canUndoAutosave: boolean;
 	canExportReaper: boolean;
 	exportingReaper: boolean;
 	isolating: boolean;
 	isolateStem: IsolationStem;
 	selectedTrackHasAudio: boolean;
+	groups: Array<{ id: string; name: string; collapsed: boolean }>;
 	onNew: () => void;
 	onSave: () => void;
 	onPaste: () => void;
 	onLoad: () => void;
 	onUndo: () => void;
 	onRedo: () => void;
-	onUndoAutosave: () => void;
 	onToggleAutomation: () => void;
 	onExport: () => void;
 	onExportWithPlugins: () => void;
@@ -50,6 +46,11 @@ interface StudioToolbarProps {
 	onIsolateStemChange: (stem: IsolationStem) => void;
 	onIsolate: () => void;
 	onProducePodcast: () => void;
+	onAddGroup: (name: string) => void;
+	onRemoveGroup: (id: string) => void;
+	onToggleGroupCollapse: (id: string) => void;
+	onToggleGroupMute: (id: string) => void;
+	onToggleGroupSolo: (id: string) => void;
 }
 
 export function StudioToolbar({
@@ -61,19 +62,18 @@ export function StudioToolbar({
 	redoStackLength,
 	tracksHaveAudio,
 	tracksHaveAnyContent,
-	canUndoAutosave,
 	canExportReaper,
 	exportingReaper,
 	isolating,
 	isolateStem,
 	selectedTrackHasAudio,
+	groups,
 	onNew,
 	onSave,
 	onPaste,
 	onLoad,
 	onUndo,
 	onRedo,
-	onUndoAutosave,
 	onToggleAutomation,
 	onExport,
 	onExportWithPlugins,
@@ -81,197 +81,334 @@ export function StudioToolbar({
 	onIsolateStemChange,
 	onIsolate,
 	onProducePodcast,
+	onAddGroup,
+	onRemoveGroup,
+	onToggleGroupCollapse,
+	onToggleGroupMute,
+	onToggleGroupSolo,
 }: StudioToolbarProps) {
+	const [showExportMenu, setShowExportMenu] = useState(false);
+	const [showToolsMenu, setShowToolsMenu] = useState(false);
+
 	return (
-		<ScreenHeader
-			title="Audio Studio"
-			helpPath="/audio-studio"
-			className="border-b border-border bg-sidebar shrink-0"
-			actions={
-				<>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-7 text-xs px-2"
-						onClick={() => {
-							if (unsaved) {
-								const ok = window.confirm(
-									"You have unsaved changes. Start a new session? Unsaved work will be lost.",
-								);
-								if (!ok) {
-									return;
-								}
-							}
-							onNew();
-						}}
-						title="New session from template"
-					>
-						<Plus className="size-3 mr-1" />
-						New
-					</Button>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-7 text-xs px-2"
-						onClick={onSave}
-						title="Save session (Ctrl+S)"
-					>
-						<Save className="size-3 mr-1" />
-						Save
-						{unsaved && (
-							<span
-								role="img"
-								className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-warning"
-								title="Unsaved changes — Save to name this session"
-								aria-label="Unsaved changes"
-							/>
-						)}
-					</Button>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-7 text-xs px-2"
-						onClick={onPaste}
-						title="Paste clip as track"
-					>
-						<Plus className="size-3 mr-1" />
-						Paste
-					</Button>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-7 text-xs px-2"
-						onClick={onLoad}
-						title="Load session (Ctrl+O)"
-					>
-						<FolderOpen className="size-3 mr-1" />
-						Load
-					</Button>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-7 text-xs px-2"
-						onClick={onUndoAutosave}
-						disabled={!canUndoAutosave}
-						title="Undo autosave (restore previous snapshot)"
-					>
-						<UndoAuto className="size-3 mr-1" />
-						Undo Save
-					</Button>
-					<div className="w-px h-4 bg-border mx-0.5" />
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-7 text-xs px-2"
-						onClick={onUndo}
-						disabled={undoStackLength === 0}
-						title="Undo (Ctrl+Z)"
-					>
-						<Undo2 className="size-3 mr-1" />
-						Undo
-					</Button>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-7 text-xs px-2"
-						onClick={onRedo}
-						disabled={redoStackLength === 0}
-						title="Redo (Ctrl+Y)"
-					>
-						<Redo2 className="size-3 mr-1" />
-						Redo
-					</Button>
-					<div className="w-px h-4 bg-border mx-0.5" />
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-7 text-xs px-2"
-						onClick={onToggleAutomation}
-						title={showAutomation ? "Hide automation" : "Show automation"}
-					>
-						<Gauge className="size-3 mr-1" />
-						{showAutomation ? "Auto on" : "Auto off"}
-					</Button>
-					<div className="w-px h-4 bg-border mx-0.5" />
-					<Select
-						value={isolateStem}
-						onValueChange={(v) => onIsolateStemChange(v as IsolationStem)}
-					>
-						<SelectTrigger
-							className="h-7 text-xs w-[100px] px-2"
-							title="Stem to isolate from the selected track"
-							aria-label="Stem to isolate"
-						>
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="vocals">Vocals</SelectItem>
-							<SelectItem value="drums">Drums</SelectItem>
-							<SelectItem value="bass">Bass</SelectItem>
-							<SelectItem value="other">Other</SelectItem>
-						</SelectContent>
-					</Select>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-7 text-xs px-2"
-						onClick={onIsolate}
-						disabled={isolating || !selectedTrackHasAudio}
-						title="Isolate stem from the selected track into a new track"
-					>
-						<Scissors className="size-3 mr-1" />
-						{isolating ? "Isolating..." : "Isolate"}
-					</Button>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-7 text-xs px-2"
-						onClick={onExport}
-						disabled={exporting || !tracksHaveAudio}
-						title="Export mixed audio"
-					>
-						<Download className="size-3 mr-1" />
-						{exporting ? "Bouncing..." : "Export"}
-					</Button>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-7 text-xs px-2"
-						onClick={onExportWithPlugins}
-						disabled={exportWithPlugins || !tracksHaveAnyContent}
-						title="Export with effect chain (server bounce)"
-					>
-						<Download className="size-3 mr-1" />
-						{exportWithPlugins ? "Bouncing..." : "Export+FX"}
-					</Button>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-7 text-xs px-2"
-						onClick={onExportReaper}
-						disabled={exportingReaper || !canExportReaper}
-						title={
-							canExportReaper
-								? "Export Reaper project (.rpp) for DAW handoff"
-								: "Save the session first, then export Reaper"
+		<div className="flex items-center gap-1 h-8 px-3 border-b border-border bg-sidebar shrink-0">
+			{/* File group */}
+			<Button
+				variant="ghost"
+				size="sm"
+				className="h-7 text-xs px-2"
+				onClick={() => {
+					if (unsaved) {
+						const ok = window.confirm(
+							"You have unsaved changes. Start a new session? Unsaved work will be lost.",
+						);
+						if (!ok) {
+							return;
 						}
-					>
-						<Download className="size-3 mr-1" />
-						{exportingReaper ? "Exporting..." : "Reaper"}
-					</Button>
-					<Button
-						variant="default"
-						size="sm"
-						className="h-7 text-xs px-2"
-						onClick={onProducePodcast}
-						disabled={!tracksHaveAnyContent}
-						title="Produce a podcast from conversation script"
-					>
-						<Mic className="size-3 mr-1" />
-						Podcast
-					</Button>
-				</>
-			}
-		/>
+					}
+					onNew();
+				}}
+				title="New session from template"
+			>
+				<PlusIcon className="size-3 mr-1" />
+				New
+			</Button>
+			<Button
+				variant="ghost"
+				size="sm"
+				className="h-7 text-xs px-2"
+				onClick={onSave}
+				title="Save session (Ctrl+S)"
+			>
+				Save
+				{unsaved && (
+					<span
+						role="img"
+						className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-warning"
+						title="Unsaved changes"
+						aria-label="Unsaved changes"
+					/>
+				)}
+			</Button>
+			<Button
+				variant="ghost"
+				size="sm"
+				className="h-7 text-xs px-2"
+				onClick={onLoad}
+				title="Load session (Ctrl+O)"
+			>
+				<FolderOpenIcon className="size-3 mr-1" />
+				Load
+			</Button>
+
+			<div className="w-px h-4 bg-border mx-1" />
+
+			{/* Edit group */}
+			<Button
+				variant="ghost"
+				size="icon"
+				className="size-7"
+				onClick={onUndo}
+				disabled={undoStackLength === 0}
+				title="Undo (Ctrl+Z)"
+			>
+				<ArrowUturnLeftIcon className="size-3.5" />
+			</Button>
+			<Button
+				variant="ghost"
+				size="icon"
+				className="size-7"
+				onClick={onRedo}
+				disabled={redoStackLength === 0}
+				title="Redo (Ctrl+Y)"
+			>
+				<ArrowUturnRightIcon className="size-3.5" />
+			</Button>
+
+			<div className="w-px h-4 bg-border mx-1" />
+
+			{/* View group */}
+			<Button
+				variant={showAutomation ? "default" : "ghost"}
+				size="sm"
+				className="h-7 text-xs px-2"
+				onClick={onToggleAutomation}
+				title={
+					showAutomation ? "Hide automation lanes" : "Show automation lanes"
+				}
+			>
+				Automation
+			</Button>
+
+			<div className="w-px h-4 bg-border mx-1" />
+
+			{/* Tools dropdown — stem isolation, podcast */}
+			<div className="relative">
+				<Button
+					variant="ghost"
+					size="sm"
+					className="h-7 text-xs px-2"
+					onClick={() => setShowToolsMenu(!showToolsMenu)}
+					title="Tools"
+				>
+					Tools
+				</Button>
+				{showToolsMenu && (
+					<>
+						<button
+							type="button"
+							tabIndex={-1}
+							className="fixed inset-0 z-40 cursor-default"
+							onClick={() => setShowToolsMenu(false)}
+							onKeyDown={(e) => {
+								if (e.key === "Escape") {
+									setShowToolsMenu(false);
+								}
+							}}
+							aria-label="Close tools menu"
+						/>
+						<div className="absolute top-full left-0 mt-1 z-50 bg-card border border-border rounded-md shadow-lg p-1 min-w-[160px]">
+							<div className="px-2 py-1 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+								Stem Isolation
+							</div>
+							<div className="flex items-center gap-1 px-2 py-1">
+								<Select
+									value={isolateStem}
+									onValueChange={(v) => onIsolateStemChange(v as IsolationStem)}
+								>
+									<SelectTrigger
+										className="h-6 text-xs flex-1"
+										aria-label="Stem to isolate"
+									>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="vocals">Vocals</SelectItem>
+										<SelectItem value="drums">Drums</SelectItem>
+										<SelectItem value="bass">Bass</SelectItem>
+										<SelectItem value="other">Other</SelectItem>
+									</SelectContent>
+								</Select>
+								<Button
+									variant="outline"
+									size="sm"
+									className="h-6 text-xs"
+									onClick={() => {
+										setShowToolsMenu(false);
+										onIsolate();
+									}}
+									disabled={isolating || !selectedTrackHasAudio}
+								>
+									{isolating ? "..." : "Isolate"}
+								</Button>
+							</div>
+							<div className="h-px bg-border my-1" />
+							<button
+								type="button"
+								className="w-full text-left px-2 py-1 text-xs hover:bg-secondary rounded-sm flex items-center gap-2"
+								onClick={() => {
+									setShowToolsMenu(false);
+									onProducePodcast();
+								}}
+								disabled={!tracksHaveAnyContent}
+							>
+								<MusicalNoteIcon className="size-3" />
+								Podcast Producer
+							</button>
+							<button
+								type="button"
+								className="w-full text-left px-2 py-1 text-xs hover:bg-secondary rounded-sm flex items-center gap-2"
+								onClick={() => {
+									setShowToolsMenu(false);
+									onPaste();
+								}}
+							>
+								Paste as Track
+							</button>
+							<div className="h-px bg-border my-1" />
+							<div className="px-2 py-1 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+								Groups
+							</div>
+							<button
+								type="button"
+								className="w-full text-left px-2 py-1 text-xs hover:bg-secondary rounded-sm"
+								onClick={() => {
+									const name = window.prompt("Group name:");
+									if (name?.trim()) {
+										onAddGroup(name.trim());
+									}
+									setShowToolsMenu(false);
+								}}
+							>
+								+ New Group
+							</button>
+							{groups.map((g) => (
+								<div
+									key={g.id}
+									className="flex items-center gap-1 px-2 py-0.5 text-xs"
+								>
+									<button
+										type="button"
+										onClick={() => onToggleGroupCollapse(g.id)}
+										className="text-muted-foreground hover:text-foreground"
+										title={g.collapsed ? "Expand group" : "Collapse group"}
+									>
+										{g.collapsed ? "▶" : "▼"}
+									</button>
+									<span className="flex-1 truncate">{g.name}</span>
+									<button
+										type="button"
+										onClick={() => onToggleGroupMute(g.id)}
+										className={cn(
+											"px-1 text-[10px] font-bold rounded",
+											"group-hover:text-muted-foreground hover:text-foreground",
+										)}
+										title="Mute/unmute group"
+									>
+										M
+									</button>
+									<button
+										type="button"
+										onClick={() => onToggleGroupSolo(g.id)}
+										className={cn(
+											"px-1 text-[10px] font-bold rounded",
+											"group-hover:text-muted-foreground hover:text-foreground",
+										)}
+										title="Solo/unsolo group"
+									>
+										S
+									</button>
+									<button
+										type="button"
+										onClick={() => onRemoveGroup(g.id)}
+										className="text-muted-foreground hover:text-destructive text-[10px]"
+										title="Remove group"
+									>
+										×
+									</button>
+								</div>
+							))}
+						</div>
+					</>
+				)}
+			</div>
+
+			{/* Spacer */}
+			<div className="flex-1" />
+
+			{/* Export group — right side */}
+			<div className="relative">
+				<Button
+					variant="default"
+					size="sm"
+					className="h-7 text-xs px-2"
+					onClick={() => setShowExportMenu(!showExportMenu)}
+					disabled={!tracksHaveAudio}
+				>
+					<ArrowDownTrayIcon className="size-3 mr-1" />
+					{exporting || exportingReaper ? "Bouncing..." : "Export"}
+				</Button>
+				{showExportMenu && (
+					<>
+						<button
+							type="button"
+							tabIndex={-1}
+							className="fixed inset-0 z-40 cursor-default"
+							onClick={() => setShowExportMenu(false)}
+							onKeyDown={(e) => {
+								if (e.key === "Escape") {
+									setShowExportMenu(false);
+								}
+							}}
+							aria-label="Close export menu"
+						/>
+						<div className="absolute top-full right-0 mt-1 z-50 bg-card border border-border rounded-md shadow-lg p-1 min-w-[180px]">
+							<button
+								type="button"
+								className="w-full text-left px-2 py-1.5 text-xs hover:bg-secondary rounded-sm"
+								onClick={() => {
+									setShowExportMenu(false);
+									onExport();
+								}}
+								disabled={exporting || !tracksHaveAudio}
+							>
+								<div className="font-medium">Export WAV</div>
+								<div className="text-muted-foreground text-[10px]">
+									Offline render — all tracks mixed
+								</div>
+							</button>
+							<button
+								type="button"
+								className="w-full text-left px-2 py-1.5 text-xs hover:bg-secondary rounded-sm"
+								onClick={() => {
+									setShowExportMenu(false);
+									onExportWithPlugins();
+								}}
+								disabled={exportWithPlugins || !tracksHaveAnyContent}
+							>
+								<div className="font-medium">Export with FX</div>
+								<div className="text-muted-foreground text-[10px]">
+									Server bounce — applies effect chains
+								</div>
+							</button>
+							<button
+								type="button"
+								className="w-full text-left px-2 py-1.5 text-xs hover:bg-secondary rounded-sm"
+								onClick={() => {
+									setShowExportMenu(false);
+									onExportReaper();
+								}}
+								disabled={exportingReaper || !canExportReaper}
+							>
+								<div className="font-medium">Reaper Project</div>
+								<div className="text-muted-foreground text-[10px]">
+									.rpp file for DAW handoff
+								</div>
+							</button>
+						</div>
+					</>
+				)}
+			</div>
+		</div>
 	);
 }

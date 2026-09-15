@@ -1,10 +1,12 @@
 import {
 	ChevronDownIcon as ChevronDown,
+	PlusIcon as Plus,
 	PowerIcon as Power,
 	TrashIcon as Trash2,
 } from "@heroicons/react/24/outline";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { cn } from "@/lib/utils/cn";
+import { Button } from "@/ui/button";
 import { Slider } from "@/ui/slider";
 import { type StudioTrack, useAudioStudioStore } from "./AudioStudioStore";
 
@@ -46,6 +48,42 @@ const PARAM_META: Record<string, Record<string, ParamMeta>> = {
 		gain: { label: "Gain", min: 0, max: 2, step: 0.05, unit: "" },
 	},
 };
+
+interface PluginCatalogEntry {
+	id: string;
+	name: string;
+	defaults: Record<string, number>;
+}
+
+const PLUGIN_CATALOG: PluginCatalogEntry[] = [
+	{
+		id: "builtin-eq",
+		name: "EQ",
+		defaults: { low_gain: 0, mid_gain: 0, high_gain: 0 },
+	},
+	{
+		id: "builtin-compressor",
+		name: "Compressor",
+		defaults: { threshold: -24, ratio: 12, attack: 3, release: 250 },
+	},
+	{
+		id: "builtin-reverb",
+		name: "Reverb",
+		defaults: { mix: 0.3 },
+	},
+	{
+		id: "builtin-delay",
+		name: "Delay",
+		defaults: { time: 0.3, feedback: 0.3, mix: 0.5 },
+	},
+	{
+		id: "builtin-gain",
+		name: "Gain",
+		defaults: { gain: 1.0 },
+	},
+];
+
+type PluginChainSnapshot = StudioTrack["pluginChain"];
 
 function ParamSlider({
 	pluginId,
@@ -167,16 +205,77 @@ function PluginItem({
 	);
 }
 
+function AddPluginDropdown({
+	onAdd,
+}: {
+	onAdd: (entry: PluginCatalogEntry) => void;
+}) {
+	const [open, setOpen] = useState(false);
+	const ref = useRef<HTMLDivElement>(null);
+
+	return (
+		<div ref={ref} className="relative">
+			<Button
+				variant="ghost"
+				size="sm"
+				className="h-6 w-full text-[10px] text-muted-foreground hover:text-foreground"
+				onClick={() => setOpen(!open)}
+			>
+				<Plus className="size-3 mr-1" />
+				Add Plugin
+			</Button>
+			{open && (
+				<>
+					<button
+						type="button"
+						tabIndex={-1}
+						className="fixed inset-0 z-40 cursor-default"
+						onClick={() => setOpen(false)}
+						onKeyDown={(e) => {
+							if (e.key === "Escape") {
+								setOpen(false);
+							}
+						}}
+						aria-label="Close plugin menu"
+					/>
+					<div className="absolute bottom-full left-0 mb-1 z-50 bg-card border border-border rounded-md shadow-lg p-1 min-w-[140px]">
+						{PLUGIN_CATALOG.map((entry) => (
+							<button
+								key={entry.id}
+								type="button"
+								className="w-full text-left px-2 py-1 text-xs hover:bg-secondary rounded-sm"
+								onClick={() => {
+									onAdd(entry);
+									setOpen(false);
+								}}
+							>
+								{entry.name}
+							</button>
+						))}
+					</div>
+				</>
+			)}
+		</div>
+	);
+}
+
 export function PluginChainPanel({ track }: { track: StudioTrack }) {
 	const updateTrack = useAudioStudioStore((s) => s.updateTrack);
+	const pushUndo = useAudioStudioStore((s) => s.pushUndo);
+	const [abSlot, setAbSlot] = useState<"a" | "b">("a");
+	const [snapshotA, setSnapshotA] = useState<PluginChainSnapshot>(null);
+	const [snapshotB, setSnapshotB] = useState<PluginChainSnapshot>(null);
 
 	const toggleChainItem = (index: number) => {
+		pushUndo(`Toggle ${track.pluginChain[index]?.pluginName ?? "plugin"}`);
 		const chain = [...(track.pluginChain ?? [])];
 		chain[index] = { ...chain[index], enabled: !chain[index].enabled };
 		updateTrack(track.id, { pluginChain: chain });
 	};
 
 	const removeChainItem = (index: number) => {
+		const name = track.pluginChain[index]?.pluginName ?? "plugin";
+		pushUndo(`Remove ${name}`);
 		const chain = [...(track.pluginChain ?? [])];
 		chain.splice(index, 1);
 		updateTrack(track.id, { pluginChain: chain });
@@ -188,18 +287,87 @@ export function PluginChainPanel({ track }: { track: StudioTrack }) {
 		updateTrack(track.id, { pluginChain: chain });
 	};
 
-	const chain = track.pluginChain ?? [];
+	const addPlugin = (entry: PluginCatalogEntry) => {
+		pushUndo(`Add ${entry.name}`);
+		const newItem: StudioTrack["pluginChain"][number] = {
+			pluginId: entry.id,
+			pluginName: entry.name,
+			enabled: true,
+			params: { ...entry.defaults },
+		};
+		updateTrack(track.id, {
+			pluginChain: [...(track.pluginChain ?? []), newItem],
+		});
+	};
 
-	if (chain.length === 0) {
-		return (
-			<div className="flex items-center justify-center py-2 text-xs text-muted-foreground/40 bg-sunken rounded mb-1">
-				No plugins — add them in the Plugins view
-			</div>
-		);
-	}
+	const saveAbSlot = () => {
+		const chain = track.pluginChain ?? [];
+		if (abSlot === "a") {
+			setSnapshotA(JSON.parse(JSON.stringify(chain)));
+		} else {
+			setSnapshotB(JSON.parse(JSON.stringify(chain)));
+		}
+	};
+
+	const applyAbSlot = (slot: "a" | "b") => {
+		const snapshot = slot === "a" ? snapshotA : snapshotB;
+		if (!snapshot) {
+			return;
+		}
+		pushUndo(`Apply ${slot.toUpperCase()} compare`);
+		updateTrack(track.id, {
+			pluginChain: JSON.parse(JSON.stringify(snapshot)),
+		});
+		setAbSlot(slot);
+	};
+
+	const chain = track.pluginChain ?? [];
 
 	return (
 		<div className="space-y-0.5 mb-1">
+			{(snapshotA || snapshotB) && (
+				<div className="flex items-center gap-1 px-1 py-0.5">
+					<span className="text-[9px] text-muted-foreground mr-0.5">A/B</span>
+					<button
+						type="button"
+						onClick={() => applyAbSlot("a")}
+						disabled={!snapshotA}
+						className={cn(
+							"px-1.5 py-0.5 text-[10px] font-bold rounded transition-colors",
+							abSlot === "a"
+								? "bg-accent text-accent-foreground"
+								: snapshotA
+									? "bg-muted text-muted-foreground hover:bg-secondary"
+									: "bg-muted/50 text-muted-foreground/30 cursor-not-allowed",
+						)}
+					>
+						A
+					</button>
+					<button
+						type="button"
+						onClick={() => applyAbSlot("b")}
+						disabled={!snapshotB}
+						className={cn(
+							"px-1.5 py-0.5 text-[10px] font-bold rounded transition-colors",
+							abSlot === "b"
+								? "bg-accent text-accent-foreground"
+								: snapshotB
+									? "bg-muted text-muted-foreground hover:bg-secondary"
+									: "bg-muted/50 text-muted-foreground/30 cursor-not-allowed",
+						)}
+					>
+						B
+					</button>
+					<button
+						type="button"
+						onClick={saveAbSlot}
+						className="px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground rounded bg-muted hover:bg-secondary transition-colors"
+						title={`Save current chain to slot ${abSlot.toUpperCase()}`}
+					>
+						Save
+					</button>
+				</div>
+			)}
 			{chain.map((item, idx) => (
 				<PluginItem
 					key={`${item.pluginId}-${idx}`}
@@ -209,6 +377,16 @@ export function PluginChainPanel({ track }: { track: StudioTrack }) {
 					onUpdateParams={(p) => updateParams(idx, p)}
 				/>
 			))}
+			<AddPluginDropdown onAdd={addPlugin} />
+			{chain.length > 0 && !snapshotA && !snapshotB && (
+				<button
+					type="button"
+					onClick={saveAbSlot}
+					className="w-full text-[9px] text-muted-foreground/50 hover:text-muted-foreground py-0.5 transition-colors"
+				>
+					Save A to compare
+				</button>
+			)}
 		</div>
 	);
 }
