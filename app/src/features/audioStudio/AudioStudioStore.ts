@@ -77,6 +77,7 @@ export interface StudioTrack {
 	generationId: string | null; // backend generation ID for transcript editing
 	groupId: string | null;
 	sidechainSourceId: string | null;
+	expanded: boolean;
 }
 
 export interface AudioStudioSnapshot {
@@ -142,6 +143,7 @@ interface AudioStudioStore {
 	assignTrackToGroup: (trackId: string, groupId: string | null) => void;
 	toggleGroupMute: (groupId: string) => void;
 	toggleGroupSolo: (groupId: string) => void;
+	toggleTrackExpanded: (trackId: string) => void;
 
 	setIsPlaying: (playing: boolean) => void;
 	setIsRecording: (recording: boolean) => void;
@@ -282,6 +284,7 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 			generationId: null,
 			groupId: null,
 			sidechainSourceId: null,
+			expanded: false,
 		};
 		set((state) => ({ tracks: [...state.tracks, track] }));
 		return id;
@@ -411,6 +414,13 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 			};
 		});
 	},
+
+	toggleTrackExpanded: (trackId) =>
+		set((state) => ({
+			tracks: state.tracks.map((t) =>
+				t.id === trackId ? { ...t, expanded: !t.expanded } : t,
+			),
+		})),
 
 	setIsPlaying: (playing) => set({ isPlaying: playing }),
 	setIsRecording: (recording) => set({ isRecording: recording }),

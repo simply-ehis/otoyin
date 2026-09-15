@@ -22,6 +22,7 @@ export function TrackVisuals({
 }) {
 	const setCurrentTime = useAudioStudioStore((s) => s.setCurrentTime);
 	const containerRef = useRef<HTMLButtonElement>(null);
+	const scale = track.expanded ? 2 : 1;
 
 	const handleWaveformClick = useCallback(
 		(e: React.MouseEvent) => {
@@ -48,21 +49,25 @@ export function TrackVisuals({
 				<WaveformCanvas
 					peaks={track.waveformData}
 					color={track.color}
-					height={44}
+					height={44 * scale}
 					className="mt-0.5"
 					channels={channelsCount}
 				/>
 				{track.midiNotes.length > 0 && (
 					<MidiPianoRoll
 						notes={track.midiNotes}
-						height={32}
+						height={32 * scale}
 						className="mt-0.5"
 					/>
 				)}
 				{showAutomation && (
-					<AutomationOverlay track={track} height={16} className="mt-0.5" />
+					<AutomationOverlay
+						track={track}
+						height={16 * scale}
+						className="mt-0.5"
+					/>
 				)}
-				<CrossfadeCanvas track={track} height={12} className="mt-0.5" />
+				<CrossfadeCanvas track={track} height={12 * scale} className="mt-0.5" />
 				{!track.audioUrl && track.midiNotes.length === 0 && (
 					<div className="absolute inset-0 flex items-center justify-center top-0">
 						<span className="text-[10px] text-muted-foreground/30 flex items-center gap-1">
@@ -75,7 +80,7 @@ export function TrackVisuals({
 			{track.showSpectrogram && track.audioUrl && (
 				<SpectrogramCanvas
 					audioUrl={track.audioUrl}
-					height={36}
+					height={36 * scale}
 					className="mt-0.5 mb-0.5"
 				/>
 			)}

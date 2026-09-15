@@ -1,4 +1,8 @@
-import { DocumentTextIcon as Document } from "@heroicons/react/24/outline";
+import {
+	ChevronDownIcon,
+	ChevronRightIcon,
+	DocumentTextIcon as Document,
+} from "@heroicons/react/24/outline";
 import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils/cn";
 import {
@@ -76,6 +80,7 @@ function TrackColorPicker({
 
 export function TrackIdentity({ track }: { track: StudioTrack }) {
 	const updateTrack = useAudioStudioStore((s) => s.updateTrack);
+	const toggleTrackExpanded = useAudioStudioStore((s) => s.toggleTrackExpanded);
 	const [editing, setEditing] = useState(false);
 	const [draft, setDraft] = useState(track.name);
 	const [showColorPicker, setShowColorPicker] = useState(false);
@@ -141,6 +146,19 @@ export function TrackIdentity({ track }: { track: StudioTrack }) {
 				title="Click to rename"
 			>
 				{track.name}
+			</button>
+			<button
+				type="button"
+				onClick={() => toggleTrackExpanded(track.id)}
+				className="text-muted-foreground hover:text-foreground transition-colors bg-transparent border-0 p-0 cursor-pointer"
+				title={track.expanded ? "Collapse track" : "Expand track"}
+				aria-label={track.expanded ? "Collapse track" : "Expand track"}
+			>
+				{track.expanded ? (
+					<ChevronDownIcon className="size-3" />
+				) : (
+					<ChevronRightIcon className="size-3" />
+				)}
 			</button>
 		</div>
 	);
