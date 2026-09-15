@@ -11,6 +11,7 @@ import type {
 	HistoryQuery,
 	HistoryResponse,
 	SFXGenerateRequest,
+	MusicGenerateRequest,
 	TranscriptionResponse,
 	WhisperModelSize,
 } from "./types";
@@ -77,7 +78,7 @@ export class GenerationsMethods extends ProfilesMethods {
 		return resp.blob();
 	}
 
-	async generateMusic(data: { engine: string; prompt: string; duration_seconds: number; genre?: string; mood?: string; tempo?: number; seed?: number; mode?: string; reference_audio_path?: string }): Promise<Blob> {
+	async generateMusic(data: MusicGenerateRequest): Promise<Blob> {
 		const resp = await this.fetchWithAuth("/generate/music", {
 			method: "POST",
 			body: JSON.stringify(data),

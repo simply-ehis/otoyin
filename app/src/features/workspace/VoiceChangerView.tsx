@@ -24,6 +24,22 @@ export function VoiceChangerView() {
 	});
 	const caps = capsQuery.data;
 
+	const latencyQuery = useQuery({
+		queryKey: ["voice-changer-latency"],
+		queryFn: () => apiClient.getVoiceChangerLatency(),
+		enabled: isActive,
+		refetchInterval: isActive ? 2000 : false,
+	});
+	const latencyMs = latencyQuery.data?.latency_ms;
+	const latencyColor =
+		latencyMs == null
+			? "text-muted-foreground"
+			: latencyMs < 80
+				? "text-green-500"
+				: latencyMs < 150
+					? "text-yellow-500"
+					: "text-red-500";
+
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
@@ -56,7 +72,15 @@ export function VoiceChangerView() {
 				<div className="flex items-center gap-2">
 					<span className="text-xs text-muted-foreground">Latency:</span>
 					<Badge tone="neutral">
-						{caps ? `${caps.target_latency_ms}ms` : "…"}
+						{isActive && latencyMs != null ? (
+							<span className={cn("font-mono tabular-nums", latencyColor)}>
+								{latencyMs.toFixed(0)}ms
+							</span>
+						) : caps ? (
+							`${caps.target_latency_ms}ms target`
+						) : (
+							"…"
+						)}
 					</Badge>
 				</div>
 			</div>

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { MusicalNoteIcon } from "@heroicons/react/24/outline";
 import { apiClient } from "@/lib/api/client";
 import type { MarketplaceProduct } from "@/lib/api/types";
 import { showStudioErrorToast } from "@/lib/errors";
@@ -9,6 +10,7 @@ import { isProductNew, useProductStore } from "@/stores/productStore";
 import { Button } from "@/ui/button";
 import { PageTabs } from "@/ui/tabs";
 import { useToast } from "@/ui/use-toast";
+import { useInstrumentPacks } from "@/features/instruments/useInstrumentPacks";
 import { BrowseStates } from "./BrowseStates";
 import { DonateCard } from "./DonateCard";
 import { useDeviceCapabilitiesStore } from "./deviceCapabilitiesStore";
@@ -463,6 +465,9 @@ export function StorePage() {
 		: undefined;
 	const isDetailDownloading = !!detailTask;
 
+	const instrumentPacks = useInstrumentPacks();
+	const packCount = instrumentPacks.data?.length ?? 0;
+
 	return (
 		<div className="flex h-full min-h-0 flex-col overflow-y-auto">
 			<div className="mx-auto w-full max-w-6xl space-y-5 px-4 py-6">
@@ -620,6 +625,36 @@ export function StorePage() {
 									onToggleWishlist={handleToggleWishlist}
 								/>
 							)}
+
+						{/* Instrument packs summary */}
+						{activeCategory === "all" && (
+							<div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
+								<div className="flex items-center gap-3">
+									<div className="flex size-9 items-center justify-center rounded-md bg-secondary">
+										<MusicalNoteIcon className="size-5 text-muted-foreground" />
+									</div>
+									<div>
+										<p className="text-sm font-medium">
+											Instrument Packs
+										</p>
+										<p className="text-xs text-muted-foreground">
+											{packCount === 0
+												? "No packs installed — upload SF2, SFZ, or sample files"
+												: `${packCount} pack${packCount === 1 ? "" : "s"} installed`}
+										</p>
+									</div>
+								</div>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => {
+										window.location.href = "/instruments";
+									}}
+								>
+									Manage
+								</Button>
+							</div>
+						)}
 
 						<p className="pt-2 text-center text-xs text-muted-foreground/60">
 							All purchases are one-time, signed offline licenses. Downloads,

@@ -252,6 +252,11 @@ const VocalIsolationView = lazy(() =>
 		default: m.VocalIsolationView,
 	})),
 );
+const MusicGenView = lazy(() =>
+	import("@/features/workspace/MusicGenView").then((m) => ({
+		default: m.MusicGenView,
+	})),
+);
 const AutomationView = lazy(() =>
 	import("@/features/workspace/AutomationView").then((m) => ({
 		default: m.AutomationView,
@@ -817,6 +822,12 @@ const spatialRoute = createRoute({
 	component: SpatialView,
 });
 
+const musicGenRoute = createRoute({
+	getParentRoute: () => workspaceRoute,
+	path: "/music-gen",
+	component: MusicGenView,
+});
+
 const automationRoute = createRoute({
 	getParentRoute: () => workspaceRoute,
 	path: "/automation",
@@ -984,6 +995,7 @@ const routeTree = rootRoute.addChildren([
 		platformExportRoute,
 		transcriptEditRoute,
 		spatialRoute,
+		musicGenRoute,
 		automationRoute,
 		multiTakeCompingRoute,
 		liveTranscriptRoute,

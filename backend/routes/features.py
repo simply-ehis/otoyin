@@ -338,6 +338,27 @@ async def voice_changer_capabilities():
     }
 
 
+@router.get("/voice-changer/latency")
+async def voice_changer_latency():
+    """Read the most recent frame latency from the running voice-changer pipeline."""
+    import json as _json
+    import os
+    import tempfile
+
+    from ..voice_changer import is_voice_changer_running
+
+    if not is_voice_changer_running():
+        return {"latency_ms": None, "running": False}
+
+    latency_path = os.path.join(tempfile.gettempdir(), "otoyin_vc_latency.json")
+    try:
+        with open(latency_path) as f:
+            data = _json.load(f)
+        return {"latency_ms": data.get("latency_ms"), "running": True}
+    except (OSError, _json.JSONDecodeError):
+        return {"latency_ms": None, "running": True}
+
+
 class VoiceChangerEnableRequest(BaseModel):
     enabled: bool
 

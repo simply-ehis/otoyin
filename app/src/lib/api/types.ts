@@ -181,6 +181,18 @@ export interface SFXGenerateRequest {
 	engine: string;
 }
 
+export interface MusicGenerateRequest {
+	engine?: string;
+	prompt: string;
+	duration_seconds?: number;
+	genre?: string;
+	mood?: string;
+	tempo?: number;
+	seed?: number;
+	mode?: "generate" | "cover" | "repaint";
+	reference_audio_path?: string;
+}
+
 export interface SFXGenerateResponse {
 	audio_path: string;
 	duration: number;

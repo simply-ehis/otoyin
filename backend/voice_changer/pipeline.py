@@ -9,6 +9,7 @@ import io
 import logging
 import os
 import tempfile
+import time
 import wave
 from dataclasses import dataclass, field
 
@@ -47,6 +48,7 @@ class PipelineState:
     speech_frames: int = 0
     silence_frames: int = 0
     is_speech: bool = False
+    last_frame_latency_ms: float = 0.0
 
 
 class VoiceChangerPipeline:
@@ -108,6 +110,7 @@ class VoiceChangerPipeline:
         info : dict
             Status dict with keys: speech_started, speech_ended, transcript.
         """
+        t0 = time.perf_counter()
         if isinstance(audio, list):
             audio = np.array(audio, dtype=np.float32)
         if audio.ndim > 1:
@@ -144,8 +147,10 @@ class VoiceChangerPipeline:
                 state.audio_buffer.clear()
                 state.speech_frames = 0
                 state.silence_frames = 0
+                state.last_frame_latency_ms = (time.perf_counter() - t0) * 1000
                 return output, info
 
+        state.last_frame_latency_ms = (time.perf_counter() - t0) * 1000
         return None, info
 
     def force_flush(self, state: PipelineState) -> tuple[list[float] | None, dict]:

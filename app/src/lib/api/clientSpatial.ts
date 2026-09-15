@@ -235,6 +235,13 @@ export class SpatialMethods extends ADRMethods {
 		return this.request("/voice-changer/capabilities");
 	}
 
+	async getVoiceChangerLatency(): Promise<{
+		latency_ms: number | null;
+		running: boolean;
+	}> {
+		return this.request("/voice-changer/latency");
+	}
+
 	// --- Comping ---
 
 	async convertVoice(opts: {

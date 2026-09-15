@@ -14,6 +14,8 @@ import base64
 import contextlib
 import json
 import logging
+import os
+import tempfile
 import uuid
 from typing import Any
 
@@ -141,6 +143,14 @@ async def _process_committed(ws: WebSocket, session: _Session) -> None:
         output_audio, info = await loop.run_in_executor(
             None, lambda: pipeline.process_chunk(np.array(audio_data, dtype=np.float32), state)
         )
+
+        # Write latency to shared file for the main backend to read
+        try:
+            latency_path = os.path.join(tempfile.gettempdir(), "otoyin_vc_latency.json")
+            with open(latency_path, "w") as f:
+                json.dump({"latency_ms": round(state.last_frame_latency_ms, 1)}, f)
+        except OSError:
+            pass
 
         # Stream result
         if output_audio and len(output_audio) > 0:
