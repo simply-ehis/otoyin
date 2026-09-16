@@ -21,8 +21,8 @@ interface GenerationProgressState {
 	remove: (id: string) => void;
 }
 
-export const useGenerationProgressStore =
-	create<GenerationProgressState>((set) => ({
+export const useGenerationProgressStore = create<GenerationProgressState>(
+	(set) => ({
 		byId: {},
 
 		upsert: (id, patch) =>
@@ -55,4 +55,5 @@ export const useGenerationProgressStore =
 				delete next[id];
 				return { byId: next };
 			}),
-	}));
+	}),
+);

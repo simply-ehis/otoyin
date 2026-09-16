@@ -11,14 +11,13 @@ All functions are no-ops on platforms without psutil (graceful degradation).
 from __future__ import annotations
 
 import logging
-import os
 import sys
 
 logger = logging.getLogger(__name__)
 
-# Thresholds (MB)
-_WARN_MB = 512   # warn when free memory drops below this
-_CRIT_MB = 256   # refuse to load when free memory is below this
+# Memory thresholds in megabytes for warnings and critical pressure.
+_WARN_MB = 512  # warn when free memory drops below this
+_CRIT_MB = 256  # refuse to load when free memory is below this
 
 # Cached values (refreshed every N calls to avoid syscall spam)
 _free_mb: int | None = None
@@ -30,6 +29,7 @@ def _read_free_mb() -> int:
     """Read free physical memory on Windows via psutil or WMI fallback."""
     try:
         import psutil
+
         return int(psutil.virtual_memory().available / (1024 * 1024))
     except ImportError:
         pass
@@ -37,9 +37,12 @@ def _read_free_mb() -> int:
     if sys.platform == "win32":
         try:
             import subprocess
+
             out = subprocess.check_output(
                 ["wmic", "OS", "get", "FreePhysicalMemory", "/value"],
-                text=True, timeout=3, stderr=subprocess.DEVNULL,
+                text=True,
+                timeout=3,
+                stderr=subprocess.DEVNULL,
             )
             for line in out.splitlines():
                 if line.startswith("FreePhysicalMemory="):
@@ -90,15 +93,18 @@ def check_memory(label: str = "operation", required_mb: int = 256) -> bool:
 
     if free < _CRIT_MB:
         logger.error(
-            "CRITICAL memory pressure: %dMB free (threshold %dMB) — "
-            "skipping %s to avoid OOM kill",
-            free, _CRIT_MB, label,
+            "CRITICAL memory pressure: %dMB free (threshold %dMB) — skipping %s to avoid OOM kill",
+            free,
+            _CRIT_MB,
+            label,
         )
         return False
     if free < _WARN_MB:
         logger.warning(
             "Low memory: %dMB free (warn at %dMB) — %s may cause OOM",
-            free, _WARN_MB, label,
+            free,
+            _WARN_MB,
+            label,
         )
     return True
 
@@ -107,15 +113,19 @@ def get_system_total_mb() -> int:
     """Return total physical memory in MB."""
     try:
         import psutil
+
         return int(psutil.virtual_memory().total / (1024 * 1024))
     except ImportError:
         pass
     if sys.platform == "win32":
         try:
             import subprocess
+
             out = subprocess.check_output(
                 ["wmic", "computerhost", "get", "TotalPhysicalMemory", "/value"],
-                text=True, timeout=3, stderr=subprocess.DEVNULL,
+                text=True,
+                timeout=3,
+                stderr=subprocess.DEVNULL,
             )
             for line in out.splitlines():
                 if line.startswith("TotalPhysicalMemory="):

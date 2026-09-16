@@ -22,21 +22,26 @@ import { debug } from "../../lib/utils/debug";
 
 // Lazy-load markdown renderer + plugins (~150KB) — only needed when messages contain markdown
 const MarkdownRenderer = lazy(() =>
-	Promise.all([
-		import("react-markdown"),
-		import("remark-gfm"),
-	]).then(([rm, gfm]) => {
-		const ReactMarkdown = rm.default;
-		const remarkGfmPlugin = gfm.default;
-		function MarkdownWrapper({ children, ...props }: { children: string; [key: string]: unknown }) {
-			return (
-				<ReactMarkdown remarkPlugins={[remarkGfmPlugin]} {...props}>
-					{children}
-				</ReactMarkdown>
-			);
-		}
-		return { default: MarkdownWrapper };
-	}),
+	Promise.all([import("react-markdown"), import("remark-gfm")]).then(
+		([rm, gfm]) => {
+			const ReactMarkdown = rm.default;
+			const remarkGfmPlugin = gfm.default;
+			function MarkdownWrapper({
+				children,
+				...props
+			}: {
+				children: string;
+				[key: string]: unknown;
+			}) {
+				return (
+					<ReactMarkdown remarkPlugins={[remarkGfmPlugin]} {...props}>
+						{children}
+					</ReactMarkdown>
+				);
+			}
+			return { default: MarkdownWrapper };
+		},
+	),
 );
 
 // Lazy-load syntax highlighter (~200KB) — only needed when code blocks are rendered
@@ -407,7 +412,11 @@ function TextBubble({
 			)}
 		>
 			<div className="flex items-start gap-2">
-				<Suspense fallback={<span className="text-muted-foreground text-xs">Loading...</span>}>
+				<Suspense
+					fallback={
+						<span className="text-muted-foreground text-xs">Loading...</span>
+					}
+				>
 					<MarkdownRenderer components={MARKDOWN_COMPONENTS}>
 						{msg.content}
 					</MarkdownRenderer>

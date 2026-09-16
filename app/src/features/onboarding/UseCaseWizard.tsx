@@ -66,7 +66,7 @@ export function UseCaseWizard() {
 			setStep(0);
 			setSelected(new Set());
 		}
-	}, [open ]);
+	}, [open]);
 
 	const stepId: StepId = STEP_IDS[step] ?? "welcome";
 
@@ -108,11 +108,7 @@ export function UseCaseWizard() {
 			<DialogContent className="max-w-lg">
 				<StepDots step={step} />
 				{stepId === "welcome" ? (
-					<WelcomeStep
-						t={t}
-						onNext={() => setStep(1)}
-						onSkip={handleSkip}
-					/>
+					<WelcomeStep t={t} onNext={() => setStep(1)} onSkip={handleSkip} />
 				) : null}
 				{stepId === "usecase" ? (
 					<UseCaseStep
@@ -337,9 +333,7 @@ function SetupStep({
 }) {
 	return (
 		<>
-			<DialogTitle>
-				{t("onboarding.setup.title", "Get a voice")}
-			</DialogTitle>
+			<DialogTitle>{t("onboarding.setup.title", "Get a voice")}</DialogTitle>
 			<DialogDescription>
 				{t(
 					"onboarding.setup.description",

@@ -225,7 +225,9 @@ function AccentField({
 				<FormItem>
 					<FormLabel className="text-xs">Accent / Nationality</FormLabel>
 					{help ? (
-						<p className="-mb-1 mt-1 text-xs text-muted-foreground/70">{help}</p>
+						<p className="-mb-1 mt-1 text-xs text-muted-foreground/70">
+							{help}
+						</p>
 					) : null}
 					<Select
 						value={(field.value as string) ?? ""}
@@ -282,7 +284,9 @@ function StyleField({
 				<FormItem>
 					<FormLabel className="text-xs">Speaking Style</FormLabel>
 					{help ? (
-						<p className="-mb-1 mt-1 text-xs text-muted-foreground/70">{help}</p>
+						<p className="-mb-1 mt-1 text-xs text-muted-foreground/70">
+							{help}
+						</p>
 					) : null}
 					<Select
 						value={(field.value as string) ?? ""}

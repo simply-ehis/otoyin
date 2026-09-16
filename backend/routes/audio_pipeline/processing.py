@@ -37,7 +37,33 @@ async def _process_to_export(audio: np.ndarray, sample_rate: int, prefix: str) -
     output_filename = f"{prefix}_{uuid.uuid4().hex[:12]}.wav"
     output_path = config.get_exports_dir() / output_filename
     await async_save_audio(audio, output_path, sample_rate)
+    _prune_old_exports()
     return {"output_path": config.to_storage_path(output_path), "filename": output_filename}
+
+
+def _prune_old_exports(max_age_days: int = 7, max_files_per_call: int = 20) -> None:
+    """Best-effort TTL eviction for the exports dir (unbounded growth blocks deploy).
+
+    Deletes ``*.wav`` older than *max_age_days*, capped at *max_files_per_call*
+    per invocation so a single request never stalls on cleanup. Never raises.
+    """
+    try:
+        exports = config.get_exports_dir()
+        import time
+
+        cutoff = time.time() - max_age_days * 86400
+        removed = 0
+        for f in exports.glob("*.wav"):
+            if removed >= max_files_per_call:
+                break
+            try:
+                if f.stat().st_mtime < cutoff:
+                    f.unlink()
+                    removed += 1
+            except OSError:
+                continue
+    except Exception as exc:
+        logger.debug("exports prune failed: %s", exc)
 
 
 # ─── Sidechain / Ducking ─────────────────────────────────────────────────────
@@ -70,10 +96,21 @@ async def apply_sidechain_duck(
             continue
 
         import base64
+        import binascii
 
-        raw_bytes = base64.b64decode(audio_data)
+        try:
+            raw_bytes = base64.b64decode(audio_data, validate=True)
+        except (binascii.Error, ValueError) as exc:
+            raise HTTPException(
+                status_code=400, detail=f"Invalid base64 audio_data for track '{track_id}': {exc}"
+            ) from exc
         buf = io.BytesIO(raw_bytes)
-        track_audio, _ = sf.read(buf, dtype="float32")
+        try:
+            track_audio, _ = sf.read(buf, dtype="float32")
+        except Exception as exc:
+            raise HTTPException(
+                status_code=400, detail=f"Undecodable audio_data for track '{track_id}': {exc}"
+            ) from exc
         if track_audio.ndim > 1:
             track_audio = track_audio.mean(axis=1)
         track_audios[track_id] = track_audio
@@ -199,8 +236,8 @@ async def compress_audio(
         audio = audio.mean(axis=1)
 
     threshold = 10 ** (threshold_db / 20)
-    attack_samples = int(attack_ms * sample_rate / 1000)
-    release_samples = int(release_ms * sample_rate / 1000)
+    attack_samples = max(1, int(attack_ms * sample_rate / 1000))
+    release_samples = max(1, int(release_ms * sample_rate / 1000))
 
     envelope = np.abs(audio)
     compressed = np.zeros_like(audio)
@@ -307,8 +344,12 @@ async def separate_audio_route(
     audio_path: str,
     stem: str = "vocals",
     model_name: str = "htdemucs",
+    invert: bool = False,
 ):
-    """Separate one stem (vocals/drums/bass/other) from a mix via Demucs."""
+    """Separate one stem (vocals/drums/bass/other) from a mix via Demucs.
+
+    If invert=True, returns the mix minus that stem (e.g. instrumental).
+    """
     resolved = config.resolve_storage_path(audio_path)
     if resolved is None or not resolved.exists():
         raise HTTPException(status_code=404, detail=ERR_AUDIO_NOT_FOUND)
@@ -317,10 +358,18 @@ async def separate_audio_route(
     from ...services.stem_separation import separate_audio
 
     try:
-        separated = separate_audio(audio, sample_rate, stem=stem, model_name=model_name)
+        separated = separate_audio(
+            audio,
+            sample_rate,
+            stem=stem,
+            model_name=model_name,
+            invert=invert,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=501, detail=str(exc)) from exc
-    return _process_to_export(separated, sample_rate, f"separated_{stem}")
+    return await _process_to_export(separated, sample_rate, f"separated_{stem}")
 
 
 # ─── Editing primitives ──────────────────────────────────────────────────────
@@ -401,22 +450,39 @@ async def blend_route(
     return blend(str(a), str(b), float(crossfade_ms), float(gap_ms), curve)
 
 
-# ─── EQ (3-band) ────────────────────────────────────────────────────────────
+# ─── EQ (4-band parametric) ──────────────────────────────────────────────────
 
 
 class EQRequest(BaseModel):
     audio_path: str
+    # 4-band parametric
+    low_freq: float = 100.0
     low_gain_db: float = 0.0
-    mid_gain_db: float = 0.0
+    low_q: float = 0.707
+    mid1_freq: float = 1000.0
+    mid1_gain_db: float = 0.0
+    mid1_q: float = 1.0
+    mid2_freq: float = 3000.0
+    mid2_gain_db: float = 0.0
+    mid2_q: float = 1.0
+    high_freq: float = 8000.0
     high_gain_db: float = 0.0
-    low_cutoff_hz: float = 200.0
-    high_cutoff_hz: float = 5000.0
+    high_q: float = 0.707
     preamp_db: float = 0.0
+    # Legacy 3-band fallback
+    legacy_low_gain_db: float | None = None
+    legacy_mid_gain_db: float | None = None
+    legacy_high_gain_db: float | None = None
+    legacy_low_cutoff_hz: float | None = None
+    legacy_high_cutoff_hz: float | None = None
 
 
 @router.post("/audio/eq")
 async def eq_audio_route(data: EQRequest):
-    """Apply 3-band parametric EQ (low shelf, mid bell, high shelf)."""
+    """Apply 4-band parametric EQ (lowshelf + 2 peaking + highshelf).
+
+    Falls back to legacy 3-band if legacy fields are provided.
+    """
     _validate_audio_path(data.audio_path)
     resolved = config.resolve_storage_path(data.audio_path)
     audio, sr = await async_load_audio(str(resolved))
@@ -429,20 +495,42 @@ async def eq_audio_route(data: EQRequest):
     if abs(data.preamp_db) > 0.01:
         audio = audio * (10 ** (data.preamp_db / 20.0))
 
-    # 3-band EQ via FFT
-    n = len(audio)
-    fft = np.fft.rfft(audio)
-    freqs = np.fft.rfftfreq(n, 1.0 / sr)
+    from ...services.effects import apply_eq
 
-    low_mask = 10 ** (data.low_gain_db / 20.0) * (freqs < data.low_cutoff_hz)
-    mid_mask = 10 ** (data.mid_gain_db / 20.0) * ((freqs >= data.low_cutoff_hz) & (freqs < data.high_cutoff_hz))
-    high_mask = 10 ** (data.high_gain_db / 20.0) * (freqs >= data.high_cutoff_hz)
+    params: dict = {}
+    # Use legacy fields if provided, else use parametric fields
+    if data.legacy_low_gain_db is not None:
+        params["low_freq"] = data.legacy_low_cutoff_hz or 200.0
+        params["low_gain"] = data.legacy_low_gain_db
+        params["low_q"] = 0.707
+    else:
+        params["low_freq"] = data.low_freq
+        params["low_gain"] = data.low_gain_db
+        params["low_q"] = data.low_q
 
-    mask = low_mask + mid_mask + high_mask
-    mask[mask == 0] = 1.0
-    fft *= mask
+    if data.legacy_mid_gain_db is not None:
+        params["mid1_freq"] = 2650.0
+        params["mid1_gain"] = data.legacy_mid_gain_db
+        params["mid1_q"] = 0.7
+    else:
+        params["mid1_freq"] = data.mid1_freq
+        params["mid1_gain"] = data.mid1_gain_db
+        params["mid1_q"] = data.mid1_q
 
-    processed = np.fft.irfft(fft, n=n).astype(np.float32)
+    params["mid2_freq"] = data.mid2_freq
+    params["mid2_gain"] = data.mid2_gain_db
+    params["mid2_q"] = data.mid2_q
+
+    if data.legacy_high_gain_db is not None:
+        params["high_freq"] = data.legacy_high_cutoff_hz or 5000.0
+        params["high_gain"] = data.legacy_high_gain_db
+        params["high_q"] = 0.707
+    else:
+        params["high_freq"] = data.high_freq
+        params["high_gain"] = data.high_gain_db
+        params["high_q"] = data.high_q
+
+    processed = apply_eq(audio, sr, params)
     processed = np.clip(processed, -1.0, 1.0)
 
     return await _process_to_export(processed, sr, "eq")
@@ -524,6 +612,9 @@ async def apply_effect_chain_route(data: EffectChainRequest):
         for e in data.effects
     ]
 
-    processed = await asyncio.to_thread(apply_effects_chain, audio.astype(np.float32), sr, chain)
+    try:
+        processed = await asyncio.to_thread(apply_effects_chain, audio.astype(np.float32), sr, chain)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     return await _process_to_export(processed, sr, "chain")

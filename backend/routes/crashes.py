@@ -10,6 +10,7 @@ scrubbed again server-side even though senders redact first.
 
 from __future__ import annotations
 
+import contextlib
 import logging
 
 from fastapi import APIRouter
@@ -45,14 +46,12 @@ class CrashCaptureMiddleware(BaseHTTPMiddleware):
     """
 
     async def dispatch(self, request, call_next):
-        try:
+        with contextlib.suppress(Exception):
             crash_reports.record_action(
                 request.method,
                 request.url.path,
                 request.headers.get("X-Request-ID"),
             )
-        except Exception:
-            pass
         try:
             return await call_next(request)
         except Exception as exc:

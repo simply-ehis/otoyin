@@ -119,7 +119,10 @@ export function ProductActions({
 	// ── Checkout: open system browser → poll for license → auto-install ──
 	const pollAndInstall = async (orderRef: string) => {
 		// Poll for license (user completes payment in browser)
-		const license = await marketplaceClient.pollForLicense(orderRef);
+		const license = await marketplaceClient.pollForLicense(
+			orderRef,
+			getDeviceId(),
+		);
 		// Auto-install the license
 		await marketplaceClient.installLicense(license);
 		await queryClient.invalidateQueries({

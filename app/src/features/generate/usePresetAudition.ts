@@ -73,7 +73,9 @@ export function usePresetAudition(engine: string) {
 				);
 				const url = URL.createObjectURL(blob);
 				cacheRef.current.set(key, url);
-				usePlayerStore.getState().setAudioWithAutoPlay(url, id, null, voice.name);
+				usePlayerStore
+					.getState()
+					.setAudioWithAutoPlay(url, id, null, voice.name);
 			} catch (e) {
 				toast({
 					title: "Preview failed",

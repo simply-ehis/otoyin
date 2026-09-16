@@ -102,9 +102,7 @@ export function AutomationView() {
 
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader
-				title="Automation & Cues"
-			/>
+			<ScreenHeader title="Automation & Cues" />
 
 			<Separator />
 

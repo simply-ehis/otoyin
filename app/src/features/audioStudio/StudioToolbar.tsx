@@ -33,6 +33,9 @@ interface StudioToolbarProps {
 	isolateStem: IsolationStem;
 	selectedTrackHasAudio: boolean;
 	bouncing: boolean;
+	renderingFx: boolean;
+	canRenderFx: boolean;
+	canStitch: boolean;
 	groups: Array<{ id: string; name: string; collapsed: boolean }>;
 	onNew: () => void;
 	onSave: () => void;
@@ -46,7 +49,11 @@ interface StudioToolbarProps {
 	onExportReaper: () => void;
 	onIsolateStemChange: (stem: IsolationStem) => void;
 	onIsolate: () => void;
+	stemMode: "isolate" | "remove";
+	onStemModeChange: (mode: "isolate" | "remove") => void;
 	onBounce: () => void;
+	onRenderFx: () => void;
+	onStitch: () => void;
 	onProducePodcast: () => void;
 	onAddGroup: (name: string) => void;
 	onRemoveGroup: (id: string) => void;
@@ -70,6 +77,9 @@ export function StudioToolbar({
 	isolateStem,
 	selectedTrackHasAudio,
 	bouncing,
+	renderingFx,
+	canRenderFx,
+	canStitch,
 	groups,
 	onNew,
 	onSave,
@@ -83,7 +93,11 @@ export function StudioToolbar({
 	onExportReaper,
 	onIsolateStemChange,
 	onIsolate,
+	stemMode,
+	onStemModeChange,
 	onBounce,
+	onRenderFx,
+	onStitch,
 	onProducePodcast,
 	onAddGroup,
 	onRemoveGroup,
@@ -213,7 +227,35 @@ export function StudioToolbar({
 						/>
 						<div className="absolute top-full left-0 mt-1 z-50 bg-card border border-border rounded-md shadow-lg p-1 min-w-[160px]">
 							<div className="px-2 py-1 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-								Stem Isolation
+								Stem {stemMode === "isolate" ? "Isolation" : "Removal"}
+							</div>
+							<div className="flex items-center gap-1 px-2 py-1">
+								<div className="flex rounded border border-border overflow-hidden">
+									<button
+										type="button"
+										onClick={() => onStemModeChange("isolate")}
+										className={cn(
+											"px-1.5 py-0.5 text-[10px] transition-colors",
+											stemMode === "isolate"
+												? "bg-accent text-accent-foreground"
+												: "text-muted-foreground hover:bg-secondary",
+										)}
+									>
+										Isolate
+									</button>
+									<button
+										type="button"
+										onClick={() => onStemModeChange("remove")}
+										className={cn(
+											"px-1.5 py-0.5 text-[10px] transition-colors",
+											stemMode === "remove"
+												? "bg-accent text-accent-foreground"
+												: "text-muted-foreground hover:bg-secondary",
+										)}
+									>
+										Remove
+									</button>
+								</div>
 							</div>
 							<div className="flex items-center gap-1 px-2 py-1">
 								<Select
@@ -222,7 +264,7 @@ export function StudioToolbar({
 								>
 									<SelectTrigger
 										className="h-6 text-xs flex-1"
-										aria-label="Stem to isolate"
+										aria-label="Stem to isolate or remove"
 									>
 										<SelectValue />
 									</SelectTrigger>
@@ -243,7 +285,11 @@ export function StudioToolbar({
 									}}
 									disabled={isolating || !selectedTrackHasAudio}
 								>
-									{isolating ? "..." : "Isolate"}
+									{isolating
+										? "..."
+										: stemMode === "isolate"
+											? "Isolate"
+											: "Remove"}
 								</Button>
 							</div>
 							<div className="h-px bg-border my-1" />
@@ -279,6 +325,34 @@ export function StudioToolbar({
 								disabled={bouncing || !selectedTrackHasAudio}
 							>
 								{bouncing ? "..." : "Bounce Track"}
+							</button>
+							<button
+								type="button"
+								className="w-full text-left px-2 py-1 text-xs hover:bg-secondary rounded-sm flex items-center gap-2"
+								onClick={() => {
+									setShowToolsMenu(false);
+									onRenderFx();
+								}}
+								disabled={renderingFx || !canRenderFx}
+								title="Render the selected track's full chain (including render-only effects) to a new track via the backend"
+							>
+								{renderingFx ? "Rendering…" : "Render FX…"}
+							</button>
+							<button
+								type="button"
+								className="w-full text-left px-2 py-1 text-xs hover:bg-secondary rounded-sm flex items-center gap-2"
+								onClick={() => {
+									setShowToolsMenu(false);
+									onStitch();
+								}}
+								disabled={!canStitch}
+								title={
+									canStitch
+										? "Stitch the selected track end-to-end with another track"
+										: "Need at least two tracks with audio to stitch"
+								}
+							>
+								Stitch Tracks…
 							</button>
 							<div className="h-px bg-border my-1" />
 							<div className="px-2 py-1 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">

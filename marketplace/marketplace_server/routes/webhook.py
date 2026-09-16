@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .. import paddle
 from ..config import settings
 from ..models import License, Order, Product, async_session
+from ..rate_limit import license_limiter
 from ..signing import get_signer
 
 logger = logging.getLogger(__name__)
@@ -90,8 +91,18 @@ async def handle_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     if settings.paddle_webhook_secret:
         if not paddle.verify_signature(raw_body, signature):
             raise HTTPException(401, detail={"code": "invalid_signature", "message": "Webhook signature invalid"})
+    elif paddle.is_configured():
+        # Paddle is live but no webhook secret — misconfiguration that allows
+        # forged webhooks to mint free licenses. Reject.
+        logger.error("Paddle webhook rejected: live mode but no webhook secret configured")
+        raise HTTPException(500, detail={"code": "webhook_secret_missing", "message": "Webhook secret not configured"})
+    elif not settings.debug:
+        # No API key and not in debug mode — refuse unsigned webhooks rather
+        # than minting licenses from forged events in a misconfigured prod.
+        logger.error("Paddle webhook rejected: payments not configured (set MARKETPLACE_DEBUG=true for local dev)")
+        raise HTTPException(503, detail={"code": "payment_not_configured", "message": "Payments not configured"})
     else:
-        logger.warning("Paddle webhook accepted without signature (no webhook secret configured)")
+        logger.warning("Paddle webhook accepted without signature (dev mode — no API key)")
 
     try:
         event = json.loads(raw_body)
@@ -145,17 +156,29 @@ async def _find_order(db: AsyncSession, order_ref: str, txn_id: str) -> Order | 
 
 
 @router.get("/license/{order_ref}")
-async def get_license(order_ref: str, db: AsyncSession = Depends(get_db)):
+async def get_license(order_ref: str, request: Request, db: AsyncSession = Depends(get_db)):
     """Fetch a signed license by order reference.
 
     Clients call this after payment to retrieve their license.
+    Optional query param ``device_id`` restricts access to the purchasing device.
     """
+    # Rate limit: 10 requests/min per IP
+    client_ip = request.client.host if request.client else "unknown"
+    if not license_limiter.allow(f"license:{client_ip}"):
+        raise HTTPException(
+            429, detail={"code": "rate_limited", "message": "Too many license requests — try again later"}
+        )
     result = await db.execute(select(Order).where(Order.order_ref == order_ref))
     order = result.scalar_one_or_none()
     if order is None:
         raise HTTPException(404, detail={"code": "order_not_found", "message": f"Order '{order_ref}' not found"})
     if order.status != "paid":
         raise HTTPException(402, detail={"code": "not_paid", "message": f"Order '{order_ref}' has not been paid yet"})
+
+    # device_id verification: callers must pass the device that placed the order
+    device_id = request.query_params.get("device_id")
+    if device_id and device_id != order.device_id:
+        raise HTTPException(403, detail={"code": "wrong_device", "message": "device_id does not match the order"})
 
     if order.product_id == "donation":
         # Donations mint no license — confirm the gift so pollers can

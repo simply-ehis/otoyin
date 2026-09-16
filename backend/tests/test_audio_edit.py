@@ -47,7 +47,7 @@ def _write(name: str, audio: np.ndarray) -> str:
 def _read(storage_path: str) -> np.ndarray:
     resolved = resolve_storage_path(storage_path)
     if resolved is None:
-        resolved = get_exports_dir() / storage_path.split("/")[-1]
+        resolved = get_exports_dir() / storage_path.replace("\\", "/").split("/")[-1]
     audio, _ = sf.read(str(resolved), dtype="float32", always_2d=False)
     return audio
 

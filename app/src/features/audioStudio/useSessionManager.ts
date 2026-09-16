@@ -178,7 +178,8 @@ export function useSessionManager() {
 				setIsAutosave(false);
 				setUnsaved(false);
 				setCanUndo(false);
-				const silent = (session.data.tracks ?? []).length > 0 &&
+				const silent =
+					(session.data.tracks ?? []).length > 0 &&
 					(session.data.tracks ?? []).every((t) => !t.audioUrl && !t.audioBlob);
 				toast({
 					title: "Session loaded",

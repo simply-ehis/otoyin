@@ -42,9 +42,7 @@ export function VoiceChangerView() {
 
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader
-				title="Voice Changer"
-			/>
+			<ScreenHeader title="Voice Changer" />
 
 			<div className="flex flex-wrap items-center gap-4">
 				<Button

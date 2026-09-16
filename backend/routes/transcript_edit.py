@@ -52,7 +52,9 @@ async def get_word_timestamps(generation_id: str):
         from ..backends.configs import get_all_model_configs
         from ..services.model_registry import is_downloaded
 
-        cfg = next((c for c in get_all_model_configs() if c.engine == "faster-whisper" and c.model_size == "tiny.en"), None)
+        cfg = next(
+            (c for c in get_all_model_configs() if c.engine == "faster-whisper" and c.model_size == "tiny.en"), None
+        )
         if cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size):
             raise HTTPException(status_code=400, detail=f"Download this model from the Store first ({cfg.model_name})")
         if not stt._is_model_cached("tiny.en"):
@@ -119,7 +121,9 @@ async def delete_words(generation_id: str, request: DeleteWordsRequest):
         from ..backends.configs import get_all_model_configs
         from ..services.model_registry import is_downloaded
 
-        cfg = next((c for c in get_all_model_configs() if c.engine == "faster-whisper" and c.model_size == "tiny.en"), None)
+        cfg = next(
+            (c for c in get_all_model_configs() if c.engine == "faster-whisper" and c.model_size == "tiny.en"), None
+        )
         if cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size):
             raise HTTPException(status_code=400, detail=f"Download this model from the Store first ({cfg.model_name})")
         if not stt._is_model_cached("tiny.en"):

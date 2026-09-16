@@ -159,7 +159,9 @@ export function VoiceDesignPanel({
 								name={"voiceAttributes.accent" as keyof ProfileFormValues}
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel className="text-xs">Accent / Nationality</FormLabel>
+										<FormLabel className="text-xs">
+											Accent / Nationality
+										</FormLabel>
 										{currentEngine?.attributes_help?.accent ? (
 											<p className="text-xs text-muted-foreground/50 -mt-1 mb-1">
 												{currentEngine.attributes_help.accent}

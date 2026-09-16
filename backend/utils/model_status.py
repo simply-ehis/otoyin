@@ -305,10 +305,9 @@ def pick_cached_tts_engine(preferred: str | None = None) -> str | None:
 
     def _entitled(eng: str) -> bool:
         """True if the engine has a manifest row AND its files are on disk."""
-        return any(
-            c.engine == eng and is_downloaded(c.model_name, c.model_size)
-            for c in configs
-        ) and is_engine_cached(eng)
+        return any(c.engine == eng and is_downloaded(c.model_name, c.model_size) for c in configs) and is_engine_cached(
+            eng
+        )
 
     if preferred and _entitled(preferred):
         return preferred

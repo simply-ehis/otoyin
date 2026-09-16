@@ -20,41 +20,31 @@ def _cfg(engine="kokoro", model="kokoro-onnx", voices=("af_heart",)):
         engine=engine,
         model_name=model,
         model_size="default",
-        structured_preset_voices=[
-            types.SimpleNamespace(id=v, name=v, gender="female", language="en") for v in voices
-        ],
+        structured_preset_voices=[types.SimpleNamespace(id=v, name=v, gender="female", language="en") for v in voices],
     )
 
 
 def test_unknown_engine_is_400(monkeypatch):
     monkeypatch.setattr("backend.backends.get_all_model_configs", lambda: [_cfg()])
-    res = _client().post(
-        "/profiles/preset-voice-preview", json={"engine": "nope", "voice_id": "af_heart"}
-    )
+    res = _client().post("/profiles/preset-voice-preview", json={"engine": "nope", "voice_id": "af_heart"})
     assert res.status_code == 400
 
 
 def test_unknown_voice_is_400(monkeypatch):
     monkeypatch.setattr("backend.backends.get_all_model_configs", lambda: [_cfg()])
-    res = _client().post(
-        "/profiles/preset-voice-preview", json={"engine": "kokoro", "voice_id": "nope"}
-    )
+    res = _client().post("/profiles/preset-voice-preview", json={"engine": "kokoro", "voice_id": "nope"})
     assert res.status_code == 400
 
 
 def test_missing_fields_are_400():
-    res = _client().post(
-        "/profiles/preset-voice-preview", json={"engine": "kokoro", "voice_id": "  "}
-    )
+    res = _client().post("/profiles/preset-voice-preview", json={"engine": "kokoro", "voice_id": "  "})
     assert res.status_code == 400
 
 
 def test_not_downloaded_model_is_400(monkeypatch):
     # No DB session configured → is_downloaded falls back to False.
     monkeypatch.setattr("backend.backends.get_all_model_configs", lambda: [_cfg()])
-    res = _client().post(
-        "/profiles/preset-voice-preview", json={"engine": "kokoro", "voice_id": "af_heart"}
-    )
+    res = _client().post("/profiles/preset-voice-preview", json={"engine": "kokoro", "voice_id": "af_heart"})
     assert res.status_code == 400
 
 
@@ -74,9 +64,7 @@ def test_synthesize_and_serve_from_cache(monkeypatch, tmp_path):
             return np.zeros(2400, dtype=np.float32), 24000
 
     monkeypatch.setattr("backend.backends.load_engine_model", _fake_load)
-    monkeypatch.setattr(
-        "backend.backends.get_tts_backend_for_engine", lambda engine: _FakeBackend()
-    )
+    monkeypatch.setattr("backend.backends.get_tts_backend_for_engine", lambda engine: _FakeBackend())
     monkeypatch.setattr("backend.config.get_data_dir", lambda: tmp_path)
 
     client = _client()
@@ -107,12 +95,8 @@ def test_engine_render_failure_is_422(monkeypatch, tmp_path):
             raise RuntimeError("boom")
 
     monkeypatch.setattr("backend.backends.load_engine_model", _fake_load)
-    monkeypatch.setattr(
-        "backend.backends.get_tts_backend_for_engine", lambda engine: _BrokenBackend()
-    )
+    monkeypatch.setattr("backend.backends.get_tts_backend_for_engine", lambda engine: _BrokenBackend())
     monkeypatch.setattr("backend.config.get_data_dir", lambda: tmp_path)
 
-    res = _client().post(
-        "/profiles/preset-voice-preview", json={"engine": "kokoro", "voice_id": "af_heart"}
-    )
+    res = _client().post("/profiles/preset-voice-preview", json={"engine": "kokoro", "voice_id": "af_heart"})
     assert res.status_code == 422

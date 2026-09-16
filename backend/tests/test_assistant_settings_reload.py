@@ -29,9 +29,7 @@ def client(monkeypatch):
     fd, path = tempfile.mkstemp(suffix=".asst_test.db")
     os.close(fd)
     eng = create_engine(f"sqlite:///{path}")
-    Base.metadata.create_all(
-        eng, tables=[DBAssistantSettings.__table__, AppSetting.__table__], checkfirst=True
-    )
+    Base.metadata.create_all(eng, tables=[DBAssistantSettings.__table__, AppSetting.__table__], checkfirst=True)
     factory = sessionmaker(bind=eng)
 
     from backend.routes import settings as settings_routes

@@ -23,7 +23,35 @@ export function WaveformVisualizer({
 }: WaveformVisualizerProps) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const animFrameRef = useRef<number>(0);
+	const freqDataRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
+	// Read progress via ref so the rAF loop doesn't re-subscribe at 60fps.
+	const progressRef = useRef(progress);
+	progressRef.current = progress;
 	const [cachedWaveform, setCachedWaveform] = useState<Uint8Array | null>(null);
+
+	// Precomputed bar colors (avoid per-frame `hsl()` string allocs).
+	const liveColors = useRef<string[]>(
+		Array.from({ length: BAR_COUNT }, (_, i) => {
+			const hue = 270 + (i / BAR_COUNT) * 60;
+			return `hsl(${hue}, 80%, 55%)`;
+		}),
+	);
+
+	// Size the canvas only when dimensions change — resetting width/height
+	// every frame forces layout + context-state reset at 60fps.
+	const ensureSize = useCallback(
+		(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
+			const totalWidth = BAR_COUNT * (BAR_WIDTH + BAR_GAP) - BAR_GAP;
+			if (canvas.width !== totalWidth || canvas.height !== height) {
+				canvas.width = totalWidth;
+				canvas.height = height;
+			} else {
+				ctx.clearRect(0, 0, totalWidth, height);
+			}
+			return totalWidth;
+		},
+		[height],
+	);
 
 	// Draw waveform from analyser data
 	const draw = useCallback(() => {
@@ -37,14 +65,17 @@ export function WaveformVisualizer({
 			return;
 		}
 
-		const totalWidth = BAR_COUNT * (BAR_WIDTH + BAR_GAP) - BAR_GAP;
-		canvas.width = totalWidth;
-		canvas.height = height;
-
-		ctx.clearRect(0, 0, totalWidth, height);
+		const totalWidth = ensureSize(canvas, ctx);
+		const progressValue = progressRef.current;
 
 		if (analyser && playing) {
-			const data = new Uint8Array(analyser.frequencyBinCount);
+			if (
+				!freqDataRef.current ||
+				freqDataRef.current.length !== analyser.frequencyBinCount
+			) {
+				freqDataRef.current = new Uint8Array(analyser.frequencyBinCount);
+			}
+			const data = freqDataRef.current;
 			analyser.getByteFrequencyData(data);
 
 			// Downsample to BAR_COUNT bars
@@ -58,8 +89,7 @@ export function WaveformVisualizer({
 				const y = height - barHeight;
 
 				// Gradient color based on frequency
-				const hue = 270 + (i / BAR_COUNT) * 60; // Purple to cyan
-				ctx.fillStyle = `hsl(${hue}, 80%, 55%)`;
+				ctx.fillStyle = liveColors.current[i];
 				ctx.fillRect(x, y, BAR_WIDTH, barHeight);
 			}
 		} else if (cachedWaveform) {
@@ -88,8 +118,8 @@ export function WaveformVisualizer({
 		}
 
 		// Draw progress indicator
-		if (progress > 0 && progress < 1) {
-			const progressX = progress * totalWidth;
+		if (progressValue > 0 && progressValue < 1) {
+			const progressX = progressValue * totalWidth;
 			ctx.fillStyle = "hsl(330, 90%, 60%)";
 			ctx.fillRect(progressX, 0, 1, height);
 		}
@@ -97,7 +127,7 @@ export function WaveformVisualizer({
 		if (playing || cachedWaveform) {
 			animFrameRef.current = requestAnimationFrame(draw);
 		}
-	}, [analyser, playing, progress, height, cachedWaveform]);
+	}, [analyser, playing, height, cachedWaveform, ensureSize]);
 
 	useEffect(() => {
 		draw();

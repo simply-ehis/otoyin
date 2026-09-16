@@ -125,9 +125,7 @@ export function SpatialView() {
 
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader
-				title="3D Spatializer"
-			/>
+			<ScreenHeader title="3D Spatializer" />
 
 			<Separator />
 

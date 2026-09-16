@@ -8,10 +8,13 @@ export function SpectrogramCanvas({
 	audioUrl,
 	height = 60,
 	className,
+	hueBase,
 }: {
 	audioUrl: string | null;
 	height?: number;
 	className?: string;
+	/** Optional stem hue base (0-360). Default is the blue→red energy map. */
+	hueBase?: number;
 }) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const [loading, setLoading] = useState(false);
@@ -85,7 +88,10 @@ export function SpectrogramCanvas({
 		for (let t = 0; t < numFrames; t++) {
 			for (let f = 0; f < numFreqBins; f++) {
 				const val = spectrogramData[f]?.[t] ?? 0;
-				const hue = 240 - Math.min(1, val) * 240;
+				const hue =
+					hueBase == null
+						? 240 - Math.min(1, val) * 240
+						: (((hueBase - Math.min(1, val) * 120) % 360) + 360) % 360;
 				ctx.fillStyle = `hsl(${hue}, 80%, ${15 + val * 55}%)`;
 				ctx.fillRect(
 					t * barWidth,
@@ -95,7 +101,7 @@ export function SpectrogramCanvas({
 				);
 			}
 		}
-	}, [spectrogramData, height]);
+	}, [spectrogramData, height, hueBase]);
 
 	if (!audioUrl) {
 		return null;

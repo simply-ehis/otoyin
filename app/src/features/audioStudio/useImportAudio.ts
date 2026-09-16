@@ -9,6 +9,7 @@ import {
 import { showStudioErrorToast } from "@/lib/errors";
 import { getSharedContext } from "@/lib/hooks/useAudioPlayer";
 import { getAudioDuration } from "@/lib/utils/audio";
+import { debug } from "@/lib/utils/debug";
 import type { StudioTrack } from "./AudioStudioStore";
 import { getPeakWaveform } from "./getPeakWaveform";
 
@@ -78,14 +79,17 @@ export function useImportAudio(opts: UseImportAudioOptions) {
 			if (targetTrack.audioUrl?.startsWith("blob:")) {
 				try {
 					URL.revokeObjectURL(targetTrack.audioUrl);
-				} catch {}
+				} catch (e) {
+					debug.warn("revokeObjectURL failed", e);
+				}
 			}
 
 			const url = URL.createObjectURL(file);
 			let duration = 0;
 			try {
 				duration = await getAudioDuration(file);
-			} catch {
+			} catch (e) {
+				debug.warn("getAudioDuration failed, using decoded duration", e);
 				duration = 0;
 			}
 
@@ -93,8 +97,8 @@ export function useImportAudio(opts: UseImportAudioOptions) {
 				const ctx = getSharedContext() ?? new AudioContext();
 				const needsClose = ctx !== getSharedContext();
 				const arrayBuffer = await file.arrayBuffer();
-				// Copy buffer because decodeAudioData may detach
-				const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+				// decodeAudioData detaches the buffer — no copy needed.
+				const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
 				const peaks = getPeakWaveform(audioBuffer, 200);
 				if (needsClose) {
 					await ctx.close();

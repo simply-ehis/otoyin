@@ -55,7 +55,10 @@ function formatVttTime(ms: number): string {
 	return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${String(ms3).padStart(3, "0")}`;
 }
 
-function groupWordsIntoCues(wordList: Word[], maxDurationMs = 5000): Array<{ start: number; end: number; text: string }> {
+function groupWordsIntoCues(
+	wordList: Word[],
+	maxDurationMs = 5000,
+): Array<{ start: number; end: number; text: string }> {
 	const cues: Array<{ start: number; end: number; text: string }> = [];
 	let cueStart = 0;
 	let cueEnd = 0;
@@ -186,11 +189,17 @@ export function TranscriptEditView() {
 			let content: string;
 			if (fmt === "srt") {
 				content = cues
-					.map((c, i) => `${i + 1}\n${formatSrtTime(c.start)} --> ${formatSrtTime(c.end)}\n${c.text}`)
+					.map(
+						(c, i) =>
+							`${i + 1}\n${formatSrtTime(c.start)} --> ${formatSrtTime(c.end)}\n${c.text}`,
+					)
 					.join("\n\n");
 			} else {
 				const vttCues = cues
-					.map((c) => `${formatVttTime(c.start)} --> ${formatVttTime(c.end)}\n${c.text}`)
+					.map(
+						(c) =>
+							`${formatVttTime(c.start)} --> ${formatVttTime(c.end)}\n${c.text}`,
+					)
 					.join("\n\n");
 				content = `WEBVTT\n\n${vttCues}`;
 			}
@@ -203,7 +212,10 @@ export function TranscriptEditView() {
 				);
 				toast({ title: `Exported ${ext.toUpperCase()}` });
 			} catch {
-				toast({ title: `Failed to export ${ext.toUpperCase()}`, variant: "destructive" });
+				toast({
+					title: `Failed to export ${ext.toUpperCase()}`,
+					variant: "destructive",
+				});
 			}
 		},
 		[words, platform, toast],
@@ -211,9 +223,7 @@ export function TranscriptEditView() {
 
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader
-				title="Transcript Edit"
-			/>
+			<ScreenHeader title="Transcript Edit" />
 
 			<div className="flex max-w-xl items-center gap-2">
 				<Input

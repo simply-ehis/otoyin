@@ -557,9 +557,7 @@ export function StandaloneProjectPage() {
 
 	return (
 		<div className="mx-auto flex h-full w-full max-w-3xl flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader
-				title="Create New Project"
-			/>
+			<ScreenHeader title="Create New Project" />
 
 			<Card>
 				<CardHeader>

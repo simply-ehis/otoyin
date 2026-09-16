@@ -78,7 +78,7 @@ def apply_effect(audio: np.ndarray, sample_rate: int, effect: EffectConfig) -> n
     handler = handlers.get(effect.effect_type)
     if handler:
         return handler(audio, sample_rate, effect.params)
-    return audio
+    raise ValueError(f"Unknown effect: {effect.effect_type}")
 
 
 def _phase_vocoder(audio: np.ndarray, factor: float) -> np.ndarray:
@@ -256,16 +256,55 @@ def apply_distortion(audio: np.ndarray, sample_rate: int, params: dict) -> np.nd
 
 
 def apply_eq(audio: np.ndarray, sample_rate: int, params: dict) -> np.ndarray:
-    low_gain = params.get("low_gain", 0.0)
-    mid_gain = params.get("mid_gain", 0.0)
-    high_gain = params.get("high_gain", 0.0)
+    """4-band parametric EQ: lowshelf + 2 peaking + highshelf.
+
+    Params: low_freq/low_gain/low_q, mid1_freq/mid1_gain/mid1_q,
+            mid2_freq/mid2_gain/mid2_q, high_freq/high_gain/high_q.
+    Legacy 3-band keys (low_gain/mid_gain/high_gain) are mapped as fallback.
+    """
+    bands = [
+        ("low", "lowshelf", params.get("low_freq", 100), params.get("low_gain", 0), params.get("low_q", 0.707)),
+        (
+            "mid1",
+            "peaking",
+            params.get("mid1_freq", 1000),
+            params.get("mid1_gain", params.get("mid_gain", 0)),
+            params.get("mid1_q", 1.0),
+        ),
+        ("mid2", "peaking", params.get("mid2_freq", 3000), params.get("mid2_gain", 0), params.get("mid2_q", 1.0)),
+        ("high", "highshelf", params.get("high_freq", 8000), params.get("high_gain", 0), params.get("high_q", 0.707)),
+    ]
     n = len(audio)
     fft = np.fft.rfft(audio)
     freqs = np.fft.rfftfreq(n, 1.0 / sample_rate)
-    mask = 10.0 ** (low_gain / 20.0) * (freqs < 300)
-    mask += 10.0 ** (mid_gain / 20.0) * ((freqs >= 300) & (freqs < 5000))
-    mask += 10.0 ** (high_gain / 20.0) * (freqs >= 5000)
-    mask[mask == 0] = 1.0
+    mask = np.ones(len(fft), dtype=np.float64)
+    for _name, btype, center, gain_db, q in bands:
+        if gain_db == 0:
+            continue
+        center = max(20.0, min(center, sample_rate / 2 - 1))
+        q = max(0.1, q)
+        a = 10.0 ** (gain_db / 40.0)
+        if btype == "peaking":
+            ratio = freqs / center
+            denom = 1.0 + q * q * (ratio - 1.0 / ratio) ** 2
+            band_mask = 1.0 + (a * a - 1.0) / denom
+        elif btype == "lowshelf":
+            shelf_q = max(q, 0.707)
+            ratio = freqs / center
+            band_mask = np.where(
+                freqs < center * 2,
+                1.0 + (a * a - 1.0) / (1.0 + shelf_q * shelf_q * (ratio - 1.0 / ratio) ** 2),
+                1.0,
+            )
+        else:  # highshelf
+            shelf_q = max(q, 0.707)
+            ratio = freqs / center
+            band_mask = np.where(
+                freqs > center / 2,
+                1.0 + (a * a - 1.0) / (1.0 + shelf_q * shelf_q * (ratio - 1.0 / ratio) ** 2),
+                1.0,
+            )
+        mask *= band_mask
     fft *= mask
     return np.fft.irfft(fft, n=n).astype(np.float32)
 
@@ -273,6 +312,8 @@ def apply_eq(audio: np.ndarray, sample_rate: int, params: dict) -> np.ndarray:
 def apply_compressor(audio: np.ndarray, sample_rate: int, params: dict) -> np.ndarray:
     threshold = params.get("threshold", -20.0)
     ratio = params.get("ratio", 4.0)
+    if not ratio or ratio < 1.0:
+        raise ValueError(f"Compressor ratio must be >= 1.0, got {ratio!r}")
     attack = params.get("attack", 0.01)
     release = params.get("release", 0.1)
     threshold_linear = 10.0 ** (threshold / 20.0)

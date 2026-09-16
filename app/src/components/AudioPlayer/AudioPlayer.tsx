@@ -7,14 +7,7 @@ import {
 	XMarkIcon as X,
 } from "@heroicons/react/24/outline";
 import { useQuery } from "@tanstack/react-query";
-import {
-	memo,
-	useCallback,
-	useEffect,
-	useMemo,
-	useRef,
-	useState,
-} from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
 import { Slider } from "@/components/ui/slider";
 import { apiClient } from "@/lib/api/client";
@@ -514,9 +507,7 @@ function AudioPlayerInner() {
 			if (useFallback && fallbackAudioRef.current) {
 				const el = fallbackAudioRef.current;
 				if (el.paused) {
-					el.play().catch((err) =>
-						debug.error("Spacebar play failed:", err),
-					);
+					el.play().catch((err) => debug.error("Spacebar play failed:", err));
 				} else {
 					el.pause();
 				}
@@ -566,7 +557,8 @@ function AudioPlayerInner() {
 					return;
 				}
 				e.preventDefault();
-				const step = (e.shiftKey ? 30 : 10) * (e.code === "ArrowRight" ? 1 : -1);
+				const step =
+					(e.shiftKey ? 30 : 10) * (e.code === "ArrowRight" ? 1 : -1);
 				seekBySeconds(step);
 			}
 		};
@@ -609,7 +601,12 @@ function AudioPlayerInner() {
 		return () => {
 			try {
 				navigator.mediaSession.metadata = null;
-				for (const a of ["play", "pause", "seekbackward", "seekforward"] as const) {
+				for (const a of [
+					"play",
+					"pause",
+					"seekbackward",
+					"seekforward",
+				] as const) {
 					navigator.mediaSession.setActionHandler(a, null);
 				}
 			} catch {
@@ -882,7 +879,7 @@ function AudioPlayerInner() {
 					</p>
 				) : null}
 
-					{/* Waveform / seek / error */}
+				{/* Waveform / seek / error */}
 				<div className="flex min-w-0 flex-1 items-center">
 					{error ? (
 						<div className="flex min-w-0 flex-1 items-center gap-2 px-1">

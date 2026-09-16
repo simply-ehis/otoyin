@@ -800,9 +800,7 @@ describe("CATEGORY_LABELS", () => {
 			if (c.id === "all") {
 				continue;
 			}
-			expect(CATEGORY_LABELS[c.id], `missing label for ${c.id}`).toMatch(
-				/\S/,
-			);
+			expect(CATEGORY_LABELS[c.id], `missing label for ${c.id}`).toMatch(/\S/);
 		}
 	});
 });

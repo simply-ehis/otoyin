@@ -94,8 +94,14 @@ function ProgressRow({ id, now }: { id: string; now: number }) {
 			return;
 		}
 		// Same id the hook uses: completion swaps this preview for the final mix.
-		usePlayerStore.getState().setAudioWithAutoPlay(entry.previewUrl, id, "", "");
-		toast({ title: "Playing partial audio", description: "Live preview — the finished take replaces it automatically." });
+		usePlayerStore
+			.getState()
+			.setAudioWithAutoPlay(entry.previewUrl, id, "", "");
+		toast({
+			title: "Playing partial audio",
+			description:
+				"Live preview — the finished take replaces it automatically.",
+		});
 	};
 
 	return (

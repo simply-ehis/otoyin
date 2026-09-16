@@ -128,9 +128,9 @@ def test_record_carries_recent_requests_and_diagnostics(tmp_path):
     assert record is not None
     trail = record["context"]["recent_requests"]
     assert [r["path"] for r in trail] == ["/generate", "/library"]
-    assert record["context"]["diagnostics"]["ram_free_mb"] is not None or "ram_error" in record["context"][
-        "diagnostics"
-    ]
+    assert (
+        record["context"]["diagnostics"]["ram_free_mb"] is not None or "ram_error" in record["context"]["diagnostics"]
+    )
 
 
 def test_recent_requests_bounded():
@@ -276,7 +276,7 @@ class TestMiddleware:
         class Req:
             url = type("U", (), {"path": "/boom"})()
             method = "GET"
-            headers = {}
+            headers = {}  # noqa: RUF012 - test double, never mutated as class attr
 
         async def _raise(_request):
             raise RuntimeError("backend blew up")
@@ -296,6 +296,6 @@ class TestMiddleware:
         class Req:
             url = type("U", (), {"path": "/health"})()
             method = "GET"
-            headers = {}
+            headers = {}  # noqa: RUF012 - test double, never mutated as class attr
 
         assert await mw.dispatch(Req(), _ok) is sentinel

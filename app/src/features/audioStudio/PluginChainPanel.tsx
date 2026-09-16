@@ -4,100 +4,155 @@ import {
 	PowerIcon as Power,
 	TrashIcon as Trash2,
 } from "@heroicons/react/24/outline";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/ui/button";
 import { Slider } from "@/ui/slider";
 import { type StudioTrack, useAudioStudioStore } from "./AudioStudioStore";
-
-interface ParamMeta {
-	label: string;
-	min: number;
-	max: number;
-	step: number;
-	unit: string;
-}
-
-const PARAM_META: Record<string, Record<string, ParamMeta>> = {
-	eq: {
-		low_gain: { label: "Bass", min: -12, max: 12, step: 1, unit: "dB" },
-		mid_gain: { label: "Mid", min: -12, max: 12, step: 1, unit: "dB" },
-		high_gain: { label: "Treble", min: -12, max: 12, step: 1, unit: "dB" },
-	},
-	compressor: {
-		threshold: {
-			label: "Threshold",
-			min: -60,
-			max: 0,
-			step: 1,
-			unit: "dB",
-		},
-		ratio: { label: "Ratio", min: 1, max: 20, step: 1, unit: ":1" },
-		attack: { label: "Attack", min: 1, max: 100, step: 1, unit: "ms" },
-		release: { label: "Release", min: 10, max: 1000, step: 10, unit: "ms" },
-	},
-	reverb: {
-		mix: { label: "Mix", min: 0, max: 1, step: 0.05, unit: "" },
-	},
-	delay: {
-		time: { label: "Time", min: 0.05, max: 1, step: 0.05, unit: "s" },
-		feedback: { label: "Feedback", min: 0, max: 0.9, step: 0.05, unit: "" },
-		mix: { label: "Mix", min: 0, max: 1, step: 0.05, unit: "" },
-	},
-	gain: {
-		gain: { label: "Gain", min: 0, max: 2, step: 0.05, unit: "" },
-	},
-};
-
-interface PluginCatalogEntry {
-	id: string;
-	name: string;
-	defaults: Record<string, number>;
-}
-
-const PLUGIN_CATALOG: PluginCatalogEntry[] = [
-	{
-		id: "builtin-eq",
-		name: "EQ",
-		defaults: { low_gain: 0, mid_gain: 0, high_gain: 0 },
-	},
-	{
-		id: "builtin-compressor",
-		name: "Compressor",
-		defaults: { threshold: -24, ratio: 12, attack: 3, release: 250 },
-	},
-	{
-		id: "builtin-reverb",
-		name: "Reverb",
-		defaults: { mix: 0.3 },
-	},
-	{
-		id: "builtin-delay",
-		name: "Delay",
-		defaults: { time: 0.3, feedback: 0.3, mix: 0.5 },
-	},
-	{
-		id: "builtin-gain",
-		name: "Gain",
-		defaults: { gain: 1.0 },
-	},
-];
+import { EQ_BANDS, eqBandResponse } from "./buildEffectChain";
+import {
+	NATIVE_PREVIEW_IDS,
+	type ParamMeta,
+	type PluginCatalogEntry,
+	usePluginCatalog,
+} from "./pluginCatalog";
 
 type PluginChainSnapshot = StudioTrack["pluginChain"];
 
+const BAND_COLORS = ["#ff6b86", "#58d6c7", "#9b8cff", "#ffb454"];
+
+function EqResponseCanvas({ params }: { params: Record<string, number> }) {
+	const canvasRef = useRef<HTMLCanvasElement>(null);
+
+	const draw = useCallback(
+		(canvas: HTMLCanvasElement) => {
+			const { width, height } = canvas;
+			const ctx2d = canvas.getContext("2d");
+			if (!ctx2d) {
+				return;
+			}
+			ctx2d.clearRect(0, 0, width, height);
+
+			const padding = { top: 4, bottom: 14, left: 24, right: 4 };
+			const plotW = width - padding.left - padding.right;
+			const plotH = height - padding.top - padding.bottom;
+
+			// Grid lines
+			ctx2d.strokeStyle = "rgba(128,128,128,0.15)";
+			ctx2d.lineWidth = 0.5;
+			for (let db = -12; db <= 12; db += 6) {
+				const y = padding.top + plotH / 2 - (db / 12) * (plotH / 2);
+				ctx2d.beginPath();
+				ctx2d.moveTo(padding.left, y);
+				ctx2d.lineTo(width - padding.right, y);
+				ctx2d.stroke();
+			}
+
+			// Compute combined response
+			const nPoints = plotW;
+			const response = new Float32Array(nPoints);
+			const logMin = Math.log10(20);
+			const logMax = Math.log10(20000);
+
+			for (let i = 0; i < nPoints; i++) {
+				const logFreq = logMin + (i / nPoints) * (logMax - logMin);
+				const freq = 10 ** logFreq;
+				let total = 0;
+				for (const band of EQ_BANDS) {
+					const freqKey = `${band.key}_freq`;
+					const gainKey = `${band.key}_gain`;
+					const qKey = `${band.key}_q`;
+					const f = (params[freqKey] as number) ?? band.defaultFreq;
+					const g = (params[gainKey] as number) ?? 0;
+					const q = (params[qKey] as number) ?? band.defaultQ;
+					total += eqBandResponse(freq, f, g, q, band.type);
+				}
+				response[i] = total;
+			}
+
+			// Draw response curve
+			ctx2d.beginPath();
+			ctx2d.strokeStyle = "hsl(var(--accent))";
+			ctx2d.lineWidth = 1.5;
+			for (let i = 0; i < nPoints; i++) {
+				const x = padding.left + i;
+				const clampedDb = Math.max(-12, Math.min(12, response[i]));
+				const y = padding.top + plotH / 2 - (clampedDb / 12) * (plotH / 2);
+				if (i === 0) {
+					ctx2d.moveTo(x, y);
+				} else {
+					ctx2d.lineTo(x, y);
+				}
+			}
+			ctx2d.stroke();
+
+			// Draw band dots
+			for (let b = 0; b < EQ_BANDS.length; b++) {
+				const band = EQ_BANDS[b];
+				const f = (params[`${band.key}_freq`] as number) ?? band.defaultFreq;
+				const g = (params[`${band.key}_gain`] as number) ?? 0;
+				const logF = Math.log10(f);
+				const x = padding.left + ((logF - logMin) / (logMax - logMin)) * plotW;
+				const y =
+					padding.top +
+					plotH / 2 -
+					(Math.max(-12, Math.min(12, g)) / 12) * (plotH / 2);
+				ctx2d.beginPath();
+				ctx2d.arc(x, y, 3, 0, Math.PI * 2);
+				ctx2d.fillStyle = BAND_COLORS[b];
+				ctx2d.fill();
+			}
+
+			// Frequency labels
+			ctx2d.fillStyle = "rgba(128,128,128,0.5)";
+			ctx2d.font = "8px monospace";
+			ctx2d.textAlign = "center";
+			for (const hz of [100, 1000, 10000]) {
+				const logF = Math.log10(hz);
+				const x = padding.left + ((logF - logMin) / (logMax - logMin)) * plotW;
+				ctx2d.fillText(hz >= 1000 ? `${hz / 1000}k` : `${hz}`, x, height - 2);
+			}
+		},
+		[params],
+	);
+
+	const refCallback = useCallback(
+		(canvas: HTMLCanvasElement | null) => {
+			(canvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current =
+				canvas;
+			if (canvas) {
+				const dpr = window.devicePixelRatio || 1;
+				const rect = canvas.getBoundingClientRect();
+				canvas.width = rect.width * dpr;
+				canvas.height = rect.height * dpr;
+				const ctx2d = canvas.getContext("2d");
+				if (ctx2d) {
+					ctx2d.scale(dpr, dpr);
+				}
+				draw(canvas);
+			}
+		},
+		[draw],
+	);
+
+	return (
+		<canvas
+			ref={refCallback}
+			className="w-full h-16 rounded bg-sunken/50"
+			aria-label="EQ frequency response"
+		/>
+	);
+}
+
 function ParamSlider({
-	pluginId,
-	paramKey,
 	value,
+	meta,
 	onChange,
 }: {
-	pluginId: string;
-	paramKey: string;
 	value: number;
+	meta: ParamMeta | undefined;
 	onChange: (v: number) => void;
 }) {
-	const id = pluginId.replace(/^builtin-/, "");
-	const meta = PARAM_META[id]?.[paramKey];
 	if (!meta) {
 		return null;
 	}
@@ -126,19 +181,22 @@ function ParamSlider({
 
 function PluginItem({
 	item,
+	paramsMeta,
 	onToggle,
 	onRemove,
 	onUpdateParams,
 }: {
 	item: StudioTrack["pluginChain"][number];
+	paramsMeta: Record<string, ParamMeta>;
 	onToggle: () => void;
 	onRemove: () => void;
 	onUpdateParams: (params: Record<string, number>) => void;
 }) {
 	const [expanded, setExpanded] = useState(false);
 	const id = item.pluginId.replace(/^builtin-/, "");
-	const paramKeys = Object.keys(PARAM_META[id] ?? {});
+	const paramKeys = Object.keys(paramsMeta);
 	const hasParams = paramKeys.length > 0;
+	const livePreview = NATIVE_PREVIEW_IDS.has(item.pluginId);
 
 	return (
 		<div className="bg-sunken rounded">
@@ -163,6 +221,14 @@ function PluginItem({
 				>
 					{item.pluginName}
 				</span>
+				{!livePreview && (
+					<span
+						className="shrink-0 rounded border border-border px-1 text-[9px] text-muted-foreground"
+						title="No live preview — apply via backend render (bounce)"
+					>
+						R
+					</span>
+				)}
 				{hasParams && (
 					<button
 						type="button"
@@ -190,12 +256,12 @@ function PluginItem({
 			</div>
 			{expanded && hasParams && (
 				<div className="flex flex-col gap-1 px-2 pb-1.5">
+					{id === "eq" && <EqResponseCanvas params={item.params} />}
 					{paramKeys.map((pk) => (
 						<ParamSlider
 							key={pk}
-							pluginId={item.pluginId}
-							paramKey={pk}
 							value={item.params[pk] ?? 0}
+							meta={paramsMeta[pk]}
 							onChange={(v) => onUpdateParams({ ...item.params, [pk]: v })}
 						/>
 					))}
@@ -206,12 +272,38 @@ function PluginItem({
 }
 
 function AddPluginDropdown({
+	entries,
 	onAdd,
 }: {
+	entries: PluginCatalogEntry[];
 	onAdd: (entry: PluginCatalogEntry) => void;
 }) {
 	const [open, setOpen] = useState(false);
 	const ref = useRef<HTMLDivElement>(null);
+	const live = entries.filter((e) => NATIVE_PREVIEW_IDS.has(e.id));
+	const renderOnly = entries.filter((e) => !NATIVE_PREVIEW_IDS.has(e.id));
+
+	const renderEntry = (entry: PluginCatalogEntry) => (
+		<button
+			key={entry.id}
+			type="button"
+			className="w-full text-left px-2 py-1 text-xs hover:bg-secondary rounded-sm flex items-center gap-1.5"
+			onClick={() => {
+				onAdd(entry);
+				setOpen(false);
+			}}
+		>
+			<span className="flex-1 truncate">{entry.name}</span>
+			{!NATIVE_PREVIEW_IDS.has(entry.id) && (
+				<span
+					className="shrink-0 rounded border border-border px-1 text-[9px] text-muted-foreground"
+					title="No live preview — apply via backend render (bounce)"
+				>
+					R
+				</span>
+			)}
+		</button>
+	);
 
 	return (
 		<div ref={ref} className="relative">
@@ -238,20 +330,19 @@ function AddPluginDropdown({
 						}}
 						aria-label="Close plugin menu"
 					/>
-					<div className="absolute bottom-full left-0 mb-1 z-50 bg-card border border-border rounded-md shadow-lg p-1 min-w-[140px]">
-						{PLUGIN_CATALOG.map((entry) => (
-							<button
-								key={entry.id}
-								type="button"
-								className="w-full text-left px-2 py-1 text-xs hover:bg-secondary rounded-sm"
-								onClick={() => {
-									onAdd(entry);
-									setOpen(false);
-								}}
-							>
-								{entry.name}
-							</button>
-						))}
+					<div className="absolute bottom-full left-0 mb-1 z-50 bg-card border border-border rounded-md shadow-lg p-1 min-w-[160px] max-h-64 overflow-y-auto">
+						<div className="px-2 py-1 text-[9px] font-medium text-muted-foreground uppercase tracking-wider">
+							Live preview
+						</div>
+						{live.map(renderEntry)}
+						{renderOnly.length > 0 && (
+							<>
+								<div className="px-2 py-1 text-[9px] font-medium text-muted-foreground uppercase tracking-wider">
+									Backend render
+								</div>
+								{renderOnly.map(renderEntry)}
+							</>
+						)}
 					</div>
 				</>
 			)}
@@ -322,6 +413,8 @@ export function PluginChainPanel({ track }: { track: StudioTrack }) {
 	};
 
 	const chain = track.pluginChain ?? [];
+	const catalog = usePluginCatalog();
+	const typeOf = (pluginId: string) => pluginId.replace(/^builtin-/, "");
 
 	return (
 		<div className="space-y-0.5 mb-1">
@@ -372,12 +465,13 @@ export function PluginChainPanel({ track }: { track: StudioTrack }) {
 				<PluginItem
 					key={`${item.pluginId}-${idx}`}
 					item={item}
+					paramsMeta={catalog.paramMeta[typeOf(item.pluginId)] ?? {}}
 					onToggle={() => toggleChainItem(idx)}
 					onRemove={() => removeChainItem(idx)}
 					onUpdateParams={(p) => updateParams(idx, p)}
 				/>
 			))}
-			<AddPluginDropdown onAdd={addPlugin} />
+			<AddPluginDropdown entries={catalog.entries} onAdd={addPlugin} />
 			{chain.length > 0 && !snapshotA && !snapshotB && (
 				<button
 					type="button"

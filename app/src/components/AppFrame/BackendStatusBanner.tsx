@@ -31,12 +31,9 @@ export function BackendStatusBanner() {
 	}
 
 	return (
-		<div
-			role="status"
-			className="flex items-center justify-center gap-2 border-b border-warning/30 bg-warning-soft px-3 py-1.5 text-xs text-warning-text"
-		>
+		<output className="flex items-center justify-center gap-2 border-b border-warning/30 bg-warning-soft px-3 py-1.5 text-xs text-warning-text">
 			<span className="inline-block size-2 animate-pulse rounded-full bg-warning" />
 			Backend is starting — downloads and playback will resume automatically.
-		</div>
+		</output>
 	);
 }

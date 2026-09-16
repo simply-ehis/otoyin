@@ -21,6 +21,7 @@ keys/tokens, credentialed URLs, and OS user-home paths are replaced. See
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import os
@@ -102,7 +103,7 @@ _recent_requests: deque[dict] = deque(maxlen=20)
 
 def record_action(method: str, path: str, request_id: str | None = None) -> None:
     """Note one handled request for the next crash record. Never raises."""
-    try:
+    with contextlib.suppress(Exception):
         _recent_requests.append(
             {
                 "ts": datetime.now(UTC).isoformat(),
@@ -111,8 +112,6 @@ def record_action(method: str, path: str, request_id: str | None = None) -> None
                 "request_id": request_id,
             }
         )
-    except Exception:
-        pass
 
 
 def collect_diagnostics() -> dict:
@@ -254,14 +253,10 @@ def store_report(record: dict) -> dict:
 def _with_diagnostics(context: dict | None) -> dict:
     """Merge recent requests + machine state into a capture's context."""
     merged = dict(context or {})
-    try:
+    with contextlib.suppress(Exception):
         merged.setdefault("recent_requests", list(_recent_requests)[-20:])
-    except Exception:
-        pass
-    try:
+    with contextlib.suppress(Exception):
         merged.setdefault("diagnostics", collect_diagnostics())
-    except Exception:
-        pass
     return merged
 
 
@@ -299,9 +294,7 @@ def capture_report(
     if layer not in ("frontend", "rust", "backend"):
         layer = "frontend"
     return store_report(
-        _build_record(
-            layer=layer, kind=kind[:120], message=message, stack=stack, context=_with_diagnostics(context)
-        )
+        _build_record(layer=layer, kind=kind[:120], message=message, stack=stack, context=_with_diagnostics(context))
     )
 
 

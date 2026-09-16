@@ -122,9 +122,9 @@ describe("PlayerStore", () => {
 				usePlayerStore.getState().setAudio("u", "i", null, "t");
 				usePlayerStore.getState().setIsPlaying(true);
 			});
-			const persisted = usePlayerStore.persist.getOptions().partialize?.(
-				usePlayerStore.getState(),
-			);
+			const persisted = usePlayerStore.persist
+				.getOptions()
+				.partialize?.(usePlayerStore.getState());
 			expect(persisted).toEqual({
 				volume: 0.4,
 				isMuted: true,

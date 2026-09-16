@@ -7,11 +7,13 @@ export function SortableTrackStrip({
 	index,
 	trackAnalysers,
 	onTranscribe,
+	onDuplicate,
 }: {
 	track: StudioTrack;
 	index: number;
 	trackAnalysers: Map<string, AnalyserNode>;
 	onTranscribe: () => void;
+	onDuplicate: () => void;
 }) {
 	const {
 		attributes,
@@ -42,6 +44,7 @@ export function SortableTrackStrip({
 				dragHandleProps={{ ...attributes, ...listeners }}
 				trackAnalysers={trackAnalysers}
 				onTranscribe={onTranscribe}
+				onDuplicate={onDuplicate}
 			/>
 		</div>
 	);

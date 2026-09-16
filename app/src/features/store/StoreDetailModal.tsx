@@ -23,7 +23,8 @@ import {
 } from "./storeUtils";
 
 interface Props {
-	product: MarketplaceProduct | null;	model?: ModelStatus;
+	product: MarketplaceProduct | null;
+	model?: ModelStatus;
 	owned: boolean;
 	installed: boolean;
 	/** Catalog `local_status` annotation — same disk manifest `installed` reads. */
@@ -55,7 +56,9 @@ function TechRow({
 	}
 	return (
 		<div className="min-w-0">
-			<dt className="uppercase tracking-wider text-muted-foreground">{label}</dt>
+			<dt className="uppercase tracking-wider text-muted-foreground">
+				{label}
+			</dt>
 			<dd
 				className={cn(
 					"mt-0.5 break-all font-medium text-foreground",
@@ -68,7 +71,8 @@ function TechRow({
 	);
 }
 
-export const StoreDetailModal = memo(function StoreDetailModal({	product,
+export const StoreDetailModal = memo(function StoreDetailModal({
+	product,
 	model,
 	owned,
 	installed,
@@ -197,8 +201,8 @@ export const StoreDetailModal = memo(function StoreDetailModal({	product,
 									{c.label}
 								</Badge>
 							))}
-					</div>
-				)}
+						</div>
+					)}
 
 					{/* technical details — quantization, engine, repo. The headline
 					    stays selling-focused; porting trivia lives here. */}
@@ -212,34 +216,30 @@ export const StoreDetailModal = memo(function StoreDetailModal({	product,
 								<TechRow label="Variant" value={model.model_size} mono />
 								<TechRow label="Quantization" value={model.quant} mono />
 								<TechRow label="Repository" value={model.hf_repo_id} mono />
-								<TechRow
-									label="Model ID"
-									value={model.model_name}
-									mono
-								/>
+								<TechRow label="Model ID" value={model.model_name} mono />
 							</dl>
 						</details>
 					)}
 
 					{/* download progress */}
-				{isDownloading && downloadTask && (
-					<div className="space-y-2 rounded-lg border border-warning/20 bg-warning-soft p-3">
-						<div className="flex items-center gap-2 text-xs font-medium text-warning-text">
-							<Spinner size="xs" />{" "}
-							{downloadTask.progress
-								? `Downloading ${downloadTask.filename ?? product.name}`
-								: "Preparing download…"}
-						</div>
-						<Progress value={downloadTask.progress ?? 0} className="h-1.5" />
-						<div className="text-xs text-muted-foreground">
-							{downloadTask.current && downloadTask.total
-								? `${(downloadTask.current / 1024 / 1024).toFixed(1)} / ${(downloadTask.total / 1024 / 1024).toFixed(1)} MB · ${(downloadTask.progress ?? 0).toFixed(0)}%`
-								: downloadTask.progress
-									? `${(downloadTask.progress ?? 0).toFixed(0)}%`
+					{isDownloading && downloadTask && (
+						<div className="space-y-2 rounded-lg border border-warning/20 bg-warning-soft p-3">
+							<div className="flex items-center gap-2 text-xs font-medium text-warning-text">
+								<Spinner size="xs" />{" "}
+								{downloadTask.progress
+									? `Downloading ${downloadTask.filename ?? product.name}`
 									: "Preparing download…"}
+							</div>
+							<Progress value={downloadTask.progress ?? 0} className="h-1.5" />
+							<div className="text-xs text-muted-foreground">
+								{downloadTask.current && downloadTask.total
+									? `${(downloadTask.current / 1024 / 1024).toFixed(1)} / ${(downloadTask.total / 1024 / 1024).toFixed(1)} MB · ${(downloadTask.progress ?? 0).toFixed(0)}%`
+									: downloadTask.progress
+										? `${(downloadTask.progress ?? 0).toFixed(0)}%`
+										: "Preparing download…"}
+							</div>
 						</div>
-					</div>
-				)}
+					)}
 
 					{/* actions — single place to activate/buy/download/delete */}
 					<div className="border-t pt-2">

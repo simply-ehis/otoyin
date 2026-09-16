@@ -87,6 +87,8 @@ export function VocalIsolationView() {
 	const [sourcePlaying, setSourcePlaying] = useState(false);
 	const sourceAudioRef = useRef<HTMLAudioElement>(null);
 	const [dragOver, setDragOver] = useState(false);
+	// Refs mirror the object URLs so unmount cleanup revokes the latest
+	// without re-subscribing (adding results/sourceUrl to deps would revoke live URLs).
 
 	const modelStatus = useQuery({
 		queryKey: ["modelStatus"],
@@ -103,19 +105,20 @@ export function VocalIsolationView() {
 	);
 	const modelReady = !!demucs?.downloaded;
 
+	const resultsRef = useRef(results);
+	resultsRef.current = results;
+	const sourceUrlRef = useRef(sourceUrl);
+	sourceUrlRef.current = sourceUrl;
 	useEffect(() => {
-		const current = results;
-		const currentSource = sourceUrl;
 		return () => {
-			for (const r of current) {
+			for (const r of resultsRef.current) {
 				URL.revokeObjectURL(r.url);
 			}
-			if (currentSource) {
-				URL.revokeObjectURL(currentSource);
+			if (sourceUrlRef.current) {
+				URL.revokeObjectURL(sourceUrlRef.current);
 			}
 		};
-		// Unmount only — revoking on every result change kills live URLs.
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		// Unmount only — refs carry the latest URLs without re-subscribing.
 	}, []);
 
 	const handleFile = useCallback(
@@ -278,9 +281,7 @@ export function VocalIsolationView() {
 			onDragOver={handleDragOver}
 			onDragLeave={handleDragLeave}
 		>
-			<ScreenHeader
-				title="Stem Separation"
-			/>
+			<ScreenHeader title="Stem Separation" />
 
 			<Separator />
 

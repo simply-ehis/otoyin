@@ -73,7 +73,15 @@ class TestExportPresets:
         data = resp.json()
         assert isinstance(data, dict)
         assert len(data) == 7
-        for key in ["podcast", "audiobook", "movie_audio", "voiceover", "social_media", "streaming_opus", "archive_aiff"]:
+        for key in [
+            "podcast",
+            "audiobook",
+            "movie_audio",
+            "voiceover",
+            "social_media",
+            "streaming_opus",
+            "archive_aiff",
+        ]:
             assert key in data
 
 

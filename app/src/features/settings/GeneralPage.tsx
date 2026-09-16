@@ -95,10 +95,9 @@ export function GeneralPage() {
 				await restart(port);
 				toast({
 					title: t("settings.general.serverPort.updatedTitle"),
-					description: t(
-						"settings.general.serverPort.updatedDescription",
-						{ port },
-					),
+					description: t("settings.general.serverPort.updatedDescription", {
+						port,
+					}),
 				});
 				void refetchServerPort();
 			} else {

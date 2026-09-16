@@ -365,13 +365,10 @@ export class StoriesAMethods extends ChannelsMethods {
 		duration_s: number;
 		sample_rate: number;
 	}> {
-		return this.request("/audio/copy", {
-			method: "POST",
-			body: JSON.stringify({
-				audio_path: audioPath,
-				start_s: startS,
-				end_s: endS,
-			}),
+		return this.postQuery("/audio/copy", {
+			audio_path: audioPath,
+			start_s: startS,
+			end_s: endS,
 		});
 	}
 
@@ -385,13 +382,10 @@ export class StoriesAMethods extends ChannelsMethods {
 		duration_s: number;
 		clip_duration_s: number;
 	}> {
-		return this.request("/audio/cut", {
-			method: "POST",
-			body: JSON.stringify({
-				audio_path: audioPath,
-				start_s: startS,
-				end_s: endS,
-			}),
+		return this.postQuery("/audio/cut", {
+			audio_path: audioPath,
+			start_s: startS,
+			end_s: endS,
 		});
 	}
 
@@ -406,14 +400,11 @@ export class StoriesAMethods extends ChannelsMethods {
 		duration_s: number;
 		sample_rate: number;
 	}> {
-		return this.request("/audio/paste", {
-			method: "POST",
-			body: JSON.stringify({
-				target_path: targetPath,
-				clip_path: clipPath,
-				at_s: atS,
-				crossfade_ms: crossfadeMs,
-			}),
+		return this.postQuery("/audio/paste", {
+			target_path: targetPath,
+			clip_path: clipPath,
+			at_s: atS,
+			crossfade_ms: crossfadeMs,
 		});
 	}
 
@@ -427,9 +418,9 @@ export class StoriesAMethods extends ChannelsMethods {
 		duration_s: number;
 		sample_rate: number;
 	}> {
-		return this.request("/audio/time-stretch", {
-			method: "POST",
-			body: JSON.stringify({ audio_path: audioPath, rate }),
+		return this.postQuery("/audio/time-stretch", {
+			audio_path: audioPath,
+			rate,
 		});
 	}
 
@@ -443,9 +434,9 @@ export class StoriesAMethods extends ChannelsMethods {
 		duration_s: number;
 		sample_rate: number;
 	}> {
-		return this.request("/audio/shout-to-whisper", {
-			method: "POST",
-			body: JSON.stringify({ audio_path: audioPath, intensity }),
+		return this.postQuery("/audio/shout-to-whisper", {
+			audio_path: audioPath,
+			intensity,
 		});
 	}
 
@@ -461,16 +452,24 @@ export class StoriesAMethods extends ChannelsMethods {
 		duration_s: number;
 		sample_rate: number;
 	}> {
-		return this.request("/audio/blend", {
-			method: "POST",
-			body: JSON.stringify({
-				audio_path_a: audioPathA,
-				audio_path_b: audioPathB,
-				crossfade_ms: crossfadeMs,
-				gap_ms: gapMs,
-				curve,
-			}),
+		return this.postQuery("/audio/blend", {
+			audio_path_a: audioPathA,
+			audio_path_b: audioPathB,
+			crossfade_ms: crossfadeMs,
+			gap_ms: gapMs,
+			curve,
 		});
+	}
+
+	async fetchExportFile(filename: string): Promise<Blob> {
+		const safe = filename.split("/").pop() ?? filename;
+		const response = await fetch(
+			`${this.getBaseUrl()}/exports/${encodeURIComponent(safe)}`,
+		);
+		if (!response.ok) {
+			throw new Error(`Export download failed: ${response.status}`);
+		}
+		return response.blob();
 	}
 
 	async applyEmotionTone(
@@ -663,9 +662,9 @@ export class StoriesAMethods extends ChannelsMethods {
 		output_path: string;
 		filename: string;
 	}> {
-		return this.request("/audio/compress", {
-			method: "POST",
-			body: JSON.stringify({ audio_path: audioPath, ...params }),
+		return this.postQuery("/audio/compress", {
+			audio_path: audioPath,
+			...params,
 		});
 	}
 
@@ -714,7 +713,7 @@ export class StoriesAMethods extends ChannelsMethods {
 		effects: Array<{
 			effect_type: string;
 			enabled?: boolean;
-			params?: Record<string, number>;
+			params?: Record<string, number | string>;
 		}>,
 		params: { parallel?: boolean } = {},
 	): Promise<{
@@ -737,9 +736,9 @@ export class StoriesAMethods extends ChannelsMethods {
 		output_path: string;
 		filename: string;
 	}> {
-		return this.request("/audio/normalize", {
-			method: "POST",
-			body: JSON.stringify({ audio_path: audioPath, ...params }),
+		return this.postQuery("/audio/normalize", {
+			audio_path: audioPath,
+			...params,
 		});
 	}
 
@@ -753,9 +752,9 @@ export class StoriesAMethods extends ChannelsMethods {
 		output_path: string;
 		filename: string;
 	}> {
-		return this.request("/audio/master", {
-			method: "POST",
-			body: JSON.stringify({ audio_path: audioPath, ...params }),
+		return this.postQuery("/audio/master", {
+			audio_path: audioPath,
+			...params,
 		});
 	}
 

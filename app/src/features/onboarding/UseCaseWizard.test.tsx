@@ -62,9 +62,7 @@ describe("UseCaseWizard tour", () => {
 		expect(
 			await screen.findByRole("heading", { name: "Generate and listen" }),
 		).toBeInTheDocument();
-		await user.click(
-			screen.getByRole("button", { name: "Start generating" }),
-		);
+		await user.click(screen.getByRole("button", { name: "Start generating" }));
 		await waitFor(() =>
 			expect(useWorkspaceStore.getState().onboarded).toBe(true),
 		);
@@ -87,9 +85,7 @@ describe("UseCaseWizard tour", () => {
 	it("Skip tour onboards without touching tabs", async () => {
 		const user = userEvent.setup();
 		render(<UseCaseWizard />);
-		await user.click(
-			await screen.findByRole("button", { name: "Skip tour" }),
-		);
+		await user.click(await screen.findByRole("button", { name: "Skip tour" }));
 		await waitFor(() =>
 			expect(useWorkspaceStore.getState().onboarded).toBe(true),
 		);
@@ -103,9 +99,7 @@ describe("UseCaseWizard tour", () => {
 			await screen.findByRole("button", { name: "Get started" }),
 		);
 		await user.click(screen.getByRole("button", { name: "Back" }));
-		await user.click(
-			await screen.findByRole("button", { name: "Skip tour" }),
-		);
+		await user.click(await screen.findByRole("button", { name: "Skip tour" }));
 		await waitFor(() =>
 			expect(useWorkspaceStore.getState().onboarded).toBe(true),
 		);

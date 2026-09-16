@@ -143,9 +143,7 @@ export function ConversationView() {
 
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader
-				title="Conversation Mode"
-			/>
+			<ScreenHeader title="Conversation Mode" />
 
 			<div className="max-w-md space-y-1">
 				<Label htmlFor="conv-preset">Conversation preset</Label>

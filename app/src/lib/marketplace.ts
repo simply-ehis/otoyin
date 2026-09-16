@@ -6,6 +6,7 @@
  * when offline.
  */
 import { apiClient } from "./api/client";
+import { debug } from "./utils/debug";
 
 // In development, use Vite proxy to local marketplace backend
 // In production, use the actual marketplace URL
@@ -99,13 +100,22 @@ class MarketplaceClient {
 		if (!resp.ok) {
 			throw new Error(`Catalog fetch failed: ${resp.status}`);
 		}
-		return resp.json();
+		let data: CatalogResponse;
+		try {
+			data = await resp.json();
+		} catch (e) {
+			throw new Error(`Catalog response was not valid JSON: ${e}`);
+		}
+		if (!data || !Array.isArray(data.products)) {
+			throw new Error("Catalog response missing products array");
+		}
+		return data;
 	}
 
 	/** Get product by ID from remote catalog. */
 	async getProduct(productId: string): Promise<MarketplaceProduct> {
 		const resp = await fetch(
-			`${this.baseUrl}/v1/catalog/product/${productId}`,
+			`${this.baseUrl}/v1/catalog/product/${encodeURIComponent(productId)}`,
 			{
 				signal: AbortSignal.timeout(10_000),
 			},
@@ -113,7 +123,11 @@ class MarketplaceClient {
 		if (!resp.ok) {
 			throw new Error(`Product fetch failed: ${resp.status}`);
 		}
-		return resp.json();
+		try {
+			return await resp.json();
+		} catch (e) {
+			throw new Error(`Product response was not valid JSON: ${e}`);
+		}
 	}
 
 	// ── Checkout ───────────────────────────────────────────────────
@@ -148,15 +162,25 @@ class MarketplaceClient {
 	 * no new checkout needed. For donations the resolved payload carries
 	 * `{donated: true}` instead of a license.
 	 */
-	async pollForLicense(orderRef: string): Promise<Record<string, unknown>> {
+	async pollForLicense(
+		orderRef: string,
+		deviceId?: string,
+	): Promise<Record<string, unknown>> {
 		const last = LICENSE_POLL_MAX_ATTEMPTS - 1;
+		const ref = encodeURIComponent(orderRef);
+		const deviceQuery = deviceId
+			? `?device_id=${encodeURIComponent(deviceId)}`
+			: "";
 		for (let i = 0; i < LICENSE_POLL_MAX_ATTEMPTS; i++) {
 			await new Promise((r) => setTimeout(r, LICENSE_POLL_INTERVAL_MS));
 			let resp: Response;
 			try {
-				resp = await fetch(`${this.baseUrl}/v1/webhook/license/${orderRef}`, {
-					signal: AbortSignal.timeout(10_000),
-				});
+				resp = await fetch(
+					`${this.baseUrl}/v1/webhook/license/${ref}${deviceQuery}`,
+					{
+						signal: AbortSignal.timeout(10_000),
+					},
+				);
 			} catch (e) {
 				// Network error — retry while attempts remain.
 				if (i === last) {
@@ -165,7 +189,12 @@ class MarketplaceClient {
 				continue;
 			}
 			if (resp.ok) {
-				return resp.json();
+				try {
+					return await resp.json();
+				} catch (e) {
+					debug.warn("license poll returned invalid JSON, retrying", e);
+					continue;
+				}
 			}
 			if (resp.status === 402 || resp.status >= 500) {
 				// Not paid yet, or transient server error — keep polling.
@@ -361,21 +390,51 @@ export const marketplaceClient = new MarketplaceClient();
  * Generate a device ID for license binding.
  * Uses a simple fingerprint stored in localStorage.
  */
+let inMemoryDeviceId = "";
 export function getDeviceId(): string {
 	const key = "21labs_device_id";
-	let id = localStorage.getItem(key);
-	if (!id) {
-		// Simple fingerprint: random UUID stored persistently
-		id = crypto.randomUUID();
-		localStorage.setItem(key, id);
+	try {
+		let id = localStorage.getItem(key);
+		if (!id) {
+			// Simple fingerprint: random UUID stored persistently
+			try {
+				id = crypto.randomUUID();
+			} catch {
+				id = `dev-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+			}
+			localStorage.setItem(key, id);
+		}
+		return id;
+	} catch (e) {
+		// Private-mode/blocked storage or non-secure context — fall back to memory.
+		debug.warn("getDeviceId storage unavailable, using in-memory id", e);
+		if (!inMemoryDeviceId) {
+			try {
+				inMemoryDeviceId = crypto.randomUUID();
+			} catch {
+				inMemoryDeviceId = `dev-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+			}
+		}
+		return inMemoryDeviceId;
 	}
-	return id;
 }
 
 /**
  * Open a URL in the system browser.
- * Uses window.open as a fallback — works in Tauri webviews.
+ * Uses Tauri shell plugin when available (opens in real browser),
+ * falls back to window.open for web mode.
  */
 export async function openExternalUrl(url: string): Promise<void> {
-	window.open(url, "_blank");
+	try {
+		const { open } = await import("@tauri-apps/plugin-shell");
+		await open(url);
+		return;
+	} catch {
+		// Not in Tauri (web mode) — fall through to window.open.
+	}
+	const win = window.open(url, "_blank", "noopener");
+	if (!win) {
+		// Popup blocked — surface the URL so the caller can show a copyable link.
+		throw new Error(`Popup blocked — open this URL manually: ${url}`);
+	}
 }

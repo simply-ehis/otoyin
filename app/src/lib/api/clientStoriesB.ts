@@ -159,7 +159,7 @@ export class StoriesBMethods extends StoriesAMethods {
 				plugin_id: string;
 				plugin_name?: string;
 				enabled?: boolean;
-				params?: Record<string, number>;
+				params?: Record<string, number | string>;
 			}>;
 			volume_automation?: Array<{ time: number; value: number }>;
 			pan_automation?: Array<{ time: number; value: number }>;
@@ -272,11 +272,10 @@ export class StoriesBMethods extends StoriesAMethods {
 		crest_db: number;
 		lra_lufs: number;
 	}> {
-		const url = `${this.getBaseUrl()}/audio/analyze-loudness`;
+		const q = new URLSearchParams({ audio_path: audioPath });
+		const url = `${this.getBaseUrl()}/audio/analyze-loudness?${q.toString()}`;
 		const response = await fetch(url, {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ audio_path: audioPath }),
 		});
 		if (!response.ok) {
 			const error = await response
@@ -488,16 +487,17 @@ export class StoriesBMethods extends StoriesAMethods {
 		audioPath: string,
 		stem: "vocals" | "drums" | "bass" | "other" = "vocals",
 		modelName: string = "htdemucs",
+		invert: boolean = false,
 	): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/audio/separate`;
+		const q = new URLSearchParams({
+			audio_path: audioPath,
+			stem,
+			model_name: modelName,
+			invert: String(invert),
+		});
+		const url = `${this.getBaseUrl()}/audio/separate?${q.toString()}`;
 		const response = await fetch(url, {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				audio_path: audioPath,
-				stem,
-				model_name: modelName,
-			}),
 		});
 		if (!response.ok) {
 			const error = await response

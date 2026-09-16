@@ -75,6 +75,7 @@ function SfxPanel() {
 	return (
 		<div className="max-w-xl space-y-3">
 			<Label htmlFor="sfx-prompt">Describe the sound effect</Label>
+			{/* biome-ignore lint/a11y/noStaticElementInteractions: file-drop zone (mouse-only enhancement); the prompt input stays keyboard-accessible and file picking has button alternatives. */}
 			<div
 				onDrop={(e) => {
 					e.preventDefault();
@@ -179,9 +180,7 @@ function NoisePanel() {
 export function StudioView() {
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader
-				title="Studio"
-			/>
+			<ScreenHeader title="Studio" />
 			<Tabs defaultValue="instruments">
 				<TabsList aria-label="Studio sections">
 					<TabsTrigger value="instruments">Instruments</TabsTrigger>

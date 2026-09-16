@@ -243,9 +243,7 @@ export function ADRView() {
 			(sessionsQuery.data as ADRSessionSummary[] | undefined) ?? [];
 		return (
 			<div className="flex h-full flex-col items-center justify-center gap-4 p-8">
-				<ScreenHeader
-					title="ADR Studio"
-				/>
+				<ScreenHeader title="ADR Studio" />
 				<div className="flex w-full max-w-md items-center gap-2">
 					<Input
 						placeholder="Session name"
@@ -310,9 +308,7 @@ export function ADRView() {
 
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader
-				title="ADR Studio"
-			/>
+			<ScreenHeader title="ADR Studio" />
 			<div className="flex flex-wrap items-center justify-between gap-2">
 				<div className="flex min-w-0 items-center gap-2">
 					<span className="truncate text-sm font-semibold text-foreground">

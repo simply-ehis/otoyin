@@ -233,9 +233,7 @@ export function Sidebar() {
 								className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
 							>
 								<Squares className="size-3.5" aria-hidden="true" />
-								<span>
-									{t("sidebar.showMoreTabs", { count: hiddenCount })}
-								</span>
+								<span>{t("sidebar.showMoreTabs", { count: hiddenCount })}</span>
 							</Link>
 						)}
 					</div>

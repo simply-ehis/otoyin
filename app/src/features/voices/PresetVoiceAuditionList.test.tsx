@@ -41,9 +41,7 @@ describe("PresetVoiceAuditionList", () => {
 		render(
 			<PresetVoiceAuditionList engine="kokoro" voices={voices} downloaded />,
 		);
-		await user.click(
-			screen.getByRole("button", { name: "Hear 2 voices" }),
-		);
+		await user.click(screen.getByRole("button", { name: "Hear 2 voices" }));
 		const hearHeart = await screen.findByRole("button", {
 			name: "Hear Heart preview",
 		});
@@ -63,9 +61,7 @@ describe("PresetVoiceAuditionList", () => {
 				downloaded={false}
 			/>,
 		);
-		await user.click(
-			screen.getByRole("button", { name: "Hear 2 voices" }),
-		);
+		await user.click(screen.getByRole("button", { name: "Hear 2 voices" }));
 		expect(
 			await screen.findByText("Download this model to hear its voices."),
 		).toBeInTheDocument();

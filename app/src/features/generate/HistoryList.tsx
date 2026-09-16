@@ -288,7 +288,9 @@ export function HistoryList() {
 											const playingId = usePlayerStore.getState().audioId;
 											setItems((prev) => {
 												const gone = new Set(
-													prev.filter((g) => g.status === "failed").map((g) => g.id),
+													prev
+														.filter((g) => g.status === "failed")
+														.map((g) => g.id),
 												);
 												if (playingId && gone.has(playingId)) {
 													usePlayerStore.getState().reset();

@@ -32,6 +32,11 @@ class AudioEditError(Exception):
     """Raised when an audio editing operation cannot complete due to invalid input."""
 
 
+def _basename(path: str) -> str:
+    """Separator-agnostic basename (storage paths use backslashes on Windows)."""
+    return path.replace("\\", "/").split("/")[-1]
+
+
 def _load_mono(audio_path: str) -> tuple[np.ndarray, int]:
     """Load audio normalized to mono float32 for segment math."""
     try:
@@ -77,7 +82,7 @@ def copy_segment(audio_path: str, start_s: float, end_s: float) -> dict:
     out_path = _save_output(clip, sample_rate, "clip")
     return {
         "output_path": out_path,
-        "filename": out_path.split("/")[-1],
+        "filename": _basename(out_path),
         "duration_s": round(len(clip) / sample_rate, 4),
         "sample_rate": sample_rate,
     }
@@ -103,7 +108,7 @@ def cut_segment(audio_path: str, start_s: float, end_s: float) -> dict:
     remain_path = _save_output(remainder, sample_rate, "cut")
     return {
         "output_path": remain_path,
-        "filename": remain_path.split("/")[-1],
+        "filename": _basename(remain_path),
         "clip_path": clip_path,
         "duration_s": round(len(remainder) / sample_rate, 4),
         "clip_duration_s": round(len(clip) / sample_rate, 4),
@@ -141,7 +146,7 @@ def paste_segment(target_path: str, clip_path: str, at_s: float, crossfade_ms: f
     out_path = _save_output(merged, sr_t, "paste")
     return {
         "output_path": out_path,
-        "filename": out_path.split("/")[-1],
+        "filename": _basename(out_path),
         "duration_s": round(len(merged) / sr_t, 4),
         "sample_rate": sr_t,
     }
@@ -169,7 +174,7 @@ def time_stretch(audio_path: str, rate: float) -> dict:
         out_path = _save_output(audio, sample_rate, "stretch")
         return {
             "output_path": out_path,
-            "filename": out_path.split("/")[-1],
+            "filename": _basename(out_path),
             "rate": 1.0,
             "duration_s": round(len(audio) / sample_rate, 4),
             "sample_rate": sample_rate,
@@ -178,7 +183,7 @@ def time_stretch(audio_path: str, rate: float) -> dict:
     out_path = _save_output(stretched.astype(np.float32), sample_rate, "stretch")
     return {
         "output_path": out_path,
-        "filename": out_path.split("/")[-1],
+        "filename": _basename(out_path),
         "rate": rate,
         "duration_s": round(len(stretched) / sample_rate, 4),
         "sample_rate": sample_rate,
@@ -206,7 +211,7 @@ def shout_to_whisper(audio_path: str, intensity: float = 0.7) -> dict:
         out_path = _save_output(audio, sample_rate, "whisper")
         return {
             "output_path": out_path,
-            "filename": out_path.split("/")[-1],
+            "filename": _basename(out_path),
             "intensity": 0.0,
             "duration_s": round(len(audio) / sample_rate, 4),
             "sample_rate": sample_rate,
@@ -239,7 +244,7 @@ def shout_to_whisper(audio_path: str, intensity: float = 0.7) -> dict:
     out_path = _save_output(out, sample_rate, "whisper")
     return {
         "output_path": out_path,
-        "filename": out_path.split("/")[-1],
+        "filename": _basename(out_path),
         "intensity": intensity,
         "duration_s": round(len(out) / sample_rate, 4),
         "sample_rate": sample_rate,
@@ -298,7 +303,7 @@ def blend(
     out_path = _save_output(merged.astype(np.float32), sr, "blend")
     return {
         "output_path": out_path,
-        "filename": out_path.split("/")[-1],
+        "filename": _basename(out_path),
         "duration_s": round(len(merged) / sr, 4),
         "sample_rate": sr,
     }
@@ -317,7 +322,7 @@ def fade_in(audio_path: str, duration_ms: float = 100.0, start_ms: float = 0.0) 
     if n_fade < 1:
         return {
             "output_path": audio_path,
-            "filename": audio_path.split("/")[-1],
+            "filename": _basename(audio_path),
             "duration_s": round(len(audio) / sr, 4),
             "sample_rate": sr,
         }
@@ -326,7 +331,7 @@ def fade_in(audio_path: str, duration_ms: float = 100.0, start_ms: float = 0.0) 
     out_path = _save_output(audio, sr, "fadein")
     return {
         "output_path": out_path,
-        "filename": out_path.split("/")[-1],
+        "filename": _basename(out_path),
         "duration_s": round(len(audio) / sr, 4),
         "sample_rate": sr,
     }
@@ -345,7 +350,7 @@ def fade_out(audio_path: str, duration_ms: float = 100.0, start_ms: float | None
     if n_fade < 1:
         return {
             "output_path": audio_path,
-            "filename": audio_path.split("/")[-1],
+            "filename": _basename(audio_path),
             "duration_s": round(len(audio) / sr, 4),
             "sample_rate": sr,
         }
@@ -354,7 +359,7 @@ def fade_out(audio_path: str, duration_ms: float = 100.0, start_ms: float | None
     out_path = _save_output(audio, sr, "fadeout")
     return {
         "output_path": out_path,
-        "filename": out_path.split("/")[-1],
+        "filename": _basename(out_path),
         "duration_s": round(len(audio) / sr, 4),
         "sample_rate": sr,
     }
@@ -371,7 +376,7 @@ def splice(audio_path: str, start_ms: float, end_ms: float) -> dict:
     out_path = _save_output(trimmed, sr, "splice")
     return {
         "output_path": out_path,
-        "filename": out_path.split("/")[-1],
+        "filename": _basename(out_path),
         "duration_s": round(len(trimmed) / sr, 4),
         "sample_rate": sr,
     }
@@ -388,7 +393,7 @@ def delete_region(audio_path: str, start_ms: float, end_ms: float) -> dict:
     out_path = _save_output(result, sr, "delete")
     return {
         "output_path": out_path,
-        "filename": out_path.split("/")[-1],
+        "filename": _basename(out_path),
         "duration_s": round(len(result) / sr, 4),
         "sample_rate": sr,
     }
@@ -404,7 +409,7 @@ def insert_silence(audio_path: str, position_ms: float, duration_ms: float) -> d
     out_path = _save_output(result, sr, "silence")
     return {
         "output_path": out_path,
-        "filename": out_path.split("/")[-1],
+        "filename": _basename(out_path),
         "duration_s": round(len(result) / sr, 4),
         "sample_rate": sr,
     }

@@ -8,6 +8,7 @@ import { CrossfadeCanvas } from "./CrossfadeCanvas";
 import { MidiPianoRoll } from "./MidiPianoRoll";
 import { PluginChainPanel } from "./PluginChainPanel";
 import { WaveformCanvas } from "./WaveformCanvas";
+import { STEM_HUE, STEM_LABEL } from "./stemColors";
 
 export function TrackVisuals({
 	track,
@@ -39,6 +40,15 @@ export function TrackVisuals({
 
 	return (
 		<div className="flex-1 relative">
+			{track.stem && (
+				<span
+					className="absolute top-0.5 right-1 z-10 rounded px-1 text-[9px] font-medium"
+					style={{ backgroundColor: `${track.color}22`, color: track.color }}
+					title={`Separated stem: ${STEM_LABEL[track.stem]}`}
+				>
+					{STEM_LABEL[track.stem]}
+				</span>
+			)}
 			<button
 				type="button"
 				ref={containerRef}
@@ -69,7 +79,7 @@ export function TrackVisuals({
 				)}
 				<CrossfadeCanvas track={track} height={12 * scale} className="mt-0.5" />
 				{!track.audioUrl && track.midiNotes.length === 0 && (
-					<div className="absolute inset-0 flex items-center justify-center top-0">
+					<div className="absolute inset-0 flex items-center justify-center pointer-events-none">
 						<span className="text-[10px] text-muted-foreground/30 flex items-center gap-1">
 							<Upload className="size-3" />
 							Import audio or record
@@ -82,6 +92,7 @@ export function TrackVisuals({
 					audioUrl={track.audioUrl}
 					height={36 * scale}
 					className="mt-0.5 mb-0.5"
+					hueBase={track.stem ? STEM_HUE[track.stem] : undefined}
 				/>
 			)}
 			{showPlugins && <PluginChainPanel track={track} />}

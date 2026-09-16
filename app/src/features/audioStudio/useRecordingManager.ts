@@ -1,6 +1,7 @@
 ﻿import { useCallback, useRef } from "react";
 import { useAudioRecording } from "@/lib/hooks/useAudioRecording";
 import { getAudioDuration } from "@/lib/utils/audio";
+import { debug } from "@/lib/utils/debug";
 import { useToast } from "@/ui/use-toast";
 import type { StudioTrack } from "./AudioStudioStore";
 import { useAudioStudioStore } from "./AudioStudioStore";
@@ -57,8 +58,15 @@ export function useRecordingManager({
 			}
 
 			const url = URL.createObjectURL(blob);
-			const duration =
-				recordedDuration || (await getAudioDuration(blob as File));
+			let duration = recordedDuration || 0;
+			try {
+				if (!duration) {
+					duration = await getAudioDuration(blob as File);
+				}
+			} catch (e) {
+				debug.warn("getAudioDuration failed for take, using fallback", e);
+				duration = recordedDuration || 0;
+			}
 
 			const audioCtx = new AudioContext();
 			try {
@@ -73,7 +81,8 @@ export function useRecordingManager({
 			} catch {
 				toast({
 					title: "Take kept, waveform unavailable",
-					description: "The recording was saved but could not be decoded for display.",
+					description:
+						"The recording was saved but could not be decoded for display.",
 					variant: "destructive",
 				});
 			} finally {

@@ -42,20 +42,31 @@ def _load_model(model_name: str):
 
 
 def separate_audio(
-    audio: np.ndarray, sample_rate: int, stem: str = "vocals", model_name: str = "htdemucs"
+    audio: np.ndarray,
+    sample_rate: int,
+    stem: str = "vocals",
+    model_name: str = "htdemucs",
+    invert: bool = False,
 ) -> np.ndarray:
     """Separate one stem (vocals/drums/bass/other) from a mix.
 
     Prefers ONNX Runtime (torch-free) when available and model is cached.
     Falls back to the torch-based Demucs path otherwise.
+    If invert=True, returns mix minus the separated stem.
     """
     from .stem_separation_onnx import _is_model_cached, is_onnx_available, separate_audio_onnx
 
     if is_onnx_available() and _is_model_cached():
         try:
-            return separate_audio_onnx(audio, sample_rate, stem, model_name)
+            return separate_audio_onnx(audio, sample_rate, stem, model_name, invert=invert)
         except Exception as exc:
-            logger.debug("Demucs ONNX failed (%s); falling back to torch", exc)
+            logger.warning(
+                "Demucs ONNX failed for stem=%s model=%s; falling back to torch: %s",
+                stem,
+                model_name,
+                exc,
+                exc_info=True,
+            )
 
     if not _is_available():
         raise RuntimeError(
@@ -86,6 +97,9 @@ def separate_audio(
         raise ValueError(f"Unknown stem '{stem}'. Available: {source_list}")
     idx = source_list.index(stem)
     result = sources[idx].cpu().numpy()
+    if invert:
+        mix = waveform
+        result = mix - result
     result = np.clip(result, -1.0, 1.0).astype(np.float32)
     if result.shape[0] == 1:
         return result[0]

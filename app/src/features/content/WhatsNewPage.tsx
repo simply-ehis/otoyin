@@ -23,9 +23,7 @@ export function WhatsNewPage() {
 
 	return (
 		<div className="mx-auto flex h-full w-full max-w-2xl flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader
-				title="What's New"
-			/>
+			<ScreenHeader title="What's New" />
 
 			{isLoading ? (
 				<div className="flex items-center gap-2 text-sm text-muted-foreground">

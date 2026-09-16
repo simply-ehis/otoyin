@@ -6,6 +6,7 @@ import type { MarketplaceProduct } from "@/lib/api/types";
 import { showStudioErrorToast } from "@/lib/errors";
 import { getDeviceId, marketplaceClient } from "@/lib/marketplace";
 import { cn } from "@/lib/utils/cn";
+import { debug } from "@/lib/utils/debug";
 import { isProductNew, useProductStore } from "@/stores/productStore";
 import { Button } from "@/ui/button";
 import { PageTabs } from "@/ui/tabs";
@@ -133,7 +134,10 @@ export function StorePage() {
 	useEffect(() => {
 		try {
 			localStorage.setItem("otoyin-wishlist", JSON.stringify([...wishlist]));
-		} catch {}
+		} catch (e) {
+			// Private-mode/blocked storage — wishlist stays in memory only.
+			debug.warn("wishlist persist failed", e);
+		}
 	}, [wishlist]);
 	// Nudge the stale-gated remote-catalog refresh when the Store opens, so
 	// newly published models appear without an app restart. The backend is a
@@ -310,9 +314,15 @@ export function StorePage() {
 		// Utilities (and other pack categories) always render last,
 		// regardless of catalog input order.
 		const bottomRank = (c: string): number => {
-			if (c === "utilities") return 3;
-			if (c === "translation") return 2;
-			if (c === "extras" || c === "sfx") return 1;
+			if (c === "utilities") {
+				return 3;
+			}
+			if (c === "translation") {
+				return 2;
+			}
+			if (c === "extras" || c === "sfx") {
+				return 1;
+			}
 			return 0;
 		};
 		return Array.from(map.entries()).sort(
@@ -450,11 +460,17 @@ export function StorePage() {
 		try {
 			const deviceId = getDeviceId();
 			if (wishlist.has(id)) {
-				void marketplaceClient.removeWishlist(id, deviceId);
+				void marketplaceClient.removeWishlist(id, deviceId).catch((e) => {
+					debug.warn("wishlist remove failed", e);
+				});
 			} else {
-				void marketplaceClient.addWishlist(id, deviceId);
+				void marketplaceClient.addWishlist(id, deviceId).catch((e) => {
+					debug.warn("wishlist add failed", e);
+				});
 			}
-		} catch {}
+		} catch (e) {
+			debug.warn("wishlist toggle failed", e);
+		}
 	};
 
 	const detailModel = detailProduct
@@ -634,9 +650,7 @@ export function StorePage() {
 										<MusicalNoteIcon className="size-5 text-muted-foreground" />
 									</div>
 									<div>
-										<p className="text-sm font-medium">
-											Instrument Packs
-										</p>
+										<p className="text-sm font-medium">Instrument Packs</p>
 										<p className="text-xs text-muted-foreground">
 											{packCount === 0
 												? "No packs installed — upload SF2, SFZ, or sample files"

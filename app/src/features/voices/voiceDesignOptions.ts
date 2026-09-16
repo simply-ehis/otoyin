@@ -77,8 +77,9 @@ export const ACCENT_GROUPS: AccentGroup[] = [
 
 export const ACCENT_OPTIONS = ACCENT_GROUPS.flatMap((g) => g.accents);
 
-export const ACCENT_LABEL_BY_VALUE: Record<string, string> =
-	Object.fromEntries(ACCENT_OPTIONS.map((o) => [o.value, o.label]));
+export const ACCENT_LABEL_BY_VALUE: Record<string, string> = Object.fromEntries(
+	ACCENT_OPTIONS.map((o) => [o.value, o.label]),
+);
 
 export interface StyleGroup {
 	label: string;

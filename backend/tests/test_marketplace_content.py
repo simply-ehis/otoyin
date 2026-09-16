@@ -28,11 +28,7 @@ def test_display_names_have_no_quant_tokens():
 
 
 def test_every_product_has_pitch_text():
-    missing = [
-        p["id"]
-        for p in PRODUCTS
-        if not (p.get("long_description") or p.get("description") or p.get("note"))
-    ]
+    missing = [p["id"] for p in PRODUCTS if not (p.get("long_description") or p.get("description") or p.get("note"))]
     assert not missing, f"products with no pitch text: {missing}"
 
 

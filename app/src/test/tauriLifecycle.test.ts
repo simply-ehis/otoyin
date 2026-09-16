@@ -73,9 +73,7 @@ describe("tauriPlatform.lifecycle", () => {
 	it("close handler stops the server then allows close", async () => {
 		mockedInvoke.mockResolvedValue(undefined);
 		mockedEmit.mockResolvedValue(undefined);
-		let handler:
-			| ((event: { preventDefault: () => void }) => void)
-			| undefined;
+		let handler: ((event: { preventDefault: () => void }) => void) | undefined;
 		mockedGetCurrentWindow.mockReturnValue({
 			onCloseRequested: vi.fn((h) => {
 				handler = h;

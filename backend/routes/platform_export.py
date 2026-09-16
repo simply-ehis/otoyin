@@ -183,7 +183,7 @@ async def apply_export_preset(req: ApplyPresetRequest):
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_wav:
         import soundfile as sf
 
-        sf.write(tmp_wav.name, normalized, sample_rate)
+        await asyncio.to_thread(sf.write, tmp_wav.name, normalized, sample_rate)
         tmp_wav_path = tmp_wav.name
 
     try:

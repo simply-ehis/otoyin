@@ -59,8 +59,12 @@ def separate_audio_onnx(
     sample_rate: int,
     stem: str = "vocals",
     model_name: str = "htdemucs",
+    invert: bool = False,
 ) -> np.ndarray:
-    """Separate one stem from a mix using Demucs ONNX — no torch."""
+    """Separate one stem from a mix using Demucs ONNX — no torch.
+
+    If invert=True, returns mix minus the separated stem (e.g. instrumental).
+    """
     if stem not in STEMS:
         raise ValueError(f"Unknown stem '{stem}'. Available: {STEMS}")
 
@@ -96,6 +100,10 @@ def separate_audio_onnx(
     full = np.concatenate(results, axis=1)[:, :orig_len]
     idx = STEMS.index(stem)
     result = full[idx]
+    if invert:
+        # Mix minus stem: subtract the separated stem from the original mix
+        mix = waveform[:, :orig_len]
+        result = mix - result
     result = np.clip(result, -1.0, 1.0).astype(np.float32)
 
     if result.shape[0] == 1:

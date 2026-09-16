@@ -256,6 +256,26 @@ export class ApiClientCore {
 		return response;
 	}
 
+	/**
+	 * POST to routes with scalar (query) params — e.g. /audio/copy,
+	 * /audio/blend, /audio/separate. These routes take NO JSON body;
+	 * posting one yields a 422, so params ride the query string.
+	 */
+	protected async postQuery<T>(
+		endpoint: string,
+		params: Record<string, string | number | boolean | undefined>,
+	): Promise<T> {
+		const q = new URLSearchParams();
+		for (const [k, v] of Object.entries(params)) {
+			if (v !== undefined) {
+				q.set(k, String(v));
+			}
+		}
+		return this.request<T>(`${endpoint}?${q.toString()}`, {
+			method: "POST",
+		});
+	}
+
 	async uploadAudio(file: File): Promise<{ audio_path: string; size: number }> {
 		const formData = new FormData();
 		formData.append("file", file);

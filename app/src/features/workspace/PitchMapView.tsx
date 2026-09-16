@@ -167,9 +167,7 @@ export function PitchMapView() {
 	if (segments.length === 0) {
 		return (
 			<div className="flex h-full flex-col items-center justify-center gap-4 p-8">
-				<ScreenHeader
-					title="Pitch Map"
-				/>
+				<ScreenHeader title="Pitch Map" />
 				<EmptyState
 					title="Analyze audio to view the pitch map"
 					body="Provide an audio file path and run the analyzer."
@@ -188,9 +186,7 @@ export function PitchMapView() {
 
 	return (
 		<div className="flex h-full flex-col gap-3 overflow-hidden p-4">
-			<ScreenHeader
-				title="Pitch Map"
-			/>
+			<ScreenHeader title="Pitch Map" />
 			<div className="flex flex-wrap items-center gap-2">
 				<Select value={scale} onValueChange={setScale}>
 					<SelectTrigger className="h-8 w-32 text-xs" aria-label="Scale">

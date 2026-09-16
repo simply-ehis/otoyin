@@ -7,12 +7,14 @@ export function TrackStripInner({
 	dragHandleProps,
 	trackAnalysers,
 	onTranscribe,
+	onDuplicate,
 }: {
 	track: StudioTrack;
 	index: number;
 	dragHandleProps: Record<string, unknown>;
 	trackAnalysers: Map<string, AnalyserNode>;
 	onTranscribe: () => void;
+	onDuplicate: () => void;
 }) {
 	const [showPlugins, setShowPlugins] = useState(false);
 	const [showCrossfade, setShowCrossfade] = useState(false);
@@ -101,6 +103,7 @@ export function TrackStripInner({
 			removeTrack={removeTrack}
 			pushUndo={pushUndo}
 			onTranscribe={onTranscribe}
+			onDuplicate={onDuplicate}
 			onAssignGroup={wrappedAssignGroup}
 		/>
 	);

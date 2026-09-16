@@ -2,6 +2,7 @@
 import { apiClient } from "@/lib/api/client";
 import { useToast } from "@/ui/use-toast";
 import type { StudioTrack } from "./AudioStudioStore";
+import { toBackendChain } from "./effectChainAdapter";
 import { trackToWavBase64 } from "./trackToWavBase64";
 
 interface UsePluginExportOptions {
@@ -42,6 +43,11 @@ export function usePluginExport({
 								: null;
 						const hasSolo = tracks.some((t) => t.solo);
 						const isMuted = hasSolo ? !track.solo : track.muted;
+						// Translate panel params (registry dialect) to the render
+						// engine dialect; frontend-only entries are dropped.
+						const { chain: backendChain } = toBackendChain(
+							track.pluginChain ?? [],
+						);
 						const crossfadeTargetIndex =
 							track.crossfade?.targetTrackId != null
 								? tracks.findIndex(
@@ -58,9 +64,9 @@ export function usePluginExport({
 							pan: track.pan,
 							muted: isMuted,
 							solo: track.solo,
-							plugin_chain: track.pluginChain.map((p) => ({
-								plugin_id: p.pluginId,
-								plugin_name: p.pluginName,
+							plugin_chain: backendChain.map((p) => ({
+								plugin_id: `builtin-${p.effect_type}`,
+								plugin_name: p.effect_type,
 								enabled: p.enabled,
 								params: p.params,
 							})),

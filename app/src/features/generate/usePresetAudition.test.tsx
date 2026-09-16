@@ -15,7 +15,12 @@ vi.mock("@/ui/use-toast", () => ({
 	useToast: () => ({ toast: toastMock }),
 }));
 
-const voice = { id: "af_heart", name: "Heart", gender: "female", language: "en" };
+const voice = {
+	id: "af_heart",
+	name: "Heart",
+	gender: "female",
+	language: "en",
+};
 
 beforeEach(() => {
 	vi.clearAllMocks();

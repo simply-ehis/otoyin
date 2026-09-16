@@ -27,6 +27,7 @@ import { apiClient } from "@/lib/api/client";
 import type { HistoryResponse } from "@/lib/api/types";
 import { copyClip } from "@/lib/clip";
 import { cn } from "@/lib/utils/cn";
+import { debug } from "@/lib/utils/debug";
 import {
 	formatDate,
 	formatDuration,
@@ -354,7 +355,9 @@ export function HistoryRow({
 											// also push via router if available
 											try {
 												window.location.assign("/#/library");
-											} catch {}
+											} catch (e) {
+												debug.warn("navigation to library failed", e);
+											}
 										}}
 									>
 										<FileArchive className="mr-2 size-4" />

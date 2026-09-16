@@ -19,6 +19,7 @@ What each piece catches:
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import sys
 import threading
@@ -42,10 +43,8 @@ def _fatal_log_path():
 
 def _capture_uncaught(exc_type, exc_value, exc_tb, *, origin: str) -> None:
     """Log + locally record an otherwise-fatal exception. Never raises."""
-    try:
+    with contextlib.suppress(Exception):
         logger.critical("Uncaught %s exception", origin, exc_info=(exc_type, exc_value, exc_tb))
-    except Exception:
-        pass
     try:
         from .services import crash_reports
 
@@ -95,7 +94,7 @@ def install_fatal_handlers() -> bool:
         log_path = _fatal_log_path()
         if log_path is not None:
             try:
-                _fatal_file = open(log_path, "a", encoding="utf-8")  # noqa: PTH123, SIM115
+                _fatal_file = open(log_path, "a", encoding="utf-8")  # noqa: SIM115
                 faulthandler.enable(file=_fatal_file)
                 # Keep a reference so the file is not GC-closed.
                 globals()["_fatal_file"] = _fatal_file
@@ -108,8 +107,6 @@ def install_fatal_handlers() -> bool:
         return False
     sys.excepthook = _excepthook
     threading.excepthook = _threading_excepthook
-    try:
+    with contextlib.suppress(AttributeError):
         sys.unraisablehook = _unraisablehook
-    except AttributeError:
-        pass  # Python < 3.8 — exc/thread hooks already cover it
     return True

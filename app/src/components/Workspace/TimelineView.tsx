@@ -154,10 +154,7 @@ export function TimelineView() {
 
 	return (
 		<div className="flex flex-col h-full p-4 gap-4">
-			<ScreenHeader
-				icon={<AudioLines className="size-5" />}
-				title="Timeline"
-			/>
+			<ScreenHeader icon={<AudioLines className="size-5" />} title="Timeline" />
 			<StudioVisualizer className="w-full shrink-0" />
 			{/* Empty state */}
 			<EmptyState

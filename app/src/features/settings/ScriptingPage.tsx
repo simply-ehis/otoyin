@@ -95,9 +95,7 @@ export function ScriptingPage() {
 
 	return (
 		<div className="flex max-w-4xl flex-col gap-6">
-			<ScreenHeader
-				title="Scripting API"
-			/>
+			<ScreenHeader title="Scripting API" />
 			{loading ? (
 				<LoadingState label="Loading functions" lines={5} />
 			) : functions.length === 0 ? (

@@ -31,7 +31,10 @@ export function DonateCard() {
 		Number.isFinite(parsedAmount) && parsedAmount >= 1 && parsedAmount <= 10000;
 
 	const pollDonation = async (orderRef: string) => {
-		const result = await marketplaceClient.pollForLicense(orderRef);
+		const result = await marketplaceClient.pollForLicense(
+			orderRef,
+			getDeviceId(),
+		);
 		if (result.donated) {
 			setThankedAmount(Number(result.amount_usd) || parsedAmount);
 			setPendingOrderRef(null);

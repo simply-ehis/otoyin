@@ -194,7 +194,7 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 		if (engineOptions.length === 0 && !settingsOpen) {
 			setSettingsOpen(true);
 		}
-	}, [engineOptions.length]);
+	}, [engineOptions.length, settingsOpen]);
 
 	const insertTag = (tag: string) => {
 		const cur = form.getValues("text") ?? "";
@@ -314,6 +314,7 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 						</ul>
 					) : null}
 
+					{/* biome-ignore lint/a11y/noStaticElementInteractions: file-drop zone (mouse-only enhancement); the textarea inside stays keyboard-accessible and file picking has button alternatives. */}
 					<div
 						ref={dropRef}
 						onDrop={handleDrop}

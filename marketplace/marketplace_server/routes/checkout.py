@@ -2,24 +2,30 @@
 
 from __future__ import annotations
 
+import datetime as dt
+import logging
 import uuid
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel, Field
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import paddle
 from ..config import settings
-from ..models import Order, Product, async_session
+from ..models import Order, Product, async_session, hash_email
+from ..rate_limit import checkout_limiter
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/v1/checkout", tags=["checkout"])
 
 
 class CheckoutRequest(BaseModel):
-    product_id: str
-    device_id: str
-    email: str = ""
+    product_id: str = Field(min_length=1, max_length=128)
+    device_id: str = Field(min_length=1, max_length=128)
+    email: str = Field(default="", max_length=256)
 
 
 class CheckoutResponse(BaseModel):
@@ -35,7 +41,7 @@ async def get_db():
 
 
 @router.post("", response_model=CheckoutResponse)
-async def create_checkout(req: CheckoutRequest, db: AsyncSession = Depends(get_db)):
+async def create_checkout(req: CheckoutRequest, request: Request, db: AsyncSession = Depends(get_db)):
     """Create a Paddle transaction and return its checkout URL.
 
     Flow:
@@ -48,6 +54,12 @@ async def create_checkout(req: CheckoutRequest, db: AsyncSession = Depends(get_d
     immediately and the checkout URL deep-links back into the app, so the
     full buy → poll → install loop works with no provider account.
     """
+    # Rate limit: 10 requests/min per IP (see rate_limit.checkout_limiter)
+    client_ip = request.client.host if request.client else "unknown"
+    if not checkout_limiter.allow(f"checkout:{client_ip}"):
+        raise HTTPException(
+            429, detail={"code": "rate_limited", "message": "Too many checkout requests — try again later"}
+        )
     # Verify product exists and is paid
     result = await db.execute(select(Product).where(Product.id == req.product_id))
     product = result.scalar_one_or_none()
@@ -60,6 +72,40 @@ async def create_checkout(req: CheckoutRequest, db: AsyncSession = Depends(get_d
             400, detail={"code": "product_free", "message": f"Product '{req.product_id}' is free — no checkout needed"}
         )
 
+    # Idempotency: reuse a recent pending order for the same product+device
+    cutoff = dt.datetime.now(dt.UTC) - dt.timedelta(minutes=10)
+    result = await db.execute(
+        select(Order).where(
+            and_(
+                Order.product_id == req.product_id,
+                Order.device_id == req.device_id,
+                Order.status == "pending",
+                Order.created_at >= cutoff,
+            )
+        )
+    )
+    existing = result.scalar_one_or_none()
+    if existing is not None:
+        if not paddle.is_configured():
+            return CheckoutResponse(
+                order_ref=existing.order_ref,
+                checkout_url=f"{settings.app_url_scheme}://payment/success?ref={existing.order_ref}",
+                product_id=req.product_id,
+                amount_usd=product.price_usd,
+            )
+        # Re-fetch from Paddle to get the checkout URL
+        try:
+            txn = await paddle.get_transaction(existing.payment_session_id)
+            return CheckoutResponse(
+                order_ref=existing.order_ref,
+                checkout_url=txn["checkout_url"],
+                product_id=req.product_id,
+                amount_usd=product.price_usd,
+            )
+        except RuntimeError as exc:
+            logger.debug("Idempotent checkout re-fetch failed for %s: %s", existing.order_ref, exc)
+            pass  # Fall through and create a new order
+
     # Create order — new refs use the otoyin_ namespace. Rows created under
     # the legacy 21labs_ prefix stay valid: lookups match the full string.
     order_ref = f"otoyin_{uuid.uuid4().hex[:16]}"
@@ -67,7 +113,7 @@ async def create_checkout(req: CheckoutRequest, db: AsyncSession = Depends(get_d
         order_ref=order_ref,
         product_id=req.product_id,
         device_id=req.device_id,
-        email=req.email,
+        email=hash_email(req.email),
         status="pending",
         amount_usd=product.price_usd,
         payment_provider="paddle",
@@ -77,6 +123,11 @@ async def create_checkout(req: CheckoutRequest, db: AsyncSession = Depends(get_d
     await db.refresh(order)
 
     if not paddle.is_configured():
+        if not settings.debug:
+            raise HTTPException(
+                503,
+                detail={"code": "payment_not_configured", "message": "Payments are not configured on this server"},
+            )
         from .webhook import fulfill_order
 
         await fulfill_order(order, db, provider_txn_id="dev")
@@ -133,9 +184,9 @@ MAX_DONATION_USD = 10000.0
 
 
 class DonateRequest(BaseModel):
-    device_id: str
-    email: str = ""
-    amount_usd: float
+    device_id: str = Field(min_length=1, max_length=128)
+    email: str = Field(default="", max_length=256)
+    amount_usd: Decimal = Field(gt=0, le=10000)
 
 
 class DonateResponse(BaseModel):
@@ -146,12 +197,18 @@ class DonateResponse(BaseModel):
 
 
 @router.post("/donate", response_model=DonateResponse)
-async def create_donation(req: DonateRequest, db: AsyncSession = Depends(get_db)):
+async def create_donation(req: DonateRequest, request: Request, db: AsyncSession = Depends(get_db)):
     """Start a custom-amount donation. Same browser→poll loop as checkout,
     but fulfillment records the gift without minting a license."""
+    # Rate limit: 10 requests/min per IP (see rate_limit.checkout_limiter)
+    client_ip = request.client.host if request.client else "unknown"
+    if not checkout_limiter.allow(f"checkout:{client_ip}"):
+        raise HTTPException(
+            429, detail={"code": "rate_limited", "message": "Too many checkout requests — try again later"}
+        )
     try:
-        amount = float(req.amount_usd)
-    except (TypeError, ValueError):
+        amount = Decimal(str(req.amount_usd)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    except (InvalidOperation, ValueError):
         raise HTTPException(400, detail={"code": "bad_amount", "message": "amount_usd must be a number"})
     if not (MIN_DONATION_USD <= amount <= MAX_DONATION_USD):
         raise HTTPException(
@@ -161,14 +218,14 @@ async def create_donation(req: DonateRequest, db: AsyncSession = Depends(get_db)
                 "message": f"Donations must be between ${MIN_DONATION_USD:.0f} and ${MAX_DONATION_USD:.0f}.",
             },
         )
-    amount_cents = int(round(amount * 100))
+    amount_cents = int((amount * 100).to_integral_value(rounding=ROUND_HALF_UP))
 
     order_ref = f"otoyin_{uuid.uuid4().hex[:16]}"
     order = Order(
         order_ref=order_ref,
         product_id=DONATION_PRODUCT_ID,
         device_id=req.device_id,
-        email=req.email,
+        email=hash_email(req.email),
         status="pending",
         amount_usd=amount_cents / 100,
         payment_provider="paddle",
@@ -178,6 +235,11 @@ async def create_donation(req: DonateRequest, db: AsyncSession = Depends(get_db)
     await db.refresh(order)
 
     if not paddle.is_configured():
+        if not settings.debug:
+            raise HTTPException(
+                503,
+                detail={"code": "payment_not_configured", "message": "Payments are not configured on this server"},
+            )
         from .webhook import fulfill_order
 
         await fulfill_order(order, db, provider_txn_id="dev")

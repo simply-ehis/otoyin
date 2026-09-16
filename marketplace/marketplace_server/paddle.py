@@ -85,13 +85,17 @@ async def create_transaction(
                 timeout=15,
             )
             resp.raise_for_status()
+            data = resp.json().get("data", {})
         except httpx.HTTPError as exc:
             logger.error("Paddle transaction creation failed for %s: %s", order_ref, exc)
             raise RuntimeError(f"Paddle transaction failed: {exc}") from exc
-    data = resp.json().get("data", {})
+        except ValueError as exc:
+            logger.error("Paddle transaction returned invalid JSON for %s: %s", order_ref, exc)
+            raise RuntimeError(f"Paddle transaction returned invalid response: {exc}") from exc
     checkout_url = (data.get("checkout") or {}).get("url", "")
     if not data.get("id") or not checkout_url:
-        raise RuntimeError(f"Paddle transaction response missing id/checkout url: {data!r:.200}")
+        logger.error("Paddle transaction response missing id/checkout url for %s", order_ref)
+        raise RuntimeError("Paddle transaction response missing id/checkout url")
     return {"transaction_id": data["id"], "checkout_url": checkout_url}
 
 
@@ -147,14 +151,49 @@ async def create_donation_transaction(
                 timeout=15,
             )
             resp.raise_for_status()
+            data = resp.json().get("data", {})
         except httpx.HTTPError as exc:
             logger.error("Paddle donation creation failed for %s: %s", order_ref, exc)
             raise RuntimeError(f"Paddle donation failed: {exc}") from exc
-    data = resp.json().get("data", {})
+        except ValueError as exc:
+            logger.error("Paddle donation returned invalid JSON for %s: %s", order_ref, exc)
+            raise RuntimeError(f"Paddle donation returned invalid response: {exc}") from exc
     checkout_url = (data.get("checkout") or {}).get("url", "")
     if not data.get("id") or not checkout_url:
-        raise RuntimeError(f"Paddle donation response missing id/checkout url: {data!r:.200}")
+        logger.error("Paddle donation response missing id/checkout url for %s", order_ref)
+        raise RuntimeError("Paddle donation response missing id/checkout url")
     return {"transaction_id": data["id"], "checkout_url": checkout_url}
+
+
+async def get_transaction(transaction_id: str) -> dict:
+    """Fetch a Paddle transaction to retrieve its checkout URL.
+
+    Used by idempotency logic to re-fetch the checkout URL for a pending order.
+    Returns ``{"checkout_url": ...}``. Raises ``RuntimeError`` on failure.
+    """
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.get(
+                f"{base_url()}/transactions/{transaction_id}",
+                headers={
+                    "Authorization": f"Bearer {settings.paddle_api_key}",
+                    "Paddle-Version": "1",
+                },
+                timeout=15,
+            )
+            resp.raise_for_status()
+            data = resp.json().get("data", {})
+        except httpx.HTTPError as exc:
+            logger.error("Paddle transaction fetch failed for %s: %s", transaction_id, exc)
+            raise RuntimeError(f"Paddle transaction fetch failed: {exc}") from exc
+        except ValueError as exc:
+            logger.error("Paddle transaction fetch returned invalid JSON for %s: %s", transaction_id, exc)
+            raise RuntimeError(f"Paddle transaction fetch returned invalid response: {exc}") from exc
+    checkout_url = (data.get("checkout") or {}).get("url", "")
+    if not checkout_url:
+        logger.error("Paddle transaction %s missing checkout url", transaction_id)
+        raise RuntimeError(f"Paddle transaction {transaction_id} missing checkout url")
+    return {"checkout_url": checkout_url}
 
 
 def verify_signature(raw_body: bytes, header: str) -> bool:

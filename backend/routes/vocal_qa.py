@@ -129,7 +129,14 @@ async def vocal_qa(data: VocalQARequest, db: Session = Depends(get_db)):
         from ..utils.model_lifecycle import lifecycle_manager
 
         # Manifest gate: faster-whisper must be downloaded via the Store.
-        cfg = next((c for c in get_all_model_configs() if c.engine == "faster-whisper" and c.model_size == (data.model or "tiny.en")), None)
+        cfg = next(
+            (
+                c
+                for c in get_all_model_configs()
+                if c.engine == "faster-whisper" and c.model_size == (data.model or "tiny.en")
+            ),
+            None,
+        )
         if cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size):
             raise HTTPException(status_code=400, detail=f"Download this model from the Store first ({cfg.model_name})")
         stt = get_stt_backend("faster-whisper")

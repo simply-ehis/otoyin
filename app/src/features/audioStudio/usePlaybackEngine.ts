@@ -1,6 +1,7 @@
 ﻿import { useCallback, useEffect, useRef, useState } from "react";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useToast } from "@/ui/use-toast";
+import { debug } from "@/lib/utils/debug";
 import type { StudioTrack } from "./AudioStudioStore";
 import { useAudioStudioStore } from "./AudioStudioStore";
 import { buildEffectChain } from "./buildEffectChain";
@@ -36,6 +37,14 @@ export function usePlaybackEngine({
 	const duckNodeRef = useRef<GainNode | null>(null);
 	const duckMeterRef = useRef<AnalyserNode | null>(null);
 	const duckDataRef = useRef<Float32Array<ArrayBuffer> | null>(null);
+	const sidechainDataRef = useRef<Map<string, Float32Array<ArrayBuffer>>>(
+		new Map(),
+	);
+	const masterGainRef = useRef<GainNode | null>(null);
+	const crossfadeGainsRef = useRef<GainNode[]>([]);
+	const effectChainsRef = useRef<
+		{ input: AudioNode; output: AudioNode; dispose: () => void }[]
+	>([]);
 	const durationRef = useRef<number>(0);
 	const gainNodesRef = useRef<Map<string, GainNode>>(new Map());
 	const panNodesRef = useRef<Map<string, StereoPannerNode>>(new Map());
@@ -108,6 +117,37 @@ export function usePlaybackEngine({
 			// Already disconnected.
 		}
 		try {
+			masterGainRef.current?.disconnect();
+		} catch {
+			// Already disconnected.
+		}
+		for (const n of crossfadeGainsRef.current) {
+			try {
+				n.disconnect();
+			} catch {
+				// Already disconnected.
+			}
+		}
+		crossfadeGainsRef.current = [];
+		for (const chain of effectChainsRef.current) {
+			try {
+				chain.dispose();
+			} catch {
+				// Already disposed.
+			}
+			try {
+				chain.input.disconnect();
+			} catch {
+				// Already disconnected.
+			}
+			try {
+				chain.output.disconnect();
+			} catch {
+				// Already disconnected.
+			}
+		}
+		effectChainsRef.current = [];
+		try {
 			duckNodeRef.current?.disconnect();
 		} catch {
 			// Already disconnected.
@@ -142,8 +182,20 @@ export function usePlaybackEngine({
 
 		stopPlayback();
 
-		if (!audioContextRef.current) {
-			audioContextRef.current = new AudioContext();
+		try {
+			if (!audioContextRef.current) {
+				audioContextRef.current = new AudioContext();
+			}
+		} catch (e) {
+			toast({
+				title: "Playback unavailable",
+				description:
+					e instanceof Error
+						? e.message
+						: "Audio device blocked or too many contexts open",
+				variant: "destructive",
+			});
+			return;
 		}
 		const ctx = audioContextRef.current;
 		if (ctx.state === "suspended") {
@@ -152,6 +204,7 @@ export function usePlaybackEngine({
 
 		const masterGain = ctx.createGain();
 		masterGain.gain.value = masterVolume;
+		masterGainRef.current = masterGain;
 
 		const analyser = ctx.createAnalyser();
 		analyser.fftSize = 2048;
@@ -264,12 +317,14 @@ export function usePlaybackEngine({
 
 			source.connect(trackGain);
 			trackGain.connect(crossfadeGain);
+			crossfadeGainsRef.current.push(crossfadeGain);
 
 			const effectChain = buildEffectChain(ctx, track.pluginChain);
 			let nodeBeforePanner: AudioNode = crossfadeGain;
 			if (effectChain) {
 				crossfadeGain.connect(effectChain.input);
 				nodeBeforePanner = effectChain.output;
+				effectChainsRef.current.push(effectChain);
 			}
 
 			const ch = buffer.numberOfChannels;
@@ -368,13 +423,17 @@ export function usePlaybackEngine({
 				const coef = target < cur ? 0.3 : 0.02;
 				duckNode.gain.value = cur + (target - cur) * coef;
 			}
-			// Sidechain modulation
+			// Sidechain modulation (reuse per-source buffer — no per-frame alloc)
 			sidechainNodesRef.current.forEach((sc, _targetId) => {
 				const sourceAnalyser = trackAnalysersRef.current.get(sc.sourceId);
 				if (!sourceAnalyser) {
 					return;
 				}
-				const sd = new Float32Array(sourceAnalyser.fftSize);
+				let sd = sidechainDataRef.current.get(sc.sourceId);
+				if (!sd || sd.length !== sourceAnalyser.fftSize) {
+					sd = new Float32Array(sourceAnalyser.fftSize);
+					sidechainDataRef.current.set(sc.sourceId, sd);
+				}
 				sourceAnalyser.getFloatTimeDomainData(sd);
 				let ssum = 0;
 				for (let i = 0; i < sd.length; i++) {
@@ -423,7 +482,9 @@ export function usePlaybackEngine({
 		if (useAudioStudioStore.getState().isPlaying) {
 			stopPlayback();
 		} else {
-			startPlayback();
+			void startPlayback().catch((e) => {
+				debug.log("AudioStudio: startPlayback failed", e);
+			});
 		}
 	}, [stopPlayback, startPlayback]);
 
@@ -442,7 +503,9 @@ export function usePlaybackEngine({
 		(time: number) => {
 			setCurrentTime(time);
 			if (useAudioStudioStore.getState().isPlaying) {
-				startPlayback();
+				void startPlayback().catch((e) => {
+					debug.log("AudioStudio: seek restart failed", e);
+				});
 			}
 		},
 		[setCurrentTime, startPlayback],
@@ -482,5 +545,3 @@ export function usePlaybackEngine({
 		trackAnalysers,
 	};
 }
-
-import { debug } from "@/lib/utils/debug";

@@ -35,6 +35,7 @@ function track(
 		waveformData: null,
 		color: COLORS[colorIndex % COLORS.length],
 		showSpectrogram: false,
+		stem: null,
 		channels: 1,
 		pluginChain: [],
 		volumeAutomation: [],

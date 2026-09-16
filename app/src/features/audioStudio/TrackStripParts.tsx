@@ -1,5 +1,6 @@
 import {
 	Bars3Icon as GripVertical,
+	Square2StackIcon as Copy,
 	TrashIcon as Trash2,
 } from "@heroicons/react/24/outline";
 import type { StudioTrack } from "./AudioStudioStore";
@@ -29,6 +30,7 @@ export function TrackRow({
 	removeTrack,
 	pushUndo,
 	onTranscribe,
+	onDuplicate,
 	onAssignGroup,
 }: {
 	track: StudioTrack;
@@ -53,6 +55,7 @@ export function TrackRow({
 	removeTrack: (id: string) => void;
 	pushUndo: (label: string) => void;
 	onTranscribe: () => void;
+	onDuplicate: () => void;
 	onAssignGroup: (trackId: string, groupId: string | null) => void;
 }) {
 	return (
@@ -93,6 +96,15 @@ export function TrackRow({
 				showPlugins={showPlugins}
 				channelsCount={channelsCount}
 			/>
+			<button
+				type="button"
+				className="p-1 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity self-start mt-2 mr-1"
+				onClick={onDuplicate}
+				title="Duplicate track"
+				aria-label={`Duplicate ${track.name}`}
+			>
+				<Copy className="h-3.5 w-3.5" />
+			</button>
 			<button
 				type="button"
 				className="p-1 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity self-start mt-2 mr-1"

@@ -122,7 +122,11 @@ export function StoryContent() {
 	}, [historyData, story, search]);
 
 	const fail = (title: string) => (error: unknown) =>
-		toast({ title, description: error instanceof Error ? error.message : String(error), variant: "destructive" });
+		toast({
+			title,
+			description: error instanceof Error ? error.message : String(error),
+			variant: "destructive",
+		});
 
 	if (!selectedId) {
 		return (
@@ -211,12 +215,13 @@ export function StoryContent() {
 				{ storyId: story.id, data: { generation_id: clip.id } },
 				{
 					onSuccess: () => setAddOpen(false),
-onError: (error: unknown) =>
-											toast({
-												title: t("storyContent.toast.pasteFailed"),
-												description: error instanceof Error ? error.message : String(error),
-												variant: "destructive",
-											}),
+					onError: (error: unknown) =>
+						toast({
+							title: t("storyContent.toast.pasteFailed"),
+							description:
+								error instanceof Error ? error.message : String(error),
+							variant: "destructive",
+						}),
 				},
 			);
 		} catch (error: unknown) {
@@ -354,7 +359,8 @@ onError: (error: unknown) =>
 										title: t("storyContent.toast.undoFailed", {
 											defaultValue: "Nothing to undo",
 										}),
-										description: error instanceof Error ? error.message : String(error),
+										description:
+											error instanceof Error ? error.message : String(error),
 										variant: "destructive",
 									}),
 							})
@@ -378,7 +384,8 @@ onError: (error: unknown) =>
 										title: t("storyContent.toast.redoFailed", {
 											defaultValue: "Nothing to redo",
 										}),
-										description: error instanceof Error ? error.message : String(error),
+										description:
+											error instanceof Error ? error.message : String(error),
 										variant: "destructive",
 									}),
 							})
@@ -413,7 +420,10 @@ onError: (error: unknown) =>
 												title: t("storyContent.toast.loudnessFailed", {
 													defaultValue: "Match loudness failed",
 												}),
-												description: error instanceof Error ? error.message : String(error),
+												description:
+													error instanceof Error
+														? error.message
+														: String(error),
 												variant: "destructive",
 											}),
 									},
@@ -517,7 +527,10 @@ onError: (error: unknown) =>
 															onError: (error: unknown) =>
 																toast({
 																	title: t("storyContent.toast.addFailed"),
-																	description: error instanceof Error ? error.message : String(error),
+																	description:
+																		error instanceof Error
+																			? error.message
+																			: String(error),
 																	variant: "destructive",
 																}),
 														},
@@ -608,12 +621,13 @@ onError: (error: unknown) =>
 							reorderItems.mutate(
 								{ storyId: story.id, data: { generation_ids: order } },
 								{
-								onError: (error: unknown) =>
-									toast({
-										title: t("storyContent.toast.reorderFailed"),
-										description: error instanceof Error ? error.message : String(error),
-										variant: "destructive",
-									}),
+									onError: (error: unknown) =>
+										toast({
+											title: t("storyContent.toast.reorderFailed"),
+											description:
+												error instanceof Error ? error.message : String(error),
+											variant: "destructive",
+										}),
 								},
 							);
 						}}
@@ -636,7 +650,10 @@ onError: (error: unknown) =>
 												onError: (error: unknown) =>
 													toast({
 														title: t("storyContent.toast.removeFailed"),
-														description: error instanceof Error ? error.message : String(error),
+														description:
+															error instanceof Error
+																? error.message
+																: String(error),
 														variant: "destructive",
 													}),
 											},

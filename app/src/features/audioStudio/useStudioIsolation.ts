@@ -5,11 +5,13 @@ import { showStudioErrorToast } from "@/lib/errors";
 import { getSharedContext } from "@/lib/hooks/useAudioPlayer";
 import type { StudioTrack } from "./AudioStudioStore";
 import { getPeakWaveform } from "./getPeakWaveform";
+import { STEM_WAVEFORM } from "./stemColors";
 
 interface UseStudioIsolationOptions {
 	tracks: StudioTrack[];
 	selectedTrackIndex: number;
 	isolateStem: IsolationStem;
+	invert?: boolean;
 	demucsReady: boolean;
 	addTrack: (name?: string) => string;
 	updateTrack: (id: string, updates: Partial<StudioTrack>) => void;
@@ -28,6 +30,7 @@ export function useStudioIsolation(opts: UseStudioIsolationOptions) {
 		tracks,
 		selectedTrackIndex,
 		isolateStem,
+		invert = false,
 		demucsReady,
 		addTrack,
 		updateTrack,
@@ -45,9 +48,19 @@ export function useStudioIsolation(opts: UseStudioIsolationOptions) {
 		let blob: Blob | null = targetTrack.audioBlob;
 		if (!blob && targetTrack.audioUrl) {
 			try {
-				blob = await (await fetch(targetTrack.audioUrl)).blob();
-			} catch {
+				const res = await fetch(targetTrack.audioUrl);
+				if (!res.ok) {
+					throw new Error(`Fetch failed: ${res.status}`);
+				}
+				blob = await res.blob();
+			} catch (e) {
 				blob = null;
+				showStudioErrorToast(
+					e instanceof Error
+						? e
+						: new Error("Failed to load track audio for isolation."),
+				);
+				return;
 			}
 		}
 		if (!blob) {
@@ -74,7 +87,12 @@ export function useStudioIsolation(opts: UseStudioIsolationOptions) {
 				blob,
 				`${targetTrack.name}.wav`,
 			);
-			const stemBlob = await apiClient.separateAudio(audio_path, isolateStem);
+			const stemBlob = await apiClient.separateAudio(
+				audio_path,
+				isolateStem,
+				"htdemucs",
+				invert,
+			);
 			const url = URL.createObjectURL(stemBlob);
 			const ctx = getSharedContext() ?? new AudioContext();
 			const needsClose = ctx !== getSharedContext();
@@ -85,18 +103,28 @@ export function useStudioIsolation(opts: UseStudioIsolationOptions) {
 			if (needsClose) {
 				await ctx.close();
 			}
-			const id = addTrack(
-				`${isolateStem[0].toUpperCase()}${isolateStem.slice(1)} (isolated)`,
-			);
+			const label = invert
+				? `${isolateStem[0].toUpperCase()}${isolateStem.slice(1)} removed`
+				: `${isolateStem[0].toUpperCase()}${isolateStem.slice(1)} (isolated)`;
+			const id = addTrack(label);
 			if (audioBuffersRef?.current) {
 				audioBuffersRef.current.set(id, audioBuffer);
 			}
 			updateTrack(id, {
 				waveformData: peaks,
 				channels: audioBuffer.numberOfChannels,
+				// Tag isolated stems so the track gets stem colors; a
+				// "removed" result is a full mix, not a stem.
+				...(invert
+					? {}
+					: { stem: isolateStem, color: STEM_WAVEFORM[isolateStem] }),
 			});
 			setTrackAudio(id, url, stemBlob, audioBuffer.duration);
-			pushUndo(`Isolate ${isolateStem} from ${targetTrack.name}`);
+			pushUndo(
+				invert
+					? `Remove ${isolateStem} from ${targetTrack.name}`
+					: `Isolate ${isolateStem} from ${targetTrack.name}`,
+			);
 		} catch (error) {
 			showStudioErrorToast(error);
 		} finally {
@@ -106,6 +134,7 @@ export function useStudioIsolation(opts: UseStudioIsolationOptions) {
 		tracks,
 		selectedTrackIndex,
 		isolateStem,
+		invert,
 		demucsReady,
 		addTrack,
 		updateTrack,

@@ -53,9 +53,7 @@ export function MonitorPicker({
 			</div>
 
 			{list.length === 0 ? (
-				<p className="text-[10px] text-muted-foreground">
-					No live sources
-				</p>
+				<p className="text-[10px] text-muted-foreground">No live sources</p>
 			) : (
 				<div className="flex flex-col gap-2">
 					{list.map((src) => {

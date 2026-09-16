@@ -447,22 +447,30 @@ export function TrackCrossfadeControls({
 				</SelectContent>
 			</Select>
 			{track.crossfade && (
-				<Slider
-					min={10}
-					max={500}
-					step={10}
-					value={[track.crossfade.durationMs]}
-					onValueChange={([v]) => {
-						if (!track.crossfade) {
-							return;
-						}
-						updateTrack(track.id, {
-							crossfade: { ...track.crossfade, durationMs: v },
-						});
-					}}
-					className="w-full h-4"
-					aria-label="Crossfade duration"
-				/>
+				<>
+					<div className="flex items-center justify-between text-[10px] text-muted-foreground">
+						<span>Fade length</span>
+						<span className="tabular-nums">
+							{track.crossfade.durationMs} ms
+						</span>
+					</div>
+					<Slider
+						min={10}
+						max={2000}
+						step={10}
+						value={[track.crossfade.durationMs]}
+						onValueChange={([v]) => {
+							if (!track.crossfade) {
+								return;
+							}
+							updateTrack(track.id, {
+								crossfade: { ...track.crossfade, durationMs: v },
+							});
+						}}
+						className="w-full h-4"
+						aria-label="Crossfade duration in milliseconds"
+					/>
+				</>
 			)}
 		</div>
 	);

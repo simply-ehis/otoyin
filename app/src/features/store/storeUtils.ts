@@ -342,9 +342,15 @@ export function buildFilteredProducts(
 		// Utility-type categories always sink to the bottom of the
 		// marketplace (utilities last of all) so core voices stay on top.
 		const bottomRank = (c: string): number => {
-			if (c === "utilities") return 3;
-			if (c === "translation") return 2;
-			if (c === "extras" || c === "sfx") return 1;
+			if (c === "utilities") {
+				return 3;
+			}
+			if (c === "translation") {
+				return 2;
+			}
+			if (c === "extras" || c === "sfx") {
+				return 1;
+			}
 			return 0;
 		};
 		const aBottom = bottomRank(a.category);

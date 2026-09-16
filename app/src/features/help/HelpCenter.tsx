@@ -50,9 +50,7 @@ export function HelpCenter() {
 
 	return (
 		<div className="flex min-h-0 flex-col gap-4">
-			<ScreenHeader
-				title="Help"
-			/>
+			<ScreenHeader title="Help" />
 			<SearchInput
 				aria-label="Search help"
 				placeholder="Search features…"

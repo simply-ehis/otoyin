@@ -1,5 +1,6 @@
 import type { MutableRefObject } from "react";
 import { create } from "zustand";
+import type { IsolationStem } from "@/features/workspace/VocalIsolationView";
 
 export interface AutomationPoint {
 	time: number;
@@ -64,6 +65,8 @@ export interface StudioTrack {
 	waveformData: Float32Array | null;
 	color: string;
 	showSpectrogram: boolean;
+	/** Separated stem for this track (set by stem isolation), if any. */
+	stem: IsolationStem | null;
 	channels: number; // decoded channel count (1 mono, 2 stereo, >2 multichannel)
 	pluginChain: PluginChainItem[];
 	volumeAutomation: AutomationPoint[];
@@ -120,6 +123,7 @@ interface AudioStudioStore {
 	timeSignature: [number, number];
 
 	addTrack: (name?: string) => string;
+	duplicateTrack: (id: string) => string | null;
 	removeTrack: (id: string) => void;
 	moveTrack: (fromIndex: number, toIndex: number) => void;
 	updateTrack: (id: string, updates: Partial<StudioTrack>) => void;
@@ -207,7 +211,9 @@ function generateGroupId(): string {
 function takeSnapshot(get: () => AudioStudioStore): AudioStudioSnapshot {
 	const s = get();
 	return {
-		tracks: s.tracks.map((t) => ({ ...t })),
+		// Strip waveformData (recomputable peaks) so 30 undo entries don't pin
+		// large Float32Arrays; audioBlob refs are kept so undo restores audio.
+		tracks: s.tracks.map((t) => ({ ...t, waveformData: null })),
 		groups: s.groups.map((g) => ({ ...g })),
 		masterVolume: s.masterVolume,
 		playbackSpeed: s.playbackSpeed,
@@ -271,6 +277,7 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 			waveformData: null,
 			color: colors[trackCount % colors.length],
 			showSpectrogram: false,
+			stem: null,
 			channels: 1,
 			pluginChain: [],
 			volumeAutomation: [],
@@ -292,6 +299,42 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 
 	removeTrack: (id) => {
 		set((state) => ({ tracks: state.tracks.filter((t) => t.id !== id) }));
+	},
+
+	duplicateTrack: (id) => {
+		const source = get().tracks.find((t) => t.id === id);
+		if (!source) {
+			return null;
+		}
+		const trackCount = get().tracks.length;
+		const colors = [
+			"hsl(var(--accent))",
+			"hsl(142, 76%, 36%)",
+			"hsl(248, 90%, 66%)",
+			"hsl(27, 96%, 61%)",
+			"hsl(340, 82%, 52%)",
+			"hsl(190, 90%, 50%)",
+		];
+		const newId = generateTrackId();
+		// audioBlob/audioUrl/waveformData are shared by reference (immutable
+		// once set); the decoded AudioBuffer is copied by the caller, which
+		// owns the buffer map.
+		const copy: StudioTrack = {
+			...source,
+			id: newId,
+			name: `${source.name} copy`,
+			color: colors[trackCount % colors.length],
+			pluginChain: source.pluginChain.map((p) => ({
+				...p,
+				params: { ...p.params },
+			})),
+			volumeAutomation: source.volumeAutomation.map((p) => ({ ...p })),
+			panAutomation: source.panAutomation.map((p) => ({ ...p })),
+			crossfade: source.crossfade ? { ...source.crossfade } : null,
+			midiNotes: [...source.midiNotes],
+		};
+		set((state) => ({ tracks: [...state.tracks, copy] }));
+		return newId;
 	},
 
 	moveTrack: (fromIndex, toIndex) => {
@@ -570,7 +613,7 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 	pushUndo: (description) => {
 		const snapshot = takeSnapshot(get);
 		set((state) => ({
-			undoStack: [...state.undoStack.slice(-49), { snapshot, description }],
+			undoStack: [...state.undoStack.slice(-29), { snapshot, description }],
 			redoStack: [],
 		}));
 	},
@@ -636,6 +679,7 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 				audioBlob: null,
 				audioUrl: null,
 				waveformData: null,
+				stem: t.stem ?? null,
 			})),
 			groups: snapshot.groups ?? [],
 			masterVolume: snapshot.masterVolume,
@@ -680,6 +724,7 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 				audioBlob: null,
 				audioUrl: null,
 				waveformData: null,
+				stem: t.stem ?? null,
 			})),
 			groups: snapshot.groups ?? [],
 			masterVolume: snapshot.masterVolume,

@@ -1,4 +1,4 @@
-﻿import { useRouterState } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { AppBackground } from "@/components/AppFrame/AppBackground";
 import { AppHeader } from "@/components/AppFrame/AppHeader";

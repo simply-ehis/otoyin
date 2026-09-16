@@ -62,16 +62,15 @@ export function WaveformCanvas({
 	}, [peaks, color, height, channels]);
 
 	if (!peaks) {
+		// Empty lane: render layout space only. The empty-track call to
+		// action ("Import audio or record") is drawn once by the parent
+		// overlay — rendering text here too doubles it up.
 		return (
 			<div
-				className={cn(
-					"flex items-center justify-center text-muted-foreground/40 text-xs",
-					className,
-				)}
+				className={cn("w-full", className)}
 				style={{ height }}
-			>
-				No audio
-			</div>
+				aria-hidden="true"
+			/>
 		);
 	}
 

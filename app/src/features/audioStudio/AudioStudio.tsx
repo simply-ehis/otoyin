@@ -30,6 +30,9 @@ import { useSessionManager } from "./useSessionManager";
 import { useStudioClipPaste } from "./useStudioClipPaste";
 import { useStudioDrag } from "./useStudioDrag";
 import { useStudioIsolation } from "./useStudioIsolation";
+import { useStudioRenderFx } from "./useStudioRenderFx";
+import { useStudioStitch } from "./useStudioStitch";
+import { StitchDialog } from "./StitchDialog";
 
 export function AudioStudio() {
 	const { toast } = useToast();
@@ -61,6 +64,7 @@ export function AudioStudio() {
 	const addMarker = useAudioStudioStore((s) => s.addMarker);
 	const removeMarker = useAudioStudioStore((s) => s.removeMarker);
 	const addTrack = useAudioStudioStore((s) => s.addTrack);
+	const duplicateTrack = useAudioStudioStore((s) => s.duplicateTrack);
 	const moveTrack = useAudioStudioStore((s) => s.moveTrack);
 	const setTrackAudio = useAudioStudioStore((s) => s.setTrackAudio);
 	const updateTrack = useAudioStudioStore((s) => s.updateTrack);
@@ -84,10 +88,12 @@ export function AudioStudio() {
 	const [exporting, setExporting] = useState(false);
 	const [exportingReaper, setExportingReaper] = useState(false);
 	const [isolateStem, setIsolateStem] = useState<IsolationStem>("vocals");
+	const [stemMode, setStemMode] = useState<"isolate" | "remove">("isolate");
 	const [transcriptDrawerOpen, setTranscriptDrawerOpen] = useState(false);
 	const [transcriptTrackIndex, setTranscriptTrackIndex] = useState<
 		number | null
 	>(null);
+	const [stitchDialogOpen, setStitchDialogOpen] = useState(false);
 	const [podcastProducerOpen, setPodcastProducerOpen] = useState(false);
 	const [podcastProfiles, setPodcastProfiles] = useState<VoiceProfile[]>([]);
 	const audioBuffersRef = useRef<Map<string, AudioBuffer>>(new Map());
@@ -132,23 +138,27 @@ export function AudioStudio() {
 		setLiveAnalyser(isPlaying ? (analyserRef.current ?? null) : null);
 	}, [isPlaying, analyserRef]);
 
-	// Drive waveform progress from ref at rAF rate — runs only while playing
-	// and the tab is visible; the old deps ([ref, ref.current]) never re-fired
-	// so the loop ran forever, even paused.
+	// Drive waveform progress from ref — throttled to ~10Hz. Writing React
+	// state at 60fps re-renders the studio + TimelineRuler every frame.
 	useEffect(() => {
 		if (!isPlaying) {
 			return;
 		}
 		let raf: number;
+		let lastUpdate = 0;
 		const tick = () => {
 			if (document.hidden) {
 				raf = requestAnimationFrame(tick);
 				return;
 			}
-			const dur = durationRef.current;
-			const t = currentTimeRef.current;
-			setWaveformProgress(dur ? Math.min(1, t / dur) : 0);
-			setDisplayTime(t);
+			const now = performance.now();
+			if (now - lastUpdate >= 100) {
+				lastUpdate = now;
+				const dur = durationRef.current;
+				const t = currentTimeRef.current;
+				setWaveformProgress(dur ? Math.min(1, t / dur) : 0);
+				setDisplayTime(t);
+			}
 			raf = requestAnimationFrame(tick);
 		};
 		raf = requestAnimationFrame(tick);
@@ -183,6 +193,26 @@ export function AudioStudio() {
 		addTrack();
 	}, [pushUndo, addTrack]);
 
+	const handleDuplicateTrack = useCallback(
+		(id: string) => {
+			const source = tracks.find((t) => t.id === id);
+			if (!source) {
+				return;
+			}
+			pushUndo(`Duplicate ${source.name}`);
+			const newId = duplicateTrack(id);
+			if (!newId) {
+				return;
+			}
+			const buffer = audioBuffersRef.current.get(id);
+			if (buffer) {
+				audioBuffersRef.current.set(newId, buffer);
+			}
+			toast({ title: `Duplicated ${source.name}` });
+		},
+		[tracks, pushUndo, duplicateTrack, toast],
+	);
+
 	const pasteClip = useStudioClipPaste(addTrack, updateTrack, pushUndo);
 	const handleImportAudio = useImportAudio({
 		selectedTrackIndex,
@@ -196,6 +226,7 @@ export function AudioStudio() {
 		tracks,
 		selectedTrackIndex,
 		isolateStem,
+		invert: stemMode === "remove",
 		demucsReady,
 		addTrack,
 		updateTrack,
@@ -210,6 +241,24 @@ export function AudioStudio() {
 		setTrackAudio,
 		updateTrack,
 		pushUndo,
+	});
+	const { stitching, handleStitch } = useStudioStitch({
+		tracks,
+		selectedTrackIndex,
+		addTrack,
+		updateTrack,
+		setTrackAudio,
+		pushUndo,
+		audioBuffersRef,
+	});
+	const { rendering: renderingFx, handleRenderFx } = useStudioRenderFx({
+		tracks,
+		selectedTrackIndex,
+		addTrack,
+		updateTrack,
+		setTrackAudio,
+		pushUndo,
+		audioBuffersRef,
 	});
 	const { activeDragId, handleDragStart, handleDragEnd } = useStudioDrag(
 		tracks,
@@ -310,6 +359,18 @@ export function AudioStudio() {
 					!!tracks[selectedTrackIndex]?.audioBlob
 				}
 				bouncing={bouncing}
+				renderingFx={renderingFx}
+				canRenderFx={
+					(tracks[selectedTrackIndex]?.pluginChain ?? []).some(
+						(p) => p.enabled,
+					) &&
+					(!!tracks[selectedTrackIndex]?.audioUrl ||
+						!!tracks[selectedTrackIndex]?.audioBlob)
+				}
+				onRenderFx={() => void handleRenderFx()}
+				canStitch={
+					tracks.filter((t) => !!t.audioUrl || !!t.audioBlob).length >= 2
+				}
 				onNew={session.handleNewSession}
 				onSave={() => session.setShowSaveDialog(true)}
 				onPaste={pasteClip}
@@ -349,7 +410,10 @@ export function AudioStudio() {
 				}}
 				onIsolateStemChange={setIsolateStem}
 				onIsolate={() => void handleIsolate()}
+				stemMode={stemMode}
+				onStemModeChange={setStemMode}
 				onBounce={() => void handleBounce()}
+				onStitch={() => setStitchDialogOpen(true)}
 				onProducePodcast={() => setPodcastProducerOpen(true)}
 				groups={groups}
 				onAddGroup={(name) => {
@@ -389,6 +453,21 @@ export function AudioStudio() {
 				}
 				open={transcriptDrawerOpen}
 				onOpenChange={setTranscriptDrawerOpen}
+			/>
+
+			<StitchDialog
+				open={stitchDialogOpen}
+				onClose={() => setStitchDialogOpen(false)}
+				tracks={tracks}
+				sourceTrackId={tracks[selectedTrackIndex]?.id ?? null}
+				stitching={stitching}
+				onStitch={(targetId, stitchOpts) => {
+					void handleStitch(targetId, stitchOpts).then((ok) => {
+						if (ok) {
+							setStitchDialogOpen(false);
+						}
+					});
+				}}
 			/>
 
 			<PodcastProducer
@@ -455,6 +534,7 @@ export function AudioStudio() {
 						onDragStart={handleDragStart}
 						onDragEnd={handleDragEnd}
 						onTranscribe={openTranscriptDrawer}
+						onDuplicate={handleDuplicateTrack}
 					/>
 				</div>
 			</div>

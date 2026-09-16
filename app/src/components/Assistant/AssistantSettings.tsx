@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -99,31 +99,32 @@ export const AssistantSettings = memo(function AssistantSettings({
 	);
 	const [reloading, setReloading] = useState(false);
 
-	const applyPlannerState = (settings: {
-		planner_loaded?: boolean;
-		loaded_n_ctx?: number | null;
-		effective_n_ctx?: number | null;
-		loaded_kv_quant?: string | null;
-		loaded_gpu_layers?: number | null;
-		effective_gpu_layers?: number | null;
-		gpu_layers_env_override?: boolean;
-	}) => {
-		setPlannerLoaded(Boolean(settings.planner_loaded));
-		setLoadedNCtx(settings.loaded_n_ctx ?? null);
-		setEffectiveNCtx(settings.effective_n_ctx ?? null);
-		setLoadedKvQuant(settings.loaded_kv_quant ?? null);
-		setLoadedGpuLayers(settings.loaded_gpu_layers ?? null);
-		setEffectiveGpuLayers(settings.effective_gpu_layers ?? null);
-		setGpuEnvOverride(Boolean(settings.gpu_layers_env_override));
-	};
+	const applyPlannerState = useCallback(
+		(settings: {
+			planner_loaded?: boolean;
+			loaded_n_ctx?: number | null;
+			effective_n_ctx?: number | null;
+			loaded_kv_quant?: string | null;
+			loaded_gpu_layers?: number | null;
+			effective_gpu_layers?: number | null;
+			gpu_layers_env_override?: boolean;
+		}) => {
+			setPlannerLoaded(Boolean(settings.planner_loaded));
+			setLoadedNCtx(settings.loaded_n_ctx ?? null);
+			setEffectiveNCtx(settings.effective_n_ctx ?? null);
+			setLoadedKvQuant(settings.loaded_kv_quant ?? null);
+			setLoadedGpuLayers(settings.loaded_gpu_layers ?? null);
+			setEffectiveGpuLayers(settings.effective_gpu_layers ?? null);
+			setGpuEnvOverride(Boolean(settings.gpu_layers_env_override));
+		},
+		[],
+	);
 	const reloadStale =
 		plannerLoaded &&
 		((loadedNCtx != null &&
 			effectiveNCtx != null &&
 			loadedNCtx !== effectiveNCtx) ||
-			(loadedKvQuant != null &&
-				kvQuant !== "" &&
-				loadedKvQuant !== kvQuant) ||
+			(loadedKvQuant != null && kvQuant !== "" && loadedKvQuant !== kvQuant) ||
 			(loadedGpuLayers != null &&
 				effectiveGpuLayers != null &&
 				loadedGpuLayers !== effectiveGpuLayers));
@@ -179,7 +180,7 @@ export const AssistantSettings = memo(function AssistantSettings({
 		return () => {
 			cancelled = true;
 		};
-	}, []);
+	}, [applyPlannerState]);
 
 	const clampToken = (v: number | ""): number | null => {
 		if (v === "") {
@@ -304,7 +305,9 @@ export const AssistantSettings = memo(function AssistantSettings({
 
 	const handleGpuLayersSave = async () => {
 		const value =
-			gpuLayers === "" ? null : Math.max(0, Math.min(999, Math.round(gpuLayers)));
+			gpuLayers === ""
+				? null
+				: Math.max(0, Math.min(999, Math.round(gpuLayers)));
 		setGpuSaving(true);
 		try {
 			await apiClient.updateAssistantSettings({ gpu_layers: value });
@@ -326,7 +329,8 @@ export const AssistantSettings = memo(function AssistantSettings({
 		}
 	};
 
-	const handleReloadPlanner = async () => {		setReloading(true);
+	const handleReloadPlanner = async () => {
+		setReloading(true);
 		try {
 			const res = await apiClient.reloadPlanner();
 			applyPlannerState(await apiClient.getAssistantSettings());
@@ -640,9 +644,9 @@ export const AssistantSettings = memo(function AssistantSettings({
 						GPU layers offload
 					</Label>
 					<p className="text-xs text-muted-foreground/70">
-						How many model layers run on the GPU (llama-server -ngl). 0
-						uses the CPU only. Higher is faster but uses more VRAM.
-						Applies on next planner load.
+						How many model layers run on the GPU (llama-server -ngl). 0 uses the
+						CPU only. Higher is faster but uses more VRAM. Applies on next
+						planner load.
 						{gpuEnvOverride
 							? " The TWENTYLABS_LLAMA_GPU_LAYERS environment variable is set and overrides this."
 							: ""}
@@ -745,7 +749,9 @@ export const AssistantSettings = memo(function AssistantSettings({
 					<div className="flex items-center justify-between gap-2 rounded-md border border-warning/40 bg-warning-soft px-2 py-1.5">
 						<p className="text-xs text-warning-text">
 							Planner is running with older settings
-							{loadedNCtx != null && effectiveNCtx != null && loadedNCtx !== effectiveNCtx
+							{loadedNCtx != null &&
+							effectiveNCtx != null &&
+							loadedNCtx !== effectiveNCtx
 								? ` (n_ctx ${loadedNCtx?.toLocaleString()} → ${effectiveNCtx?.toLocaleString()})`
 								: ""}
 							— reload to apply.

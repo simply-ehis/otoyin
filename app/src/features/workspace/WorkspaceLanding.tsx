@@ -50,10 +50,7 @@ export function WorkspaceLanding() {
 
 	return (
 		<div className="flex h-full flex-col gap-6 overflow-y-auto">
-			<ScreenHeader
-				title="Workspace"
-				helpPath="/workspace"
-			/>
+			<ScreenHeader title="Workspace" helpPath="/workspace" />
 
 			{/* Search */}
 			<div className="relative max-w-sm">

@@ -6,12 +6,18 @@ Supports both SQLite (local dev) and PostgreSQL (Neon prod).
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from .config import settings
+
+
+def hash_email(email: str) -> str:
+    """SHA-256 hash of a normalized email for at-rest storage."""
+    return hashlib.sha256(email.strip().lower().encode()).hexdigest()
 
 
 def _create_engine():

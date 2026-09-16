@@ -71,14 +71,13 @@ export function RecordAudioButton({ compact = false }: { compact?: boolean }) {
 	if (isRecording) {
 		return (
 			<span className="flex items-center gap-2">
-				<span
-					role="status"
+				<output
 					aria-label={`Recording ${formatSecs(duration)}`}
 					className="flex items-center gap-1.5 rounded-full border border-destructive/40 bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive"
 				>
 					<span className="size-2 animate-pulse rounded-full bg-destructive" />
 					{formatSecs(duration)}
-				</span>
+				</output>
 				<Button
 					size="sm"
 					variant="destructive"

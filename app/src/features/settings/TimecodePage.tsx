@@ -99,9 +99,7 @@ export function TimecodeDisplay({
 	}
 	return (
 		<div className="flex max-w-3xl flex-col gap-6">
-			<ScreenHeader
-				title="Timecode"
-			/>
+			<ScreenHeader title="Timecode" />
 			<Card>
 				<CardTitle className="flex items-center gap-2">
 					<ClockIcon

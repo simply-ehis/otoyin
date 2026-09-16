@@ -22,6 +22,7 @@ interface TrackListProps {
 	onDragStart: (e: DragStartEvent) => void;
 	onDragEnd: (e: DragEndEvent) => void;
 	onTranscribe: (index: number) => void;
+	onDuplicate: (id: string) => void;
 }
 
 export function TrackList({
@@ -32,6 +33,7 @@ export function TrackList({
 	onDragStart,
 	onDragEnd,
 	onTranscribe,
+	onDuplicate,
 }: TrackListProps) {
 	if (tracks.length === 0) {
 		return (
@@ -62,6 +64,7 @@ export function TrackList({
 						index={index}
 						trackAnalysers={trackAnalysers}
 						onTranscribe={() => onTranscribe(index)}
+						onDuplicate={() => onDuplicate(track.id)}
 					/>
 				))}
 			</SortableContext>

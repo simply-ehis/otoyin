@@ -11,13 +11,38 @@ import { useToast } from "@/ui/use-toast";
 import { ScreenHeader } from "@/ui/states";
 
 const GENRES = [
-	"pop", "rock", "jazz", "classical", "electronic", "hip-hop",
-	"r&b", "country", "folk", "metal", "blues", "reggae",
-	"ambient", "lo-fi", "cinematic", "funk", "soul", "latin",
+	"pop",
+	"rock",
+	"jazz",
+	"classical",
+	"electronic",
+	"hip-hop",
+	"r&b",
+	"country",
+	"folk",
+	"metal",
+	"blues",
+	"reggae",
+	"ambient",
+	"lo-fi",
+	"cinematic",
+	"funk",
+	"soul",
+	"latin",
 ];
 const MOODS = [
-	"neutral", "happy", "sad", "energetic", "calm", "dark",
-	"uplifting", "romantic", "epic", "mysterious", "aggressive", "dreamy",
+	"neutral",
+	"happy",
+	"sad",
+	"energetic",
+	"calm",
+	"dark",
+	"uplifting",
+	"romantic",
+	"epic",
+	"mysterious",
+	"aggressive",
+	"dreamy",
 ];
 
 export function MusicGenView() {
@@ -81,7 +106,9 @@ export function MusicGenView() {
 						className="w-full rounded-md border border-border bg-card px-2 py-1.5 text-sm"
 					>
 						{GENRES.map((g) => (
-							<option key={g} value={g}>{g}</option>
+							<option key={g} value={g}>
+								{g}
+							</option>
 						))}
 					</select>
 				</div>
@@ -94,7 +121,9 @@ export function MusicGenView() {
 						className="w-full rounded-md border border-border bg-card px-2 py-1.5 text-sm"
 					>
 						{MOODS.map((m) => (
-							<option key={m} value={m}>{m}</option>
+							<option key={m} value={m}>
+								{m}
+							</option>
 						))}
 					</select>
 				</div>
@@ -122,7 +151,9 @@ export function MusicGenView() {
 						max={240}
 						placeholder="auto"
 						value={tempo}
-						onChange={(e) => setTempo(e.target.value ? Number(e.target.value) : "")}
+						onChange={(e) =>
+							setTempo(e.target.value ? Number(e.target.value) : "")
+						}
 						className="h-9"
 					/>
 				</div>
@@ -134,7 +165,9 @@ export function MusicGenView() {
 						min={0}
 						placeholder="random"
 						value={seed}
-						onChange={(e) => setSeed(e.target.value ? Number(e.target.value) : "")}
+						onChange={(e) =>
+							setSeed(e.target.value ? Number(e.target.value) : "")
+						}
 						className="h-9"
 					/>
 				</div>
@@ -146,7 +179,9 @@ export function MusicGenView() {
 					id="mg-prompt"
 					placeholder="Describe the music you want to generate..."
 					value={prompt}
-					onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPrompt(e.target.value)}
+					onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+						setPrompt(e.target.value)
+					}
 					rows={3}
 				/>
 			</div>

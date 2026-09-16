@@ -1,4 +1,4 @@
-﻿"""Voice-conversion model configs â€” RVC ONNX, NeuTTS, Orpheus, Seed-VC, OpenVoice ONNX."""
+﻿"""Voice-conversion model configs — RVC ONNX, NeuTTS, Orpheus, Seed-VC, OpenVoice ONNX."""
 
 from ..protocols import ModelConfig, PresetVoiceConfig
 

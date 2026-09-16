@@ -19,7 +19,12 @@ import { relaunch } from "@tauri-apps/plugin-process";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useServerStore } from "@/stores/serverStore";
-import type { Platform, ServerError, ServerLogEntry, UpdateStatus } from "./types";
+import type {
+	Platform,
+	ServerError,
+	ServerLogEntry,
+	UpdateStatus,
+} from "./types";
 import { webPlatform } from "./webPlatform";
 
 let currentUpdate: Update | null = null;

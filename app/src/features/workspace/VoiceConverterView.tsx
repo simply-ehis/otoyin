@@ -187,9 +187,7 @@ export function VoiceConverterView() {
 
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader
-				title="Voice Converter"
-			/>
+			<ScreenHeader title="Voice Converter" />
 
 			<Separator />
 

@@ -43,10 +43,13 @@ def client(monkeypatch):
 
 
 def test_post_and_list_round_trip(client):
-    assert client.post(
-        "/marketplace/product/kokoro-onnx/reviews",
-        json={"rating": 5, "comment": "Superb", "device_id": "d1"},
-    ).status_code == 200
+    assert (
+        client.post(
+            "/marketplace/product/kokoro-onnx/reviews",
+            json={"rating": 5, "comment": "Superb", "device_id": "d1"},
+        ).status_code
+        == 200
+    )
     body = client.get("/marketplace/product/kokoro-onnx/reviews").json()
     assert len(body["reviews"]) == 1
     assert body["reviews"][0]["rating"] == 5

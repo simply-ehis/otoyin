@@ -147,7 +147,10 @@ export function useOfflineExport(
 				const wavData = audioBufferToWav(renderedBuffer);
 				const blob = new Blob([wavData], { type: "audio/wav" });
 				const url = URL.createObjectURL(blob);
-				const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+				const stamp = new Date()
+					.toISOString()
+					.replace(/[:.]/g, "-")
+					.slice(0, 19);
 				const a = document.createElement("a");
 				a.href = url;
 				a.download = `audio-studio-export-${stamp}.wav`;

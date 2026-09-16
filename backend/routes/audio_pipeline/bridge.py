@@ -1,5 +1,6 @@
 """General Audio Bridge — import/export beyond Leone-only."""
 
+import asyncio
 import io
 import tempfile
 import zipfile
@@ -105,7 +106,7 @@ async def export_audio_from_library(data: ExportAudioRequest):
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_wav:
         import soundfile as sf
 
-        sf.write(tmp_wav.name, audio, sr)
+        await asyncio.to_thread(sf.write, tmp_wav.name, audio, sr)
         tmp_wav_path = tmp_wav.name
 
     try:
@@ -186,7 +187,7 @@ async def batch_convert_audio(data: BatchConvertRequest):
 
                     audio = normalize_to_lufs(audio, sr, data.target_lufs)
 
-                sf.write(tmp_wav.name, audio, sr)
+                await asyncio.to_thread(sf.write, tmp_wav.name, audio, sr)
 
             output_path = convert_audio_file(
                 tmp_wav_path,

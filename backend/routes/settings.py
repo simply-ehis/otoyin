@@ -70,9 +70,7 @@ async def get_assistant_settings_endpoint(db: Session = Depends(get_db)):
     try:
         import os
 
-        n_ctx, _ = settings_service.compute_effective_tokens(
-            row.model_size, row.context_tokens, row.max_tokens
-        )
+        n_ctx, _ = settings_service.compute_effective_tokens(row.model_size, row.context_tokens, row.max_tokens)
         payload["effective_n_ctx"] = n_ctx
         layers, from_env = settings_service.resolve_gpu_layers(
             os.environ.get("TWENTYLABS_LLAMA_GPU_LAYERS"), row.gpu_layers

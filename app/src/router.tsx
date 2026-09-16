@@ -232,16 +232,16 @@ const VoiceConverterView = lazy(() =>
 		default: m.VoiceConverterView,
 	})),
 );
-  const SoundEffectsView = lazy(() =>
-  	import("@/features/workspace/SoundEffectsView").then((m) => ({
-  		default: m.SoundEffectsView,
-  	})),
-  );
-  const TranslateView = lazy(() =>
-  	import("@/features/translate/TranslateView").then((m) => ({
-  		default: m.TranslateView,
-  	})),
-  );
+const SoundEffectsView = lazy(() =>
+	import("@/features/workspace/SoundEffectsView").then((m) => ({
+		default: m.SoundEffectsView,
+	})),
+);
+const TranslateView = lazy(() =>
+	import("@/features/translate/TranslateView").then((m) => ({
+		default: m.TranslateView,
+	})),
+);
 const AudioEnhanceView = lazy(() =>
 	import("@/features/workspace/AudioEnhanceView").then((m) => ({
 		default: m.AudioEnhanceView,

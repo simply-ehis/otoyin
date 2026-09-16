@@ -63,8 +63,8 @@ export function ModelOfferings({ models }: { models?: ModelOffering[] }) {
 					What each model offers
 				</span>
 				<span className="text-xs text-muted-foreground">
-					{models.length} voices engines · {presetTotal} presets ·{" "}
-					{cloneCount} clone · {designCount} design {open ? "▴" : "▾"}
+					{models.length} voices engines · {presetTotal} presets · {cloneCount}{" "}
+					clone · {designCount} design {open ? "▴" : "▾"}
 				</span>
 			</button>
 			{open ? (
@@ -89,9 +89,7 @@ export function ModelOfferings({ models }: { models?: ModelOffering[] }) {
 									: " · no presets"}
 							</p>
 							<p className="mt-1.5 flex flex-wrap gap-1">
-								{m.clone_voice ? (
-									<Chip tone="accent">Clone</Chip>
-								) : null}
+								{m.clone_voice ? <Chip tone="accent">Clone</Chip> : null}
 								{m.voice_design ? <Chip tone="accent">Design</Chip> : null}
 								{m.preset_voice_count > 0 ? (
 									<Chip>{m.preset_voice_count} voices</Chip>

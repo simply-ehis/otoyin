@@ -369,7 +369,9 @@ export function useGenerationProgress() {
 											// terminal states, so a late fetch 404 is
 											// expected, not an interruption.
 											if (
-												useGenerationStore.getState().pendingGenerationIds.has(id)
+												useGenerationStore
+													.getState()
+													.pendingGenerationIds.has(id)
 											) {
 												toast({
 													title: "Streaming interrupted",
@@ -489,9 +491,7 @@ export function useGenerationProgress() {
 			};
 
 			currentSources.set(id, source);
-			useGenerationProgressStore
-				.getState()
-				.upsert(id, { stage: "connecting" });
+			useGenerationProgressStore.getState().upsert(id, { stage: "connecting" });
 		}
 	}, [
 		removePendingGeneration,
