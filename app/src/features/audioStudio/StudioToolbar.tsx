@@ -32,6 +32,7 @@ interface StudioToolbarProps {
 	isolating: boolean;
 	isolateStem: IsolationStem;
 	selectedTrackHasAudio: boolean;
+	bouncing: boolean;
 	groups: Array<{ id: string; name: string; collapsed: boolean }>;
 	onNew: () => void;
 	onSave: () => void;
@@ -45,6 +46,7 @@ interface StudioToolbarProps {
 	onExportReaper: () => void;
 	onIsolateStemChange: (stem: IsolationStem) => void;
 	onIsolate: () => void;
+	onBounce: () => void;
 	onProducePodcast: () => void;
 	onAddGroup: (name: string) => void;
 	onRemoveGroup: (id: string) => void;
@@ -67,6 +69,7 @@ export function StudioToolbar({
 	isolating,
 	isolateStem,
 	selectedTrackHasAudio,
+	bouncing,
 	groups,
 	onNew,
 	onSave,
@@ -80,6 +83,7 @@ export function StudioToolbar({
 	onExportReaper,
 	onIsolateStemChange,
 	onIsolate,
+	onBounce,
 	onProducePodcast,
 	onAddGroup,
 	onRemoveGroup,
@@ -264,6 +268,17 @@ export function StudioToolbar({
 								}}
 							>
 								Paste as Track
+							</button>
+							<button
+								type="button"
+								className="w-full text-left px-2 py-1 text-xs hover:bg-secondary rounded-sm flex items-center gap-2"
+								onClick={() => {
+									setShowToolsMenu(false);
+									onBounce();
+								}}
+								disabled={bouncing || !selectedTrackHasAudio}
+							>
+								{bouncing ? "..." : "Bounce Track"}
 							</button>
 							<div className="h-px bg-border my-1" />
 							<div className="px-2 py-1 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">

@@ -19,6 +19,7 @@ import { StudioToolbar } from "./StudioToolbar";
 import { TimelineRuler } from "./TimelineRuler";
 import { TrackList } from "./TrackList";
 import { TransportControls } from "./TransportControls";
+import { useBounceTrack } from "./useBounceTrack";
 import { useImportAudio } from "./useImportAudio";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 import { useOfflineExport } from "./useOfflineExport";
@@ -202,6 +203,14 @@ export function AudioStudio() {
 		pushUndo,
 		audioBuffersRef,
 	});
+	const { handleBounce, bouncing } = useBounceTrack({
+		tracks,
+		selectedTrackIndex,
+		audioBuffersRef,
+		setTrackAudio,
+		updateTrack,
+		pushUndo,
+	});
 	const { activeDragId, handleDragStart, handleDragEnd } = useStudioDrag(
 		tracks,
 		moveTrack,
@@ -300,6 +309,7 @@ export function AudioStudio() {
 					!!tracks[selectedTrackIndex]?.audioUrl ||
 					!!tracks[selectedTrackIndex]?.audioBlob
 				}
+				bouncing={bouncing}
 				onNew={session.handleNewSession}
 				onSave={() => session.setShowSaveDialog(true)}
 				onPaste={pasteClip}
@@ -339,6 +349,7 @@ export function AudioStudio() {
 				}}
 				onIsolateStemChange={setIsolateStem}
 				onIsolate={() => void handleIsolate()}
+				onBounce={() => void handleBounce()}
 				onProducePodcast={() => setPodcastProducerOpen(true)}
 				groups={groups}
 				onAddGroup={(name) => {
