@@ -290,6 +290,17 @@ def build_server(cuda=False):
     else:
         logger.warning("Silero VAD onnx not found locally — run download_required_models first")
 
+    # In-app Help Center catalog (backend/data/app_features.json, force-tracked
+    # despite the data/ ignore). Without it the frozen backend serves an empty
+    # catalog and Help search goes dark. SRC is backend-relative: PyInstaller
+    # runs after os.chdir(backend_dir) below.
+    _help_catalog_src = backend_dir / "data" / "app_features.json"
+    if _help_catalog_src.is_file():
+        args.extend(["--add-data", f"data/app_features.json{os.pathsep}backend/data"])
+        logger.info("Bundling help catalog from %s", _help_catalog_src)
+    else:
+        logger.warning("Help catalog %s missing — Help Center will be empty", _help_catalog_src)
+
     # Add CUDA-specific hidden imports
     if cuda:
         logger.info("Building with CUDA support")

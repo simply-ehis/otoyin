@@ -5,6 +5,14 @@ All notable changes to otoyin will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Audio Studio plugin catalog is registry-driven** — `pluginCatalog.ts` merges `GET /effects/available` over an offline fallback, so all ~30 renderable backend effects (telephone, vocoder, auto-tune, de-esser, formant shift, …) appear with real ranges; render-only items carry an R badge and a grouped Live/Backend-render dropdown
+- **Live Web Audio previews** for chorus, distortion, telephone, megaphone, resonant filter sweep (`buildEffectChain.ts`), with oscillator disposal on stop
+- **Render FX** — Tools menu renders the selected track's full chain through `POST /audio/effect-chain` onto a new track, original preserved (`useStudioRenderFx.ts`)
+- **Stitch Tracks dialog** — join two tracks end-to-end with crossfade, silence gap, and fade curve via `/audio/blend` (`StitchDialog.tsx`, `useStudioStitch.ts`)
+- **Track duplication** — per-track copy button cloning audio, chain, and automation (`duplicateTrack`)
+- **Per-stem colors** — isolated stems get a tag, waveform color, and spectrogram hue (vocals/drums/bass/other)
+- **Paddle launch checklist** — `docs/PADDLE_LAUNCH_CHECKLIST.md` owner-side steps to take payments live
+- **In-app Help catalog v2** — `backend/data/app_features.json` force-tracked (was gitignored, so fresh clones served empty Help), mojibake repaired, new stitch/duplicate/render-FX/stem entries; bundled into frozen builds via `build_binary.py`
 - **Fish Audio S2 Pro (GGUF, 4.5B Dual-AR) via s2.cpp** — `rodrigomt/s2-pro-gguf` Q4_K_M (3.4 GB) + tokenizer, subprocess one-shot, 10 languages, `[emotion]` bracket tags, voice cloning, `gpu_only` — `backend/backends/fish_speech_s2_backend.py:1`, `configs/tts.py:187`, `registry.py:124`, marketplace `$80` anchor (overrides $91 equation, `PRICING_PLAN.md:64`)
 - **Performance Mode** — `performance_settings` singleton (`database/models.py:297`), `GET/PUT /settings/performance` (`routes/settings.py:71`), `lifecycle_manager` skips idle-unload when on (`utils/model_lifecycle.py:141`), frontend `GeneralPage.tsx:221` toggle + `ProfileCard.tsx:46` `content-visibility:auto` bypass + `usePerformanceSettings` optimistic
 - **Workflow skill catalog** — `backend/agents/manifest.py:40` `SkillSpec` ×6 (`voiceover`/`podcast`/`audiobook`/`clean-master`/`adr`/`voice-design`), `GET /assistant/skills` + `21labs.list_skills` (`mcp_server/tools/skills.py:1`), `AppLoadingScreen.tsx:1` branded fallback wired at `router.tsx:388` + `LoadingState.tsx:12` `output[aria-busy]`
@@ -16,6 +24,11 @@ All notable changes to otoyin will be documented in this file.
 - Docker container now runs as non-root user
 
 ### Fixed
+- API transport mismatch: 11 client methods (separate, blend, copy/cut/paste, time-stretch, shout-to-whisper, compress, normalize, master, loudness) POSTed JSON bodies to query-param routes and 422'd — now send query params via `postQuery` (`clientCore.ts`)
+- Windows basename bug broke blend/export downloads (`split("/")` on backslash paths) — separator-agnostic `_basename` in `backend/services/audio_edit.py`
+- Unknown `/audio/effect-chain` types now 400 instead of 500 (and unknown effects raise instead of silently passing audio through)
+- Export-with-FX mistranslation: panel params (ms, seconds, registry keys) are translated to engine params via `effectChainAdapter.ts`
+- Empty studio tracks showed overlapping "No audio" + "Import audio or record" texts — single empty state
 - EQ effect crash (scipy.signal not imported)
 - Pitch shift crash (float passed where dict expected)
 - Effects chain errors now propagate instead of being silently dropped

@@ -62,7 +62,8 @@ Every knowledge doc should have an `## Agent Callable` section with exact MCP to
 | List audio tags | `21labs.list_audio_tags` | `GET /audio/tags` | `backend/services/audio_tags.py` |
 | Sample manifest | `21labs.sample_manifest` | `GET /audio/sample-manifest` | `backend/services/audio_sample_library.py` |
 | Time stretch | — | `POST /audio/time-stretch` | `backend/services/effects_extended.py` |
-| Blend | — | `POST /audio/blend` | `backend/services/effects_extended.py` |
+| Blend | `21labs.blend` | `POST /audio/blend` (query params) | `backend/services/audio_edit.py`, `backend/routes/audio_pipeline/processing.py` |
+| Effect chain | `21labs.apply_effects` | `POST /audio/effect-chain` (JSON body; unknown types 400) | `backend/services/effects.py`, `backend/routes/audio_pipeline/processing.py` |
 | Shout to whisper | — | `POST /audio/shout-to-whisper` | `backend/services/effects_extended.py` |
 
 ### Instruments & DSP
