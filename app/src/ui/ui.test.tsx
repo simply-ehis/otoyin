@@ -5,6 +5,7 @@
  */
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { act } from "react";
 import { describe, expect, it } from "vitest";
 import { Banner } from "@/ui/banner";
 import { Button } from "@/ui/button";
@@ -96,7 +97,11 @@ describe("canonical feedback", () => {
 	it("toast appears with title and dismisses", async () => {
 		const user = userEvent.setup();
 		render(<Toaster />);
-		toast({ title: "Export complete", description: "12 tracks bounced." });
+		// toast() writes the store outside any event handler — wrap so the
+		// Toaster update flushes inside act instead of warning.
+		act(() => {
+			toast({ title: "Export complete", description: "12 tracks bounced." });
+		});
 		expect(await screen.findByText("Export complete")).toBeInTheDocument();
 		await user.click(
 			screen.getByRole("button", { name: "Dismiss notification" }),

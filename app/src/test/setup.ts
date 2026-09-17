@@ -22,6 +22,8 @@ if (typeof window !== "undefined") {
 	if (!window.HTMLElement.prototype.scrollIntoView) {
 		window.HTMLElement.prototype.scrollIntoView = vi.fn();
 	}
+	// jsdom defines scrollTo but throws "not implemented" — override always.
+	window.scrollTo = vi.fn() as unknown as typeof window.scrollTo;
 	for (const method of [
 		"hasPointerCapture",
 		"setPointerCapture",

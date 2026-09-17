@@ -10,6 +10,16 @@ vi.mock("@tanstack/react-router", () => ({
 	useNavigate: () => navigateMock,
 }));
 
+// Same seam as VoiceCleanABToggle.test: provide t() without booting i18next.
+// Supports both react-i18next overloads: t(key, defaultString) and
+// t(key, { defaultValue }).
+vi.mock("react-i18next", () => ({
+	useTranslation: () => ({
+		t: (key: string, def?: string | { defaultValue?: string }) =>
+			typeof def === "string" ? def : (def?.defaultValue ?? key),
+	}),
+}));
+
 function resetTour() {
 	navigateMock.mockClear();
 	useWorkspaceStore.setState({

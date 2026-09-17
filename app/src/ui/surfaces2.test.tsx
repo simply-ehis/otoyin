@@ -7,6 +7,7 @@
  */
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 import {
 	AlertDialog,
@@ -164,7 +165,11 @@ describe("DropdownMenu", () => {
 		renderMenu();
 		await user.click(screen.getByRole("button", { name: "Actions" }));
 		const rename = screen.getByRole("menuitem", { name: "Rename" });
-		rename.focus();
+		// Direct DOM focus fires Radix state updates outside userEvent's
+		// act scope — wrap so the update flushes inside act.
+		act(() => {
+			rename.focus();
+		});
 		await user.keyboard("{ArrowDown}");
 		expect(
 			screen.getByRole("menuitem", { name: "Disabled thing" }),

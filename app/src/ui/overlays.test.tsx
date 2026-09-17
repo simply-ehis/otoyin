@@ -8,6 +8,7 @@
  */
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 import {
 	Dialog,
@@ -100,7 +101,11 @@ describe("Tabs", () => {
 		const user = userEvent.setup();
 		renderTabs();
 		const voices = screen.getByRole("tab", { name: "Voices" });
-		voices.focus();
+		// Direct DOM focus fires Radix roving-tabindex updates outside
+		// userEvent's act scope — wrap so the update flushes inside act.
+		act(() => {
+			voices.focus();
+		});
 		await user.keyboard("{ArrowRight}");
 		expect(screen.getByRole("tab", { name: "Models" })).toHaveAttribute(
 			"aria-selected",

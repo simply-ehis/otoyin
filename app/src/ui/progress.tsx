@@ -12,14 +12,17 @@ export function Progress({
 	label,
 	...props
 }: ProgressPrimitive.ProgressProps & { label?: string }) {
+	// Clamp before Radix sees it: out-of-range values make the primitive
+	// warn (and lie to assistive tech). The indicator math clamps too.
+	const clamped = value == null ? null : Math.min(max, Math.max(0, value));
 	return (
 		<ProgressPrimitive.Root
 			role="progressbar"
 			aria-label={label}
 			aria-valuemin={0}
 			aria-valuemax={max}
-			aria-valuenow={value ?? undefined}
-			value={value}
+			aria-valuenow={clamped ?? undefined}
+			value={clamped}
 			max={max}
 			className={cn(
 				"relative h-1.5 w-full overflow-hidden rounded-full bg-strong",
