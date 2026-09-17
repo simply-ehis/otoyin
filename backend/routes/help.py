@@ -18,11 +18,33 @@ router = APIRouter()
 _FEATURES_PATH = Path(__file__).resolve().parent.parent / "data" / "app_features.json"
 
 
+def _resolve_catalog_path() -> Path:
+    """Locate the catalog in dev, frozen, and test layouts.
+
+    Dev/tests: ``backend/data/app_features.json`` next to this package.
+    Frozen (PyInstaller onedir): datas land at the bundle root, so also try
+    ``<bundle>/backend/data`` and ``<bundle>/_internal/backend/data``.
+    """
+    if _FEATURES_PATH.is_file():
+        return _FEATURES_PATH
+    import sys
+
+    if getattr(sys, "frozen", False):
+        root = Path(getattr(sys, "_MEIPASS", _FEATURES_PATH.parent))
+        for candidate in (
+            root / "backend" / "data" / "app_features.json",
+            root / "_internal" / "backend" / "data" / "app_features.json",
+        ):
+            if candidate.is_file():
+                return candidate
+    return _FEATURES_PATH
+
+
 @lru_cache(maxsize=1)
 def _load_catalog() -> dict:
     """Load and cache the feature catalog (single JSON file, read once)."""
     try:
-        return json.loads(_FEATURES_PATH.read_text(encoding="utf-8"))
+        return json.loads(_resolve_catalog_path().read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         logger.warning("Feature catalog unreadable (%s); serving empty catalog", exc)
         return {"version": 0, "features": []}
