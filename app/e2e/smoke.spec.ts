@@ -35,6 +35,7 @@ const ROUTES = [
 	"/pitch",
 	"/mixer",
 	"/studio",
+	"/audio-studio",
 	"/instruments",
 	"/dsp",
 	"/adr",

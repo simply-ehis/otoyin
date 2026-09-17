@@ -462,9 +462,13 @@ db-reset:
 generate-api:
     ./scripts/generate-api.sh
 
+# PowerShell-native: `bash` on stock Windows resolves to the WSL stub when
+# Git Bash is not first on PATH, so the Windows recipe avoids bash entirely.
 [windows]
 generate-api:
-    bash scripts/generate-api.sh
+    $port = if ($env:TWENTYLABS_PORT) { $env:TWENTYLABS_PORT } else { '17493' }; $hostA = if ($env:TWENTYLABS_HOST) { $env:TWENTYLABS_HOST } else { '127.0.0.1' }; \
+    Invoke-WebRequest -Uri ('http://' + $hostA + ':' + $port + '/openapi.json') -OutFile 'app/src/lib/api/openapi.json' -UseBasicParsing; \
+    Write-Host 'Exported backend schema to app/src/lib/api/openapi.json — sync clientStories*/types.ts by hand.'
 
 # Open API docs in browser
 [unix]

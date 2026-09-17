@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { isTauri } from "@tauri-apps/api/core";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -91,6 +92,10 @@ function CapturesTabInner() {
 	}, [captures, selectedId]);
 
 	useEffect(() => {
+		// Tauri event bridge only — listen() throws without the IPC runtime.
+		if (!isTauri()) {
+			return;
+		}
 		const unlistens: Promise<UnlistenFn>[] = [];
 		unlistens.push(
 			listen<{ capture: CaptureResponse }>("capture:created", (event) => {

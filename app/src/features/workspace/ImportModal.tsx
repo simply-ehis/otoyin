@@ -35,6 +35,11 @@ export function ImportModal({
 	const { toast } = useToast();
 	const [mode, setMode] = useState<"audio" | "video">("audio");
 	const [filePath, setFilePath] = useState("");
+	const isWindows =
+		typeof navigator !== "undefined" &&
+		`${navigator.platform} ${navigator.userAgent}`
+			.toLowerCase()
+			.includes("win");
 	const [sampleRate, setSampleRate] = useState(48000);
 	const [channels, setChannels] = useState(1);
 	const [sanitize, setSanitize] = useState(false);
@@ -115,8 +120,12 @@ export function ImportModal({
 							onBlur={probe}
 							placeholder={
 								mode === "video"
-									? "C:\\Videos\\interview.mp4"
-									: "C:\\Audio\\recording.m4a"
+									? isWindows
+										? "C:\\Videos\\interview.mp4"
+										: "~/Videos/interview.mp4"
+									: isWindows
+										? "C:\\Audio\\recording.m4a"
+										: "~/Audio/recording.m4a"
 							}
 						/>
 					</Field>
