@@ -75,7 +75,7 @@
       "endpoints": [
         "https://github.com/anomalyco/otoyin/releases/latest/download/latest.json"
       ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDNFNzlBNjRDQzFDODc5NTEKUldSUmVjakJUS1o1UHJzbW9YN3hNOUFXMndQUHE0eTc4NWpOVmpheU5FT0Y4QldRdGU2NkV1eE0K"
+        "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEUzODVBRjQyRThGNTAzRjcKUldUM0EvWG9RcStGNHpiT3Jpd2NaZ0g5ZWNQUCtFZ1k2RG9JSGZndCsvclV0Wi9EV0RTZG5HSHkK"
     }
   }
 }
