@@ -46,26 +46,3 @@ pub fn init_mic_permission_handler() {
         }
     });
 }
-
-/// JavaScript to request microphone permission on first recording attempt.
-/// This triggers the browser/OS permission prompt if not already granted.
-pub const MIC_PERMISSION_JS: &str = r#"
-(async function() {
-    try {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            console.warn('[mic_webview] getUserMedia not supported');
-            return;
-        }
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(t => t.stop());
-        console.log('[mic_webview] Microphone permission available');
-    } catch (err) {
-        console.warn('[mic_webview] Microphone permission denied or unavailable:', err.message);
-    }
-})();
-"#;
-
-/// Returns JavaScript to inject for early microphone permission check.
-pub fn get_mic_permission_js() -> &'static str {
-    MIC_PERMISSION_JS
-}

@@ -11,7 +11,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis"],
     "createUpdaterArtifacts": true,
     "resources": {
       "binaries/otoyin-server/": "otoyin-server/"
@@ -28,7 +28,7 @@
         "compression": "lzma"
       },
       "wix": {
-        "language": ["en-US", "de-DE", "es-ES", "fr-FR", "pt-BR", "ko-KR"]
+        "language": "en-US"
       }
     },
     "icon": [
