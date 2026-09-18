@@ -9,7 +9,15 @@
 		"loading": "載入中…",
 		"error": "錯誤",
 		"unknown": "未知",
-		"unknownError": "未知錯誤"
+		"unknownError": "未知錯誤",
+		"back": "Back",
+		"copy": "Copy",
+		"copying": "Copying…",
+		"move": "Move",
+		"next": "Next",
+		"normal": "normal",
+		"optional": "optional",
+		"remove": "Remove"
 	},
 	"nav": {
 		"generate": "生成",
@@ -64,7 +72,9 @@
 			"playAsGenerating": "生成中…",
 			"playAsStop": "停止 · {{name}}",
 			"playAsStopFallback": "停止 · 聲音",
-			"playAsDropdownLabel": "以聲音播放轉錄文字"
+			"playAsDropdownLabel": "以聲音播放轉錄文字",
+			"copyAudio": "Copy audio",
+			"copyAudioTitle": "Copy the selected capture"
 		},
 		"empty": {
 			"noMatches": "找不到符合 \"{{query}}\" 的擷取",
@@ -94,7 +104,8 @@
 			"exportEmpty": "沒有可匯出的內容",
 			"shortcutNotArmed": "快捷鍵已開啟,但尚未就緒",
 			"shortcutNotArmedDescription_one": "{{names}} 仍需下載。請開啟「擷取」分頁開始下載。",
-			"shortcutNotArmedDescription_other": "{{names}} 仍需下載。請開啟「擷取」分頁開始下載。"
+			"shortcutNotArmedDescription_other": "{{names}} 仍需下載。請開啟「擷取」分頁開始下載。",
+			"audioCopied": "Audio copied to clipboard — paste in any tab"
 		},
 		"pill": {
 			"recording": "錄音中",
@@ -280,7 +291,8 @@
 			"defaultEffectsHint": "自動套用於使用此聲音所有新生成的效果。",
 			"personalityLabel": "個性",
 			"personalityPlaceholder": "例如:「一位脾氣暴躁的海盜,只會用航海比喻說話」",
-			"personalityHint": "這個聲音是誰以及他們如何說話。會驅動生成頁面上的「撰寫」按鈕和角色化重寫切換。留空則兩者都隱藏。"
+			"personalityHint": "這個聲音是誰以及他們如何說話。會驅動生成頁面上的「撰寫」按鈕和角色化重寫切換。留空則兩者都隱藏。",
+			"referenceTextHint": "The exact words spoken in the sample."
 		},
 		"avatar": {
 			"alt": "頭像預覽"
@@ -296,7 +308,9 @@
 			"sampleRequired": "需要音訊樣本",
 			"referenceTextRequired": "需要參考文字",
 			"audioTooLong": "音訊過長({{duration}})。最大時長為 {{max}}。",
-			"audioFailed": "音訊檔案驗證失敗。請嘗試其他檔案。"
+			"audioFailed": "音訊檔案驗證失敗。請嘗試其他檔案。",
+			"audioFormatUnsupported": "Unsupported audio format. Accepted formats: {{formats}}.",
+			"audioTooLarge": "Audio file exceeds the maximum size of {{max}}."
 		},
 		"toast": {
 			"recordingComplete": "錄製完成",
@@ -420,7 +434,8 @@
 			"errorLoading": "載入聲音檔案時出錯:{{message}}",
 			"empty": "尚無聲音檔案。建立您的第一個檔案以開始使用。",
 			"createVoice": "建立聲音",
-			"unsupportedNote": "目前模型僅可選擇支援的聲音檔案。"
+			"unsupportedNote": "目前模型僅可選擇支援的聲音檔案。",
+			"quickClone": "Quick Clone"
 		},
 		"deleteDialog": {
 			"title": "刪除聲音檔案",
@@ -570,7 +585,8 @@
 				"name": "低沉嗓音",
 				"description": "降低音高並增添溫暖"
 			}
-		}
+		},
+		"recordSample": "Record a test sample"
 	},
 	"stories": {
 		"title": "故事",
@@ -648,7 +664,11 @@
 			"vocalQa": "Vocal QA",
 			"vocalQaDone": "Vocal QA complete",
 			"vocalQaFailed": "Vocal QA failed",
-			"vocalQaRunning": "Checking vocals…"
+			"vocalQaRunning": "Checking vocals…",
+			"crossfadeNext": "Crossfade into next (0.5s)",
+			"mergeWithNext": "Merge with next",
+			"moveToStory": "Move to another story",
+			"speed": "Playback speed"
 		},
 		"importAudio": "匯入音訊…",
 		"importing": "匯入中…",
@@ -661,10 +681,25 @@
 			"regenerateFailed": "重新生成失敗",
 			"importFailed": "匯入音訊失敗",
 			"noClip": "Clipboard is empty — copy a clip from History first",
-			"pasteFailed": "Failed to paste clip"
+			"pasteFailed": "Failed to paste clip",
+			"crossfadeFailed": "Crossfade failed",
+			"loudnessFailed": "Match loudness failed",
+			"loudnessMatched": "Loudness matched across clips",
+			"mergeFailed": "Merge failed",
+			"moveFailed": "Move failed",
+			"redoFailed": "Nothing to redo",
+			"speedFailed": "Speed change failed",
+			"undoFailed": "Nothing to undo"
 		},
 		"pasteClip": "Paste clip",
-		"sourceUnavailable": "Source audio is no longer available"
+		"sourceUnavailable": "Source audio is no longer available",
+		"matchLoudness": "Match loudness",
+		"matchLoudnessTitle": "Set every clip",
+		"moveToStory": {
+			"none": "No other stories yet — create one first."
+		},
+		"redo": "Redo edit",
+		"undo": "Undo edit"
 	},
 	"history": {
 		"empty": "尚無語音生成…",
@@ -883,6 +918,21 @@
 			"performanceMode": {
 				"description": "Trade RAM for speed: keep models loaded and render all UI immediately instead of deferring off-screen work.",
 				"title": "Performance Mode"
+			},
+			"serverPort": {
+				"busy": "That port is already in use — pick a free one.",
+				"description": "The port the backend listens on. Takes effect after a backend restart.",
+				"devHint": "Port {{port}} saved. Restart your backend with OTOYIN_PORT={{port}} to apply it.",
+				"invalid": "Enter a port between 1024 and 65535",
+				"pendingRestart": "Port {{port}} saved — restart the backend to apply it.",
+				"restarting": "Restarting backend…",
+				"save": "Save port",
+				"saveRestart": "Save & restart",
+				"saving": "Saving…",
+				"servingNow": "Serving on port {{port}}",
+				"title": "Backend port",
+				"updatedDescription": "Backend is now serving on port {{port}}",
+				"updatedTitle": "Backend port updated"
 			}
 		},
 		"generation": {
@@ -992,7 +1042,9 @@
 						"higher": "較高準確度",
 						"best": "最高準確度",
 						"nearBest": "接近最佳,快速"
-					}
+					},
+					"baseEn": "Whisper Base.en — 74M — {{tail}}",
+					"tinyEn": "Whisper Tiny.en — 39M — {{tail}}"
 				},
 				"language": {
 					"title": "語言",
@@ -1265,6 +1317,14 @@
 			"website": "網站",
 			"comingSoon": "即將推出",
 			"license": "採用 <link>MIT</link> 授權"
+		},
+		"workspace": {
+			"description": "Choose which tabs appear in the sidebar. Uncheck to hide a tab.",
+			"profiles": "Quick profiles",
+			"profilesDescription": "Apply a preset combination of tabs for a specific use case.",
+			"replayTour": "Replay welcome tour",
+			"reset": "Show all tabs",
+			"title": "Sidebar tabs"
 		}
 	},
 	"models": {
@@ -1397,7 +1457,10 @@
 		"library": "Library",
 		"pitchMap": "Pitch Map",
 		"songwriter": "Songwriter",
-		"clipboard": "Clipboard"
+		"clipboard": "Clipboard",
+		"showMoreTabs_one": "See {{count}} more tab",
+		"showMoreTabs_other": "See {{count}} more tabs",
+		"translate": "Translate"
 	},
 	"instruments": {
 		"description": "Install SoundFont packs (SF2/SF3), SFZ instruments, or audio samples for use in the launcher and studio.",
@@ -1415,11 +1478,62 @@
 			"noSession": "Save the session first",
 			"saved": "Session saved"
 		},
-		"tracks": "tracks"
+		"tracks": "tracks",
+		"newSession": "New session",
+		"session": "Session"
 	},
 	"podcast": {
 		"conversation": {
-			"noEngines": "No TTS engine installed. Download a text-to-speech engine to build a conversation."
+			"noEngines": "No TTS engine installed. Download a text-to-speech engine to build a conversation.",
+			"absolute": "At fixed time",
+			"addLine": "Add line",
+			"engine": "Engine",
+			"noLines": "No lines yet — add the first line of dialogue.",
+			"noProfile": "No voice available",
+			"offsetMs": "Offset (ms)",
+			"overlapMs": "Overlap (ms)",
+			"profile": "Voice",
+			"relativeToPrevious": "After previous line",
+			"removeLine": "Remove line",
+			"selectEngine": "Select engine",
+			"selectProfile": "Select voice",
+			"speakerLabel": "Speaker name",
+			"speakerPlaceholder": "Speaker",
+			"startMode": "Starts",
+			"text": "Text",
+			"textLabel": "Dialogue text",
+			"textPlaceholder": "What do they say?",
+			"title": "Conversation",
+			"track": "Track"
+		},
+		"producer": {
+			"applyingExport": "Applying export preset…",
+			"complete": "Complete",
+			"description": "Render every line, mix the conversation, and export one finished episode.",
+			"download": "Download",
+			"downloadDesc": "One mixed file, mastered to your target loudness.",
+			"downloadReady": "Your episode is ready to download.",
+			"failed": "Production failed",
+			"generateSfx": "Generate music",
+			"generatingConversation": "Generating conversation…",
+			"generatingLine": "Generating line",
+			"generationFailed": "Line generation failed",
+			"musicBed": "Music bed",
+			"newPodcast": "New podcast",
+			"noLines": "Add conversation lines first",
+			"phase1": "Rendering dialogue…",
+			"phase2": "Mixing…",
+			"phase3": "Exporting…",
+			"produceButton": "Produce episode",
+			"prompt": "Music prompt",
+			"promptPlaceholder": "Lo-fi hip-hop, mellow, 90 BPM…",
+			"recipe": "Recipe",
+			"runningRecipe": "Running mix recipe…",
+			"sfxFailed": "Music generation failed",
+			"success": "Podcast produced",
+			"targetLufs": "Target LUFS",
+			"title": "Produce podcast",
+			"tryAgain": "Try again"
 		}
 	},
 	"referenceVoices": {
@@ -1455,7 +1569,13 @@
 		"title": "Translate",
 		"translate": "Translate",
 		"translated": "Translated",
-		"translating": "Translating..."
+		"translating": "Translating...",
+		"copy": "Copy translation",
+		"description": "Translate text between 50+ languages.",
+		"inputPlaceholder": "Type or paste text to translate…",
+		"offlineHint": "Translation needs a network connection or an offline language pack.",
+		"openStore": "Get offline packs in the Store",
+		"swap": "Swap languages"
 	},
 	"youtube": {
 		"audio": "Audio",
@@ -1475,5 +1595,138 @@
 		"title": "Download from URL",
 		"urlPlaceholder": "Paste YouTube, SoundCloud, Vimeo URL...",
 		"video": "Video"
+	},
+	"clipboard": {
+		"clear": "Clear clipboard",
+		"emptyBody": "Use Copy as clip on any capture, generation, sample, or message — it lands here for every tab to paste.",
+		"emptyTitle": "Clipboard empty",
+		"liveSlot": "On clipboard",
+		"loadFailed": "Couldn",
+		"noAudio": "No audio",
+		"nothingToCopy": "Nothing to copy yet",
+		"play": "Play",
+		"restore": "Put back on clipboard"
+	},
+	"onboarding": {
+		"generate": {
+			"description": "Everything happens on the Generate tab.",
+			"finish": "Start generating",
+			"listenBody": "Past takes live in History — play, retry, or delete them. The bottom bar plays anything, with speed and loop.",
+			"listenTitle": "2. Listen and tweak",
+			"moreBody": "Each tab shows its own short intro card the first time you open it.",
+			"moreTitle": "3. Go further",
+			"title": "Generate and listen",
+			"writeBody": "Pick a voice and language, type your script, hit Generate. Watch live progress under the prompt bar.",
+			"writeTitle": "1. Write and generate"
+		},
+		"setup": {
+			"description": "Voices come from models. Grab a free one from the Store, then manage voices on the Voices tab.",
+			"openStore": "Open Store",
+			"storeBody": "Store → pick a voice engine → Download. Free voices work fully offline.",
+			"storeTitle": "1. Download a model",
+			"title": "Get a voice",
+			"voicesBody": "Voices → use a built-in preset, clone yours, or design one by description.",
+			"voicesTitle": "2. Pick or make a voice"
+		},
+		"welcome": {
+			"description": "A quick tour before you start — under a minute.",
+			"generateBody": "Type a script, pick a voice, get studio audio.",
+			"generateTitle": "Generate speech",
+			"next": "Get started",
+			"offlineBody": "Models run locally — no cloud needed for core features.",
+			"offlineTitle": "Stays on your machine",
+			"shapeBody": "Mix, add effects, and export for any platform.",
+			"shapeTitle": "Shape sound",
+			"title": "Welcome to otoyin"
+		},
+		"wizard": {
+			"confirm": "Continue",
+			"description": "Select all that apply. You can change this anytime in Settings → Workspace.",
+			"skip": "Show everything",
+			"skipTour": "Skip tour",
+			"title": "What do you want to do?"
+		}
+	},
+	"quickClone": {
+		"cloneButton": "Clone Voice",
+		"creating": "Cloning voice…",
+		"creatingDesc": "Creating profile and processing audio",
+		"description": "Upload 5–60 seconds of clear speech to create a voice clone.",
+		"doneButton": "Start Generating",
+		"doneDesc": "“{{name}}” is ready. You can now use it for TTS generation.",
+		"doneTitle": "Voice cloned!",
+		"dragOrClick": "Drag audio or click to browse",
+		"dropHere": "Drop audio here",
+		"failed": "Clone failed",
+		"failedDesc": "Could not create voice profile.",
+		"nameLabel": "Voice name",
+		"namePlaceholder": "e.g. My Voice",
+		"pause": "Pause preview",
+		"play": "Play preview",
+		"refTextLabel": "What is being said?",
+		"refTextPlaceholder": "The spoken words improve clone quality",
+		"success": "Voice cloned!",
+		"successDesc": "Your voice profile is ready to use.",
+		"title": "Clone a Voice",
+		"tooShort": "Audio is too short. At least 5 seconds of speech is needed for a good clone."
+	},
+	"songwriter": {
+		"audience": "Who is it for?",
+		"blueprints": "Structure blueprints",
+		"coach": "Craft coach",
+		"copyBrief": "Copy agent brief",
+		"craftSignal": "craft signal — guidance, not a verdict",
+		"delete": "Delete draft",
+		"draft": "Draft",
+		"genre": "Genre",
+		"hook": "Central hook",
+		"hookHint": "A short repeatable payoff",
+		"imagery": "Image bank",
+		"insertSection": "Insert section:",
+		"languagePack": "Language pack",
+		"lines": "lines",
+		"lyrics": "Song lyrics",
+		"lyricsCraft": "Lyrics & Craft",
+		"mood": "Emotional color",
+		"newDraft": "New draft",
+		"nextRevision": "Next revision",
+		"pointOfView": "Point of view",
+		"production": "Production direction",
+		"promise": "The song",
+		"prosody": "Section prosody",
+		"rendering": "Rendering…",
+		"repeated": "repeated",
+		"save": "Save draft",
+		"sections": "sections",
+		"sendToAceStep": "Render with ACE-Step",
+		"songDna": "Song DNA",
+		"tense": "Tense",
+		"title": "Title / working title",
+		"titleHint": "The phrase listeners remember",
+		"toast": {
+			"briefCopied": "Writing brief copied",
+			"copyFailed": "Could not copy the brief",
+			"rendered": "ACE-Step render playing",
+			"saved": "Draft saved"
+		},
+		"untitled": "Untitled",
+		"views": "Songwriter views",
+		"words": "words"
+	},
+	"tabHelp": {
+		"keyActions": "Key actions",
+		"learn": "Learn about this tab",
+		"tips": "Tips"
+	},
+	"voiceCleanAB": {
+		"enhanced": "Enhanced",
+		"loading": "Loading comparison…",
+		"original": "Original",
+		"play": "Play current version",
+		"stop": "Stop playback",
+		"strength": "Strength",
+		"strengthAria": "Enhancement strength",
+		"title": "Voice Clean",
+		"toggleLabel": "Toggle between original and enhanced audio"
 	}
 }
