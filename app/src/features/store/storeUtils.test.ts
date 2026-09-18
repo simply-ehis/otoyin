@@ -274,6 +274,17 @@ describe("buildFilteredProducts — filters", () => {
 		expect(ids(run({ category: "stt" }))).toEqual(["bravo"]);
 	});
 
+	it("filters the instruments category for soundfont banks", () => {
+		const bank = makeProduct({
+			id: "sf2-generaluser-gs",
+			name: "GeneralUser GS",
+			category: "instruments",
+		});
+		expect(ids(run({ category: "instruments" }, [alpha, bank]))).toEqual([
+			"sf2-generaluser-gs",
+		]);
+	});
+
 	it("showFilter: installed / available / paid / free", () => {
 		const installed = new Set(["bravo"]);
 		expect(ids(run({ showFilter: "installed", installed }))).toEqual(["bravo"]);

@@ -635,6 +635,25 @@ PRODUCTS: list[dict[str, Any]] = [
         "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
+    # --- Free downloadable instruments (not bundled, install from Marketplace) ---
+    {
+        "id": "sf2-generaluser-gs",
+        "name": "GeneralUser GS (GM + drums)",
+        "category": "instruments",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 8,
+        "note": "261 GM presets + 13 drum kits in ~31 MB. Free for any use (S. Christian Collins). Works in studio + launcher on install.",
+    },
+    {
+        "id": "sf2-fluid-gm",
+        "name": "FluidR3 GM (classic GM + drums)",
+        "category": "instruments",
+        "price_usd": 0,
+        "paid": False,
+        "quality_score": 7,
+        "note": "Classic MIT-licensed GM bank (~142 MB) with full drum kits. Works in studio + launcher on install.",
+    },
     # --- Spatial audio ---
     {
         "id": "steam-audio",

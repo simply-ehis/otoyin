@@ -17,6 +17,13 @@ from sqlalchemy.orm import Session
 from .. import config, models
 from ..database import InstrumentPack as DBInstrumentPack, get_db
 from ..errors import ERR_INVALID_REQUEST
+from ..services.soundfont_packs import index_instruments, instruments_dir
+
+
+def _instruments_dir() -> str:
+    """Upload path root (shared with marketplace downloads)."""
+    return instruments_dir()
+
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +106,7 @@ async def upload_instrument_pack(
         dest = os.path.join(pack_dir, safe_name)
         with open(dest, "wb") as f:
             f.write(contents)
-        instruments = _index_instruments(dest, fmt, pack_id)
+        instruments = index_instruments(dest, fmt, pack_id)
         manifest = {
             "name": name or os.path.splitext(filename)[0],
             "format": fmt,
@@ -110,7 +117,6 @@ async def upload_instrument_pack(
         return instruments
 
     instruments = await asyncio.to_thread(_write_pack)
-
     row = DBInstrumentPack(
         id=pack_id,
         name=name or os.path.splitext(filename)[0],
@@ -129,53 +135,6 @@ async def upload_instrument_pack(
         pack=_to_response(row),
         instrument_count=len(instruments),
     )
-
-
-def _index_instruments(path: str, fmt: str, pack_id: str) -> list[dict]:
-    """Best-effort instrument indexing from an uploaded file."""
-    instruments: list[dict] = []
-    basename = os.path.splitext(os.path.basename(path))[0]
-
-    if fmt == "soundfont":
-        try:
-            from spessasynth_core import SoundBankLoader
-
-            with open(path, "rb") as f:
-                data = f.read()
-            bank = SoundBankLoader.fromArrayBuffer(data)
-            for idx, preset in enumerate(bank):
-                instruments.append(
-                    {
-                        "id": f"{pack_id}:preset-{idx}",
-                        "name": getattr(preset, "name", f"Preset {idx}"),
-                        "family": "soundfont",
-                        "program": getattr(preset, "program", idx),
-                        "bankMSB": getattr(preset, "bank", 0),
-                        "percussion": getattr(preset, "percussion", False),
-                        "format": "soundfont",
-                    }
-                )
-        except Exception:
-            logger.warning("Could not index SF2 presets: %s", path)
-            instruments.append(
-                {
-                    "id": f"{pack_id}:main",
-                    "name": basename,
-                    "family": "soundfont",
-                    "format": "soundfont",
-                }
-            )
-    else:
-        instruments.append(
-            {
-                "id": f"{pack_id}:main",
-                "name": basename,
-                "family": fmt,
-                "format": fmt,
-            }
-        )
-
-    return instruments
 
 
 @router.get(

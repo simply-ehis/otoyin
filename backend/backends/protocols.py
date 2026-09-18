@@ -80,6 +80,9 @@ class ModelConfig:
     # is downloaded. Empty list = no extra pip deps needed (uses base install
     # or a binary sidecar like llama-server/crispasr).
     pip_packages: list[str] = field(default_factory=list)
+    # Direct download URL for non-HF assets (e.g. engine="soundfont" banks).
+    # Empty for everything else. Shown nowhere; used by the download worker.
+    download_url: str = ""
     # Dedicated venv name for engines with conflicting deps (e.g. "rvc"
     # pins numpy<=1.23.5). If set, pip installs into data/venvs/{venv_name}/
     # instead of the main environment. None = install into main env.

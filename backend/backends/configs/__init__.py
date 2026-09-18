@@ -452,6 +452,41 @@ def _get_audio_processing_configs() -> list[ModelConfig]:
     ]
 
 
+def _get_soundfont_configs() -> list[ModelConfig]:
+    """Return free downloadable SoundFont banks (GM + drums).
+
+    Each bank downloads straight into the instruments library and registers
+    as an installed instrument pack — the same one-click flow as the
+    translation packs. Sources are redistributable: FluidR3 is MIT,
+    GeneralUser GS is free for any use incl. redistribution (attribution
+    kept in the catalog copy below).
+    """
+    return [
+        ModelConfig(
+            model_name="sf2-generaluser-gs",
+            display_name="GeneralUser GS (GM + drums)",
+            engine="soundfont",
+            hf_repo_id="mrbumpy409/GeneralUser-GS",
+            model_size="generaluser-gs",
+            size_mb=31,
+            quality_score=8,
+            category="instruments",
+            download_url="https://raw.githubusercontent.com/mrbumpy409/GeneralUser-GS/main/GeneralUser-GS.sf2",
+        ),
+        ModelConfig(
+            model_name="sf2-fluid-gm",
+            display_name="FluidR3 GM (classic GM + drums)",
+            engine="soundfont",
+            hf_repo_id="pianobooster/fluid-soundfont",
+            model_size="fluid-r3-gm",
+            size_mb=142,
+            quality_score=7,
+            category="instruments",
+            download_url="https://github.com/pianobooster/fluid-soundfont/releases/download/v3.1/FluidR3_GM.sf2",
+        ),
+    ]
+
+
 def get_vc_backend(engine: str):
     """Return the voice-conversion backend for the requested engine.
 
@@ -527,6 +562,7 @@ def get_all_model_configs() -> list[ModelConfig]:
         + _get_music_configs()
         + _get_steam_audio_configs()
         + _get_audio_processing_configs()
+        + _get_soundfont_configs()
         + _get_translation_configs()
         + _get_cloud_vc_configs()
         + _get_cloud_stt_configs()

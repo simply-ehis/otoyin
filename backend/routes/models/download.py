@@ -356,6 +356,41 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
                     filename=ONNX_FILE,
                 ),
             )
+        elif config.engine == "soundfont":
+            # Marketplace SoundFont bank — fetch straight into the instruments
+            # library and register the pack row (same table uploads use).
+            from ...services import soundfont_packs as sf_packs
+
+            if not config.download_url:
+                raise RuntimeError(f"No download URL configured for {model_name}")
+
+            def _download_soundfont(
+                _cfg=config,
+                _pm=progress_manager,
+                _name=model_name,
+            ):
+                def _progress(done: int, total: int) -> None:
+                    _pm.update_progress(_name, done, total, filename=f"{_name}.sf2")
+
+                sf_packs.download_soundfont_pack(_name, _cfg.download_url, _cfg.display_name, _progress)
+
+            await loop.run_in_executor(_download_executor, _download_soundfont)
+
+            # Register on a fresh session — the request session is long dead
+            # by the time this worker runs (same reason record_download does).
+            def _register_soundfont(
+                _cfg=config,
+                _name=model_name,
+            ):
+                from ...database import session as _db_session
+
+                fresh = _db_session.SessionLocal()
+                try:
+                    sf_packs.register_soundfont_pack(fresh, _name, _cfg.display_name, _cfg.download_url)
+                finally:
+                    fresh.close()
+
+            await loop.run_in_executor(_download_executor, _register_soundfont)
         elif config.engine == "argos_translate":
             # Argos offline pack — download via argostranslate.package directly.
             def _download_argos():
@@ -683,6 +718,23 @@ async def delete_model(model_name: str):
     if config.engine == "argos_translate":
         _forget()
         return {"message": f"Translation pack {model_name} removed"}
+    if config.engine == "soundfont":
+        from ...database import session as _db_session
+        from ...services.soundfont_packs import delete_soundfont_pack
+
+        if _db_session.SessionLocal is None:
+            logger.warning("Database not initialized — pack row for %s kept, files removed", model_name)
+            from ...services import soundfont_packs as _sf
+
+            _sf.delete_soundfont_pack_files_only(model_name)
+        else:
+            fresh_db = _db_session.SessionLocal()
+            try:
+                delete_soundfont_pack(fresh_db, model_name)
+            finally:
+                fresh_db.close()
+        _forget()
+        return {"message": f"Soundfont pack {model_name} removed"}
     if config.engine == "whisper":
         from ... import config as cfg_mod
         from ...backends.whisper_cpp_backend import WHISPER_CPP_FILES

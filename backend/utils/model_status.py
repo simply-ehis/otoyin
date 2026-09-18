@@ -248,6 +248,22 @@ def is_model_downloaded(model_name: str) -> bool:
             from .. import config as cfg_mod
 
             return (cfg_mod.get_models_dir() / f"faster-whisper-{cfg.model_size}" / "model.bin").exists()
+        if cfg.engine == "soundfont":
+            try:
+                from ..database import session as _db_session
+                from ..services.soundfont_packs import is_soundfont_pack_installed
+
+                session_local = _db_session.SessionLocal
+                if session_local is None:
+                    return False
+                db = session_local()
+                try:
+                    return is_soundfont_pack_installed(db, model_name)
+                finally:
+                    db.close()
+            except Exception:
+                logger.debug("Soundfont check failed for %s", model_name, exc_info=True)
+                return False
         if cfg.engine == "argos_translate":
             try:
                 import argostranslate.translate
