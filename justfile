@@ -264,14 +264,17 @@ build-server: _ensure-venv
     if ($LASTEXITCODE -ne 0) { throw "build_binary.py failed with exit code $LASTEXITCODE" }; \
     New-Item -ItemType Directory -Path "{{ tauri_dir }}/src-tauri/binaries" -Force | Out-Null; \
     Copy-Item "backend/dist/otoyin-server" "{{ tauri_dir }}/src-tauri/binaries/otoyin-server" -Recurse -Force; \
-    Write-Host "Copied server bundle: otoyin-server/"
+    $triple = (rustc --print host-tuple); \
+    Copy-Item "{{ tauri_dir }}/src-tauri/binaries/otoyin-server/otoyin-server.exe" "{{ tauri_dir }}/src-tauri/binaries/otoyin-server/otoyin-server-$triple.exe" -Force; \
+    Write-Host "Copied server bundle: otoyin-server/ (sidecar: otoyin-server-$triple.exe)"
 
 [unix]
 build-server: _ensure-venv
     PATH="{{ venv_bin }}:$PATH" ./scripts/build-server.sh
     mkdir -p {{ tauri_dir }}/src-tauri/binaries
     cp -r backend/dist/otoyin-server {{ tauri_dir }}/src-tauri/binaries/otoyin-server
-    @echo "Copied server bundle: otoyin-server/"
+    cp {{ tauri_dir }}/src-tauri/binaries/otoyin-server/otoyin-server {{ tauri_dir }}/src-tauri/binaries/otoyin-server/otoyin-server-$(rustc --print host-tuple)
+    @echo "Copied server bundle: otoyin-server/ (sidecar triple-suffixed for externalBin)"
 
 # Build MCP shim binary (tiny stdio↔HTTP proxy, no ML deps)
 [unix]
