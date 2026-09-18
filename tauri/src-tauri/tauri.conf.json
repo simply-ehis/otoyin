@@ -22,8 +22,8 @@
         "displayLanguageSelector": true,
         "languages": ["English", "German", "Spanish", "French", "PortugueseBR", "Korean"],
         "installerIcon": "icons/icon.ico",
-        "headerImage": "icons/128x128.png",
-        "sidebarImage": "icons/128x128.png",
+        "headerImage": "icons/installer-header.bmp",
+        "sidebarImage": "icons/installer-sidebar.bmp",
         "installMode": "both",
         "compression": "lzma"
       },
