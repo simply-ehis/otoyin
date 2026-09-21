@@ -189,7 +189,7 @@ LIBRARY_TOOLS = [
                     "name": {"type": "string"},
                     "session_data": {"type": "string"},
                 },
-                "required": ["name", "session_data"],
+                "required": ["name"],
             },
         },
     },

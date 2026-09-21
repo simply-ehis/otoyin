@@ -55,9 +55,7 @@ export function ProductReviews({
 					</>
 				) : (
 					<>
-						<StarRating score={product.quality_score ?? 0} size="sm" />
 						<span className="text-xs text-muted-foreground">
-							Quality {product.quality_score ?? 0}/10 · No reviews yet
 						</span>
 					</>
 				)}

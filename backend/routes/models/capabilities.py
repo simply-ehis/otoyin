@@ -72,7 +72,7 @@ async def model_capabilities():
     )
 
     default_llm_ctx = compute_llm_context(DEFAULT_MODEL_SIZE)
-    planner_sizes = ["2B", "0.8B", "4B-v3", "3B-Reasoning", "2.6B"]
+    planner_sizes = ["4B", "4B-v3", "spark-4B", "2.6B"]
     llm_context_by_size = {size: compute_llm_context(f"{size}-Q4_K_M") for size in planner_sizes}
     llm_max_by_size = {size: get_model_max_ctx(f"{size}-Q4_K_M") for size in planner_sizes}
 

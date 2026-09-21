@@ -402,6 +402,60 @@ def get_assistant_gpu_layers() -> int:
         db.close()
 
 
+def get_assistant_moe_stream_cache_gb() -> int:
+    """MoE expert streaming cache size in GB (``--moe-stream-cache``).
+
+    ``OTOYIN_MOE_STREAM_CACHE_GB`` (legacy ``TWENTYLABS_MOE_STREAM_CACHE_GB``)
+    wins when set; otherwise the assistant-settings ``moe_stream_cache_gb``
+    value; 0 (disabled) default.  When non-zero, the GGUF backend passes
+    ``--moe-stream-cache <N>G`` to llama-server.
+    """
+    import os
+
+    from ..database.session import SessionLocal
+
+    env_val = os.environ.get("OTOYIN_MOE_STREAM_CACHE_GB") or os.environ.get(
+        "TWENTYLABS_MOE_STREAM_CACHE_GB"
+    )
+    if env_val is not None:
+        try:
+            return max(0, int(env_val))
+        except (TypeError, ValueError):
+            pass
+
+    db = SessionLocal()
+    try:
+        row = _get_or_create_assistant_row(db)
+        return int(row.moe_stream_cache_gb or 0)
+    finally:
+        db.close()
+
+
+def get_assistant_moe_stream_direct() -> bool:
+    """O_DIRECT bypass for MoE expert reads (``--moe-stream-direct``).
+
+    ``OTOYIN_MOE_STREAM_DIRECT`` (legacy ``TWENTYLABS_MOE_STREAM_DIRECT``)
+    wins when set; otherwise the assistant-settings ``moe_stream_direct``
+    value; False (disabled) default.
+    """
+    import os
+
+    from ..database.session import SessionLocal
+
+    env_val = os.environ.get("OTOYIN_MOE_STREAM_DIRECT") or os.environ.get(
+        "TWENTYLABS_MOE_STREAM_DIRECT"
+    )
+    if env_val is not None:
+        return env_val.lower() in ("1", "true", "yes")
+
+    db = SessionLocal()
+    try:
+        row = _get_or_create_assistant_row(db)
+        return bool(row.moe_stream_direct)
+    finally:
+        db.close()
+
+
 # ---------------------------------------------------------------------------
 # Serving port (persisted in app_settings; applies after backend restart)
 # ---------------------------------------------------------------------------

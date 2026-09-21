@@ -176,7 +176,6 @@ def _build_model_status(
             for v in config["structured_preset_voices"]
         ],
         supports_voice_mixing=config["supports_voice_mixing"],
-        quality_score=config["quality_score"],
         category=config["category"],
     )
 
@@ -227,7 +226,6 @@ async def get_model_status():
             "supported_tags": cfg.supported_tags,
             "structured_preset_voices": cfg.structured_preset_voices,
             "supports_voice_mixing": cfg.supports_voice_mixing,
-            "quality_score": cfg.quality_score,
             "category": cfg.category,
             "check_loaded": lambda c=cfg: check_model_loaded(c),
         }

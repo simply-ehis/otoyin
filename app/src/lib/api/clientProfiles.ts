@@ -103,7 +103,6 @@ export class ProfilesMethods extends CrashesMethods {
 			paralinguistic_tags: boolean;
 			supports_instruct: boolean;
 			supported_tags: string[];
-			quality_score: number;
 		}[];
 	}> {
 		return this.request("/profiles/voice-design-capabilities");

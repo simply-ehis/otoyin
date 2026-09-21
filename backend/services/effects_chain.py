@@ -4,7 +4,12 @@ import logging
 
 import numpy as np
 
-from .effects import EffectConfig, apply_pitch_shift as _lib_pitch_shift, apply_time_stretch as _lib_time_stretch
+from .effects import (
+    EffectConfig,
+    apply_effect,
+    apply_pitch_shift as _lib_pitch_shift,
+    apply_time_stretch as _lib_time_stretch,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +49,12 @@ class AudioEffectsChain:
                 if effect.effect_type in self.effects:
                     processed = self.effects[effect.effect_type](processed, sample_rate, effect.params)
                 else:
-                    logger.warning(f"Unknown effect type: {effect.effect_type}")
+                    # P0.3: fall through to the Render FX engine so extended
+                    # types (telephone, vocoder, auto-tune, …) render on
+                    # export exactly as they do in Render FX. A type neither
+                    # engine knows raises ValueError there — loud, like
+                    # Render FX, instead of passing through silently.
+                    processed = apply_effect(processed, sample_rate, effect)
             except Exception as e:
                 logger.error(f"Error applying effect {effect.effect_type}: {e}")
                 raise

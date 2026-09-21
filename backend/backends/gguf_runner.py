@@ -249,12 +249,18 @@ class GGUFServerProcess:
         n_gpu_layers: int = 0,
         port: int | None = None,
         kv_cache_type: str | None = None,
+        moe_stream_cache_size: str | None = None,
+        moe_stream_direct: bool = False,
+        server_binary: str | Path | None = None,
     ):
         self.model_path = str(model_path)
         self.n_ctx = int(n_ctx)
         self.n_gpu_layers = int(n_gpu_layers)
         self._port = int(port) if port is not None else _pick_free_port()
         self.kv_cache_type = kv_cache_type or _KV_CACHE_TYPE
+        self.moe_stream_cache_size = moe_stream_cache_size
+        self.moe_stream_direct = moe_stream_direct
+        self._server_binary = str(server_binary) if server_binary else None
         self._proc: subprocess.Popen | psutil.Process | None = None
         self.load_error: str | None = None
 
@@ -275,7 +281,15 @@ class GGUFServerProcess:
 
     def start(self) -> None:
         """Spawn the server sidecar and block until it is healthy."""
-        server_path = find_llama_server()
+        server_path = None
+        if self._server_binary:
+            candidate = Path(self._server_binary)
+            if candidate.exists():
+                server_path = candidate
+            else:
+                logger.warning("Custom server binary not found at %s, falling back to default", candidate)
+        if server_path is None:
+            server_path = find_llama_server()
         if server_path is None:
             self.load_error = (
                 "llama.cpp server binary not found. Download it into data/models/ "
@@ -327,14 +341,24 @@ class GGUFServerProcess:
             cmd += ["--fit", "on", "--flash-attn", "auto"]
             cmd += ["--cache-type-k", self.kv_cache_type, "--cache-type-v", self.kv_cache_type]
             cmd += ["--parallel", _PARALLEL_SLOTS]
+            # MoE expert weight streaming (PR #25294).  When set, routed
+            # expert weights are read from SSD via the OS page cache instead
+            # of being mmap'd into RAM — critical for large MoE models
+            # (30B+ params) that exceed available RAM.
+            if self.moe_stream_cache_size:
+                cmd += ["--moe-stream-cache", self.moe_stream_cache_size]
+            if self.moe_stream_direct:
+                cmd += ["--moe-stream-direct"]
             logger.info(
-                "Spawning %s for %s (n_ctx=%d, ngl=%d, kv=%s, parallel=%s, port=%d) attempt %d/3",
+                "Spawning %s for %s (n_ctx=%d, ngl=%d, kv=%s, parallel=%s, moe_cache=%s, moe_direct=%s, port=%d) attempt %d/3",
                 server_path.name,
                 Path(self.model_path).name,
                 self.n_ctx,
                 self.n_gpu_layers,
                 self.kv_cache_type,
                 _PARALLEL_SLOTS,
+                self.moe_stream_cache_size or "off",
+                self.moe_stream_direct,
                 self._port,
                 attempt + 1,
             )
@@ -449,6 +473,9 @@ class GGUFServerProcess:
         max_tokens: int,
         temperature: float = 0.7,
         top_p: float = 0.9,
+        repeat_penalty: float = 1.1,
+        frequency_penalty: float = 0.0,
+        presence_penalty: float = 0.0,
         timeout: float | None = None,
         grammar: str | None = None,
     ) -> dict:
@@ -466,6 +493,12 @@ class GGUFServerProcess:
             "temperature": temperature,
             "top_p": top_p,
         }
+        if repeat_penalty != 1.0:
+            payload["repeat_penalty"] = repeat_penalty
+        if frequency_penalty != 0.0:
+            payload["frequency_penalty"] = frequency_penalty
+        if presence_penalty != 0.0:
+            payload["presence_penalty"] = presence_penalty
         if grammar:
             payload["grammar"] = grammar
         resp = requests.post(

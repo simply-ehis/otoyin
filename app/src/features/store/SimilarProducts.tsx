@@ -1,6 +1,5 @@
 import type { MarketplaceProduct } from "@/lib/api/types";
 import { useRegionCurrency } from "@/lib/regionCurrency";
-import { StarRating } from "./StarRating";
 import { formatPrice } from "./storeUtils";
 
 interface Props {
@@ -47,13 +46,6 @@ export function SimilarProducts({
 									</span>
 								)}
 							</div>
-							{sp.quality_score != null && (
-								<StarRating
-									score={sp.quality_score}
-									size="xs"
-									className="mt-0.5"
-								/>
-							)}
 						</div>
 					</button>
 				))}

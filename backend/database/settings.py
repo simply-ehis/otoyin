@@ -31,7 +31,7 @@ class CaptureSettings(Base):
     stt_model = Column(String, nullable=False, default="tiny.en")
     language = Column(String, nullable=False, default="auto")
     auto_refine = Column(Boolean, nullable=False, default=True)
-    llm_model = Column(String, nullable=False, default="2B-Q4_K_M")
+    llm_model = Column(String, nullable=False, default="4B-Q4_K_M")
     smart_cleanup = Column(Boolean, nullable=False, default=True)
     self_correction = Column(Boolean, nullable=False, default=True)
     preserve_technical = Column(Boolean, nullable=False, default=True)
@@ -66,7 +66,7 @@ class AssistantSettings(Base):
     __tablename__ = "assistant_settings"
 
     id = Column(Integer, primary_key=True, default=1)
-    model_size = Column(String, nullable=False, default="2B-Q4_K_M")
+    model_size = Column(String, nullable=False, default="4B-Q4_K_M")
     context_tokens = Column(Integer, nullable=True, default=None)
     max_tokens = Column(Integer, nullable=True, default=None)
     agent_memory_enabled = Column(Boolean, nullable=False, default=True)
@@ -76,6 +76,12 @@ class AssistantSettings(Base):
     # Layers offloaded to GPU (llama-server -ngl). NULL = CPU-only (0),
     # matching historical behavior. Applies at planner load time.
     gpu_layers = Column(Integer, nullable=True, default=None)
+    # MoE (Mixture of Experts) streaming — when set, passes
+    # --moe-stream-cache <N>G to llama-server for SSD-based expert weight
+    # streaming. NULL = disabled (dense models). Value is in GB.
+    moe_stream_cache_gb = Column(Integer, nullable=True, default=None)
+    # O_DIRECT bypass for MoE expert reads (avoids page-cache pollution).
+    moe_stream_direct = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 

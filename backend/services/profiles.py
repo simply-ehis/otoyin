@@ -281,7 +281,6 @@ def get_voice_design_capabilities() -> dict:
                     "paralinguistic_tags": bool(cfg.paralinguistic_tags),
                     "supports_instruct": bool(cfg.supports_instruct),
                     "supported_tags": list(cfg.supported_tags or []),
-                    "quality_score": int(cfg.quality_score or 0),
                 }
             )
     except Exception:

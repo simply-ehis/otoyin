@@ -86,6 +86,11 @@ export const AssistantSettings = memo(function AssistantSettings({
 	const [gpuSaving, setGpuSaving] = useState(false);
 	const [gpuEnvOverride, setGpuEnvOverride] = useState(false);
 
+	// MoE (Mixture of Experts) streaming — SSD-based expert weight offload.
+	const [moeCacheGb, setMoeCacheGb] = useState<number | "">("");
+	const [moeDirect, setMoeDirect] = useState(false);
+	const [moeSaving, setMoeSaving] = useState(false);
+
 	// Live planner state: n_ctx/kv_quant apply at load time only. When the
 	// running server's n_ctx differs from the effective setting, show a
 	// reload notice instead of pretending "saved" means "active".
@@ -146,6 +151,8 @@ export const AssistantSettings = memo(function AssistantSettings({
 				setSystemPrompt(settings.system_prompt ?? "");
 				setKvQuant(settings.kv_quant || "q8_0");
 				setGpuLayers(settings.gpu_layers ?? "");
+				setMoeCacheGb(settings.moe_stream_cache_gb ?? "");
+				setMoeDirect(Boolean(settings.moe_stream_direct));
 				applyPlannerState(settings);
 				const bySize = caps.llm_context?.by_size ?? {};
 				const maxBySize = bySize;
@@ -326,6 +333,33 @@ export const AssistantSettings = memo(function AssistantSettings({
 			});
 		} finally {
 			setGpuSaving(false);
+		}
+	};
+
+	const handleMoeSave = async () => {
+		const cacheValue =
+			moeCacheGb === "" ? null : Math.max(0, Math.min(64, Math.round(moeCacheGb)));
+		setMoeSaving(true);
+		try {
+			await apiClient.updateAssistantSettings({
+				moe_stream_cache_gb: cacheValue,
+				moe_stream_direct: moeDirect,
+			});
+			setMoeCacheGb(cacheValue ?? "");
+			applyPlannerState(await apiClient.getAssistantSettings());
+			toast({
+				title: plannerLoaded
+					? "Saved — applies when the planner reloads"
+					: "MoE streaming settings saved",
+			});
+		} catch {
+			toast({
+				title: ERR_TITLE_SETTINGS,
+				description: ERR_DESC_SETTINGS_FAILED,
+				variant: "destructive",
+			});
+		} finally {
+			setMoeSaving(false);
 		}
 	};
 
@@ -678,6 +712,73 @@ export const AssistantSettings = memo(function AssistantSettings({
 							{gpuSaving ? <Spinner size="xs" /> : "Save"}
 						</Button>
 					</div>
+				</div>
+			</div>
+
+			<div className="space-y-2 pt-2 border-t border-border">
+				<div className="space-y-1">
+					<Label
+						htmlFor="moe-cache-gb"
+						className="text-xs font-medium text-muted-foreground"
+					>
+						MoE expert streaming cache
+					</Label>
+					<p className="text-xs text-muted-foreground/70">
+						For Mixture-of-Experts models only. Sets the SSD read cache size in GB
+						(llama-server --moe-stream-cache). When a MoE model is loaded and this
+						is 0, the backend auto-computes a value from available RAM. 0 = auto
+						(disabled for dense models). Applies on next planner load.
+					</p>
+					<div className="flex gap-2">
+						<Input
+							id="moe-cache-gb"
+							type="number"
+							min={0}
+							max={64}
+							step={1}
+							value={moeCacheGb}
+							onChange={(e) =>
+								setMoeCacheGb(
+									e.target.value === "" ? "" : Number(e.target.value),
+								)
+							}
+							placeholder="0 (auto)"
+							disabled={moeSaving}
+							className="h-8 text-xs"
+						/>
+						<Button
+							variant="outline"
+							size="sm"
+							className="h-8 shrink-0 px-2 text-xs"
+							onClick={handleMoeSave}
+							disabled={moeSaving}
+						>
+							{moeSaving ? <Spinner size="xs" /> : "Save"}
+						</Button>
+					</div>
+				</div>
+				<div className="flex items-center justify-between">
+					<div className="space-y-0.5">
+						<Label
+							htmlFor="moe-direct"
+							className="text-xs font-medium text-muted-foreground"
+						>
+							O_DIRECT for MoE reads
+						</Label>
+						<p className="text-xs text-muted-foreground/70">
+							Bypass the OS page cache for expert weight reads. Prevents large MoE
+							models from evicting other data. Only for SSDs. Applies on next
+							planner load.
+						</p>
+					</div>
+					<Switch
+						id="moe-direct"
+						checked={moeDirect}
+						onCheckedChange={(v) => {
+							setMoeDirect(v);
+						}}
+						disabled={moeSaving}
+					/>
 				</div>
 			</div>
 

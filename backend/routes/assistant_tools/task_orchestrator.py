@@ -149,7 +149,7 @@ READ_ONLY_TOOLS: frozenset[str] = frozenset(
         "dub_languages",
         "dub_status",
         "translate_languages",
-        "ad_r_list_sessions",
+        "adr_list_sessions",
         "adr_get_session",
         "studio_list_sessions",
         "list_preset_voices",
@@ -349,7 +349,7 @@ def decompose_tasks(query: str) -> list[SubTask]:
         )
 
     # Detect transcription
-    if any(kw in q_lower for kw in ["transcribe", "subtitle", "captions", "captions", "diarize", "stt"]):
+    if any(kw in q_lower for kw in ["transcribe", "subtitle", "captions", "diarize", "stt"]):
         trans_tools = ["transcribe"]
         if "subtitle" in q_lower or "caption" in q_lower:
             trans_tools.append("export_subtitles")

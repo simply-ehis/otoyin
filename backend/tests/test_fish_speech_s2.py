@@ -243,7 +243,7 @@ def test_subprocess_engine_skips_vram():
     # Verify the VRAM gate list in registry.py contains the engine (read file)
     import pathlib
 
-    text = pathlib.Path("backend/backends/registry.py").read_text(encoding="utf-8")
+    text = pathlib.Path("backend/backends/registry/__init__.py").read_text(encoding="utf-8")
     assert '"fish_speech_s2"' in text or "'fish_speech_s2'" in text
 
 

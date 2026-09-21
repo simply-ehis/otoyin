@@ -21,7 +21,6 @@ import {
 	CATEGORIES,
 	CATEGORY_LABELS,
 	type CategoryId,
-	compareQualityDesc,
 	formatPrice,
 	formatSize,
 	priceTone,
@@ -44,7 +43,6 @@ function makeRng(seed: number): () => number {
 
 const ALL_SORT_MODES: SortMode[] = [
 	"default",
-	"quality",
 	"price-asc",
 	"price-desc",
 	"name",
@@ -53,7 +51,6 @@ const ALL_SORT_MODES: SortMode[] = [
 /** Duplicate-heavy pools force tie-break paths hand-written tests miss. */
 const NAME_POOL = ["Aurora", "Ember", "Aurora", "Zephyr", "Ember", "Onyx"];
 const PRICE_POOL = [0, 0, 3, 9, 3, 20];
-const QUALITY_POOL = [0, 9, 5, 9, undefined, 3];
 
 function randomProductSet(rng: () => number): MarketplaceProduct[] {
 	const count = 2 + Math.floor(rng() * 38);
@@ -67,7 +64,6 @@ function randomProductSet(rng: () => number): MarketplaceProduct[] {
 			price_usd: paid
 				? PRICE_POOL[Math.floor(rng() * PRICE_POOL.length)] || 1
 				: 0,
-			quality_score: QUALITY_POOL[Math.floor(rng() * QUALITY_POOL.length)],
 		});
 	});
 }
@@ -106,8 +102,6 @@ function sortKey(
 	mode: SortMode,
 ): [number, number, string] | [string] {
 	switch (mode) {
-		case "quality":
-			return [-(p.quality_score ?? 0), 0, p.name];
 		case "price-asc":
 			return [p.price_usd, 0, p.name];
 		case "price-desc":
@@ -115,7 +109,7 @@ function sortKey(
 		case "name":
 			return [p.name];
 		default:
-			return [p.paid ? 1 : 0, -(p.quality_score ?? 0), p.name];
+			return [p.paid ? 1 : 0, p.price_usd, p.name];
 	}
 }
 
@@ -128,7 +122,6 @@ function makeProduct(
 		category: "tts",
 		price_usd: 0,
 		paid: false,
-		quality_score: 5,
 		...overrides,
 	};
 }
@@ -136,25 +129,34 @@ function makeProduct(
 // Ids deliberately avoid the MODEL_DESCRIPTIONS keys so search tests stay
 // deterministic — except one product that uses "kokoro-onnx" to prove search
 // reaches the rich-description fallback.
-const alpha = makeProduct({ id: "alpha", name: "Alpha", quality_score: 5 });
+const alpha = makeProduct({
+	id: "alpha",
+	name: "Alpha",
+	category: "tts",
+	price_usd: 3,
+	paid: true,
+});
 const bravo = makeProduct({
 	id: "bravo",
 	name: "Bravo",
 	category: "stt",
 	price_usd: 10,
 	paid: true,
-	quality_score: 9,
 });
 const charlie = makeProduct({
 	id: "charlie",
 	name: "Charlie",
 	price_usd: 5,
 	paid: true,
-	quality_score: 7,
 	note: "night mode ready",
 	use_cases: ["podcast"],
 });
-const delta = makeProduct({ id: "sirius", name: "Delta", quality_score: 9 });
+const delta = makeProduct({
+	id: "sirius",
+	name: "Delta",
+	price_usd: 0,
+	paid: false,
+});
 const ALL = [alpha, bravo, charlie, delta];
 
 type Args = {
@@ -197,16 +199,6 @@ describe("buildFilteredProducts — sort modes", () => {
 		expect(ids(run())).toEqual(["sirius", "alpha", "bravo", "charlie"]);
 	});
 
-	it("quality: quality desc with name tiebreak", () => {
-		// bravo (9) and delta (9) tie -> name orders bravo first.
-		expect(ids(run({ sort: "quality" }))).toEqual([
-			"bravo",
-			"sirius",
-			"charlie",
-			"alpha",
-		]);
-	});
-
 	it("price-asc: price ascending with name tiebreak for equal prices", () => {
 		expect(ids(run({ sort: "price-asc" }))).toEqual([
 			"alpha",
@@ -236,11 +228,11 @@ describe("buildFilteredProducts — sort modes", () => {
 });
 
 describe("buildFilteredProducts — installed/owned ordering contract", () => {
-	it("an installed product leads the grid even with the lowest quality", () => {
-		// charlie (q7) is installed; in quality mode it must still rank first.
+	it("an installed product leads the grid even with the lowest price", () => {
+		// charlie is installed; it must still rank first.
 		expect(
-			ids(run({ sort: "quality", installed: new Set(["charlie"]) })),
-		).toEqual(["charlie", "bravo", "sirius", "alpha"]);
+			ids(run({ sort: "price-asc", installed: new Set(["charlie"]) })),
+		).toEqual(["charlie", "sirius", "alpha", "bravo"]);
 	});
 
 	it("ownership alone (without install) is enough to lead", () => {
@@ -730,78 +722,6 @@ describe("formatSize", () => {
 	it("1 GB and above → GB with two decimals", () => {
 		expect(formatSize(1024)).toBe("1.00 GB");
 		expect(formatSize(1587)).toBe("1.55 GB");
-	});
-});
-
-describe("compareQualityDesc", () => {
-	it("orders quality descending", () => {
-		const hi = makeProduct({ id: "hi", name: "Hi", quality_score: 9 });
-		const mid = makeProduct({ id: "mid", name: "Mid", quality_score: 5 });
-		expect(compareQualityDesc(hi, mid)).toBeLessThan(0);
-		expect(compareQualityDesc(mid, hi)).toBeGreaterThan(0);
-	});
-
-	it("treats missing quality_score as 0", () => {
-		const none = makeProduct({
-			id: "none",
-			name: "Same",
-			quality_score: undefined,
-		});
-		const zero = makeProduct({ id: "zero", name: "Same", quality_score: 0 });
-		// Same (missing) quality and same name → a true comparator zero.
-		expect(compareQualityDesc(none, zero)).toBe(0);
-		// Both rank below any scored product…
-		expect(
-			compareQualityDesc(
-				makeProduct({ id: "a", name: "A", quality_score: 1 }),
-				none,
-			),
-		).toBeLessThan(0);
-		// …and among themselves the name tie-break applies (missing != skipped).
-		expect(
-			compareQualityDesc(
-				none,
-				makeProduct({ id: "zero2", name: "Zed", quality_score: undefined }),
-			),
-		).toBeLessThan(0);
-	});
-
-	it("breaks quality ties by name (deterministic order)", () => {
-		const zed = makeProduct({ id: "z", name: "Zed", quality_score: 7 });
-		const art = makeProduct({ id: "a", name: "Art", quality_score: 7 });
-		expect(compareQualityDesc(zed, art)).toBeGreaterThan(0);
-		expect(compareQualityDesc(art, zed)).toBeLessThan(0);
-		expect(
-			compareQualityDesc(
-				art,
-				makeProduct({ id: "a2", name: "Art", quality_score: 7 }),
-			),
-		).toBe(0);
-	});
-
-	it("works as a sort comparator and is input-order invariant", () => {
-		// The exact bug class the similar-products rail had: without the name
-		// tie-break, equal-quality products kept unstable input order.
-		const products = [
-			makeProduct({ id: "p1", name: "Zeta", quality_score: 5 }),
-			makeProduct({ id: "p2", name: "Beta", quality_score: 9 }),
-			makeProduct({ id: "p3", name: "Alpha", quality_score: 9 }),
-			makeProduct({ id: "p4", name: "Yankee", quality_score: undefined }),
-		];
-		const forward = [...products].sort(compareQualityDesc).map((p) => p.id);
-		const backward = [...products]
-			.reverse()
-			.sort(compareQualityDesc)
-			.map((p) => p.id);
-		// Quality 9 pair: Alpha before Beta via the name tie-break.
-		expect(forward).toEqual(["p3", "p2", "p1", "p4"]);
-		expect(backward).toEqual(forward);
-	});
-
-	it("accepts the minimal Pick shape (no full product needed)", () => {
-		expect(
-			compareQualityDesc({ name: "a", quality_score: 2 }, { name: "b" }),
-		).toBeLessThan(0);
 	});
 });
 

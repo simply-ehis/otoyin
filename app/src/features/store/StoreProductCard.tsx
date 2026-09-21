@@ -23,7 +23,6 @@ import { Card } from "@/ui/card";
 import { Spinner } from "@/ui/primitives";
 import { Progress } from "@/ui/progress";
 import { PresetVoiceAuditionList } from "@/features/voices/PresetVoiceAuditionList";
-import { StarRating } from "./StarRating";
 import {
 	CATEGORY_ACCENT,
 	CATEGORY_LABELS,
@@ -211,11 +210,6 @@ export function StoreProductCard({
 					>
 						{CATEGORY_LABELS[product.category] ?? product.category}
 					</span>
-					{product.quality_score != null && (
-						<span title="Curated quality score for its category — capability, quality and value compared with similar models">
-							<StarRating score={product.quality_score} size="xs" />
-						</span>
-					)}
 					{sizeLabel && (
 						<span className="text-xs text-muted-foreground">{sizeLabel}</span>
 					)}

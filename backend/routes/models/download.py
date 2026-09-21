@@ -41,6 +41,8 @@ _ENGINE_IMPORT_PROBES: dict[str, str] = {
     "neutts_2e": "neutts",
     "orpheus": "snac",
     "zonos_gguf": "crispasr",
+    "voxcpm2": "crispasr",
+    "moonshine": "moonshine",
     "whisper": "pywhispercpp",
     "rvc_onnx": "onnxruntime",
     "openvoice_onnx": "onnxruntime",
@@ -425,6 +427,20 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
                 await loop.run_in_executor(
                     _download_executor,
                     lambda f=filename: hf_hub_download(repo_id=config.hf_repo_id, filename=f),
+                )
+        elif config.engine == "voxcpm2":
+            await loop.run_in_executor(
+                _download_executor,
+                lambda: hf_hub_download(repo_id=config.hf_repo_id, filename="voxcpm2-q8_0.gguf"),
+            )
+        elif config.engine == "moonshine":
+            from ...backends.moonshine_backend import _MODELS
+
+            info = _MODELS.get(config.model_size)
+            if info:
+                await loop.run_in_executor(
+                    _download_executor,
+                    lambda: hf_hub_download(repo_id=info["repo"], filename=info["file"]),
                 )
         else:
             await loop.run_in_executor(

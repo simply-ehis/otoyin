@@ -516,7 +516,7 @@ function RefinementSettings() {
 				description={t("settings.captures.refinement.model.description")}
 				action={
 					<Select
-						value={settings?.llm_model ?? "2B-Q4_K_M"}
+						value={settings?.llm_model ?? "4B-Q4_K_M"}
 						onValueChange={(v) => update({ llm_model: v as PlannerModelSize })}
 						disabled={!autoRefine}
 					>
@@ -524,13 +524,8 @@ function RefinementSettings() {
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="0.8B-Q5_K_M">
-								{t("settings.captures.refinement.model.size08", {
-									tail: t("settings.captures.refinement.model.tail.veryFast"),
-								})}
-							</SelectItem>
-							<SelectItem value="2B-Q4_K_M">
-								{t("settings.captures.refinement.model.size2b", {
+							<SelectItem value="4B-Q4_K_M">
+								{t("settings.captures.refinement.model.size4b", {
 									tail: t("settings.captures.refinement.model.tail.fast"),
 								})}
 							</SelectItem>
@@ -541,8 +536,15 @@ function RefinementSettings() {
 									),
 								})}
 							</SelectItem>
-							<SelectItem value="3B-Reasoning-Q4_K_M">
+							<SelectItem value="spark-4B-Q4_K_M">
 								{t("settings.captures.refinement.model.size3b", {
+									tail: t(
+										"settings.captures.refinement.model.tail.fullQuality",
+									),
+								})}
+							</SelectItem>
+							<SelectItem value="2.6B-Q4_0">
+								{t("settings.captures.refinement.model.size2b", {
 									tail: t(
 										"settings.captures.refinement.model.tail.fullQuality",
 									),

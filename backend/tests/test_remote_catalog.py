@@ -54,7 +54,6 @@ def _remote_products() -> list[dict]:
             "long_description": "Fetched from the remote catalog",
             "price_usd": 19.0,
             "paid": True,
-            "quality_score": 8,
             "avg_rating": 4.7,
             "review_count": 3,
             "size_mb": 250,

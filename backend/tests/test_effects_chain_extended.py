@@ -2,7 +2,7 @@
 
 Covers:
 - apply_effects_chain with mixed enabled/disabled effects
-- Unknown effect type returns audio unchanged
+- Unknown effect type raises (surfaced, never passed through silently)
 - Chain ordering
 - Edge cases: empty audio, empty chain, single effect
 - Key effects: reverb, delay, distortion, EQ
@@ -11,6 +11,7 @@ Covers:
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from backend.services.effects import (
     EffectConfig,
@@ -93,11 +94,11 @@ class TestApplyEffectsChain:
 
 
 class TestApplyEffect:
-    def test_unknown_effect_returns_unchanged(self):
+    def test_unknown_effect_raises(self):
         audio = _tone()
         effect = EffectConfig(effect_type="nonexistent_effect", enabled=True, params={})
-        result = apply_effect(audio, 16000, effect)
-        np.testing.assert_array_equal(result, audio)
+        with pytest.raises(ValueError):
+            apply_effect(audio, 16000, effect)
 
     def test_distortion_changes_audio(self):
         audio = _tone() * 0.1  # Low amplitude

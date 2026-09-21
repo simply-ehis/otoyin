@@ -63,7 +63,6 @@ interface VoiceDesignCapabilitiesResponse {
 		paralinguistic_tags: boolean;
 		supports_instruct: boolean;
 		supported_tags: string[];
-		quality_score: number;
 	}[];
 }
 

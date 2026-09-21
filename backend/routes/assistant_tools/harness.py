@@ -21,7 +21,7 @@ import mimetypes
 import re
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -358,7 +358,7 @@ def create_harness_session(
 
     return HarnessState(
         session_id=session_id,
-        started_at=datetime.utcnow().isoformat() + "Z",
+        started_at=datetime.now(UTC).isoformat(),
         budget_remaining=budget,
         n_ctx=n_ctx or 0,
     )

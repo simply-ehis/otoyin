@@ -23,7 +23,6 @@ export interface ModelOffering {
 	paralinguistic_tags: boolean;
 	supports_instruct: boolean;
 	supported_tags: string[];
-	quality_score: number;
 }
 
 /**
@@ -79,7 +78,6 @@ export function ModelOfferings({ models }: { models?: ModelOffering[] }) {
 									{m.display_name}
 								</span>
 								<span className="shrink-0 text-xs text-muted-foreground">
-									★ {m.quality_score}/10
 								</span>
 							</p>
 							<p className="mt-0.5 text-xs text-muted-foreground">

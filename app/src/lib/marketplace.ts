@@ -25,7 +25,6 @@ export interface MarketplaceProduct {
 	long_description?: string;
 	price_usd: number;
 	paid: boolean;
-	quality_score: number;
 	avg_rating?: number;
 	review_count?: number;
 	size_mb?: number;

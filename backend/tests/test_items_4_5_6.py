@@ -135,10 +135,10 @@ class TestGrammarAutoDetect:
     """Item 6: grammar should auto-detect thinking models."""
 
     def test_thinking_model_detected(self):
-        """Jackrong Qwen planners should be detected as thinking."""
-        assert _is_thinking_model("2B-Q4_K_M") is True
+        """Qwen planners should be detected as thinking."""
+        assert _is_thinking_model("4B-Q4_K_M") is True
         assert _is_thinking_model("4B-qwen3.5-Q4_K_M") is True
-        assert _is_thinking_model("planner-2b") is True
+        assert _is_thinking_model("planner-4b") is True
 
     def test_non_thinking_model(self):
         """Non-thinking models should not be flagged."""

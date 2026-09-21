@@ -181,7 +181,7 @@ def register_import_tools(mcp: FastMCP) -> None:
         return await _rest(
             "POST",
             f"/audiobooks/{_encode_path_param(book_id)}/chapters",
-            data={"title": title, "text": text},
+            json={"title": title, "text": text},
         )
 
     @mcp.tool(

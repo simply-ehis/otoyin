@@ -56,7 +56,6 @@ def test_status_surface_exposes_quant():
         "supported_tags": cfg.supported_tags,
         "structured_preset_voices": [],
         "supports_voice_mixing": cfg.supports_voice_mixing,
-        "quality_score": cfg.quality_score,
         "category": cfg.category,
     }
     status = _build_model_status(config_dict, False, False, None, False, False)

@@ -18,9 +18,9 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 # Ordered recommended pack — Kokoro 82M is the default voice (tiny, fast,
-# Apache-2.0). Whisper-tiny powers transcription/STT input, the jackrong
-# Qwen3.5-2B planner is the on-device assistant brain. DeepFilterNet + LavaSR
-# need no download — they ship inside the ``audiosronnx`` dependency.
+# Apache-2.0). Whisper-tiny powers transcription/STT input, Qwopus 4B is the
+# on-device assistant brain. DeepFilterNet + LavaSR need no download — they
+# ship inside the ``audiosronnx`` dependency.
 RECOMMENDED_MODELS: list[dict] = [
     {
         "model_name": "kokoro-onnx",
@@ -33,7 +33,7 @@ RECOMMENDED_MODELS: list[dict] = [
         "reason": "Transcription and speech-to-speech input",
     },
     {
-        "model_name": "planner-2b",
+        "model_name": "planner-4b",
         "role": "llm",
         "reason": "On-device assistant brain for the in-app agent",
     },

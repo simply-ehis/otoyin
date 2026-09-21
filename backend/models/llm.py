@@ -11,7 +11,7 @@ class LLMGenerateRequest(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=50000)
     system: str | None = Field(None, max_length=4000)
     model_size: str | None = Field(
-        default="2B-Q4_K_M", pattern="^(2B-Q4_K_M|0\\.8B-Q5_K_M|4B-v3-Q4_K_M|3B-Reasoning-Q4_K_M)$"
+        default="4B-Q4_K_M", pattern="^(4B-Q4_K_M|4B-v3-Q4_K_M|spark-4B-Q4_K_M|2\\.6B-Q4_0|cloud)$"
     )
     max_tokens: int = Field(default=512, ge=1, le=4096)
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)

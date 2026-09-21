@@ -235,7 +235,7 @@ TASK_CATEGORIES: dict[str, dict] = {
             "batch_job_progress",
             "batch_job_items",
             "batch_job_retry",
-            "batch_job_cancel",
+            "cancel_batch_job",
         },
         "weight": 2.5,
     },

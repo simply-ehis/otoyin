@@ -78,7 +78,6 @@ const product: MarketplaceProduct = {
 	note: "",
 	special_offer: false,
 	offer_discount_pct: 0,
-	quality_score: 8,
 };
 
 const catalog: Catalog = {
@@ -137,13 +136,11 @@ describe("StorePage end-to-end wiring", () => {
 		note: "",
 		special_offer: false,
 		offer_discount_pct: 0,
-		quality_score: 8,
 	};
 	const pocket: MarketplaceProduct = {
 		...kokoro,
 		id: "pocket-tts-free",
 		name: "Pocket TTS",
-		quality_score: 5,
 	};
 	const neutts: MarketplaceProduct = {
 		...kokoro,
@@ -151,7 +148,6 @@ describe("StorePage end-to-end wiring", () => {
 		name: "NeuTTS Air",
 		price_usd: 9,
 		paid: true,
-		quality_score: 7,
 	};
 	const whisper: MarketplaceProduct = {
 		...kokoro,
@@ -160,7 +156,6 @@ describe("StorePage end-to-end wiring", () => {
 		category: "stt",
 		price_usd: 3,
 		paid: true,
-		quality_score: 6,
 	};
 
 	function wireCatalog() {

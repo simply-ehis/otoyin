@@ -45,7 +45,6 @@ REMOTE_CATALOG_POLL_S = float(os.environ.get("OTOYIN_CATALOG_POLL_S", "3600"))
 # model products. `paid` drives the license gate.
 PRODUCTS: list[dict[str, Any]] = [
     # --- Free funnel (always allowed) ---
-    # quality_score: 1-10 rating within the product's category.
     # IDs must match model_name in backends/configs — the download pipeline
     # and license gate both resolve entitlements via this name.
     {
@@ -54,7 +53,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "tts",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 10,
         "note": "Free 30 days, then $3 one-time",
     },
     {
@@ -63,7 +61,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "tts",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 3,
         "note": "80MB, lightest TTS. 8 preset voices, EN only, CPU-only. Apache 2.0.",
     },
     {
@@ -72,7 +69,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "tts",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 5,
         "note": "763MB ONNX, zero-shot voice cloning, 20 languages. No torch needed.",
     },
     {
@@ -81,8 +77,15 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "stt",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 3,
         "note": "75 MB — fastest, decent English accuracy",
+    },
+    {
+        "id": "moonshine-tiny",
+        "name": "Moonshine Tiny",
+        "category": "stt",
+        "price_usd": 0,
+        "paid": False,
+        "note": "35 MB Q8_0 — ultra-light English STT, 12% WER, Raspberry Pi friendly. MIT license.",
     },
     {
         "id": "whisper-base-en",
@@ -90,8 +93,23 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "stt",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 5,
         "note": "142 MB — good speed/accuracy balance",
+    },
+    {
+        "id": "moonshine-base",
+        "name": "Moonshine Base",
+        "category": "stt",
+        "price_usd": 0,
+        "paid": False,
+        "note": "74 MB Q8_0 — best balance English STT, 3.3% WER. MIT license.",
+    },
+    {
+        "id": "moonshine-streaming-small",
+        "name": "Moonshine Streaming Small",
+        "category": "stt",
+        "price_usd": 0,
+        "paid": False,
+        "note": "189 MB Q8_0 — streaming-capable English STT, 2.5% WER, beats Whisper Large v3. MIT license.",
     },
     {
         "id": "whisper-small-en",
@@ -99,7 +117,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "stt",
         "price_usd": 5,
         "paid": True,
-        "quality_score": 7,
         "note": "466 MB — excellent accuracy, CTranslate2 int8, sweet spot for most users. 23 languages.",
     },
     {
@@ -108,7 +125,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "stt",
         "price_usd": 12,
         "paid": True,
-        "quality_score": 8,
         "note": "1.5 GB — best EN accuracy before large, handles accented speech. CTranslate2 int8.",
     },
     {
@@ -117,7 +133,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "stt",
         "price_usd": 30,
         "paid": True,
-        "quality_score": 10,
         "note": "3.1 GB — flagship multilingual, 99 languages, CTranslate2 int8. Near-human accuracy.",
     },
     {
@@ -126,36 +141,9 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "stt",
         "price_usd": 20,
         "paid": True,
-        "quality_score": 10,
         "note": "1.6 GB — near-human accuracy, 99 languages, runs on CPU",
     },
-    {
-        "id": "planner-4b",
-        "name": "Qwen3.5-4B (free planner)",
-        "category": "llm",
-        "price_usd": 0,
-        "paid": False,
-        "quality_score": 7,
-        "note": "Unsloth Qwen3.5-4B — free premium planner. Strong all-rounder for reasoning, tool calling, and multi-step workflows. 2.7GB, needs 3.5GB+ RAM.",
-    },
-    {
-        "id": "planner-0.8b",
-        "name": "Qwen3.5-0.8B (free planner)",
-        "category": "llm",
-        "price_usd": 0,
-        "paid": False,
-        "quality_score": 4,
-        "note": "Ultra-lightweight 0.8B fallback — runs on any device with <1GB RAM. Good enough for simple tool calls and quick responses when larger models aren't available.",
-    },
-    {
-        "id": "planner-lfm2-2.6b",
-        "name": "LiquidAI LFM2-2.6B (free planner)",
-        "category": "llm",
-        "price_usd": 0,
-        "paid": False,
-        "quality_score": 10,
-        "note": "LiquidAI's latest 2.6B — 128K context, 24 languages, tool calling + thinking tags. Free, top-quality planner for capable devices.",
-    },
+
     # --- Paid Fish Audio S2 Pro (GGUF, 4.56B Dual-AR, s2.cpp) — user anchor $80 overrides $91 equation ---
     {
         "id": "fish-speech-s2-pro",
@@ -163,8 +151,15 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "tts",
         "price_usd": 80,
         "paid": True,
-        "quality_score": 10,
         "note": "4.56B Dual-AR GGUF via s2.cpp, 10 languages, voice cloning, [emotion] tags. GPU (Vulkan) or large RAM. Fish Audio Research License.",
+    },
+    {
+        "id": "voxcpm2-q8",
+        "name": "VoxCPM2 2B",
+        "category": "tts",
+        "price_usd": 40,
+        "paid": True,
+        "note": "2B tokenizer-free CFM diffusion AR, 30 languages, 48kHz, zero-shot voice cloning, voice design via text instructions. GGUF via CrispASR. Apache 2.0.",
     },
     # --- Paid ONNX TTS (equation: params_b x $20) ---
     {
@@ -173,7 +168,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "tts",
         "price_usd": 8,
         "paid": True,
-        "quality_score": 5,
         "note": "380M params → $8. 6 languages, clone or pick presets, torch-free ONNX. CPU-only.",
     },
     {
@@ -182,7 +176,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "tts",
         "price_usd": 8,
         "paid": True,
-        "quality_score": 5,
         "note": "380M params → $8. 6 languages, clone or pick presets. Requires PyTorch. CC-BY-4.0.",
     },
     # --- Paid STT (equation: params_b x $20) ---
@@ -192,7 +185,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "stt",
         "price_usd": 12,
         "paid": True,
-        "quality_score": 8,
         "note": "0.6B params → $12. 25 European languages, auto-detect, fast on CPU. GGML Q8.",
     },
     {
@@ -201,7 +193,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "stt",
         "price_usd": 12,
         "paid": True,
-        "quality_score": 9,
         "note": "0.6B params → $12. 25 European languages, F16 quant, 220 MB, faster than Q8.",
     },
     {
@@ -210,7 +201,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "stt",
         "price_usd": 12,
         "paid": True,
-        "quality_score": 8,
         "note": "0.6B params → $12. 52 languages, INT4 quant, 600 MB, CPU-friendly.",
     },
     {
@@ -219,7 +209,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "stt",
         "price_usd": 34,
         "paid": True,
-        "quality_score": 10,
         "note": "1.7B params → $34. 52 languages, INT4 quant, near-cloud accuracy offline. 1.7GB.",
     },
     # --- Cloud STT/VC (BYOK, no local weights) ---
@@ -229,7 +218,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "stt",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 0,
         "note": "Bring your own API key. No local download.",
     },
     {
@@ -238,7 +226,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "vc",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 0,
         "note": "Bring your own API key. No local download.",
     },
     # --- Paid TTS ---
@@ -248,7 +235,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "tts",
         "price_usd": 5,
         "paid": True,
-        "quality_score": 4,
         "note": "235MB GGUF, 26 preset voices, 13 languages. MIT. CPU-friendly, no torch needed.",
     },
     {
@@ -257,7 +243,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "tts",
         "price_usd": 10,
         "paid": True,
-        "quality_score": 6,
         "note": "803MB GGUF, zero-shot voice cloning, English only. Apache 2.0.",
     },
     {
@@ -266,7 +251,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "tts",
         "price_usd": 10,
         "paid": True,
-        "quality_score": 7,
         "note": "Emotion-aware TTS, 4 preset speakers, English only. Q4 quantized GGUF.",
     },
     {
@@ -275,7 +259,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "tts",
         "price_usd": 15,
         "paid": True,
-        "quality_score": 8,
         "note": "Emotion-aware TTS, 4 preset speakers, English only. Q8 GGUF, higher quality than Q4.",
     },
     {
@@ -284,7 +267,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "tts",
         "price_usd": 18,
         "paid": True,
-        "quality_score": 6,
         "note": "979MB GGUF, voice design (describe voice in natural language), English only. No torch.",
     },
     {
@@ -293,7 +275,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "tts",
         "price_usd": 32,
         "paid": True,
-        "quality_score": 9,
         "note": "1.7GB GGUF, zero-shot voice cloning, emotion control, English only. High fidelity.",
     },
     {
@@ -302,7 +283,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "tts",
         "price_usd": 40,
         "paid": True,
-        "quality_score": 9,
         "note": "2.3GB GGUF (backbone + mmproj), 10 languages, voice cloning + voice design. Apache 2.0.",
     },
     {
@@ -311,7 +291,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "tts",
         "price_usd": 80,
         "paid": True,
-        "quality_score": 10,
         "note": "3B GGUF (3.7GB), SNAC decoder, 8 preset voices, emotion tags (<laugh>, <sigh>, etc). CPU-friendly, 24kHz output.",
     },
     # --- Paid VC ---
@@ -321,7 +300,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "vc",
         "price_usd": 14,
         "paid": True,
-        "quality_score": 5,
         "note": "Base RVC voice-conversion model. Retarget any voice recording toward a new timbre, fully offline on CPU.",
     },
     {
@@ -330,7 +308,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "vc",
         "price_usd": 14,
         "paid": True,
-        "quality_score": 5,
         "note": "Ready-to-use RVC character voice. Drop into voice conversion for instant results, no training needed.",
     },
     {
@@ -339,7 +316,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "vc",
         "price_usd": 14,
         "paid": True,
-        "quality_score": 5,
         "note": "Ready-to-use RVC character voice. Drop into voice conversion for instant results, no training needed.",
     },
     {
@@ -348,7 +324,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "vc",
         "price_usd": 20,
         "paid": True,
-        "quality_score": 8,
         "note": "1.5GB, zero-shot voice cloning from reference audio. GPU required. High fidelity conversion.",
     },
     {
@@ -357,7 +332,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "vc",
         "price_usd": 10,
         "paid": True,
-        "quality_score": 6,
         "note": "161MB, tone-color conversion, no torch. Fast CPU inference. MIT license.",
     },
     # --- Paid Music ---
@@ -367,7 +341,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "music",
         "price_usd": 43,
         "paid": True,
-        "quality_score": 9,
         "note": "7.7GB GGUF, full song generation with vocals + instruments. CPU-friendly with Q8 quant.",
     },
     {
@@ -376,7 +349,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "music",
         "price_usd": 37,
         "paid": True,
-        "quality_score": 8,
         "note": "7.6GB GGUF, best-in-class lyrics music generation. 12GB+ RAM recommended.",
     },
     {
@@ -385,7 +357,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "music",
         "price_usd": 25,
         "paid": True,
-        "quality_score": 7,
         "note": "1.7GB GGUF, sound effects generation (Foley, impacts, ambiences). 2.5GB+ RAM.",
     },
     {
@@ -394,56 +365,89 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "music",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 0,
         "note": "Bring your own API key. No local download.",
     },
     # --- Paid Assistant planners (LLM) ---
     {
-        "id": "planner-4b-v3",
-        "name": "Qwopus3.5-4B-v3 (planner)",
+        "id": "planner-4b",
+        "name": "Qwopus 4B (Free)",
         "category": "llm",
-        "price_usd": 40,
+        "price_usd": 0,
+        "paid": False,
+        "note": "Qwen3.5-4B free planner — strong all-rounder for reasoning, tool calling, and multi-step workflows. 2.7GB, needs 3.5GB+ RAM.",
+    },
+    {
+        "id": "planner-4b-v3",
+        "name": "Qwopus 4B v3 ($20)",
+        "category": "llm",
+        "price_usd": 20,
         "paid": True,
-        "quality_score": 10,
         "note": "Claude-distilled 4B planner. Premium tier — highest-quality reasoning and tool calling for complex multi-step workflows.",
     },
     {
-        "id": "planner-lfm2-2.6b-qad",
-        "name": "LFM2.5-2.6B (planner)",
+        "id": "planner-lfm2-2.6b",
+        "name": "LFM2.5-2.6B ($13)",
         "category": "llm",
         "price_usd": 13,
         "paid": True,
-        "quality_score": 9,
-        "special_offer": True,
-        "note": "Limited-time special offer — LiquidAI LFM2.5-2.6B with Quantization-Aware-Distillation 4-bit weights (1.59 GB). 128K context, 24 languages, tool calling + thinking tags.",
-    },
-    {
-        "id": "planner-minicpm5-2b",
-        "name": "MiniCPM5-2B (planner)",
-        "category": "llm",
-        "price_usd": 5,
-        "paid": True,
-        "quality_score": 9,
-        "special_offer": True,
-        "note": "PROMO — normally $20. OpenBMB's 2B SOTA: competes with 4B-class models. RL + On-Policy Distillation from 16 expert teachers. 128K context, strong at code (LiveCodeBench 69.1%), math (AIME 86.5%), agentic tasks (SWE-bench 46.4%). Apache 2.0.",
+        "note": "LiquidAI LFM2.5-2.6B — 128K context, 24 languages, tool calling + thinking tags. Strong multilingual reasoning at a tiny footprint.",
     },
     {
         "id": "planner-spark-x-2.5-4b",
-        "name": "Spark-X 2.5-4B (planner)",
+        "name": "Spark-X 2.5-4B ($20)",
+        "category": "llm",
+        "price_usd": 20,
+        "paid": True,
+        "note": "iFLYTEK's 4B agentic king — 1M native context, 200+ languages. Hybrid sliding-window attention. Apache 2.0.",
+    },
+    {
+        "id": "planner-lfm2-8b-a1b",
+        "name": "LFM2.5-8B-A1B ($40)",
         "category": "llm",
         "price_usd": 40,
         "paid": True,
-        "quality_score": 9,
-        "note": "iFLYTEK's 4B agentic king — 1M native context, 200+ languages. Beats Qwen3.5-9B on τ³-bench (30.4 vs 9.3), BrowseComp (40.9 vs 8.3), SWE-Bench Pro (44.4 vs 33.8). Hybrid sliding-window attention. Apache 2.0.",
+        "note": "LiquidAI LFM2.5-8B-A1B — 8B MoE, 1.5B active per token. 128K context, 24 languages, reasoning + tool calling. Fastest in its size class.",
     },
     {
-        "id": "planner-qwen3-8-27b",
-        "name": "Qwen3.8-27B (planner)",
+        "id": "planner-ling-tiny",
+        "name": "Ling-3.0-tiny ($40)",
         "category": "llm",
-        "price_usd": 5,
+        "price_usd": 40,
         "paid": True,
-        "quality_score": 9,
-        "note": "Alibaba's flagship dense 27B — native vision-language model, 262K context (extensible to 1M). Gated DeltaNet + Attention hybrid architecture. Top-tier at coding, professional work, research, and long-horizon agentic tasks.",
+        "note": "inclusionAI Ling-3.0-tiny — 7.9B MoE, 1.3B active per token. 128K context, 128 routed experts, hybrid KDA/MLA reasoning.",
+    },
+    {
+        "id": "planner-bonsai-2-27b",
+        "name": "Bonsai 2 27B ($80)",
+        "category": "llm",
+        "price_usd": 80,
+        "paid": True,
+        "note": "PrismML Bonsai 2 27B — 27B ternary quantized, 5.95 GB, 98.2% of FP16 quality. Apache 2.0. Requires PrismML llama.cpp fork (TWENTYLABS_LLAMA_SERVER_BONSAI env).",
+    },
+    # --- Cloud LLM subscription tiers ---
+    {
+        "id": "llm-cloud-starter",
+        "name": "Cloud Starter ($10/mo)",
+        "category": "llm",
+        "price_usd": 10,
+        "paid": True,
+        "note": "Cloud-hosted LLM — Starter tier. Requires active subscription. Faster than local, no download needed.",
+    },
+    {
+        "id": "llm-cloud-pro",
+        "name": "Cloud Pro ($20/mo)",
+        "category": "llm",
+        "price_usd": 20,
+        "paid": True,
+        "note": "Cloud-hosted LLM — Pro tier. Requires active subscription. Smarter model, better reasoning.",
+    },
+    {
+        "id": "llm-cloud-max",
+        "name": "Cloud Max ($50/mo)",
+        "category": "llm",
+        "price_usd": 50,
+        "paid": True,
+        "note": "Cloud-hosted LLM — Max tier. Requires active subscription. Top-tier model, maximum capability.",
     },
     # --- Free downloadable utilities (not bundled, install from Marketplace) ---
     {
@@ -452,7 +456,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "MIT-licensed stem separation. Extracts vocals, drums, bass or other from any mix. ~316MB, runs on CPU.",
     },
     {
@@ -461,7 +464,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
     {
@@ -470,7 +472,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
     {
@@ -479,7 +480,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
     {
@@ -488,7 +488,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
     {
@@ -497,7 +496,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
     {
@@ -506,7 +504,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
     {
@@ -515,7 +512,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
     {
@@ -524,7 +520,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
     {
@@ -533,7 +528,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
     {
@@ -542,7 +536,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
     {
@@ -551,7 +544,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
     {
@@ -560,7 +552,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
     {
@@ -569,7 +560,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
     {
@@ -578,7 +568,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
     {
@@ -587,7 +576,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
     {
@@ -596,7 +584,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
     {
@@ -605,7 +592,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
     {
@@ -614,7 +600,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
     {
@@ -623,7 +608,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
     {
@@ -632,7 +616,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "utilities",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "Offline translation pack. ~45 MB.",
     },
     # --- Free downloadable instruments (not bundled, install from Marketplace) ---
@@ -642,7 +625,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "instruments",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 8,
         "note": "261 GM presets + 13 drum kits in ~31 MB. Free for any use (S. Christian Collins). Works in studio + launcher on install.",
     },
     {
@@ -651,7 +633,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "instruments",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 7,
         "note": "Classic MIT-licensed GM bank (~142 MB) with full drum kits. Works in studio + launcher on install.",
     },
     # --- Spatial audio ---
@@ -661,7 +642,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "spatial",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 5,
         "note": "10MB. Binaural rendering, HRTF, occlusion. Free download — requires phonon.dll on disk.",
     },
 ]

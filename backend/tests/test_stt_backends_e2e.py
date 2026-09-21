@@ -262,15 +262,6 @@ class TestSTTConfigRegistration:
         assert len(qwen) >= 2
         assert all(c.category == "stt" for c in qwen)
 
-    def test_quality_scores_set(self):
-        """Each new model should have a quality_score from the research."""
-        from backend.backends.configs import get_all_model_configs
-
-        configs = get_all_model_configs()
-        new_models = [c for c in configs if c.engine in ("parakeet", "qwen3_asr")]
-        for c in new_models:
-            assert c.quality_score is not None and c.quality_score > 0, f"{c.model_name} missing quality_score"
-
     def test_hf_repo_ids_populated(self):
         """Each new model should have a valid HF repo ID for downloading."""
         from backend.backends.configs import get_all_model_configs

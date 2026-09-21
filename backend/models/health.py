@@ -86,10 +86,6 @@ class ModelStatus(BaseModel):
     # Preset voices — populated for models with built-in voice presets (Kokoro, KittenTTS)
     preset_voices: list[PresetVoice] = Field(default_factory=list)
     supports_voice_mixing: bool = False  # True for Kokoro (42 voices can be blended)
-    # Quality scoring (0-10) — reflects capability, quality, and value within
-    # the model's category.  10 = best-in-class; scores are per-category so
-    # TTS scores are only compared against other TTS models, etc.
-    quality_score: int = 0  # 0-10
     category: str = "tts"  # tts | stt | llm | music | sfx | vc
     # Entitlement = this install has a manifest row for the model (downloaded via the
     # Models page). The UI uses this to decide what's selectable/visible in the

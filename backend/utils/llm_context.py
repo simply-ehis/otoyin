@@ -31,6 +31,9 @@ MODEL_MAX_CTX: dict[str, int] = {
     "4B": 262144,
     "3B": 262144,
     "0.8B": 262144,
+    "8B-A1B": 131072,  # LiquidAI LFM2.5-8B-A1B native window
+    "ling-tiny": 131072,  # inclusionAI Ling-3.0-tiny native window
+    "27B": 262144,  # PrismML Bonsai 2 27B (Qwen3.8-27B base, 262K native)
 }
 
 # Per-size RAM tiers: (size_label, [(min_ram_gb, n_ctx), ...]) in ascending
@@ -40,6 +43,9 @@ _SIZE_RAM_TIERS: dict[str, list[tuple[int, int]]] = {
     "0.8B": [(4, 16384), (8, 24576), (16, 32768)],
     "4B": [(4, 4096), (8, 8192), (16, 16384), (32, 24576)],
     "3B": [(4, 4096), (8, 8192), (16, 16384), (32, 24576)],
+    "8B-A1B": [(8, 8192), (16, 16384), (32, 32768)],
+    "ling-tiny": [(8, 8192), (16, 16384), (32, 32768)],
+    "27B": [(8, 4096), (16, 8192), (32, 16384), (64, 32768)],
 }
 
 
@@ -104,3 +110,27 @@ def compute_llm_context(
         if total >= min_ram:
             chosen = n_ctx
     return clamp_n_ctx(chosen, model_size)
+
+
+def compute_moe_stream_cache_gb(
+    model_size_mb: int,
+    total_ram_gb: int | None = None,
+) -> int:
+    """Suggest an MoE expert-streaming cache size in GB.
+
+    Returns 0 when streaming is not needed (dense model or insufficient RAM).
+
+    Strategy: reserve half the surplus RAM (total minus model footprint) for
+    the expert cache, capped at 16 GB.  On a 32 GB machine loading a 14 GB
+    MoE model the surplus is 18 GB → cache = 9 GB.  On 16 GB with a 4 GB
+    model the surplus is 12 GB → cache = 6 GB.  Below 4 GB surplus the
+    feature is disabled because the OS page cache alone handles the working
+    set.
+    """
+    total = total_ram_gb if total_ram_gb is not None else _total_ram_gb()
+    model_gb = model_size_mb / 1024
+    surplus = total - model_gb
+    if surplus < 4:
+        return 0
+    suggested = int(surplus // 2)
+    return min(suggested, 16)

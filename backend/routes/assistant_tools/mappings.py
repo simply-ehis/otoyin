@@ -63,7 +63,7 @@ ENDPOINT_MAP = {
     "list_voices": "/profiles",
     "list_effects": "/effects/available",
     "export_audio": "/export/apply-preset",
-    "measure_loudness": "/audio/loudness",
+    "measure_loudness": "/audio/analyze-loudness",
     "transcribe": "/transcribe/path",
     "list_captures": "/captures",
     "generate_sfx": "/generate/sfx",

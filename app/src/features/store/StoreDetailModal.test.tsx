@@ -28,7 +28,6 @@ function makeProduct(
 		note: "",
 		special_offer: false,
 		offer_discount_pct: 0,
-		quality_score: 8,
 		...overrides,
 	};
 }

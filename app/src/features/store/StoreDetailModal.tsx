@@ -14,10 +14,8 @@ import { ProductActions } from "./ProductActions";
 import { ProductReviews } from "./ProductReviews";
 import { ProductSpecs } from "./ProductSpecs";
 import { SimilarProducts } from "./SimilarProducts";
-import { StarRating } from "./StarRating";
 import {
 	CATEGORY_LABELS,
-	compareQualityDesc,
 	getCapabilityChips,
 	getDisplayDescription,
 } from "./storeUtils";
@@ -113,10 +111,10 @@ export const StoreDetailModal = memo(function StoreDetailModal({
 		if (!product) {
 			return [];
 		}
-		return products
-			.filter((p) => p.category === product.category && p.id !== product.id)
-			.sort(compareQualityDesc)
-			.slice(0, 3);
+	return products
+		.filter((p) => p.category === product.category && p.id !== product.id)
+		.sort((a, b) => a.price_usd - b.price_usd)
+		.slice(0, 3);
 	}, [product, products]);
 
 	if (!product) {
@@ -160,23 +158,6 @@ export const StoreDetailModal = memo(function StoreDetailModal({
 							</div>
 							<div className="mt-0.5 font-medium text-foreground">
 								Local · Offline
-							</div>
-						</div>
-						<div className="rounded-lg border bg-secondary px-3 py-2">
-							<div className="uppercase tracking-wider text-muted-foreground">
-								Quality
-							</div>
-							<div className="mt-0.5 font-medium text-foreground">
-								{(product.quality_score ?? model?.quality_score) ? (
-									<span title="Curated quality score for its category — capability, quality and value compared with similar models">
-										<StarRating
-											score={product.quality_score ?? model?.quality_score ?? 0}
-											size="sm"
-										/>
-									</span>
-								) : (
-									"—"
-								)}
 							</div>
 						</div>
 					</div>

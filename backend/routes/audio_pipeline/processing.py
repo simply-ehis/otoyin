@@ -69,6 +69,47 @@ def _prune_old_exports(max_age_days: int = 7, max_files_per_call: int = 20) -> N
 # ─── Sidechain / Ducking ─────────────────────────────────────────────────────
 
 
+def _duck_audio(
+    master_audio: np.ndarray,
+    sample_rate: int,
+    track_audios: dict,
+    threshold_db: float,
+    ratio: float,
+    duck_gain_db: float,
+    attack_ms: float,
+    release_ms: float,
+) -> np.ndarray:
+    """Sync ducking core (runs in a worker thread — per-sample gain loop)."""
+    threshold = 10 ** (threshold_db / 20)
+    duck_gain = 10 ** ((duck_gain_db / ratio) / 20) if ratio else 10 ** (duck_gain_db / 20)
+    duck_gain = max(0.0, min(1.0, duck_gain))
+    attack_samples = max(1, int(attack_ms * sample_rate / 1000))
+    release_samples = max(1, int(release_ms * sample_rate / 1000))
+
+    # Sidechain ducking is driven by the *sidechain* tracks (e.g. a music bed),
+    # not by the master's own loudness. Sum the supplied tracks into one
+    # trigger envelope; when it exceeds the threshold the master is attenuated.
+    # With no tracks the envelope is silent, so gain stays at 1.0 (no ducking).
+    sidechain = np.zeros_like(master_audio)
+    for audio in track_audios.values():
+        aligned = audio[: len(master_audio)]
+        if len(aligned) < len(master_audio):
+            aligned = np.concatenate([aligned, np.zeros(len(master_audio) - len(aligned), dtype=np.float32)])
+        sidechain = sidechain + aligned
+
+    sidechain_envelope = np.abs(sidechain)
+    gain = np.ones_like(master_audio)
+    current = 1.0
+    for i in range(len(master_audio)):
+        target = duck_gain if sidechain_envelope[i] > threshold else 1.0
+        coeff = 1.0 / attack_samples if target < current else 1.0 / release_samples
+        current += (target - current) * coeff
+        current = max(duck_gain, min(1.0, current))
+        gain[i] = current
+
+    return np.clip(master_audio * gain, -1.0, 1.0)
+
+
 @router.post("/audio/duck")
 async def apply_sidechain_duck(
     audio_path: str,
@@ -115,34 +156,17 @@ async def apply_sidechain_duck(
             track_audio = track_audio.mean(axis=1)
         track_audios[track_id] = track_audio
 
-    threshold = 10 ** (threshold_db / 20)
-    duck_gain = 10 ** ((duck_gain_db / ratio) / 20) if ratio else 10 ** (duck_gain_db / 20)
-    duck_gain = max(0.0, min(1.0, duck_gain))
-    attack_samples = max(1, int(attack_ms * sample_rate / 1000))
-    release_samples = max(1, int(release_ms * sample_rate / 1000))
-
-    # Sidechain ducking is driven by the *sidechain* tracks (e.g. a music bed),
-    # not by the master's own loudness. Sum the supplied tracks into one
-    # trigger envelope; when it exceeds the threshold the master is attenuated.
-    # With no tracks the envelope is silent, so gain stays at 1.0 (no ducking).
-    sidechain = np.zeros_like(master_audio)
-    for audio in track_audios.values():
-        aligned = audio[: len(master_audio)]
-        if len(aligned) < len(master_audio):
-            aligned = np.concatenate([aligned, np.zeros(len(master_audio) - len(aligned), dtype=np.float32)])
-        sidechain = sidechain + aligned
-
-    sidechain_envelope = np.abs(sidechain)
-    gain = np.ones_like(master_audio)
-    current = 1.0
-    for i in range(len(master_audio)):
-        target = duck_gain if sidechain_envelope[i] > threshold else 1.0
-        coeff = 1.0 / attack_samples if target < current else 1.0 / release_samples
-        current += (target - current) * coeff
-        current = max(duck_gain, min(1.0, current))
-        gain[i] = current
-
-    ducked_audio = master_audio * gain
+    ducked_audio = await asyncio.to_thread(
+        _duck_audio,
+        master_audio,
+        sample_rate,
+        track_audios,
+        threshold_db,
+        ratio,
+        duck_gain_db,
+        attack_ms,
+        release_ms,
+    )
     ducked_audio = np.clip(ducked_audio, -1.0, 1.0)
 
     output_filename = f"ducked_{uuid.uuid4().hex[:12]}.wav"
@@ -214,27 +238,16 @@ async def silence_removal_audio(
 # ─── Compression ──────────────────────────────────────────────────────────────
 
 
-@router.post("/audio/compress")
-async def compress_audio(
-    audio_path: str,
-    threshold_db: float = -20.0,
-    ratio: float = 4.0,
-    attack_ms: float = 10.0,
-    release_ms: float = 100.0,
-    makeup_gain_db: float = 0.0,
-):
-    """Apply dynamic range compression to audio."""
-    resolved = config.resolve_storage_path(audio_path)
-    if resolved is None or not resolved.exists():
-        raise HTTPException(status_code=404, detail=ERR_AUDIO_NOT_FOUND)
-
-    if ratio <= 0:
-        raise HTTPException(status_code=400, detail=ERR_RATIO_NOT_POSITIVE)
-
-    audio, sample_rate = await async_load_audio(str(resolved))
-    if audio.ndim > 1:
-        audio = audio.mean(axis=1)
-
+def _compress_audio(
+    audio: np.ndarray,
+    sample_rate: int,
+    threshold_db: float,
+    ratio: float,
+    attack_ms: float,
+    release_ms: float,
+    makeup_gain_db: float,
+) -> np.ndarray:
+    """Sync compression core (runs in a worker thread — per-sample loops)."""
     threshold = 10 ** (threshold_db / 20)
     attack_samples = max(1, int(attack_ms * sample_rate / 1000))
     release_samples = max(1, int(release_ms * sample_rate / 1000))
@@ -257,6 +270,34 @@ async def compress_audio(
             compressed[i] = audio[i] * gain_reduction
         else:
             compressed[i] = audio[i] * makeup_gain
+
+    return compressed
+
+
+@router.post("/audio/compress")
+async def compress_audio(
+    audio_path: str,
+    threshold_db: float = -20.0,
+    ratio: float = 4.0,
+    attack_ms: float = 10.0,
+    release_ms: float = 100.0,
+    makeup_gain_db: float = 0.0,
+):
+    """Apply dynamic range compression to audio."""
+    resolved = config.resolve_storage_path(audio_path)
+    if resolved is None or not resolved.exists():
+        raise HTTPException(status_code=404, detail=ERR_AUDIO_NOT_FOUND)
+
+    if ratio <= 0:
+        raise HTTPException(status_code=400, detail=ERR_RATIO_NOT_POSITIVE)
+
+    audio, sample_rate = await async_load_audio(str(resolved))
+    if audio.ndim > 1:
+        audio = audio.mean(axis=1)
+
+    compressed = await asyncio.to_thread(
+        _compress_audio, audio, sample_rate, threshold_db, ratio, attack_ms, release_ms, makeup_gain_db
+    )
 
     output_filename = f"compressed_{uuid.uuid4().hex[:12]}.wav"
     output_path = config.get_exports_dir() / output_filename

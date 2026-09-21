@@ -11,14 +11,12 @@ import asyncio
 import contextlib
 import logging
 import threading
-from dataclasses import dataclass
-from importlib import import_module
 
-from ..utils.model_lifecycle import lifecycle_manager
-from .configs import (
+from ...utils.model_lifecycle import lifecycle_manager
+from ..configs import (
     get_tts_model_configs,
 )
-from .protocols import (
+from ..protocols import (
     LLM_ENGINES,
     MUSIC_ENGINES,
     TTS_ENGINES,
@@ -28,6 +26,7 @@ from .protocols import (
     STTBackend,
     TTSBackend,
 )
+from .tts import _REGISTRY_BY_ENGINE, ENGINE_REGISTRY, resolve_tts_backend
 
 logger = logging.getLogger(__name__)
 
@@ -41,140 +40,23 @@ _llm_backends_lock = threading.Lock()
 _music_backends: dict[str, MusicBackend] = {}
 _music_backends_lock = threading.Lock()
 
-
-# ---------------------------------------------------------------------------
-# Declarative TTS engine registry
-# ---------------------------------------------------------------------------
-#
-# Each entry describes ONE engine.  The generic resolver
-# _resolve_tts_backend() handles the ONNX-preferred -> torch-fallback ->
-# lifecycle-register dance exactly once, eliminating the 180-line if/elif
-# chain that previously duplicated this pattern for every engine.
-#
-# Adding a new engine = one table row.  The resolver handles everything.
-
-
-@dataclass(frozen=True)
-class _TTSBackendEntry:
-    """Declarative descriptor for one TTS engine."""
-
-    engine: str
-    # ONNX-preferred path (optional)
-    onnx_module: str = ""
-    onnx_class: str = ""
-    onnx_check: str = "is_onnx_available"
-    # Torch fallback path (optional)
-    torch_module: str = ""
-    torch_class: str = ""
-    # Singleton import -- module-level instance (neutts, orpheus)
-    # Mutually exclusive with onnx/torch.
-    singleton_module: str = ""
-    singleton_attr: str = ""
-    # If True, no torch fallback exists -- raise ValueError when ONNX unavailable
-    onnx_only: bool = False
-
-
-# fmt: off
-ENGINE_REGISTRY: list[_TTSBackendEntry] = [
-    # --- ONNX-preferred with torch fallback ---
-    _TTSBackendEntry(
-        engine="kokoro",
-        onnx_module=".kokoro_onnx_backend", onnx_class="KokoroONNXBackend",
-        torch_module=".kokoro_backend", torch_class="KokoroTTSBackend",
-    ),
-    _TTSBackendEntry(
-        engine="pocket_tts",
-        onnx_module=".pocket_tts_onnx_backend", onnx_class="PocketTTSOnnxBackend",
-        torch_module=".pocket_tts_backend", torch_class="PocketTTSBackend",
-    ),
-    # --- ONNX-only (no torch fallback) ---
-    _TTSBackendEntry(
-        engine="moss_tts_nano",
-        onnx_module=".moss_tts_nano_onnx_backend", onnx_class="MossTTSNanoOnnxBackend",
-        onnx_only=True,
-    ),
-    _TTSBackendEntry(
-        engine="kitten_tts",
-        onnx_module=".kitten_tts_onnx_backend", onnx_class="KittenTTSOnnxBackend",
-        onnx_only=True,
-    ),
-    # --- Singleton pre-created instances (no torch needed) ---
-    _TTSBackendEntry(engine="zonos_gguf", singleton_module=".zonos_gguf_backend", singleton_attr="zonos_gguf_backend"),
-    _TTSBackendEntry(engine="parler_tts_gguf", singleton_module=".parler_tts_gguf_backend", singleton_attr="parler_tts_gguf_backend"),
-    _TTSBackendEntry(engine="neutts", singleton_module=".neutts_backend", singleton_attr="neutts_backend"),
-    _TTSBackendEntry(engine="neutts_2e", singleton_module=".neutts_backend", singleton_attr="neutts_2e_backend"),
-    _TTSBackendEntry(engine="orpheus", singleton_module=".orpheus_backend", singleton_attr="orpheus_backend"),
-    # --- Subprocess one-shot (llama-tts CLI, no resident model) ---
-    _TTSBackendEntry(engine="qwen3_tts", singleton_module=".qwen3_tts_backend", singleton_attr="qwen3_tts_backend"),
-    # --- Subprocess one-shot (CrispASR bark CLI, no resident model) ---
-    _TTSBackendEntry(engine="bark_small", singleton_module=".bark_backend", singleton_attr="bark_backend"),
-    # --- Subprocess one-shot (s2.cpp, Fish Audio S2 Pro GGUF) ---
-    _TTSBackendEntry(engine="fish_speech_s2", singleton_module=".fish_speech_s2_backend", singleton_attr="fish_speech_s2_backend"),
-    # --- Subprocess one-shot (CrispASR zonos-tts GGUF, no torch) ---
-    _TTSBackendEntry(engine="zonos_gguf", singleton_module=".zonos_gguf_backend", singleton_attr="zonos_gguf_backend"),
-    # --- Subprocess one-shot (CrispASR parler-tts GGUF, no torch) ---
-    _TTSBackendEntry(engine="parler_tts_gguf", singleton_module=".parler_tts_gguf_backend", singleton_attr="parler_tts_gguf_backend"),
+# Expose engine registry for tests and external queries.
+__all__ = [
+    "ENGINE_REGISTRY",
+    "check_model_loaded",
+    "ensure_model_cached_or_raise",
+    "get_llm_backend",
+    "get_llm_backend_for_engine",
+    "get_model_load_func",
+    "get_music_backend",
+    "get_stt_backend",
+    "get_tts_backend",
+    "get_tts_backend_for_engine",
+    "load_engine_model",
+    "reset_backends",
+    "resolve_tts_engine_of",
+    "unload_model_by_config",
 ]
-# fmt: on
-
-# Fast lookup by engine name (built once at import time).
-_REGISTRY_BY_ENGINE: dict[str, _TTSBackendEntry] = {e.engine: e for e in ENGINE_REGISTRY}
-
-
-def _resolve_tts_backend(entry: _TTSBackendEntry) -> TTSBackend:
-    """Generic TTS backend resolver driven by a table entry.
-
-    Handles the four patterns:
-    1. ONNX-preferred with torch fallback (kokoro, pocket_tts)
-    2. ONNX-only, no torch fallback (moss_tts_nano, kitten_tts)
-    3. Simple torch-only (zonos, parler_tts)
-    4. Singleton import (neutts, neutts_2e, orpheus)
-
-    Lifecycle registration happens exactly once at the end of every path.
-    """
-    engine = entry.engine
-
-    # --- Pattern 4: Singleton import ---
-    if entry.singleton_module:
-        mod = import_module(entry.singleton_module, package=__package__)
-        backend = getattr(mod, entry.singleton_attr)
-        lifecycle_manager.register(engine, backend.is_loaded, backend.unload_model)
-        return backend
-
-    # --- Pattern 1 & 2: ONNX-preferred path ---
-    if entry.onnx_module:
-        onnx_mod = import_module(entry.onnx_module, package=__package__)
-        onnx_check_fn = getattr(onnx_mod, entry.onnx_check)
-        onnx_cls = getattr(onnx_mod, entry.onnx_class)
-
-        if onnx_check_fn():
-            try:
-                backend = onnx_cls()
-                if backend._is_model_cached():
-                    _tts_backends[engine] = backend
-                    lifecycle_manager.register(engine, backend.is_loaded, backend.unload_model)
-                    return backend
-            except (ImportError, RuntimeError, OSError) as exc:
-                logger.debug(
-                    "%s ONNX unavailable (%s); %s",
-                    engine,
-                    exc,
-                    "no torch fallback" if entry.onnx_only else "falling back to torch",
-                )
-
-        if entry.onnx_only:
-            raise ValueError(f"{entry.engine} requires the ONNX assets. No torch backend exists for this engine.")
-
-    # --- Pattern 2 & 3: Torch fallback / torch-only ---
-    if entry.torch_module:
-        torch_mod = import_module(entry.torch_module, package=__package__)
-        backend = getattr(torch_mod, entry.torch_class)()
-        _tts_backends[engine] = backend
-        lifecycle_manager.register(engine, backend.is_loaded, backend.unload_model)
-        return backend
-
-    # Should not reach here if the registry is complete.
-    raise ValueError(f"Engine '{engine}' has no resolvable backend in ENGINE_REGISTRY")
 
 
 _load_lock = threading.Lock()  # serialize concurrent model loads so two engines don't both stay resident
@@ -200,8 +82,8 @@ async def load_engine_model(engine: str, model_size: str = "default") -> None:
     # Models tab, or seeded from the bundle on first launch). This covers every
     # caller of this chokepoint: the /models/load route, the generations
     # pre-load route, and the generation service.
-    from ..services.model_registry import MODEL_NOT_DOWNLOADED_MSG, is_downloaded
-    from .configs import get_all_model_configs
+    from ...services.model_registry import MODEL_NOT_DOWNLOADED_MSG, is_downloaded
+    from ..configs import get_all_model_configs
 
     cfg = next(
         (c for c in get_all_model_configs() if c.engine == engine and c.model_size == model_size),
@@ -243,6 +125,8 @@ async def load_engine_model(engine: str, model_size: str = "default") -> None:
         "fish_speech_s2",
         "zonos_gguf",
         "parler_tts_gguf",
+        "voxcpm2",
+        "moonshine",
         "acestep_gguf",
         "rvc_onnx",
         "openvoice_onnx",
@@ -251,7 +135,7 @@ async def load_engine_model(engine: str, model_size: str = "default") -> None:
     skip_vram_check = engine in _subprocess_engines or (cfg is not None and not cfg.gpu_only and estimated_mb < 100)
     if not skip_vram_check and estimated_mb > 0:
         try:
-            from ..utils.vram_pressure import VRAMInsufficientError, wait_for_vram
+            from ...utils.vram_pressure import VRAMInsufficientError, wait_for_vram
 
             await wait_for_vram(required_mb=estimated_mb)
         except VRAMInsufficientError as e:
@@ -298,7 +182,7 @@ async def load_engine_model(engine: str, model_size: str = "default") -> None:
 
     backend = get_tts_backend_for_engine(engine)
     # Don't retry VRAM-insufficient errors — they are not transient
-    from ..utils.vram_pressure import VRAMInsufficientError as _VRAMErr
+    from ...utils.vram_pressure import VRAMInsufficientError as _VRAMErr
 
     try:
         await backend.load_model(model_size)
@@ -336,7 +220,7 @@ async def ensure_model_cached_or_raise(engine: str, model_size: str = "default")
 
 def unload_model_by_config(config: ModelConfig) -> bool:
     """Unload a model given its config. Returns True if it was loaded, False otherwise."""
-    from ..services import transcribe
+    from ...services import transcribe
 
     if config.engine == "whisper":
         whisper_model = transcribe.get_whisper_model()
@@ -368,7 +252,7 @@ def unload_model_by_config(config: ModelConfig) -> bool:
 
 def check_model_loaded(config: ModelConfig) -> bool:
     """Check if a model is currently loaded."""
-    from ..services import transcribe
+    from ...services import transcribe
 
     try:
         if config.engine == "whisper":
@@ -388,7 +272,7 @@ def check_model_loaded(config: ModelConfig) -> bool:
 
 def get_model_load_func(config: ModelConfig):
     """Return a callable that loads/downloads the model."""
-    from ..services import transcribe
+    from ...services import transcribe
 
     if config.engine == "whisper":
         return lambda: transcribe.get_whisper_model().load_model(config.model_size)
@@ -400,7 +284,7 @@ def get_model_load_func(config: ModelConfig):
         return lambda: get_music_backend("stable_audio").load_model()
 
     if config.engine == "rvc_onnx":
-        from .configs import get_vc_backend
+        from ..configs import get_vc_backend
 
         voice_name = config.model_name.removeprefix("rvc-onnx-")
         return lambda: get_vc_backend("rvc_onnx").load_model(voice_name)
@@ -415,8 +299,8 @@ def get_tts_backend() -> TTSBackend:
     No hardcoded engine — picks the first downloaded TTS engine, or raises
     if nothing is installed so callers must handle the empty case.
     """
-    from ..config import DEFAULT_TTS_ENGINE
-    from ..utils.model_status import get_tts_preference_order, is_engine_cached
+    from ...config import DEFAULT_TTS_ENGINE
+    from ...utils.model_status import get_tts_preference_order, is_engine_cached
 
     if DEFAULT_TTS_ENGINE:
         return get_tts_backend_for_engine(DEFAULT_TTS_ENGINE)
@@ -470,7 +354,7 @@ def get_tts_backend_for_engine(engine: str) -> TTSBackend:
         if entry is None:
             raise ValueError(f"Unknown TTS engine: {engine}. Supported: {list(TTS_ENGINES.keys())}")
 
-        return _resolve_tts_backend(entry)
+        return resolve_tts_backend(entry)
 
 
 _stt_backends: dict[str, STTBackend] = {}
@@ -493,7 +377,7 @@ def get_stt_backend(engine: str = "whisper") -> STTBackend:
     if engine not in _stt_backends:
         if engine == "whisper":
             try:
-                from .whisper_cpp_backend import WhisperCppSTTBackend
+                from ..whisper_cpp_backend import WhisperCppSTTBackend
 
                 _stt_backends[engine] = WhisperCppSTTBackend()
             except ImportError:
@@ -502,7 +386,7 @@ def get_stt_backend(engine: str = "whisper") -> STTBackend:
                 ) from None
         elif engine == "faster-whisper":
             try:
-                from .faster_whisper_backend import FasterWhisperSTTBackend
+                from ..faster_whisper_backend import FasterWhisperSTTBackend
 
                 _stt_backends[engine] = FasterWhisperSTTBackend()
             except ImportError:
@@ -511,22 +395,29 @@ def get_stt_backend(engine: str = "whisper") -> STTBackend:
                 ) from None
         elif engine == "parakeet":
             try:
-                from .parakeet_backend import ParakeetSTTBackend
+                from ..parakeet_backend import ParakeetSTTBackend
 
                 _stt_backends[engine] = ParakeetSTTBackend()
             except ImportError:
                 raise RuntimeError("parakeet backend unavailable. Install parakeet.cpp binary.") from None
         elif engine == "qwen3_asr":
             try:
-                from .qwen3_asr_backend import Qwen3ASRBackend
+                from ..qwen3_asr_backend import Qwen3ASRBackend
 
                 _stt_backends[engine] = Qwen3ASRBackend()
             except ImportError:
                 raise RuntimeError(
                     "qwen3_asr backend unavailable. Install onnxruntime (pip install onnxruntime)."
                 ) from None
+        elif engine == "moonshine":
+            try:
+                from ..moonshine_backend import MoonshineSTTBackend
+
+                _stt_backends[engine] = MoonshineSTTBackend()
+            except ImportError:
+                raise RuntimeError("moonshine backend unavailable. Place transcribe.cpp binary in models dir.") from None
         else:
-            raise ValueError(f"Unknown STT engine: {engine}. Supported: whisper, faster-whisper, parakeet, qwen3_asr")
+            raise ValueError(f"Unknown STT engine: {engine}. Supported: whisper, faster-whisper, parakeet, qwen3_asr, moonshine")
 
     lifecycle_manager.register(engine, _stt_backends[engine].is_loaded, _stt_backends[engine].unload_model)
     return _stt_backends[engine]
@@ -553,7 +444,7 @@ def get_llm_backend_for_engine(engine: str) -> LLMBackend:
             return _llm_backends[engine]
 
         if engine == "gguf_llm":
-            from .gguf_server_backend import GGUFServerLLMBackend
+            from ..gguf_server_backend import GGUFServerLLMBackend
 
             backend = GGUFServerLLMBackend()
         else:
@@ -588,27 +479,27 @@ def get_music_backend(engine: str = "stable_audio") -> MusicBackend:
             return _music_backends[engine]
 
         if engine == "stable_audio":
-            from .stable_audio_backend import stable_audio_backend
+            from ..stable_audio_backend import stable_audio_backend
 
             backend = stable_audio_backend
         elif engine == "acestep_gguf":
-            from .acestep_gguf_backend import acestep_gguf_backend
+            from ..acestep_gguf_backend import acestep_gguf_backend
 
             backend = acestep_gguf_backend
         elif engine == "heartmula":
-            from .heartmula_backend import heartmula_backend
+            from ..heartmula_backend import heartmula_backend
 
             backend = heartmula_backend
         elif engine == "sa3_sfx":
-            from .sa3_sfx_backend import sa3_sfx_backend
+            from ..sa3_sfx_backend import sa3_sfx_backend
 
             backend = sa3_sfx_backend
         elif engine == "minimax_music3":
-            from .minimax_music3_backend import minimax_music3_backend
+            from ..minimax_music3_backend import minimax_music3_backend
 
             backend = minimax_music3_backend
         elif engine == "cloud":
-            from .cloud_music_backend import cloud_music_backend
+            from ..cloud_music_backend import cloud_music_backend
 
             backend = cloud_music_backend
         else:

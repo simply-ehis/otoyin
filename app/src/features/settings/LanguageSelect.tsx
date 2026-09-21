@@ -1,5 +1,9 @@
 import { useTranslation } from "react-i18next";
-import { type LanguageCode, SUPPORTED_LANGUAGES } from "@/i18n";
+import {
+	type LanguageCode,
+	SUPPORTED_LANGUAGES,
+	changeLanguage,
+} from "@/i18n";
 import {
 	Select,
 	SelectContent,
@@ -17,7 +21,7 @@ export function LanguageSelect() {
 		<Select
 			value={current}
 			onValueChange={(value) => {
-				void i18n.changeLanguage(value as LanguageCode);
+				void changeLanguage(value as LanguageCode);
 			}}
 		>
 			<SelectTrigger className="h-9 w-[180px]" aria-label="Interface language">

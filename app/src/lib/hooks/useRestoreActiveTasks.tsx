@@ -87,10 +87,13 @@ export function useRestoreActiveTasks() {
  */
 export const MODEL_DISPLAY_NAMES: Record<string, string> = {
 	"whisper-tiny-en": "Whisper Tiny",
-	"planner-2b": "Qwen3.5-2B Planner",
-	"planner-0.8b": "Qwen3.5-0.8B Planner",
-	"planner-4b-v3": "Qwopus3.5-4B-v3 Planner",
-	"planner-ministral-3b": "Ministral-3-3B Planner",
+	"planner-4b": "Qwopus 4B Planner",
+	"planner-4b-v3": "Qwopus 4B v3 Planner",
+	"planner-spark-x-2.5-4b": "Spark-X 2.5-4B Planner",
+	"planner-lfm2-2.6b": "LFM2.5-2.6B Planner",
+	"llm-cloud-starter": "Cloud Starter",
+	"llm-cloud-pro": "Cloud Pro",
+	"llm-cloud-max": "Cloud Max",
 	"whisper-base": "Whisper Base",
 	"whisper-small": "Whisper Small",
 	"whisper-medium": "Whisper Medium",

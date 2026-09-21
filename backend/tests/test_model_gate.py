@@ -43,7 +43,6 @@ class _FakeCfg:
         self.supported_tags = []
         self.structured_preset_voices = []
         self.supports_voice_mixing = False
-        self.quality_score = 7
         self.category = "tts"
 
     def __getitem__(self, key):
@@ -75,13 +74,13 @@ def test_record_is_downloaded_forget(monkeypatch):
     sess = _make_session_factory()
     monkeypatch.setattr(mr, "SessionLocal", sess)
 
-    assert mr.is_downloaded("planner-2b", "2B-Q4_K_M") is False
-    mr.record_download(sess(), "planner-2b", "2B-Q4_K_M", "gguf_llm", "r/f", None, None)
-    assert mr.is_downloaded("planner-2b", "2B-Q4_K_M") is True
-    assert mr.is_downloaded("planner-2b", None) is False  # size-scoped
-    assert mr.forget_download("planner-2b", "2B-Q4_K_M") is True
-    assert mr.is_downloaded("planner-2b", "2B-Q4_K_M") is False
-    assert mr.forget_download("planner-2b", "2B-Q4_K_M") is False
+    assert mr.is_downloaded("planner-4b", "4B-Q4_K_M") is False
+    mr.record_download(sess(), "planner-4b", "4B-Q4_K_M", "gguf_llm", "r/f", None, None)
+    assert mr.is_downloaded("planner-4b", "4B-Q4_K_M") is True
+    assert mr.is_downloaded("planner-4b", None) is False  # size-scoped
+    assert mr.forget_download("planner-4b", "4B-Q4_K_M") is True
+    assert mr.is_downloaded("planner-4b", "4B-Q4_K_M") is False
+    assert mr.forget_download("planner-4b", "4B-Q4_K_M") is False
 
 
 def test_reconcile_seeds_from_cache(monkeypatch):

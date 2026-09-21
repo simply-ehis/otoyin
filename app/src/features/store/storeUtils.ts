@@ -125,16 +125,20 @@ export const MODEL_DESCRIPTIONS: Record<string, string> = {
 		"Qwen3-ASR 1.7B INT4 — 52 languages, offline, ONNX Runtime. Near-cloud accuracy without the cloud.",
 	"qwen3-asr-0.6b-int4":
 		"Qwen3-ASR 0.6B INT4 — 52 languages in 600MB. Best quality-per-size for multilingual teams.",
-	"planner-2b":
-		"Qwen3.5-2B Opus-Distilled (Free) — the default brain. Distilled from Claude Opus, strong tool-choice and self-correction for the assistant.",
-	"planner-0.8b":
-		"Qwen3.5-0.8B Opus-Distilled (Free) — fallback for 8GB RAM machines. Same reasoning style, lighter and quicker.",
+	"planner-4b":
+		"Qwen3.5-4B (Free) — strong all-rounder for reasoning, tool calling, and multi-step workflows. 2.7GB, needs 3.5GB+ RAM.",
 	"planner-4b-v3":
-		"Qwopus3.5-4B-v3 (Paid) — the smart planner. RL tool-calling with act-then-refine, best quality when captures need cleanup or the assistant drafts text.",
-	"planner-ministral-3b":
-		"Ministral-3-3B-Reasoning-2512 (Paid, Apache-2.0) — reasoning planner with native function calling and 256K context. For long transcripts and complex tool chains.",
-	"planner-lfm2-2.6b-qad":
-		"LFM2.5-2.6B QAD-Q4_0 (Special Offer — $13) — LiquidAI's on-device 2.6B planner with Quantization-Aware-Distillation 4-bit weights (1.59GB). 128K context, 24 languages, native tool calling + thinking tags. Strong multilingual reasoning at a tiny footprint.",
+		"Qwopus 4B v3 ($20) — Claude-distilled premium planner. Highest-quality reasoning and tool calling for complex multi-step workflows.",
+	"planner-spark-x-2.5-4b":
+		"Spark-X 2.5-4B ($20) — iFLYTEK's agentic king. 1M native context, 200+ languages, hybrid sliding-window attention. Apache 2.0.",
+	"planner-lfm2-2.6b":
+		"LFM2.5-2.6B ($13) — LiquidAI's on-device planner. 128K context, 24 languages, native tool calling + thinking tags.",
+	"llm-cloud-starter":
+		"Cloud Starter ($10/mo) — cloud-hosted LLM for the in-app assistant. No download, instant responses, requires active subscription.",
+	"llm-cloud-pro":
+		"Cloud Pro ($20/mo) — smarter cloud model for complex reasoning and coding. Requires active subscription.",
+	"llm-cloud-max":
+		"Cloud Max ($50/mo) — top-tier cloud model, maximum capability. Requires active subscription.",
 	"seed-vc":
 		"Seed-VC — zero-shot voice conversion from a reference clip. Change timbre without re-generating text. GPU recommended.",
 	"rvc-default":
@@ -266,30 +270,8 @@ export function priceTone(
 	return "amber";
 }
 
-/**
- * Canonical quality-descending comparator — the single source of truth for
- * "better products first" ordering (buildFilteredProducts' quality mode,
- * similar-products rails, any future ranking surface).
- *
- * Deterministic: name is the tie-break, so equal-quality products render in
- * stable order regardless of catalog input ordering (an unstable sort here
- * made the similar-products rail flicker between renders).
- */
-export function compareQualityDesc(
-	a: Pick<MarketplaceProduct, "name" | "quality_score">,
-	b: Pick<MarketplaceProduct, "name" | "quality_score">,
-): number {
-	const aQ = a.quality_score ?? 0;
-	const bQ = b.quality_score ?? 0;
-	if (aQ !== bQ) {
-		return bQ - aQ;
-	}
-	return a.name.localeCompare(b.name);
-}
-
 export type SortMode =
 	| "default"
-	| "quality"
 	| "price-asc"
 	| "price-desc"
 	| "name";
@@ -369,13 +351,7 @@ export function buildFilteredProducts(
 			return aInst - bInst;
 		}
 		// Sort mode
-		if (sortMode === "quality") {
-			const aQ = a.quality_score ?? 0;
-			const bQ = b.quality_score ?? 0;
-			if (aQ !== bQ) {
-				return bQ - aQ;
-			}
-		} else if (sortMode === "price-asc") {
+		if (sortMode === "price-asc") {
 			if (a.price_usd !== b.price_usd) {
 				return a.price_usd - b.price_usd;
 			}
@@ -386,14 +362,12 @@ export function buildFilteredProducts(
 		} else if (sortMode === "name") {
 			return a.name.localeCompare(b.name);
 		} else {
-			// Default: free before paid, then quality desc
+			// Default: free before paid, then price ascending
 			if (a.paid !== b.paid) {
 				return a.paid ? 1 : -1;
 			}
-			const aQ = a.quality_score ?? 0;
-			const bQ = b.quality_score ?? 0;
-			if (aQ !== bQ) {
-				return bQ - aQ;
+			if (a.price_usd !== b.price_usd) {
+				return a.price_usd - b.price_usd;
 			}
 		}
 		return a.name.localeCompare(b.name);

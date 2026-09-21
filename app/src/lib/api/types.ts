@@ -220,10 +220,11 @@ export interface HistoryListResponse {
 export type WhisperModelSize = "tiny.en" | "base.en" | "cloud";
 
 export type PlannerModelSize =
-	| "2B-Q4_K_M"
-	| "0.8B-Q5_K_M"
+	| "4B-Q4_K_M"
 	| "4B-v3-Q4_K_M"
-	| "3B-Reasoning-Q4_K_M";
+	| "spark-4B-Q4_K_M"
+	| "2.6B-Q4_0"
+	| "cloud";
 
 export type CaptureSource = "dictation" | "recording" | "file";
 
@@ -344,7 +345,7 @@ export interface GenerationSettings {
 export type GenerationSettingsUpdate = Partial<GenerationSettings>;
 
 export interface AssistantSettings {
-	/** GGUF planner variant, e.g. "2B-Q4_K_M". */
+	/** GGUF planner variant, e.g. "4B-Q4_K_M". */
 	model_size: string;
 	/** null = use the RAM-aware default; otherwise a user override in [2048,32768]. */
 	context_tokens: number | null;
@@ -358,6 +359,10 @@ export interface AssistantSettings {
 	kv_quant: string;
 	/** Layers offloaded to GPU (null = CPU-only). Applies at planner load. */
 	gpu_layers?: number | null;
+	/** MoE expert streaming cache in GB (null = disabled). Applies at planner load. */
+	moe_stream_cache_gb?: number | null;
+	/** O_DIRECT bypass for MoE expert reads (avoids page-cache pollution). */
+	moe_stream_direct?: boolean;
 	/** Live planner state (not persisted): true while llama-server runs. */
 	planner_loaded?: boolean;
 	/** n_ctx the running server was started with (null when not loaded). */
@@ -523,7 +528,6 @@ export interface ModelStatus {
 	// Quality scoring (0-10) — reflects capability, quality, and value within
 	// the model's category. 10 = best-in-class; scores are per-category so
 	// TTS scores are only compared against other TTS models, etc.
-	quality_score?: number;
 	category?: string; // tts | stt | llm | music | sfx | vc
 }
 
@@ -1046,7 +1050,6 @@ export interface MarketplaceProduct {
 	price_usd: number;
 	paid: boolean;
 	note?: string;
-	quality_score?: number;
 	avg_rating?: number;
 	review_count?: number;
 	size_mb?: number;

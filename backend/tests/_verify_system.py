@@ -98,7 +98,7 @@ assert fb is not None and "speak" in fb.lower()
 print("Fallback chain: PASS")
 
 # Check thinking model detection
-assert _is_thinking_model("2B-Q4_K_M") is True
+assert _is_thinking_model("4B-Q4_K_M") is True
 assert _is_thinking_model("chatterbox") is False
 print("Thinking model detection: PASS")
 

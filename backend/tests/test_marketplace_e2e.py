@@ -70,7 +70,6 @@ BASE_PRODUCTS: list[dict] = [
         "category": "tts",
         "price_usd": 0,
         "paid": False,
-        "quality_score": 10,
     },
     {
         "id": "whisper-small-en",
@@ -78,7 +77,6 @@ BASE_PRODUCTS: list[dict] = [
         "category": "stt",
         "price_usd": 5,
         "paid": True,
-        "quality_score": 7,
     },
 ]
 
@@ -88,7 +86,6 @@ NEW_PRODUCT: dict = {
     "category": "tts",
     "price_usd": 9,
     "paid": True,
-    "quality_score": 6,
     "note": "published while the app was running",
 }
 

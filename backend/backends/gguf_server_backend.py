@@ -1,17 +1,17 @@
 """Local GGUF assistant planner backend via llama.cpp ``server`` (OpenAI-compatible).
 
-Replaces the llama-cpp-python LFM backend. The planner stack (see
-docs/ASSISTANT_ARCHITECTURE.md):
+Replaces the llama-cpp-python LFM backend. The planner stack:
 
-    jackrong Qwen3.5-2B Opus-Distilled   (free default planner)
-    jackrong Qwen3.5-0.8B Opus-Distilled (free low-RAM fallback)
-    Unsloth Qwen3.5-4B                   (free premium planner)
-    LiquidAI LFM2-2.6B                   (free latest planner)
-    Qwopus3.5-4B-v3                      (paid planner, $40)
-    Spark-X 2.5-4B                       (paid planner, $40)
-    LiquidAI LFM2.5-2.6B QAD             (paid planner, $13 special offer)
-    MiniCPM5-2B                          (paid planner, $5 PROMO)
-    Qwen3.8-27B                          (paid planner, $5)
+    Qwopus 4B            (free default planner)
+    Qwopus 4B v3         (paid planner, $20)
+    Spark-X 2.5-4B       (paid planner, $20)
+    LFM2.5-2.6B          (paid planner, $13)
+    LFM2.5-8B-A1B        (paid MoE planner, $40)
+    Ling-3.0-tiny        (paid MoE planner, $40)
+    Bonsai 2 27B         (paid planner, $80, requires PrismML fork)
+    Cloud Starter        (cloud subscription, $10/mo)
+    Cloud Pro            (cloud subscription, $20/mo)
+    Cloud Max            (cloud subscription, $50/mo)
 
 All models are GGUF served by one native ``llama-server`` process spawned as
 a sidecar on a free localhost port. The backend keeps the same public surface
@@ -25,6 +25,8 @@ loads fail with a clear ``load_error`` surfaced by ``GET /llm/status``.
 
 import asyncio
 import logging
+import os
+from pathlib import Path
 
 from ..utils.llm_context import MIN_CTX as MIN_GEN_TOKENS
 from . import DEFAULT_LLM_TEMPERATURE
@@ -33,20 +35,18 @@ from .gguf_runner import GGUFServerProcess
 
 logger = logging.getLogger(__name__)
 
-# model_size -> (HF repo, quant tag as it appears in the GGUF filename)
-GGUF_MODELS: dict[str, tuple[str, str]] = {
-    "2B-Q4_K_M": ("Jackrong/Qwen3.5-2B-Claude-4.6-Opus-Reasoning-Distilled-GGUF", "q4_k_m"),
-    "0.8B-Q5_K_M": ("Jackrong/Qwen3.5-0.8B-Claude-4.6-Opus-Reasoning-Distilled-GGUF", "q5_k_m"),
-    "4B-Q4_K_M": ("unsloth/Qwen3.5-4B-GGUF", "q4_k_m"),
-    "4B-v3-Q4_K_M": ("Jackrong/Qwopus3.5-4B-v3-GGUF", "q4_k_m"),
-    "2.6B-Q4_K_M": ("LiquidAI/LFM2-2.6B-GGUF", "q4_k_m"),
-    "2.6B-QAD-Q4_0": ("LiquidAI/LFM2.5-2.6B-GGUF", "q4_0"),
-    "minicpm5-2B-Q4_K_M": ("openbmb/MiniCPM5-2B-GGUF", "q4_k_m"),
-    "spark-4B-Q4_K_M": ("XHToken/Spark-X2.5-4B-GGUF", "q4_k_m"),
-    "27B-UD-Q2_K_XL": ("unsloth/Qwen3.8-27B-GGUF", "q2_k_xl"),
+# model_size -> (HF repo, quant tag, is_moe)
+GGUF_MODELS: dict[str, tuple[str, str, bool]] = {
+    "4B-Q4_K_M": ("unsloth/Qwen3.5-4B-GGUF", "q4_k_m", False),
+    "4B-v3-Q4_K_M": ("Jackrong/Qwopus3.5-4B-v3-GGUF", "q4_k_m", False),
+    "spark-4B-Q4_K_M": ("XHToken/Spark-X2.5-4B-GGUF", "q4_k_m", False),
+    "2.6B-Q4_0": ("LiquidAI/LFM2.5-2.6B-GGUF", "q4_0", False),
+    "8B-A1B-Q4_K_M": ("LiquidAI/LFM2.5-8B-A1B-GGUF", "q4_k_m", True),
+    "ling-tiny-Q4_K_M": ("inclusionAI/Ling-3.0-tiny-GGUF", "q4_k_m", True),
+    "27B-PTQ1_0": ("prism-ml/Ternary-Bonsai-2-27B-gguf", "PTQ1_0", False),
 }
 
-DEFAULT_MODEL_SIZE = "2B-Q4_K_M"
+DEFAULT_MODEL_SIZE = "4B-Q4_K_M"
 
 # Extra GGUF artifacts in the repos that are not the model weights.
 _EXCLUDED_GGUF_TAGS = ("mmproj", "mtp", "imatrix", "embedding", "encoder")
@@ -155,7 +155,7 @@ class GGUFServerLLMBackend(BackendBase):
         from huggingface_hub import hf_hub_download
 
         try:
-            repo, quant = GGUF_MODELS[model_size]
+            repo, quant, _is_moe = GGUF_MODELS[model_size]
             filename = _resolve_gguf_filename(repo, quant)
             hf_hub_download(repo_id=repo, filename=filename, local_files_only=True)
             return True
@@ -193,7 +193,7 @@ class GGUFServerLLMBackend(BackendBase):
         from .base import model_load_progress
 
         progress_model_name = f"gguf-{model_size.lower()}"
-        repo, quant = GGUF_MODELS[model_size]
+        repo, quant, is_moe = GGUF_MODELS[model_size]
         n_ctx = compute_llm_context(model_size, override=ctx_override)
 
         # Model is already verified as cached in load_model(), so load from local cache only
@@ -201,15 +201,67 @@ class GGUFServerLLMBackend(BackendBase):
         with model_load_progress(progress_model_name, True), force_offline_if_cached(True, progress_model_name):
             model_path = hf_hub_download(repo_id=repo, filename=filename, local_files_only=True)
 
-        from ..services.settings import get_assistant_gpu_layers, get_assistant_kv_quant
+        from ..services.settings import (
+            get_assistant_gpu_layers,
+            get_assistant_kv_quant,
+            get_assistant_moe_stream_cache_gb,
+            get_assistant_moe_stream_direct,
+        )
 
         gpu_layers = get_assistant_gpu_layers()
         kv_quant = get_assistant_kv_quant()
+        moe_cache_gb = get_assistant_moe_stream_cache_gb()
+        moe_direct = get_assistant_moe_stream_direct()
+
+        # Auto-detect: when user hasn't explicitly set a cache size but the
+        # model is MoE, compute an optimal cache from available RAM.
+        if moe_cache_gb == 0 and is_moe:
+            import psutil
+
+            from ..utils.llm_context import compute_moe_stream_cache_gb
+
+            total_ram_gb = round(psutil.virtual_memory().total / (1024**3))
+            # Estimate model size from the downloaded file
+            model_size_mb = Path(model_path).stat().st_size // (1024 * 1024)
+            moe_cache_gb = compute_moe_stream_cache_gb(model_size_mb, total_ram_gb)
+            if moe_cache_gb > 0:
+                logger.info(
+                    "MoE model detected — auto-computed stream cache: %d GB (RAM=%d GB, model=%d MB)",
+                    moe_cache_gb,
+                    total_ram_gb,
+                    model_size_mb,
+                )
+
+        # Format cache size for llama-server (--moe-stream-cache takes "8G")
+        moe_cache_size = f"{moe_cache_gb}G" if moe_cache_gb > 0 else None
+
+        # Resolve custom binary for models with non-stock kernels (e.g. Bonsai
+        # ternary format needs PrismML-Eng/llama.cpp fork).
+        from .configs.llm import get_llm_model_configs
+
+        custom_binary = None
+        for cfg in get_llm_model_configs():
+            if cfg.model_size == model_size and cfg.custom_binary_env:
+                env_val = os.environ.get(cfg.custom_binary_env, "")
+                if env_val and Path(env_val).exists():
+                    custom_binary = env_val
+                    logger.info("Using custom llama-server binary from %s: %s", cfg.custom_binary_env, env_val)
+                elif env_val:
+                    logger.warning(
+                        "Custom binary path set in %s but file not found: %s — falling back to default",
+                        cfg.custom_binary_env,
+                        env_val,
+                    )
+                break
+
         self._server = GGUFServerProcess(
             model_path,
             n_ctx=n_ctx,
             n_gpu_layers=gpu_layers,
             kv_cache_type=kv_quant,
+            moe_stream_cache_size=moe_cache_size,
+            moe_stream_direct=moe_direct,
+            server_binary=custom_binary,
         )
         try:
             self._server.start()
@@ -250,6 +302,9 @@ class GGUFServerLLMBackend(BackendBase):
         chat_messages: list[dict] | None = None,
         ctx_override: int | None = None,
         grammar: str | None = None,
+        repeat_penalty: float = 1.1,
+        frequency_penalty: float = 0.0,
+        presence_penalty: float = 0.0,
     ) -> str:
         await self.load_model(model_size, ctx_override=ctx_override)
         if max_tokens is None:
@@ -268,6 +323,9 @@ class GGUFServerLLMBackend(BackendBase):
             max_tokens=int(max_tokens),
             temperature=temperature if do_sample else 0.0,
             top_p=0.9 if do_sample else 1.0,
+            repeat_penalty=repeat_penalty,
+            frequency_penalty=frequency_penalty,
+            presence_penalty=presence_penalty,
             grammar=grammar,
         )
 

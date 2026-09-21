@@ -1,15 +1,7 @@
 import i18n from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
-import de from "./locales/de/translation.json";
 import en from "./locales/en/translation.json";
-import es from "./locales/es/translation.json";
-import fr from "./locales/fr/translation.json";
-import ja from "./locales/ja/translation.json";
-import ko from "./locales/ko/translation.json";
-import ptBR from "./locales/pt-BR/translation.json";
-import zhCN from "./locales/zh-CN/translation.json";
-import zhTW from "./locales/zh-TW/translation.json";
 
 export const SUPPORTED_LANGUAGES = [
 	{ code: "en", label: "English" },
@@ -31,14 +23,6 @@ i18n
 	.init({
 		resources: {
 			en: { translation: en },
-			ja: { translation: ja },
-			"zh-CN": { translation: zhCN },
-			"zh-TW": { translation: zhTW },
-			es: { translation: es },
-			fr: { translation: fr },
-			de: { translation: de },
-			"pt-BR": { translation: ptBR },
-			ko: { translation: ko },
 		},
 		fallbackLng: "en",
 		supportedLngs: SUPPORTED_LANGUAGES.map((l) => l.code),
@@ -51,5 +35,38 @@ i18n
 			caches: ["localStorage"],
 		},
 	});
+
+const loadedLocales = new Set<LanguageCode>(["en"]);
+
+/** Load a locale bundle on demand. Only English ships in the entry chunk;
+ * the other eight locales split into lazy chunks (P1.3). */
+export async function ensureLocale(code: LanguageCode): Promise<void> {
+	if (loadedLocales.has(code)) {
+		return;
+	}
+	const mod = await import(`./locales/${code}/translation.json`);
+	i18n.addResourceBundle(code, "translation", mod.default ?? mod, true, true);
+	loadedLocales.add(code);
+}
+
+/** Switch interface language, loading its bundle first. Falls back to
+ * English when the bundle cannot be loaded. */
+export async function changeLanguage(code: LanguageCode): Promise<void> {
+	try {
+		await ensureLocale(code);
+	} catch {
+		code = "en";
+	}
+	await i18n.changeLanguage(code);
+}
+
+// Fetch the detected/stored language once at startup (English is bundled,
+// so cold start never waits on a chunk).
+void (async () => {
+	const lng = i18n.language;
+	if (lng !== "en" && SUPPORTED_LANGUAGES.some((l) => l.code === lng)) {
+		await changeLanguage(lng as LanguageCode);
+	}
+})();
 
 export default i18n;

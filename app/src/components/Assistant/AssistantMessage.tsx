@@ -44,11 +44,40 @@ const MarkdownRenderer = lazy(() =>
 	),
 );
 
-// Lazy-load syntax highlighter (~200KB) — only needed when code blocks are rendered
+// Lazy-load the Light highlighter with only the languages assistants emit.
+// The full Prism bundle ships every language (~600KB+); this stays ~200KB.
+// Unregistered languages fall back to the plain <pre> block (never a crash).
+const HIGHLIGHT_LANGUAGE_LOADERS: Record<string, () => Promise<{ default: unknown }>> = {
+	markup: () => import("react-syntax-highlighter/dist/esm/languages/prism/markup"),
+	css: () => import("react-syntax-highlighter/dist/esm/languages/prism/css"),
+	clike: () => import("react-syntax-highlighter/dist/esm/languages/prism/clike"),
+	javascript: () => import("react-syntax-highlighter/dist/esm/languages/prism/javascript"),
+	typescript: () => import("react-syntax-highlighter/dist/esm/languages/prism/typescript"),
+	python: () => import("react-syntax-highlighter/dist/esm/languages/prism/python"),
+	bash: () => import("react-syntax-highlighter/dist/esm/languages/prism/bash"),
+	json: () => import("react-syntax-highlighter/dist/esm/languages/prism/json"),
+	yaml: () => import("react-syntax-highlighter/dist/esm/languages/prism/yaml"),
+	markdown: () => import("react-syntax-highlighter/dist/esm/languages/prism/markdown"),
+	rust: () => import("react-syntax-highlighter/dist/esm/languages/prism/rust"),
+	sql: () => import("react-syntax-highlighter/dist/esm/languages/prism/sql"),
+	powershell: () => import("react-syntax-highlighter/dist/esm/languages/prism/powershell"),
+	java: () => import("react-syntax-highlighter/dist/esm/languages/prism/java"),
+	go: () => import("react-syntax-highlighter/dist/esm/languages/prism/go"),
+	c: () => import("react-syntax-highlighter/dist/esm/languages/prism/c"),
+	cpp: () => import("react-syntax-highlighter/dist/esm/languages/prism/cpp"),
+};
+const HIGHLIGHT_LANGUAGES = new Set(Object.keys(HIGHLIGHT_LANGUAGE_LOADERS));
 const SyntaxHighlighter = lazy(() =>
-	import("react-syntax-highlighter").then((mod) => ({
-		default: mod.Prism,
-	})),
+	Promise.all([
+		import("react-syntax-highlighter/dist/esm/prism-light"),
+		...Object.values(HIGHLIGHT_LANGUAGE_LOADERS).map((load) => load()),
+	]).then(([light, ...defs]) => {
+		const { PrismLight } = light;
+		Object.keys(HIGHLIGHT_LANGUAGE_LOADERS).forEach((name, i) => {
+			PrismLight.registerLanguage(name, defs[i].default);
+		});
+		return { default: PrismLight };
+	}),
 );
 const vscDarkPlusStyle = import(
 	"react-syntax-highlighter/dist/esm/styles/prism"
@@ -103,7 +132,7 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
 		vscDarkPlusStyle.then(setStyle);
 	}, []);
 
-	if (!style) {
+	if (!style || !HIGHLIGHT_LANGUAGES.has(language)) {
 		return (
 			<pre className="bg-sunken p-3 rounded text-sm font-mono overflow-x-auto">
 				<code>{code}</code>

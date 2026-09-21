@@ -4,22 +4,14 @@ MCP tools for generation (speech, music, SFX, bounce, etc.).
 
 from __future__ import annotations
 
-import base64
-import io
 import logging
 from typing import Any
 
-import soundfile as sf
 from fastmcp import FastMCP
 
+from ._common import _wav_b64
+
 logger = logging.getLogger(__name__)
-
-
-def _wav_b64(audio, sr) -> str:
-    """Encode float32 audio as base64 WAV."""
-    buf = io.BytesIO()
-    sf.write(buf, audio, sr, format="WAV")
-    return base64.b64encode(buf.getvalue()).decode()
 
 
 def register_generation_tools(mcp: FastMCP) -> None:

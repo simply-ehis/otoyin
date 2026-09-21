@@ -71,10 +71,6 @@ class ModelConfig:
     preset_voices: list[str] = field(default_factory=list)  # fixed voice presets (e.g. KittenTTS)
     structured_preset_voices: list[PresetVoiceConfig] = field(default_factory=list)  # rich voice metadata
     supports_voice_mixing: bool = False  # True for Kokoro (voices can be blended)
-    # Quality scoring (0-10) — reflects capability, quality, and value within
-    # the model's category.  10 = best-in-class; scores are per-category so
-    # TTS scores are only compared against other TTS models, etc.
-    quality_score: int = 0  # 0-10, set in config files
     category: str = "tts"  # tts | stt | llm | music | sfx | vc
     # On-demand pip dependencies — installed automatically when the model
     # is downloaded. Empty list = no extra pip deps needed (uses base install
@@ -87,6 +83,17 @@ class ModelConfig:
     # pins numpy<=1.23.5). If set, pip installs into data/venvs/{venv_name}/
     # instead of the main environment. None = install into main env.
     venv_name: str | None = None
+    # MoE (Mixture of Experts) flag — when True, the GGUF server backend
+    # passes --moe-stream-cache / --moe-stream-direct to llama-server to
+    # enable SSD-based expert weight streaming (see PR #25294).
+    is_moe: bool = False
+    # Whether the model requires a paid license / subscription to use.
+    paid: bool = False
+    # Name of an env var that points to a custom llama-server binary.
+    # When set, GGUFServerProcess uses this binary instead of the stock
+    # llama-server (needed for models with custom kernels like Bonsai's
+    # ternary PTQ1_0 format which requires PrismML-Eng/llama.cpp fork).
+    custom_binary_env: str | None = None
 
     def __post_init__(self):
         """Validate quantization field based on engine type."""
@@ -108,6 +115,7 @@ class ModelConfig:
                 "Q5_K_S",
                 "Q4_0",
                 "UD-Q2_K_XL",  # unsloth custom quant
+                "PTQ1_0",  # PrismML ternary dense-trit packing
             }
             if self.quant and self.quant not in valid_quants:
                 raise ValueError(f"GGUF LLM must use valid quant: {valid_quants}, got {self.quant}")
@@ -391,6 +399,7 @@ TTS_ENGINES = {
     "orpheus": "Orpheus TTS 3B",
     "qwen3_tts": "Qwen3-TTS 12Hz 1.7B Base",
     "bark_small": "Bark Small (GGUF)",
+    "voxcpm2": "VoxCPM2 (GGUF)",
 }
 
 LLM_ENGINES = {

@@ -8,7 +8,7 @@ from __future__ import annotations
 import datetime as dt
 import hashlib
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -47,7 +47,7 @@ class Product(Base):
     category: Mapped[str] = mapped_column(String(64))
     description: Mapped[str] = mapped_column(Text, default="")
     long_description: Mapped[str] = mapped_column(Text, default="")  # about — what the model does
-    price_usd: Mapped[float] = mapped_column(Float)
+    price_usd: Mapped[float] = mapped_column(Numeric(10, 2))
     paid: Mapped[bool] = mapped_column(Boolean, default=True)
     quality_score: Mapped[int] = mapped_column(Integer, default=5)
     avg_rating: Mapped[float] = mapped_column(Float, default=0.0)  # 0-5, computed from reviews
@@ -59,7 +59,7 @@ class Product(Base):
     note: Mapped[str] = mapped_column(Text, default="")
     special_offer: Mapped[bool] = mapped_column(Boolean, default=False)
     offer_discount_pct: Mapped[int] = mapped_column(Integer, default=0)
-    baseline_usd: Mapped[float] = mapped_column(Float, default=0.0)
+    baseline_usd: Mapped[float] = mapped_column(Numeric(10, 2), default=0.0)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(dt.UTC), default=lambda: dt.datetime.now(dt.UTC))
 
@@ -103,7 +103,7 @@ class Order(Base):
     device_id: Mapped[str] = mapped_column(String(128))
     email: Mapped[str] = mapped_column(String(256), default="")
     status: Mapped[str] = mapped_column(String(32), default="pending")
-    amount_usd: Mapped[float] = mapped_column(Float)
+    amount_usd: Mapped[float] = mapped_column(Numeric(10, 2))
     payment_provider: Mapped[str] = mapped_column(String(64), default="paddle")
     payment_session_id: Mapped[str] = mapped_column(String(256), default="")
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(dt.UTC), default=lambda: dt.datetime.now(dt.UTC))

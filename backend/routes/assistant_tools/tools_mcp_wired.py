@@ -79,6 +79,7 @@ MCP_WIRED_TOOLS = [
             "parameters": {
                 "type": "object",
                 "properties": {"session_id": {"type": "string"}, "audio_path": {"type": "string"}},
+                "required": ["session_id", "audio_path"],
             },
         },
     },
@@ -94,6 +95,7 @@ MCP_WIRED_TOOLS = [
                     "line_id": {"type": "string"},
                     "audio_path": {"type": "string"},
                 },
+                "required": ["session_id", "line_id", "audio_path"],
             },
         },
     },

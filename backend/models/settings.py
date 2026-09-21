@@ -15,7 +15,7 @@ class AssistantSettingsResponse(BaseModel):
     value from model size + total RAM in that case.
     """
 
-    model_size: str = "2B-Q4_K_M"
+    model_size: str = "4B-Q4_K_M"
     context_tokens: int | None = None
     max_tokens: int | None = None
     agent_memory_enabled: bool = True
@@ -24,6 +24,12 @@ class AssistantSettingsResponse(BaseModel):
     kv_quant: str = "q8_0"
     # Layers offloaded to GPU (None = CPU-only). Applies at planner load.
     gpu_layers: int | None = None
+    # MoE (Mixture of Experts) streaming — when set, passes
+    # --moe-stream-cache <N>G to llama-server for SSD-based expert weight
+    # streaming. None = disabled (dense models). Value is in GB.
+    moe_stream_cache_gb: int | None = None
+    # O_DIRECT bypass for MoE expert reads (avoids page-cache pollution).
+    moe_stream_direct: bool = False
     # Live planner state (not persisted): n_ctx/kv_quant/gpu_layers only take effect
     # when the llama-server (re)loads, so the UI can tell the user a reload
     # is pending instead of pretending "saved" means "active".
@@ -55,6 +61,8 @@ class AssistantSettingsUpdate(BaseModel):
     system_prompt: str | None = None
     kv_quant: str | None = None
     gpu_layers: int | None = Field(default=None, ge=0, le=999)
+    moe_stream_cache_gb: int | None = Field(default=None, ge=0, le=64)
+    moe_stream_direct: bool | None = None
 
 
 class PerformanceSettingsResponse(BaseModel):

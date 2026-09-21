@@ -84,7 +84,7 @@ async def stream_local(
     system_prompt: str,
     use_tools: bool,
     base_url: str,
-    model_id: str = "2B-Q4_K_M",
+    model_id: str = "4B-Q4_K_M",
     harness: HarnessState | None = None,
 ) -> AsyncIterator[str]:
     """Stream response from a local GGUF planner with a tool-call loop.
