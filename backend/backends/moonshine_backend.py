@@ -19,7 +19,9 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import platform
 import shutil
+import tarfile
 import tempfile
 from pathlib import Path
 
@@ -47,8 +49,59 @@ _MODELS = {
     },
 }
 
+# transcribe.cpp release info
+_TRANSCRIBE_CPP_VERSION = "0.1.3"
+_TRANSCRIBE_CPP_REPO = "handy-computer/transcribe.cpp"
+_TRANSCRIBE_CPP_ASSETS = {
+    "windows": f"transcribe-native-{_TRANSCRIBE_CPP_VERSION}-windows-x86_64-cpu-vulkan.tar.gz",
+    "linux": f"transcribe-native-{_TRANSCRIBE_CPP_VERSION}-linux-x86_64-cpu-vulkan.tar.gz",
+}
+
 DEFAULT_MODEL = "moonshine-base"
 SAMPLE_RATE = 16000
+
+
+def _download_transcribe_cpp_sync() -> Path:
+    """Download and extract transcribe.cpp binary from GitHub releases (sync version)."""
+    system = platform.system().lower()
+    if system not in _TRANSCRIBE_CPP_ASSETS:
+        raise RuntimeError(f"No pre-built transcribe.cpp for {system}")
+
+    asset = _TRANSCRIBE_CPP_ASSETS[system]
+    url = f"https://github.com/{_TRANSCRIBE_CPP_REPO}/releases/download/v{_TRANSCRIBE_CPP_VERSION}/{asset}"
+
+    dest_dir = config.get_models_dir()
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    binary_name = "transcribe.exe" if system == "windows" else "transcribe"
+    binary_path = dest_dir / binary_name
+
+    if binary_path.exists():
+        return binary_path
+
+    import urllib.request
+
+    logger.info("Downloading transcribe.cpp from %s", url)
+    with urllib.request.urlopen(url) as resp:
+        data = resp.read()
+
+    # Extract the binary from the tarball
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tarball = Path(tmpdir) / asset
+        tarball.write_bytes(data)
+        with tarfile.open(tarball, "r:gz") as tf:
+            tf.extractall(tmpdir)
+        # Find the binary in extracted files
+        for root, _, files in os.walk(tmpdir):
+            for f in files:
+                if f in ("transcribe-cli", "transcribe-cli.exe", "transcribe", "transcribe.exe"):
+                    src = Path(root) / f
+                    shutil.copy2(src, binary_path)
+                    binary_path.chmod(0o755)
+                    logger.info("Installed transcribe.cpp to %s", binary_path)
+                    return binary_path
+
+    raise RuntimeError("transcribe.cpp binary not found in release archive")
 
 
 def _find_transcribe_cpp() -> Path | None:
@@ -64,6 +117,16 @@ def _find_transcribe_cpp() -> Path | None:
     exe = "transcribe.exe" if os.name == "nt" else "transcribe"
     found = shutil.which(exe)
     return Path(found) if found else None
+
+
+async def _ensure_transcribe_cpp() -> Path:
+    """Ensure transcribe.cpp binary exists, downloading if needed."""
+    binary = _find_transcribe_cpp()
+    if binary:
+        return binary
+    # Auto-download in thread pool to avoid blocking
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, _download_transcribe_cpp_sync)
 
 
 def _gguf_path(model_name: str) -> Path | None:
@@ -106,11 +169,11 @@ class MoonshineSTTBackend(BackendBase):
         if model_name:
             self.model_name = model_name
 
-        binary = _find_transcribe_cpp()
+        binary = await _ensure_transcribe_cpp()
         if binary is None:
             raise RuntimeError(
-                "transcribe.cpp not found. Set TRANSCRIBE_CPP env var or "
-                "place the binary in the models directory."
+                "transcribe.cpp not found and auto-download failed. "
+                "Set TRANSCRIBE_CPP env var or place binary in models directory."
             )
 
         gguf = _gguf_path(self.model_name)
