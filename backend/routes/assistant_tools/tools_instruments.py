@@ -3,7 +3,7 @@ INSTRUMENTS_TOOLS = [
         "type": "function",
         "function": {
             "name": "play_gm_instrument",
-            "description": "Render a General-MIDI instrument note (program 0-127) via a SoundFont: piano, bass, strings, brass, pads, bells, and more. Offline; requires a SoundFont in data/soundfonts.",
+            "description": "Render a General-MIDI instrument note (program 0-127) via a SoundFont: piano, bass, strings, brass, pads, bells, and more. Offline; requires a SoundFont (any Store instrument-pack bank, or an .sf2 in data/soundfonts).",
             "parameters": {
                 "type": "object",
                 "properties": {

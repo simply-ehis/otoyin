@@ -144,5 +144,6 @@ async def list_gm_types():
     """Describe the General-MIDI program range exposed by /instruments/gm."""
     return {
         "note": "General MIDI programs 0-127. Examples: 0 piano, 32 bass, 40 strings, "
-        "56 trumpet, 73 pad, 112 tinkle bell. Requires a SoundFont in data/soundfonts.",
+        "56 trumpet, 73 pad, 112 tinkle bell. Requires a SoundFont: any "
+        "instrument-pack bank from the Store, or an .sf2/.sf3 in data/soundfonts.",
     }

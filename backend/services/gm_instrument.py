@@ -1,26 +1,61 @@
 """General-MIDI instrument rendering via a SoundFont (TinySoundFont).
 
 Gated optional dependency: ``tinysoundfont`` (pip install tinysoundfont) plus a
-GM SoundFont file (e.g. FreePats / FluidR3_GM) in ``data/soundfonts/``. When
-either is missing the service raises a clear RuntimeError so the agent can
-instruct the user to install/download. Offline, non-destructive.
+GM SoundFont bank — any instrument-pack bank from the Store (they land in
+``data/instruments/<pack>/``), or a manually placed ``.sf2``/``.sf3`` in
+``data/soundfonts/``. When both are missing the service raises a clear
+RuntimeError. Offline, non-destructive.
 """
 
 from pathlib import Path
 
 import numpy as np
 
+# Full General-MIDI banks the renderer recognizes by name (preferred over
+# single-preset banks when several are installed).
+_KNOWN_GM_BANKS = ("FreePats.sf2", "FluidR3_GM.sf2", "FluidR3_GS.sf2", "GeneralUser-GS.sf2")
+
+
+def _find_bank(directory: Path) -> Path | None:
+    """Known GM bank by name first, else the largest .sf2/.sf3.
+
+    A full GM set dwarfs one-shots and single presets, so size is a reliable
+    tie-breaker when the filename is unfamiliar.
+    """
+    for name in _KNOWN_GM_BANKS:
+        candidate = directory / name
+        if candidate.is_file():
+            return candidate
+    banks = sorted(
+        (p for p in directory.iterdir() if p.is_file() and p.suffix.lower() in (".sf2", ".sf3")),
+        key=lambda p: (-p.stat().st_size, p.name),
+    )
+    return banks[0] if banks else None
+
 
 def get_soundfont_path() -> Path | None:
-    """Return the first available GM SoundFont in the data soundfonts dir."""
+    """Return the first available GM SoundFont.
+
+    Search order (offline-first, explicit placement wins):
+    1. ``data/soundfonts/`` — a manually placed bank.
+    2. ``data/instruments/<pack>/`` — a Store/downloaded or uploaded bank.
+       Marketplace SoundFont packs land here, so a bank from the Store works
+       for GM rendering with no extra step.
+    """
     from .. import config
 
-    sf_dir = config.get_data_dir() / "soundfonts"
+    data = config.get_data_dir()
+    sf_dir = data / "soundfonts"
     sf_dir.mkdir(parents=True, exist_ok=True)
-    for name in ("FreePats.sf2", "FluidR3_GM.sf2", "FluidR3_GS.sf2"):
-        candidate = sf_dir / name
-        if candidate.exists():
-            return candidate
+    found = _find_bank(sf_dir)
+    if found is not None:
+        return found
+    inst_root = data / "instruments"
+    if inst_root.is_dir():
+        for pack in sorted(p for p in inst_root.iterdir() if p.is_dir()):
+            found = _find_bank(pack)
+            if found is not None:
+                return found
     return None
 
 
@@ -51,7 +86,8 @@ def render_gm_note(
     sf = soundfont or get_soundfont_path()
     if sf is None:
         raise RuntimeError(
-            "No SoundFont found in data/soundfonts. Download a GM SoundFont (e.g. FreePats.sf2) and place it there."
+            "No SoundFont found. Download a GM bank from the Store (instrument packs) "
+            "or place an .sf2/.sf3 file in data/soundfonts."
         )
 
     synth = tinysoundfont.Synth()

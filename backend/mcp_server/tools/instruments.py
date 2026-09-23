@@ -12,7 +12,7 @@ from ._common import _rest
 def register_instrument_tools(mcp: FastMCP) -> None:
     @mcp.tool(
         name="21labs.play_gm_instrument",
-        description="Render a General-MIDI instrument note (program 0-127) via a SoundFont: piano, bass, strings, brass, pads, bells. Offline; requires a SoundFont in data/soundfonts. Returns WAV audio.",
+        description="Render a General-MIDI instrument note (program 0-127) via a SoundFont: piano, bass, strings, brass, pads, bells. Offline; requires a SoundFont (any Store instrument-pack bank, or an .sf2 in data/soundfonts). Returns WAV audio.",
     )
     async def twentylabs_play_gm_instrument(
         program: int,
