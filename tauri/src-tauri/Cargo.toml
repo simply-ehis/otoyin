@@ -35,6 +35,7 @@ core-foundation-sys = "0.8"
 wasapi = "0.22"
 windows = { version = "0.62", features = [
     "Win32_Foundation",
+    "Win32_Graphics_Gdi",
     "Win32_UI_WindowsAndMessaging",
     "Win32_UI_Accessibility",
     "Win32_UI_Input_KeyboardAndMouse",

@@ -15,6 +15,7 @@ mod audio_mac;
 mod audio_win;
 mod server;
 mod mic_webview;
+mod window_state;
 
 use std::sync::atomic::Ordering;
 use tauri::{Emitter, Listener, Manager, WindowEvent};
@@ -119,6 +120,9 @@ pub fn run() {
         .setup(|app| {
             app.manage(AppState::default());
             install_panic_hook(app.handle());
+            // Fit the window into the usable desktop and restore the
+            // user's last geometry (never larger than the work area).
+            window_state::apply_startup_geometry(app.handle());
             #[cfg(desktop)]
             {
                 register_window_close_handling(app.handle());
@@ -138,6 +142,7 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
+            window_state::handle_window_event(window, event);
             if let WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
                 let state = window.state::<AppState>();

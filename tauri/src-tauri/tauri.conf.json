@@ -53,12 +53,13 @@
     "windows": [
       {
         "title": "Otoyin Studio",
-        "width": 1400,
-        "height": 900,
+        "width": 1280,
+        "height": 800,
         "minWidth": 800,
         "minHeight": 600,
         "resizable": true,
         "fullscreen": false,
+        "center": true,
         "userAgent": null,
         "decorations": false,
         "titleBarStyle": "Overlay",
