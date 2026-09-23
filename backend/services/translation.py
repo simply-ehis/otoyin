@@ -127,6 +127,7 @@ class TranslationResult:
     translated_text: str
     source_lang: str
     detected_lang: str
+    engine: str = "google"  # "argos" (offline pack) or "google" (online)
 
 
 def _is_available() -> bool:
@@ -137,6 +138,31 @@ def _is_available() -> bool:
         return True
     except ImportError:
         return False
+
+
+def get_argos_translator(source_lang: str, target_lang: str) -> object | None:
+    """Offline Argos translator for an INSTALLED language pack, else None.
+
+    Never downloads: packs come from the Store (``translate-*`` models).
+    Returns None when argostranslate is missing, the pair is not installed,
+    or source is ``auto`` (Argos needs an explicit source language).
+    """
+    if source_lang == "auto":
+        return None
+    try:
+        import argostranslate.translate
+    except ImportError:
+        return None
+    try:
+        installed = argostranslate.translate.get_installed_languages()
+        src = next((lang for lang in installed if lang.code == source_lang), None)
+        tgt = next((lang for lang in installed if lang.code == target_lang), None)
+        if src is None or tgt is None:
+            return None
+        return src.get_translation(tgt)
+    except Exception as exc:
+        logger.debug("Argos offline lookup failed for %s->%s: %s", source_lang, target_lang, exc)
+        return None
 
 
 def _validate_lang(code: str) -> str:
@@ -191,8 +217,39 @@ async def translate_text(
     target_lang = _validate_lang(target_lang)
     if source_lang == target_lang and source_lang != "auto":
         return TranslationResult(translated_text=text, source_lang=source_lang, detected_lang=source_lang)
+    if not text.strip():
+        return TranslationResult(translated_text="", source_lang=source_lang, detected_lang=source_lang)
+
+    # Offline first: an installed Argos pack wins over the online endpoint,
+    # so the offline claim holds whenever the user downloaded the pair.
+    argos = get_argos_translator(source_lang, target_lang)
+    if argos is not None:
+        parts: list[str] = []
+        for ch in _chunk_text(text):
+            try:
+                out = await asyncio.to_thread(argos.translate, ch)
+            except Exception as exc:
+                logger.warning("Argos offline translate failed: %s", exc)
+                argos = None
+                break
+            if not out:
+                argos = None
+                break
+            parts.append(out.strip())
+        if argos is not None and parts:
+            sep = "\n\n" if "\n\n" in text else "\n" if "\n" in text else " "
+            return TranslationResult(
+                translated_text=sep.join(parts),
+                source_lang=source_lang,
+                detected_lang=source_lang,
+                engine="argos",
+            )
+
     if not _is_available():
-        raise RuntimeError("deep-translator is not installed. Install with: pip install deep-translator")
+        raise RuntimeError(
+            "No translation backend available: install the offline Argos pack "
+            f"for {source_lang}->{target_lang} from the Store, or pip install deep-translator"
+        )
 
     if not text.strip():
         return TranslationResult(translated_text="", source_lang=source_lang, detected_lang=source_lang)
@@ -262,8 +319,11 @@ async def translate_batch(
     """
     source_lang = _validate_lang(source_lang)
     target_lang = _validate_lang(target_lang)
-    if not _is_available():
-        raise RuntimeError("deep-translator is not installed. Install with: pip install deep-translator")
+    if not _is_available() and get_argos_translator(source_lang, target_lang) is None:
+        raise RuntimeError(
+            "No translation backend available: install the offline Argos pack "
+            f"for {source_lang}->{target_lang} from the Store, or pip install deep-translator"
+        )
 
     results = []
     chunk_size = 5

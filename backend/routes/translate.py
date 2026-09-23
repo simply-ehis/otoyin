@@ -35,6 +35,7 @@ async def translate_text(data: TranslateRequest):
         "translated_text": result.translated_text,
         "source_lang": result.source_lang,
         "detected_lang": result.detected_lang,
+        "engine": result.engine,
     }
 
 
@@ -57,6 +58,7 @@ async def translate_batch(data: TranslateBatchRequest):
                 "translated_text": r.translated_text,
                 "source_lang": r.source_lang,
                 "detected_lang": r.detected_lang,
+                "engine": r.engine,
             }
             for r in results
         ]
