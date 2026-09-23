@@ -48,6 +48,8 @@ async def client():
 
 async def _seed_product(product_id: str = "test-voice", price: float = 19.0) -> None:
     async with async_session() as db:
+        # Idempotent: an interrupted run may have left the row behind.
+        await db.execute(delete(Product).where(Product.id == product_id))
         db.add(Product(id=product_id, name="Test Voice", category="tts", price_usd=price, paid=True))
         await db.commit()
 
@@ -106,6 +108,8 @@ def test_verify_accepts_rotation_second_h1():
 
 async def test_dev_checkout_fulfills_immediately(client, monkeypatch):
     monkeypatch.setattr(settings, "paddle_api_key", "")
+    # Dev auto-fulfill requires debug mode (fail-closed otherwise).
+    monkeypatch.setattr(settings, "debug", True)
     await _seed_product()
     resp = await client.post(
         "/v1/checkout",
@@ -182,6 +186,8 @@ async def test_webhook_rejects_bad_signature(client, monkeypatch):
 
 async def test_webhook_ignores_unknown_events(client, monkeypatch):
     monkeypatch.setattr(settings, "paddle_webhook_secret", "")
+    # Unsigned webhooks are only accepted in debug mode (fail-closed otherwise).
+    monkeypatch.setattr(settings, "debug", True)
     resp = await client.post("/v1/webhook", content=json.dumps({"event_type": "ping", "data": {}}).encode())
     assert resp.status_code == 200
     assert resp.json()["status"] == "ignored"
@@ -219,6 +225,8 @@ async def test_refund_reached_via_transaction_id(client, monkeypatch):
 
 async def test_donate_dev_fulfills_without_license(client, monkeypatch):
     monkeypatch.setattr(settings, "paddle_api_key", "")
+    # Dev auto-fulfill requires debug mode (fail-closed otherwise).
+    monkeypatch.setattr(settings, "debug", True)
     resp = await client.post(
         "/v1/checkout/donate",
         json={"device_id": "dev-1", "email": "", "amount_usd": 25},
@@ -241,13 +249,20 @@ async def test_donate_dev_fulfills_without_license(client, monkeypatch):
 
 async def test_donate_rejects_bad_amounts(client, monkeypatch):
     monkeypatch.setattr(settings, "paddle_api_key", "")
-    for bad in (0, -5, 0.5, 10000.01):
+    # Out-of-schema values are rejected by request validation (422) ...
+    for bad in (0, -5, 10000.01):
         resp = await client.post(
             "/v1/checkout/donate",
             json={"device_id": "d", "email": "", "amount_usd": bad},
         )
-        assert resp.status_code == 400, bad
-        assert resp.json()["detail"]["code"] == "bad_amount"
+        assert resp.status_code == 422, bad
+    # ... while in-schema but out-of-range values get the handler's 400.
+    resp = await client.post(
+        "/v1/checkout/donate",
+        json={"device_id": "d", "email": "", "amount_usd": 0.5},
+    )
+    assert resp.status_code == 400
+    assert resp.json()["detail"]["code"] == "bad_amount"
 
 
 async def test_donate_pending_is_402(client, monkeypatch):

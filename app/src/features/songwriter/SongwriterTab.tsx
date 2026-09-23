@@ -182,7 +182,7 @@ export function SongwriterTab() {
 				.filter(Boolean)
 				.join("\n\n");
 			return apiClient.generateMusic({
-				engine: "acestep",
+				engine: "acestep_gguf",
 				prompt,
 				duration_seconds: 60,
 				genre: draft.genre || "pop",

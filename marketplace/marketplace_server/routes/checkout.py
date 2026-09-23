@@ -5,7 +5,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import uuid
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -87,6 +87,13 @@ async def create_checkout(req: CheckoutRequest, request: Request, db: AsyncSessi
     existing = result.scalar_one_or_none()
     if existing is not None:
         if not paddle.is_configured():
+            if settings.debug:
+                # Dev mode fulfills immediately (same as the create branch
+                # below) — otherwise a retried checkout would poll a
+                # pending order forever.
+                from .webhook import fulfill_order
+
+                await fulfill_order(existing, db, provider_txn_id="dev")
             return CheckoutResponse(
                 order_ref=existing.order_ref,
                 checkout_url=f"{settings.app_url_scheme}://payment/success?ref={existing.order_ref}",

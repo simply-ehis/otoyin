@@ -220,12 +220,18 @@ class TestBuyInstallFlow:
 
         _wire_marketplace_keys(monkeypatch)
         monkeypatch.setattr(mp_settings, "paddle_api_key", "")
+        # Dev auto-fulfill requires debug mode (fail-closed otherwise —
+        # PADDLE_LAUNCH_CHECKLIST §6: MARKETPLACE_DEBUG=true, no keys).
+        monkeypatch.setattr(mp_settings, "debug", True)
 
         import asyncio
 
         async def _flow():
             await init_db()
             async with async_session() as db:
+                # Idempotent: a previous interrupted run may have left the row
+                # behind in the file-backed marketplace DB (UNIQUE products.id).
+                await db.execute(delete(MPProduct).where(MPProduct.id == "e2e-voice"))
                 db.add(MPProduct(id="e2e-voice", name="E2E Voice", category="tts", price_usd=19.0, paid=True))
                 await db.commit()
             transport = ASGITransport(app=mp_app)

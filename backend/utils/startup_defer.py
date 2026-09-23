@@ -248,31 +248,31 @@ async def ensure_engines_registered() -> None:
                 else:
                     lifecycle_manager.register("tts", tts.is_loaded, lambda: tts.unload_model())
             except Exception:
-                logger.debug("TTS backend not registered (no model available)")
+                logger.debug("TTS backend not registered (no model available)", exc_info=True)
 
             try:
                 stt = get_stt_backend()
                 lifecycle_manager.register("whisper", stt.is_loaded, lambda: stt.unload_model())
             except Exception:
-                logger.debug("STT backend not registered (no model available)")
+                logger.debug("STT backend not registered (no model available)", exc_info=True)
 
             try:
                 llm = get_llm_backend_for_engine("gguf_llm")
                 lifecycle_manager.register("gguf_llm", llm.is_loaded, lambda: llm.unload_model())
             except Exception:
-                logger.debug("LLM backend not registered (no model available)")
+                logger.debug("LLM backend not registered (no model available)", exc_info=True)
 
             try:
                 rvc_backend = get_vc_backend("rvc_onnx")
                 lifecycle_manager.register("rvc_onnx", rvc_backend.is_loaded, lambda: rvc_backend.unload_model())
             except Exception:
-                logger.debug("RVC ONNX backend not registered (no model available)")
+                logger.debug("RVC ONNX backend not registered (no model available)", exc_info=True)
 
             try:
                 seed_vc_backend = get_vc_backend("seed_vc")
                 lifecycle_manager.register("seed_vc", seed_vc_backend.is_loaded, lambda: seed_vc_backend.unload_model())
             except Exception:
-                logger.debug("Seed-VC backend not registered (no model available)")
+                logger.debug("Seed-VC backend not registered (no model available)", exc_info=True)
 
             try:
                 from ..backends.stable_audio_backend import stable_audio_backend
@@ -283,14 +283,14 @@ async def ensure_engines_registered() -> None:
                     lambda: stable_audio_backend.unload_model(),
                 )
             except Exception:
-                logger.debug("Stable Audio backend not registered (no model available)")
+                logger.debug("Stable Audio backend not registered (no model available)", exc_info=True)
 
             try:
                 from ..services.deepfilter_onnx import _is_session_loaded, unload_deepfilter
 
                 lifecycle_manager.register("deepfilter", _is_session_loaded, unload_deepfilter)
             except Exception:
-                logger.debug("DeepFilter not registered (no model available)")
+                logger.debug("DeepFilter not registered (no model available)", exc_info=True)
 
             lifecycle_manager.start()
             _engines_event.set()

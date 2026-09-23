@@ -415,9 +415,13 @@ def get_stt_backend(engine: str = "whisper") -> STTBackend:
 
                 _stt_backends[engine] = MoonshineSTTBackend()
             except ImportError:
-                raise RuntimeError("moonshine backend unavailable. Place transcribe.cpp binary in models dir.") from None
+                raise RuntimeError(
+                    "moonshine backend unavailable. Place transcribe.cpp binary in models dir."
+                ) from None
         else:
-            raise ValueError(f"Unknown STT engine: {engine}. Supported: whisper, faster-whisper, parakeet, qwen3_asr, moonshine")
+            raise ValueError(
+                f"Unknown STT engine: {engine}. Supported: whisper, faster-whisper, parakeet, qwen3_asr, moonshine"
+            )
 
     lifecycle_manager.register(engine, _stt_backends[engine].is_loaded, _stt_backends[engine].unload_model)
     return _stt_backends[engine]
@@ -459,7 +463,7 @@ def get_music_backend(engine: str = "stable_audio") -> MusicBackend:
     """Get or create a music / SFX backend for the given engine.
 
     Args:
-        engine: One of ``MUSIC_ENGINES`` (``stable_audio``, ``acestep``,
+        engine: One of ``MUSIC_ENGINES`` (``stable_audio``, ``acestep_gguf``,
         ``heartmula``, ``sa3_sfx``).
 
     Returns:

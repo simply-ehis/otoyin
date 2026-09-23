@@ -44,6 +44,7 @@ def _is_allowed_origin(origin: str) -> bool:
         base = f"{parsed.scheme}://{parsed.hostname}"
         return base in _ALLOWED_WS_ORIGINS or origin.startswith("http://localhost:")
     except Exception:
+        logger.debug("WebSocket origin check failed for %r", origin, exc_info=True)
         return False
 
 

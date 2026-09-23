@@ -57,7 +57,7 @@ def spawn_voice_changer(port: int = 17494, host: str = "127.0.0.1") -> subproces
             )
             port = free
     except Exception:
-        pass  # best-effort; child will report the real error if bind fails
+        logger.debug("Port pre-scan failed; using requested port", exc_info=True)  # child reports bind errors
 
     try:
         python = sys.executable
@@ -83,6 +83,7 @@ def spawn_voice_changer(port: int = 17494, host: str = "127.0.0.1") -> subproces
                     _, err = _vc_process.communicate(timeout=1)
                     msg = err.decode(errors="ignore")[:500] if err else "unknown"
                 except Exception:
+                    logger.debug("Could not read voice-changer stderr", exc_info=True)
                     msg = "unknown"
                 logger.warning("Voice-changer failed to start on %s:%d: %s", host, port, msg)
                 _vc_process = None
@@ -90,7 +91,7 @@ def spawn_voice_changer(port: int = 17494, host: str = "127.0.0.1") -> subproces
                 _vc_host = None
                 return None
         except Exception:
-            pass
+            logger.debug("Post-spawn health peek failed", exc_info=True)
         logger.info("Spawned voice-changer (pid=%d) on %s:%d", _vc_process.pid, host, port)
         return _vc_process
     except Exception as exc:
@@ -115,6 +116,7 @@ def kill_voice_changer() -> None:
         try:
             _vc_process.wait(timeout=5)
         except Exception:
+            logger.debug("Voice-changer terminate timed out; killing", exc_info=True)
             _vc_process.kill()
     _vc_process = None
     _vc_port = None

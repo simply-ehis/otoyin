@@ -358,7 +358,8 @@ def create_harness_session(
 
     return HarnessState(
         session_id=session_id,
-        started_at=datetime.now(UTC).isoformat(),
+        # Zulu UTC: matches the E2E report format and sorts lexicographically.
+        started_at=datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         budget_remaining=budget,
         n_ctx=n_ctx or 0,
     )

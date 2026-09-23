@@ -140,10 +140,10 @@ class ModelConfig:
             if not self.quant:
                 self.quant = "int8"
 
-        elif self.engine in {"acestep", "heartmula", "sa3_sfx", "minimax_music3"}:
+        elif self.engine in {"acestep_gguf", "heartmula", "sa3_sfx", "minimax_music3"}:
             # Music generation models
             if not self.quant:
-                self.quant = "bf16" if self.engine == "acestep" else "Q8_0"
+                self.quant = "bf16" if self.engine == "acestep_gguf" else "Q8_0"
 
 
 @runtime_checkable

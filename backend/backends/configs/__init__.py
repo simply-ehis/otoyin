@@ -8,7 +8,7 @@ are pure data + small helpers and contain no backend instantiation logic.
 
 from ...utils.model_lifecycle import lifecycle_manager
 from ..protocols import ModelConfig
-from .llm import _get_gguf_llm_configs, get_llm_model_configs
+from .llm import _get_cloud_llm_configs, _get_gguf_llm_configs, get_llm_model_configs
 from .music import (
     _get_audio_processing_configs,
     _get_cloud_vc_configs,
@@ -78,6 +78,7 @@ def get_all_model_configs() -> list[ModelConfig]:
         + _get_tts_gguf_configs()
         + get_stt_model_configs()
         + _get_gguf_llm_configs()
+        + _get_cloud_llm_configs()
         + _get_rvc_onnx_configs()
         + _get_seed_vc_configs()
         + _get_openvoice_onnx_configs()
