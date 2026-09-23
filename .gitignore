@@ -62,6 +62,9 @@ logs/
 app/openapi.json
 tauri/src-tauri/binaries/*
 tauri/src-tauri/.tauri-updater.key*
+# Stale manual keygen experiments (incl. REAL private key material) — never commit
+tauri/src-tauri/*.pem
+tauri/src-tauri/minisign.zip
 tauri/src-tauri/gen/Assets.car
 tauri/src-tauri/gen/di-stefano.icns
 tauri/src-tauri/gen/partial.plist
@@ -173,3 +176,6 @@ awesome-desktop-design.skills/
 
 # Next.js build output (marketplace/web)
 marketplace/web/.next/
+
+# Pre-test backups (DBs + generations — restorable, never commit)
+backup-pre-test-*/

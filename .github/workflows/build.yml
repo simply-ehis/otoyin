@@ -140,6 +140,7 @@ jobs:
           # Required since bundle.createUpdaterArtifacts is true: signs every
           # installer and emits the .sig files the updater manifest needs.
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

@@ -130,4 +130,4 @@ We will update this policy as needed. The "Last updated" date at the top will re
 
 ## Contact
 
-For privacy questions, open an issue at https://github.com/anomalyco/otoyin/issues
+For privacy questions, open an issue at https://github.com/simply-ehis/otoyin/issues

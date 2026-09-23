@@ -66,18 +66,15 @@ pytest.importorskip("cryptography")
 def _configured_pubkey_bytes() -> tuple[bytes, bytes]:
     """Decode tauri.conf.json's pubkey into (key_id, ed25519_key).
 
-    The conf value is base64 of the *textual* minisign public-key box:
-    line 0 is the untrusted comment, line 1 is base64 of the 42-byte binary
-    box: 2-byte algorithm ("Ed") + 8-byte key id + 32-byte Ed25519 public
-    key. ``PublicKey::from_base64`` expects exactly those 42 bytes; the
-    plugin decodes the conf string the same way.
+    The conf value is the minisign public-key box exactly as
+    ``tauri signer generate`` writes it (and DEPLOY.md says to paste it
+    verbatim): base64 of the 42-byte binary box — 2-byte algorithm ("Ed")
+    + 8-byte key id + 32-byte Ed25519 public key. These are the same bytes
+    ``minisign_verify::PublicKey::from_base64`` receives inside the plugin.
     """
     conf = json.loads(CONF_PATH.read_text(encoding="utf-8"))
     pubkey_b64 = conf["plugins"]["updater"]["pubkey"]
-    box = base64.b64decode(pubkey_b64).decode("utf-8")
-    lines = box.splitlines()
-    assert len(lines) == 2, f"unexpected pubkey box shape: {lines!r}"
-    bin_key = base64.b64decode(lines[1])
+    bin_key = base64.b64decode(pubkey_b64)
     assert len(bin_key) == 42, f"pubkey box must decode to 42 bytes, got {len(bin_key)}"
     assert bin_key[0:2] in (b"Ed", b"ED"), f"unexpected key algorithm {bin_key[0:2]!r}"
     return bin_key[2:10], bin_key[10:42]
@@ -123,8 +120,11 @@ def _sign_artifact(payload_path: Path) -> str:
     # Windows: npx is a .cmd shim; resolve it so CreateProcess can launch it.
     npx = shutil.which("npx") or shutil.which("npx.cmd")
     assert npx, "npx not found on PATH - tauri-cli required for this test"
+    # Passworded dev key: same variable CI passes (build.yml). Unset = legacy
+    # passwordless key; both are exercised the way their environment signs.
+    password = os.environ.get("TAURI_SIGNING_PRIVATE_KEY_PASSWORD", "")
     result = subprocess.run(
-        [npx, "--no-install", "tauri", "signer", "sign", "-f", str(DEV_KEY), "--password", "", str(payload_path)],
+        [npx, "--no-install", "tauri", "signer", "sign", "-f", str(DEV_KEY), "--password", password, str(payload_path)],
         cwd=REPO_ROOT / "tauri" / "src-tauri",
         capture_output=True,
         text=True,
@@ -142,7 +142,7 @@ def _build_manifest(artifacts_dir: Path) -> dict:
         cwd=REPO_ROOT,
         env=dict(
             os.environ,
-            GITHUB_REPOSITORY="anomalyco/otoyin",
+            GITHUB_REPOSITORY="simply-ehis/otoyin",
             GITHUB_REF_NAME="v0.0.1",
             PYTHONIOENCODING="utf-8",
         ),
@@ -244,7 +244,7 @@ def test_signed_artifact_round_trips_against_configured_pubkey(updater_stack) ->
     # 3. Download the installer from the manifest's URL (rewritten to the fake
     #    release mirror; in production it points at GitHub Releases).
     asset_url = platform["url"].replace(
-        "https://github.com/anomalyco/otoyin/releases/download/v0.0.1/",
+        "https://github.com/simply-ehis/otoyin/releases/download/v0.0.1/",
         f"{base}/download/",
     )
     with urllib.request.urlopen(asset_url) as resp:
@@ -279,7 +279,7 @@ def test_manifest_generator_fails_without_signature(updater_stack) -> None:
             [sys.executable, "-X", "utf8", str(MANIFEST_SCRIPT), str(artifacts)],
             cwd=REPO_ROOT,
             env=dict(
-                os.environ, GITHUB_REPOSITORY="anomalyco/otoyin", GITHUB_REF_NAME="v0.0.1", PYTHONIOENCODING="utf-8"
+                os.environ, GITHUB_REPOSITORY="simply-ehis/otoyin", GITHUB_REF_NAME="v0.0.1", PYTHONIOENCODING="utf-8"
             ),
             capture_output=True,
             text=True,

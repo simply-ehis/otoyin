@@ -34,10 +34,17 @@ def _resolve_venv() -> Path:
     if env:
         return Path(env).expanduser().resolve()
     # Default to a models-dir subfolder so the backend finds it automatically.
+    # backend/config.py is the source of truth; resolve it relative to this
+    # file so the result never depends on the caller's cwd (the old
+    # `from backends import config` never resolved — backends/ has no config
+    # submodule — and always silently fell back).
     try:
-        from backends import config as cfg  # type: ignore
+        _backend_dir = Path(__file__).resolve().parents[1]
+        if str(_backend_dir) not in sys.path:
+            sys.path.insert(0, str(_backend_dir))
+        from config import get_models_dir
 
-        base = cfg.get_models_dir()
+        base = get_models_dir()
     except Exception as e:
         print(f"[install_seed_vc] config import failed, using fallback: {e}")
         base = Path(os.getcwd()) / "data" / "models"
@@ -60,22 +67,21 @@ def main() -> int:
         _run([python_exe, "-m", "venv", str(venv)])
 
     if os.name == "nt":
-        pip = venv / "Scripts" / "pip.exe"
-        venv / "Scripts" / "python.exe"
+        py = venv / "Scripts" / "python.exe"
     else:
-        pip = venv / "bin" / "pip"
-        venv / "bin" / "python"
+        py = venv / "bin" / "python"
 
-    # Upgrade pip in the venv first.
-    _run([str(pip), "install", "--upgrade", "pip"])
+    # Upgrade pip in the venv first (via python -m pip: the pip.exe shim
+    # refuses self-upgrade on Windows with "To modify pip, please run
+    # python.exe -m pip install --upgrade pip").
+    _run([str(py), "-m", "pip", "install", "--upgrade", "pip"])
 
-    # Install Seed-VC from git (pulls torch / numpy / diffusers into this venv
-    # only — never touches the base app's environment).
-    _run([str(pip), "install", "git+" + REPO_URL + "@" + ref])
-
-    # The repo ships a requirements.txt that pins exact compatible versions;
-    # install it on top so the wrapper's runtime imports resolve.
-    # Clone to a temp dir just to read requirements.txt without leaving artifacts.
+    # Upstream is an app-style repo (no setup.py/pyproject.toml), so it is not
+    # pip-installable from git. Clone it, install its requirements, then stage
+    # its runtime sources (seed_vc_wrapper.py + hf_utils.py + modules/) into
+    # the venv's site-packages — the backend injects exactly that directory
+    # onto sys.path before `from seed_vc_wrapper import SeedVCWrapper`.
+    import shutil
     import tempfile
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -83,7 +89,21 @@ def main() -> int:
         _run(["git", "clone", "--depth", "1", "--branch", ref, REPO_URL, str(repo_dir)])
         req = repo_dir / "requirements.txt"
         if req.exists():
-            _run([str(pip), "install", "-r", str(req)])
+            _run([str(py), "-m", "pip", "install", "-r", str(req)])
+        hits = sorted(glob.glob(str(venv / ("Lib/site-packages" if os.name == "nt" else "lib/python*/site-packages"))))
+        if not hits:
+            raise RuntimeError(f"No site-packages found in {venv}")
+        site = Path(hits[-1])
+        for name in ("seed_vc_wrapper.py", "hf_utils.py"):
+            src = repo_dir / name
+            if src.is_file():
+                shutil.copy2(src, site / name)
+                print(f"[install_seed_vc] staged {name}")
+        for dirname in ("modules",):
+            src = repo_dir / dirname
+            if src.is_dir():
+                shutil.copytree(src, site / dirname, dirs_exist_ok=True)
+                print(f"[install_seed_vc] staged {dirname}/")
 
     print("[install_seed_vc] done.")
     print("[install_seed_vc] venv site-packages:")

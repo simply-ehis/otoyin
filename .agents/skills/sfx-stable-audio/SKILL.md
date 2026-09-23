@@ -16,7 +16,9 @@ effects from a text prompt. It is the SFX `MusicBackend`. Fully offline, returns
 ## Prerequisites
 - Engine/model: Stable Audio Open downloaded via `21labs.models_download` (HF repo `StabilityAI/stable-audio-open-1.0`). See [engine-atlas](../engine-atlas/SKILL.md).
 - Tool surface: MCP `21labs.generate_sfx` OR REST `POST /generate/sfx`.
-- Package: `pip install stable-audio-open` must be importable (else 503 / `ValueError`).
+- Package: `stable-audio-open` must be importable (else 503 / `ValueError`).
+  No PyPI distribution as of 2026-09-22 — install from upstream source;
+  model weights are still required separately.
 
 ## Parameters / Schema (REAL ranges from code)
 | param | range | default | notes |

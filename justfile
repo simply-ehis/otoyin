@@ -263,6 +263,9 @@ build-server: _ensure-venv
     & "{{ python }}" backend/build_binary.py; \
     if ($LASTEXITCODE -ne 0) { throw "build_binary.py failed with exit code $LASTEXITCODE" }; \
     New-Item -ItemType Directory -Path "{{ tauri_dir }}/src-tauri/binaries" -Force | Out-Null; \
+    # Clear first: Copy-Item merges into an existing dir (nesting
+    # otoyin-server/ inside itself) instead of replacing it.
+    Remove-Item "{{ tauri_dir }}/src-tauri/binaries/otoyin-server" -Recurse -Force -ErrorAction SilentlyContinue; \
     Copy-Item "backend/dist/otoyin-server" "{{ tauri_dir }}/src-tauri/binaries/otoyin-server" -Recurse -Force; \
     $triple = (rustc --print host-tuple); \
     Copy-Item "{{ tauri_dir }}/src-tauri/binaries/otoyin-server/otoyin-server.exe" "{{ tauri_dir }}/src-tauri/binaries/otoyin-server/otoyin-server-$triple.exe" -Force; \
@@ -272,6 +275,9 @@ build-server: _ensure-venv
 build-server: _ensure-venv
     PATH="{{ venv_bin }}:$PATH" ./scripts/build-server.sh
     mkdir -p {{ tauri_dir }}/src-tauri/binaries
+    # Clear first: cp -r merges into an existing dir (nesting
+    # otoyin-server/ inside itself) instead of replacing it.
+    rm -rf {{ tauri_dir }}/src-tauri/binaries/otoyin-server
     cp -r backend/dist/otoyin-server {{ tauri_dir }}/src-tauri/binaries/otoyin-server
     cp {{ tauri_dir }}/src-tauri/binaries/otoyin-server/otoyin-server {{ tauri_dir }}/src-tauri/binaries/otoyin-server/otoyin-server-$(rustc --print host-tuple)
     @echo "Copied server bundle: otoyin-server/ (sidecar triple-suffixed for externalBin)"

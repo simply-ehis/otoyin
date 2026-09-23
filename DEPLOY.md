@@ -53,11 +53,11 @@ verify against it — that constraint drives everything below.
   manager's machine and the `TAURI_SIGNING_PRIVATE_KEY` GitHub secret.
 - The `.key.pub` file is also untracked. The pubkey that ships is the one
   embedded in `tauri.conf.json` — that tracked field is the source of truth.
-- The bootstrap pair is password-encrypted (`rsign encrypted secret key`,
-  empty password — usable non-interactively). Before the first public
-  release, regenerate it (below). If you set a real password, CI also needs
-  a `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` secret — build.yml passes no
-  password today, and an encrypted key without one hangs the signing step.
+- The current pair is password-encrypted (`rsign encrypted secret key`,
+  real password — generated 2026-09-22, key id `8875…`; stale predecessors
+  backed up to `~/.tauri`). CI passes `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
+  through (build.yml), and the updater e2e test reads the same variable —
+  an encrypted key without that secret hangs the signing step.
 - Never pass the key on a command line in scripts or workflows; env var or
   `TAURI_SIGNING_PRIVATE_KEY_PATH` only.
 

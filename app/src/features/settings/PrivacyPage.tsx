@@ -136,7 +136,7 @@ export function PrivacyPage() {
 							you opt in to telemetry or crash reporting.
 						</p>
 						<a
-							href="https://github.com/anomalyco/otoyin/blob/main/docs/PRIVACY_POLICY.md"
+							href="https://github.com/simply-ehis/otoyin/blob/main/docs/PRIVACY_POLICY.md"
 							target="_blank"
 							rel="noopener noreferrer"
 							className="text-sm text-primary hover:underline"

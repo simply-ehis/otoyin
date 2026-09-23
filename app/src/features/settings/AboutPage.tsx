@@ -53,7 +53,7 @@ export function AboutPage() {
 				</p>
 				<div className="flex flex-wrap justify-center gap-3 pt-2">
 					<a
-						href="https://github.com/anomalyco/otoyin"
+						href="https://github.com/simply-ehis/otoyin"
 						target="_blank"
 						rel="noopener noreferrer"
 						className="group inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
@@ -73,7 +73,7 @@ export function AboutPage() {
 						/>
 					</a>
 					<a
-						href="https://github.com/anomalyco/otoyin/issues"
+						href="https://github.com/simply-ehis/otoyin/issues"
 						target="_blank"
 						rel="noopener noreferrer"
 						className="group inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
@@ -124,7 +124,7 @@ export function AboutPage() {
 						components={{
 							link: (
 								<a
-									href="https://github.com/anomalyco/otoyin/blob/main/LICENSE"
+									href="https://github.com/simply-ehis/otoyin/blob/main/LICENSE"
 									target="_blank"
 									rel="noopener noreferrer"
 									className="transition-colors hover:text-muted-foreground"

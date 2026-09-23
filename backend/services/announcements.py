@@ -39,6 +39,11 @@ NOTICES_POLL_S = float(os.environ.get("OTOYIN_NOTICES_POLL_S", str(60 * 60)))
 
 _DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
+# Empty-but-valid fallback so _load_content() never raises NameError when
+# content.json is missing AND this constant is the only thing standing
+# between a missing data file and a dead import (frozen builds).
+_DEFAULT_CONTENT: dict = {"whats_new": [], "announcements": [], "offers": []}
+
 
 def _content_dir() -> Path:
     """Resolve the bundled data directory, supporting frozen PyInstaller builds.
