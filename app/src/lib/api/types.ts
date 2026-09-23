@@ -259,6 +259,31 @@ export interface CaptureResponse {
 	created_at: string;
 }
 
+/** Scribe-shaped words sidecar (video-use contract): word/spacing/audio_event entries. */
+export interface CaptureWordsEntry {
+	text: string;
+	start: number;
+	end: number;
+	type: string;
+	speaker_id?: string | null;
+}
+
+export interface CaptureWordsDoc {
+	text: string;
+	words: CaptureWordsEntry[];
+}
+
+export interface CaptureChapter {
+	index: number;
+	title: string;
+	start: number;
+	end: number;
+}
+
+export interface CaptureChaptersResponse {
+	chapters: CaptureChapter[];
+}
+
 export interface CaptureListResponse {
 	items: CaptureResponse[];
 	total: number;

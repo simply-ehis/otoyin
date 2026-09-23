@@ -222,3 +222,42 @@ def align_speakers(
         seg.speaker = best_speaker
 
     return transcript_segments
+
+
+def align_words_to_speakers(
+    words: list[dict],
+    speaker_turns: list[SpeakerTurn],
+) -> list[dict]:
+    """Assign each word dict the speaker of its best-overlap turn.
+
+    Words carry ``start``/``end`` seconds. Unlike :func:`align_speakers` this
+    returns NEW dicts (inputs untouched) with a ``speaker`` key added; words
+    with no overlapping turn inherit the nearest turn, or ``None`` when there
+    are no turns at all. Ties go to the earliest turn (stable output).
+    """
+    if not words:
+        return []
+    if not speaker_turns:
+        return [dict(w) for w in words]
+
+    merged = []
+    for word in words:
+        start = float(word.get("start", 0.0))
+        end = float(word.get("end", start))
+        best_overlap = 0.0
+        best_speaker: str | None = None
+        best_distance = float("inf")
+        for turn in speaker_turns:
+            overlap = max(0.0, min(end, turn.end) - max(start, turn.start))
+            if overlap > best_overlap:
+                best_overlap = overlap
+                best_speaker = turn.speaker
+                best_distance = 0.0
+            elif overlap == 0.0 and best_overlap == 0.0:
+                # No overlap yet: track the nearest turn edge instead.
+                distance = min(abs(start - turn.end), abs(end - turn.start))
+                if distance < best_distance:
+                    best_distance = distance
+                    best_speaker = turn.speaker
+        merged.append({**word, "speaker": best_speaker})
+    return merged

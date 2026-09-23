@@ -3,6 +3,7 @@ import { formatErrorDetail } from "./clientCore";
 import { GenerationsMethods } from "./clientGenerations";
 import type {
 	AutomationParameters,
+	CaptureChaptersResponse,
 	CaptureCreateResponse,
 	CaptureListResponse,
 	CaptureReadinessResponse,
@@ -12,6 +13,7 @@ import type {
 	CaptureSettings,
 	CaptureSettingsUpdate,
 	CaptureSource,
+	CaptureWordsDoc,
 	CrossfadeCurves,
 	PerformanceSettings,
 	PerformanceSettingsUpdate,
@@ -94,6 +96,54 @@ export class CapturesMethods extends GenerationsMethods {
 
 	getCaptureAudioUrl(captureId: string): string {
 		return `${this.getBaseUrl()}/captures/${captureId}/audio`;
+	}
+
+	getCaptureWordsUrl(captureId: string): string {
+		return `${this.getBaseUrl()}/captures/${captureId}/words`;
+	}
+
+	/** Fetch auto-chapters; null when no words sidecar exists (404). */
+	async fetchCaptureChapters(
+		captureId: string,
+	): Promise<CaptureChaptersResponse | null> {
+		const response = await fetch(
+			`${this.getBaseUrl()}/captures/${captureId}/chapters`,
+		);
+		if (response.status === 404) {
+			return null;
+		}
+		if (!response.ok) {
+			const error = await response.json().catch(() => ({
+				detail: response.statusText,
+			}));
+			throw new Error(
+				formatErrorDetail(
+					error.detail,
+					`HTTP error! status: ${response.status}`,
+				),
+			);
+		}
+		return response.json();
+	}
+
+	/** Fetch the Scribe-shaped words sidecar; null when never generated (404). */
+	async fetchCaptureWordsJson(captureId: string): Promise<CaptureWordsDoc | null> {
+		const response = await fetch(this.getCaptureWordsUrl(captureId));
+		if (response.status === 404) {
+			return null;
+		}
+		if (!response.ok) {
+			const error = await response.json().catch(() => ({
+				detail: response.statusText,
+			}));
+			throw new Error(
+				formatErrorDetail(
+					error.detail,
+					`HTTP error! status: ${response.status}`,
+				),
+			);
+		}
+		return response.json();
 	}
 
 	// Settings

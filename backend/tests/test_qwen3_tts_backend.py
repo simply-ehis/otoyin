@@ -6,6 +6,7 @@ No real model or binary is required — everything is monkeypatched.
 """
 
 import asyncio
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -86,6 +87,9 @@ def test_find_llama_tts_missing(monkeypatch, tmp_path):
 
     monkeypatch.delenv("TWENTYLABS_LLAMA_TTS", raising=False)
     monkeypatch.setattr(cfg_mod, "get_models_dir", lambda: tmp_path / "nope")
+    # PATH is machine state (a Winget llama.cpp install counts) — pin it off
+    # so "missing" means missing everywhere, on every machine.
+    monkeypatch.setattr(shutil, "which", lambda *args, **kwargs: None)
     assert qtts.find_llama_tts() is None
 
 

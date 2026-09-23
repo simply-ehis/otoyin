@@ -50,7 +50,15 @@
 			"refined": "精修",
 			"raw": "原始",
 			"refinedHint": "由 Qwen3 · {{model}} 精修",
-			"rawHint": "由 Whisper {{model}} 轉錄"
+			"rawHint": "由 Whisper {{model}} 轉錄",
+			"packed": "Packed",
+			"packedEmpty": "No word-level transcript yet \u2014 retranscribe to generate one.",
+			"copyPack": "Copy pack",
+			"downloadPack": "Pack (.md)",
+			"highlights": "Highlights",
+			"copyHighlights": "Copy highlights",
+			"chapters": "Chapters",
+			"copyChapters": "Copy chapters"
 		},
 		"actions": {
 			"configure": "設定",

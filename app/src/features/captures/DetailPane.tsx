@@ -31,6 +31,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/ui/dropdown-menu";
 import { InlinePlayer } from "./InlinePlayer";
+import { PackedTranscriptView } from "./PackedTranscriptView";
 import { SourceBadge } from "./shared";
 
 type PlaybackState = "idle" | "generating" | "playing";
@@ -244,6 +245,10 @@ export function DetailPane({
 					}
 					className="min-h-[260px] max-h-[500px] w-full resize-none overflow-y-auto rounded-md border-0 bg-transparent p-6 text-[15px] leading-relaxed text-foreground focus:outline-none"
 				/>
+			</div>
+
+			<div className="mt-4">
+				<PackedTranscriptView captureId={capture.id} />
 			</div>
 
 			<div className="mt-4 flex flex-wrap items-center gap-2">

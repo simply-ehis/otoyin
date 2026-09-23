@@ -255,6 +255,29 @@ def build_server(cuda=False):
             "backend.backends.orpheus_backend",
             "--hidden-import",
             "backend.backends.neutts_backend",
+            # Route auto-discovery (routes/__init__.py) and the engine registry
+            # resolve modules via importlib/pkgutil at RUNTIME, which static
+            # analysis cannot see — without explicit collection the frozen
+            # binary boots with "No module named 'backend.routes.health'" and
+            # exits. NOTE: --collect-submodules does NOT cover this layout
+            # (verified: top-level route modules missing from PYZ-00.toc), so
+            # enumerate the files and pin each as a --hidden-import instead.
+            # The pyi_rth_pkgutil runtime hook then also finds them for the
+            # iter_modules auto-discovery scan.
+            "--collect-submodules",
+            "backend.routes",
+            "--collect-submodules",
+            "backend.routes.assistant_tools",
+            "--collect-submodules",
+            "backend.routes.audio_pipeline",
+            "--collect-submodules",
+            "backend.routes.models",
+            # Engine backend modules resolve via registry import_module()
+            # literals — same invisibility, same fix.
+            "--collect-submodules",
+            "backend.backends",
+            "--collect-submodules",
+            "backend.backends.registry",
             # ONNX runtime powers DeepFilter/LavaSR; bundle the provider DLLs.
             # audiosronnx carries the DeepFilter model artifacts. kokoro and
             # faster_whisper/ctranslate2 are REMOVED (bloat) — never bundled.
@@ -265,6 +288,28 @@ def build_server(cuda=False):
             "audiosronnx",
         ]
     )
+
+    # Belt and braces: --collect-submodules misses top-level modules in this
+    # layout (verified: backend.routes.health absent from PYZ-00.toc despite
+    # the collect lines above), so enumerate every routes/backends .py file
+    # and pin each as an explicit --hidden-import. Resolved from __file__
+    # (absolute) — backend_dir itself may be relative at this point.
+    _enum_root = Path(__file__).resolve().parent
+    for _pkg in (
+        "backend.routes",
+        "backend.routes.assistant_tools",
+        "backend.routes.audio_pipeline",
+        "backend.routes.models",
+        "backend.backends",
+        "backend.backends.registry",
+    ):
+        _pkg_dir = _enum_root / Path(*_pkg.split(".")[1:])
+        if not _pkg_dir.is_dir():
+            logger.warning("Build package dir missing: %s", _pkg_dir)
+            continue
+        for _py in sorted(_pkg_dir.glob("*.py")):
+            _mod = _pkg if _py.stem == "__init__" else f"{_pkg}.{_py.stem}"
+            args.extend(["--hidden-import", _mod])
 
     # Silero VAD weights: services/vad.py falls back to <bundle>/data/*.onnx
     # in frozen builds. Bundle the file when it exists locally (torch.hub or
@@ -300,6 +345,50 @@ def build_server(cuda=False):
         logger.info("Bundling help catalog from %s", _help_catalog_src)
     else:
         logger.warning("Help catalog %s missing — Help Center will be empty", _help_catalog_src)
+
+    # In-app content feed (backend/data/content.json: whats-new, banners,
+    # offers). _content_dir() looks for <bundle>/data/content.json when
+    # frozen; without this the support/content routes fall back to empty
+    # defaults (and previously crashed on a missing _DEFAULT_CONTENT).
+    _content_src = backend_dir / "data" / "content.json"
+    if _content_src.is_file():
+        args.extend(["--add-data", f"{_content_src}{os.pathsep}data"])
+        logger.info("Bundling content feed from %s", _content_src)
+    else:
+        logger.warning("Content feed %s missing — support/content routes will be empty", _content_src)
+
+    # Plugin manifest schema (backend/plugins/manifest_schema.json).
+    # manifest.py resolves it via Path(__file__).with_name(...), which lands
+    # at <bundle>/backend/plugins/ when frozen — bundle it there so the
+    # plugins-marketplace route imports instead of failing the whole module.
+    _plugin_schema_src = backend_dir / "plugins" / "manifest_schema.json"
+    if _plugin_schema_src.is_file():
+        args.extend(["--add-data", f"{_plugin_schema_src}{os.pathsep}backend/plugins"])
+        logger.info("Bundling plugin manifest schema from %s", _plugin_schema_src)
+    else:
+        logger.warning("Plugin schema %s missing — plugins-marketplace route will be skipped", _plugin_schema_src)
+
+    # YAMNet audio-event classifier (bundled model, ~16 MB). The backend
+    # resolves <bundle>/yamnet/ when frozen, <models>/yamnet/ in dev.
+    # Fetch once from HF when absent everywhere — weights are never committed
+    # (*.onnx is gitignored).
+    _yamnet_files = ["yamnet.onnx", "yamnet_class_map.csv"]
+    _yamnet_srcs = [backend_dir.parent / "data" / "models" / "yamnet" / f for f in _yamnet_files]
+    if not all(p.is_file() for p in _yamnet_srcs):
+        try:
+            from huggingface_hub import hf_hub_download
+
+            _cached = Path(hf_hub_download(repo_id="audiomagic/yamnet-onnx", filename="yamnet.onnx")).parent
+            _yamnet_srcs = [_cached / f for f in _yamnet_files]
+        except Exception as exc:
+            logger.warning("YAMNet fetch failed (%s) — event detection will be unavailable", exc)
+            _yamnet_srcs = []
+    if _yamnet_srcs and all(p.is_file() for p in _yamnet_srcs):
+        for _src in _yamnet_srcs:
+            args.extend(["--add-data", f"{_src}{os.pathsep}yamnet"])
+        logger.info("Bundling YAMNet model from %s", _yamnet_srcs[0].parent)
+    else:
+        logger.warning("YAMNet weights missing — event detection will be unavailable")
 
     # Add CUDA-specific hidden imports
     if cuda:
@@ -338,16 +427,27 @@ def build_server(cuda=False):
         # Bloat exclusion — kokoro + faster-whisper must NEVER be bundled.
         # Requirements intentionally do not include them; this guarantees
         # the frozen binary never pulls them even if present in the venv.
+        # Same treatment for the other heavy optionals: the collect-submodules
+        # lines above would otherwise drag them in, and every one of these
+        # degrades gracefully (501/degraded path) when absent — exactly like
+        # a venv without the optional installed.
         for pkg in [
             "kokoro",
             "misaki",
             "faster_whisper",
             "ctranslate2",
+            "av",
             "language_tags",
             "espeakng_loader",
             "en_core_web_sm",
             "unidic_lite",
             "unidic",
+            "demucs",
+            "julius",
+            "lameenc",
+            "sphn",
+            "argostranslate",
+            "stanza",
         ]:
             args.extend(["--exclude-module", pkg])
 

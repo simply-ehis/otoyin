@@ -405,6 +405,7 @@ Every knowledge doc should have an `## Agent Callable` section with exact MCP to
 - [30-quality-ratings.md](30-quality-ratings.md) — 10-star quality scoring per model in marketplace, categorized by domain (TTS/STT/LLM/Music/SFX).
 - [31-cancellation-ui.md](31-cancellation-ui.md) — Generation cancellation UI: cancel button in history + editor, backend CancelledError handling.
 - [32-stt-backends.md](32-stt-backends.md) — STT model registry: Whisper, Parakeet, Qwen3-ASR with multilingual support, C++ backends.
+- [88-takes-pipeline.md](88-takes-pipeline.md) — Local takes pipeline (words+speakers+YAMNet events) with Scribe-shaped JSON, packed view, highlights, chapters; video-use-compatible.
 - [36-feature-completeness.md](36-feature-completeness.md) — Feature completeness audit: 55 features across 7 categories, 100% wired to backend + MCP + frontend.
 - [backend-music-interface.md](backend-music-interface.md) — `MusicBackend` protocol + factory (Stable Audio).
 - [errors.md](errors.md) — Error shapes and handling.

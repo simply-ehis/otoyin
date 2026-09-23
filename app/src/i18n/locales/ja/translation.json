@@ -50,7 +50,15 @@
 			"refined": "整形済み",
 			"raw": "生テキスト",
 			"refinedHint": "Qwen3 · {{model}} で整形",
-			"rawHint": "Whisper {{model}} で文字起こし"
+			"rawHint": "Whisper {{model}} で文字起こし",
+			"packed": "Packed",
+			"packedEmpty": "No word-level transcript yet \u2014 retranscribe to generate one.",
+			"copyPack": "Copy pack",
+			"downloadPack": "Pack (.md)",
+			"highlights": "Highlights",
+			"copyHighlights": "Copy highlights",
+			"chapters": "Chapters",
+			"copyChapters": "Copy chapters"
 		},
 		"actions": {
 			"configure": "設定",

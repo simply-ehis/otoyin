@@ -1,5 +1,6 @@
 """Capture (voice input) endpoints."""
 
+import json
 import logging
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
@@ -22,7 +23,9 @@ from ..errors import (
     ERR_RETRANSCRIPTION_FAILED,
 )
 from ..services import captures as captures_service, settings as settings_service
+from ..services.chapters import build_chapters
 from ..services.refinement import RefinementFlags
+from ..services.scribe_json import words_json_path
 
 logger = logging.getLogger(__name__)
 
@@ -123,6 +126,50 @@ async def get_capture_audio_endpoint(capture_id: str, db: Session = Depends(get_
         media_type="audio/wav",
         filename=f"capture_{capture_id}.wav",
     )
+
+
+@router.get("/captures/{capture_id}/words")
+async def get_capture_words_endpoint(capture_id: str, db: Session = Depends(get_db)):
+    """Serve the Scribe-shaped words JSON sidecar (video-use contract)."""
+    row = db.query(DBCapture).filter(DBCapture.id == capture_id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail=ERR_CAPTURE_NOT_FOUND)
+
+    audio_path = config.resolve_storage_path(row.audio_path)
+    if audio_path is None:
+        raise HTTPException(status_code=404, detail=ERR_AUDIO_NOT_FOUND)
+    sidecar = words_json_path(audio_path)
+    if not sidecar.exists():
+        raise HTTPException(status_code=404, detail=ERR_AUDIO_NOT_FOUND)
+
+    return FileResponse(
+        sidecar,
+        media_type="application/json",
+        filename=f"capture_{capture_id}.words.json",
+    )
+
+
+@router.get("/captures/{capture_id}/chapters")
+async def get_capture_chapters_endpoint(capture_id: str, db: Session = Depends(get_db)):
+    """Auto-chapters derived from the words sidecar (404 when absent)."""
+    row = db.query(DBCapture).filter(DBCapture.id == capture_id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail=ERR_CAPTURE_NOT_FOUND)
+
+    audio_path = config.resolve_storage_path(row.audio_path)
+    if audio_path is None:
+        raise HTTPException(status_code=404, detail=ERR_AUDIO_NOT_FOUND)
+    sidecar = words_json_path(audio_path)
+    if not sidecar.exists():
+        raise HTTPException(status_code=404, detail=ERR_AUDIO_NOT_FOUND)
+    try:
+        doc = json.loads(sidecar.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    words = doc.get("words", [])
+    duration = max((w.get("end", 0.0) for w in words), default=0.0)
+    return {"chapters": build_chapters(words, float(duration))}
 
 
 @router.delete("/captures/{capture_id}")

@@ -21,6 +21,7 @@ from ..database import Capture as DBCapture
 from ..models import CaptureResponse, RefinementFlagsModel
 from ..utils.audio import load_audio, save_audio
 from .refinement import RefinementFlags, refine_transcript
+from .scribe_json import build_capture_words_json, words_json_path
 from .transcribe import get_whisper_model
 
 logger = logging.getLogger(__name__)
@@ -146,6 +147,13 @@ async def create_capture(
                 path.unlink()
         raise
 
+    # Best-effort Scribe-shaped words JSON (video-use contract: words +
+    # speakers + events). Failures only skip the sidecar, never the row.
+    try:
+        await build_capture_words_json(audio_path, language)
+    except Exception as exc:
+        logger.debug("Words JSON skipped for capture %s: %s", capture_id, exc)
+
     return _to_response(row)
 
 
@@ -171,6 +179,8 @@ def delete_capture(capture_id: str, db: Session) -> bool:
             resolved.unlink()
         except OSError:
             logger.exception("Failed to remove capture audio %s", resolved)
+        with contextlib.suppress(OSError):
+            words_json_path(resolved).unlink(missing_ok=True)
 
     db.delete(row)
     db.commit()
@@ -229,4 +239,11 @@ async def retranscribe_capture(
     row.refinement_flags = None
     db.commit()
     db.refresh(row)
+    # Words JSON is stale for the same reason — rebuild it best-effort.
+    with contextlib.suppress(OSError):
+        words_json_path(resolved).unlink(missing_ok=True)
+    try:
+        await build_capture_words_json(resolved, language)
+    except Exception as exc:
+        logger.debug("Words JSON skipped for capture %s: %s", capture_id, exc)
     return _to_response(row)

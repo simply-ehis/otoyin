@@ -81,7 +81,15 @@
 			"refined": "Refined",
 			"raw": "Raw",
 			"refinedHint": "Refined with Qwen3 · {{model}}",
-			"rawHint": "Transcribed with Whisper {{model}}"
+			"rawHint": "Transcribed with Whisper {{model}}",
+			"packed": "Packed",
+			"packedEmpty": "No word-level transcript yet \u2014 retranscribe to generate one.",
+			"copyPack": "Copy pack",
+			"downloadPack": "Pack (.md)",
+			"highlights": "Highlights",
+			"copyHighlights": "Copy highlights",
+			"chapters": "Chapters",
+			"copyChapters": "Copy chapters"
 		},
 		"actions": {
 			"configure": "Configure",
