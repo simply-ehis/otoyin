@@ -13,8 +13,8 @@ mod audio;
 mod audio_mac;
 #[cfg(windows)]
 mod audio_win;
-mod server;
 mod mic_webview;
+mod server;
 mod window_state;
 
 use std::sync::atomic::Ordering;
@@ -32,7 +32,10 @@ const CRASH_LOG_MAX_BYTES: u64 = 256 * 1024;
 
 /// Write a panic entry to the given log path, rotating if over the size cap.
 /// Extracted so it can be unit-tested without a Tauri AppHandle.
-fn write_panic_to_log(log_path: &std::path::Path, info: &std::panic::PanicHookInfo) -> Result<(), String> {
+fn write_panic_to_log(
+    log_path: &std::path::Path,
+    info: &std::panic::PanicHookInfo,
+) -> Result<(), String> {
     if let Some(parent) = log_path.parent() {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
@@ -47,8 +50,13 @@ fn write_panic_to_log(log_path: &std::path::Path, info: &std::panic::PanicHookIn
         .append(true)
         .open(log_path)
         .map_err(|e| e.to_string())?;
-    writeln!(file, "--- panic at {:?} ---\n{}", std::time::SystemTime::now(), info)
-        .map_err(|e| e.to_string())?;
+    writeln!(
+        file,
+        "--- panic at {:?} ---\n{}",
+        std::time::SystemTime::now(),
+        info
+    )
+    .map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -206,10 +214,6 @@ mod tests {
             panic!("{}", msg);
         });
 
-        // Restore default hook
-        let _ = std::panic::take_hook();
-        std::panic::set_hook(default_hook);
-
         assert!(result.is_err(), "should have caught the panic");
     }
 
@@ -220,7 +224,10 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let log_path = dir.join("crashes.log");
 
-        trigger_test_panic(&log_path, "deliberate test panic for crash log verification");
+        trigger_test_panic(
+            &log_path,
+            "deliberate test panic for crash log verification",
+        );
 
         assert!(
             log_path.exists(),

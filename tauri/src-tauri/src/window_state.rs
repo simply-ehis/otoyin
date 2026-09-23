@@ -12,7 +12,9 @@ use std::sync::{Mutex, OnceLock};
 use std::time::Instant;
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, Position, Size, WebviewWindow, WindowEvent};
+use tauri::{
+    AppHandle, LogicalPosition, LogicalSize, Manager, Position, Size, WebviewWindow, WindowEvent,
+};
 
 const MAX_DEFAULT_WIDTH: f64 = 1400.0;
 const MAX_DEFAULT_HEIGHT: f64 = 900.0;
@@ -37,7 +39,7 @@ struct SavedGeometry {
 
 /// Usable rectangle in logical pixels.
 #[derive(Debug, Clone, Copy)]
-struct WorkArea {
+pub struct WorkArea {
     x: f64,
     y: f64,
     w: f64,
@@ -72,7 +74,7 @@ pub fn centered(area: &WorkArea, w: f64, h: f64) -> (f64, f64) {
 pub fn rect_visible(x: f64, y: f64, w: f64, h: f64, monitors: &[(f64, f64, f64, f64)]) -> bool {
     monitors
         .iter()
-        .any(|(mx, my, mw, mh)| x < mx + mw && x + w > mx && y < my + mh && y + h > my)
+        .any(|&(mx, my, mw, mh)| x < mx + mw && x + w > mx && y < my + mh && y + h > my)
 }
 
 /// Work area (taskbar excluded) of the monitor the window is on, in logical
@@ -80,9 +82,9 @@ pub fn rect_visible(x: f64, y: f64, w: f64, h: f64, monitors: &[(f64, f64, f64, 
 /// the right screen; falls back to the nearest monitor when that fails.
 #[cfg(windows)]
 fn primary_work_area(window: &WebviewWindow, scale: f64) -> Option<WorkArea> {
-    use windows::Win32::Graphics::Gdi::{GetMonitorInfoW, MONITORINFO};
-    use windows::Win32::UI::WindowsAndMessaging::{
-        MonitorFromPoint, MONITOR_DEFAULTTONEAREST, POINT,
+    use windows::Win32::Foundation::POINT;
+    use windows::Win32::Graphics::Gdi::{
+        GetMonitorInfoW, MonitorFromPoint, MONITORINFO, MONITOR_DEFAULTTONEAREST,
     };
 
     let pos = window.outer_position().ok()?;
@@ -123,9 +125,9 @@ fn work_area_for_window(window: &WebviewWindow) -> Option<WorkArea> {
         }
     }
     let monitor = window.primary_monitor().ok()??;
-    let scale = monitor.scale_factor().unwrap_or(1.0);
-    let size = monitor.size().ok()?;
-    let position = monitor.position().ok()?;
+    let scale = monitor.scale_factor();
+    let size = monitor.size();
+    let position = monitor.position();
     let (w, h) = (
         size.width as f64 / scale * FALLBACK_MARGIN,
         size.height as f64 / scale * FALLBACK_MARGIN,
@@ -139,14 +141,18 @@ fn work_area_for_window(window: &WebviewWindow) -> Option<WorkArea> {
 }
 
 fn state_path(app: &AppHandle) -> Option<PathBuf> {
-    app.path().app_local_data_dir().ok().map(|d| d.join(STATE_FILE))
+    app.path()
+        .app_local_data_dir()
+        .ok()
+        .map(|d| d.join(STATE_FILE))
 }
 
 fn load_saved(app: &AppHandle) -> Option<SavedGeometry> {
     let path = state_path(app)?;
     let text = std::fs::read_to_string(path).ok()?;
     let geo: SavedGeometry = serde_json::from_str(&text).ok()?;
-    if !geo.width.is_finite() || !geo.height.is_finite() || !geo.x.is_finite() || !geo.y.is_finite() {
+    if !geo.width.is_finite() || !geo.height.is_finite() || !geo.x.is_finite() || !geo.y.is_finite()
+    {
         return None;
     }
     Some(geo)
@@ -197,7 +203,8 @@ pub fn note_geometry_changed(window: &WebviewWindow) {
                         width: cw,
                         height: ch,
                     }));
-                    let _ = window.set_position(Position::Logical(LogicalPosition { x: cx, y: cy }));
+                    let _ =
+                        window.set_position(Position::Logical(LogicalPosition { x: cx, y: cy }));
                     return;
                 }
             }
@@ -245,16 +252,16 @@ pub fn apply_startup_geometry(app: &AppHandle) {
             .available_monitors()
             .unwrap_or_default()
             .iter()
-            .filter_map(|m| {
-                let scale = m.scale_factor().unwrap_or(1.0);
-                let size = m.size().ok()?;
-                let pos = m.position().ok()?;
-                Some((
+            .map(|m| {
+                let scale = m.scale_factor();
+                let size = m.size();
+                let pos = m.position();
+                (
                     pos.x as f64 / scale,
                     pos.y as f64 / scale,
                     size.width as f64 / scale,
                     size.height as f64 / scale,
-                ))
+                )
             })
             .collect();
         let visible = monitors.is_empty() || rect_visible(saved.x, saved.y, w, h, &monitors);
@@ -263,22 +270,36 @@ pub fn apply_startup_geometry(app: &AppHandle) {
             // restore can't strand the window off-screen.
             let x = saved.x.max(area.x).min((area.x + area.w - w).max(area.x));
             let y = saved.y.max(area.y).min((area.y + area.h - h).max(area.y));
-            let _ = window.set_size(Size::Logical(LogicalSize { width: w, height: h }));
+            let _ = window.set_size(Size::Logical(LogicalSize {
+                width: w,
+                height: h,
+            }));
             let _ = window.set_position(Position::Logical(LogicalPosition { x, y }));
             return;
         }
     }
     let (w, h) = default_size(&area);
     let (x, y) = centered(&area, w, h);
-    let _ = window.set_size(Size::Logical(LogicalSize { width: w, height: h }));
+    let _ = window.set_size(Size::Logical(LogicalSize {
+        width: w,
+        height: h,
+    }));
     let _ = window.set_position(Position::Logical(LogicalPosition { x, y }));
 }
 
 /// Route window events into the geometry tracker. Call from the app's
-/// `on_window_event` handler.
-pub fn handle_window_event(window: &WebviewWindow, event: &WindowEvent) {
+/// `on_window_event` handler. Only the main window is tracked — auxiliary
+/// windows (dictate pill, etc.) resolve through the same handler and must
+/// never overwrite the main geometry.
+pub fn handle_window_event(window: &tauri::Window, event: &WindowEvent) {
+    if window.label() != "main" {
+        return;
+    }
+    let Some(main) = window.app_handle().get_webview_window("main") else {
+        return;
+    };
     match event {
-        WindowEvent::Resized(_) | WindowEvent::Moved(_) => note_geometry_changed(window),
+        WindowEvent::Resized(_) | WindowEvent::Moved(_) => note_geometry_changed(&main),
         WindowEvent::CloseRequested { .. } => save_now(&window.app_handle()),
         _ => {}
     }
@@ -298,12 +319,22 @@ mod tests {
     #[test]
     fn default_size_scales_with_device() {
         // 1080p work area: preferred size, not full screen.
-        let area = WorkArea { x: 0.0, y: 0.0, w: 1920.0, h: 1040.0 };
+        let area = WorkArea {
+            x: 0.0,
+            y: 0.0,
+            w: 1920.0,
+            h: 1040.0,
+        };
         let (w, h) = default_size(&area);
         assert!((w - 1400.0).abs() < 1e-6);
         assert!((h - 1040.0 * 0.84).abs() < 1e-6);
         // Small laptop: fits inside the work area, never the fixed 1400x900.
-        let small = WorkArea { x: 0.0, y: 0.0, w: 1366.0, h: 728.0 };
+        let small = WorkArea {
+            x: 0.0,
+            y: 0.0,
+            w: 1366.0,
+            h: 728.0,
+        };
         let (w, h) = default_size(&small);
         assert!(w <= small.w && h <= small.h);
         assert!((w - 1366.0 * 0.82).abs() < 1e-6);
@@ -311,7 +342,12 @@ mod tests {
 
     #[test]
     fn centering_math() {
-        let area = WorkArea { x: 0.0, y: 0.0, w: 1920.0, h: 1040.0 };
+        let area = WorkArea {
+            x: 0.0,
+            y: 0.0,
+            w: 1920.0,
+            h: 1040.0,
+        };
         assert_eq!(centered(&area, 1400.0, 900.0), (260.0, 70.0));
     }
 
@@ -326,10 +362,18 @@ mod tests {
 
     #[test]
     fn saved_geometry_roundtrips() {
-        let geo = SavedGeometry { width: 1400.0, height: 900.0, x: 260.0, y: 70.0 };
+        let geo = SavedGeometry {
+            width: 1400.0,
+            height: 900.0,
+            x: 260.0,
+            y: 70.0,
+        };
         let text = serde_json::to_string(&geo).unwrap();
         let back: SavedGeometry = serde_json::from_str(&text).unwrap();
-        assert_eq!((back.width, back.height, back.x, back.y), (1400.0, 900.0, 260.0, 70.0));
+        assert_eq!(
+            (back.width, back.height, back.x, back.y),
+            (1400.0, 900.0, 260.0, 70.0)
+        );
         assert!(serde_json::from_str::<SavedGeometry>("not json").is_err());
     }
 }
