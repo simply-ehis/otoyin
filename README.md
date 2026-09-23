@@ -3,19 +3,22 @@
 **Open-source AI voice studio. Premium models. No subscription.**
 
 Otoyin is a desktop application for professional audio post-production powered by AI.
-Multi-engine TTS, voice cloning, waveform editing, mixing, spatial audio, and
-agent integration. The app is free and open-source. Premium AI models are
-available in the marketplace — pay once, own forever, works offline.
+Multi-engine TTS, voice cloning, waveform editing, mixing, spatial audio, video
+dubbing, podcast dialogue, and agent integration. The app is free and open-source.
+Premium AI models are available in the marketplace — pay once, own forever, works offline.
+
+Built by 21labs. Everything runs on-device; no data leaves your machine unless you
+configure a BYOK provider.
 
 ---
 
 ## Why Otoyin
 
-- **Open-source app** — All editing, effects, mixing, instruments, presets, tools, and the MCP server are free forever.
-- **Premium models** — Better voices, music generation, spatial audio via the marketplace. Pay once, no subscription.
-- **Offline-first** — Everything runs on your machine. No data leaves your device unless you configure a BYOK provider.
-- **Agent-ready** — Built-in MCP server (201 tools) for AI agent integration. Works with Claude Code, Cursor, Windsurf, VS Code.
-- **Cross-platform** — Windows, macOS, Linux via Tauri.
+- **Open-source app** — All editing, effects, mixing, instruments, dubbing, dialogue tools, and the MCP server are free forever.
+- **Premium models** — Better voices, music generation, advanced STT via the marketplace. Pay once, no subscription.
+- **Offline-first** — Every engine runs locally (GGUF/ONNX/CPU-first). No cloud dependency for core features.
+- **Agent-ready** — 202-tool MCP server plus an in-app assistant backed by a skill catalog, user custom skills, 78 dev-time skill packs and 113 knowledge docs. Works with Claude Code, Cursor, Windsurf, VS Code.
+- **Cross-platform** — Windows, macOS, Linux via Tauri (macOS port in progress).
 
 ---
 
@@ -23,17 +26,18 @@ available in the marketplace — pay once, own forever, works offline.
 
 | Category | Highlights |
 |---|---|
-| **TTS & Voice** | 15 engines (Kokoro, Fish Speech, Zonos, StyleTTS2, Qwen3-TTS, Orpheus 3B…), voice cloning, emotion tags, voice profiles |
-| **STT & Transcription** | 4 engines (Whisper.cpp, Faster-Whisper, Parakeet TDT, Qwen3-ASR), streaming STT, speaker diarization |
-| **Voice Conversion** | RVC v2, Seed-VC, OpenVoice — zero-shot and pre-trained voice conversion |
-| **Audio Editing** | Waveform editor, pitch map (piano roll), 25+ effects, transcript-driven editing, spectrogram, audio clipboard |
-| **Mixing** | Multi-track mixer with VU meters, bus routing, auto-duck, mastering to broadcast LUFS |
-| **Dialogue** | Stories (multi-track editor), Audiobooks (EPUB/PDF import + multi-voice cast), Conversation mode (podcast), ADR, multi-take comping |
-| **Dubbing** | Full video dubbing pipeline: transcribe, translate, re-voice, mux |
-| **Real-time** | Live voice changer (sub-50ms), speech-to-speech voice chat, streaming STT, dictate window |
-| **Music & SFX** | 5 engines (Stable Audio, ACE-Step, HeartMuLa, MiniMax Music), drum machine, GM instruments, 7 DSP synth engines |
-| **Spatial** | 3D binaural, Doppler, convolution reverb (Steam Audio SDK) |
-| **Agents** | 204-tool in-app assistant, 201 MCP tools, workflow planner, automation lanes, content recipes |
+| **TTS & Voice** | 13-engine runtime (Kokoro, Pocket-TTS, Zonos, Qwen3-TTS, Fish S2 Pro, VoxCPM2, Moss Nano, Parler, KittenTTS, Bark, NeuTTS…), zero-shot cloning, emotion tags, voice profiles, reference-voice shelf |
+| **STT & Transcription** | 5 families / 17 models (Whisper.cpp, Faster-Whisper, Moonshine incl. streaming, Parakeet 25-lang, Qwen3-ASR 52-lang), word timestamps, speaker diarization |
+| **Voice Conversion** | RVC v2 packs, Seed-VC zero-shot, OpenVoice tone-color, NeuTTS/Orpheus pipelines |
+| **Takes pipeline** | Capture → word-aligned packed transcript (Scribe-shaped JSON) → chapters + highlights → video-use interop (`/captures/{id}/words`, `/chapters`) |
+| **Audio Editing** | Waveform editor, pitch map, 28 effects + cleanup suite, transcript-driven editing, spectrogram, audio clipboard |
+| **Mixing & Mastering** | Multi-track mixer with VU meters, bus routing, auto-duck, broadcast LUFS mastering, platform export presets |
+| **Dialogue** | Stories multi-track editor, audiobooks (EPUB/PDF + multi-voice cast), Conversation podcast mode, ADR, multi-take comping |
+| **Dubbing** | Full video pipeline: transcribe, translate, re-voice, mux |
+| **Real-time** | Live voice changer, speech-to-speech chat, streaming STT, floating dictate window with auto-paste |
+| **Music & SFX** | ACE-Step, HeartMuLa, MiniMax Music 3, Stable Audio (Open + 3 Small), drum machine, GM SoundFonts, procedural instruments |
+| **Spatial & Enhance** | 3D binaural/Doppler/convolution (Steam Audio), Demucs vocal isolation, neural enhancement + denoising |
+| **Agents** | In-app assistant (on-device LLM), 202 MCP tools, batch queue, content recipes, automation lanes |
 | **Marketplace** | Model catalog with premium AI models. Pay once, own forever, no subscription. |
 
 > **Full inventory:** see [FEATURES.md](FEATURES.md) — every capability verified against code.
@@ -47,9 +51,9 @@ available in the marketplace — pay once, own forever, works offline.
 | What | Cost |
 |---|---|
 | Otoyin app (all features) | Free, open-source |
-| Starter models (Kokoro, KittenTTS, Whisper tiny/base, etc.) | Free |
-| Premium models (StyleTTS2, Qwen3-TTS, CosyVoice2, Zonos, Orpheus, ACE-Step, etc.) | $7–$23 each |
-| Discount packs (Pro Voice, Studio, Music, Creator Bundle) | $31–$103 |
+| Starter models (Kokoro, KittenTTS, Whisper tiny/base, Moonshine, etc.) | Free |
+| Premium models (Zonos, Qwen3-TTS, Fish S2 Pro, VoxCPM2, ACE-Step, etc.) | Priced per model |
+| Discount packs (Pro Voice, Studio, Music, Creator Bundle) | Bundled pricing |
 | Student/indie discount | 30% off |
 
 Pay once, own forever, works offline. No subscription. See [docs/MARKETPLACE_PLAN.md](docs/MARKETPLACE_PLAN.md) for full pricing.
@@ -58,131 +62,29 @@ Pay once, own forever, works offline. No subscription. See [docs/MARKETPLACE_PLA
 
 ## Getting started
 
-### Prerequisites
-
-- **Node.js 18+** (npm is the only JS package manager — no bun/pnpm)
-- **Python 3.11+** (3.12+ preferred)
-- **Rust** (for Tauri desktop builds)
-- **just** command runner (optional — `cargo install just` or `brew install just`)
-- **Windows:** Visual Studio 2022 Build Tools (for Rust compilation)
-
-### Quick start
-
 ```bash
-# 1. Install JS dependencies
-npm install
-
-# 2. Set up Python venv + backend deps
-just setup-python
-
-# 3. Run the full app (backend + Tauri desktop)
-just dev
-
-# Or run in the browser (no Tauri needed):
-just dev-web
+just setup          # Python venv + JS deps (Windows/macOS/Linux recipes)
+just dev            # backend + Tauri shell
+just dev-backend    # backend only (FastAPI on :17493)
 ```
 
-### Manual setup
-
-```bash
-# Backend
-python -m venv backend/venv
-backend/venv/Scripts/activate    # Windows
-source backend/venv/bin/activate # macOS/Linux
-pip install -r backend/requirements.lock   # exact tested versions (see note below)
-
-# Frontend
-npm install
-
-# Start backend
-uvicorn backend.main:app --reload --port 17493
-
-# Start frontend (in a separate terminal)
-cd tauri && npm run dev        # Tauri desktop
-# OR
-cd app && npm run dev          # Browser (no Tauri)
-```
-
-### Commands
-
-| Command | What it does |
-|---------|-------------|
-| `just dev` | Start backend + Tauri desktop |
-| `just dev-backend` | Start Python backend only |
-| `just dev-frontend` | Start Tauri app (backend must be running) |
-| `just dev-web` | Start backend + web app (no Tauri) |
-| `just setup` | Full setup (venv + JS deps) |
-| `just test` | Run Python tests |
-| `just build` | Build server binary + Tauri app |
-| `just check` | Run all lint/format checks |
+Requires Python 3.12, Node 20, Rust stable. First launch downloads starter
+models automatically; premium models come from the in-app marketplace.
 
 ---
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────┐
-│  Tauri Desktop Shell (Rust)                         │
-│  ┌───────────────────────────────────────────────┐  │
-│  │  React Frontend (TypeScript + Tailwind)       │  │
-│  │  16 tabs · 22 workspace views · 15 settings  │  │
-│  │  260+ components · 13 Zustand stores          │  │
-│  └───────────────────────────────────────────────┘  │
-│  ┌───────────────────────────────────────────────┐  │
-│  │  Python Backend (FastAPI + SQLAlchemy)         │  │
-│  │  77 route modules · 85 service modules        │  │
-│  │  16 TTS · 4 STT · 3 VC · 3 music · 1 LLM    │  │
-│  │  MCP server (201 tools) · Voice changer (WS) │  │
-│  └───────────────────────────────────────────────┘  │
-│  ┌───────────────────────────────────────────────┐  │
-│  │  Data Layer (SQLite + file storage)           │  │
-│  │  generations · voice_profiles · channels       │  │
-│  │  audiobooks · model_providers (encrypted)     │  │
-│  └───────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────┘
-```
-
-### Project structure
-
-```
-otoyin/
-├── app/          — React frontend (Tauri desktop)
-├── web/          — React frontend (browser variant)
-├── landing/      — Marketing landing page (Next.js + Three.js)
-├── backend/      — Python FastAPI server
-│   ├── backends/ — TTS/STT/VC/Music engine integrations (45 modules)
-│   ├── routes/   — HTTP API routes (77 modules)
-│   ├── services/ — Business logic (85 modules)
-│   └── database/ — SQLite ORM
-├── tauri/        — Tauri desktop shell (Rust)
-├── docs/         — Documentation + knowledge base
-│   └── knowledge/ — Per-tool docs + TOOL-REFERENCE.md (204 assistant / 201 MCP tools)
-├── .agents/skills/ — 63 active agent skills
-└── data/         — User-generated data (voices, projects)
-```
+- **Frontend** — React + TypeScript Tauri app (`app/`), 22 feature areas, 9 locales.
+- **Backend** — FastAPI sidecar (`backend/`, 540+ endpoints) bundling every engine; ships as one binary.
+- **Agents** — MCP server at `/mcp` (202 tools) + in-app assistant driven by an on-device LLM (llama.cpp sidecar).
+- **Updates** — Signed Tauri updater (minisign rotation, staged rollout); adaptive window that fits your work area and remembers its size.
 
 ---
 
-## API
+## Docs
 
-- **TOOL-REFERENCE.md** — the in-app assistant's 204-tool catalog with system prompt, recipes, and app map.
-- **mcp-tools-extended.md** — the 201 MCP tools and how to connect external agents.
-- **REST API** — 77 route modules on port 17493. See `backend/routes/` for the full surface.
-
----
-
-## Platform notes
-
-- **Windows:** GPU auto-detection handles NVIDIA CUDA, Intel Arc XPU, and CPU fallback. Use `check-env.bat` to verify your Rust build environment.
-- **macOS (Apple Silicon):** Optimized via on-device backends. All engines run native.
-- **Linux:** Ensure `webkit2gtk` is installed for Tauri builds.
-
----
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup, code style, and PR process.
-
-## License
-
-See [LICENSE](LICENSE) for details.
+- [FEATURES.md](FEATURES.md) — complete capability inventory
+- [docs/](docs/) — knowledge base (113 docs): engine guides, workflows, troubleshooting
+- [docs/OWNER_BLOCKERS.md](docs/OWNER_BLOCKERS.md) — launch checklist status
+- [DEPLOY.md](DEPLOY.md) — the three deployable units (desktop, marketplace, web)
