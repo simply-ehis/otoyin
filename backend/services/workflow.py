@@ -127,6 +127,11 @@ PLAN_TEMPLATES: dict[str, dict[str, Any]] = {
 # ---------------------------------------------------------------------------
 
 
+# Hard cap on plan length: plans arrive from agents, and each step is a real
+# tool call (TTS/SD/download minutes). Anything larger is a runaway loop.
+MAX_PLAN_STEPS = 25
+
+
 def build_plan(
     description: str,
     steps: list[dict[str, str]],
@@ -140,6 +145,9 @@ def build_plan(
         template: Optional template name to merge with.
     """
     plan_id = f"plan_{int(time.time() * 1000)}"
+
+    if len(steps) > MAX_PLAN_STEPS:
+        raise ValueError(f"Plan has {len(steps)} steps, exceeding the {MAX_PLAN_STEPS}-step budget")
 
     # Merge with template if provided
     if template and template in PLAN_TEMPLATES:
@@ -225,10 +233,13 @@ async def execute_plan(
     overall_status = StepStatus.COMPLETED
     start_time = time.perf_counter()
 
+    # Defensive slice: plans built outside build_plan() skip the budget check.
+    steps = list(plan.steps)[:MAX_PLAN_STEPS]
+
     # Build dependency graph
     completed_steps: set[str] = set()
 
-    for step in plan.steps:
+    for step in steps:
         # Check dependencies
         deps_met = all(dep in completed_steps for dep in step.depends_on)
         if not deps_met:

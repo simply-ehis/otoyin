@@ -8,6 +8,23 @@ This package is the split of the former single ``tools.py`` (1441 lines) into
 cohesive per-domain modules, each exposing a ``register_*_tools(mcp)``
 function. :func:`register_tools` re-exports the original public symbol so
 existing imports (``from mcp_server.tools import register_tools``) keep working.
+
+ARCHITECTURE (read before editing a domain file): the ``@mcp.tool``
+decorators in the domain modules are METADATA, not live registrations. Only
+``generation``, ``skills``, ``speech``, and ``workflow`` registrars are ever
+called below. Everything else reaches clients through the TR dispatcher:
+
+1. ``tool_registry_populate.populate()`` regex-scans the decorators for
+   ``name=``/``description=`` and builds the unified registry (TR).
+2. ``tr_dispatch.register_tr_tools`` generates the live FastMCP wrappers
+   from TR (explicit params, loopback REST delegation).
+
+Consequence: in every domain module EXCEPT generation/skills/speech/workflow
+(which are called below and live), editing an inner function BODY changes
+nothing at runtime — only its ``name=``/``description=`` decorator text
+matters (TR metadata). Those inner bodies are reference implementations kept
+for readability. ``backend/tests/test_mcp_registration_invariant.py`` locks
+this: decorated names must equal TR names exactly, or the build fails.
 """
 
 from __future__ import annotations

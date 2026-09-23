@@ -21,9 +21,10 @@ def _count_registered_tools() -> int:
 
 
 # Minimum tool count — bump this when adding new tools.
-# As of 2026-08-20 the count is 111. Set floor 5 below documented minimum
-# to allow minor refactors without flaking, but catch real regressions.
-_MIN_TOOL_COUNT = 106
+# As of 2026-09-23 the live count is 201 (202 TR entries; one is overridden
+# by a manual registrar with the same name). Set floor 5 below the live
+# count to allow minor refactors without flaking, but catch real regressions.
+_MIN_TOOL_COUNT = 196
 
 
 @pytest.mark.skipif(

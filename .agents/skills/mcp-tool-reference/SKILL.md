@@ -7,8 +7,11 @@ description: Consolidated catalog of every 21labs.* MCP tool (namespace at /mcp)
 ## Purpose
 Complete surface of `21labs.*` MCP tools (FastMCP, mounted at `/mcp`, port 17493 / `twentylabs_PORT`).
 All tools are thin wrappers that call the REST API in-process and return base64 WAV or JSON. Signatures
-below are read from the `backend/mcp_server/tools/` package (106 tools). Audio returns as `{ audio_base64, sample_rate, duration, bytes }`
-unless noted.
+below are read from the `backend/mcp_server/tools/` package (201 live tools).
+Audio returns as `{ audio_base64, sample_rate, duration, bytes }`
+unless noted. (TR holds 202 entries; one is overridden by a manual registrar
+with the same name. `backend/tests/test_mcp_registration_invariant.py` locks
+the decorated↔TR match; `test_mcp_tool_count.py` floors the live count.)
 
 ## When to use
 - Calling or debugging any `21labs.*` tool.
@@ -41,10 +44,8 @@ Example:
 ## Music / SFX
 | tool | params | response |
 |------|--------|----------|
-| generate_sfx | prompt, duration_seconds=5, seed? | audio_base64 (Stable Audio) |
-
-> `generate_music` / `generate_sound` / `list_sounds` were REMOVED with the ACE-Step and
-> Bark engines. SFX today comes from `generate_sfx` (Stable Audio Open).
+| generate_music | engine=acestep_gguf/heartmula, prompt, duration_seconds=30, genre?, mood?, tempo?, seed? | audio_base64 | manifest-gated, 400 if model not downloaded |
+| generate_sfx | prompt, duration_seconds=5, seed? | audio_base64 (Stable Audio) | |
 
 ## Audio processing
 | tool | params | response | code |
