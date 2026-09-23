@@ -353,16 +353,26 @@ async def _synthesize_segments(
     tts_backend = get_tts_backend_for_engine(engine)
     lifecycle_manager.mark_model_used(engine)
     if not tts_backend.is_loaded():
-        await load_engine_model(engine, tts_backend)
+        # NOTE: model_size stays at its default — dubbing tracks the engine,
+        # not the size variant. Never pass the backend object here (it used
+        # to flow into load_model as model_size, skipping the manifest gate
+        # and forcing a reload on every segment).
+        await load_engine_model(engine)
 
     voice_prompt = await create_voice_prompt_for_profile(profile_id, db_session, use_cache=True, engine=engine)
 
     results: list[DubbedSegment] = []
     for seg in segments:
         try:
-            audio_array, sample_rate = await tts_backend.generate(
-                text=seg.text,
-                voice_prompt=voice_prompt,
+            # Chunked synthesis: short segments take the single-shot fast
+            # path (zero overhead); long translated segments split instead
+            # of slamming one-shot subprocess backends with unbounded text.
+            from ..utils.chunked_tts import generate_chunked
+
+            audio_array, sample_rate = await generate_chunked(
+                tts_backend,
+                seg.text,
+                voice_prompt,
                 language=language,
             )
             # Save segment audio to temp file

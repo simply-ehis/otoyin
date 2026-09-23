@@ -280,22 +280,17 @@ class KokoroTTSBackend(BackendBase):
             chunk_seed = (seed + i) if seed is not None else None
             try:
                 audio, _sr = await self._generate_chunk(chunk, voice_name, language, chunk_seed, KOKORO_CHUNK_TIMEOUT)
-            except TimeoutError:
-                logger.warning(
-                    "Kokoro chunk %d/%d timed out (hung G2P/inference), skipping: %.80r",
-                    i + 1,
-                    len(chunks),
-                    chunk,
-                )
-                continue
+            except TimeoutError as exc:
+                # Fail loud: silently dropping sentences corrupts narration.
+                # The service layer retries per chunk, so transients recover.
+                raise TimeoutError(f"Kokoro chunk {i + 1}/{len(chunks)} timed out (hung G2P/inference)") from exc
             except Exception as exc:
-                logger.warning("Kokoro chunk %d/%d failed, skipping: %s", i + 1, len(chunks), exc)
-                continue
+                raise RuntimeError(f"Kokoro chunk {i + 1}/{len(chunks)} failed: {exc}") from exc
             if audio is not None and len(audio):
                 audio_chunks.append(audio.astype(np.float32))
 
         if not audio_chunks:
-            return np.zeros(KOKORO_SAMPLE_RATE, dtype=np.float32), KOKORO_SAMPLE_RATE
+            raise RuntimeError("Kokoro produced no audio for the given text")
 
         audio = concatenate_audio_chunks(audio_chunks, KOKORO_SAMPLE_RATE, crossfade_ms=KOKORO_CROSSFADE_MS)
         return audio, KOKORO_SAMPLE_RATE
@@ -312,8 +307,9 @@ class KokoroTTSBackend(BackendBase):
 
         Runs Kokoro's synchronous ``KPipeline`` in a worker thread and bounds
         the wait with ``asyncio.wait_for``.  On timeout a ``TimeoutError`` is
-        raised so the caller can skip the chunk.  Note: a Python worker thread
-        cannot be force-killed, so the stalled thread lingers until it
+        raised so the caller can retry or fail the synthesis — callers must
+        never silently skip the chunk (dropped sentences corrupt narration).
+        Note: a Python worker thread cannot be force-killed, so the stalled thread lingers until it
         naturally exits; for a guaranteed kill a process-isolated worker would
         be required.  Under normal load chunks finish in well under a second,
         so pool exhaustion is not a concern in practice.

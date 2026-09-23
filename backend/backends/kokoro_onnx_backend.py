@@ -264,27 +264,17 @@ class KokoroONNXBackend(BackendBase):
             chunk_seed = (seed + i) if seed is not None else None
             try:
                 audio, _sr = await self._generate_chunk(chunk, voice_name, onnx_lang, chunk_seed, KOKORO_CHUNK_TIMEOUT)
-            except TimeoutError:
-                logger.warning(
-                    "Kokoro-ONNX chunk %d/%d timed out, skipping: %.80r",
-                    i + 1,
-                    len(chunks),
-                    chunk,
-                )
-                continue
+            except TimeoutError as exc:
+                # Fail loud: silently dropping sentences corrupts narration.
+                # The service layer retries per chunk, so transients recover.
+                raise TimeoutError(f"Kokoro-ONNX chunk {i + 1}/{len(chunks)} timed out: {chunk[:80]!r}") from exc
             except Exception as exc:
-                logger.warning(
-                    "Kokoro-ONNX chunk %d/%d failed, skipping: %s",
-                    i + 1,
-                    len(chunks),
-                    exc,
-                )
-                continue
+                raise RuntimeError(f"Kokoro-ONNX chunk {i + 1}/{len(chunks)} failed: {exc}") from exc
             if audio is not None and len(audio):
                 audio_chunks.append(audio.astype(np.float32))
 
         if not audio_chunks:
-            return np.zeros(KOKORO_SAMPLE_RATE, dtype=np.float32), KOKORO_SAMPLE_RATE
+            raise RuntimeError("Kokoro-ONNX produced no audio for the given text")
 
         audio = concatenate_audio_chunks(audio_chunks, KOKORO_SAMPLE_RATE, crossfade_ms=KOKORO_CROSSFADE_MS)
         return audio, KOKORO_SAMPLE_RATE
