@@ -74,13 +74,13 @@ def test_record_is_downloaded_forget(monkeypatch):
     sess = _make_session_factory()
     monkeypatch.setattr(mr, "SessionLocal", sess)
 
-    assert mr.is_downloaded("planner-4b", "4B-Q4_K_M") is False
-    mr.record_download(sess(), "planner-4b", "4B-Q4_K_M", "gguf_llm", "r/f", None, None)
-    assert mr.is_downloaded("planner-4b", "4B-Q4_K_M") is True
+    assert mr.is_downloaded("planner-4b", "Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M") is False
+    mr.record_download(sess(), "planner-4b", "Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M", "gguf_llm", "r/f", None, None)
+    assert mr.is_downloaded("planner-4b", "Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M") is True
     assert mr.is_downloaded("planner-4b", None) is False  # size-scoped
-    assert mr.forget_download("planner-4b", "4B-Q4_K_M") is True
-    assert mr.is_downloaded("planner-4b", "4B-Q4_K_M") is False
-    assert mr.forget_download("planner-4b", "4B-Q4_K_M") is False
+    assert mr.forget_download("planner-4b", "Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M") is True
+    assert mr.is_downloaded("planner-4b", "Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M") is False
+    assert mr.forget_download("planner-4b", "Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M") is False
 
 
 def test_reconcile_seeds_from_cache(monkeypatch):

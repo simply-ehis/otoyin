@@ -281,9 +281,11 @@ def get_assistant_token_settings() -> tuple[int, int, str]:
 
     db = SessionLocal()
     try:
+        from ..backends.configs.llm import resolve_planner_size
+
         row = _get_or_create_assistant_row(db)
         n_ctx, gen_tokens = compute_effective_tokens(row.model_size, row.context_tokens, row.max_tokens)
-        return n_ctx, gen_tokens, row.model_size
+        return n_ctx, gen_tokens, resolve_planner_size(row.model_size)
     finally:
         db.close()
 
@@ -295,8 +297,10 @@ def get_assistant_token_settings_for(model_size: str) -> tuple[int, int]:
     default, so the RAM-aware default and any user override are resolved
     against the model actually being loaded. Returns ``(n_ctx, max_tokens)``.
     """
+    from ..backends.configs.llm import resolve_planner_size
     from ..database.session import SessionLocal
 
+    model_size = resolve_planner_size(model_size)
     db = SessionLocal()
     try:
         row = _get_or_create_assistant_row(db)

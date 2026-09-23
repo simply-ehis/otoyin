@@ -36,17 +36,43 @@ from .gguf_runner import GGUFServerProcess
 logger = logging.getLogger(__name__)
 
 # model_size -> (HF repo, quant tag, is_moe)
-GGUF_MODELS: dict[str, tuple[str, str, bool]] = {
-    "4B-Q4_K_M": ("unsloth/Qwen3.5-4B-GGUF", "q4_k_m", False),
-    "4B-v3-Q4_K_M": ("Jackrong/Qwopus3.5-4B-v3-GGUF", "q4_k_m", False),
-    "spark-4B-Q4_K_M": ("XHToken/Spark-X2.5-4B-GGUF", "q4_k_m", False),
-    "2.6B-Q4_0": ("LiquidAI/LFM2.5-2.6B-GGUF", "q4_0", False),
-    "8B-A1B-Q4_K_M": ("LiquidAI/LFM2.5-8B-A1B-GGUF", "q4_k_m", True),
-    "ling-tiny-Q4_K_M": ("inclusionAI/Ling-3.0-tiny-GGUF", "q4_k_m", True),
-    "27B-PTQ1_0": ("prism-ml/Ternary-Bonsai-2-27B-gguf", "PTQ1_0", False),
-}
+#
+# Built from the model catalog (configs/llm.py), the single source of truth —
+# never a parallel hardcoded table, so catalog renames cannot strand the
+# backend again. Populated lazily to avoid import cycles at startup.
+_GGUF_MODELS_CACHE: dict[str, tuple[str, str, bool]] | None = None
 
-DEFAULT_MODEL_SIZE = "4B-Q4_K_M"
+
+def _gguf_models() -> dict[str, tuple[str, str, bool]]:
+    """Catalog-derived GGUF model table (repo, quant, is_moe by size)."""
+    global _GGUF_MODELS_CACHE
+    if _GGUF_MODELS_CACHE is None:
+        from .configs.llm import get_llm_model_configs
+
+        _GGUF_MODELS_CACHE = {
+            c.model_size: (c.hf_repo_id, c.quant, bool(c.is_moe))
+            for c in get_llm_model_configs()
+            if c.engine == "gguf_llm" and c.model_size and c.hf_repo_id
+        }
+    return _GGUF_MODELS_CACHE
+
+
+def _default_model_size() -> str:
+    """Catalog default planner size (function form keeps linters honest)."""
+    from .configs.llm import DEFAULT_PLANNER_SIZE
+
+    return DEFAULT_PLANNER_SIZE
+
+
+# Resolved lazily (PEP 562) so catalog renames flow through without an
+# import cycle at startup: configs/__init__ pulls utils.model_lifecycle.
+def __getattr__(name: str):
+    if name == "DEFAULT_MODEL_SIZE":
+        from .configs.llm import DEFAULT_PLANNER_SIZE
+
+        return DEFAULT_PLANNER_SIZE
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 # Extra GGUF artifacts in the repos that are not the model weights.
 _EXCLUDED_GGUF_TAGS = ("mmproj", "mtp", "imatrix", "embedding", "encoder")
@@ -138,8 +164,10 @@ class GGUFServerLLMBackend(BackendBase):
 
     _model_attr = "_server"
 
-    def __init__(self, model_size: str = DEFAULT_MODEL_SIZE):
-        self.model_size = model_size
+    def __init__(self, model_size: str | None = None):
+        # Default resolves at call time so import cycles can never observe
+        # a half-initialized catalog.
+        self.model_size = model_size or _default_model_size()
         self._current_model_size: str | None = None
         self._server: GGUFServerProcess | None = None
         self._port: int | None = None
@@ -155,7 +183,7 @@ class GGUFServerLLMBackend(BackendBase):
         from huggingface_hub import hf_hub_download
 
         try:
-            repo, quant, _is_moe = GGUF_MODELS[model_size]
+            repo, quant, _is_moe = _gguf_models()[model_size]
             filename = _resolve_gguf_filename(repo, quant)
             hf_hub_download(repo_id=repo, filename=filename, local_files_only=True)
             return True
@@ -166,7 +194,13 @@ class GGUFServerLLMBackend(BackendBase):
     async def load_model(self, model_size: str | None = None, ctx_override: int | None = None) -> None:
         if model_size is None:
             model_size = self.model_size
-        if model_size not in GGUF_MODELS:
+        else:
+            # Legacy pre-catalog ids resolve here too, so direct backend
+            # callers never need to know about renames.
+            from .configs.llm import resolve_planner_size
+
+            model_size = resolve_planner_size(model_size)
+        if model_size not in _gguf_models():
             raise ValueError(f"Unknown planner model size: {model_size}")
 
         if self.is_loaded() and self._current_model_size == model_size:
@@ -193,7 +227,7 @@ class GGUFServerLLMBackend(BackendBase):
         from .base import model_load_progress
 
         progress_model_name = f"gguf-{model_size.lower()}"
-        repo, quant, is_moe = GGUF_MODELS[model_size]
+        repo, quant, is_moe = _gguf_models()[model_size]
         n_ctx = compute_llm_context(model_size, override=ctx_override)
 
         # Model is already verified as cached in load_model(), so load from local cache only

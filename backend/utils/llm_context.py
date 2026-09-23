@@ -40,6 +40,7 @@ MODEL_MAX_CTX: dict[str, int] = {
 # RAM order; the first tier whose min_ram_gb <= total is used.
 _SIZE_RAM_TIERS: dict[str, list[tuple[int, int]]] = {
     "2B": [(4, 8192), (8, 16384), (16, 24576), (32, 32768)],
+    "2.6B": [(4, 8192), (8, 16384), (16, 24576), (32, 32768)],
     "0.8B": [(4, 16384), (8, 24576), (16, 32768)],
     "4B": [(4, 4096), (8, 8192), (16, 16384), (32, 24576)],
     "3B": [(4, 4096), (8, 8192), (16, 16384), (32, 24576)],
@@ -65,7 +66,24 @@ def _sub_4gb_tier(total_gb: int) -> int:
 
 
 def _resolve_size_label(model_size: str) -> str:
-    """Extract the bare size label (e.g. '350M') from '350M-Q4_K_M'."""
+    """Extract the bare size label from a model size id.
+
+    Handles both legacy ids (``4B-Q4_K_M`` → ``4B``) and catalog ids
+    (``Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M`` → ``4B``). Longer, more specific
+    labels match first so ``8B-A1B`` wins over ``4B``-style fragments.
+    """
+    for label in (
+        "8B-A1B",
+        "ling-tiny",
+        "2.6B",
+        "27B",
+        "0.8B",
+        "4B",
+        "3B",
+        "2B",
+    ):
+        if label in model_size:
+            return label
     return model_size.split("-")[0]
 
 

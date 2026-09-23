@@ -84,7 +84,7 @@ async def stream_local(
     system_prompt: str,
     use_tools: bool,
     base_url: str,
-    model_id: str = "4B-Q4_K_M",
+    model_id: str | None = None,
     harness: HarnessState | None = None,
 ) -> AsyncIterator[str]:
     """Stream response from a local GGUF planner with a tool-call loop.
@@ -99,8 +99,10 @@ async def stream_local(
     and compacts tool responses under pressure.  This is critical for 2B--4B
     models which have no native function-calling and limited context.
     """
+    from ..backends.configs.llm import resolve_planner_size
     from ..utils.startup_defer import ensure_planner_preloaded
 
+    model_id = resolve_planner_size(model_id)
     await ensure_planner_preloaded()
 
     backend = get_llm_backend()

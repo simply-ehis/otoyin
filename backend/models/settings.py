@@ -6,6 +6,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..backends.configs.llm import DEFAULT_PLANNER_SIZE
+
 
 class AssistantSettingsResponse(BaseModel):
     """Server-persisted agent/LLM preferences.
@@ -15,7 +17,7 @@ class AssistantSettingsResponse(BaseModel):
     value from model size + total RAM in that case.
     """
 
-    model_size: str = "4B-Q4_K_M"
+    model_size: str = DEFAULT_PLANNER_SIZE
     context_tokens: int | None = None
     max_tokens: int | None = None
     agent_memory_enabled: bool = True

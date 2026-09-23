@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException
 
 from .. import models
 from ..backends import get_llm_model_configs
+from ..backends.configs.llm import resolve_planner_size
 from ..services.llm import get_llm_model
 from ..utils.model_lifecycle import lifecycle_manager
 
@@ -44,7 +45,7 @@ async def llm_generate(request: models.LLMGenerateRequest):
     """Run a single-turn local LLM completion."""
     backend = get_llm_model()
     lifecycle_manager.mark_model_used("gguf_llm")
-    model_size = request.model_size or backend.model_size
+    model_size = resolve_planner_size(request.model_size or backend.model_size)
 
     valid_sizes = {cfg.model_size for cfg in get_llm_model_configs()}
     if model_size not in valid_sizes:

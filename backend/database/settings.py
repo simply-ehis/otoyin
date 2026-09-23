@@ -31,7 +31,10 @@ class CaptureSettings(Base):
     stt_model = Column(String, nullable=False, default="tiny.en")
     language = Column(String, nullable=False, default="auto")
     auto_refine = Column(Boolean, nullable=False, default=True)
-    llm_model = Column(String, nullable=False, default="4B-Q4_K_M")
+    # NOTE: must equal backends.configs.llm.DEFAULT_PLANNER_SIZE (kept as a
+    # literal here to avoid an import cycle: configs/__init__ -> utils ->
+    # services -> database). backend/tests/test_llm_size_unified.py asserts it.
+    llm_model = Column(String, nullable=False, default="Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M")
     smart_cleanup = Column(Boolean, nullable=False, default=True)
     self_correction = Column(Boolean, nullable=False, default=True)
     preserve_technical = Column(Boolean, nullable=False, default=True)
@@ -66,7 +69,9 @@ class AssistantSettings(Base):
     __tablename__ = "assistant_settings"
 
     id = Column(Integer, primary_key=True, default=1)
-    model_size = Column(String, nullable=False, default="4B-Q4_K_M")
+    model_size = Column(
+        String, nullable=False, default="Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M"
+    )  # == DEFAULT_PLANNER_SIZE, see note above
     context_tokens = Column(Integer, nullable=True, default=None)
     max_tokens = Column(Integer, nullable=True, default=None)
     agent_memory_enabled = Column(Boolean, nullable=False, default=True)

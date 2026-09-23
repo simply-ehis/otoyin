@@ -257,3 +257,38 @@ def _get_cloud_llm_configs() -> list[ModelConfig]:
 def get_llm_model_configs() -> list[ModelConfig]:
     """Return all LLM model configs (GGUF + cloud)."""
     return _get_gguf_llm_configs() + _get_cloud_llm_configs()
+
+
+# Default planner size: the free Qwopus 4B. Single source of truth — every
+# route, default, and pattern below must reference this, never a literal.
+DEFAULT_PLANNER_SIZE = "Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M"
+
+# Pre-catalog size ids (DB rows, saved settings, old clients) mapped to their
+# current catalog size. Applied at every LLM entry point so renames never
+# strand stored values again.
+LEGACY_PLANNER_SIZE_ALIASES: dict[str, str] = {
+    "4B-Q4_K_M": DEFAULT_PLANNER_SIZE,
+    "4B-v3-Q4_K_M": "Qwen_Qwen3.5-4B-125B-40EF-Q4_K_M",
+    "spark-4B-Q4_K_M": "Spark-2.5B-A3B-Q4_K_M",
+}
+
+
+def resolve_planner_size(model_size: str | None) -> str:
+    """Map a requested size through legacy aliases to its catalog size."""
+    if not model_size:
+        return DEFAULT_PLANNER_SIZE
+    return LEGACY_PLANNER_SIZE_ALIASES.get(model_size, model_size)
+
+
+def planner_size_pattern() -> str:
+    """Pydantic ``pattern`` accepting catalog sizes, legacy ids, and cloud.
+
+    Legacy ids are accepted so pre-catalog clients validate, then resolve to
+    their catalog size at the route layer (``resolve_planner_size``).
+    """
+    import re
+
+    sizes = (
+        [c.model_size for c in _get_gguf_llm_configs() if c.model_size] + list(LEGACY_PLANNER_SIZE_ALIASES) + ["cloud"]
+    )
+    return "^(" + "|".join(re.escape(s) for s in sizes) + ")$"

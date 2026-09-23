@@ -6,6 +6,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..backends.configs.llm import DEFAULT_PLANNER_SIZE, planner_size_pattern
 from .common import RefinementFlagsModel
 
 try:
@@ -64,7 +65,7 @@ class CaptureRefineRequest(BaseModel):
     """Request to refine a capture's transcript via the LLM."""
 
     flags: RefinementFlagsModel | None = None
-    model_size: str | None = Field(default=None, pattern="^(4B-Q4_K_M|4B-v3-Q4_K_M|spark-4B-Q4_K_M|2\\.6B-Q4_0|cloud)$")
+    model_size: str | None = Field(default=None, pattern=planner_size_pattern())
 
 
 class CaptureRetranscribeRequest(BaseModel):
@@ -80,7 +81,7 @@ class CaptureSettingsResponse(BaseModel):
     stt_model: str = Field(default="tiny.en", pattern="^(tiny\\.en|base\\.en|cloud)$")
     language: str = Field(default="auto")
     auto_refine: bool = True
-    llm_model: str = Field(default="4B-Q4_K_M", pattern="^(4B-Q4_K_M|4B-v3-Q4_K_M|spark-4B-Q4_K_M|2\\.6B-Q4_0|cloud)$")
+    llm_model: str = Field(default=DEFAULT_PLANNER_SIZE, pattern=planner_size_pattern())
     smart_cleanup: bool = True
     self_correction: bool = True
     preserve_technical: bool = True
@@ -103,7 +104,7 @@ class CaptureSettingsUpdate(BaseModel):
     stt_model: str | None = Field(default=None, pattern="^(tiny\\.en|base\\.en|cloud)$")
     language: str | None = None
     auto_refine: bool | None = None
-    llm_model: str | None = Field(default=None, pattern="^(4B-Q4_K_M|4B-v3-Q4_K_M|spark-4B-Q4_K_M|2\\.6B-Q4_0|cloud)$")
+    llm_model: str | None = Field(default=None, pattern=planner_size_pattern())
     smart_cleanup: bool | None = None
     self_correction: bool | None = None
     preserve_technical: bool | None = None

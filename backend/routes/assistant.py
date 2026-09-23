@@ -9,6 +9,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from ..backends import get_llm_model_configs
+from ..backends.configs.llm import DEFAULT_PLANNER_SIZE, resolve_planner_size
 from ..config import get_server_host, get_server_port
 from ..utils.ssrf import is_url_safe as _is_safe_url
 from .assistant_stream import stream_api, stream_local
@@ -41,7 +42,7 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[ChatMessage]
-    model_id: str = Field(default="4B-Q4_K_M")
+    model_id: str = Field(default=DEFAULT_PLANNER_SIZE)
     api_key: str | None = None
     api_base_url: str | None = None
     tools: bool = True
@@ -187,6 +188,9 @@ async def assistant_chat(req: ChatRequest, request: Request):
     """
     api_key = req.api_key
     api_base_url = req.api_base_url
+    # Pre-catalog clients/DB rows may send legacy size ids — resolve before
+    # anything branches on the value.
+    req.model_id = resolve_planner_size(req.model_id)
     if not (api_key and api_base_url):
         # Fall back to the configured BYOK cloud provider for the llm domain.
         from ..services.cloud_provider import get_cloud_provider
@@ -195,11 +199,11 @@ async def assistant_chat(req: ChatRequest, request: Request):
         if creds and creds.get("base_url"):
             api_key = api_key or (creds.get("api_key") or "").strip()
             api_base_url = api_base_url or creds["base_url"].strip()
-            if not req.model_id or req.model_id == "4B-Q4_K_M":
+            if not req.model_id or req.model_id == DEFAULT_PLANNER_SIZE:
                 cloud_model = (creds.get("model") or "").strip()
                 if cloud_model:
                     req.model_id = cloud_model
-                elif req.model_id == "4B-Q4_K_M":
+                elif req.model_id == DEFAULT_PLANNER_SIZE:
                     # Never send the local GGUF id to a cloud endpoint —
                     # surface the misconfiguration instead of failing oddly.
                     logger.warning("BYOK llm provider has no model set; local default not sent")

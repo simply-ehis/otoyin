@@ -127,7 +127,7 @@ class TestParameterPatterns:
 
     def test_model_name_patterns(self):
         valid_patterns = [
-            "4B-Q4_K_M",
+            "Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M",
             "350M-Q4_K_M",
             "default",
             "tiny.en",

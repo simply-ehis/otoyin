@@ -4,15 +4,15 @@ LLM request and response models — text generation and personality.
 
 from pydantic import BaseModel, Field
 
+from ..backends.configs.llm import DEFAULT_PLANNER_SIZE, planner_size_pattern
+
 
 class LLMGenerateRequest(BaseModel):
     """Request model for LLM text generation."""
 
     prompt: str = Field(..., min_length=1, max_length=50000)
     system: str | None = Field(None, max_length=4000)
-    model_size: str | None = Field(
-        default="4B-Q4_K_M", pattern="^(4B-Q4_K_M|4B-v3-Q4_K_M|spark-4B-Q4_K_M|2\\.6B-Q4_0|cloud)$"
-    )
+    model_size: str | None = Field(default=DEFAULT_PLANNER_SIZE, pattern=planner_size_pattern())
     max_tokens: int = Field(default=512, ge=1, le=4096)
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     # Few-shot (user, assistant) pairs prepended as real chat turns.
