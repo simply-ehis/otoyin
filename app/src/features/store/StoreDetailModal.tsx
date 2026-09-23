@@ -111,10 +111,10 @@ export const StoreDetailModal = memo(function StoreDetailModal({
 		if (!product) {
 			return [];
 		}
-	return products
-		.filter((p) => p.category === product.category && p.id !== product.id)
-		.sort((a, b) => a.price_usd - b.price_usd)
-		.slice(0, 3);
+		return products
+			.filter((p) => p.category === product.category && p.id !== product.id)
+			.sort((a, b) => a.price_usd - b.price_usd)
+			.slice(0, 3);
 	}, [product, products]);
 
 	if (!product) {

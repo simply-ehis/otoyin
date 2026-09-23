@@ -270,11 +270,7 @@ export function priceTone(
 	return "amber";
 }
 
-export type SortMode =
-	| "default"
-	| "price-asc"
-	| "price-desc"
-	| "name";
+export type SortMode = "default" | "price-asc" | "price-desc" | "name";
 
 export function buildFilteredProducts(
 	products: MarketplaceProduct[],

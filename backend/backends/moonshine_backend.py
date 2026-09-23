@@ -240,9 +240,7 @@ class MoonshineSTTBackend(BackendBase):
             stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=120.0)
 
             if proc.returncode != 0:
-                raise RuntimeError(
-                    f"transcribe.cpp exited {proc.returncode}: {stderr.decode(errors='replace')}"
-                )
+                raise RuntimeError(f"transcribe.cpp exited {proc.returncode}: {stderr.decode(errors='replace')}")
 
             text = stdout.decode(errors="replace").strip()
 

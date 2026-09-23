@@ -194,15 +194,15 @@ function run(
 const ids = (list: MarketplaceProduct[]) => list.map((p) => p.id);
 
 describe("buildFilteredProducts — sort modes", () => {
-	it("default: free before paid, then quality desc, name as final tiebreak", () => {
-		// Free: delta (q9) > alpha (q5); paid: bravo (q9) > charlie (q7).
-		expect(ids(run())).toEqual(["sirius", "alpha", "bravo", "charlie"]);
+	it("default: free before paid, then price ascending, name as final tiebreak", () => {
+		// Free: sirius ($0). Paid: alpha ($3) < charlie ($5) < bravo ($10).
+		expect(ids(run())).toEqual(["sirius", "alpha", "charlie", "bravo"]);
 	});
 
 	it("price-asc: price ascending with name tiebreak for equal prices", () => {
 		expect(ids(run({ sort: "price-asc" }))).toEqual([
-			"alpha",
 			"sirius",
+			"alpha",
 			"charlie",
 			"bravo",
 		]);
@@ -244,7 +244,7 @@ describe("buildFilteredProducts — installed/owned ordering contract", () => {
 
 	it("the top group itself is ordered by the active sort mode", () => {
 		// bravo (owned) and charlie (installed) both rank 0; default sort
-		// orders that group: both paid -> quality desc (bravo q9 > charlie q7).
+		// orders that group: both paid → price ascending (charlie $5 < bravo $10).
 		expect(
 			ids(
 				run({
@@ -252,7 +252,7 @@ describe("buildFilteredProducts — installed/owned ordering contract", () => {
 					owned: new Set(["bravo"]),
 				}),
 			),
-		).toEqual(["bravo", "charlie", "sirius", "alpha"]);
+		).toEqual(["charlie", "bravo", "sirius", "alpha"]);
 	});
 });
 
@@ -285,8 +285,12 @@ describe("buildFilteredProducts — filters", () => {
 			"alpha",
 			"charlie",
 		]);
-		expect(ids(run({ showFilter: "paid" }))).toEqual(["bravo", "charlie"]);
-		expect(ids(run({ showFilter: "free" }))).toEqual(["sirius", "alpha"]);
+		expect(ids(run({ showFilter: "paid" }))).toEqual([
+			"alpha",
+			"charlie",
+			"bravo",
+		]);
+		expect(ids(run({ showFilter: "free" }))).toEqual(["sirius"]);
 	});
 
 	it("use-case filter matches use_cases and excludes products without any", () => {
@@ -306,6 +310,7 @@ describe("buildFilteredProducts — filters", () => {
 
 	it("filters compose", () => {
 		expect(ids(run({ category: "tts", showFilter: "paid" }))).toEqual([
+			"alpha",
 			"charlie",
 		]);
 	});
@@ -413,8 +418,8 @@ describe("buildFilteredProducts — sort contract properties (randomized)", () =
 
 					// P2: adjacent same-rank pairs satisfy the mode's key order —
 					// full lexicographic element-wise comparison, mirroring the
-					// comparator's fall-through (e.g. default = paid, then quality,
-					// THEN name; a primary-only check would false-fail quality ties).
+					// comparator's fall-through (e.g. default = paid, then price,
+					// THEN name; a primary-only check would false-fail price ties).
 					const rank = (p: MarketplaceProduct) =>
 						installed.has(p.id) || owned.has(p.id) ? 0 : 1;
 					for (let i = 1; i < out.length; i++) {

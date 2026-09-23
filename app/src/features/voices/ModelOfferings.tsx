@@ -77,8 +77,7 @@ export function ModelOfferings({ models }: { models?: ModelOffering[] }) {
 								<span className="truncate text-xs font-medium text-foreground">
 									{m.display_name}
 								</span>
-								<span className="shrink-0 text-xs text-muted-foreground">
-								</span>
+								<span className="shrink-0 text-xs text-muted-foreground"></span>
 							</p>
 							<p className="mt-0.5 text-xs text-muted-foreground">
 								{m.languages.join(", ").toUpperCase()} · {m.engine}

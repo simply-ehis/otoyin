@@ -414,9 +414,7 @@ def get_assistant_moe_stream_cache_gb() -> int:
 
     from ..database.session import SessionLocal
 
-    env_val = os.environ.get("OTOYIN_MOE_STREAM_CACHE_GB") or os.environ.get(
-        "TWENTYLABS_MOE_STREAM_CACHE_GB"
-    )
+    env_val = os.environ.get("OTOYIN_MOE_STREAM_CACHE_GB") or os.environ.get("TWENTYLABS_MOE_STREAM_CACHE_GB")
     if env_val is not None:
         try:
             return max(0, int(env_val))
@@ -442,9 +440,7 @@ def get_assistant_moe_stream_direct() -> bool:
 
     from ..database.session import SessionLocal
 
-    env_val = os.environ.get("OTOYIN_MOE_STREAM_DIRECT") or os.environ.get(
-        "TWENTYLABS_MOE_STREAM_DIRECT"
-    )
+    env_val = os.environ.get("OTOYIN_MOE_STREAM_DIRECT") or os.environ.get("TWENTYLABS_MOE_STREAM_DIRECT")
     if env_val is not None:
         return env_val.lower() in ("1", "true", "yes")
 

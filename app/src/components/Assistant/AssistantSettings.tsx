@@ -338,7 +338,9 @@ export const AssistantSettings = memo(function AssistantSettings({
 
 	const handleMoeSave = async () => {
 		const cacheValue =
-			moeCacheGb === "" ? null : Math.max(0, Math.min(64, Math.round(moeCacheGb)));
+			moeCacheGb === ""
+				? null
+				: Math.max(0, Math.min(64, Math.round(moeCacheGb)));
 		setMoeSaving(true);
 		try {
 			await apiClient.updateAssistantSettings({
@@ -724,10 +726,10 @@ export const AssistantSettings = memo(function AssistantSettings({
 						MoE expert streaming cache
 					</Label>
 					<p className="text-xs text-muted-foreground/70">
-						For Mixture-of-Experts models only. Sets the SSD read cache size in GB
-						(llama-server --moe-stream-cache). When a MoE model is loaded and this
-						is 0, the backend auto-computes a value from available RAM. 0 = auto
-						(disabled for dense models). Applies on next planner load.
+						For Mixture-of-Experts models only. Sets the SSD read cache size in
+						GB (llama-server --moe-stream-cache). When a MoE model is loaded and
+						this is 0, the backend auto-computes a value from available RAM. 0 =
+						auto (disabled for dense models). Applies on next planner load.
 					</p>
 					<div className="flex gap-2">
 						<Input
@@ -766,9 +768,9 @@ export const AssistantSettings = memo(function AssistantSettings({
 							O_DIRECT for MoE reads
 						</Label>
 						<p className="text-xs text-muted-foreground/70">
-							Bypass the OS page cache for expert weight reads. Prevents large MoE
-							models from evicting other data. Only for SSDs. Applies on next
-							planner load.
+							Bypass the OS page cache for expert weight reads. Prevents large
+							MoE models from evicting other data. Only for SSDs. Applies on
+							next planner load.
 						</p>
 					</div>
 					<Switch

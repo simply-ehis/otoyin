@@ -3,14 +3,17 @@
 
 declare module "react-syntax-highlighter/dist/esm/prism-light" {
 	import React from "react";
-	export class PrismLight extends React.Component<{
-		language?: string;
-		style?: unknown;
-		showLineNumbers?: boolean;
-		wrapLongLines?: boolean;
-		customStyle?: unknown;
-		children?: React.ReactNode;
-	}, unknown> {
+	export class PrismLight extends React.Component<
+		{
+			language?: string;
+			style?: unknown;
+			showLineNumbers?: boolean;
+			wrapLongLines?: boolean;
+			customStyle?: unknown;
+			children?: React.ReactNode;
+		},
+		unknown
+	> {
 		static registerLanguage(name: string, func: unknown): void;
 	}
 	export default PrismLight;

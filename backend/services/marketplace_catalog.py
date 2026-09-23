@@ -143,7 +143,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "paid": True,
         "note": "1.6 GB — near-human accuracy, 99 languages, runs on CPU",
     },
-
     # --- Paid Fish Audio S2 Pro (GGUF, 4.56B Dual-AR, s2.cpp) — user anchor $80 overrides $91 equation ---
     {
         "id": "fish-speech-s2-pro",
