@@ -180,12 +180,17 @@ async def build_capture_words_json(
     language: str | None = None,
     num_speakers: int | None = None,
     event_threshold: float = 0.5,
+    engine: str = "faster-whisper",
 ) -> Path | None:
     """Transcribe words + speakers + events into a Scribe-shaped sidecar.
 
     Best-effort: returns the sidecar path, or None when nothing usable was
     produced (silent/missing audio, unavailable models, backend errors).
     An existing sidecar short-circuits (cache-if-exists).
+
+    ``engine`` selects the STT engine; any engine works now — native word
+    timestamps when it has them, proportional segment split otherwise, with
+    faster-whisper as the automatic fallback.
     """
     import asyncio
     import json
@@ -209,12 +214,10 @@ async def build_capture_words_json(
         return None
 
     try:
-        from ..backends.faster_whisper_backend import FasterWhisperSTTBackend
+        from .transcribe import transcribe_words_with_fallback
 
-        words = normalize_words(
-            await FasterWhisperSTTBackend().transcribe_with_words(str(audio_path), language),
-            unit="ms",
-        )
+        words, source = await transcribe_words_with_fallback(engine, str(audio_path), language)
+        logger.debug("Words JSON via %s for %s", source, audio_path)
     except Exception as exc:
         logger.debug("Words JSON skipped, word transcribe failed: %s", exc)
         return None

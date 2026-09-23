@@ -122,10 +122,12 @@ async def vocal_qa(data: VocalQARequest, db: Session = Depends(get_db)):
     if resolved is None or not resolved.exists():
         raise HTTPException(status_code=404, detail=ERR_AUDIO_NOT_FOUND)
 
+    store_hint: str | None = None
     try:
         from ..backends.configs import get_all_model_configs
         from ..backends.registry import get_stt_backend
         from ..services.model_registry import is_downloaded
+        from ..services.transcribe import transcribe_words_with_fallback
         from ..utils.model_lifecycle import lifecycle_manager
 
         # Manifest gate: faster-whisper must be downloaded via the Store.
@@ -137,16 +139,41 @@ async def vocal_qa(data: VocalQARequest, db: Session = Depends(get_db)):
             ),
             None,
         )
-        if cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size):
-            raise HTTPException(status_code=400, detail=f"Download this model from the Store first ({cfg.model_name})")
-        stt = get_stt_backend("faster-whisper")
-        lifecycle_manager.mark_model_used("faster-whisper")
-        words_raw = await stt.transcribe_with_words(str(resolved), language=data.language, model_size=data.model)
+        words_raw: list[dict] | None = None
+        fw_missing = cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size)
+        if fw_missing and cfg is not None:
+            store_hint = f"Download this model from the Store first ({cfg.model_name})"
+        if not fw_missing:
+            stt = get_stt_backend("faster-whisper")
+            lifecycle_manager.mark_model_used("faster-whisper")
+            try:
+                words_raw = await stt.transcribe_with_words(
+                    str(resolved), language=data.language, model_size=data.model
+                )
+            except Exception:
+                words_raw = None
+        if not words_raw:
+            # faster-whisper unavailable: fall back to whisper.cpp (segment
+            # split). Timing is estimated; the transcribed words are real.
+            fallback, _source = await transcribe_words_with_fallback(
+                "whisper", str(resolved), language=data.language, fallback_to=()
+            )
+            words_raw = [
+                {
+                    "word": w["text"],
+                    "start_ms": w["start"] * 1000.0,
+                    "end_ms": w["end"] * 1000.0,
+                    "confidence": 1.0,
+                }
+                for w in fallback
+            ]
     except HTTPException:
         # The manifest gate above raises HTTPException (400) — it must
         # surface as-is, not be swallowed into 500 below.
         raise
     except RuntimeError as exc:
+        if store_hint is not None:
+            raise HTTPException(status_code=400, detail=store_hint) from exc
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:
         logger.debug("vocal-qa transcription failed", exc_info=True)

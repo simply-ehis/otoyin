@@ -47,7 +47,10 @@ async def get_word_timestamps(generation_id: str):
 
     stt = get_stt_backend("faster-whisper")
     lifecycle_manager.mark_model_used("faster-whisper")
-    if not stt.is_loaded():
+    words: list[dict] | None = None
+    if stt.is_loaded():
+        words = await stt.transcribe_with_words(str(resolved))
+    else:
         # Manifest gate: whisper must be downloaded via the Store.
         from ..backends.configs import get_all_model_configs
         from ..services.model_registry import is_downloaded
@@ -55,15 +58,36 @@ async def get_word_timestamps(generation_id: str):
         cfg = next(
             (c for c in get_all_model_configs() if c.engine == "faster-whisper" and c.model_size == "tiny.en"), None
         )
-        if cfg is not None and not is_downloaded(cfg.model_name, cfg.model_size):
-            raise HTTPException(status_code=400, detail=f"Download this model from the Store first ({cfg.model_name})")
-        if not stt._is_model_cached("tiny.en"):
-            raise HTTPException(
-                status_code=400, detail="Whisper model not downloaded. Install 'whisper-tiny-en' from the Store."
-            )
-        await stt.load_model("tiny.en")
+        if cfg is not None and is_downloaded(cfg.model_name, cfg.model_size) and stt._is_model_cached("tiny.en"):
+            await stt.load_model("tiny.en")
+            words = await stt.transcribe_with_words(str(resolved))
 
-    words = await stt.transcribe_with_words(str(resolved))
+    if not words:
+        # faster-whisper unavailable: any STT engine will do — native words
+        # when it has them, proportional segment split otherwise.
+        from ..services.transcribe import transcribe_words_with_fallback
+
+        try:
+            fallback, _source = await transcribe_words_with_fallback(
+                "whisper",
+                str(resolved),
+                model_size=None,
+                fallback_to=("parakeet", "qwen3_asr", "moonshine"),
+            )
+        except RuntimeError as exc:
+            raise HTTPException(
+                status_code=400,
+                detail="No STT model downloaded. Install a Whisper model from the Store first.",
+            ) from exc
+        words = [
+            {
+                "word": w["text"],
+                "start_ms": w["start"] * 1000.0,
+                "end_ms": w["end"] * 1000.0,
+                "confidence": 1.0,
+            }
+            for w in fallback
+        ]
     return {"words": words}
 
 

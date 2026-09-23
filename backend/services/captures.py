@@ -149,8 +149,10 @@ async def create_capture(
 
     # Best-effort Scribe-shaped words JSON (video-use contract: words +
     # speakers + events). Failures only skip the sidecar, never the row.
+    # Words come from the same whisper.cpp pass (proportional split), with
+    # faster-whisper as the automatic fallback when it is downloaded.
     try:
-        await build_capture_words_json(audio_path, language)
+        await build_capture_words_json(audio_path, language, engine="whisper")
     except Exception as exc:
         logger.debug("Words JSON skipped for capture %s: %s", capture_id, exc)
 
@@ -243,7 +245,7 @@ async def retranscribe_capture(
     with contextlib.suppress(OSError):
         words_json_path(resolved).unlink(missing_ok=True)
     try:
-        await build_capture_words_json(resolved, language)
+        await build_capture_words_json(resolved, language, engine="whisper")
     except Exception as exc:
         logger.debug("Words JSON skipped for capture %s: %s", capture_id, exc)
     return _to_response(row)

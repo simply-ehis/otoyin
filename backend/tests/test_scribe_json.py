@@ -117,7 +117,7 @@ async def test_build_capture_json_with_stubs(monkeypatch, tmp_path):
     _write_tone(wav)
     calls = {"words": 0}
 
-    async def fake_words(self, path, language=None):
+    async def fake_words(self, path, language=None, model_size=None):
         calls["words"] += 1
         return [{"word": "hello", "start_ms": 0.0, "end_ms": 500.0, "confidence": 0.9}]
 
