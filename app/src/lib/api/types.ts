@@ -550,6 +550,9 @@ export interface ModelStatus {
 	// Preset voices — populated for models with built-in voice presets (Kokoro, KittenTTS)
 	preset_voices?: PresetVoice[];
 	supports_voice_mixing?: boolean; // True for Kokoro (42 voices can be blended)
+	license_id?: string;
+	license_note?: string;
+	commercial_use?: boolean;
 	// Quality scoring (0-10) — reflects capability, quality, and value within
 	// the model's category. 10 = best-in-class; scores are per-category so
 	// TTS scores are only compared against other TTS models, etc.

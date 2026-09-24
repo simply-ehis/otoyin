@@ -23,6 +23,7 @@ import {
 	type CategoryId,
 	formatPrice,
 	formatSize,
+	getCapabilityChips,
 	priceTone,
 	type SortMode,
 } from "./storeUtils";
@@ -354,6 +355,26 @@ describe("buildFilteredProducts — search", () => {
 
 	it("whitespace-only search is ignored", () => {
 		expect(run({ search: "   " })).toHaveLength(4);
+	});
+});
+
+describe("getCapabilityChips", () => {
+	it("surfaces non-commercial and license metadata", () => {
+		const base: ModelStatus = {
+			model_name: "fish-speech-s2-pro",
+			display_name: "Fish Audio S2 Pro",
+			downloaded: false,
+			downloading: false,
+			loaded: false,
+		};
+		expect(getCapabilityChips({ ...base, commercial_use: false })).toContainEqual({
+			label: "Non-commercial",
+			tone: "red",
+		});
+		expect(getCapabilityChips({ ...base, license_id: "cc-by-4.0" })).toContainEqual({
+			label: "License",
+			tone: "zinc",
+		});
 	});
 });
 

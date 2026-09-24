@@ -232,6 +232,11 @@ export function getCapabilityChips(
 	if (model.gpu_only) {
 		chips.push({ label: "GPU", tone: "red" });
 	}
+	if (model.commercial_use === false) {
+		chips.push({ label: "Non-commercial", tone: "red" });
+	} else if (model.license_id) {
+		chips.push({ label: "License", tone: "zinc" });
+	}
 	if (model.preset_voices && model.preset_voices.length > 0) {
 		chips.push({ label: `${model.preset_voices.length} voices`, tone: "zinc" });
 	}
