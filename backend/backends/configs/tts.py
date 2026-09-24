@@ -178,6 +178,9 @@ def _get_tts_configs() -> list[ModelConfig]:
                 "[surprised]",
             ],
             languages=["en", "zh", "ja", "ko", "de", "fr", "es", "pt", "ru", "it"],
+            license_id="fish-audio-research",
+            license_note="Non-commercial research use. Verify rights before commercial deployment.",
+            commercial_use=False,
         ),
         # --- Pocket-TTS: 100M, CPU, clone + presets, CC-BY-4.0 -----
         ModelConfig(
@@ -192,6 +195,8 @@ def _get_tts_configs() -> list[ModelConfig]:
             preset_voices=_POCKET_TTS_PRESET_IDS,
             structured_preset_voices=_POCKET_TTS_STRUCTURED_VOICES,
             languages=["en", "fr", "de", "pt", "it", "es"],
+            license_id="cc-by-4.0",
+            license_note="Pocket-TTS weights are CC-BY; attribution required.",
         ),
         # --- Pocket-TTS ONNX: torch-free, 6 languages ---
         ModelConfig(
@@ -207,6 +212,8 @@ def _get_tts_configs() -> list[ModelConfig]:
             structured_preset_voices=_POCKET_TTS_STRUCTURED_VOICES,
             languages=["en", "de", "fr", "it", "pt", "es"],
             quant="int8",
+            license_id="cc-by-4.0",
+            license_note="Pocket-TTS ONNX conversion is CC-BY; attribution required.",
         ),
         # --- MOSS-TTS-Nano: 100M, torch-free ONNX, zero-shot clone -----
         # Weights = MOSS-TTS-Nano-100M-ONNX (~673MB: .data + .onnx) +

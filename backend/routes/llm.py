@@ -8,6 +8,7 @@ from .. import models
 from ..backends import get_llm_model_configs
 from ..backends.configs.llm import resolve_planner_size
 from ..services.llm import get_llm_model
+from ..services.settings import select_llm_model_size
 from ..utils.model_lifecycle import lifecycle_manager
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,10 @@ async def llm_generate(request: models.LLMGenerateRequest):
     backend = get_llm_model()
     lifecycle_manager.mark_model_used("gguf_llm")
     model_size = resolve_planner_size(request.model_size or backend.model_size)
+    try:
+        model_size = select_llm_model_size(model_size)
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     valid_sizes = {cfg.model_size for cfg in get_llm_model_configs()}
     if model_size not in valid_sizes:

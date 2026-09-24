@@ -20,6 +20,8 @@ def _get_neutts_configs() -> list[ModelConfig]:
             quant="Q8_0",
             category="tts",
             pip_packages=["neutts[llama,onnx]>=0.1.0"],
+            license_id="apache-2.0",
+            license_note="NeuTTS-Air code/weights declared Apache-2.0 by the publisher.",
         ),
     ]
 
@@ -49,6 +51,8 @@ def _get_neutts_2e_configs() -> list[ModelConfig]:
             pip_packages=["neutts[llama,onnx]>=0.1.0"],
             structured_preset_voices=neutts_2e_voices,
             quant="Q4_0",
+            license_id="neutts-open-license",
+            license_note="NeuTTS-2E uses a custom open license; verify terms before commercial use.",
         ),
         ModelConfig(
             model_name="neutts-2e-q8",
@@ -66,6 +70,8 @@ def _get_neutts_2e_configs() -> list[ModelConfig]:
             pip_packages=["neutts[llama,onnx]>=0.1.0"],
             structured_preset_voices=neutts_2e_voices,
             quant="Q8_0",
+            license_id="neutts-open-license",
+            license_note="NeuTTS-2E uses a custom open license; verify terms before commercial use.",
         ),
     ]
 
@@ -99,6 +105,8 @@ def _get_orpheus_configs() -> list[ModelConfig]:
             structured_preset_voices=orpheus_voices,
             quant="Q8_0",
             needs_trim=True,
+            license_id="mixed",
+            license_note="Code and weight licenses differ for Orpheus; verify both before distribution.",
         ),
     ]
 

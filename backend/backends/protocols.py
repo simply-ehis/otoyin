@@ -89,6 +89,9 @@ class ModelConfig:
     is_moe: bool = False
     # Whether the model requires a paid license / subscription to use.
     paid: bool = False
+    license_id: str = ""
+    license_note: str = ""
+    commercial_use: bool = True
     # Name of an env var that points to a custom llama-server binary.
     # When set, GGUFServerProcess uses this binary instead of the stock
     # llama-server (needed for models with custom kernels like Bonsai's

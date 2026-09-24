@@ -21,41 +21,42 @@ languages, clone flags), `backend/backends/registry.py` (factory), and GROUNDING
 - See [agent-operating-guide](../agent-operating-guide/SKILL.md) for the loop.
 - See [mcp-tool-reference](../mcp-tool-reference/SKILL.md) for tool signatures.
 
-## TTS engines (12 — fish_speech/chattts/f5_tts removed, see rows)
+## TTS engines (13 runtime ids — catalog entries include torch/ONNX/GGUF variants)
 | engine | model(s) | size MB | langs | clone | best use | known limits |
 |--------|----------|---------|-------|-------|----------|--------------|
 | kokoro | Kokoro-82M / ONNX | 350 / 340 | 8 (en,es,fr,hi,it,pt,ja,zh) | NO (preset blend + .pt packs only) | fast CPU batch narration | long text must be chunked (250 chars) + 120s/chunk timeout; no zero-shot clone |
-| ~~fish_speech~~ | REMOVED 2026-09-05 (CC-BY-NC-SA weights) | — | — | — | use zonos or qwen3_tts | |
-| zonos | Zyphra Zonos v0.1 | 2000 | 5 (en,ja,zh,fr,de) | clone + emotion (CLONING_ENGINES) | clone + emotion control | |
+| fish_speech_s2 | Fish Audio S2 Pro (GGUF) | ~1700 | 10+ | gen-time reference | high-quality multilingual clone | Fish Research License — non-commercial research; do not ship as unrestricted paid model |
+| zonos_gguf | Zyphra Zonos v0.1 GGUF | 2000 | 5 (en,ja,zh,fr,de) | clone + emotion | clone + emotion control | GGUF/crispasr subprocess; profile clone path |
 | styletts2 | StyleTTS2 LibriTTS / ONNX | 400 / 440 | 1 (en) | clone (CLONING_ENGINES) | fast English clone | ⚠ atlas notes CC-BY-NC weights yet catalog sells it $5 — license re-verification open |
 | ~~chattts~~ | REMOVED 2026-09-05 (CC-BY-NC weights) | — | — | — | conversational → use zonos | |
 | ~~f5_tts~~ | REMOVED 2026-09-05 (CC-BY-NC weights) | — | — | — | zero-shot clone → use zonos or qwen3_tts | |
-| pocket_tts | Pocket-TTS / ONNX | 200 | 6 (en,fr,de,pt,it,es) | clone (CLONING_ENGINES) | tiny CPU clone | |
+| pocket_tts | Pocket-TTS / ONNX | 200 | 6 (en,fr,de,pt,it,es) | clone (CLONING_ENGINES) | tiny CPU clone | CC-BY model weights; attribution required |
 | parler_tts | Parler-TTS Mini | 880 | 1 (en) | text-described voice | prompt-describable voice | en only |
 | moss_tts_nano | MOSS-TTS-Nano (ONNX) | 763 | 20 | gen-time zero-shot (NOT in CLONING_ENGINES) | multilingual zero-shot clone | ONNX-only; no torch fallback |
 | kitten_tts | KittenTTS (mini) | 80 | 1 (en) | no | tiny en | KITTEN_SIZE env: mini=80 / micro=40 MB |
 | neutts | NeuTTS-Air (Q4 GGUF) | 400 | 1 (en) | zero-shot clone (NOT in CLONING_ENGINES) | GGUF CPU clone | Apache 2.0 |
-| neutts_2e | NeuTTS-2E (Q4 / Q8 GGUF) | 400 / 700 | 1 (en) | zero-shot clone (NOT in CLONING_ENGINES) | GGUF CPU clone | |
-| orpheus | Orpheus 3B (Q4_K_M / Q8_0 GGUF) | 2360 / 4030 | 1 (en) | no | high-quality English | heavy; GGUF |
+| neutts_2e | NeuTTS-2E (Q4 / Q8 GGUF) | 400 / 700 | 1 (en) | zero-shot clone (NOT in CLONING_ENGINES) | GGUF CPU clone | custom NeuTTS license; verify before commercial use |
+| orpheus | Orpheus 3B (Q4_K_M / Q8_0 GGUF) | 2360 / 4030 | 1 (en) | no | high-quality English | heavy; GGUF; weight license differs from code license |
 | qwen3_tts | Qwen3-TTS 1.7B (subprocess) | ~1700 | 10 (en,zh,ja,ko,de,fr,es,it,pt,ru) | gen-time zero-shot | multilingual clone | subprocess one-shot; no resident model |
 | bark_small | Bark Small (GGUF, subprocess) | ~400 | 1 (en) | no | non-verbal sounds (laughs, sighs) | subprocess one-shot; no resident model |
 
-## Music / SFX engines (5)
+## Music / SFX engines (6 runtime ids)
 | engine | size / type | use | notes |
 |--------|-------------|-----|-------|
-| stable_audio | Stable Audio Open | one-shot SFX | `21labs.generate_sfx` |
-| acestep | ACE-Step 1.5 (bf16) | full music generation | genre/mood/tempo controllable |
+| stable_audio | Stable Audio Open 1.0 | music + SFX | `21labs.generate_sfx`; diffusers/torch path |
+| acestep_gguf | ACE-Step 1.5 GGUF | full music generation | genre/mood/tempo controllable |
 | heartmula | HeartMuLa 3B (Q8_0) | music generation | |
 | sa3_sfx | Stable Audio 3 Small SFX (Q8_0) | sound effects | |
 | minimax_music3 | MiniMax Music 3 (Q8_0) | music generation | |
 
-## STT engines (4)
+## STT engines (5 families, 17 catalog models)
 | engine | backend | notes |
 |--------|---------|-------|
 | whisper | whisper.cpp (GGML GGUF) | default STT; tiny/base/large-v3 variants |
 | faster-whisper | CTranslate2 int8 | fast CPU inference |
 | parakeet | parakeet.cpp (native C++) | 25 European languages |
 | qwen3_asr | ONNX Runtime C++ | 52 languages |
+| moonshine | transcribe.cpp GGUF | streaming small model; EN-only; no native word timestamps |
 
 ## Voice conversion engines (3)
 | engine | backend | notes |
@@ -68,10 +69,13 @@ languages, clone flags), `backend/backends/registry.py` (factory), and GROUNDING
 - **gguf_llm** (jackrong Qwen3.5 family, GGUF via llama.cpp `server` sidecar):
   | model_name | repo | size | quant | paid |
   |-----------|------|------|-------|------|
-  | planner-2b | Jackrong/Qwen3.5-2B-Claude-4.6-Opus-Reasoning-Distilled-GGUF | 1.7 GB | Q4_K_M | No (free default) |
-  | planner-0.8b | Jackrong/Qwen3.5-0.8B-Claude-4.6-Opus-Reasoning-Distilled-GGUF | 700 MB | Q5_K_M | No (low-RAM fallback) |
-  | planner-4b-v3 | Jackrong/Qwopus3.5-4B-v3-GGUF | 2.8 GB | Q4_K_M | Yes |
-  | planner-ministral-3b | mistralai/Ministral-3-3B-Reasoning-2512-GGUF | 2.0 GB | Q4_K_M | Yes |
+  | planner-4b | bartowski/Qwen3.5-4B-125B-16EF-GGUF | 2.7 GB | Q4_K_M | No (default) |
+  | planner-4b-v3 | bartowski/Qwen3.5-4B-125B-40EF-GGUF | 2.8 GB | Q4_K_M | Yes |
+  | planner-spark-x-2.5-4b | bartowski/Spark-2.5B-A3B-GGUF | 2.5 GB | Q4_K_M | Yes |
+  | planner-lfm2-2.6b | LiquidAI/LFM2.5-2.6B-GGUF | 1.6 GB | Q4_0 | Yes |
+  | planner-lfm2-8b-a1b | LiquidAI/LFM2.5-8B-A1B-GGUF | 4.5 GB | Q4_K_M | Yes (MoE) |
+  | planner-ling-tiny | inclusionAI/Ling-3.0-tiny-GGUF | 4.8 GB | Q4_K_M | Yes (MoE) |
+  | planner-bonsai-2-27b | prism-ml/Ternary-Bonsai-2-27B-gguf | 6.1 GB | PTQ1_0 | Yes |
   10 languages (en,zh,ja,ko,de,fr,es,it,pt,ru). Drives in-app assistant refinement via
   `POST /llm/generate` and `GET /llm/status`. `llama-cpp-python` removed — uses the native
   `llama-server` binary as a sidecar process.
@@ -91,9 +95,9 @@ languages, clone flags), `backend/backends/registry.py` (factory), and GROUNDING
 | European STT | Parakeet TDT (25 European langs) |
 
 ## Pitfalls / Gotchas
-- **15 TTS engines** (not 13 as older docs claim). Qwen3-TTS and Bark Small are subprocess-based.
-- **5 music/SFX engines** (not 1). ACE-Step, HeartMuLa, MiniMax Music 3 are all active.
-- **4 STT engines** (not 1). Parakeet and Qwen3-ASR are newer additions.
+- **13 TTS runtime ids** in `backend/backends/registry/tts.py`; Fish S2 Pro is back as `fish_speech_s2` and has a non-commercial research license flag.
+- **6 music/SFX runtime ids**; MiniMax is wired but gated behind manual HF license acceptance.
+- **5 STT families / 17 catalog models**; only faster-whisper has native word timestamps, other engines use proportional segment fallback for Scribe JSON.
 - **3 VC engines** (RVC, Seed-VC, OpenVoice). Seed-VC requires GPU.
 - Kokoro has NO zero-shot cloning — only preset blending ("af_bella,af_sky") + custom `.pt` packs.
 - **Two distinct cloning paths.** Profile-layer `CLONING_ENGINES = {zonos,

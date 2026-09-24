@@ -7,9 +7,9 @@ description: Consolidated catalog of every 21labs.* MCP tool (namespace at /mcp)
 ## Purpose
 Complete surface of `21labs.*` MCP tools (FastMCP, mounted at `/mcp`, port 17493 / `twentylabs_PORT`).
 All tools are thin wrappers that call the REST API in-process and return base64 WAV or JSON. Signatures
-below are read from the `backend/mcp_server/tools/` package (201 live tools).
+below are read from the `backend/mcp_server/tools/` package (203 live tools).
 Audio returns as `{ audio_base64, sample_rate, duration, bytes }`
-unless noted. (TR holds 202 entries; one is overridden by a manual registrar
+unless noted. (TR holds 204 entries; one is overridden by a manual registrar
 with the same name. `backend/tests/test_mcp_registration_invariant.py` locks
 the decorated↔TR match; `test_mcp_tool_count.py` floors the live count.)
 
@@ -33,6 +33,8 @@ the decorated↔TR match; `test_mcp_tool_count.py` floors the live count.)
 | 21labs.transcribe | audio_base64 XOR audio_path (loopback abs only), language?, model? | `{ text, duration, language, model }` | model ∈ base/small/medium/large/turbo |
 | 21labs.list_profiles | — | `{ profiles:[{id,name,voice_type,language,has_personality}] }` | |
 | 21labs.list_captures | limit=20(1–200), offset=0 | `{ captures, total }` | |
+| 21labs.capture_words | capture_id | Scribe-shaped `{ text, words[] }` JSON | words include timing, speaker_id, spacing, audio events |
+| 21labs.capture_chapters | capture_id | `{ chapters: [{ index, title, start, end }] }` | auto-chapters from words + detected events |
 | 21labs.list_models | — | `{ tts_engines, music_engines, llm_engines, stt }` | discovery of valid `engine=` |
 
 Example:

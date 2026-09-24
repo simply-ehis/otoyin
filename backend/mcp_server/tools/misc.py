@@ -56,6 +56,20 @@ def register_capture_tools(mcp: FastMCP) -> None:
     async def twentylabs_captures_retranscribe(capture_id: str) -> dict[str, Any]:
         return await _rest("POST", f"/captures/{_encode_path_param(capture_id)}/retranscribe")
 
+    @mcp.tool(
+        name="21labs.capture_words",
+        description="Get the Scribe-shaped word transcript JSON for a capture. Includes text, word timings, speakers, spacing, and audio events.",
+    )
+    async def twentylabs_capture_words(capture_id: str) -> dict[str, Any]:
+        return await _rest("GET", f"/captures/{_encode_path_param(capture_id)}/words")
+
+    @mcp.tool(
+        name="21labs.capture_chapters",
+        description="Get auto-chapters for a capture derived from its word transcript and detected audio events.",
+    )
+    async def twentylabs_capture_chapters(capture_id: str) -> dict[str, Any]:
+        return await _rest("GET", f"/captures/{_encode_path_param(capture_id)}/chapters")
+
 
 def register_model_tools(mcp: FastMCP) -> None:
     @mcp.tool(

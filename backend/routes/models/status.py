@@ -176,6 +176,9 @@ def _build_model_status(
             for v in config["structured_preset_voices"]
         ],
         supports_voice_mixing=config["supports_voice_mixing"],
+        license_id=config.get("license_id", ""),
+        license_note=config.get("license_note", ""),
+        commercial_use=config.get("commercial_use", True),
         category=config["category"],
     )
 
@@ -226,6 +229,9 @@ async def get_model_status():
             "supported_tags": cfg.supported_tags,
             "structured_preset_voices": cfg.structured_preset_voices,
             "supports_voice_mixing": cfg.supports_voice_mixing,
+            "license_id": getattr(cfg, "license_id", ""),
+            "license_note": getattr(cfg, "license_note", ""),
+            "commercial_use": getattr(cfg, "commercial_use", True),
             "category": cfg.category,
             "check_loaded": lambda c=cfg: check_model_loaded(c),
         }

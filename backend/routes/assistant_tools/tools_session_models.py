@@ -26,6 +26,30 @@ SESSION_MODELS_TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "capture_words",
+            "description": "Get the Scribe-shaped word transcript JSON for a capture.",
+            "parameters": {
+                "type": "object",
+                "properties": {"capture_id": {"type": "string"}},
+                "required": ["capture_id"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "capture_chapters",
+            "description": "Get auto-chapters for a capture derived from its transcript and audio events.",
+            "parameters": {
+                "type": "object",
+                "properties": {"capture_id": {"type": "string"}},
+                "required": ["capture_id"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "generation_version_audio",
             "description": "Fetch the audio for a specific generation version by id.",
             "parameters": {

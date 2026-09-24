@@ -86,6 +86,9 @@ class ModelStatus(BaseModel):
     # Preset voices — populated for models with built-in voice presets (Kokoro, KittenTTS)
     preset_voices: list[PresetVoice] = Field(default_factory=list)
     supports_voice_mixing: bool = False  # True for Kokoro (42 voices can be blended)
+    license_id: str = ""
+    license_note: str = ""
+    commercial_use: bool = True
     category: str = "tts"  # tts | stt | llm | music | sfx | vc
     # Entitlement = this install has a manifest row for the model (downloaded via the
     # Models page). The UI uses this to decide what's selectable/visible in the

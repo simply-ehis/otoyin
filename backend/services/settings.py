@@ -319,6 +319,48 @@ def get_budget_max_tokens(model_size: str) -> int:
     return gen_tokens
 
 
+def get_available_ram_mb() -> int:
+    """Current available system RAM in MB, or 0 when it cannot be read."""
+    try:
+        import psutil
+
+        return int(psutil.virtual_memory().available / (1024 * 1024))
+    except Exception:
+        return 0
+
+
+def select_llm_model_size(requested: str, available_mb: int | None = None) -> str:
+    """Return a local planner size that fits current available RAM.
+
+    Keeps the requested model when it fits. Otherwise picks the smallest
+    catalog planner whose ``min_ram_mb`` fits, preferring a model already
+    recorded as downloaded. Raises ``ValueError`` when no local planner fits.
+    """
+    from ..backends.configs.llm import get_planner_configs, planner_config_for_size, resolve_planner_size
+
+    resolved = resolve_planner_size(requested)
+    if available_mb is None:
+        available_mb = get_available_ram_mb()
+    if available_mb <= 0:
+        return resolved
+    requested_cfg = planner_config_for_size(resolved)
+    if requested_cfg is None or not requested_cfg.min_ram_mb or available_mb >= requested_cfg.min_ram_mb:
+        return resolved
+
+    candidates = [cfg for cfg in get_planner_configs() if cfg.min_ram_mb and available_mb >= cfg.min_ram_mb]
+    if not candidates:
+        raise ValueError(
+            f"Not enough available RAM for local LLM '{resolved}': need {requested_cfg.min_ram_mb} MB, "
+            f"have {available_mb} MB"
+        )
+
+    from .model_registry import is_downloaded
+
+    downloaded = [cfg for cfg in candidates if is_downloaded(cfg.model_name, cfg.model_size)]
+    pool = downloaded or candidates
+    return min(pool, key=lambda cfg: (cfg.min_ram_mb, cfg.size_mb, cfg.model_size)).model_size
+
+
 def get_assistant_thinking_enabled() -> bool:
     """Whether the planner should emit chain-of-thought reasoning.
 

@@ -100,9 +100,11 @@ async def stream_local(
     models which have no native function-calling and limited context.
     """
     from ..backends.configs.llm import resolve_planner_size
+    from ..services.settings import select_llm_model_size
     from ..utils.startup_defer import ensure_planner_preloaded
 
     model_id = resolve_planner_size(model_id)
+    model_id = select_llm_model_size(model_id)
     await ensure_planner_preloaded()
 
     backend = get_llm_backend()

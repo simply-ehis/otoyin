@@ -14,8 +14,14 @@ from sqlalchemy.orm import Session
 from .. import models
 from ..database import get_db
 from ..database.models import MCPClientBinding
+from ..mcp_server.context import request_is_loopback
 
 router = APIRouter()
+
+
+def _require_loopback_bindings() -> None:
+    if not request_is_loopback():
+        raise HTTPException(status_code=403, detail="MCP binding changes are only allowed from loopback clients")
 
 
 @router.get(
@@ -23,6 +29,7 @@ router = APIRouter()
     response_model=models.MCPClientBindingListResponse,
 )
 async def list_mcp_bindings(db: Session = Depends(get_db)):
+    _require_loopback_bindings()
     rows = db.query(MCPClientBinding).order_by(MCPClientBinding.client_id).all()
     return models.MCPClientBindingListResponse(items=[models.MCPClientBindingResponse.model_validate(r) for r in rows])
 
@@ -36,6 +43,7 @@ async def upsert_mcp_binding(
     db: Session = Depends(get_db),
 ):
     """Create-or-update a binding. Matches by client_id."""
+    _require_loopback_bindings()
     row = db.query(MCPClientBinding).filter(MCPClientBinding.client_id == data.client_id).first()
     if row is None:
         row = MCPClientBinding(client_id=data.client_id)
@@ -56,6 +64,7 @@ async def delete_mcp_binding(
     client_id: str,
     db: Session = Depends(get_db),
 ):
+    _require_loopback_bindings()
     row = db.query(MCPClientBinding).filter(MCPClientBinding.client_id == client_id).first()
     if row is None:
         raise HTTPException(status_code=404, detail="Binding not found")

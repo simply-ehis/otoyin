@@ -158,6 +158,8 @@ ENDPOINT_MAP = {
     # Captures / versions
     "captures_refine": "/captures/{capture_id}/refine",
     "captures_retranscribe": "/captures/{capture_id}/retranscribe",
+    "capture_words": "/captures/{capture_id}/words",
+    "capture_chapters": "/captures/{capture_id}/chapters",
     "generation_version_audio": "/audio/version/{version_id}",
     # Models lifecycle
     "model_cache_dir": "/models/cache-dir",
@@ -362,6 +364,8 @@ TOOL_METHODS = {
     "list_import_formats": "GET",
     "import_info": "GET",
     "generation_version_audio": "GET",
+    "capture_words": "GET",
+    "capture_chapters": "GET",
     "list_audio_tags": "GET",
     "sample_manifest": "GET",
     "video_preview": "GET",

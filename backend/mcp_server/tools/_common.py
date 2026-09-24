@@ -11,7 +11,9 @@ import io
 import logging
 import os
 import re
+import tempfile
 import urllib.parse
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -39,20 +41,24 @@ _PATH_BODY_KEYS = {
     "clip_path",
     "sample_path",
     "video_path",
-    "session_id",
 }
 
 
 def _validate_path(value: str) -> str:
-    """Reject path traversal, absolute paths, and URL schemes in path values."""
+    """Reject URL schemes, traversal, and absolute paths outside data/temp roots."""
     if not isinstance(value, str) or not value:
         return value
     if re.search(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", value):
         raise ValueError(f"Invalid path: URL schemes are not allowed ({value[:60]})")
-    if value.startswith("/") or re.match(r"^[a-zA-Z]:[\\/]", value):
-        raise ValueError(f"Invalid path: absolute paths are not allowed ({value[:60]})")
     if re.search(r"(^|[\\/])\.\.([\\/]|$)", value):
         raise ValueError(f"Invalid path: path traversal ('..') is not allowed ({value[:60]})")
+    if value.startswith("/") or re.match(r"^[a-zA-Z]:[\\/]", value):
+        from ... import config
+
+        resolved = Path(value).resolve()
+        allowed_roots = [config.get_data_dir().resolve(), Path(tempfile.gettempdir()).resolve()]
+        if not any(resolved.is_relative_to(root) for root in allowed_roots):
+            raise ValueError(f"Invalid path: absolute paths are only allowed under data/temp roots ({value[:60]})")
     return value
 
 

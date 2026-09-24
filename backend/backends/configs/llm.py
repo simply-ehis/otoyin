@@ -259,6 +259,16 @@ def get_llm_model_configs() -> list[ModelConfig]:
     return _get_gguf_llm_configs() + _get_cloud_llm_configs()
 
 
+def get_planner_configs() -> list[ModelConfig]:
+    """Return local GGUF planner configs only."""
+    return _get_gguf_llm_configs()
+
+
+def planner_config_for_size(model_size: str) -> ModelConfig | None:
+    """Return the local planner config for a resolved model size."""
+    return next((c for c in _get_gguf_llm_configs() if c.model_size == model_size), None)
+
+
 # Default planner size: the free Qwopus 4B. Single source of truth — every
 # route, default, and pattern below must reference this, never a literal.
 DEFAULT_PLANNER_SIZE = "Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M"
