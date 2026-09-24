@@ -75,10 +75,16 @@ export function ProductSpecs({
 				</span>
 				{model?.license_id && (
 					<span
-						className={model.commercial_use === false ? "rounded-full border border-destructive/40 bg-destructive-soft px-2 py-1 text-xs font-semibold text-destructive" : "rounded-full border border-border bg-secondary px-2 py-1 text-xs text-muted-foreground"}
+						className={
+							model.commercial_use === false
+								? "rounded-full border border-destructive/40 bg-destructive-soft px-2 py-1 text-xs font-semibold text-destructive"
+								: "rounded-full border border-border bg-secondary px-2 py-1 text-xs text-muted-foreground"
+						}
 						title={model.license_note || model.license_id}
 					>
-						{model.commercial_use === false ? "Non-commercial" : model.license_id}
+						{model.commercial_use === false
+							? "Non-commercial"
+							: model.license_id}
 					</span>
 				)}
 				{model?.size_mb && (

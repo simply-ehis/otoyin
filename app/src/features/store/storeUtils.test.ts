@@ -367,11 +367,15 @@ describe("getCapabilityChips", () => {
 			downloading: false,
 			loaded: false,
 		};
-		expect(getCapabilityChips({ ...base, commercial_use: false })).toContainEqual({
+		expect(
+			getCapabilityChips({ ...base, commercial_use: false }),
+		).toContainEqual({
 			label: "Non-commercial",
 			tone: "red",
 		});
-		expect(getCapabilityChips({ ...base, license_id: "cc-by-4.0" })).toContainEqual({
+		expect(
+			getCapabilityChips({ ...base, license_id: "cc-by-4.0" }),
+		).toContainEqual({
 			label: "License",
 			tone: "zinc",
 		});
