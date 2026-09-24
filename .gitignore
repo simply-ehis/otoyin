@@ -177,5 +177,12 @@ awesome-desktop-design.skills/
 # Next.js build output (marketplace/web)
 marketplace/web/.next/
 
+# Local OpenCode MCP config / throwaway sandbox state
+opencode.json
+
+# One-off updater key generator scratch files
+tauri/src-tauri/gen_key.rs
+tauri/src-tauri/Cargo.gen.toml
+
 # Pre-test backups (DBs + generations — restorable, never commit)
 backup-pre-test-*/
