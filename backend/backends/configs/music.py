@@ -55,11 +55,15 @@ def _get_music_configs() -> list[ModelConfig]:
             engine="stable_audio",
             hf_repo_id="StabilityAI/stable-audio-open-1.0",
             model_size="default",
-            size_mb=2500,
-            min_ram_mb=4000,
+            # Real: model.safetensors is 4,629,043,112 B (~4415 MB). Was declared
+            # 2500 MB with quant="int8", but the repo ships no quantized export —
+            # only fp32/bf16 PyTorch checkpoints.
+            size_mb=4415,
+            min_ram_mb=6000,
             min_vram_mb=0,
             languages=["en"],
             category="music",
+            quant="fp32",
             pip_packages=["stable-audio-open"],
         ),
         ModelConfig(
@@ -67,11 +71,14 @@ def _get_music_configs() -> list[ModelConfig]:
             display_name="Stable Audio 3 Small SFX (sound effects)",
             engine="sa3_sfx",
             hf_repo_id="stabilityai/stable-audio-open-small",
-            model_size="Q8_0",
-            size_mb=1684,
-            min_ram_mb=1800,
+            model_size="default",
+            # Real: model.safetensors is 1,676,829,212 B (~1599 MB). Was declared
+            # 1684 MB with quant="Q8_0" and model_size Q8_0, but the repo ships no
+            # GGUF/Q8_0 file — the backend loads the safetensors checkpoint.
+            size_mb=1599,
+            min_ram_mb=2200,
             min_vram_mb=0,
-            quant="Q8_0",
+            quant="fp32",
             languages=["en"],
             category="music",
         ),

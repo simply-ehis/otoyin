@@ -42,6 +42,6 @@ Render the instrument/drum clip, then `master_audio` (target LUFS for the platfo
 - **MCP Tools:** `21labs.play_gm_instrument`, `21labs.play_drum_machine`, `21labs.play_piano_note`, `21labs.play_synth_note`, `21labs.play_drum_pad`, `21labs.generate_noise`
 - **REST Endpoints:** `POST /instruments/gm`, `POST /instruments/drum-machine`, `POST /instruments/piano`, `POST /instruments/synth`, `POST /instruments/drum`, `POST /instruments/noise`, `GET /instruments/gm-types`, `GET /instruments/drum-types`, `GET /instruments/noise-types`
 - **Key Backend Files:** `backend/services/gm_instrument.py`, `backend/services/drum_machine.py`, `backend/services/instruments.py`, `backend/routes/instruments.py`
-- **Key Frontend Files:** `app/src/components/Workspace/StudioView.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/StudioView.tsx`
 
 UPDATED: 2026-07-15

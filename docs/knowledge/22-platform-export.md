@@ -43,4 +43,4 @@ One-tap export presets for podcast, audiobook, movie, voiceover, and social medi
 - **MCP Tools:** (none — platform export is UI-initiated)
 - **REST Endpoints:** `GET /export/presets`, `POST /export/apply-preset`
 - **Key Backend Files:** `backend/routes/platform_export.py`
-- **Key Frontend Files:** `app/src/components/Workspace/PlatformExportView.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/PlatformExportView.tsx`

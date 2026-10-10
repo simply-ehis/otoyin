@@ -55,4 +55,4 @@ Seed-VC is not installed.
 - **MCP Tools:** `21labs.convert_voice` (with `engine: "seed_vc"`)
 - **REST Endpoints:** `POST /voice-convert` (with `engine: "seed_vc"`)
 - **Key Backend Files:** `backend/backends/seed_vc_backend.py`, `backend/routes/voice_convert.py`
-- **Key Frontend Files:** `app/src/components/Workspace/VoiceConverterView.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/VoiceConverterView.tsx`

@@ -1,7 +1,7 @@
 # 09 — Session Management
 
 ## StandaloneProjectPage at `/projects`
-- **Component:** `StandaloneProjectPage` in `app/src/components/StandaloneProject/StandaloneProjectPage.tsx`
+- **Component:** `StandaloneProjectPage` in `app/src/features/content/StandaloneProjectPage.tsx`
 - **What:** Create, save, load, and manage standalone projects. Template selector, project metadata fields, script import.
 
 ## Create/Save/Load Workflow
@@ -33,4 +33,4 @@
 - **MCP Tools:** `21labs.session_save`, `21labs.session_load`, `21labs.create_project`, `21labs.save_project`, `21labs.load_project`, `21labs.import_script`, `21labs.list_project_templates`
 - **REST Endpoints:** `POST /session/save`, `POST /session/load`, `POST /project/create`, `POST /project/save`, `POST /project/load`, `POST /project/import-script`, `GET /project/templates`
 - **Key Backend Files:** `backend/services/session.py`, `backend/routes/standalone.py`, `backend/routes/features.py`
-- **Key Frontend Files:** `app/src/components/StandaloneProject/StandaloneProjectPage.tsx`
+- **Key Frontend Files:** `app/src/features/content/StandaloneProjectPage.tsx`

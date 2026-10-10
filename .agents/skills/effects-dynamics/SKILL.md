@@ -66,9 +66,9 @@ curl -X POST "http://localhost:17493/effects/preview/{generation_id}" \
 - These are ignored inside `run_recipe`; apply them first, then recipe.
 
 ## Cross-links
-- [effects-field-guide](../../effects-field-guide/SKILL.md)
-- [effects-tone](../../effects-tone/SKILL.md)
-- [mastering](../../mastering/SKILL.md)
+- [effects-field-guide](../effects-field-guide/SKILL.md)
+- [effects-tone](../effects-tone/SKILL.md)
+- [mastering](../mastering/SKILL.md)
 
 ## Validation
 - Compressor: louder quiet passages rise, peaks reduced; no audible pumping.

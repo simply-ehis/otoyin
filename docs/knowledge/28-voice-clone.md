@@ -3,7 +3,7 @@
 PURPOSE: One-click voice clone workflow: upload audio → extract voice profile → use immediately.
 OWNS: Voice clone creation, QuickCloneDialog, voice profile cloning backends.
 READ-WHEN: You touch voice profiles, clone dialogs, or the clone pipeline.
-KEY-FILES: app/src/components/VoiceProfiles/QuickCloneDialog.tsx, backend/routes/profiles.py, backend/services/voice_clone.py, backend/routes/voice_clone.py
+KEY-FILES: app/src/features/voices/QuickCloneDialog.tsx, backend/routes/profiles.py, backend/services/voice_clone.py, backend/routes/voice_clone.py
 INVARIANTS: Clone requires 5–60s of clear speech; auto-transcribes reference text; auto-detects best engine.
 GOTCHAS: QuickCloneDialog handles upload → backend → profile creation in a single flow. Engine selection is automatic based on available models (Fish Speech > Seed-VC > RVC).
 UPDATED: 2026-08-21
@@ -49,9 +49,9 @@ The system automatically picks the best engine based on what's loaded:
 
 | Component | File | Purpose |
 |-----------|------|---------|
-| `QuickCloneDialog` | `app/src/components/VoiceProfiles/QuickCloneDialog.tsx` | Main clone dialog |
-| `ProfileList` | `app/src/components/VoiceProfiles/ProfileList.tsx` | List + clone button trigger |
-| `ProfileInfoColumn` | `app/src/components/VoiceProfiles/ProfileInfoColumn.tsx` | Profile details display |
+| `QuickCloneDialog` | `app/src/features/voices/QuickCloneDialog.tsx` | Main clone dialog |
+| `VoicesTab` | `app/src/features/voices/VoicesTab.tsx` | List + clone button trigger |
+| `VoiceInspector` | `app/src/features/voices/VoiceInspector.tsx` | Profile details display |
 
 ## Backend Endpoints
 

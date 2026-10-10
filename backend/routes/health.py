@@ -292,7 +292,20 @@ async def health():
     Invariant GPU info (availability, type, compatibility) is probed once
     and cached in _gpu_snapshot.  Dynamic fields (VRAM, model state) are
     computed per-request.
+
+    The probes are blocking (lazy torch import, engine-registry scan, model
+    directory walk, psutil), so the whole snapshot is built in a worker
+    thread.  Running it inline froze the entire event loop for ~10 s on the
+    first call after startup — the UI appeared to hang right after launch,
+    and ``test_graceful_shutdown_unloads_models_and_exits_cleanly`` timed out
+    polling /health.  Steady-state cost is ~35 ms; thread offload keeps the
+    loop responsive for the cold path too.
     """
+    return await asyncio.to_thread(_build_health_response)
+
+
+def _build_health_response() -> models.HealthResponse:
+    """Blocking part of ``GET /health``. Runs in a worker thread."""
     # ── Invariant fields (cached) ──
     snap = _get_gpu_snapshot()
 

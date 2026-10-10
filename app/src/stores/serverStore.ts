@@ -18,9 +18,6 @@ interface ServerStore {
 	 */
 	lastRemoteUrl: string | null;
 
-	keepServerRunningOnClose: boolean;
-	setKeepServerRunningOnClose: (keepRunning: boolean) => void;
-
 	customModelsDir: string | null;
 	setCustomModelsDir: (dir: string | null) => void;
 }
@@ -143,10 +140,6 @@ export const useServerStore = create<ServerStore>()(
 				}
 				invalidateAllServerData();
 			},
-
-			keepServerRunningOnClose: false,
-			setKeepServerRunningOnClose: (keepRunning) =>
-				set({ keepServerRunningOnClose: keepRunning }),
 
 			customModelsDir: null,
 			setCustomModelsDir: (dir) => set({ customModelsDir: dir }),

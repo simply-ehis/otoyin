@@ -11,9 +11,9 @@ Use this skill when building the server-side endpoint that receives Paddle webho
 
 This skill is the foundation for almost every server-side Paddle integration. Pair with:
 
-- `subscription-sync` — turn webhook events into rows in your database.
-- `sandbox-testing` — drive your endpoint with the webhook simulator.
-- `checkout-web` — the client-side counterpart that triggers the events you'll receive here.
+- `paddle-subscription-sync` — turn webhook events into rows in your database.
+- `paddle-sandbox-testing` — drive your endpoint with the webhook simulator.
+- `paddle-checkout-web` — the client-side counterpart that triggers the events you'll receive here.
 
 ## The delivery contract
 
@@ -31,7 +31,7 @@ Every design choice in this skill follows from these facts about how Paddle deli
 
 You need:
 
-- A Paddle account with a configured product and price (sandbox is fine for development) — see `catalog-setup` if you don't have one yet.
+- A Paddle account with a configured product and price (sandbox is fine for development) — see `paddle-catalog-setup` if you don't have one yet.
 - A publicly reachable URL for your dev environment if you want real Paddle events to hit local code (see "Local testing" below).
 - Three environment variables:
 
@@ -303,7 +303,7 @@ Real Paddle events from the sandbox will then hit your local route handler.
 3. Pick an event type or a scenario (`subscription.created`, `transaction.paid`).
 4. Paddle constructs a payload, signs it with your destination's secret, and POSTs it to your URL.
 
-See `sandbox-testing` for the full sandbox + simulator workflow.
+See `paddle-sandbox-testing` for the full sandbox + simulator workflow.
 
 ## Common pitfalls
 
@@ -329,7 +329,7 @@ See `sandbox-testing` for the full sandbox + simulator workflow.
    - The handler returns a non-2xx (this skill's handler returns 500).
    - The dashboard log shows the failed delivery and a queued retry.
    - Restore the correct secret afterwards — Paddle will retry the failed delivery and it should succeed.
-6. Trigger a real flow: complete a sandbox checkout (see `checkout-web`) and confirm the resulting `transaction.completed` and `subscription.created` events arrive.
+6. Trigger a real flow: complete a sandbox checkout (see `paddle-checkout-web`) and confirm the resulting `transaction.completed` and `subscription.created` events arrive.
 
 ## Related docs
 

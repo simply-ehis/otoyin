@@ -58,9 +58,9 @@ REST: DELETE /models/kokoro-onnx
 - Windows file locks: retry delete after 2s; the manifest still frees even when files linger.
 
 ## Cross-links
-- `engine-atlas` — which engine to pick
-- `voice-clone-workflow` — cloning after activation
-- `troubleshooting` — backend-down triage
+- [engine-atlas](../engine-atlas/SKILL.md) — which engine to pick
+- [voice-clone-workflow](../voice-clone-workflow/SKILL.md) — cloning after activation
+- [troubleshooting](../troubleshooting/SKILL.md) — backend-down triage
 
 ## Validation
 - `GET /models/status` shows `downloaded:true` after download, `loaded:true` after activate, `downloaded:false` after delete.

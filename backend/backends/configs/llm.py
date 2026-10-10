@@ -9,7 +9,7 @@ def _get_gguf_llm_configs() -> list[ModelConfig]:
     """Return GGUF planner LLM configs.
 
     Lineup: Qwopus 4B (free default), Qwopus 4B v3 ($20, premium),
-    LFM2.5-2.6B ($13, multilingual), Spark-X 2.5-4B ($20, agentic),
+    LFM2.5-2.6B (free, multilingual), Spark-X 2.5-4B ($20, agentic),
     LFM2.5-8B-A1B ($40, MoE), Ling-3.0-tiny ($40, MoE),
     Bonsai 2 27B ($80, ternary quantized, requires custom llama.cpp fork).
     All run via llama.cpp server.exe (or custom fork for Bonsai).
@@ -68,7 +68,7 @@ def _get_gguf_llm_configs() -> list[ModelConfig]:
         ),
         ModelConfig(
             model_name="planner-lfm2-2.6b",
-            display_name="LFM2.5-2.6B ($13)",
+            display_name="LFM2.5-2.6B (Free)",
             engine="gguf_llm",
             hf_repo_id="LiquidAI/LFM2.5-2.6B-GGUF",
             model_size="2.6B-Q4_0",
@@ -200,15 +200,15 @@ def _get_gguf_llm_configs() -> list[ModelConfig]:
 
 
 def _get_cloud_llm_configs() -> list[ModelConfig]:
-    """Cloud LLM — subscription-only, third-party routed.
+    """Cloud LLM — coming soon, third-party routed.
 
-    Three tiers ($10/$20/$50) with increasing capability. Users pick a tier,
-    not a specific model. Access gated by active subscription license.
+    Planned tiers ($10/$20/$50) with increasing capability. Users pick a tier,
+    not a specific model. Access will be gated by active subscription license.
     """
     return [
         ModelConfig(
             model_name="llm-cloud-starter",
-            display_name="Cloud Starter ($10/mo)",
+            display_name="Cloud Starter — Coming Soon ($10/mo)",
             engine="cloud",
             hf_repo_id="",
             model_size="cloud",
@@ -223,7 +223,7 @@ def _get_cloud_llm_configs() -> list[ModelConfig]:
         ),
         ModelConfig(
             model_name="llm-cloud-pro",
-            display_name="Cloud Pro ($20/mo)",
+            display_name="Cloud Pro — Coming Soon ($20/mo)",
             engine="cloud",
             hf_repo_id="",
             model_size="cloud",
@@ -238,7 +238,7 @@ def _get_cloud_llm_configs() -> list[ModelConfig]:
         ),
         ModelConfig(
             model_name="llm-cloud-max",
-            display_name="Cloud Max ($50/mo)",
+            display_name="Cloud Max — Coming Soon ($50/mo)",
             engine="cloud",
             hf_repo_id="",
             model_size="cloud",

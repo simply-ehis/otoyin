@@ -15,15 +15,15 @@ Create original music — from simple loops to full arrangements — using otoyi
 - User needs drum patterns or beats
 
 ## Prerequisites
-- At least one music engine available (ACE-Step, Stable Audio)
+- At least one music engine available (`acestep_gguf`, `heartmula`, `minimax_music3`, or Stable Audio for beds)
 - Optional: SoundFont for GM instruments
 
 ## Parameters / Schema
 - **prompt**: Natural language description of the music
-- **duration**: Length in seconds (5-180)
-- **tempo**: BPM (optional, some engines support it)
+- **duration_seconds**: Length in seconds (`generate_music`: 1–300; `generate_sfx`: 0.1–30)
+- **tempo**: BPM in `[40,240]` (optional; only some music engines use it)
 - **genre**: Style hint (optional)
-- **format**: `loop` (seamless) or `track` (with intro/outro)
+- **mode**: `generate`, `cover`, or `repaint` for music engines
 
 ## Agent procedure
 
@@ -31,49 +31,50 @@ Create original music — from simple loops to full arrangements — using otoyi
 
 | Request | Best engine | Why |
 |---------|-------------|-----|
-| Full song with lyrics | ACE-Step | Supports singing |
-| Instrumental background | ACE-Step or Stable Audio | Both handle this well |
-| Short loop/jingle | ACE-Step (loop mode) | Seamless looping |
+| Full song with lyrics | ACE-Step GGUF | Supports singing |
+| Instrumental background | ACE-Step GGUF or Stable Audio | Both handle this well |
+| Short loop/jingle | ACE-Step GGUF | Generate a short bed, then sequence/repeat it |
 | Drum pattern | Drum Machine | Step-sequenced percussion |
 | Single instrument note | Procedural instruments | Piano, synth, drum hits |
 
 ### 2. Generate the music
 ```
 MCP: 21labs.generate_music(
+  engine="acestep_gguf",
   prompt="upbeat corporate background music, positive, 120 BPM",
-  duration=30
+  duration_seconds=30,
+  genre="corporate",
+  mood="positive",
+  tempo=120
 )
 ```
 
 ### 3. Post-process
 ```
 MCP: 21labs.apply_effects(
-  effects=[
-    {"type": "eq", "params": {"low_freq": 80, "high_freq": 12000}},
-    {"type": "compressor", "params": {"threshold": -18, "ratio": 3}}
+  generation_id="<generation-id>",
+  effects_chain=[
+    {"type": "eq", "enabled": true, "params": {"low_gain": 0, "mid_gain": 0, "high_gain": 2}},
+    {"type": "compressor", "enabled": true, "params": {"threshold": -18, "ratio": 3}}
   ]
 )
 ```
 
 ### 4. Loop if needed
-For background beds that need to repeat:
-```
-MCP: 21labs.splice_audio(files=["track.wav"], operation="loop", target_duration=180)
-```
+For background beds that need to repeat, generate a short bed and sequence repeats with story items or `run_recipe`; there is no dedicated loop-generation mode.
 
 ### 5. Mix with other elements
-```
-MCP: 21labs.splice_audio(
-  files=["music.wav", "voiceover.wav"],
-  operation="mix",
-  offsets=[0, 2]
-)
-```
+Use story sequencing for timed placement, or `21labs.bounce_preview` with base64 `audio_data` tracks for ad-hoc mixing.
 
 ### 6. Master to target loudness
 ```
-MCP: 21labs.normalize_audio(target_lufs=-16)
+MCP: 21labs.master_audio(
+  audio_path="music.wav",
+  target_lufs=-16.0,
+  true_peak_db=-1.0
+)
 ```
+`normalize_audio` adjusts peak level only; it does not set LUFS.
 
 ## Music prompt tips
 - Be specific about genre: "lo-fi hip hop" not just "music"
@@ -90,14 +91,14 @@ MCP: 21labs.normalize_audio(target_lufs=-16)
 - Normalize after mixing — music + voice often clips
 
 ## Cross-links
-- `music-acestep` — ACE-Step engine (lyrics, singing)
-- `sfx-stable-audio` — Stable Audio (instrumental, SFX)
-- `drum-machine` — Step-sequenced percussion
-- `procedural-instruments` — Single-note synthesis
-- `virtual-instruments-gm` — General MIDI SoundFont
-- `effects-tone` — EQ for music mixing
-- `effects-dynamics` — Compression for music
-- `mastering` — Final loudness/quality
+- [music-acestep](../music-acestep/SKILL.md) — ACE-Step engine (lyrics, singing)
+- [sfx-stable-audio](../sfx-stable-audio/SKILL.md) — Stable Audio (instrumental, SFX)
+- [drum-machine](../drum-machine/SKILL.md) — Step-sequenced percussion
+- [procedural-instruments](../procedural-instruments/SKILL.md) — Single-note synthesis
+- [virtual-instruments-gm](../virtual-instruments-gm/SKILL.md) — General MIDI SoundFont
+- [effects-tone](../effects-tone/SKILL.md) — EQ for music mixing
+- [effects-dynamics](../effects-dynamics/SKILL.md) — Compression for music
+- [mastering](../mastering/SKILL.md) — Final loudness/quality
 
 ## Validation
 - Play the output and verify it matches the prompt intent

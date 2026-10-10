@@ -82,6 +82,19 @@ def _signed_catalog(products: list[dict]) -> dict:
     return licensing.sign_license(payload)
 
 
+def test_bundled_catalog_hides_byok_cloud_and_marks_llm_cloud(mc):
+    """BYOK cloud rows stay out of the marketplace; Cloud LLM rows are previews."""
+    products = {product["id"]: product for product in mc.PRODUCTS}
+
+    assert "stt-cloud" not in products
+    assert "vc-cloud" not in products
+    assert "music-cloud" not in products
+
+    for product_id in ("llm-cloud-starter", "llm-cloud-pro", "llm-cloud-max"):
+        assert products[product_id]["paid"] is True
+        assert products[product_id]["coming_soon"] is True
+
+
 def test_remote_shaped_catalog_verifies(mc):
     """The remote response shape verifies against the embedded public key."""
     catalog = _signed_catalog(_remote_products())

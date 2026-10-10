@@ -14,7 +14,7 @@ Guide the complete voice cloning process: selecting reference audio, creating a 
 - User needs to verify clone quality before production use
 
 ## Prerequisites
-- At least one cloning-capable engine downloaded (Chatterbox, Fish Speech, Qwen3-TTS, or Seed-VC)
+- At least one cloning-capable engine downloaded (`pocket_tts`, `qwen3_tts`, or `zonos_gguf` — verify with `21labs.list_models`)
 - Reference audio file (WAV/MP3, 5-30 seconds recommended)
 
 ## Parameters / Schema
@@ -29,8 +29,9 @@ Guide the complete voice cloning process: selecting reference audio, creating a 
 Check quality before cloning:
 ```
 MCP: 21labs.analyze_loudness(audio_path="reference.wav")
-MCP: 21labs.transcribe(audio_path="reference.wav")
+MCP: 21labs.transcribe(audio_base64="<b64 of reference.wav>", model="base.en", language="en")
 ```
+`audio_path` is loopback-callers only; remote callers must use `audio_base64`.
 - Loudness should be -20 to -6 LUFS (not too quiet, not clipping)
 - Transcription should match what the speaker actually said
 - Background noise degrades clone quality
@@ -38,20 +39,18 @@ MCP: 21labs.transcribe(audio_path="reference.wav")
 ### 2. Clean if needed
 ```
 MCP: 21labs.noise_reduce(audio_path="reference.wav")
-MCP: 21labs.normalize_audio(audio_path="reference_clean.wav", target_lufs=-14)
+MCP: 21labs.normalize_audio(audio_path="reference_clean.wav", target_db=-14.0, max_peak_db=-3.0)
 ```
 
 ### 3. Choose the cloning engine
 
 | Engine | Size | Quality | Speed | Languages |
 |--------|------|---------|-------|-----------|
-| Chatterbox | 1.2GB | Excellent | Medium | ~20 |
-| Fish Speech S1-mini | 500MB | Very good | Fast | 13 |
-| Qwen3-TTS 1.7B | 1.7GB | Excellent | Slow | 10 |
-| Seed-VC | 400MB | Good | Fast | Multi |
-| LuxTTS | 300MB | Good | Very fast | English |
+| pocket_tts | 200MB | Good | Fast | 6 |
+| qwen3_tts | ~1.5GB | Excellent | Slow, one-shot | 10 |
+| zonos_gguf | 2GB | Excellent | Slow | 5 |
 
-**Recommendation**: Start with Chatterbox (best quality/size ratio).
+**Recommendation**: Start with `pocket_tts`; use a preset voice first if a preset is acceptable. Escalate to `qwen3_tts`, then `zonos_gguf`.
 
 ### 4. Create the voice profile
 ```
@@ -59,15 +58,15 @@ MCP: 21labs.create_profile(
   name="My Cloned Voice",
   description="Clone of [person] from [source]",
   voice_type="cloned",
-  default_engine="chatterbox"
+  default_engine="pocket_tts"
 )
 ```
 
 ### 5. Upload reference audio to the profile
 ```
-MCP: 21labs.clone_voice(
+MCP: 21labs.add_profile_sample(
   profile_id="<new_profile_id>",
-  audio_path="reference_clean.wav",
+  sample_path="reference_clean.wav",
   reference_text="What the speaker said in the recording"
 )
 ```
@@ -76,9 +75,9 @@ MCP: 21labs.clone_voice(
 Generate a test phrase and listen:
 ```
 MCP: 21labs.speak(
-  profile_id="<new_profile_id>",
+  profile="<new_profile_id>",
   text="This is a quality check for the cloned voice.",
-  engine="chatterbox"
+  engine="pocket_tts"
 )
 ```
 Compare the output to the reference. Check for:
@@ -90,9 +89,9 @@ Compare the output to the reference. Check for:
 Once verified, use the profile for any generation:
 ```
 MCP: 21labs.speak(
-  profile_id="<new_profile_id>",
+  profile="<new_profile_id>",
   text="Your production text here",
-  engine="chatterbox"
+  engine="pocket_tts"
 )
 ```
 
@@ -104,12 +103,10 @@ MCP: 21labs.speak(
 - **Test before production** — always generate a quality check clip first
 
 ## Cross-links
-- `voice-cloning` — Engine comparison and fallback strategies
-- `voice-profiles` — Profile management reference
-- `tts-chatterbox` — Chatterbox engine details
-- `tts-fish-speech` — Fish Speech engine details
-- `tts-qwen` — Qwen3-TTS engine details
-- `reference-voices` — Bundled reference voice clips
+- [voice-cloning](../voice-cloning/SKILL.md) — Engine comparison and fallback strategies
+- [voice-profiles](../voice-profiles/SKILL.md) — Profile management reference
+- [engine-atlas](../engine-atlas/SKILL.md) — Current engine capabilities
+- [reference-voices](../reference-voices/SKILL.md) — Bundled reference voice clips
 
 ## Validation
 - Transcribe the clone output and compare to input text (should match)

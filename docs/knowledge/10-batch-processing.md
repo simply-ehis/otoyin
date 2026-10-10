@@ -1,7 +1,7 @@
 # 10 — Batch Processing Queue
 
 ## BatchQueueView at `/workspace/batch`
-- **Component:** `BatchQueueView` in `app/src/components/Workspace/BatchQueueView.tsx`
+- **Component:** `BatchQueueView` in `app/src/features/workspace/BatchQueueView.tsx`
 - **What:** Job queue with status badges, progress bars, cancel action, and create job button. Polls server every 5 seconds.
 
 ## Job Table
@@ -60,4 +60,4 @@ target for Phases 2/3).
 - **MCP Tools:** `21labs.list_batch_jobs`, `21labs.get_batch_job`, `21labs.create_batch_job`, `21labs.cancel_batch_job`
 - **REST Endpoints:** `GET /batch/jobs`, `POST /batch/jobs`, `GET /batch/jobs/{id}`, `POST /batch/jobs/{id}/cancel`
 - **Key Backend Files:** `backend/services/batch.py`, `backend/routes/batch.py`
-- **Key Frontend Files:** `app/src/components/Workspace/BatchQueueView.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/BatchQueueView.tsx`

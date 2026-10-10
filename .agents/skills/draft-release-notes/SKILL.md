@@ -25,14 +25,15 @@ Update the `[Unreleased]` section at the top of `CHANGELOG.md` with a narrative 
    git log --oneline "$LAST_TAG"..HEAD
    ```
 
-   b. **GitHub-generated release notes preview** (PR titles, new contributors):
-   ```bash
-   gh api repos/:owner/:repo/releases/generate-notes \
-     -f tag_name="vNEXT" \
-     -f target_commitish="$(git rev-parse HEAD)" \
-     -f previous_tag_name="$LAST_TAG" \
-     --jq '.body'
-   ```
+    b. **GitHub-generated release notes preview** (PR titles, new contributors):
+    ```bash
+    OWNER_REPO=$(gh repo view --json owner,name --jq '"\(.owner.login)/\(.name)"')
+    gh api repos/$OWNER_REPO/releases/generate-notes \
+      -f tag_name="vNEXT" \
+      -f target_commitish="$(git rev-parse HEAD)" \
+      -f previous_tag_name="$LAST_TAG" \
+      --jq '.body'
+    ```
 
    c. **Diff stat for theme analysis:**
    ```bash
@@ -65,7 +66,7 @@ Tie it to concrete shipped changes. No vague hype.>
 
 ### <Feature/Theme Group>
 - Bullet points with specifics
-- Reference PRs where available: ([#123](https://github.com/21-labs/21-labs/pull/123))
+- Reference PRs where available: ([#123](https://github.com/$OWNER_REPO/pull/123))
 
 ### <Another Group>
 - ...

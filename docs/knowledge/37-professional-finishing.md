@@ -40,6 +40,6 @@ GOTCHAS:
 - **MCP Tools:** `21labs.master_audio`, `21labs.separate_audio`, `21labs.compress_audio`, `21labs.normalize_audio`, `21labs.noise_reduce`
 - **REST Endpoints:** `POST /audio/master`, `POST /audio/separate`, `POST /audio/compress`, `POST /audio/normalize`, `POST /audio/noise-reduce`
 - **Key Backend Files:** `backend/services/mastering.py`, `backend/services/stem_separation.py`, `backend/services/effects_extended.py`, `backend/services/noise_reduction.py`, `backend/routes/audio_processing.py`
-- **Key Frontend Files:** `app/src/components/Workspace/AudioEnhanceView.tsx`, `app/src/components/Workspace/NoiseReductionView.tsx`, `app/src/components/Workspace/VocalIsolationView.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/AudioEnhanceView.tsx`, `app/src/features/workspace/NoiseReductionView.tsx`, `app/src/features/workspace/VocalIsolationView.tsx`
 
 UPDATED: 2026-08-20

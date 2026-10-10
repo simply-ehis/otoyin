@@ -9,10 +9,9 @@ Error messages use sound‑studio terminology throughout. Raw backend/network er
 | Layer | File | Purpose |
 |---|---|---|
 | Error definitions | `app/src/lib/errors.ts` | 12 error codes, `inferStudioError()` regex matcher, `showStudioErrorToast()` |
-| Crash boundary | `app/src/components/ErrorBoundary/ErrorBoundary.tsx` | Class‑based React error boundary |
-| Crash screen | `app/src/components/ErrorBoundary/CrashScreen.tsx` | Full‑screen error card with collapsible console log, retry button |
-| Inline banner | `app/src/components/ErrorBoundary/ErrorBanner.tsx` | Dismissable inline banner (critical/warning/info severity) |
-| Error hook | `app/src/hooks/useErrorHandler.ts` | Returns `{ error, handleError, clearError }` with optional toast |
+| Crash boundary | `app/src/layouts/ErrorBoundary/ErrorBoundary.tsx` | Class‑based React error boundary |
+| Crash screen | `app/src/layouts/ErrorBoundary/CrashScreen.tsx` | Full‑screen error card with collapsible console log, retry button |
+| Toast bridge | `app/src/ui/use-toast.ts` | Inline surfaces via `showStudioErrorToast()` + query error callbacks (former ErrorBanner/useErrorHandler) |
 
 ## Error Codes
 

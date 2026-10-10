@@ -19,7 +19,7 @@ Renders one GM instrument note (piano/bass/strings/brass/pads/bells) via `tinyso
 - Stereo 48000 Hz. **501 if no SoundFont.** 0-based program (0 = piano).
 - Detail: [virtual-instruments-gm](../virtual-instruments-gm/SKILL.md)
 
-## 3. Drum machine (SoundFont, patterned loop) — `drum-machine`
+## 3. Drum machine (synthesized hits, patterned loop) — `drum-machine`
 16-step (or N-step) drum pattern loop from synthesized hits.
 - MCP: `play_drum_machine` — REST: `POST /instruments/drum-machine`
 - `pattern` is a list of steps; each step is a voice name or list of names.

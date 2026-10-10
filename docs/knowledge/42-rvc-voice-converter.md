@@ -43,4 +43,4 @@ Paired with Seed-VC (zero-shot) — see `43b-seed-vc.md`.
 - **MCP Tools:** `21labs.list_voice_packs`, `21labs.convert_voice`
 - **REST Endpoints:** `GET /voice-packs`, `POST /voice-convert`
 - **Key Backend Files:** `backend/backends/rvc_backend.py`, `backend/routes/voice_convert.py`
-- **Key Frontend Files:** `app/src/components/Workspace/VoiceConverterView.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/VoiceConverterView.tsx`

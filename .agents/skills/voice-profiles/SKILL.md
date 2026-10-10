@@ -60,9 +60,9 @@ curl http://localhost:17493/profiles/presets/kokoro
 
 ## Pitfalls / Gotchas
 - Preset profiles must set BOTH `preset_engine` and `preset_voice_id`; `default_engine` must equal `preset_engine` or the create is rejected (profiles.py:87-91).
-- Cloned profiles cannot set `preset_*` or `design_prompt`; `default_engine` must be in `CLONING_ENGINES = {fish_speech,zonos,styletts2,f5_tts,pocket_tts}` (profiles.py:26-34).
+- Cloned profiles cannot set `preset_*` or `design_prompt`; `default_engine` must be in the current `CLONING_ENGINES`, and never `styletts2` because it has no backend.
 - `reference_text` is REQUIRED on sample upload even for engines that transcribe internally.
-- `GET /profiles/presets/{engine}` returns `{"voices":[]}` for engines without preset voices (only `kokoro` has any today).
+- `GET /profiles/presets/{engine}` returns `{"voices":[]}` for engines without preset voices. Use `21labs.list_preset_voices` and backend validation as the source; profile validation currently supports `kokoro` and `bark_small`.
 
 ## Cross-links
 - [voice-cloning](../voice-cloning/SKILL.md)

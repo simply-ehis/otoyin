@@ -1,8 +1,8 @@
 # 04 — Voice Effects Chain
 
 ## EffectsView at `/workspace/effects`
-- **Component:** `EffectsView` in `app/src/components/Workspace/EffectsView.tsx`
-- **What:** Drag-sortable effects chain with per-effect enable toggle, parameter sliders, preset save/load, add effect dropdown, and ABComparison wired at bottom.
+- **Component:** `EffectsTab` in `app/src/features/effects/EffectsTab.tsx`
+- **What:** Drag-sortable effects chain with per-effect enable toggle, parameter sliders, preset save/load, add effect dropdown.
 
 ## Drag-Sortable Chain
 - **Library:** `@dnd-kit/core` and `@dnd-kit/sortable` for drag-and-drop reordering
@@ -30,11 +30,8 @@
 - **Data source:** `GET /effects/available` lists all effect types
 - **Behavior:** Adds effect with default parameters, auto-expands it
 
-## ABComparison
-- **What:** Wired at bottom of EffectsView — toggle between original and processed audio for comparison
-- **Component:** `ABComparison` in `app/src/components/ABComparison/ABComparison.tsx`
-- **Modes:** Original (VolumeX icon), Processed (Volume2 icon), A/B (auto-switch after 2s)
-- **UI:** Three toggle buttons, play/stop button, status description text
+## ABComparison (removed)
+- Formerly wired at the bottom of the Workspace EffectsView; the standalone `ABComparison` component was removed with that view. Audition processed audio via history playback (`app/src/features/generate/HistoryList.tsx`) or capture playback (`app/src/features/captures/InlinePlayer.tsx`).
 
 ## Available Effects (Backend)
 - Chorus/Flanger, Reverb, Delay, Compressor, Gain, High-Pass Filter, Low-Pass Filter, Pitch Shift
@@ -46,4 +43,4 @@
 - **MCP Tools:** `21labs.list_builtin_presets`, `21labs.export_preset`, `21labs.import_preset`, `21labs.list_community_presets`, `21labs.list_community_preset_categories`
 - **REST Endpoints:** `GET /effects/available`, `GET /effects/presets`, `GET /effects/presets/{id}`, `POST /effects/presets`, `PUT /effects/presets/{id}`, `DELETE /effects/presets/{id}`, `POST /effects/preview/{id}`, `POST /generations/{id}/versions/apply-effects`, `GET /presets/builtin`, `POST /presets/export`, `POST /presets/import`
 - **Key Backend Files:** `backend/routes/effects.py`, `backend/services/effects.py`, `backend/services/presets.py`, `backend/routes/features.py`
-- **Key Frontend Files:** `app/src/components/Workspace/EffectsView.tsx`, `app/src/components/EffectsTab/EffectsTab.tsx`, `app/src/stores/effectsStore.ts`
+- **Key Frontend Files:** `app/src/features/effects/EffectsTab.tsx`, `app/src/stores/effectsStore.ts`

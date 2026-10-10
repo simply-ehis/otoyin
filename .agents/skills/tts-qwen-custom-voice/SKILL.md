@@ -9,8 +9,8 @@ description: Generate speech with Qwen3-TTS CustomVoice (0.6B/1.7B) — 9 preset
 > `TTS_ENGINES` (`backend/backends/protocols.py::TTS_ENGINES`); no
 > `qwen_custom_voice_backend.py` exists, and `get_tts_backend_for_engine` raises
 > `ValueError: Unknown TTS engine`. This page is retained for historical reference only —
-> do not use it for current work. Instruct-style expressiveness is covered today by
-> `zonos` (emotion control). See [engine-atlas](../engine-atlas/SKILL.md).
+> do not use it for current work. For text-described voices, use a `designed` profile with
+> `parler_tts_gguf` or `neutts_2e`. See [engine-atlas](../engine-atlas/SKILL.md).
 
 ## Purpose
 Qwen CustomVoice (`Qwen/Qwen3-TTS-12Hz-*B-CustomVoice`) uses **9 built-in preset speakers**

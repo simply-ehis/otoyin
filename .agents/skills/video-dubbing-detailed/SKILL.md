@@ -29,29 +29,32 @@ Returns supported languages with engine coverage.
 ```
 MCP: 21labs.dub_video(
   video_path="input.mp4",
-  target_language="es",
-  voice_profile_id="optional-profile-uuid"
+  target_lang="es",
+  profile_id="<profile-id>",
+  engine="kokoro"
 )
 ```
-If no profile is specified, the system auto-selects a suitable voice for the target language.
+`profile_id` is required; there is no automatic voice selection in this call.
 
 ### 3. Monitor progress
 ```
 MCP: 21labs.dub_status(job_id="job-uuid")
 ```
-Status values: `pending` → `transcribing` → `translating` → `rendering` → `muxing` → `completed`
+Status values: `pending` → `transcribing` → `translating` → `synthesizing` → `muxing` → `done`
 
-### 4. Preview the result
+### 4. Preview the transcript
 ```
-MCP: 21labs.dub_preview(job_id="job-uuid")
+MCP: 21labs.dub_preview(
+  video_path="input.mp4"
+)
 ```
-Returns a low-quality preview for verification.
+Preview returns transcript segments, not playable A/V.
 
 ### 5. Download the final video
 ```
 MCP: 21labs.dub_download(job_id="job-uuid")
 ```
-Returns the path to the dubbed video file.
+Download succeeds only after `status=="done"` and returns MP4 bytes.
 
 ### 6. Cancel if needed
 ```
@@ -84,11 +87,10 @@ Source Video → STT (Whisper) → Text → Translation (LLM) → TTS → Audio 
 - Dubbed audio replaces the original audio track (original is preserved separately)
 
 ## Cross-links
-- `stt-whisper` — Transcription engine reference
-- `tts-kokoro` — Kokoro for multilingual TTS
-- `tts-qwen` — Qwen for multilingual TTS
-- `66-video-dubbing.md` — Video dubbing knowledge doc
-- `platform-export` — Export presets for different platforms
+- [stt-whisper](../stt-whisper/SKILL.md) — Transcription engine reference
+- [tts-kokoro](../tts-kokoro/SKILL.md) — Kokoro for multilingual TTS
+- [engine-atlas](../engine-atlas/SKILL.md) — Current engine capabilities
+- [platform-export](../platform-export/SKILL.md) — Export presets for different platforms
 
 ## Validation
 - Preview the dubbed video and check lip-sync timing

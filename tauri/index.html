@@ -9,7 +9,12 @@
       (() => {
         try {
           let theme = 'system';
-          const raw = localStorage.getItem('21-labs-ui');
+          // The store persists under 'otoyin-ui' (see app/src/stores/uiStore).
+          // Reading only the legacy '21-labs-ui' key meant this pre-paint
+          // script never saw the user's theme, so the app booted in light mode
+          // regardless of what was chosen, then corrected itself on mount.
+          const raw =
+            localStorage.getItem('otoyin-ui') || localStorage.getItem('21-labs-ui');
           let parsed;
           if (raw) {
             parsed = JSON.parse(raw);
@@ -18,7 +23,18 @@
           const resolved = theme === 'system'
             ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
             : theme;
-          if (resolved === 'dark') document.documentElement.classList.add('dark');
+          // Keep this in step with app/index.html: without the special-theme
+          // classes, non-default themes rendered with default colours until the
+          // store mounted and re-applied them (a visible flash).
+          const DARK_THEMES = ['dark', 'di-stefano', 'stripe', 'mesh-dark'];
+          if (DARK_THEMES.includes(resolved)) {
+            document.documentElement.classList.add('dark');
+          }
+          if (resolved === 'di-stefano') {
+            document.documentElement.classList.add('di-stefano');
+          } else if (resolved !== 'light' && resolved !== 'dark') {
+            document.documentElement.classList.add('theme-' + resolved);
+          }
         } catch (_) {}
       })();
     </script>

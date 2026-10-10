@@ -13,7 +13,7 @@ export async function openExternalUrl(url: string): Promise<void> {
   window.open(url, '_blank');
 }
 
-export const MARKETPLACE_URL = 'https://marketplace.21labs.app';
+export const MARKETPLACE_URL = process.env.NEXT_PUBLIC_MARKETPLACE_URL ?? 'https://marketplace-mauve-five.vercel.app';
 const LICENSE_POLL_INTERVAL_MS = 3_000;
 const LICENSE_POLL_MAX_ATTEMPTS = 20; // 1 min total polling
 
@@ -26,6 +26,7 @@ export interface MarketplaceProduct {
   price_usd: number;
   baseline_usd?: number;
   paid: boolean;
+  coming_soon?: boolean;
   quality_score: number;
   avg_rating?: number;
   review_count?: number;

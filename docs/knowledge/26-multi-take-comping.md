@@ -51,4 +51,4 @@ interface TakeLane {
 - **MCP Tools:** (none — comping is UI-initiated)
 - **REST Endpoints:** `POST /comping/assemble`, session CRUD via `/comping/sessions/*`
 - **Key Backend Files:** `backend/routes/comping.py`, `backend/routes/comping_sessions.py`
-- **Key Frontend Files:** `app/src/components/Workspace/MultiTakeCompingView.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/MultiTakeCompingView.tsx`

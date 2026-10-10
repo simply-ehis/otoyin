@@ -1,6 +1,19 @@
 @import "tailwindcss";
 @import "./styles/tokens.css";
-@source "./src";
+
+/* Tell Tailwind where the class names actually live.
+   Paths are resolved relative to THIS file, so "./src" pointed at
+   app/src/src — which does not exist. Tailwind then found no sources and
+   emitted almost nothing: the tauri shell shipped a 33 KB stylesheet with no
+   `.size-4`, `.flex-1` or `.h-screen`, so every heroicon rendered at
+   1440x1440 px and the app was unusable. The `app/` shell happened to work
+   only because its build cwd made automatic detection stumble across the
+   right files.
+
+   This must list BOTH source trees: the UI lives in app/src, while the tauri
+   entrypoint and platform bridge live in tauri/src. */
+@source "../src";
+@source "../../tauri/src";
 /* @import "loaders.css/loaders.min.css"; */
 
 /* ── Slim native-feeling scrollbars (desktop-ui-scrolling-navigation):
@@ -84,6 +97,7 @@
 	--color-accent: hsl(348 68% 58%);
 	--color-accent-foreground: hsl(0 0% 98%);
 	--color-accent-muted: hsl(348 28% 22%);
+	--color-accent-ink: hsl(348 68% 68.1%);
 
 	--color-destructive: hsl(0 62% 50%);
 	--color-destructive-foreground: hsl(0 0% 98%);
@@ -249,7 +263,11 @@
 	--color-muted-foreground: hsl(28 6% 42%);
 	--color-accent: hsl(348 68% 52%);
 	--color-accent-foreground: hsl(0 0% 98%);
-	--color-accent-muted: hsl(348 30% 88%);
+	/* Accent text ON the accent-muted tint. The plain accent cannot clear
+	   WCAG AA against its own tint in either direction (light 3.40, dark 3.25),
+	   so the pill label uses this ink instead. Hue and saturation are unchanged;
+	   only lightness moves. */
+	--color-accent-ink: hsl(348 68% 43.2%);
 	--color-destructive: hsl(0 62% 48%);
 	--color-destructive-foreground: hsl(0 0% 98%);
 	--color-info: hsl(210 65% 45%);
@@ -327,21 +345,37 @@
    ══════════════════════════════════════════════════════════════════ */
 
 :root {
-	/* Extended theme tokens (set by applyThemeAccent) */
+	/* Extended theme tokens (set by applyThemeAccent). --theme-accent-muted
+	   keeps the base rose tint as a bare HSL triplet so the theme alias
+	   below never resolves `hsl(unset)` when no accent config is active. */
 	--theme-surface: unset;
 	--theme-surface-fg: unset;
 	--theme-surface-elevated: unset;
 	--theme-surface-elevated-fg: unset;
-	--theme-accent-muted: unset;
+	--theme-accent-muted: 348 28% 22%;
 	--theme-accent-subtle: unset;
+	/* Accent text for use ON --color-accent-muted. The plain accent cannot
+	   reach WCAG AA against its own tint, so themes supply an ink. */
+	--theme-accent-ink: unset;
 
-	/* Semantic color aliases using theme tokens — disabled for build compatibility */
+	/* Semantic color aliases using theme tokens. Only the muted accent is
+	   live: applyThemeAccent / applyAccentHueOverride always write
+	   --theme-accent-muted as a bare triplet, so hsl(var(...)) resolves.
+	   The surface aliases stay off because those tokens are `unset` for
+	   plain themes, which would substitute an invalid hsl(unset). */
 	/* --color-surface: hsl(var(--theme-surface)); */
 	/* --color-surface-foreground: hsl(var(--theme-surface-fg)); */
 	/* --color-surface-elevated: hsl(var(--theme-surface-elevated)); */
 	/* --color-surface-elevated-foreground: hsl(var(--theme-surface-elevated-fg)); */
-	/* --color-accent-muted: hsl(var(--theme-accent-muted)); */
+	--color-accent-muted: hsl(var(--theme-accent-muted));
 	/* --color-accent-subtle: hsl(var(--theme-accent-subtle)); */
+}
+
+/* Light mode's own rose tint. Declared after :root so it wins the tie (both
+   target <html>); applyThemeAccent's inline value still beats both when a
+   themed accent is active. */
+.light {
+	--theme-accent-muted: 348 30% 88%;
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -428,7 +462,9 @@
 	--color-foreground: hsl(var(--theme-surface-fg));
 	--color-accent: hsl(var(--theme-accent));
 	--color-accent-foreground: hsl(var(--theme-accent-fg));
+	--color-accent-muted: hsl(var(--theme-accent-muted));
 	--color-primary: hsl(var(--theme-primary));
+	--color-accent-ink: hsl(var(--theme-accent-ink));
 	--color-primary-foreground: hsl(var(--theme-primary-fg));
 	--color-border: hsl(var(--theme-border));
 	--color-card: hsl(var(--theme-card));
@@ -486,25 +522,6 @@
 	background-size: 200% 100%;
 	animation: di-stefano-wave 8s ease-in-out infinite;
 	pointer-events: none;
-}
-
-/* Di Stefano active element pulse — subtle warmth */
-@keyframes di-stefano-pulse {
-	0%,
-	100% {
-		filter: brightness(1);
-	}
-	50% {
-		filter: brightness(1.05);
-	}
-}
-
-.di-stefano [data-active="true"],
-.di-stefano .active,
-.di-stefano [aria-selected="true"],
-.di-stefano [aria-current="page"],
-.di-stefano button:focus-visible {
-	animation: di-stefano-pulse 4s ease-in-out infinite;
 }
 
 /* Di Stefano active tab indicator — rose accent bar */
@@ -595,7 +612,9 @@
 	--color-foreground: hsl(var(--theme-surface-fg));
 	--color-accent: hsl(var(--theme-accent));
 	--color-accent-foreground: hsl(var(--theme-accent-fg));
+	--color-accent-muted: hsl(var(--theme-accent-muted));
 	--color-primary: hsl(var(--theme-primary));
+	--color-accent-ink: hsl(var(--theme-accent-ink));
 	--color-primary-foreground: hsl(var(--theme-primary-fg));
 	--color-border: hsl(var(--theme-border));
 	--color-card: hsl(var(--theme-card));
@@ -651,24 +670,6 @@
 	animation: stripe-scan 15s linear infinite;
 	pointer-events: none;
 	z-index: 1;
-}
-
-/* Stripe active pulse — sharp, fast */
-@keyframes stripe-pulse {
-	0%,
-	100% {
-		box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
-	}
-	50% {
-		box-shadow: 0 0 8px 1px rgba(255, 255, 255, 0.2);
-	}
-}
-
-.theme-stripe [data-active="true"],
-.theme-stripe .active,
-.theme-stripe [aria-selected="true"],
-.theme-stripe [aria-current="page"] {
-	animation: stripe-pulse 3s ease-in-out infinite;
 }
 
 /* Stripe active tab indicator */
@@ -755,7 +756,9 @@
 	--color-foreground: hsl(var(--theme-surface-fg));
 	--color-accent: hsl(var(--theme-accent));
 	--color-accent-foreground: hsl(var(--theme-accent-fg));
+	--color-accent-muted: hsl(var(--theme-accent-muted));
 	--color-primary: hsl(var(--theme-primary));
+	--color-accent-ink: hsl(var(--theme-accent-ink));
 	--color-primary-foreground: hsl(var(--theme-primary-fg));
 	--color-border: hsl(var(--theme-border));
 	--color-card: hsl(var(--theme-card));
@@ -854,24 +857,6 @@
 	animation-duration: 20s;
 }
 
-/* Coastal Light gentle pulse */
-@keyframes coastal-pulse {
-	0%,
-	100% {
-		filter: brightness(1);
-	}
-	50% {
-		filter: brightness(1.02);
-	}
-}
-
-.theme-coastal-light [data-active="true"],
-.theme-coastal-light .active,
-.theme-coastal-light [aria-selected="true"],
-.theme-coastal-light [aria-current="page"] {
-	animation: coastal-pulse 5s ease-in-out infinite;
-}
-
 /* Coastal Light active tab indicator */
 .theme-coastal-light nav [data-active="true"]::after,
 .theme-coastal-light nav .active::after {
@@ -961,7 +946,9 @@
 	--color-foreground: hsl(var(--theme-surface-fg));
 	--color-accent: hsl(var(--theme-accent));
 	--color-accent-foreground: hsl(var(--theme-accent-fg));
+	--color-accent-muted: hsl(var(--theme-accent-muted));
 	--color-primary: hsl(var(--theme-primary));
+	--color-accent-ink: hsl(var(--theme-accent-ink));
 	--color-primary-foreground: hsl(var(--theme-primary-fg));
 	--color-border: hsl(var(--theme-border));
 	--color-card: hsl(var(--theme-card));
@@ -1015,24 +1002,6 @@
 		transparent 60%
 	);
 	animation: mesh-breathe 6s ease-in-out infinite;
-}
-
-/* Mesh Dark active pulse — cyan glow */
-@keyframes mesh-pulse {
-	0%,
-	100% {
-		box-shadow: 0 0 0 0 hsl(var(--theme-accent) / 0);
-	}
-	50% {
-		box-shadow: 0 0 8px 1px hsl(var(--theme-accent) / 0.2);
-	}
-}
-
-.theme-mesh-dark [data-active="true"],
-.theme-mesh-dark .active,
-.theme-mesh-dark [aria-selected="true"],
-.theme-mesh-dark [aria-current="page"] {
-	animation: mesh-pulse 4s ease-in-out infinite;
 }
 
 /* Mesh Dark active tab indicator */

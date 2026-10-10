@@ -87,7 +87,7 @@ speak returns poll_url; GET /generate/{id}/status → 404 or "processing"
 ```
 Server fails to bind / import errors
   → run with PYTHONPATH=<repo root> (MCP mounts at /mcp)
-  → check port conflict on 17493 (override twentylabs_PORT)
+  → check port conflict on 17493 (override `OTOYIN_PORT` or `TWENTYLABS_PORT`)
   → SIGNAL_LOST at client → server not up; restart backend
 ```
 
@@ -97,10 +97,10 @@ Server fails to bind / import errors
 - 404 from `get_batch_job`/`get_story`/etc. means id not found, not "pending".
 
 ## Cross-links
-- [engine-atlas](./engine-atlas/SKILL.md)
-- [agent-operating-guide](./agent-operating-guide/SKILL.md)
-- [mcp-tool-reference](./mcp-tool-reference/SKILL.md)
-- [batch-queue](./batch-queue/SKILL.md)
+- [engine-atlas](../engine-atlas/SKILL.md)
+- [agent-operating-guide](../agent-operating-guide/SKILL.md)
+- [mcp-tool-reference](../mcp-tool-reference/SKILL.md)
+- [batch-queue](../batch-queue/SKILL.md)
 
 ## Validation
 - After applying a fix, re-run the failing tool and re-measure (`analyze_loudness`) to confirm spec.

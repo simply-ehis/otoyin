@@ -9,7 +9,7 @@ description: Test a Paddle integration end-to-end using the sandbox environment,
 
 Use this skill when verifying a Paddle integration before going live — running real-looking checkouts, triggering webhook events, and exercising subscription state changes without taking real money. Covers sandbox configuration, test card numbers, the webhook simulator (single events and scenarios), local development with public tunnels, and the differences between sandbox and live behavior that bite people in production.
 
-This skill is the safety net for everything else. Apply it alongside `checkout-web`, `webhooks`, and `subscription-sync` whenever you ship — sandbox testing is the cheapest way to catch integration bugs.
+This skill is the safety net for everything else. Apply it alongside `paddle-checkout-web`, `paddle-webhooks`, and `paddle-subscription-sync` whenever you ship — sandbox testing is the cheapest way to catch integration bugs.
 
 ## Sandbox vs production at a glance
 
@@ -35,7 +35,7 @@ Paddle gives you two completely separate environments:
 
 Sign up for the sandbox at [sandbox-vendors.paddle.com](https://sandbox-vendors.paddle.com) (separate signup from production). Then:
 
-1. Set up at least one **product** with one **price** — see `catalog-setup` if you haven't done this yet.
+1. Set up at least one **product** with one **price** — see `paddle-catalog-setup` if you haven't done this yet.
 2. Go to **Paddle > Developer tools > Authentication** and create:
    - A **client-side token** for use in `Paddle.js`.
    - A **server-side API key** for the Node SDK.
@@ -141,7 +141,7 @@ Here's the loop for verifying a fresh integration:
 5. **Confirm**:
    - Browser lands on your `successUrl`.
    - Server logs show all events
-   - Your DB has the new customer and subscription rows (if you've wired `subscription-sync`).
+   - Your DB has the new customer and subscription rows (if you've wired `paddle-subscription-sync`).
    - The dashboard shows the transaction under **Transactions**.
 6. **Cancel** the subscription using simulator, passing the subscription ID from the simulated subscription creation event.
 7. **Confirm**:

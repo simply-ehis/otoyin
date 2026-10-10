@@ -143,6 +143,13 @@ export interface ThemeAccentConfig {
 	surfaceElevatedFg: string;
 	accentMuted: string;
 	accentSubtle: string;
+	/**
+	 * Text colour for use on `accentMuted`. Solved per theme to clear WCAG AA
+	 * (4.5:1) at the same hue and saturation as `accent`, so the active-nav
+	 * pill stays in the rose family instead of dropping the brand colour or
+	 * crushing the tint. Undefined means the accent already passes.
+	 */
+	accentInk?: string;
 }
 
 const THEME_ACCENTS: Record<string, ThemeAccentConfig> = {
@@ -165,6 +172,9 @@ const THEME_ACCENTS: Record<string, ThemeAccentConfig> = {
 		surfaceElevatedFg: "0 0% 97%",
 		accentMuted: "15 40% 25%",
 		accentSubtle: "15 30% 15%",
+		// accent-on-accentMuted was 3.06:1 (WCAG AA needs 4.5). Same hue and
+		// saturation as the accent, lightened just enough to clear AA.
+		accentInk: "15 65% 68%",
 	},
 	stripe: {
 		// High-contrast B&W — diagonal scan lines, sharp
@@ -185,6 +195,8 @@ const THEME_ACCENTS: Record<string, ThemeAccentConfig> = {
 		surfaceElevatedFg: "0 0% 99%",
 		accentMuted: "0 0% 20%",
 		accentSubtle: "0 0% 8%",
+		// White on 20% grey is already 12.63:1 — the accent needs no adjustment.
+		accentInk: "0 0% 100%",
 	},
 	"coastal-light": {
 		// Warm pastel — airy, coastal morning light
@@ -205,6 +217,10 @@ const THEME_ACCENTS: Record<string, ThemeAccentConfig> = {
 		surfaceElevatedFg: "0 0% 6%",
 		accentMuted: "14 45% 85%",
 		accentSubtle: "14 35% 92%",
+		// accent-on-accentMuted was 2.62:1. Darkened along the same hue/sat
+		// rather than crushing the light tint to black, which would have
+		// destroyed the airy look this theme depends on.
+		accentInk: "14 75% 36.8%",
 	},
 	"mesh-dark": {
 		// Cool tech — perforated metal, cyan accent
@@ -225,6 +241,8 @@ const THEME_ACCENTS: Record<string, ThemeAccentConfig> = {
 		surfaceElevatedFg: "210 10% 98%",
 		accentMuted: "195 50% 18%",
 		accentSubtle: "195 40% 10%",
+		// Cyan on 18% cyan is already 5.61:1 — the accent needs no adjustment.
+		accentInk: "195 85% 55%",
 	},
 };
 
@@ -270,6 +288,11 @@ export function applyThemeAccent(theme: string): void {
 		config.surfaceElevatedFg,
 	);
 	root.style.setProperty("--theme-accent-muted", config.accentMuted);
+	// Ink only when the theme supplies one; otherwise the accent passes on its
+	// own and --color-accent-ink keeps whatever @theme resolved.
+	if (config.accentInk) {
+		root.style.setProperty("--theme-accent-ink", config.accentInk);
+	}
 	root.style.setProperty("--theme-accent-subtle", config.accentSubtle);
 }
 
@@ -284,6 +307,7 @@ export function applyAccentHueOverride(hue: number | null): void {
 		root.style.removeProperty("--color-primary");
 		root.style.removeProperty("--color-ring");
 		root.style.removeProperty("--theme-accent-muted");
+		root.style.removeProperty("--theme-accent-ink");
 		return;
 	}
 	const accent = `${hue} 65% 55%`;
@@ -293,5 +317,6 @@ export function applyAccentHueOverride(hue: number | null): void {
 	root.style.setProperty("--color-accent", `hsl(${accent})`);
 	root.style.setProperty("--color-primary", `hsl(${primary})`);
 	root.style.setProperty("--color-ring", `hsl(${ring})`);
-	root.style.setProperty("--theme-accent-muted", `hsl(${accentMuted})`);
+	// Bare triplet: CSS consumes this as hsl(var(--theme-accent-muted)).
+	root.style.setProperty("--theme-accent-muted", accentMuted);
 }

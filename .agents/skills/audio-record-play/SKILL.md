@@ -26,7 +26,7 @@ Native sidecar first on Tauri, webview fallback otherwise. Takes auto-upload as 
 
 ### 3. Play
 ```
-MCP: 21labs.speak(profile_id="<id>", text="...") → GET /audio/{generation_id}
+MCP: 21labs.speak(profile="<id>", text="...") → GET /audio/{generation_id}
 UI: shared AudioPlayer (bottom bar)
 ```
 If WaveSurfer decode fails the player auto-switches to native `<audio controls>` — that is success, not an error.

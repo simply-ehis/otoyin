@@ -174,6 +174,15 @@ export function StoreProductCard({
 						>
 							<KeyIcon className="size-3" /> Owned
 						</span>
+					) : product.coming_soon ? (
+						<span
+							className={cn(
+								chipClass,
+								"bg-info-soft text-info-text border-info/40",
+							)}
+						>
+							Coming Soon
+						</span>
 					) : product.paid ? (
 						<span
 							className={cn(
@@ -350,6 +359,20 @@ export function StoreProductCard({
 								<ArrowDownTrayIcon className="size-3.5" />
 							)}
 							{busy ? "Starting…" : "Install"}
+						</Button>
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							onClick={() => onDetail(product)}
+						>
+							Details
+						</Button>
+					</>
+				) : product.coming_soon ? (
+					<>
+						<Button size="sm" disabled className="flex-1">
+							Coming Soon
 						</Button>
 						<Button
 							type="button"

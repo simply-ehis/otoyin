@@ -49,7 +49,7 @@ export. Every action is a tool call to a real REST endpoint or MCP tool.
    target; or `master_audio` directly for a single clip.
 
 ## Engine selection
-See [engine-atlas](./engine-atlas/SKILL.md). Rule of thumb: smallest engine that sounds right
+See [engine-atlas](../engine-atlas/SKILL.md). Rule of thumb: smallest engine that sounds right
 (Kokoro for fast batch; Zonos for expressive English; Fish Speech for multilingual;
 Pocket-TTS for tiny CPU; Stable Audio for music/SFX).
 
@@ -58,7 +58,7 @@ Pocket-TTS for tiny CPU; Stable Audio for music/SFX).
   `conversation_auto_level`). NOTE: `POST /conversation/render` does NOT exist.
 - Acted-over-picture → ADR (`/adr/*`).
 - Long narrative → split into chapters, sequence in Stories (`/stories`).
-- Many clips (N>1) → batch queue (see [batch-queue](./batch-queue/SKILL.md)).
+- Many clips (N>1) → batch queue (see [batch-queue](../batch-queue/SKILL.md)).
 
 ## UI feedback for long operations
 - Generation, download, export, and model-loading actions must expose a visible pending state;
@@ -92,10 +92,10 @@ Pocket-TTS for tiny CPU; Stable Audio for music/SFX).
 - Do not wire `POST /conversation/render` — it does not exist.
 
 ## Cross-links
-- [engine-atlas](./engine-atlas/SKILL.md)
-- [effects-field-guide](./effects-field-guide/SKILL.md)
-- [mcp-tool-reference](./mcp-tool-reference/SKILL.md)
-- [batch-queue](./batch-queue/SKILL.md)
+- [engine-atlas](../engine-atlas/SKILL.md)
+- [effects-field-guide](../effects-field-guide/SKILL.md)
+- [mcp-tool-reference](../mcp-tool-reference/SKILL.md)
+- [batch-queue](../batch-queue/SKILL.md)
 
 ## Validation
 - Confirm output loudness ≈ recipe target within 1 LUFS via `analyze_loudness` before declaring done.

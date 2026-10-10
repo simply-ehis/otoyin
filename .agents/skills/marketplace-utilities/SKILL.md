@@ -24,14 +24,14 @@ REST: GET /marketplace/catalog + GET /models/status
 Expand Utilities (or Translation), Download/Install, then Verify via `GET /models/verify/{id}`.
 
 ### 3. Dev rule
-Bottom rank: core(0) < extras/sfx(1) < translation(2) < utilities(3). New pack categories go in `CATEGORIES` last + `CATEGORY_LABELS` + `CATEGORY_ACCENT` + bottomRank in `storeUtils.ts` and `StorePage.tsx`.
+Bottom rank: core(0) < extras/sfx(1) < translation(2) < utilities(3). New pack categories go in `CATEGORIES` last + `CATEGORY_LABELS` + `CATEGORY_ACCENT` + bottomRank in `app/src/features/store/storeUtils.ts` and `app/src/features/store/StorePage.tsx`.
 
 ## Pitfalls / Gotchas
 - Catalog order ≠ display order; groups re-sort every render.
 - Collapsed sections still show Installed badges — never hide them.
 
 ## Cross-links
-- `model-manager` — install/verify the pack
+- [model-manager](../model-manager/SKILL.md) — install/verify the pack
 
 ## Validation
 - Utilities render last, collapsed, with correct counts; voices stay on top.

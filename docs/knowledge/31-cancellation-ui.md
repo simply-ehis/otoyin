@@ -3,7 +3,7 @@
 PURPOSE: Allow users to cancel in-progress generations from the UI — backend supports CancelledError but frontend needed a button/shortcut.
 OWNS: Cancel button in generation history and main editor, backend CancelledError handling.
 READ-WHEN: You touch generation UI, history table, or generation lifecycle.
-KEY-FILES: app/src/components/Generation/GenerateButton.tsx, backend/routes/generations.py, backend/services/generation.py
+KEY-FILES: app/src/features/generate/Composer.tsx, app/src/features/generate/GenerationProgressList.tsx, app/src/features/generate/HistoryList.tsx, backend/routes/generations.py, backend/services/generation.py
 INVARIANTS: Cancel button visible only for in-progress generations; sends cancel event to backend; backend cleans up partial chunks.
 GOTCHAS: Backend already handles CancelledError — frontend just needs to trigger it via the cancel endpoint.
 UPDATED: 2026-08-21

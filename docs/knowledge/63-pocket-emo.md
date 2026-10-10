@@ -103,4 +103,4 @@ GET /audio/pocket-emo/emotions
 - **MCP Tools:** `21labs.emotion_tone`
 - **REST Endpoints:** `POST /audio/emotion-tone`
 - **Key Backend Files:** `backend/backends/pocket_tts_onnx_backend.py`, `backend/services/emotion_tone.py`, `backend/routes/audio_effects.py`
-- **Key Frontend Files:** `app/src/components/Generation/ParalinguisticInput.tsx`
+- **Key Frontend Files:** `app/src/features/generate/Composer.tsx`

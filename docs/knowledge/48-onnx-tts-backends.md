@@ -39,4 +39,4 @@ All five ONNX engines resolve each graph through `_onnx_precision.resolve_sessio
 - **MCP Tools:** `21labs.speak` (uses ONNX backends when profile engine is kokoro/f5_tts/pocket_tts/styletts2)
 - **REST Endpoints:** `POST /generate` (with `engine: "kokoro"|"f5_tts"|"pocket_tts"|"styletts2"`)
 - **Key Backend Files:** `backend/backends/kokoro_onnx_backend.py`, `backend/backends/f5_tts_onnx_backend.py`, `backend/backends/pocket_tts_onnx_backend.py`, `backend/backends/styletts2_onnx_backend.py`, `backend/backends/protocols.py`
-- **Key Frontend Files:** `app/src/components/Generation/EngineModelSelector.tsx`
+- **Key Frontend Files:** `app/src/features/generate/Composer.tsx`

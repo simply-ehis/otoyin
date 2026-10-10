@@ -5,6 +5,7 @@ import { apiClient } from "@/lib/api/client";
 import type { MarketplaceProduct } from "@/lib/api/types";
 import { showStudioErrorToast } from "@/lib/errors";
 import { getDeviceId, marketplaceClient } from "@/lib/marketplace";
+import { regionForLocale } from "@/lib/regionCurrency";
 import { cn } from "@/lib/utils/cn";
 import { debug } from "@/lib/utils/debug";
 import { isProductNew, useProductStore } from "@/stores/productStore";
@@ -265,11 +266,40 @@ export function StorePage() {
 
 	const products = catalog.data?.products ?? [];
 	const models = modelsStatus.data?.models;
+	const country = useMemo(
+		() =>
+			regionForLocale(
+				typeof navigator !== "undefined" ? navigator.language : "en-US",
+			),
+		[],
+	);
+	const previewIds = useMemo(
+		() => products.filter((p) => p.paid && !p.coming_soon).map((p) => p.id),
+		[products],
+	);
+	const previewQ = useQuery({
+		queryKey: ["marketplace", "price-preview", country, previewIds],
+		queryFn: () => marketplaceClient.fetchPricePreview(country, previewIds),
+		enabled: previewIds.length > 0,
+		staleTime: 1000 * 60 * 10,
+		retry: 1,
+	});
+	const displayProducts = useMemo(() => {
+		const hits = previewQ.data?.prices;
+		if (!hits || hits.length === 0) {
+			return products;
+		}
+		const byId = new Map(hits.map((hit) => [hit.product_id, hit]));
+		return products.map((p) => {
+			const hit = byId.get(p.id);
+			return hit ? { ...p, localized_price: hit.formatted_total } : p;
+		});
+	}, [products, previewQ.data]);
 
 	const filtered = useMemo(
 		() =>
 			buildFilteredProducts(
-				products,
+				displayProducts,
 				models,
 				activeCategory,
 				search,
@@ -282,7 +312,7 @@ export function StorePage() {
 				showWishlistOnly,
 			),
 		[
-			products,
+			displayProducts,
 			models,
 			activeCategory,
 			search,
@@ -339,13 +369,13 @@ export function StorePage() {
 
 	const categoryCounts = useMemo(() => {
 		const m: Record<string, number> = {};
-		for (const p of products) {
+		for (const p of displayProducts) {
 			m[p.category] = (m[p.category] ?? 0) + 1;
 		}
 		return m;
-	}, [products]);
-	const freeCount = products.filter((p) => !p.paid).length;
-	const paidCount = products.filter((p) => p.paid).length;
+	}, [displayProducts]);
+	const freeCount = displayProducts.filter((p) => !p.paid).length;
+	const paidCount = displayProducts.filter((p) => p.paid).length;
 	const installedCount = installed.size;
 
 	// -- Mutations (only here) --

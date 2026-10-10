@@ -141,9 +141,9 @@ is already anomalous, which is exactly the shape of this corruption.
 - `79-encoding-repairs.md` — the general repair/verification method this doc extends
 - `scripts/check-encoding.py` — byte-level scanner (passes this class; see gap above)
 - `backend/tests/test_check_encoding.py` — regression floor; add script-run cases here
-- `docs/reports/2026-09-04-typecheck-triage.txt` — repaired case 1 (born corrupt)
-- `docs/reports/2026-09-04-wiring-audit.txt` — repaired case 2 (restored from ancestor)
-- `docs/reports/README.md` — the header convention for marking snapshots
+- `docs/archive/reports/2026-09-04-typecheck-triage.txt` — repaired case 1 (born corrupt)
+- `docs/archive/reports/2026-09-04-wiring-audit.txt` — repaired case 2 (restored from ancestor)
+- `docs/archive/reports/README.md` — the header convention for marking snapshots
 
 ## Remediated sites (2026-09-07)
 

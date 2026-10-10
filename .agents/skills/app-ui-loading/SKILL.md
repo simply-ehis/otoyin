@@ -21,8 +21,8 @@ seconds or minutes and need honest, contextual feedback.
 
 | Situation | Use | Rule |
 |---|---|---|
-| Route/chunk startup | `AppLoadingScreen` from `app/src/components/ui/AppLoadingScreen.tsx` | Full-area branded fallback; never a blank pane. |
-| First data load with no usable data | `LoadingState` from `app/src/components/ui/LoadingState.tsx` | Provide a specific label such as `Loading voice packs…`. |
+| Route/chunk startup | `AppLoadingScreen` from `app/src/ui/AppLoadingScreen.tsx` | Full-area branded fallback; never a blank pane. |
+| First data load with no usable data | `LoadingState` from `app/src/ui/states.tsx` | Provide a specific label such as `Loading voice packs…`. |
 | Refresh with existing data | Keep the content visible | Add an inline spinner or `isFetching` hint; do not replace the content. |
 | Button mutation | `Spinner` inside the button | Disable only the action being performed and change its label. |
 | Long generation/download | Existing progress/toast surface | Include model/task name, current phase, and failure recovery. |

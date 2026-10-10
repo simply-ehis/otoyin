@@ -20,7 +20,7 @@ Both are optional on-device models. If absent, enhancement degrades to pass-thro
 ## Prerequisites
 - Models cached locally: `audiosronnx` package + Lavasr weights, `deepfilter-onnx`
   package + weights. Download size: ~50 MB combined.
-- Tool surface: `POST /audio/enhance` (batch), `21labs.enhance_audio` (MCP).
+- Tool surface: REST `POST /audio/enhance`; there is no `21labs.enhance_audio` MCP tool.
 - `POST /audio/voice-clean` for TTS-specific preset chain (denoise→de-ess→warmth EQ→dynamics).
 
 ## Parameters (REAL from `services/audio_enhancer.py`)
@@ -42,13 +42,11 @@ Output: `(enhanced_audio: np.ndarray, output_sample_rate: int)` — always 48 kH
 POST `/audio/voice-clean` takes `preset: "light"|"medium"|"heavy"` + `strength: 0–1`.
 
 ## Agent procedure
-1. Ensure enhancement models downloaded: `21labs.models_download(model_name="lavasr")`.
-2. Enhance a clip:
-   - MCP: `21labs.enhance_audio(audio_base64=..., sample_rate=16000, mode="auto")`
-   - REST: `POST /audio/enhance` with `{"audio": [...], "sample_rate": 16000, "mode": "auto"}`
-3. For TTS cleanup: `POST /audio/voice-clean` with `{"generation_id": "...", "preset": "medium"}`.
-4. If Lavasr is not installed, the call degrades gracefully (logs debug, returns
-   input unchanged) — inform the user that bandwidth extension is unavailable.
+1. Use locally installed enhancement packages; enhancement weights are not Store model downloads.
+2. Enhance a stored clip:
+   - REST: `POST /audio/enhance` with `{"audio_path": "<stored path>", "mode": "auto"}`
+3. For TTS cleanup: `POST /audio/voice-clean` with `{"audio_path": "<stored path>", "preset": "medium", "strength": 1.0}`.
+4. `auto` skips unavailable stages; explicitly requesting unavailable `lavasr` raises, and a failed explicit `denoise` re-raises.
 
 ## Pitfalls / Gotchas
 - **Lavasr is CPU-only ONNX** — expect ~2-3× real-time on a modern desktop.
@@ -62,9 +60,8 @@ POST `/audio/voice-clean` takes `preset: "light"|"medium"|"heavy"` + `strength: 
 ## Cross-links
 - [engine-atlas](../engine-atlas/SKILL.md)
 - [voice-changer-pipeline](../voice-changer-pipeline/SKILL.md)
-- [tts-enhancer](../tts-enhancer/...) — if separate; otherwise covers the same chain
 
 ## Validation
-- `POST /audio/enhance` with noisy 16 kHz input returns 48 kHz output.
-- Missing Lavasr → call returns input unchanged (auto mode), debug log emitted.
-- `POST /audio/voice-clean` applies denoise + de-ess + EQ to the generation's audio.
+- `POST /audio/enhance` with noisy input returns enhanced audio.
+- Missing Lavasr → `auto`-mode call returns input unchanged, debug log emitted.
+- `POST /audio/voice-clean` applies denoise + de-ess + EQ to the stored audio.

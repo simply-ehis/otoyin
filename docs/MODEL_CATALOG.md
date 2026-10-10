@@ -54,7 +54,6 @@ Updated: 2026-09-20
 | parakeet-v3-f16 | Parakeet v3 (F16) | parakeet | 220 MB | 400 MB | F16 | 25 European languages | Lighter, same accuracy | Apache-2.0 | $12 | 220 MB — pick for tighter disks. |
 | qwen3-asr-0.6b-int4 | Qwen3 ASR 0.6B | qwen3_asr | 600 MB | 800 MB | INT4 | 52 languages | Best quality-per-size multilingual | Apache-2.0 | $12 | ONNX Runtime. |
 | qwen3-asr-1.7b-int4 | Qwen3 ASR 1.7B | qwen3_asr | 1700 MB | 2.5 GB | INT4 | 52 languages | Near-cloud accuracy offline | Apache-2.0 | $34 | ONNX Runtime. Best STT in the catalog. |
-| stt-cloud | Cloud STT (BYOK) | cloud | — | — | — | — | Bring your own API key | — | Free | No local download. |
 
 ---
 
@@ -65,13 +64,13 @@ Updated: 2026-09-20
 | planner-4b | Qwopus 4B (Free) | gguf_llm | 2740 MB | 3.5 GB | Q4_K_M | en zh ja ko de fr es it pt ru | Reasoning, tool calling | Apache-2.0 | Free | Default assistant brain. Strong all-rounder. |
 | planner-4b-v3 | Qwopus 4B v3 | gguf_llm | 2800 MB | 4 GB | Q4_K_M | en zh ja ko de fr es it pt ru | Thinking, tool calling, JSON mode | Commercial | $20 | Claude-distilled. Premium reasoning and tool calling. |
 | planner-spark-x-2.5-4b | Spark-X 2.5-4B | gguf_llm | 2500 MB | 3.5 GB | Q4_K_M | en zh ja ko de fr es it pt ru | 1M context, 200+ languages | Apache-2.0 | $20 | iFLYTEK's agentic king. Hybrid sliding-window attention. |
-| planner-lfm2-2.6b | LFM2.5-2.6B | gguf_llm | 1590 MB | 4 GB | Q4_0 | 25 languages | 128K context, thinking, tool calling | Apache-2.0 | $13 | LiquidAI. Strong multilingual at tiny footprint. |
+| planner-lfm2-2.6b | LFM2.5-2.6B | gguf_llm | 1590 MB | 4 GB | Q4_0 | 25 languages | 128K context, thinking, tool calling | Apache-2.0 | Free | LiquidAI. Strong multilingual at tiny footprint. |
 | planner-lfm2-8b-a1b | LFM2.5-8B-A1B | gguf_llm | 4500 MB | 6 GB | Q4_K_M | 25 languages | 128K context, MoE (1.5B active) | Apache-2.0 | $40 | LiquidAI MoE. Fastest in its class. SSD streaming. |
 | planner-ling-tiny | Ling-3.0-tiny | gguf_llm | 4820 MB | 6 GB | Q4_K_M | 25 languages | 128K context, MoE (1.3B active), chain-of-thought | MIT | $40 | inclusionAI. 128 routed experts, hybrid KDA/MLA. |
 | planner-bonsai-2-27b | Bonsai 2 27B | gguf_llm | 6090 MB | 8 GB | PTQ1_0 | 25 languages | 262K context, 98.2% of FP16 quality | Apache-2.0 | $80 | PrismML ternary quantized. Requires PrismML llama.cpp fork. |
-| llm-cloud-starter | Cloud Starter | cloud | — | — | — | — | Cloud-hosted LLM | — | $10/mo | Requires active subscription. |
-| llm-cloud-pro | Cloud Pro | cloud | — | — | — | — | Cloud-hosted LLM | — | $20/mo | Smarter model, better reasoning. |
-| llm-cloud-max | Cloud Max | cloud | — | — | — | — | Cloud-hosted LLM | — | $50/mo | Top-tier model, maximum capability. |
+| llm-cloud-starter | Cloud Starter — Coming Soon | cloud | — | — | — | — | Cloud-hosted LLM | — | $10/mo | Planned subscription tier. Not purchasable yet. |
+| llm-cloud-pro | Cloud Pro — Coming Soon | cloud | — | — | — | — | Cloud-hosted LLM | — | $20/mo | Planned subscription tier. Not purchasable yet. |
+| llm-cloud-max | Cloud Max — Coming Soon | cloud | — | — | — | — | Cloud-hosted LLM | — | $50/mo | Planned subscription tier. Not purchasable yet. |
 
 ---
 
@@ -83,7 +82,6 @@ Updated: 2026-09-20
 | heartmula-3b | HeartMuLa 3B | heartmula | 7660 MB | 10 GB | Q8_0 | en | Lyrics music generation | Apache-2.0 | $37 | Best-in-class lyrics. Tag-based style control. |
 | stable-audio-3-small-sfx | Stable Audio 3 Small SFX | sa3_sfx | 1684 MB | 2.5 GB | Q8_0 | en | Sound effects (Foley, impacts, ambiences) | Commercial | $25 | One-shot SFX from text prompt. |
 | demucs_onnx | Demucs HTDemucs | demucs_onnx | 316 MB | — | — | — | Stem separation (vocals/drums/bass) | MIT | Free | Torch-free ONNX. Extract stems from any mix. |
-| music-cloud | Cloud Music (BYOK) | cloud | — | — | — | — | Bring your own API key | — | Free | No local download. |
 
 ---
 
@@ -114,13 +112,13 @@ All packs are ~45 MB each, MIT license, free. 20 bidirectional pairs.
 
 ---
 
-## Cloud (BYOK)
+## Cloud LLM (Coming Soon)
 
 | ID | Category | Price | Notes |
 |---|---|---|---|
-| stt-cloud | STT | Free | Bring your own API key. |
-| vc-cloud | VC | Free | Bring your own API key. |
-| music-cloud | Music | Free | Bring your own API key. |
+| llm-cloud-starter | LLM | $10/mo | Planned cloud subscription tier. Not purchasable yet. |
+| llm-cloud-pro | LLM | $20/mo | Planned cloud subscription tier. Not purchasable yet. |
+| llm-cloud-max | LLM | $50/mo | Planned cloud subscription tier. Not purchasable yet. |
 
 ---
 
@@ -128,16 +126,15 @@ All packs are ~45 MB each, MIT license, free. 20 bidirectional pairs.
 
 | Price Tier | Models |
 |---|---|
-| Free | Kokoro 82M, KittenTTS, MOSS-TTS-Nano, Whisper Tiny/Base, Demucs, SoundFonts, Translation packs, Steam Audio, Cloud BYOK, Qwopus 4B |
+| Free | Kokoro 82M, KittenTTS, MOSS-TTS-Nano, Whisper Tiny/Base, Demucs, SoundFonts, Translation packs, Steam Audio, Qwopus 4B, LFM2.5-2.6B |
 | $5 | Bark Small, Whisper Small |
 | $8 | Pocket-TTS (ONNX/PyTorch) |
-| $10 | NeuTTS-Air, NeuTTS-2E Q4, OpenVoice V2, Cloud Starter ($10/mo) |
+| $10 | NeuTTS-Air, NeuTTS-2E Q4, OpenVoice V2 |
 | $12 | Whisper Medium, Parakeet v3, Qwen3 ASR 0.6B |
-| $13 | LFM2.5-2.6B |
 | $14 | RVC Voice Packs |
 | $15 | NeuTTS-2E Q8 |
 | $18 | Parler-TTS Mini |
-| $20 | Qwopus 4B v3, Spark-X 2.5-4B, Seed-VC, Whisper Large-v3-Turbo, Cloud Pro ($20/mo) |
+| $20 | Qwopus 4B v3, Spark-X 2.5-4B, Seed-VC, Whisper Large-v3-Turbo |
 | $25 | Stable Audio 3 Small SFX |
 | $30 | Whisper Large-v3 |
 | $32 | Zonos v0.1 |
@@ -145,5 +142,5 @@ All packs are ~45 MB each, MIT license, free. 20 bidirectional pairs.
 | $37 | HeartMuLa 3B |
 | $40 | Qwen3-TTS 1.7B, LFM2.5-8B-A1B, Ling-3.0-tiny |
 | $43 | ACE-Step 1.5 |
-| $50 | Cloud Max ($50/mo) |
 | $80 | Fish Audio S2 Pro, Orpheus 3B, Bonsai 2 27B |
+| Coming soon | Cloud Starter ($10/mo), Cloud Pro ($20/mo), Cloud Max ($50/mo) |

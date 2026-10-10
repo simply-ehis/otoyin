@@ -5,13 +5,13 @@ Replaces the llama-cpp-python LFM backend. The planner stack:
     Qwopus 4B            (free default planner)
     Qwopus 4B v3         (paid planner, $20)
     Spark-X 2.5-4B       (paid planner, $20)
-    LFM2.5-2.6B          (paid planner, $13)
+    LFM2.5-2.6B          (free multilingual planner)
     LFM2.5-8B-A1B        (paid MoE planner, $40)
     Ling-3.0-tiny        (paid MoE planner, $40)
     Bonsai 2 27B         (paid planner, $80, requires PrismML fork)
-    Cloud Starter        (cloud subscription, $10/mo)
-    Cloud Pro            (cloud subscription, $20/mo)
-    Cloud Max            (cloud subscription, $50/mo)
+    Cloud Starter        (coming soon, $10/mo)
+    Cloud Pro            (coming soon, $20/mo)
+    Cloud Max            (coming soon, $50/mo)
 
 All models are GGUF served by one native ``llama-server`` process spawned as
 a sidecar on a free localhost port. The backend keeps the same public surface

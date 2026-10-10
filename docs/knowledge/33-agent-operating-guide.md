@@ -66,4 +66,4 @@ Every production follows the same shape:
 - **MCP Tools:** `21labs.speak`, `21labs.list_profiles`, `21labs.list_models`, `21labs.generate_sfx`, `21labs.generate_music`, `21labs.bounce`, `21labs.noise_reduce`, `21labs.normalize_audio`, `21labs.master_audio`, `21labs.separate_audio`, `21labs.run_recipe`, `21labs.plan_workflow`, `21labs.execute_plan`, `21labs.plan_templates`
 - **REST Endpoints:** `POST /generate`, `POST /audio/bounce`, `GET /effects/available`, `GET /export/presets`, `POST /recipe/run`, `GET /assistant/tool-parity`
 - **Key Backend Files:** `backend/mcp_server/tools/` (all tool files), `backend/routes/assistant.py`, `backend/services/workflow.py`
-- **Key Frontend Files:** `app/src/components/Assistant/AssistantPanel.tsx`, `app/src/components/VoiceChat/VoiceChatOverlay.tsx`
+- **Key Frontend Files:** `app/src/features/assistant/AssistantPanel.tsx`, `app/src/features/voiceChat/VoiceChatOverlay.tsx`

@@ -1,7 +1,7 @@
 # DSP / Synth (Offline Pre-AI Synthesis)
 
 PURPOSE: Offline "Synth / DSP" tab — pure DSP synthesis and classical effects, no AI models, no network.
-OWNS: backend/routes/dsp.py, backend/services/dsp_synth.py, app/src/components/Workspace/DspView.tsx
+OWNS: backend/routes/dsp.py, backend/services/dsp_synth.py, app/src/features/workspace/DspView.tsx
 READ-WHEN: You add a synth/effect, change params, or touch the offline DSP endpoint contract.
 KEY-FILES: backend/services/dsp_synth.py (wrappers), backend/routes/dsp.py (HTTP), clientStoriesA.ts (dspSynth/dspEffect/dspUpload/dspCapabilities)
 INVARIANTS: Every sound is generated on-device with NumPy/SciPy via the `audio-dsp` library (MIT). No torch, no API, no cloud.
@@ -47,4 +47,4 @@ Note: audio-dsp exposes vocoder/bitcrush/distortion/tape/filter/delay/phaser/pit
 - **MCP Tools:** `21labs.dsp_capabilities`, `21labs.dsp_synth`, `21labs.dsp_effect`
 - **REST Endpoints:** `GET /dsp/capabilities`, `POST /dsp/synth`, `POST /dsp/effect`, `POST /dsp/upload`
 - **Key Backend Files:** `backend/services/dsp_synth.py`, `backend/routes/dsp.py`
-- **Key Frontend Files:** `app/src/components/Workspace/DspView.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/DspView.tsx`

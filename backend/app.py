@@ -4,7 +4,7 @@ import asyncio
 import logging
 import os
 import sys
-from contextlib import asynccontextmanager, suppress
+from contextlib import AsyncExitStack, asynccontextmanager, suppress
 from pathlib import Path
 from typing import ClassVar
 from urllib.parse import urlparse
@@ -113,8 +113,11 @@ def create_app() -> FastAPI:
 
         try:
             await _run_startup(app)
-            yield
+            async with AsyncExitStack() as mcp_lifespan_stack:
+                app.state.mcp_lifespan_stack = mcp_lifespan_stack
+                yield
         finally:
+            app.state.mcp_lifespan_stack = None
             await _run_shutdown()
 
     application = FastAPI(
@@ -137,7 +140,7 @@ def create_app() -> FastAPI:
     import starlette.middleware.base
     import starlette.responses
 
-    health_paths = ("/health", "/health/filesystem")
+    health_paths = ("/health", "/health/ready", "/health/filesystem")
 
     class ReadinessMiddleware(starlette.middleware.base.BaseHTTPMiddleware):
         async def dispatch(self, request, call_next):
@@ -250,19 +253,22 @@ def create_app() -> FastAPI:
     # via a middleware that mounts the sub-app on demand.
     _mcp_app_holder: dict[str, object] = {}
 
-    import starlette.requests
-    from starlette.middleware.base import BaseHTTPMiddleware
-
-    class MCPLazyBuildMiddleware(BaseHTTPMiddleware):
+    class MCPLazyBuildMiddleware:
         """Build and mount the MCP sub-app on first /mcp request."""
 
-        async def dispatch(self, request: starlette.requests.Request, call_next):
-            path = request.url.path
+        def __init__(self, app):
+            self.app = app
+
+        async def __call__(self, scope, receive, send):
+            if scope["type"] != "http":
+                await self.app(scope, receive, send)
+                return
+            path = scope.get("path", "")
             if (path == "/mcp" or path.startswith("/mcp/")) and "app" not in _mcp_app_holder:
                 from .utils.startup_defer import ensure_mcp_built
 
                 await ensure_mcp_built(application)
-            return await call_next(request)
+            await self.app(scope, receive, send)
 
     application.add_middleware(MCPLazyBuildMiddleware)
 
@@ -473,7 +479,6 @@ async def _run_startup(application: FastAPI) -> None:
     from .utils.platform_detect import log_platform_info
 
     log_platform_info()
-
     # Install cross-platform signal handlers for graceful shutdown.
     # On Unix, SIGTERM already triggers uvicorn's shutdown; our handler
     # layers on top to also call _run_shutdown() and sys.exit(0).
@@ -488,6 +493,24 @@ async def _run_startup(application: FastAPI) -> None:
         logger.info("Model cache: %s", cache_dir)
     except Exception as e:
         logger.warning("Could not create HuggingFace cache directory: %s", e)
+
+    # ── Warm the health snapshot ─────────────────────────────────────────
+    # GET /health probes the GPU (torch/CUDA init) and scans the TTS engine
+    # registry. Cold, that costs ~5.9 s and used to happen inside the first
+    # request, freezing the event loop and making the app look hung right
+    # after launch. Warm it here — before readiness — so the first client
+    # request is served in single-digit milliseconds. Runs in a thread
+    # because every probe inside is blocking.
+    try:
+        import time as _time
+
+        warm_t0 = _time.perf_counter()
+        await asyncio.to_thread(_warm_health_snapshot)
+        logger.info("Health snapshot warmed in %.0f ms", (_time.perf_counter() - warm_t0) * 1000)
+    except Exception as e:
+        # Warning, not debug: a skipped warm-up means the first /health request
+        # pays ~6 s of blocking work, which is exactly what this prevents.
+        logger.warning("Health snapshot warm-up skipped: %s", e, exc_info=True)
 
     # ── Signal readiness ────────────────────────────────────────────────
     # Server is ready to accept requests after DB + queue + cleanup.
@@ -628,6 +651,22 @@ def _init_ready_event() -> None:
     global _ready_event, _startup_error
     _ready_event = asyncio.Event()
     _startup_error = None
+
+
+def _warm_health_snapshot() -> None:
+    """Populate the cached GPU snapshot and TTS engine registry before readiness.
+
+    ``GET /health`` probes the GPU (torch/CUDA initialisation) and scans the TTS
+    engine registry. Cold, that is ~5.9 s of blocking work. Left lazy, the first
+    client request paid it inline and froze the event loop, so the app looked
+    hung immediately after launch. Calling this once during startup moves the
+    cost into the background start-up window, where it belongs.
+
+    Safe to fail: a warm-up error must never block readiness.
+    """
+    from .routes.health import _build_health_response
+
+    _build_health_response()
 
 
 def _signal_ready() -> None:

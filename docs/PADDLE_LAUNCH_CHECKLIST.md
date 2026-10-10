@@ -44,7 +44,7 @@ backend\venv\Scripts\python.exe -c "import base64; from cryptography.hazmat.prim
    test payout *before* going live.
 3. Full detail: `PADDLE_TESTING.md` §0.
 
-## 3. Products and prices (31 paid products in the seed)
+## 3. Products and prices (36 paid products in the seed)
 
 Dashboard: one **product + price** per paid catalog product, copy each
 `pri_...` ID. Then set the map (JSON in a single env var):

@@ -68,9 +68,9 @@ curl -X POST http://localhost:17493/audio-plan/auto -H 'Content-Type: applicatio
   generating each line.
 
 ## Cross-links
-- [mastering](../../mastering/SKILL.md)
-- [engine-atlas](../../engine-atlas/SKILL.md)
-- [effects-field-guide](../../effects-field-guide/SKILL.md)
+- [mastering](../mastering/SKILL.md)
+- [engine-atlas](../engine-atlas/SKILL.md)
+- [effects-field-guide](../effects-field-guide/SKILL.md)
 
 ## Validation
 - `validate` returns `valid:true` and zero warnings before production.

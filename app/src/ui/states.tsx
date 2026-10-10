@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils/cn";
 import { Button } from "./button";
 
 const TabHelp = lazy(() =>
-	import("@/components/Help/TabHelp").then((m) => ({ default: m.TabHelp })),
+	import("@/features/help/TabHelp").then((m) => ({ default: m.TabHelp })),
 );
 
 /**

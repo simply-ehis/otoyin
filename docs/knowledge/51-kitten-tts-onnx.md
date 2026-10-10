@@ -24,4 +24,4 @@ UPDATED: 2026-07-19
 - **MCP Tools:** `21labs.speak` (uses kitten_tts engine)
 - **REST Endpoints:** `POST /generate` (with `engine: "kitten_tts"`)
 - **Key Backend Files:** `backend/backends/kitten_tts_onnx_backend.py`
-- **Key Frontend Files:** `app/src/components/Generation/EngineModelSelector.tsx`
+- **Key Frontend Files:** `app/src/features/generate/Composer.tsx`

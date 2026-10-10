@@ -52,4 +52,4 @@ Environmental convolution, HRTF-like binaural panning, and Doppler effect.
 - **MCP Tools:** `21labs.list_spatial_presets`, `21labs.list_convolution_presets`, `21labs.spatial_status`, `21labs.spatial_binaural`, `21labs.spatial_convolution`, `21labs.spatial_doppler`, `21labs.spatial_render`
 - **REST Endpoints:** `GET /spatial/presets`, `GET /spatial/convolution-presets`, `GET /spatial/status`, `POST /spatial/apply-binaural`, `POST /spatial/apply-convolution`, `POST /spatial/apply-doppler`, `POST /spatial/render`
 - **Key Backend Files:** `backend/services/steam_audio.py`, `backend/routes/spatial.py`
-- **Key Frontend Files:** `app/src/components/Workspace/SpatialView.tsx`, `app/src/components/Workspace/Spatial/SpatialControls.tsx`, `app/src/components/Workspace/Spatial/SourceControls.tsx`, `app/src/components/Workspace/Spatial/SoundstageRadar.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/SpatialView.tsx`, `app/src/features/workspace/spatial/SpatialControls.tsx`, `app/src/features/workspace/spatial/SourceControls.tsx`, `app/src/features/workspace/spatial/SoundstageRadar.tsx`

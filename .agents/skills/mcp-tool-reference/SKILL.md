@@ -5,13 +5,19 @@ description: Consolidated catalog of every 21labs.* MCP tool (namespace at /mcp)
 # MCP Tool Reference
 
 ## Purpose
-Complete surface of `21labs.*` MCP tools (FastMCP, mounted at `/mcp`, port 17493 / `twentylabs_PORT`).
+Complete surface of `21labs.*` MCP tools (FastMCP, mounted at `/mcp`, port 17493 / `OTOYIN_PORT` or `TWENTYLABS_PORT`).
 All tools are thin wrappers that call the REST API in-process and return base64 WAV or JSON. Signatures
 below are read from the `backend/mcp_server/tools/` package (203 live tools).
 Audio returns as `{ audio_base64, sample_rate, duration, bytes }`
 unless noted. (TR holds 204 entries; one is overridden by a manual registrar
 with the same name. `backend/tests/test_mcp_registration_invariant.py` locks
 the decorated↔TR match; `test_mcp_tool_count.py` floors the live count.)
+
+## Transport — stdio shim
+Agents connect via stdio: `node ./bin/otoyin-mcp.mjs` (see `.mcp.json`) spawns the target-suffixed
+`tauri/src-tauri/binaries/otoyin-mcp-*` binary and forwards JSON-RPC to
+`http://127.0.0.1:<port>/mcp/`. The server builds and mounts `/mcp` lazily on first request.
+Pass `OTOYIN_CLIENT_ID`; direct HTTP to `/mcp` works only when the backend is already running.
 
 ## When to use
 - Calling or debugging any `21labs.*` tool.
@@ -76,7 +82,7 @@ Example:
 | conversation_auto_duck | lines:list[dict] | ducking gain envelope JSON |
 | conversation_auto_level | lines:list[dict] | level-matched JSON |
 
-## Batch (see [batch-queue](./batch-queue/SKILL.md))
+## Batch (see [batch-queue](../batch-queue/SKILL.md))
 | tool | params | response |
 |------|--------|----------|
 | list_batch_jobs | — | `{ jobs:[...] }` |
@@ -114,7 +120,6 @@ Example:
 | list_community_presets / list_community_preset_categories / list_builtin_presets / export_preset / import_preset | /community-presets, /presets/* |
 | models_download(model_name) / model_progress / model_cache_dir / models_load / models_unload | /models/* |
 | run_recipe(segments:list, recipe="podcast", music_path?, target_lufs?, gap_ms=250) | POST /recipe/run |
-| arrange_music(sections, genre, mood, duration_seconds=60, separate_stems=False) | POST /generate/music |
 | export_subtitles(audio_path, fmt="srt", model?, language?) | POST /transcription/export-subtitles |
 
 ## Pitfalls / Gotchas
@@ -126,9 +131,10 @@ Example:
 - `speak` returns a `poll_url`; audio is 404 until ready.
 
 ## Cross-links
-- [engine-atlas](./engine-atlas/SKILL.md)
-- [agent-operating-guide](./agent-operating-guide/SKILL.md)
-- [effects-field-guide](./effects-field-guide/SKILL.md)
+- [engine-atlas](../engine-atlas/SKILL.md)
+- [agent-operating-guide](../agent-operating-guide/SKILL.md)
+- [effects-field-guide](../effects-field-guide/SKILL.md)
+- [batch-queue](../batch-queue/SKILL.md)
 
 ## Validation
 - Call `21labs.list_models` first to confirm valid `engine=` values; a 400 means not downloaded.

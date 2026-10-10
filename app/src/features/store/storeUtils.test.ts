@@ -700,6 +700,18 @@ describe("formatPrice", () => {
 		expect(out).toContain("€");
 	});
 
+	it("Paddle preview total wins over FX estimates", () => {
+		const previewed = makeProduct({
+			id: "previewed",
+			paid: true,
+			price_usd: 5,
+			localized_price: "£3.78",
+		});
+		expect(
+			formatPrice(previewed, { currency: "GBP", rate: 0.75, locale: "en-GB" }),
+		).toBe("£3.78");
+	});
+
 	it("FX path falls back to dollars when Intl rejects the currency", () => {
 		// "???" is not a well-formed currency code → formatMoney's catch fires,
 		// rendering the converted amount with the plain-dollar fallback.

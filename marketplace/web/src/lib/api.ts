@@ -92,6 +92,7 @@ export interface MarketplaceProduct {
   price_usd: number;
   baseline_usd?: number;
   paid: boolean;
+  coming_soon?: boolean;
   quality_score: number;
   avg_rating?: number;
   review_count?: number;

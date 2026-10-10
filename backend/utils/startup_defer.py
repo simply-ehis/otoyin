@@ -185,6 +185,10 @@ async def ensure_mcp_built(app: FastAPI) -> None:
 
             mcp = build_mcp_server()
             mcp_app = mcp.http_app(path="/", transport="http")
+            lifespan_stack = getattr(app.state, "mcp_lifespan_stack", None)
+            if lifespan_stack is None:
+                raise RuntimeError("MCP lifespan is not attached to the parent app")
+            await lifespan_stack.enter_async_context(mcp_app.lifespan(mcp_app))
             app.mount("/mcp", mcp_app)
             from ..tool_registry_populate import startup_verify
 

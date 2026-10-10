@@ -1,7 +1,7 @@
 # 06 — Multi-Track Mixer
 
 ## MixerView at `/workspace/mixer`
-- **Component:** `MixerView` in `app/src/components/Workspace/MixerView.tsx`
+- **Component:** `MixerView` in `app/src/features/workspace/MixerView.tsx`
 - **What:** Channel strips with VU meters, volume faders, pan indicators, mute/solo buttons, and master channel.
 
 ## Channel Strips
@@ -44,4 +44,4 @@
 - **MCP Tools:** `21labs.bounce`, `21labs.bounce_preview`, `21labs.analyze_loudness`, `21labs.list_channels`, `21labs.get_channel`, `21labs.create_channel`, `21labs.get_channel_voices`
 - **REST Endpoints:** `POST /audio/bounce`, `POST /audio/bounce-preview`, `POST /audio/loudness`, `GET /channels`, `POST /channels`, `GET /channels/{id}`, `PUT /channels/{id}`, `DELETE /channels/{id}`, `GET /channels/{id}/voices`, `PUT /channels/{id}/voices`
 - **Key Backend Files:** `backend/routes/audio.py`, `backend/services/mixer.py`, `backend/routes/channels.py`, `backend/services/channels.py`
-- **Key Frontend Files:** `app/src/components/Workspace/MixerView.tsx`, `app/src/stores/playerStore.ts`
+- **Key Frontend Files:** `app/src/features/workspace/MixerView.tsx`, `app/src/stores/playerStore.ts`

@@ -44,4 +44,4 @@ UPDATED: 2026-07-19
 - **MCP Tools:** `21labs.session_save`, `21labs.session_load`, `21labs.export_reaper_project`
 - **REST Endpoints:** `POST /audio-studio/sessions`, `GET /audio-studio/sessions`, `GET /audio-studio/sessions/{id}`, `PUT /audio-studio/sessions/{id}`, `DELETE /audio-studio/sessions/{id}`, `POST /audio-studio/sessions/{id}/autosave-snapshot`, `GET /audio-studio/sessions/{id}/autosave-snapshots`, `POST /audio-studio/sessions/{id}/undo-autosave`, `POST /audio-studio/sessions/{id}/promote`, `POST /audio-studio/sessions/{id}/export-reaper`
 - **Key Backend Files:** `backend/routes/audio_studio.py`, `backend/routes/_session_store.py`
-- **Key Frontend Files:** `app/src/features/audioStudio/AudioStudio.tsx`, `app/src/features/audioStudio/StudioToolbar.tsx`, `app/src/features/audioStudio/TransportControls.tsx`, `app/src/stores/AudioStudio/AudioStudioStore.ts`
+- **Key Frontend Files:** `app/src/features/audioStudio/AudioStudio.tsx`, `app/src/features/audioStudio/StudioToolbar.tsx`, `app/src/features/audioStudio/TransportControls.tsx`, `app/src/features/audioStudio/AudioStudioStore.ts`

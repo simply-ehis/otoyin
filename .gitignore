@@ -171,6 +171,9 @@ awesome-desktop-design.skills/
 # MCP codebase-memory artifacts
 .codebase-memory/
 
+# Local codegraph index (SQLite knowledge graph — never commit)
+.codegraph/
+
 # ONNX model weights (large, user-downloaded)
 *.onnx
 
@@ -186,3 +189,4 @@ tauri/src-tauri/Cargo.gen.toml
 
 # Pre-test backups (DBs + generations — restorable, never commit)
 backup-pre-test-*/
+.neon

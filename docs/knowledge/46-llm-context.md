@@ -1,6 +1,6 @@
 PURPOSE: RAM-aware LLM context-window budget for the on-device GGUF planner backend, so the model never over-allocates its KV cache on small machines and the user can override it.
 
-OWNS: `backend/utils/llm_context.py` (formula + clamp), `backend/backends/gguf_server_backend.py` (computes n_ctx at load, defaults generation max_tokens to 2048 capped at n_ctx), `backend/routes/models/capabilities.py` `GET /models/capabilities` (`llm_context` block), `app/src/components/CapabilityBar.tsx` (shows the budget), `app/src/lib/api/client.ts` (`getModelCapabilities` typed return).
+OWNS: `backend/utils/llm_context.py` (formula + clamp), `backend/backends/gguf_server_backend.py` (computes n_ctx at load, defaults generation max_tokens to 2048 capped at n_ctx), `backend/routes/models/capabilities.py` `GET /models/capabilities` (`llm_context` block), `app/src/features/assistant/ContextWindowIndicator.tsx` (shows the budget), `app/src/lib/api/client.ts` (`getModelCapabilities` typed return).
 
 READ-WHEN: You change model sizes, the context budget, idle-unload behavior, or the Settings UI for LLM context/tokens.
 
@@ -38,6 +38,6 @@ max_tokens rule (simple, no adaptive logic):
 - **MCP Tools:** `21labs.models_list`
 - **REST Endpoints:** `GET /models/capabilities`
 - **Key Backend Files:** `backend/utils/llm_context.py`, `backend/backends/gguf_server_backend.py`, `backend/routes/models/capabilities.py`
-- **Key Frontend Files:** `app/src/components/Assistant/AssistantSettings.tsx`
+- **Key Frontend Files:** `app/src/features/assistant/AssistantSettings.tsx`
 
 UPDATED: 2026-07-17

@@ -69,8 +69,8 @@ Cuts boom below 200 Hz, lifts presence (3 kHz+ shelf +3 dB), slightly brightens 
 - These effects are NOT applied by `run_recipe`.
 
 ## Cross-links
-- [effects-field-guide](../../effects-field-guide/SKILL.md)
-- [effects-dynamics](../../effects-dynamics/SKILL.md)
+- [effects-field-guide](../effects-field-guide/SKILL.md)
+- [effects-dynamics](../effects-dynamics/SKILL.md)
 
 ## Validation
 - A/B preview: brighter/open voice at +3 high_gain; no phasey artifacts from formant shift.

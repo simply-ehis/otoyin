@@ -3,10 +3,10 @@
 > **PURPOSE:** Reference for the Generate tab — the primary TTS/text-to-audio creation interface.
 > **OWNS:** Generate tab, history panel, generation controls
 > **READ-WHEN:** Working on generation UI, adding new TTS engines, fixing generation bugs
-> **KEY-FILES:** `FloatingGenerateBox.tsx`, `GenerateBoxView.tsx`, `GenerateButton.tsx`, `ComposeButton.tsx`, `GenerationControlsRow.tsx`, `HistoryTable.tsx`, `HistoryRow.tsx`
+> **KEY-FILES:** `GeneratePage.tsx`, `Composer.tsx`, `PromptBar.tsx`, `GenerationProgressList.tsx`, `HistoryList.tsx`, `engines.ts`
 > **INVARIANTS:** Generation requires a selected voice profile; engines are backend-driven
 > **GOTCHAS:** Compose button only visible if profile has personality; InstructToggleButton only shown when expanded + engine supports instruct
-> **UPDATED:** 2026-08-07
+> **UPDATED:** 2026-10-09
 
 ## Overview
 
@@ -50,13 +50,10 @@ The Generate tab is the primary interface for creating audio from text. It consi
 
 | Action | Description |
 |---|---|
-| Play | Play generation audio |
-| Export Audio | Download as audio file |
-| Export Package | Export generation + metadata |
-| Apply Effects | Open effects dialog |
+| Download audio | Download audio file |
+| Export package | Export generation + metadata |
+| Retry | Re-run failed generation |
 | Regenerate | Re-run TTS generation |
-| Edit Audio | Open audio editor (AudioEditorPanel) |
-| Copy Clip | Copy to process clipboard |
 | Delete | Remove generation |
 
 ### Bulk Actions
@@ -79,4 +76,4 @@ The language dropdown defaults to English and remembers each explicit choice per
 - **MCP Tools:** `21labs.speak`, `21labs.list_profiles`, `21labs.list_models`, `21labs.list_captures`
 - **REST Endpoints:** `POST /generate`, `GET /history`, `GET /history/{id}`, `DELETE /history/{id}`, `POST /generate/{id}/retry`, `POST /generate/{id}/regenerate`, `GET /generate/{id}/status`, `POST /generate/stream`
 - **Key Backend Files:** `backend/routes/generations.py`, `backend/routes/history.py`, `backend/services/generation.py`
-- **Key Frontend Files:** `app/src/components/Generation/FloatingGenerateBox.tsx`, `app/src/components/Generation/GenerateBoxView.tsx`, `app/src/components/Generation/GenerateButton.tsx`, `app/src/components/History/HistoryTable.tsx`, `app/src/lib/hooks/useGeneration.ts`, `app/src/lib/hooks/useHistory.ts`
+- **Key Frontend Files:** `app/src/features/generate/GeneratePage.tsx`, `app/src/features/generate/Composer.tsx`, `app/src/features/generate/GenerationProgressList.tsx`, `app/src/features/generate/HistoryList.tsx`, `app/src/lib/hooks/useGeneration.ts`, `app/src/lib/hooks/useHistory.ts`

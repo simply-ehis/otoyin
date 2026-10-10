@@ -26,6 +26,7 @@ effects from a text prompt. It is the SFX `MusicBackend`. Fully offline, returns
 | prompt | str | (required) | free-text SFX description |
 | duration_seconds | [0.1, 30.0] | 5.0 | enforced by `SFXGenerateRequest` Field bounds |
 | seed | int \| None | None | sets `torch.manual_seed` for reproducibility |
+| engine | `stable_audio`, `sa3_sfx` | `stable_audio` | SFX engines only |
 
 Return shape (MCP): `audio_base64` (WAV), `sample_rate` (44100), `duration`, `engine="stable_audio"`, `prompt`.
 REST returns a streamed `audio/wav`.
@@ -49,9 +50,7 @@ curl -X POST http://localhost:17493/generate/sfx \
 ```
 
 ## Pitfalls / Gotchas
-- **genre / mood / tempo are IGNORED by Stable Audio** — the MCP tool and route take only
-  `prompt`, `duration_seconds`, `seed`. (The old `MusicBackend` protocol params belonged to the
-  REMOVED ACE-Step engine.)
+- `generate_sfx` takes only `prompt`, `duration_seconds`, `seed`, and SFX `engine`; genre/mood/tempo/mode belong to live `generate_music` (`acestep_gguf`, `heartmula`, `minimax_music3`).
 - Output sample rate is 44100 (hardcoded fallback), not 48000.
 - Output is mono (channel-mean'd in `stable_audio_backend.generate`).
 - Uncached model → 400 `ModelNotCachedError` (REST) or `ValueError` (MCP).

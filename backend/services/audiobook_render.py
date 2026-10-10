@@ -190,21 +190,22 @@ async def render_chapter(
                     import tempfile
                     from pathlib import Path
 
-                    from ..services.audio_conversion import ffmpeg_available
+                    from ..services.audio_conversion import ffmpeg_path
 
-                    if ffmpeg_available() and len(wav_paths) > 1:
+                    ffmpeg = ffmpeg_path()
+                    if ffmpeg and len(wav_paths) > 1:
                         with tempfile.TemporaryDirectory() as td:
                             lst = Path(td) / "list.txt"
                             lst.write_text("\n".join(f"file '{Path(p).resolve()}'" for p in wav_paths))
                             out = Path(td) / "chapter.wav"
                             subprocess.run(
-                                ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy", str(out)],
+                                [ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy", str(out)],
                                 capture_output=True,
                                 check=False,
                             )
                             if not out.exists():
                                 subprocess.run(
-                                    ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(lst), str(out)],
+                                    [ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", str(lst), str(out)],
                                     capture_output=True,
                                     check=True,
                                 )

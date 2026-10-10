@@ -9,7 +9,7 @@ description: Render country-localized prices on a Next.js pricing page using Pad
 
 Use this skill when building a public pricing page (or in-app upgrade screen) that needs to show prices in the user's local currency, with the right tax behavior. Covers the `Paddle.PricePreview()` API, country detection, a billing frequency toggle (monthly/yearly), the zero-decimal currency formatting gotcha (JPY/KRW/CLP), and how to keep the displayed price in sync with what checkout will charge.
 
-This is a client-side concern. For checkout itself, see `checkout-web` — the price IDs you display here are the same ones you pass to `Paddle.Checkout.open()`.
+This is a client-side concern. For checkout itself, see `paddle-checkout-web` — the price IDs you display here are the same ones you pass to `Paddle.Checkout.open()`.
 
 ## Why use PricePreview at all?
 
@@ -23,7 +23,7 @@ If a Paddle MCP server is available to you, call `client.pricingPreview.preview(
 
 ## Prerequisites
 
-- Same Paddle.js setup as `checkout-web`:
+- Same Paddle.js setup as `paddle-checkout-web`:
 
 ```bash
 npm install @paddle/paddle-js
@@ -36,7 +36,7 @@ NEXT_PUBLIC_PADDLE_ENV=sandbox
 
 - One or more **prices** in your Paddle catalog, ideally with price overrides for the markets you sell to.
   - A single base price (no overrides) will be auto-converted, but explicit overrides give you control over rounding and psychological pricing (e.g. €9 not €9.13).
-  - Use `catalog-setup` if you don't have prices yet — that skill includes a section on regional overrides.
+  - Use `paddle-catalog-setup` if you don't have prices yet — that skill includes a section on regional overrides.
 
 ## Define your tiers
 
@@ -191,7 +191,7 @@ export function Pricing({ country }: Props) {
 }
 ```
 
-This pattern initializes Paddle.js **without** the checkout config — you only need the client token to call `PricePreview()`. When the user clicks "Subscribe" you re-initialize with checkout settings (or use a separate page that does), as covered in `checkout-web`.
+This pattern initializes Paddle.js **without** the checkout config — you only need the client token to call `PricePreview()`. When the user clicks "Subscribe" you re-initialize with checkout settings (or use a separate page that does), as covered in `paddle-checkout-web`.
 
 ## Country detection
 

@@ -55,4 +55,4 @@ UPDATED: 2026-07-15
 - **MCP Tools:** `21labs.list_channels`, `21labs.conversation_auto_duck`, `21labs.conversation_auto_level`, `21labs.analyze_loudness`, `21labs.run_recipe`
 - **REST Endpoints:** `POST /conversation/auto-duck`, `POST /conversation/auto-level`, `POST /adr/sessions`, `POST /adr/score`, `POST /adr/auto-select`, `POST /adr/align`, `POST /audio/pitch-analysis`
 - **Key Backend Files:** `backend/routes/adr.py`, `backend/routes/conversation.py`, `backend/routes/stories.py`, `backend/routes/channels.py`, `backend/services/adr.py`
-- **Key Frontend Files:** `app/src/components/Workspace/ADRView.tsx`, `app/src/components/Workspace/ConversationView.tsx`, `app/src/components/Workspace/MultiTakeCompingView.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/adr/ADRView.tsx`, `app/src/features/workspace/ConversationView.tsx`, `app/src/features/workspace/MultiTakeCompingView.tsx`

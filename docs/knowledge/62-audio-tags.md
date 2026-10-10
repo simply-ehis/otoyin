@@ -1,7 +1,7 @@
 # 62 — Audio Tags (Universal TTS Expressiveness)
 
 PURPOSE: Bracketed tags ([pause], [laughs shy], [sigh]) parsed from TTS text, non-speech sounds loaded from real human sample library, text sent to TTS clean, then spliced together — works on any engine.
-OWNS: backend/services/audio_tags.py, backend/services/audio_sample_library.py, backend/routes/audio.py (/audio/apply-tags, /audio/tags, /audio/tag-preview, /audio/sample-manifest), app/src/components/Settings/AudioTagsPanel.tsx
+OWNS: backend/services/audio_tags.py, backend/services/audio_sample_library.py, backend/routes/audio.py (/audio/apply-tags, /audio/tags, /audio/tag-preview, /audio/sample-manifest), app/src/features/settings/GenerationPage.tsx (audio_tags toggle)
 READ-WHEN: Adding new tag types, modifying sound playback, or changing how tags interact with TTS engines.
 KEY-FILES: backend/services/audio_tags.py, backend/services/audio_sample_library.py, backend/scripts/curate_vocal_samples.py, backend/scripts/generate_starter_samples.py, backend/routes/audio.py, app/src/lib/api/clientStoriesA.ts (applyAudioTags, listAudioTags, previewAudioTag, getSampleManifest)
 INVARIANTS: Tags are stripped before TTS for engines without native support. Engines with native tags (Chatterbox, ChatTTS, Zonos, Step-Audio-EditX, Orpheus) get tags rewritten to their native format and passed through. Sample library loaded from data/vocal_samples/<tag>/<variant>/*.wav. DSP used as fallback for pauses, speech modifiers, and missing classes.
@@ -136,4 +136,4 @@ Tags not in the engine's vocabulary are silently stripped. Tags with no native e
 - **MCP Tools:** `21labs.apply_audio_tags`, `21labs.list_audio_tags`, `21labs.sample_manifest`
 - **REST Endpoints:** `POST /audio/apply-tags`, `GET /audio/tags`, `GET /audio/sample-manifest`, `POST /audio/tag-preview`
 - **Key Backend Files:** `backend/services/audio_tags.py`, `backend/services/audio_sample_library.py`, `backend/routes/audio_effects.py`
-- **Key Frontend Files:** `app/src/components/Generation/InstructPanel.tsx`
+- **Key Frontend Files:** `app/src/features/generate/Composer.tsx` (instruct field)

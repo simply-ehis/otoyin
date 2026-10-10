@@ -1,7 +1,7 @@
 # 03 — Pitch Map
 
 ## PitchMapView at `/workspace/pitch`
-- **Component:** `PitchMapView` in `app/src/components/Workspace/PitchMapView.tsx`
+- **Component:** `PitchMapView` in `app/src/features/workspace/PitchMapView.tsx`
 - **What:** Piano roll visualization with pitch detection, scale snapping, and MIDI note display. C3–C5 keyboard range (MIDI 48–84).
 
 ## Piano Roll Keyboard
@@ -35,4 +35,4 @@
 - **MCP Tools:** (none — pitch analysis is backend-only)
 - **REST Endpoints:** `POST /audio/pitch-analysis`
 - **Key Backend Files:** `backend/routes/pitch.py`
-- **Key Frontend Files:** `app/src/components/Workspace/PitchMapView.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/PitchMapView.tsx`

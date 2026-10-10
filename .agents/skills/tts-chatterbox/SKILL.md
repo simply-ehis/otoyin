@@ -6,11 +6,11 @@ description: Generate speech with Chatterbox TTS — multilingual (~20 langs) re
 # Chatterbox TTS (Multilingual)
 
 > **REMOVED — 2026-07.** The `chatterbox` engine is no longer registered in
-> `TTS_ENGINES` (`backend/backends/protocols.py:300-318`); no `chatterbox_backend.py`
-> exists, and `get_tts_backend_for_engine` raises `ValueError: Unknown TTS engine`
-> (`registry.py:355-356`). This page is retained for historical reference only — do not
-> use it for current work. See [engine-atlas](../engine-atlas/SKILL.md) for the 13 live
-> engines and their clone paths.
+> `TTS_ENGINES` (`backend/backends/protocols.py::TTS_ENGINES`); no `chatterbox_backend.py`
+> exists, and `get_tts_backend_for_engine` raises `ValueError: Unknown TTS engine`.
+> This page is retained for historical reference only — do not use it for current work.
+> For cloning, use `21labs.clone_voice` with `qwen3_tts`, `pocket_tts`, or another
+> supported engine. See [engine-atlas](../engine-atlas/SKILL.md).
 
 ## Purpose
 Chatterbox (ResembleAI/chatterbox, 3200 MB) is a reference-conditioned, multilingual TTS
@@ -22,7 +22,7 @@ per-language generation defaults. Output may include trailing silence, so it is 
 ## When to use
 - User wants expressive, reference-conditioned speech across many languages.
 - Need `exaggeration` / `cfg_weight` / `temperature` emotional control.
-- A real arbitrary-audio clone (true zero-shot) is required → use `../tts-xtts-v2/SKILL.md` instead.
+- A real arbitrary-audio clone (true zero-shot) is required → use a supported clone engine instead; see [engine-atlas](../engine-atlas/SKILL.md).
 
 ## Prerequisites
 - Engine/model: `chatterbox` — `ResembleAI/chatterbox` (3200 MB). Required weights:

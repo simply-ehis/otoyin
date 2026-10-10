@@ -2,7 +2,7 @@ import { ArrowUpTrayIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "@tanstack/react-router";
 import { lazy, Suspense, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { RecordAudioButton } from "@/components/Recording/RecordAudioButton";
+import { RecordAudioButton } from "@/features/capture/RecordAudioButton";
 import { useImportProfile } from "@/lib/hooks/useProfiles";
 import { Button } from "@/ui/button";
 import {
@@ -19,7 +19,7 @@ import { HistoryList } from "./HistoryList";
 import { PromptBar } from "./PromptBar";
 
 const TabHelp = lazy(() =>
-	import("@/components/Help/TabHelp").then((m) => ({ default: m.TabHelp })),
+	import("@/features/help/TabHelp").then((m) => ({ default: m.TabHelp })),
 );
 
 /**

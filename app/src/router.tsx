@@ -7,11 +7,11 @@ import {
 	useLocation,
 } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useRef } from "react";
-import { AppFrame } from "@/components/AppFrame/AppFrame";
-import { AnnouncementBanner } from "@/components/Banner/AnnouncementBanner";
-import { ServerStatusBanner } from "@/components/Banner/ServerStatusBanner";
-import { ErrorBoundary } from "@/components/ErrorBoundary/ErrorBoundary";
-import { RecommendedModelsBanner } from "@/components/RecommendedModelsBanner/RecommendedModelsBanner";
+import { AppFrame } from "@/layouts/AppFrame/AppFrame";
+import { AnnouncementBanner } from "@/layouts/Banner/AnnouncementBanner";
+import { ServerStatusBanner } from "@/layouts/Banner/ServerStatusBanner";
+import { ErrorBoundary } from "@/layouts/ErrorBoundary/ErrorBoundary";
+import { RecommendedModelsBanner } from "@/features/store/RecommendedModelsBanner";
 import { TabIntroMount } from "@/features/onboarding/TabIntro";
 import { AutoUpdateFlow } from "@/features/settings/AutoUpdateFlow";
 import { AppLoadingScreen } from "@/ui/AppLoadingScreen";
@@ -28,20 +28,26 @@ const GenerationGameNudge = lazy(() =>
 	})),
 );
 
+import { isTauri } from "@tauri-apps/api/core";
 import { useAssistantCommands } from "@/lib/assistantCommands";
+import { useBackendRestart } from "@/lib/hooks/useBackendRestart";
+import { useBootReadiness } from "@/lib/hooks/useBootReadiness";
 import { useGenerationProgress } from "@/lib/hooks/useGenerationProgress";
 import { useModelDownloadToast } from "@/lib/hooks/useModelDownloadToast";
 import {
 	MODEL_DISPLAY_NAMES,
 	useRestoreActiveTasks,
 } from "@/lib/hooks/useRestoreActiveTasks";
+import { usePlatform } from "@/platform/PlatformContext";
 import { useGenerationStore } from "@/stores/generationStore";
 import { usePlayerStore } from "@/stores/playerStore";
+import { useServerStore } from "@/stores/serverStore";
 import { useUIStore } from "@/stores/uiStore";
+import { Button } from "@/ui/button";
 
 // Lazy-load Sidebar — large component with heroicons, only visible on desktop
 const Sidebar = lazy(() =>
-	import("@/components/Sidebar").then((m) => ({
+	import("@/layouts/Sidebar").then((m) => ({
 		default: m.Sidebar,
 	})),
 );
@@ -143,17 +149,17 @@ const VoicesTab = lazy(() =>
 	})),
 );
 const WorkspaceLayout = lazy(() =>
-	import("@/components/Workspace/WorkspaceLayout").then((m) => ({
+	import("@/features/workspace/WorkspaceLayout").then((m) => ({
 		default: m.WorkspaceLayout,
 	})),
 );
 const TimelineView = lazy(() =>
-	import("@/components/Workspace/TimelineView").then((m) => ({
+	import("@/features/workspace/TimelineView").then((m) => ({
 		default: m.TimelineView,
 	})),
 );
 const WorkspaceLanding = lazy(() =>
-	import("@/components/Workspace/WorkspaceLanding").then((m) => ({
+	import("@/features/workspace/WorkspaceLanding").then((m) => ({
 		default: m.WorkspaceLanding,
 	})),
 );
@@ -386,6 +392,7 @@ const ModelHealthPage = lazy(() =>
 
 // Platform check that works in both web and Tauri
 // navigator.platform is deprecated; prefer userAgentData with fallback
+
 function RootLayout() {
 	// Monitor active downloads/generations and show toasts for them
 	const activeDownloads = useRestoreActiveTasks();
@@ -395,6 +402,41 @@ function RootLayout() {
 
 	// Handle lower-risk assistant UI commands (navigation, Audio Studio, store setters)
 	useAssistantCommands();
+
+	// Boot handshake: in the desktop app the Rust side may have spawned the
+	// backend on a fallback port (busy-port squat) or adopted an existing
+	// one — adopt whatever URL it reports instead of assuming :17493.
+	// Idempotent: start_server is a no-op when already running. Skipped in
+	// remote mode (never touch the user's remote address) and on web.
+	const { startServer } = usePlatform().lifecycle;
+	useEffect(() => {
+		if (!isTauri()) {
+			return;
+		}
+		const { mode, customModelsDir } = useServerStore.getState();
+		if (mode !== "local") {
+			return;
+		}
+		let cancelled = false;
+		void (async () => {
+			try {
+				const url = await startServer(false, customModelsDir, null);
+				if (
+					!cancelled &&
+					typeof url === "string" &&
+					url.startsWith("http") &&
+					url !== useServerStore.getState().serverUrl
+				) {
+					useServerStore.getState().setServerUrl(url);
+				}
+			} catch {
+				// Keep the default URL; the status banner surfaces backend state.
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [startServer]);
 
 	// Pause global audio player on route change
 	const location = useLocation();
@@ -412,6 +454,18 @@ function RootLayout() {
 	const isGenerating = useGenerationStore((s) => s.isGenerating);
 	const miniGameOpen = useUIStore((s) => s.miniGameOpen);
 	const setMiniGameOpen = useUIStore((s) => s.setMiniGameOpen);
+	const serverUrl = useServerStore((s) => s.serverUrl);
+	const serverMode = useServerStore((s) => s.mode);
+	const boot = useBootReadiness(serverUrl);
+	const { phase: restartPhase, restart: restartBackend } = useBackendRestart();
+	const bootLabel =
+		boot.status === "startup_failed"
+			? "Backend failed to start"
+			: boot.status === "initializing"
+				? `Starting backend… ${boot.elapsed}s`
+				: boot.elapsed > 30
+					? `Waiting for backend… ${boot.elapsed}s (first launch loads models — this takes a while)`
+					: `Waiting for backend… ${boot.elapsed}s`;
 
 	return (
 		<AppFrame>
@@ -438,11 +492,36 @@ function RootLayout() {
 						<TabIntroMount />
 					</ErrorBoundary>
 					<div className="container mx-auto px-8 max-w-[1800px] h-full overflow-hidden flex flex-col">
-						<Suspense fallback={<AppLoadingScreen />}>
-							<ErrorBoundary>
-								<Outlet />
-							</ErrorBoundary>
-						</Suspense>
+						{boot.ready ? (
+							<Suspense fallback={<AppLoadingScreen />}>
+								<ErrorBoundary>
+									<Outlet />
+								</ErrorBoundary>
+							</Suspense>
+						) : (
+							<div className="flex flex-1 flex-col items-center justify-center gap-4">
+								<AppLoadingScreen label={bootLabel} />
+								{boot.status === "startup_failed" && (
+									<div className="flex max-w-md flex-col items-center gap-2 text-center">
+										<p className="text-sm text-destructive">
+											{boot.error ?? "The backend reported a startup failure."}
+										</p>
+										{serverMode === "local" && (
+											<Button
+												size="sm"
+												disabled={restartPhase !== "idle"}
+												onClick={() => void restartBackend()}
+												title="Restart the backend process"
+											>
+												{restartPhase === "idle"
+													? "Restart backend"
+													: "Restarting…"}
+											</Button>
+										)}
+									</div>
+								)}
+							</div>
+						)}
 					</div>
 				</main>
 			</div>
@@ -460,7 +539,10 @@ function RootLayout() {
 				);
 			})}
 
-			{/* Mini-game: manual via sidebar + popup when generating */}
+			{/* Mini-game: manual via sidebar + popup when generating.
+			    Both are behind an explicit condition — `MiniGame` used to render
+			    unconditionally, which fired its dynamic import (and with it the
+			    ~350 KB framer-motion runtime) on every cold start. */}
 			{isGenerating && !miniGameOpen && (
 				<div className="relative z-40 float-right mr-4 mb-4">
 					<Suspense>
@@ -470,11 +552,13 @@ function RootLayout() {
 					</Suspense>
 				</div>
 			)}
-			<Suspense>
-				<ErrorBoundary fallback={() => null}>
-					<MiniGame />
-				</ErrorBoundary>
-			</Suspense>
+			{miniGameOpen && (
+				<Suspense>
+					<ErrorBoundary fallback={() => null}>
+						<MiniGame />
+					</ErrorBoundary>
+				</Suspense>
+			)}
 			<ErrorBoundary fallback={() => null}>
 				<AutoUpdateFlow />
 			</ErrorBoundary>

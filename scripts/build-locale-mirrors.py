@@ -10,7 +10,7 @@ in OTHER locales (ja/zh-*) are never touched by this script.
 
 Review workflow: pick a file, replace en values with real translations,
 delete nothing, then remove the _meta block and record the reviewer in
-docs/reports/2026-09-04-i18n-review-log.md.
+docs/archive/reports/2026-09-04-i18n-review-log.md.
 """
 
 from __future__ import annotations

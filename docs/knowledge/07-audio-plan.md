@@ -1,7 +1,7 @@
 # 07 — AI Audio Plan System
 
 ## AudioPlanView at `/workspace/audio-plan`
-- **Component:** `AudioPlanView` in `app/src/components/Workspace/AudioPlanView.tsx`
+- **Component:** `AudioPlanView` in `app/src/features/workspace/AudioPlanView.tsx`
 - **What:** Scene-based audio planning with Auto/Guided mode toggle, scene list, generate button, and timeline grid overlay.
 
 ## Auto/Guided Mode Toggle
@@ -34,4 +34,4 @@
 - **MCP Tools:** (none — audio plan is UI-initiated)
 - **REST Endpoints:** `POST /audio-plan/auto`, `POST /audio-plan/validate`, `GET /audio-plan/stats`
 - **Key Backend Files:** `backend/services/audio_plan.py`, `backend/routes/audio_plan.py`
-- **Key Frontend Files:** `app/src/components/Workspace/AudioPlanView.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/AudioPlanView.tsx`

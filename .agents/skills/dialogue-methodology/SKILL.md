@@ -51,11 +51,11 @@ Always run auto-duck + auto-level before export. Never hand-clip peaks.
 4. **Mix/master** — bus routing + sidechain duck; `measure_loudness`; export preset:
    | content | LUFS | channels |
    |---------|------|----------|
-   | Podcast | −16 | mono |
-   | Audiobook | −18 | stereo |
-   | Movie audio | −24 | 5.1 |
-   | Voiceover | −12 | mono |
-   | Social/YouTube | −14 | mono |
+   | Podcast | −16 | stereo |
+   | Audiobook | −18 | mono |
+   | Movie audio | −24 | stereo |
+   | Voiceover | −12 | stereo |
+   | Social/YouTube | −14 | stereo |
 
 ## Pitfalls / Gotchas
 - **Render gap.** `POST /conversation/render` is documented (doc 21) but NOT in

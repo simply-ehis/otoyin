@@ -20,6 +20,10 @@ export default defineConfig({
 		setupFiles: ["./src/test/setup.ts"],
 		globals: true,
 		include: ["src/**/*.{test,spec}.{ts,tsx}"],
+		// 59 jsdom files on a loaded machine: environment setup alone can
+		// exceed 800s cumulative, and first-tests pay cold-module cost —
+		// the 5s default flakes under load. 10s still catches real hangs.
+		testTimeout: 10000,
 		coverage: {
 			provider: "v8",
 			include: ["src/**/*.{ts,tsx}"],

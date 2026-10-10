@@ -88,6 +88,11 @@ MAX_AUDIO_BUFFER_SAMPLES = MAX_AUDIO_BUFFER_SECONDS * SAMPLE_RATE
 MAX_CONVERSATION_HISTORY = 100
 SESSION_TTL_SECONDS = 600  # 10 minutes idle before eviction
 
+# How long a pending tool confirmation waits for the user before defaulting to
+# "denied". Module-level (not inline) so tests can shrink it — a 30s real wait
+# blows the suite timeout and leaves a pending future on the loop.
+TOOL_CONFIRMATION_TIMEOUT_S = 30.0
+
 
 _sessions: dict[str, VoiceChatSession] = {}
 
@@ -280,7 +285,12 @@ async def _request_tool_confirmation(
     tool_args: dict,
     reason: str,
 ) -> bool:
-    """Request user confirmation for a tool call. Waits up to 30s for response."""
+    """Request user confirmation for a tool call.
+
+    Waits up to ``TOOL_CONFIRMATION_TIMEOUT_S`` for a response; on expiry the
+    call is treated as **denied** (fail-closed — an unanswered prompt must never
+    auto-approve a tool).
+    """
     loop = asyncio.get_running_loop()
     future = loop.create_future()
     session.tool_confirmation_future = future
@@ -291,7 +301,7 @@ async def _request_tool_confirmation(
     }
 
     try:
-        result = await asyncio.wait_for(future, timeout=30.0)
+        result = await asyncio.wait_for(future, timeout=TOOL_CONFIRMATION_TIMEOUT_S)
         return result
     except TimeoutError:
         logger.info("Tool confirmation timed out for %s", tool_name)

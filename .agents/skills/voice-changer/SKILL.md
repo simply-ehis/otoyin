@@ -42,7 +42,7 @@ UI control ranges (from `19-voice-changer.md`, for reporting only):
 
 ## Worked example
 ```python
-TWENTYLABS.voice_changer_capabilities()
+21labs.voice_changer_capabilities()
 # -> {"target_latency_ms":50,"supported_effects":["pitch_shift","formant_shift","reverb","chorus"],
 #     "max_chain_length":4,"sample_rate":48000,"frame_size_ms":10}
 ```

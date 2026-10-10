@@ -9,8 +9,8 @@ description: Generate speech with Qwen3-TTS Base (0.6B/1.7B) — zero-shot voice
 > (`backend/backends/protocols.py::TTS_ENGINES`); no `pytorch_backend.py` / `mlx_backend.py`
 > exists, and `get_tts_backend_for_engine` raises `ValueError: Unknown TTS engine`.
 > This page is retained for historical reference only — do not use it for current work.
-> Default engine is now `kokoro`; zero-shot cloning lives in `fish_speech`, `zonos`,
-> `f5_tts`, `pocket_tts` (see [engine-atlas](../engine-atlas/SKILL.md)).
+> Default engine is now `kokoro`; live zero-shot cloning is `qwen3_tts`
+> (see [engine-atlas](../engine-atlas/SKILL.md)).
 
 ## Purpose
 Qwen3-TTS Base (`Qwen/Qwen3-TTS-12Hz-*B-Base`) is the default zero-shot voice-clone engine

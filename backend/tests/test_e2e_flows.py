@@ -219,9 +219,9 @@ class TestBuyInstallFlow:
         )
 
         _wire_marketplace_keys(monkeypatch)
-        monkeypatch.setattr(mp_settings, "paddle_api_key", "")
+        monkeypatch.setattr(mp_settings, "dodo_api_key", "")
         # Dev auto-fulfill requires debug mode (fail-closed otherwise —
-        # PADDLE_LAUNCH_CHECKLIST §6: MARKETPLACE_DEBUG=true, no keys).
+        # MARKETPLACE_DEBUG=true, no keys).
         monkeypatch.setattr(mp_settings, "debug", True)
 
         import asyncio

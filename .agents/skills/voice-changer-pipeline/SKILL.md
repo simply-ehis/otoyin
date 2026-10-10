@@ -19,7 +19,7 @@ Voice Changer. Transforms live mic input: capture → VAD → denoise → STT �
 
 ## Prerequisites
 - Backend: `backend/voice_changer/pipeline.py` + `backend/voice_changer/server.py`.
-- Endpoint: `POST /voice-changer/process` (REST, for testing) or the live
+- Endpoint: `GET /voice-changer/status`, `GET /voice-changer/latency`, `GET /voice-changer/capabilities`, or the live
   VoiceChangerView (`/voice-changer`) for real-time mic.
 
 ## Pipeline stages (REAL from `pipeline.py:1`)
@@ -48,8 +48,7 @@ Voice Changer. Transforms live mic input: capture → VAD → denoise → STT �
 - The agent only probes capabilities via `21labs.voice_changer_capabilities`
   (or `GET /voice-changer/capabilities`). It must NOT start/stop/reconfigure
   the live graph (per AGENTS.md hard constraint).
-- For pipeline diagnostics, inspect `POST /voice-changer/process` with a test
-  buffer to trace each stage.
+- For pipeline diagnostics, use `GET /voice-changer/status` and `GET /voice-changer/latency`.
 
 ## Pitfalls / Gotchas
 - **CPU-bound**: `VoiceChangerPipeline.process_chunk()` is synchronous — called

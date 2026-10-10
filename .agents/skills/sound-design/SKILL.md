@@ -15,60 +15,64 @@ Create custom sound effects and ambient textures from scratch using otoyin's syn
 - User wants to layer multiple sounds into a composite effect
 
 ## Prerequisites
-- At least one audio generation engine available (Stable Audio, ACE-Step, or Bark SFX)
+- At least one audio generation engine available (`stable_audio`, `sa3_sfx`, `acestep_gguf`, `heartmula`, or `minimax_music3`)
 - Effects chain available for post-processing
 
 ## Parameters / Schema
 - **text**: Description of the desired sound (natural language)
-- **duration**: Length in seconds (1-30 typical)
-- **engine**: `stable_audio` (default, best for SFX), `bark_sfx` (human sounds), `ace_step` (musical textures)
+- **duration_seconds**: Length in seconds (`generate_sfx`: 0.1–30)
+- **engine**: `stable_audio` or `sa3_sfx` for SFX; `acestep_gguf`, `heartmula`, or `minimax_music3` for musical textures
 - **effects**: Optional post-processing chain
 
 ## Agent procedure
 
 ### 1. Determine the sound type
-- **Human sounds** (laugh, cough, sigh, gasp) → use `bark_sfx`
-- **Musical textures** (pads, drones, risers) → use `ace_step` or `generate_music`
-- **Everything else** (impacts, ambiences, foley, UI sounds) → use `generate_sfx`
+- **Human sounds** (laugh, cough, sigh, gasp) → describe them in a Stable Audio prompt; there is no dedicated non-verbal engine in the current set.
+- **Musical textures** (pads, drones, risers) → use `generate_music` with `acestep_gguf`, `heartmula`, or `minimax_music3`.
+- **Everything else** (impacts, ambiences, foley, UI sounds) → use `generate_sfx`.
 
 ### 2. Generate the base sound
 ```
-MCP: 21labs.generate_sfx(prompt="...", duration=N)
-Assistant: generate_speech (with SFX-capable engine)
+MCP: 21labs.generate_sfx(prompt="...", duration_seconds=2.0)
 ```
 
 ### 3. Post-process with effects
 ```
 MCP: 21labs.apply_effects(
-  effects=[
-    {"type": "eq", "params": {"low_freq": 100, "high_freq": 8000}},
-    {"type": "reverb", "params": {"room_size": 0.7, "wet_level": 0.3}},
-    {"type": "compressor", "params": {"threshold": -20, "ratio": 4}}
+  generation_id="<generation-id>",
+  effects_chain=[
+    {"type": "eq", "enabled": true, "params": {"low_gain": 0, "mid_gain": 0, "high_gain": 2}},
+    {"type": "reverb", "enabled": true, "params": {"room_size": 0.7, "damping": 0.5, "wet": 0.3}},
+    {"type": "compressor", "enabled": true, "params": {"threshold": -20, "ratio": 4}}
   ]
 )
 ```
 
 ### 4. Layer if needed
-For composite sounds, generate multiple layers and mix:
-```
-MCP: 21labs.splice_audio(files=["impact.wav", " debris.wav", " rumble.wav"], operation="mix")
-```
+For composite sounds, generate multiple layers and sequence or bounce them with story items or `21labs.bounce_preview` using base64 `audio_data`.
 
 ### 5. Normalize and export
 ```
-MCP: 21labs.normalize_audio(target_lufs=-14)
-MCP: 21labs.export_audio(filename="my_sfx.wav")
+MCP: 21labs.master_audio(
+  audio_path="composite.wav",
+  target_lufs=-14.0,
+  true_peak_db=-1.0
+)
+MCP: 21labs.apply_export_preset(
+  preset_name="social_media",
+  audio_path="composite.wav"
+)
 ```
 
 ## Worked example: "Create a cinematic impact sound"
 
-1. Generate sub-bass layer: `generate_sfx("deep sub-bass cinematic impact", duration=2)`
-2. Generate texture layer: `generate_sfx("metallic debris scatter", duration=3)`
-3. Generate tail layer: `generate_sfx("dark ambient reverb tail", duration=4)`
-4. Mix layers: `splice_audio(files=[...], operation="mix")`
-5. Apply processing: `apply_effects(effects=[compressor, eq, reverb])`
-6. Normalize: `normalize_audio(target_lufs=-14)`
-7. Export: `export_audio(filename="cinematic_impact.wav")`
+1. Generate sub-bass layer: `generate_sfx("deep sub-bass cinematic impact", duration_seconds=2)`
+2. Generate texture layer: `generate_sfx("metallic debris scatter", duration_seconds=3)`
+3. Generate tail layer: `generate_sfx("dark ambient reverb tail", duration_seconds=4)`
+4. Sequence or bounce the layers with story items or `bounce_preview`.
+5. Apply processing: `apply_effects(generation_id=..., effects_chain=[compressor, eq, reverb])`.
+6. Master: `master_audio(..., target_lufs=-14.0, true_peak_db=-1.0)`.
+7. Export: `apply_export_preset(preset_name="social_media", ...)`, unless another preset is requested.
 
 ## Pitfalls / Gotchas
 - SFX generation is non-deterministic — generate multiple variations and pick the best
@@ -77,11 +81,10 @@ MCP: 21labs.export_audio(filename="my_sfx.wav")
 - Always normalize after mixing — layering increases peak levels
 
 ## Cross-links
-- `sfx-stable-audio` — Stable Audio engine reference
-- `bark-sfx` — Bark SFX engine for human sounds
-- `music-acestep` — ACE-Step for musical textures
-- `effects-field-guide` — All available effects and parameters
-- `effects-space` — Reverb and spatial effects
+- [sfx-stable-audio](../sfx-stable-audio/SKILL.md) — Stable Audio engine reference
+- [music-acestep](../music-acestep/SKILL.md) — ACE-Step-family music textures
+- [effects-field-guide](../effects-field-guide/SKILL.md) — All available effects and parameters
+- [effects-space](../effects-space/SKILL.md) — Reverb and spatial effects
 
 ## Validation
 - Generate a 1-second test tone first to verify the engine is loaded

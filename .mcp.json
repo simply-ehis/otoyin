@@ -1,17 +1,11 @@
 {
-  "servers": {
-    "paddle-sandbox": {
-      "type": "http",
-      "url": "https://sandbox-mcp.paddle.com/mcp",
-      "headers": {
-        "Authorization": "Bearer ${env:PADDLE_SANDBOX_API_KEY}"
-      }
-    },
-    "21-labs": {
+  "mcpServers": {
+    "otoyin": {
       "type": "stdio",
-      "command": "21-labs-mcp",
+      "command": "node",
+      "args": ["./bin/otoyin-mcp.mjs"],
       "env": {
-        "TWENTYLABS_MCP_TRANSPORT": "stdio"
+        "OTOYIN_CLIENT_ID": "coding-agent"
       }
     }
   }

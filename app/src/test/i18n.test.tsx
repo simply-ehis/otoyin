@@ -6,8 +6,7 @@
  * mixed machine translation), and the Settings switcher lists them all.
  */
 
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { createInstance } from "i18next";
 import { describe, expect, it } from "vitest";
 import { LanguageSelect } from "@/features/settings/LanguageSelect";
@@ -99,11 +98,13 @@ describe("fallback behavior", () => {
 
 describe("LanguageSelect", () => {
 	it("lists all nine languages", async () => {
-		const user = userEvent.setup();
 		render(<LanguageSelect />);
-		await user.click(
-			screen.getByRole("combobox", { name: "Interface language" }),
-		);
+		// Radix Select in jsdom: open via keyboard (clicks hit the
+		// dismissable-layer pointer-events gap) — same pattern as
+		// overlays.test.tsx "opens the listbox and chooses an option".
+		fireEvent.keyDown(screen.getByRole("combobox", { name: "Interface language" }), {
+			key: "ArrowDown",
+		});
 		for (const code of EXPECTED) {
 			expect(
 				await screen.findByRole("option", {

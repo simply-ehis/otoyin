@@ -134,14 +134,23 @@ def test_parse_date_rejects_garbage():
 
 
 def test_stale_warning_after_threshold(tmp_path):
-    old = (datetime.now() - timedelta(days=45)).strftime("%Y-%m-%d")
+    # Use a comfortably-past date rather than exactly-threshold days: the
+    # checker measures whole elapsed days from a date-only value, so
+    # `now - timedelta(days=45)` lands on 44 whenever the current time of day
+    # is earlier in the day than it was 45 days ago (i.e. most of the day).
+    old = (datetime.now() - timedelta(days=60)).strftime("%Y-%m-%d")
     path = write(tmp_path, "r.md", "DONE", old)
     w = crh.stale_warnings(path, tmp_path)
-    assert len(w) == 1 and "45 days ago" in w[0]
+    assert len(w) == 1 and "days ago" in w[0]
 
 
 def test_fresh_actionable_not_warned(tmp_path):
-    path = write(tmp_path, "r.md", "DONE", "2026-09-07")
+    # Derive the date relative to now instead of hardcoding one. This used to
+    # pin "2026-09-07", which was ~23 days stale when written and crossed the
+    # 30-day actionable threshold on 2026-10-07 — the suite went red on a
+    # calendar boundary rather than on any behaviour change.
+    fresh = (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d")
+    path = write(tmp_path, "r.md", "DONE", fresh)
     assert crh.stale_warnings(path, tmp_path) == []
 
 

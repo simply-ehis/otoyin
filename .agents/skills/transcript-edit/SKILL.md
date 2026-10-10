@@ -30,8 +30,7 @@ Defaults: `confidence` defaults 1.0; `selected` defaults false.
 ## Agent procedure
 1. `GET /transcript/{generation_id}/words` → word list with start/end ms.
 2. To navigate: `POST /transcript/{generation_id}/click-word` with the chosen word → `playhead_ms`.
-3. To delete: select the word indices, then [VERIFY IN CODE] call the delete endpoint (see Pitfalls)
-   — audio is trimmed to drop those spans.
+3. To delete: `POST /transcript/{generation_id}/delete-words` with `{word_indices:[int], crossfade_ms:10}` → `{new_generation_id, new_audio_path, new_duration}`.
 4. Re-render / export the edited generation.
 
 ## Worked example
@@ -44,13 +43,7 @@ curl -X POST localhost:17493/transcript/g123/click-word -H 'content-type: applic
 ```
 
 ## Pitfalls / Gotchas
-- **Schema/route drift vs doc 23.** Docs/knowledge/23-transcript-edit.md describes
-  `GET /transcript/words?generation_id=` and `POST /transcript/delete-words` + `click-to-playhead`.
-  The current `backend/routes/transcript_edit.py` implements `GET /transcript/{generation_id}/words`
-  and `POST /transcript/{generation_id}/click-word` ONLY — there is **no `delete-words` route or
-  `click-to-playhead` route** as of this read. Deletion must be performed client-side (splice the
-  word spans) or via another edit path; do not call a non-existent endpoint.
-- `click-word` returns the playhead + selection span; it does NOT mutate audio.
+- `click-word` returns the playhead + selection span; it does NOT mutate audio. Deletion uses `delete-words` and returns a new generation.
 - Word timestamps are produced by transcribing the generation's audio (faster-whisper); accuracy
   depends on the model.
 

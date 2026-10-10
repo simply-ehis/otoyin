@@ -72,9 +72,9 @@ Backend defines `CueGridCell`/`CueMatrix` models but NO endpoint saves them.
 - `volume` max is 2.0 (not 1.0) — envelopes may exceed unity; downstream limiting applies.
 
 ## Cross-links
-- [effects-field-guide](../../effects-field-guide/SKILL.md)
-- [mastering](../../mastering/SKILL.md)
-- [loudness-metering](../../loudness-metering/SKILL.md)
+- [effects-field-guide](../effects-field-guide/SKILL.md)
+- [mastering](../mastering/SKILL.md)
+- [loudness-metering](../loudness-metering/SKILL.md)
 
 ## Validation
 - Re-run `interpolate` with `linear` and compare to `equal_power`; equal_power should

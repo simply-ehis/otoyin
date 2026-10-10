@@ -371,10 +371,15 @@ async def generate_speech(
     try:
         enqueue_generation(generation_id, run_generation(ctx), dedup_key=dedup_key)
     except DuplicateGenerationError:
-        # Clean up the DB row and task_manager entry we just created
+        # Clean up the DB row and task_manager entry we just created.
+        # `generation` is a Pydantic response (not an ORM row), so reload
+        # the row for deletion — direct callers (MCP) don't go through
+        # FastAPI's response_model serialization.
         task_manager.complete_generation(generation_id)
-        db.delete(generation)
-        db.commit()
+        row = db.query(DBGeneration).filter_by(id=generation_id).first()
+        if row is not None:
+            db.delete(row)
+            db.commit()
         raise HTTPException(
             status_code=409, detail="Generation already in progress — please wait for the current one to finish"
         ) from None
@@ -382,8 +387,10 @@ async def generate_speech(
         # Full queue: fail the row now so it never sits in 'generating'
         # forever with no worker watching it.
         task_manager.complete_generation(generation_id)
-        db.delete(generation)
-        db.commit()
+        row = db.query(DBGeneration).filter_by(id=generation_id).first()
+        if row is not None:
+            db.delete(row)
+            db.commit()
         raise HTTPException(status_code=429, detail=str(e)) from e
 
     return generation

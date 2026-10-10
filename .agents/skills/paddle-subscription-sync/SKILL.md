@@ -9,11 +9,11 @@ description: Mirror Paddle subscription and customer state into your database vi
 
 Use this skill when you need a local copy of Paddle subscription and customer state — typically to gate features by subscription status, render account pages without round-tripping to the Paddle API, and report on revenue. This skill defines the table schema, the events to subscribe to, the upsert pattern, how to map your app's users to Paddle customers, status semantics, and how to handle scheduled changes (pauses, cancels effective at end of period).
 
-This skill assumes you already receive verified webhooks. If you don't, do `webhooks` first — that skill covers the route handler and signature verification. The code here lives inside the event handler functions that skill creates.
+This skill assumes you already receive verified webhooks. If you don't, do `paddle-webhooks` first — that skill covers the route handler and signature verification. The code here lives inside the event handler functions that skill creates.
 
 ## Prerequisites
 
-- Working webhook endpoint with signature verification (`webhooks`).
+- Working webhook endpoint with signature verification (`paddle-webhooks`).
 - A database (the examples use Supabase, but any SQL store with `UPSERT` works).
 - Subscribed events on your notification destination:
   - `customer.created`, `customer.updated`
@@ -90,7 +90,7 @@ If a user signs up in your app and **then** checks out (no Paddle customer yet),
 
 ## Process subscription events
 
-Inside the route handler from `webhooks`, route to a typed handler:
+Inside the route handler from `paddle-webhooks`, route to a typed handler:
 
 ```ts
 // utils/paddle/process-webhook.ts
@@ -332,7 +332,7 @@ Run it once before flipping access gating to read from your DB.
 4. Confirm:
    - The `subscriptions` row shows `subscription_status: 'active'` with `scheduled_change` set.
    - In the dashboard, advance the clock or wait for the period — the status flips to `canceled`.
-5. Use the simulator (see `sandbox-testing`) to fire `subscription.updated` with a `paused` status and confirm your UI handles it.
+5. Use the simulator (see `paddle-sandbox-testing`) to fire `subscription.updated` with a `paused` status and confirm your UI handles it.
 
 ## Related docs
 

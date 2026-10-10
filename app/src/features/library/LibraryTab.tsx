@@ -9,7 +9,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { RecordAudioButton } from "@/components/Recording/RecordAudioButton";
+import { RecordAudioButton } from "@/features/capture/RecordAudioButton";
 import { ClipboardPanel } from "@/features/clipboard/ClipboardPanel";
 import { apiClient } from "@/lib/api/client";
 import { copyClip } from "@/lib/clip";

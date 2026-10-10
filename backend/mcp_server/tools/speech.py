@@ -11,7 +11,6 @@ from typing import Any
 
 from fastmcp import FastMCP
 
-from ... import models
 from ...database import get_db
 from ...services import captures as captures_service, profiles as profiles_service
 from .. import events as mcp_events
@@ -313,7 +312,7 @@ def register_speech_tools(mcp: FastMCP) -> None:
             else:
                 raise ValueError("voice_type must be 'cloned', 'preset', or 'designed'")
 
-            profile = await profiles_service.create_profile(db, profile_data)
+            profile = await profiles_service.create_profile(data=profile_data, db=db)
 
             if voice_type == "cloned" and sample_path:
                 await profiles_service.add_sample(db, profile.id, sample_path, reference_text)
@@ -484,7 +483,7 @@ def register_speech_tools(mcp: FastMCP) -> None:
                 voice_type="cloned",
                 default_engine=default_engine,
             )
-            profile = await profiles_service.create_profile(db, profile_data)
+            profile = await profiles_service.create_profile(data=profile_data, db=db)
             sample = await profiles_service.add_sample(db, profile.id, sample_path, reference_text)
             return {
                 "profile_id": profile.id,
@@ -542,17 +541,25 @@ async def _speak(
     db,
 ) -> dict[str, Any]:
     """Delegate to POST /generate — the route handles personality-rewrite
-    internally when ``personality=true`` and the profile has a prompt."""
-    from ...routes.generations import generate_speech
+    internally when ``personality=true`` and the profile has a prompt.
 
-    req = models.GenerationRequest(
-        profile_id=profile_id,
-        text=text,
-        language=language or "en",
-        engine=engine,
-        personality=personality,
+    Goes through REST (like every other MCP tool) instead of calling the
+    route function in-process: the generation task queue lives in the
+    backend process, so direct calls fail outside the in-process /mcp
+    mount (stdio shim, external hosts)."""
+    from ._common import _rest
+
+    generation = await _rest(
+        "POST",
+        "/generate",
+        json={
+            "profile_id": profile_id,
+            "text": text,
+            "language": language or "en",
+            "engine": engine,
+            "personality": personality,
+        },
     )
-    generation = await generate_speech(req, db)
     return _speak_response(generation, profile_name, source="mcp")
 
 

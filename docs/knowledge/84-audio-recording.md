@@ -1,9 +1,9 @@
 # 84 — Audio Recording (Visible UI)
 
 PURPOSE: Where the record button lives and how a take becomes a capture.
-OWNS: app/src/components/Recording/RecordAudioButton.tsx, app/src/lib/hooks/useAudioRecording.ts, backend/routes/captures.py
+OWNS: app/src/features/capture/RecordAudioButton.tsx, app/src/lib/hooks/useAudioRecording.ts, backend/routes/captures.py
 READ-WHEN: You add recording UI, debug mic permissions, or wire a new capture source.
-KEY-FILES: app/src/components/Recording/RecordAudioButton.tsx, app/src/lib/hooks/useAudioRecording.ts, app/src/lib/audio/nativeMic.ts
+KEY-FILES: app/src/features/capture/RecordAudioButton.tsx, app/src/lib/hooks/useAudioRecording.ts, app/src/lib/audio/nativeMic.ts
 INVARIANTS: Native sidecar first on Tauri, webview getUserMedia fallback; stop always uploads as source=recording.
 GOTCHAS: Tauri webviews need OS mic permission + app restart; MediaRecorder MIME varies (webm/opus vs mp4/aac) — backend ffmpeg normalizes.
 UPDATED: 2026-09-11
@@ -22,4 +22,4 @@ UPDATED: 2026-09-11
 ## Agent Callable
 - **MCP Tools:** `21labs.transcribe` (transcribe the take), `21labs.list_captures`
 - **REST:** `POST /captures`, `GET /captures/{id}/audio`, `GET /captures`
-- **Key Files:** `app/src/components/Recording/RecordAudioButton.tsx`, `backend/routes/captures.py`
+- **Key Files:** `app/src/features/capture/RecordAudioButton.tsx`, `backend/routes/captures.py`

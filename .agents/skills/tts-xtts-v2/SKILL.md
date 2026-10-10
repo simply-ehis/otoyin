@@ -6,12 +6,11 @@ description: Generate speech with XTTS v2 — the true zero-shot voice cloning e
 # XTTS v2 (Zero-Shot Clone)
 
 > **REMOVED — 2026-07.** The `xtts_v2` engine is no longer registered in `TTS_ENGINES`
-> (`backend/backends/protocols.py:300-318`); no `xtts_backend.py` exists, and
-> `get_tts_backend_for_engine` raises `ValueError: Unknown TTS engine` (`registry.py:355-356`).
+> (`backend/backends/protocols.py::TTS_ENGINES`); no `xtts_backend.py` exists, and
+> `get_tts_backend_for_engine` raises `ValueError: Unknown TTS engine`.
 > This page is retained for historical reference only — do not use it for current work.
-> True zero-shot cloning today lives in `f5_tts`, `fish_speech`, and `moss_tts_nano`
-> (gen-time) and `zonos` / `pocket_tts` / `styletts2` (CLONING_ENGINES). See
-> [engine-atlas](../engine-atlas/SKILL.md).
+> For cloning, use `21labs.clone_voice` with `qwen3_tts`, `pocket_tts`, or another
+> supported engine. See [engine-atlas](../engine-atlas/SKILL.md).
 
 ## Purpose
 XTTS v2 (`coqui/XTTS-v2`, 1800 MB) is otoyin's **true zero-shot voice cloning** engine.

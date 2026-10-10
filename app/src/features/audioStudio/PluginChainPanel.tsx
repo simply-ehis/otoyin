@@ -6,6 +6,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils/cn";
+import { useUIStore } from "@/stores/uiStore";
 import { Button } from "@/ui/button";
 import { Slider } from "@/ui/slider";
 import { type StudioTrack, useAudioStudioStore } from "./AudioStudioStore";
@@ -23,7 +24,11 @@ const BAND_COLORS = ["#ff6b86", "#58d6c7", "#9b8cff", "#ffb454"];
 
 function EqResponseCanvas({ params }: { params: Record<string, number> }) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
+	// Redraw on theme change: --accent is read at draw time, so the curve
+	// must re-render when the active theme swaps its triplet.
+	const theme = useUIStore((s) => s.theme);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: theme forces a redraw when the active theme swaps the --accent triplet this callback resolves at draw time
 	const draw = useCallback(
 		(canvas: HTMLCanvasElement) => {
 			const { width, height } = canvas;
@@ -70,9 +75,14 @@ function EqResponseCanvas({ params }: { params: Record<string, number> }) {
 				response[i] = total;
 			}
 
-			// Draw response curve
+			// Draw response curve. Canvas ignores CSS custom properties, so the
+			// bare --accent triplet (theme-aware via --theme-accent) is wrapped
+			// here instead.
 			ctx2d.beginPath();
-			ctx2d.strokeStyle = "hsl(var(--accent))";
+			const accent = getComputedStyle(canvas)
+				.getPropertyValue("--accent")
+				.trim();
+			ctx2d.strokeStyle = accent ? `hsl(${accent})` : "hsl(348 68% 58%)";
 			ctx2d.lineWidth = 1.5;
 			for (let i = 0; i < nPoints; i++) {
 				const x = padding.left + i;
@@ -113,7 +123,7 @@ function EqResponseCanvas({ params }: { params: Record<string, number> }) {
 				ctx2d.fillText(hz >= 1000 ? `${hz / 1000}k` : `${hz}`, x, height - 2);
 			}
 		},
-		[params],
+		[params, theme],
 	);
 
 	const refCallback = useCallback(

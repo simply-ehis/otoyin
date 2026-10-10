@@ -61,4 +61,4 @@ UPDATED: 2026-07-19
 - **MCP Tools:** `21labs.speak`, `21labs.generate_sfx`, `21labs.generate_music`
 - **REST Endpoints:** `POST /generate`, `POST /generate/stream`, `POST /profiles/{id}/compose`, `GET /generate/{id}/status`
 - **Key Backend Files:** `backend/services/generation.py`, `backend/routes/generations.py`, `backend/backends/protocols.py`
-- **Key Frontend Files:** `app/src/components/Generation/FloatingGenerateBox.tsx`, `app/src/lib/hooks/useGeneration.ts`, `app/src/lib/hooks/useGenerationProgress.ts`
+- **Key Frontend Files:** `app/src/features/generate/Composer.tsx`, `app/src/lib/hooks/useGeneration.ts`, `app/src/lib/hooks/useGenerationProgress.ts`

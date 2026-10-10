@@ -6,11 +6,11 @@ description: Generate fast English speech with Chatterbox Turbo using [paralingu
 # Chatterbox Turbo TTS (English, Paralinguistic)
 
 > **REMOVED — 2026-07.** The `chatterbox_turbo` engine is no longer registered in
-> `TTS_ENGINES` (`backend/backends/protocols.py:300-318`); no `chatterbox_backend.py`
-> exists, and `get_tts_backend_for_engine` raises `ValueError: Unknown TTS engine`
-> (`registry.py:355-356`). This page is retained for historical reference only — do not
-> use it for current work. Paralinguistic-style control today lives in `zonos` /
-> `fish_speech` (both in CLONING_ENGINES). See [engine-atlas](../engine-atlas/SKILL.md).
+> `TTS_ENGINES` (`backend/backends/protocols.py::TTS_ENGINES`); no `chatterbox_backend.py`
+> exists, and `get_tts_backend_for_engine` raises `ValueError: Unknown TTS engine`.
+> This page is retained for historical reference only — do not use it for current work.
+> For non-verbal tags, use `21labs.apply_audio_tags`; for cloning, use a supported
+> clone engine. See [engine-atlas](../engine-atlas/SKILL.md).
 
 ## Purpose
 Chatterbox Turbo (`ResembleAI/chatterbox-turbo`, 1500 MB) is the fast, English-only cousin

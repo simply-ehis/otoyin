@@ -23,4 +23,4 @@ UPDATED: 2026-07-18
 - **MCP Tools:** `21labs.speak` (uses moss_tts_nano engine)
 - **REST Endpoints:** `POST /generate` (with `engine: "moss_tts_nano"`)
 - **Key Backend Files:** `backend/backends/moss_tts_nano_onnx_backend.py`
-- **Key Frontend Files:** `app/src/components/Generation/EngineModelSelector.tsx`
+- **Key Frontend Files:** `app/src/features/generate/Composer.tsx`

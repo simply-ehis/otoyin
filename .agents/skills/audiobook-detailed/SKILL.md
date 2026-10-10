@@ -16,7 +16,7 @@ Turn a long-form text (script, EPUB, PDF) into a multi-voice audiobook with per-
 ## Prerequisites
 - Text source (plain text, EPUB, or PDF)
 - Voice profiles for each character/narrator
-- TTS engine with good long-form quality (Kokoro, Chatterbox, or Qwen)
+- TTS engine with good long-form quality (for example, Kokoro or another supported engine from `engine-atlas`)
 
 ## Agent procedure
 
@@ -24,42 +24,53 @@ Turn a long-form text (script, EPUB, PDF) into a multi-voice audiobook with per-
 ```
 MCP: 21labs.create_audiobook(
   title="My Book",
-  source_path="manuscript.epub"
+  author="Author Name"
+)
+```
+For EPUB/PDF ingest, use:
+```
+MCP: 21labs.import_audiobook(
+  file_path="manuscript.epub",
+  title="My Book"
 )
 ```
 
-### 2. Parse the script into chapters
+### 2. Add chapters, then parse each chapter
 ```
+MCP: 21labs.add_audiobook_chapter(
+  book_id="audiobook-uuid",
+  title="Chapter 1",
+  text="<chapter text>"
+)
 MCP: 21labs.parse_audiobook_script(
-  audiobook_id="audiobook-uuid"
+  book_id="audiobook-uuid",
+  chapter_id="<chapter-id>"
 )
 ```
-This splits the text into chapters and detects character names from dialogue tags.
+This splits the chapter into utterances for character casting.
 
 ### 3. Cast voices for each character
 ```
 MCP: 21labs.list_profiles()
 ```
-Then assign profiles:
+Then assign profiles one character at a time:
 ```
-MCP: 21labs.update_audiobook_cast(
-  audiobook_id="audiobook-uuid",
-  cast={
-    "Narrator": "profile-uuid-narrator",
-    "Alice": "profile-uuid-alice",
-    "Bob": "profile-uuid-bob"
-  }
+MCP: 21labs.add_audiobook_cast(
+  book_id="audiobook-uuid",
+  character="Narrator",
+  profile_id="profile-uuid-narrator"
 )
 ```
 
-### 4. Render a chapter
+### 4. Render the book
 ```
-MCP: 21labs.render_audiobook_chapter(
-  audiobook_id="audiobook-uuid",
-  chapter_number=1
+MCP: 21labs.render_audiobook(
+  book_id="audiobook-uuid",
+  engine="<engine>",
+  profile_id="<narrator-profile-id>"
 )
 ```
-This generates audio for every utterance in the chapter, using the cast voice for each character.
+This uses the batch queue; a chapter-scoped render is not separately routed, so chapter quality checks should happen before whole-book rendering.
 
 ### 5. Quality check
 - Listen to the rendered chapter
@@ -68,16 +79,14 @@ This generates audio for every utterance in the chapter, using the cast voice fo
 
 ### 6. Export the finished audiobook
 ```
-MCP: 21labs.export_audiobook(
-  audiobook_id="audiobook-uuid",
-  format="m4b"
-)
+GET /audiobooks/{book_id}/export
+GET /audiobooks/{book_id}/export-m4b
 ```
-M4B is the standard format for Audible and other audiobook platforms.
+Use `export-m4b` for chaptered Audible delivery. There is no MCP export tool with a `format` parameter.
 
 ## Casting tips
 - **Narrator** should be a calm, clear voice (Kokoro works well)
-- **Characters** can use more expressive engines (Chatterbox for emotion)
+- **Characters** can use more expressive supported engines (for example, `zonos_gguf` for emotion control)
 - **Consistency** — use the same voice profile throughout; don't switch engines mid-book
 - **Pacing** — match speaking rates across voices so transitions feel natural
 
@@ -89,12 +98,10 @@ M4B is the standard format for Audible and other audiobook platforms.
 - Export to M4B, not MP3 — M4B supports chapters and metadata
 
 ## Cross-links
-- `67-audiobook-pipeline.md` — Audiobook pipeline knowledge doc
-- `tts-kokoro` — Kokoro for narrator voices
-- `tts-chatterbox` — Chatterbox for expressive character voices
-- `tts-qwen` — Qwen for multilingual audiobooks
-- `loudness-metering` — Verify audiobook loudness (-18 to -20 LUFS)
-- `platform-export` — Export to Audible format
+- [engine-atlas](../engine-atlas/SKILL.md) — Current engine capabilities
+- [voice-profiles](../voice-profiles/SKILL.md) — Profile management reference
+- [loudness-metering](../loudness-metering/SKILL.md) — Verify audiobook loudness
+- [platform-export](../platform-export/SKILL.md) — Export presets and delivery
 
 ## Validation
 - Each chapter renders without errors

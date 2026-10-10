@@ -8,37 +8,39 @@
 |---|---|---|---|
 | **API Client** | `app/src/lib/api/client.ts`, `client*.ts` | Frontend | Backend REST API |
 | **TTS Engine** | `backend/backends/*.py`, `routes/generate.py` | Backend | Model configs, database |
-| **Story Editor** | `app/src/components/StoriesTab/StoryTrackEditor.tsx` | Frontend | API Client, Story Store |
+| **Story Editor** | `app/src/features/stories/editor/StoryTrackEditor.tsx` | Frontend | API Client, Story Store |
 | **Audio Studio** | `app/src/features/audioStudio/AudioStudio.tsx`, `usePlaybackEngine.ts`, `AudioStudioStore.ts` (moved from `components/AudioStudio/` 2026-08-19), `lib/hooks/useAudioRecording.ts` | Frontend | Web Audio API, AudioStudioStore |
-| **Voice Profiles** | `app/src/components/VoiceProfiles/`, `backend/services/profiles.py` | Both | TTS engines, database |
-| **Model Downloads** | `app/src/components/ServerSettings/` (legacy detail/list, now via Marketplace), `backend/routes/models/` | Both | HuggingFace API |
+| **Voice Profiles** | `app/src/features/voices/` (live UI, moved from `components/VoiceProfiles/` 2026-10-09; the `components/VoiceProfiles/` dir now holds dead legacy only), `backend/services/profiles.py` | Both | TTS engines, database |
+| **Model Downloads** | `app/src/features/store/` (download UI is the Marketplace; the old `components/ServerSettings/` detail/list was removed), `backend/routes/models/` | Both | HuggingFace API |
 | **On-Demand Pip Install** | `backend/backends/protocols.py` (`ModelConfig.pip_packages`, `ModelConfig.venv_name`), `backend/routes/models/download.py` (`_ensure_engine_pip_deps`, `_ensure_venv`), `backend/backends/configs/*.py` (all model configs) | Backend | 16 engines declare pip deps; 3 engines (rvc, seed_vc, demucs) get dedicated venvs at `data/venvs/{name}/` for dependency conflicts |
-| **Marketplace Store** | `app/src/components/Store/` (`StorePage.tsx` + `StoreProductCard.tsx` + `StoreDetailModal.tsx` + `storeUtils.ts`), `app/src/components/ServerSettings/modelUtils.ts` (rich descriptions), `backend/routes/marketplace.py`, `backend/services/marketplace_catalog.py`, `backend/routes/models/status.py` (TTL cache) | Both | Signed catalog, offline licensing |
-| **Vocal Isolation (Demucs)** | `backend/services/stem_separation*.py`, `backend/routes/audio_processing.py` (`/audio/separate`), `app/src/components/Workspace/VocalIsolationView.tsx`, `app/src/lib/audio/ensureModel.ts`, Audio Studio toolbar isolate | Both | ONNX weights `MrCitron/demucs-v4-onnx` (downloaded via Store), optional torch demucs |
+| **Marketplace Store** | `app/src/features/store/` (`StorePage.tsx` + `StoreProductCard.tsx` + `StoreDetailModal.tsx` + `storeUtils.ts`), `app/src/features/store/storeUtils.ts` (rich descriptions), `backend/routes/marketplace.py`, `backend/services/marketplace_catalog.py`, `backend/routes/models/status.py` (TTL cache) | Both | Signed catalog, offline licensing |
+| **Vocal Isolation (Demucs)** | `backend/services/stem_separation*.py`, `backend/routes/audio_processing.py` (`/audio/separate`), `app/src/features/workspace/VocalIsolationView.tsx`, `app/src/lib/audio/ensureModel.ts`, Audio Studio toolbar isolate | Both | ONNX weights `MrCitron/demucs-v4-onnx` (downloaded via Store), optional torch demucs |
 | **MCP Server** | `backend/mcp_server/` | Backend | All backend services |
 | **Database** | `backend/database/`, `backend/models.py` | Backend | SQLAlchemy, SQLite |
 | **Server Config** | `backend/config.py` (`get_server_base_url/host/port`) | Backend | Env vars `TWENTYLABS_HOST/PORT` |
 | **ONNX Device Strategy** | `backend/backends/_onnx_precision.py`, `bin/setup-onnx.ps1` | Backend | onnxruntime-directml, `data/runtime/onnx_provider.json` |
-| **API Keys Manager** | `backend/routes/model_providers.py`, `app/src/components/ServerTab/ApiKeysPage.tsx` | Both | model_providers table, Fernet encryption |
+| **API Keys Manager** | `backend/routes/model_providers.py`, `app/src/features/settings/ApiKeysPage.tsx` | Both | model_providers table, Fernet encryption |
 | **Voice-Changer** | `backend/voice_changer/` (`__init__`, `pipeline`, `server`, `__main__`) | Backend | VAD, DeepFilterNet, Whisper, Kokoro TTS, LavaSR |
 | **Streaming LavaSR** | `backend/services/streaming_lavasr.py` | Backend | audiosronnx, sliding window + overlap-add crossfade |
 | **Emotion DSP** | `backend/services/audio_tags.py` (`apply_emotion_dsp`, `EMOTION_PRESETS`) | Backend | scipy resample, numpy |
 | **Silero VAD (ONNX)** | `backend/services/vad.py` | Backend | onnxruntime, `silero_vad_16k_op15.onnx` |
 | **faster-whisper STT** | `backend/backends/faster_whisper_backend.py`, `backend/routes/transcript_edit.py` | Backend | CTranslate2 int8, Systran HF repos, word timestamps + confidence |
-| **Transcript Editing** | `backend/routes/transcript_edit.py`, `app/src/lib/transcript/` (TranscriptService, useTranscriptEditor, TranscriptEditor, TranscriptDrawer), `app/src/features/audioStudio/` (moved from `components/AudioStudio/` 2026-08-19), `app/src/components/Workspace/TranscriptEditView.tsx` | Both | faster-whisper STT, non-destructive audio splicing with crossfade |
+| **Transcript Editing** | `backend/routes/transcript_edit.py`, `app/src/lib/transcript/` (TranscriptService, useTranscriptEditor, TranscriptEditor, TranscriptDrawer), `app/src/features/audioStudio/` (moved from `components/AudioStudio/` 2026-08-19), `app/src/features/workspace/TranscriptEditView.tsx` | Both | faster-whisper STT, non-destructive audio splicing with crossfade |
 | **GGUF Planner LLM** | `backend/backends/gguf_server_backend.py` (spawns llama.cpp `server.exe` sidecar on a free localhost port) | Backend | jackrong Qwen3.5 GGUF repos, Ministral GGUF, llama-server binary, huggingface_hub, aiohttp |
 | **Fish Audio S2 Pro** | `backend/backends/fish_speech_s2_backend.py`, `backends/registry.py:124`, `configs/tts.py:187`, `routes/models/download.py:242` | Backend | s2.cpp binary (`TWENTYLABS_S2_CPP`), `rodrigomt/s2-pro-gguf` Q4_K_M + tokenizer |
-| **Performance Mode** | `backend/database/models.py:297` `PerformanceSettings`, `services/settings.py:124`, `routes/settings.py:71`, `utils/model_lifecycle.py:141`, `app/src/components/ServerTab/GeneralPage.tsx:221`, `VoiceProfiles/ProfileCard.tsx:46` | Both | SQLite singleton, lifecycle 30s poll |
+| **Performance Mode** | `backend/database/models.py:297` `PerformanceSettings`, `services/settings.py:124`, `routes/settings.py:71`, `utils/model_lifecycle.py:141`, `app/src/features/settings/GeneralPage.tsx`, `VoiceProfiles/ProfileCard.tsx:46` | Both | SQLite singleton, lifecycle 30s poll |
 | **Workflow Skills** | `backend/agents/manifest.py:40` `SkillSpec`×6, `routes/assistant.py:168` `GET /assistant/skills`, `mcp_server/tools/skills.py:1` `21labs.list_skills` | Both | `TOOL-REFERENCE.md`, `SKILL_SPECS` |
-| **App Loading** | `app/src/components/ui/AppLoadingScreen.tsx`, `LoadingState.tsx:12`, `.agents/skills/app-ui-loading/SKILL.md:1` | Frontend | `router.tsx:388` `Suspense fallback`, `aria-busy` |
-| **ADR** | `backend/routes/adr.py` (13 endpoints), `backend/services/adr.py` (DB + scoring + align + waveform), `app/src/components/Workspace/ADRView.tsx` (654 lines, waveform + auto-select + align), `app/src/lib/api/clientADR.ts` (score/autoSelect/align/waveform) | Both | DB ADRSession/Line/Take, soundfile, numpy correlate, AudioContext |
-| **Cloud BYOK (STT/Music/VC)** | `backend/services/cloud_provider.py` (`transcribe_via_cloud`, `generate_music_via_cloud`, `convert_voice_via_cloud`), `backend/backends/cloud_music_backend.py`, `cloud_vc_backend.py`, `cloud_stt_backend.py`, `backend/routes/transcription.py`, `generate.py`, `voice_convert.py`, `app/src/components/Generation/EngineModelSelector.tsx` (`cloud` engine), `app/src/components/Workspace/VoiceConverterView.tsx` (`cloud` toggle), `types.ts` (`WhisperModelSize` includes `cloud`) | Both | BYOK `model_providers` encrypted, httpx, soundfile |
+| **App Loading** | `app/src/ui/AppLoadingScreen.tsx`, `app/src/lib/hooks/useBootReadiness.ts`, `app/src/router.tsx`, `LoadingState.tsx:12`, `.agents/skills/app-ui-loading/SKILL.md:1` | Frontend | `/health/ready`, Tauri backend URL handoff, restart lifecycle, `aria-busy` |
+| **ADR** | `backend/routes/adr.py` (13 endpoints), `backend/services/adr.py` (DB + scoring + align + waveform), `app/src/features/workspace/adr/ADRView.tsx` (654 lines, waveform + auto-select + align), `app/src/lib/api/clientADR.ts` (score/autoSelect/align/waveform) | Both | DB ADRSession/Line/Take, soundfile, numpy correlate, AudioContext |
+| **Cloud BYOK (STT/Music/VC)** | `backend/services/cloud_provider.py` (`transcribe_via_cloud`, `generate_music_via_cloud`, `convert_voice_via_cloud`), `backend/backends/cloud_music_backend.py`, `cloud_vc_backend.py`, `cloud_stt_backend.py`, `backend/routes/transcription.py`, `generate.py`, `voice_convert.py`, `app/src/features/generate/engines.ts` + `app/src/lib/constants/engines.ts` (`cloud` engine; `components/Generation/EngineModelSelector.tsx` was removed), `app/src/features/workspace/VoiceConverterView.tsx` (`cloud` toggle), `types.ts` (`WhisperModelSize` includes `cloud`) | Both | BYOK `model_providers` encrypted, httpx, soundfile |
 
 ## Change Impact Rules
 
 ### Frontend changes
-- **Component in `components/`**: isolated, no cross-component impact
-- **API client change**: all consumers in `components/` affected
+- **Layout/chrome change** (`app/src/layouts/` — AppFrame, Sidebar, Banner, AudioPlayer, ErrorBoundary, Notifications): touches shared shell; check every route's mount path
+- **Feature change** (`app/src/features/<area>/`): isolated to that area unless it edits a shared store/API client
+- **`app/src/components/ui/` change**: shared primitives — all consumers affected (grep `@/components/ui`)
+- **API client change**: all consumers across `features/` affected
 - **Store change**: all consumers of that store affected
 - **Type change in `types.ts`**: all importers affected
 - **GenerationControlsRow.tsx change**: affects all generation flows (main editor, stories)
@@ -116,7 +118,7 @@
 - NOT in v1 (P1): bundle-wide Ed25519 signature verification, install/execution flow, version negotiation.
 
 ### Audit C — In-app Log viewer (2026-08-19, done)- Gap: logs streamed into `logStore` (Tauri `server-log` events) + persisted to `appData/logs/server_{stdout,stderr}.log` — but nothing displayed them.
-- `app/src/components/ServerTab/LogsPage.tsx`: search, stream filter, copy, export (.log, ANSI-stripped), open log folder (Tauri), no-match state, toasts. Route `/settings/logs` already existed.
+- `app/src/features/settings/LogsPage.tsx` (was `components/ServerTab/`): search, stream filter, copy, export (.log, ANSI-stripped), open log folder (Tauri), no-match state, toasts. Route `/settings/logs` already existed.
 - `PlatformFilesystem.getLogsDir()` added (types.ts + webPlatform "" + `tauri/src/platform/filesystem.ts` → `appDataDir()/logs`). i18n ×4 locales (16 keys under `settings.logs`).
 - Verification: lint/format clean; zero typecheck errors in touched files (both app + tauri). Full gate red from USER in-progress work (AssistantPanel, StoryTrackEditor, MixerView/TimelineView, useEditorDrag, index.css) — untouched.
 
@@ -142,7 +144,7 @@
 - Recording switched to id-based (`recordingTrackIdRef`); `useAudioRecording` gains `onRecordingError` teardown
 - `ModelStatus.supports_instruct` (backend `models.py`, `routes/models/status.py`) → frontend `types.ts`, `useGenerationForm.ts`, `useEngineSync.ts`, `EngineModelSelector.tsx` (instruct gate = `emotion_control || supports_instruct`)
 - `biome.json` overrides added: `tauri/dist/**`, `web/dist/**` (linter+formatter disabled — build artifacts)
-- **Impact**: pan/loop/duck/export paths share one graph; `channels` flows through store → templates → bounce; instruct toggle visible for engines flagged `supports_instruct` in the model catalog; generated `app/src/lib/api/models/ModelStatus.ts` stays stale by convention (hand-maintained `types.ts` is source of truth)
+- **Impact**: pan/loop/duck/export paths share one graph; `channels` flows through store → templates → bounce; instruct toggle visible for engines flagged `supports_instruct` in the model catalog; the generated `app/src/lib/api/models/ModelStatus.ts` was dropped — hand-maintained `types.ts` is the source of truth
 
 ### Phase 9 — P0 Engine Removals (2026-08-19, done; marketplace launch prep)
 - Removed engines: `qwen` (Qwen3-TTS PyTorch), `qwen_custom_voice`, `step_audio_editx`, `pocket_emo` (EmoShift), MLX whisper variant, `bark` non-verbal, `acestep` (music). Kept as P1 paid plans: Qwen3-TTS 1.7B GGUF, Bark Small/Large TTS, ACE-Step 1.5.
@@ -244,7 +246,7 @@ outes/models/download.py bark branch (gguf + per-voice pack_voice_npz), services
 - **Verify-gate:** `just verify-lint` 8/8; 72 targeted backend tests + 45 voice-chat tests pass; `bin/check.ps1` unicode box-chars fixed for pwsh 5.1; backend normalized to LF via `.gitattributes` (`backend/** text eol=lf`) so cross-OS CRLF churn can't re-break the gate.
 - **BYOK audit fixes (5 findings):**
   - Divergent LLM BYOK paths → consolidated. VoiceChat now reads/writes Layer A (`model_providers` idle LLM domain) in `services/memory.py` (`get_voice_chat_settings` overlays Layer A; `save_voice_chat_settings` writes both layers, single source of truth). `routes/model_providers.py` stays the canonical backend; `routes/assistant.py` consumes `get_api_provider`/Layer A for cloud LLM dispatch.
-  - Inactive domains (`music`, `vc`, `stt`) surfaced in UI: `components/ServerTab/ApiKeysPage.tsx` lists them as INACTIVE and disables Add (existing backends are the only supported BYOK path).
+  - Inactive domains (`music`, `vc`, `stt`) surfaced in UI: `app/src/features/settings/ApiKeysPage.tsx` lists them as INACTIVE and disables Add (existing backends are the only supported BYOK path).
   - Free-text domain param → validated `ProviderDomain(StrEnum)` in `routes/model_providers.py` (`domain` query/path now typed; invalid domain → 422).
   - Freesound still legitimately reuses the `sfx` domain (functional, kept).
   - Cloud LLM with no model selected → `routes/assistant.py` `event_stream` yields a clear, recoverable error instead of an opaque crash.
@@ -254,7 +256,7 @@ outes/models/download.py bark branch (gguf + per-voice pack_voice_npz), services
 
 ### Phase 17 — ADR Hardening + Cloud BYOK Restore (2026-08-26, done)
 - **ADR backend hardening:** `backend/services/adr.py` `add_take` now auto-scores via `score_take_quality` (capped 10s, SF read) so `quality_score` + `auto-select` (quality 0.6 + timing 0.4) work without manual score; `calculate_alignment_offset` (numpy correlate), `score_take_quality` (RMS+speech+clipping), `compute_waveform` tested. `backend/tests/test_adr.py` (17 tests: service CRUD + scoring + alignment + waveform + route create/guide/takes/select/auto-select/score/align/waveform/audio + 404s) — 17/17 pass.
-- **ADR frontend:** `app/src/components/Workspace/ADRView.tsx` — `WaveformBars` fixed to render `s*32px` heights (was constant), new `TakeWaveform` per-take query (`getADRTakeWaveform`), `autoSelectMut` (`POST /adr/auto-select`) with “Auto-Select” button per line, `alignMut` (fetch guide/take WAV → AudioContext decode 24k c10s → `POST /adr/align` → `setShiftMs`), guide-first gate (`hasGuide` disables Record/Align, amber banner, toast), unified errors to `showStudioErrorToast`, delete confirm, `Align` button + shift slider (-500…500). `app/src/lib/api/clientADR.ts` added `autoSelectADRTake`.
+- **ADR frontend:** `app/src/features/workspace/adr/ADRView.tsx` (was `components/Workspace/ADRView.tsx`) — `WaveformBars` fixed to render `s*32px` heights (was constant), new `TakeWaveform` per-take query (`getADRTakeWaveform`), `autoSelectMut` (`POST /adr/auto-select`) with “Auto-Select” button per line, `alignMut` (fetch guide/take WAV → AudioContext decode 24k c10s → `POST /adr/align` → `setShiftMs`), guide-first gate (`hasGuide` disables Record/Align, amber banner, toast), unified errors to `showStudioErrorToast`, delete confirm, `Align` button + shift slider (-500…500). `app/src/lib/api/clientADR.ts` added `autoSelectADRTake`.
 - **Cloud BYOK restore:** Tracked backend files (`transcription.py`, `generate.py`, `voice_convert.py`, `registry.py`, `configs/__init__.py`, `protocols.py`, `transcribe.py`, `subtitles.py`, `cloud_provider.py`) restored from stash after `just verify` reset; untracked `cloud_music_backend.py`/`cloud_vc_backend.py`/`cloud_stt_backend.py` fixed (`_decode_audio_bytes` double-decode removed, instances `cloud_music_backend`/`cloud_vc_backend` added); `backend/tests/test_cloud_stt_music_vc.py` recreated (14 tests: unit + route, app readiness patch, backend class patch for thread mocks) — 14/14 pass. Frontend cloud engines already present: `EngineModelSelector.tsx` (`cloud` in ENGINE_OPTIONS + desc), `VoiceConverterView.tsx` (`cloud` toggle), `types.ts` (`WhisperModelSize` includes `cloud`).
 - **Verification:** `pytest backend/tests/test_adr.py` 17 passed, `pytest backend/tests/test_cloud_stt_music_vc.py` 14 passed, `ruff check` clean (fixed unused imports), `biome check` fixed formatting on ADRView/clientADR.
 - **Impact:** ADR take quality badges + auto-select now meaningful; align staged via REST (no destructive timeline mutate); cloud STT/music/VC one-shot via BYOK provider.
@@ -307,6 +309,13 @@ outes/models/download.py bark branch (gguf + per-voice pack_voice_npz), services
 - **Tests:** `TranslateView.test.tsx` (4 pass: load, translate+detected, swap-disabled, error hint); i18n guard still green; `tsc` clean.
 - **Impact:** every model capability family now has a reachable interface; translation is one click away in the sidebar.
 
+### Phase 24 — Dependency prune + vendor-core entry-payload fix (2026-10-10, done)
+- **Goal:** remove unused workspace deps and fix the boot payload — `vendor-dnd` (150+ KB) was in the entry preloads even though only 4 route chunks use it.
+- **Root cause:** rolldown 1.2.7 (vite 8.2.2) `manualChunks` places a module shared between manual chunks into the alphabetically-first manual chunk that imports it, overriding its own returned chunk name. React sorted into `vendor-dnd` (react lives in `vendor-react`'s rules, which sorts after `vendor-dnd`/`vendor-forms`), so the dnd chunk carried react and index.html preloaded all of it. Fix: rename the react chunk to `vendor-core` (sorts before d/f/m/r/s/t/u/w) in `app/vite.config.ts` + `tauri/vite.config.ts`; GOTCHA comments added — never rename `vendor-core` to anything that sorts after `vendor-dnd`.
+- **Deps removed (81 packages):** root dropped react/react-dom/zod/pinyin-pro/@testing-library/\*/@types/\*/@neon/env/@vitejs/plugin-react-swc; app dropped @radix-ui/react-avatar+separator+toast, webaudio-peaks, react-sound-visualizer (all verified unused; custom toast kept), moved @types/react-syntax-highlighter to devDeps, added @testing-library/dom + @types/node; tauri slimmed to runtime-only mirrors (dropped ~40 mirrored frontend deps + nested vite 6 / plugin-react 4 — tauri now builds on root vite 8 + plugin-react 6, byte-identical vendor chunks to app). docs/landing untouched (@tailwindcss/postcss has no peers to break).
+- **Result:** entry preloads 761.0 → 607.9 KB raw (−153.1 KB, −20%); `vendor-dnd` loads only via AudioStudio/ChainEditor/StoriesTab/StoryTrackEditor; dist total unchanged (bytes redistributed, not duplicated).
+- **Guards:** `tsc` clean; scoped `biome lint` at baseline (app 15 pre-existing warnings, tauri 5, edited files clean — full-repo `biome check .` is 8999 pre-existing errors, never the gate); app build 16.7s, tauri build 12.6s; vitest 59 files / 566 pass; smoke2 boot 2.35s, 8 routes, 0 errors; check-encoding 1731 files.
+
 ## Critical Flows
 
 ### TTS Generation Flow
@@ -358,3 +367,302 @@ resolve_providers() [at ONNX backend init]
   → read recorded choice
   → return ["DmlExecutionProvider", "CPUExecutionProvider"]
 ```
+
+### Audit A3/C — Boot readiness and error feedback (2026-09-25)
+- `app/src/router.tsx` now waits for `/health/ready` before mounting routes, adopts the Rust-reported backend URL, reports elapsed startup time, and offers a local backend restart after `startup_failed`.
+- `app/src/lib/hooks/useBootReadiness.ts` owns the resilient 1.5-second readiness poll and 5-second request timeout.
+- `app/src/test/bootReadiness.test.ts` covers healthy startup, transient connection failures, and startup failure propagation.
+- `app/src/features/assistant/AssistantPanel.tsx` reports assistant model-list failures through `showStudioErrorToast`.
+- `backend/main.py` logs persisted-port and port-handoff failures at debug level instead of silently discarding them.
+- **Impact**: cold starts remain visible and recoverable; frontend model-loading failures are user-visible; backend diagnostics remain debug-friendly without changing fallback behavior.
+
+### Audit D — Runtime configuration drift (2026-09-25)
+- `backend/server.py` now honors `OTOYIN_HOST`/`OTOYIN_PORT` before legacy `TWENTYLABS_*` names, matching `backend/main.py` and the supervisor.
+- `app/src/lib/api/clientCore.ts` reports the actual requested backend address instead of suggesting the default `127.0.0.1:17493` when a custom/fallback port is active.
+- Existing defaults in `serverStore.ts`, Tauri `server.rs`, and the voice-changer entry points remain protocol defaults; runtime handoff and environment overrides are the source of truth after startup.
+- **Impact**: frozen server, CLI, and frontend error messages no longer disagree about the active host/port.
+
+### Audit E — Orphaned/half-done UI (2026-09-25)
+- `scripts/check-wiring.py` reports 79 registered backend routers, 476 OpenAPI paths, and zero orphaned frontend components.
+- `MonitorRecorder.tsx` is now wired into `TransportControls.tsx` and receives `useRecordingManager`'s completion callback, so monitor captures use the existing selected-track fallback, waveform decode, undo, and toast path.
+- `SourceColumn.tsx` + `InfoColumn.tsx` are now wired via the new `app/src/features/voices/VoiceFormDialog.tsx`, which drives both columns with the existing `useProfileForm` controller (drafts, recording, transcribe, submit) and opens from `VoicesTab` through the "Full form" button (`uiStore.profileDialogOpen`).
+- The wiring report also lists 100 stranded endpoints and 107 unwired advisory components from the ongoing frontend rebuild; these are not treated as automatic deletions.
+- **Impact**: monitor-to-track capture and the full voice form are no longer orphaned; QuickCloneDialog remains the fast creation path.
+
+### Live Paddle catalog setup (2026-09-25)
+- Live account was empty; created all 36 paid catalog products: 33 one-time USD prices plus 3 cloud tiers as monthly subscriptions (`llm-cloud-starter/pro/max`).
+- One-time products use the `saas` tax category (`digital-goods` is rejected on this account); probe product created and archived.
+- Webhook notification destination created (`ntfset_01m3gz4gz46cte46cq6sk7z4d6`) → `https://marketplace-mauve-five.vercel.app/v1/webhook` with the four required events.
+- Fresh Ed25519 license keypair generated (private → Vercel `MARKETPLACE_LICENSE_PRIVATE_KEY`; public → release builds + `TWENTYLABS_ENV=production`).
+- Price map (`MARKETPLACE_PADDLE_PRICE_MAP`) staged at `marketplace/live-price-map.json`; still to paste into Vercel along with the webhook secret (copied from the Paddle dashboard).
+- **Impact**: catalog/license plumbing is ready pending owner-side Vercel env + dashboard secret + live sale test.
+
+### Audit F — Performance hotspots (2026-09-25)
+- Codebase-memory complexity scan identifies the largest measured candidates as `backend/utils/hf_offline_patch.force_offline_if_cached`, `backend/routes/assistant_stream.stream_local`, `backend/app._run_startup`, and `app/src/lib/hooks/useGenerationProgress.ts`.
+- `AudioStudio` already throttles waveform state to 10Hz and uses refs for per-frame values; no regression was introduced there.
+- Two disposable direct-server launches reached `/health/ready` in 9,024 ms and 8,065 ms; both returned HTTP 200 without rebuilding or packaging.
+- No performance refactor was applied without a representative generation workload; the repository has no `bin/bench.ps1`, and rebuilding/packaging remains out of scope.
+- **Next measurement**: profile SSE generation progress and AudioStudio playback under a representative generation before changing hot paths.
+
+### Audit G — Backend crash recovery (2026-09-25)
+- The local crash log showed repeated FastMCP failures (`StreamableHTTPSessionManager task group was not initialized`) on `/mcp/`.
+- `backend/app.py` now owns an `AsyncExitStack` for the parent lifespan; `backend/utils/startup_defer.py` enters the FastMCP child lifespan before mounting `/mcp`.
+- The lazy MCP wrapper is pure ASGI instead of `BaseHTTPMiddleware`, preventing AnyIO cancel-scope failures when the MCP endpoint returns a streaming response.
+- `/health/ready` now bypasses the readiness middleware so the frontend receives the actual startup status instead of a generic 503.
+- Regression test: `backend/tests/test_mcp_http_lifespan.py`; live smoke: initialize request returned HTTP 200 and logged the session manager started; the pure-ASGI wrapper produced zero traceback lines.
+- **Impact**: MCP HTTP no longer crashes or 500s on its first request, and backend startup failures remain observable to the client.
+
+### Audit H — Agent discovery and skills bundle (2026-09-25)
+- `.mcp.json` now uses the standard `mcpServers` key and launches `node ./bin/otoyin-mcp.mjs` instead of the nonexistent `21-labs-mcp` command.
+- `bin/otoyin-mcp.mjs` resolves the target-suffixed shim in `tauri/src-tauri/binaries/`, falling back to `otoyin-mcp` on `PATH`.
+- `tauri/src-tauri/tauri.conf.json` now bundles `binaries/otoyin-mcp` as an external sidecar alongside the server.
+- Repository skills bundle: `C:\Users\ehis\AppData\Local\Temp\opencode\otoyin-skills-bundle-2026-09-25.zip` — 86 skills, 117 files.
+- **Impact**: coding agents reading the project MCP config can start the built shim without a manual PATH edit; the skills archive is available for review before the remake.
+
+### Audit I — Skills audit and cleanup (2026-09-25)
+- Corrected stale engine registries, MCP/REST signatures, platform-export targets, STT model keys, recipe/music behavior, and relative skill links.
+- Fixed the MCP conversation auto-duck/level wrapper to send the bare array expected by the route, with a regression test.
+- **Impact**: generation/production skills now match the current backend instead of removed engines or nonexistent endpoints.
+
+### Audit J — Markdown TODO sweep (2026-09-25)
+- `docs/reports/XXX_TODO_AUDIT.md` re-verified via `check_placeholders` (clean); `Last verified` bumped.
+- `docs/WHATS_NEXT.md` and `PLAN.md` archived in place (all items done; Phase 2 re-verified in tree).
+- `LOOP_STATUS.md` row 20 refreshed: 79 routers, 100 stranded, 1 orphaned (`SourceColumn.tsx`, intentional).
+- `PADDLE_TESTING.md` §1 verified: marketplace suite 26/26 pass.
+- Remaining open items are owner-gated (Paddle account/payout/prices/webhook/keypair/sale runs; Apple/Windows certs; DNS/repo; signed updater proof; human translations) or need full loop-row refreshes.
+- **Impact**: no code changes; docs now agree with the tree.
+
+### Audit K — Frozen bundle / packaged-app parity (2026-10-03)
+
+Found by smoke-testing the built `otoyin-server` against the dev server rather
+than trusting the dev suite. Four defects, all dev-invisible:
+
+- **`numba`/`llvmlite` must stay in the bundle.** Excluding them (to save ~115 MB)
+  breaks every audio route: `librosa/core/audio.py` does a module-level
+  `from numba import guvectorize, jit, stencil`, so `librosa.load()` raises
+  `ModuleNotFoundError` and `POST /audio/spectrogram` 500s. Reverted and pinned
+  by `test_librosa_load_requires_numba_so_bundle_must_keep_it`.
+- **MCP tool sources must be bundled.** `tool_registry_populate.populate()` does
+  not import its metadata — it `ast.parse`/`exec`s
+  `backend/routes/assistant_tools/*.py` and regex-scans
+  `backend/mcp_server/tools/*.py`. PyInstaller ships bytecode, so `/mcp` never
+  mounted (404) and the whole MCP surface was dead in the installer. Both
+  directories are now added via `--add-data`; the packaged app exposes all
+  **203** tools, exactly matching dev.
+- **The MCP shim must not exclude `typing`.** `build_shim()` excluded it as an
+  "obsolete backport"; no such distribution is installed and on Python 3.12
+  `typing` is stdlib that `functools` imports. The shim died on every launch with
+  `ModuleNotFoundError: No module named 'typing'`.
+- **`populate()` was not idempotent.** The merge branch rebuilt each
+  `ToolDef` without carrying `client_command`, so a second call reset it and
+  `verify_assistant_vs_tr()` reported 6 phantom errors. Passed in isolation,
+  failed only in the full suite.
+
+- **Impact**: `backend/build_binary.py` (data files, shim excludes, guard
+  comment), `backend/tool_registry_populate.py` (idempotent merge). Installer
+  verified end-to-end after a real install: one server copy, MCP 203 tools,
+  bundled ffmpeg 9.0.2, numba/llvmlite/torch present.
+
+### Audit L — Event-loop stalls on the request path (2026-10-03)
+
+- **`GET /health` froze the loop for >10 s.** It is `async def` but ran every
+  probe inline; cold, `_get_gpu_snapshot()` alone cost ~5.2 s (torch/CUDA init)
+  and `tts.get_tts_model()` ~0.65 s. First call after startup timed out, which
+  made `test_graceful_shutdown_unloads_models_and_exits_cleanly` flaky (2 of 3
+  runs, each on a different test). Split into a sync `_build_health_response()`
+  awaited via `asyncio.to_thread`, and warmed once during startup
+  (`_warm_health_snapshot`, before `_signal_ready()`). First `/health` is now
+  ~35 ms instead of ~6.2 s, and the suite runs ~30% faster.
+- **`silence_removal_audio` had a per-sample Python loop.** `processing.py`
+  walked 1.44 M samples one at a time inside `async def` (~0.83 s stall). Fixed
+  for duck/compress but missed here. Replaced with a numpy run-length encode;
+  differential-tested against the original over 528 cases (random masks plus
+  empty/single/all-silent/trailing/alternating edge cases) — byte-identical.
+
+- **Impact**: `backend/routes/health.py`, `backend/app.py`,
+  `backend/routes/audio_pipeline/processing.py`. Any future blocking probe added
+  to an `async def` route should follow the `asyncio.to_thread` pattern already
+  used throughout `utils/async_audio.py`.
+
+### Audit M — Orphaned backend, port ownership, web mode (2026-10-03)
+
+Four defects found by driving the built app, not the dev server.
+
+**Orphaned backend on close (the "ghost server").** Closing the window left
+`otoyin-server.exe` alive and holding port 17493, so the next launch adopted a
+stale backend or moved to a different port. Three compounding causes:
+- The kill was gated on `window.__TWENTYLABSServerStartedByApp` — declared in
+  `global.d.ts`, never assigned anywhere, therefore always `false`.
+- Two handlers raced on the same close event: Rust `on_window_event` (which
+  asked the renderer for permission over `window-close-requested`) and a JS
+  `win.onCloseRequested`, each calling `preventDefault`.
+- `child.kill()` and `child.wait()` errors were swallowed with `let _ =`, so a
+  failed kill looked identical to a successful one.
+
+Fixed by making Rust the sole owner of close: it stops the backend
+unconditionally, *before* destroying the window, and kills the process **tree**
+(`taskkill /T /F` on Windows, a process group on Unix) because killing only the
+direct child can leave grandchildren holding the port. The renderer round-trip
+and the dead flag are gone.
+
+**Port ownership instead of trial and error.** The port alone cannot say who owns
+the backend. `backend_owner.json` (pid + port) now lives beside the port file,
+and `plan_bind` distinguishes four cases: free / stale lock (reclaim) / our own
+live backend (adopt, spawn nothing) / foreign occupant (**fail loudly naming the
+port**). `find_free_port` and every silent "walk to the next port" fallback were
+deleted — they are what desynchronised the frontend from the backend.
+`spawn_bundled_silent` (the auto-restart path) previously kept a private copy of
+that fallback, so a crash could still relocate the backend; both spawn paths now
+share `plan_bind`.
+
+**CSP blocked the backend.** `SERVER_HOST` is `127.0.0.1`, but `connect-src`
+allowed only `http://localhost:*`. CSP matches on host string, so every fetch to
+the backend was blocked and the boot gate (which polls forever by design) never
+cleared — the blank splash. `connect-src` now also allows `http://127.0.0.1:*`
+and `http://[::1]:*`.
+
+**Web mode was unusable.** `tauri/src/main.tsx` hardcoded `tauriPlatform` even
+when served by `vite dev`, so a plain browser threw
+`Cannot read properties of undefined (reading 'transformCallback')` on every
+mount. The entrypoint now picks `webPlatform` when `window.__TAURI_INTERNALS__`
+is absent; that platform already existed and was simply never selected.
+
+**Also removed:** the "keep server running when app closes" setting, end to end
+(Settings row, store field, `PlatformLifecycle` member, both implementations,
+the Rust `keep_running` flag + `set_keep_server_running` command, and the
+`settings.general.keepServerRunning` block in all 9 locales). Closing now always
+stops the backend, so the switch could not change behaviour and would have been a
+control that silently did nothing.
+
+- **Impact**: `tauri/src-tauri/src/server.rs` (owner lock, `plan_bind`, tree
+  kill, `spawn_bundled_silent`), `tauri/src-tauri/src/lib.rs` (single close
+  owner), `tauri/src-tauri/tauri.conf.json` (CSP),
+  `tauri/src/main.tsx` + `app/src/platform/*` (runtime platform selection),
+  `app/src/features/settings/GeneralPage.tsx`, `app/src/stores/serverStore.ts`,
+  9 locale files.
+- **Guards**: `backend/tests/test_packaged_runtime_guards.py` (6 tests) and 7
+  `server.rs` unit tests. Each was verified to fail when its fix is reverted.
+- **Not yet verified**: the ghost fix itself needs one desktop close/relaunch
+  cycle, which cannot be exercised in a browser (web mode spawns no sidecar).
+
+### Frontend migration — `components/` → `features/` + `layouts/` (2026-10-09, done)
+
+Moved the 69 app-live files out of `app/src/components/` (nothing deleted except
+the 2 confirmed-dead files `layouts/AppFrame.tsx` / `layouts/TitleBar.tsx` that
+blocked the target dir):
+
+- App chrome → `app/src/layouts/`: `AppFrame/` (4), `Sidebar/`, `Banner/`,
+  `ErrorBoundary/`, `Notifications/`, `AudioPlayer/`, `TitleBarDragRegion.tsx`
+- Feature code → `app/src/features/`: `Assistant/`→`assistant/` (14),
+  `VoiceChat/`→`voiceChat/`, `StoriesTab/`→`stories/editor/` (24, subdir dodges
+  the `timeline.ts` collision), `VoiceProfiles/`→`voices/` (7),
+  `Help/`→`help/` (`HelpCenter.tsx` renamed `HelpCenterOverlay.tsx` — distinct
+  from the pre-existing `features/help/HelpCenter.tsx` panel),
+  `Recording/`→`capture/`, `RecommendedModelsBanner/`→`store/`,
+  `WaveformVisualizer/`→`audioStudio/`
+- `components/` keeps: `ui/` (25 shared primitives, dedupe vs `src/ui` deferred),
+  33 dead legacy files, 7 test-only files, and the `index.ts` barrel (updated,
+  kept as a compat shim)
+- Import specs rewritten repo-wide (static + dynamic `import()`), including
+  left-behind files whose relative targets moved; 54 doc path refs across 27
+  living docs updated in the same change. Follow-up judgement sweep 2026-10-09:
+  remaining knowledge-doc dead paths rewritten to live equivalents (see
+  `AGENT_FEEDBACK.md` doc-drift bullet for the full map); 2 survivors intentional
+  (dated change-log entries).
+
+- **Impact**: `router.tsx` (lazy `Sidebar`), `layouts/AppFrame/*` (6 lazy
+  children), `components/index.ts` barrel consumers, knowledge docs listing
+  moved paths, the codebase flow graph (regenerated after the move)
+- **Guards**: `npx tsc --noEmit` clean; `npx vitest run` (from `app/`) 63/607
+  pass; `npx vite build` 10.6s; `node smoke2.cjs` 8 routes 0 errors;
+  `scripts/check-encoding.py` 1731 files clean
+
+### Audio-studio visual bugs: stem-badge alpha + `--accent` stuck rose (2026-10-09, done)
+
+Two user-visible bugs, both now fixed:
+
+1. **Stem badge invisible.** `TrackVisuals.tsx` built the badge background as
+   `` `${track.color}22` `` — but `track.color` is a full `hsl(...)` string, so the
+   `22` alpha suffix produced an invalid CSS color and the badge rendered
+   transparent. Now uses `color-mix(in srgb, ${track.color} 13%, transparent)`
+   (0x22 ≈ 13%).
+2. **`--accent` never followed the theme.** `styles/tokens.css` declared
+   `--accent: 348 68% 58%` as a hard-coded rose, so every consumer of the
+   `--accent` namespace (track palette, EQ curve stroke, WaveSurfer progress,
+   `--focus-ring`) stayed brand-rose even under named themes. Now
+   `--accent: var(--theme-accent, 348 68% 58%)` — themed when
+   `applyThemeAccent` sets the inline `--theme-accent`, falling back to brand
+   rose for plain themes. (Chrome probe confirmed `:root { --theme-accent: unset }`
+   + `var(--theme-accent, <fallback>)` resolves to the fallback, not to `unset`.)
+   - `WaveformCanvas.tsx` and `EqResponseCanvas` gained a tiny
+     `resolveCanvasColor`-style helper because canvas `fillStyle` does not
+     resolve CSS custom properties (silently paints black); both also now
+     subscribe to `useUIStore(s => s.theme)` so they re-draw on a live theme
+     swap. Marked with `biome-ignore useExhaustiveDependencies` (intentional
+     extra dep) so `check.ps1 -Fix` cannot silently strip it.
+3. Also swept `biome format app/src --write` (46 files, whitespace-only) —
+   the format gate had been failing on ~37 pre-existing (HEAD) files.
+
+- **Impact**: `app/src/features/audioStudio/{TrackVisuals,WaveformCanvas,PluginChainPanel}.tsx`,
+  `app/src/styles/tokens.css` (`--accent` decl). Palette strings and
+  `AudioPlayer`/`InlinePlayer` `getCSSVar("--accent")` callers needed no change —
+  they inherit the theme automatically once `--accent` is wired to
+  `--theme-accent`.
+- **Guards**: `npx tsc --noEmit` clean; `npx vitest run` 63/607 pass;
+  `npx vite build` 8.1s; `node smoke2.cjs` 8 routes 0 errors;
+  `scripts/check-encoding.py` 1731 clean; `npx biome lint` 15 warnings (baseline,
+  none in touched files) + `npx biome format` clean; browser probe
+  `check_accent2.cjs` 6/6 (default fallback + 4 themes + canvas contract) and
+  prior `check_accent.cjs` 7/7 still green.
+
+### Doc archive + orphan dead-code deletion (2026-10-09, done)
+
+**Archive.** Completed docs moved out of the living tree into `docs/archive/`:
+
+- `docs/plan/` (7 plans), `docs/reports/` (22 reports + `loop-logs/` + `README.md`
+  + `LOOP_STATUS.md` + `XXX_TODO_AUDIT.md`), `worksheets/` (1),
+  `AUDIT_REPORT.md`, `docs/WHATS_NEXT.md`, root `PLAN.md` (header said
+  "ARCHIVED 2026-09-25: Phase 2 verified done").
+- Living tree keeps: `docs/README.md`, `PROJECT_STATUS.md`, `OWNER_BLOCKERS.md`,
+  `PADDLE_LAUNCH_CHECKLIST.md`, `PRICE_MANIFEST.md`, `PRIVACY_POLICY.md`,
+  `knowledge/*`, plus the other `docs/*.md` still referenced
+  (`ASSISTANT_ARCHITECTURE`, `MARKETPLACE_PLAN`, `AUDIO_PRODUCTION_GUIDE`,
+  `FEATURES`, `DEPLOYMENT_TEST_PLAN`, `ARCHITECTURE`, `MODEL_CATALOG`,
+  `LANDING_PAGE_PLAN`).
+- `docs/README.md` active/archived tables updated; `scripts/check-report-headers.py`
+  retargeted `docs/reports` → `docs/archive/reports` and now passes (22 files OK);
+  `2026-10-02-release-audit.md` got the missing Date/Status header. Living-doc
+  refs to archived paths rewritten (`02-waveform-editor`, `14-voice-profiles`,
+  `28-voice-clone`, `47-assistant-settings`, `52-cross-tab-clip-linkage`,
+  `80-powershell-redirect-corruption`, `81-waveform-playlist-adapter`,
+  `87-voice-design-offerings`, `ABOUT-VOICES`, `01-voice-studio` ProfileList).
+
+**Deletion.** Transitive-orphan audit (zero non-test importers, or importers that
+themselves have zero non-test importers) → deleted 25 roots + their private deps:
+
+- Workspace twins (`components/Workspace/{TimelineView,WorkspaceLanding,WorkspaceLayout}.tsx`
+  + `Import/ImportModal.tsx`, `Studio/StudioVisualizer.tsx`, `TapeScrubber/`) —
+  superseded by `features/workspace/*`
+- StoriesTab leftovers (`components/StoriesTab/{ClipItem,Playhead,TimelineRuler,TrackRow,useEditorDrag,clipStyle,ClipWaveform}` + 2 tests) — superseded by `features/stories/editor/*`
+- VoiceProfiles leftovers (`components/VoiceProfiles/` 18 files incl. `ProfileList`,
+  `QuickCloneDialog`, `VoiceDesignPanel`, tests) — superseded by `features/voices/*`
+- Generation panel (`AudioEditorPanel.tsx`, `VoiceCleanABToggle.tsx` + test,
+  `WaveformABDiff.tsx`) — unwired; live story editing is `features/stories/editor/StoryTrackEditor`
+- Orphan `ui/` twins (`EmptyState`, `ScreenHeader`, `toggle`, `badge`, `circle-button`,
+  `skeleton`, `tabs`) — live twins are `@/ui/states` + radix primitives
+- `components/index.ts` barrel (zero consumers after the migration; nothing does
+  `from "@/components"`)
+- `features/generate/VoicePicker.tsx`, `features/audioStudio/useStudioMidi.ts`,
+  `features/instruments/instrumentRender.ts` — dead after the PromptBar /
+  MidiPianoRoll rewrite (the `instrumentRender` MIDI→waveform port is no longer
+  the playback path)
+
+**Impact**: `router.tsx` unchanged (already lazy-loads the features tree);
+`features/workspace/{TimelineView,WorkspaceLanding,WorkspaceLayout}.tsx` and
+`features/stories/editor/*` are the only Timeline/workspace surfaces left.
+**Guards**: `npx tsc --noEmit` clean; `npx vitest run` (from `app/`) 59 files /
+566 tests pass (the 4-file / 41-test drop is exactly the deleted orphan tests:
+`VoiceCleanABToggle.test`, `StoriesTab/waveformPlaylist.test`,
+`StoriesTab/WaveformPlaylistStage.test`, `VoiceProfiles/QuickCloneDialog.test`);
+`npx vite build` 9.3s; `npx biome lint` clean; `scripts/check-encoding.py`
+1731 files clean; `scripts/check-report-headers.py` 22 files OK.

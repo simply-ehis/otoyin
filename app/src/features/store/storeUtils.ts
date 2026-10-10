@@ -132,13 +132,13 @@ export const MODEL_DESCRIPTIONS: Record<string, string> = {
 	"planner-spark-x-2.5-4b":
 		"Spark-X 2.5-4B ($20) — iFLYTEK's agentic king. 1M native context, 200+ languages, hybrid sliding-window attention. Apache 2.0.",
 	"planner-lfm2-2.6b":
-		"LFM2.5-2.6B ($13) — LiquidAI's on-device planner. 128K context, 24 languages, native tool calling + thinking tags.",
+		"LFM2.5-2.6B (Free) — LiquidAI's on-device planner. 128K context, 24 languages, native tool calling + thinking tags.",
 	"llm-cloud-starter":
-		"Cloud Starter ($10/mo) — cloud-hosted LLM for the in-app assistant. No download, instant responses, requires active subscription.",
+		"Cloud Starter — Coming Soon ($10/mo) — planned cloud-hosted LLM for the in-app assistant. No download, instant responses when live.",
 	"llm-cloud-pro":
-		"Cloud Pro ($20/mo) — smarter cloud model for complex reasoning and coding. Requires active subscription.",
+		"Cloud Pro — Coming Soon ($20/mo) — planned smarter cloud model for complex reasoning and coding.",
 	"llm-cloud-max":
-		"Cloud Max ($50/mo) — top-tier cloud model, maximum capability. Requires active subscription.",
+		"Cloud Max — Coming Soon ($50/mo) — planned top-tier cloud model, maximum capability.",
 	"seed-vc":
 		"Seed-VC — zero-shot voice conversion from a reference clip. Change timbre without re-generating text. GPU recommended.",
 	"rvc-default":
@@ -249,6 +249,9 @@ export function formatPrice(
 ): string {
 	if (!product.paid) {
 		return "Free";
+	}
+	if (product.localized_price) {
+		return product.localized_price;
 	}
 	// No FX (offline/unknown locale) or USD: legacy plain-dollar display.
 	if (!fx || fx.currency === "USD" || !(fx.rate > 0)) {

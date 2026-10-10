@@ -43,7 +43,10 @@ export function TrackVisuals({
 			{track.stem && (
 				<span
 					className="absolute top-0.5 right-1 z-10 rounded px-1 text-[9px] font-medium"
-					style={{ backgroundColor: `${track.color}22`, color: track.color }}
+					style={{
+						backgroundColor: `color-mix(in srgb, ${track.color} 13%, transparent)`,
+						color: track.color,
+					}}
 					title={`Separated stem: ${STEM_LABEL[track.stem]}`}
 				>
 					{STEM_LABEL[track.stem]}

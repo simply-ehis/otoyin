@@ -157,7 +157,7 @@ export class ApiClientCore {
 			// Surface network/fetch failures as SIGNAL_LOST so inferStudioError maps correctly
 			if (isNetworkError(err)) {
 				throw new Error(
-					`Signal lost — cannot reach ${url} — check that the backend is running (http://127.0.0.1:17493)`,
+					`Signal lost — cannot reach ${url} — check that the backend is running at this address`,
 				);
 			}
 			if (err instanceof DOMException && err.name === "AbortError") {

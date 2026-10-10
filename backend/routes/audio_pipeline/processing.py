@@ -202,26 +202,25 @@ async def silence_removal_audio(
     energy = np.abs(audio)
     is_silent = energy < threshold
 
-    result: list[np.ndarray] = []
-    i = 0
     n = len(audio)
-    while i < n:
-        if is_silent[i]:
-            j = i
-            while j < n and is_silent[j]:
-                j += 1
-            silence_len = j - i
-            if silence_len < max_silence_samples and j < n:
-                result.append(audio[i:j])
-            i = j
-        else:
-            j = i
-            while j < n and not is_silent[j]:
-                j += 1
-            segment = audio[i:j]
-            if len(segment) >= min_length_samples:
-                result.append(segment)
-            i = j
+    result: list[np.ndarray] = []
+    if n:
+        # Run-length encode the silence mask with numpy instead of walking every
+        # sample in Python. The per-sample loop below stalled the event loop for
+        # ~0.6 s on a 60 s clip (1.44 M iterations), which is what
+        # test_silence_removal_does_not_block_event_loop guards against.
+        change_idx = np.flatnonzero(is_silent[1:] != is_silent[:-1]) + 1
+        starts = np.concatenate(([0], change_idx))
+        ends = np.concatenate((change_idx, [n]))
+
+        for start, end in zip(starts, ends, strict=True):
+            length = end - start
+            if is_silent[start]:
+                # Keep short silences for breathing room, but drop a trailing one.
+                if length < max_silence_samples and end < n:
+                    result.append(audio[start:end])
+            elif length >= min_length_samples:
+                result.append(audio[start:end])
 
     if not result:
         return {"output_path": None, "message": "No non-silent audio found"}

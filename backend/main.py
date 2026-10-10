@@ -49,7 +49,7 @@ def resolve_server_port(cli_port: int | None = None) -> int:
         if persisted is not None:
             return persisted
     except Exception:
-        pass
+        logger.debug("Persisted server port unavailable; using default", exc_info=True)
     return 17493
 
 
@@ -95,7 +95,7 @@ if __name__ == "__main__":
         runtime_dir.mkdir(parents=True, exist_ok=True)
         (runtime_dir / "backend_port.json").write_text(f'{{"port": {args.port}}}', encoding="utf-8")
     except Exception:
-        pass
+        logger.debug("Backend port handoff file unavailable", exc_info=True)
 
     database.init_db()
 

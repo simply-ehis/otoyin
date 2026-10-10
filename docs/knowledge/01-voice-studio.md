@@ -3,8 +3,8 @@
 ## UI Routes
 
 ### Generate Tab at `/`
-- **Component:** `MainEditor`
-- **What:** Main TTS interface. Engine/model selector, voice profile picker, Floating Generate Box for text input with emotion/instruct controls.
+- **Component:** `GeneratePage` (`app/src/features/generate/GeneratePage.tsx`)
+- **What:** Main TTS interface. Engine/model selector, voice profile picker, floating Composer for text input with emotion/instruct controls.
 - **Features:** Engine selector filters by language compatibility, voice profile selector, generate button streams WAV output.
 
 ### Workspace Studio Tab at `/workspace/studio`
@@ -48,7 +48,7 @@
 
 ### Voice Profile Creation
 - **What:** Create reusable voice profiles from uploaded/recorded audio or built-in presets.
-- **Where:** `app/src/components/VoiceProfiles/ProfileForm.tsx`
+- **Where:** `app/src/features/voices/VoiceFormDialog.tsx` (+ `useProfileForm*.ts` hooks)
 - **Modes:**
   - `clone`: Upload or record reference audio. Creates a voice prompt cached per engine.
   - `builtin`: Select from engine's preset voice library (e.g., Kokoro's 48 voices)
@@ -57,19 +57,19 @@
 
 ### Voice Profile List
 - **What:** Browse, search, and manage saved voice profiles.
-- **Where:** `app/src/components/VoiceProfiles/VoiceProfileList.tsx`
+- **Where:** `app/src/features/voices/VoicesTab.tsx` (list UI; inspector in `VoiceInspector.tsx`)
 - **Features:** Filter by type (cloned/preset), search by name, delete, edit
 
 ## Generation UI
 
 ### Engine/Model Selector
 - **What:** Dropdown to select TTS engine and model size.
-- **Where:** `app/src/components/Generation/EngineModelSelector.tsx`
+- **Where:** `app/src/features/generate/Composer.tsx` (engine/model select)
 - **Behavior:** Shows available engines, filters by language compatibility, displays model descriptions.
 
 ### Floating Generate Box
 - **What:** Main text input for TTS generation with text, voice, and emotion controls.
-- **Where:** `app/src/components/Generation/FloatingGenerateBox.tsx`
+- **Where:** `app/src/features/generate/Composer.tsx`
 - **Parameters:**
   - `text` (string, required): Script text to synthesize
   - `voice_profile_id` (string): Selected voice profile
@@ -79,4 +79,4 @@
 - **MCP Tools:** `21labs.speak`, `21labs.list_profiles`, `21labs.list_models`, `21labs.list_captures`
 - **REST Endpoints:** `POST /generate`, `GET /profiles`, `GET /profiles/presets/{engine}`, `POST /profiles`, `PUT /profiles/{id}`, `DELETE /profiles/{id}`, `GET /models/status`, `POST /generate/{id}/retry`, `POST /generate/{id}/regenerate`, `POST /generate/stream`
 - **Key Backend Files:** `backend/services/generation.py`, `backend/services/profiles.py`, `backend/routes/generations.py`, `backend/routes/profiles.py`, `backend/backends/protocols.py`
-- **Key Frontend Files:** `app/src/components/Generation/FloatingGenerateBox.tsx`, `app/src/components/Generation/EngineModelSelector.tsx`, `app/src/components/VoicesTab/VoicesTab.tsx`, `app/src/components/VoicesTab/VoiceInspector.tsx`, `app/src/stores/uiStore.ts`
+- **Key Frontend Files:** `app/src/features/generate/Composer.tsx`, `app/src/features/voices/VoicesTab.tsx`, `app/src/features/voices/VoiceInspector.tsx`, `app/src/stores/uiStore.ts`

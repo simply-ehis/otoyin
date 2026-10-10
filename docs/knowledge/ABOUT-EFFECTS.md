@@ -50,4 +50,4 @@ Effects include: compressor, EQ, reverb, delay, chorus, flanger, phaser, distort
 - **MCP Tools:** `21labs.list_builtin_presets`, `21labs.export_preset`, `21labs.import_preset`, `21labs.list_community_presets`
 - **REST Endpoints:** `GET /effects/available`, `GET /effects/presets`, `POST /effects/presets`, `PUT /effects/presets/{id}`, `DELETE /effects/presets/{id}`, `POST /effects/preview/{id}`, `POST /generations/{id}/versions/apply-effects`, `GET /presets/builtin`, `POST /presets/export`, `POST /presets/import`
 - **Key Backend Files:** `backend/routes/effects.py`, `backend/services/effects.py`, `backend/services/presets.py`
-- **Key Frontend Files:** `app/src/components/EffectsTab/EffectsTab.tsx`, `app/src/components/EffectsTab/EffectsList.tsx`, `app/src/components/EffectsTab/EffectsDetail.tsx`, `app/src/stores/effectsStore.ts`
+- **Key Frontend Files:** `app/src/features/effects/EffectsTab.tsx`, `app/src/stores/effectsStore.ts`

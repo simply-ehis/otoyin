@@ -11,7 +11,7 @@ Integrate a new text-to-speech engine into otoyin end-to-end: dependency researc
 
 ## Reference Doc
 
-The full phased guide lives at `docs/content/docs/developer/tts-engines.mdx`. **Read this file in its entirety before starting.** It contains:
+The full phased guide lives at `docs/content/docs/developer/tts-engines.mdx` — currently missing from the repo. Do not start Phase 1 until the guide is restored or its phases are inlined here; Phase 0 (dependency audit) is still mandatory. It contains:
 
 - Phase 0: Dependency research (mandatory before writing code)
 - Phase 1: Backend implementation (`TTSBackend` protocol)
@@ -60,15 +60,14 @@ Follow the guide's phases in order. Key files to modify:
 
 **Backend (Phase 1):**
 - Create `backend/backends/<engine>_backend.py`
-- Register in `backend/backends/__init__.py` (ModelConfig + TTS_ENGINES + factory)
-- Update regex in `backend/models.py`
+- Register in `backend/backends/protocols.py` (`ModelConfig` + `TTS_ENGINES`) and the factory in `backend/backends/registry/__init__.py` (`backend/backends/__init__.py` is only a lazy re-export shim)
 
 **Frontend (Phase 3):**
-- `app/src/lib/api/types.ts` — engine union type
-- `app/src/lib/constants/languages.ts` — ENGINE_LANGUAGES
-- `app/src/components/Generation/EngineModelSelector.tsx` — ENGINE_OPTIONS, ENGINE_DESCRIPTIONS
+- `app/src/lib/constants/engines.ts` — `DEFAULT_ENGINE_OPTIONS`
+- `app/src/features/generate/engines.ts` — `ENGINE_OPTIONS`
+- `app/src/lib/constants/languages.ts` — `ENGINE_LANGUAGES`
 - `app/src/lib/hooks/useGenerationForm.ts` — Zod schema, model-name mapping
-- `app/src/components/ServerSettings/ModelManagement.tsx` — MODEL_DESCRIPTIONS
+- `app/src/features/store/storeUtils.ts` — `MODEL_DESCRIPTIONS`
 
 **Dependencies (Phase 4):**
 - `backend/requirements.txt`
@@ -113,8 +112,8 @@ These are the most common failure modes. Phase 0 research catches all of them:
 
 ## Notes
 
-- The route and service layers have zero per-engine dispatch points. `main.py` requires zero changes.
-- The model config registry in `backends/__init__.py` handles all dispatch automatically.
-- Use `get_torch_device()` and `model_load_progress()` from `backends/base.py` — don't reimplement device detection or progress tracking.
+- The route and service layers have zero per-engine dispatch points. Lifecycle entry points may still matter (`backend/app.py` for startup, `backend/main.py` for ports, `backend/server.py` for frozen builds).
+- The model config registry in `backend/backends/protocols.py` handles dispatch; use the registry factory rather than adding dispatch branches.
+- Use `get_torch_device()` and `model_load_progress()` from `backend/backends/base.py` — don't reimplement device detection or progress tracking.
 - Always test with a **clean HuggingFace cache** (no pre-downloaded models from dev).
 - Do NOT push or create a release. Hand the build to the user for local testing.

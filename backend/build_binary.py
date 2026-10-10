@@ -357,6 +357,29 @@ def build_server(cuda=False):
     else:
         logger.warning("Content feed %s missing — support/content routes will be empty", _content_src)
 
+    # Python sources that tool_registry_populate.populate() parses from disk at
+    # runtime (ast.parse + exec / regex scan) instead of importing:
+    #   * backend/routes/assistant_tools/*.py  -> ENDPOINT_MAP + TOOLS schemas
+    #   * backend/mcp_server/tools/*.py         -> @mcp.tool decorator metadata
+    # PyInstaller ships bytecode, not .py, so without these the frozen backend
+    # raises FileNotFoundError on the first /mcp request, ensure_mcp_built()
+    # swallows it, /mcp stays unmounted (404), and the MCP tool surface is dead
+    # in the installer while working fine in dev. Even with the first set
+    # bundled, the missing mcp_server/tools sources silently truncated the
+    # registry from 203 tools to 29 — so both directories are required.
+    for _rel in ("routes/assistant_tools", "mcp_server/tools"):
+        _src_dir = backend_dir / _rel
+        _py_files = sorted(_src_dir.glob("*.py")) if _src_dir.is_dir() else []
+        if _py_files:
+            for _f in _py_files:
+                args.extend(["--add-data", f"{_f}{os.pathsep}backend/{_rel}"])
+            logger.info("Bundling %d tool-registry source files from %s", len(_py_files), _src_dir)
+        else:
+            logger.warning(
+                "Tool-registry sources missing at %s — MCP tool surface will be incomplete",
+                _src_dir,
+            )
+
     # Plugin manifest schema (backend/plugins/manifest_schema.json).
     # manifest.py resolves it via Path(__file__).with_name(...), which lands
     # at <bundle>/backend/plugins/ when frozen — bundle it there so the
@@ -448,6 +471,15 @@ def build_server(cuda=False):
             "sphn",
             "argostranslate",
             "stanza",
+            # NOTE: do NOT add numba or llvmlite here, despite llvmlite looking
+            # like 115 MB of dead weight. librosa/core/audio.py does a
+            # module-level `from numba import guvectorize, jit, stencil`, so
+            # excluding numba makes librosa.load() raise ModuleNotFoundError
+            # and 500s every audio route in the packaged app — while the dev
+            # server keeps passing, because dev has numba installed. Verified
+            # against the frozen binary on 2026-10-03; pinned by
+            # backend/tests/test_release_audit_regressions.py
+            # ::test_librosa_load_requires_numba_so_bundle_must_keep_it
         ]:
             args.extend(["--exclude-module", pkg])
 
@@ -589,8 +621,6 @@ def build_shim():
         "numpy",
         "--exclude-module",
         "pedalboard",
-        "--exclude-module",
-        "typing",  # obsolete backport, conflicts with PyInstaller
         "--exclude-module",
         "fastapi",
         "--exclude-module",

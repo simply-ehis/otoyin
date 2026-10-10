@@ -1077,6 +1077,8 @@ export interface MarketplaceProduct {
 	long_description?: string;
 	price_usd: number;
 	paid: boolean;
+	coming_soon?: boolean;
+	localized_price?: string;
 	note?: string;
 	avg_rating?: number;
 	review_count?: number;

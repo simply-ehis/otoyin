@@ -16,9 +16,9 @@ tool calling through voice.
 - The user wants the assistant to hear and respond aloud, not type.
 
 ## Prerequisites
-- STT model downloaded: faster-whisper `base` or `turbo` (or whisper.cpp GGUF).
-- LLM model downloaded: `planner-2b` (free default) or `planner-0.8b` (low-RAM fallback).
-- TTS engine with streaming: Fish Speech, Zonos, or Kokoro.
+- STT model downloaded for the configured voice-chat backend; the session default is `base`.
+- LLM model downloaded: `planner-4b` (free default) or `planner-lfm2-2.6b` (low-RAM fallback).
+- TTS engine: `kokoro` for low-latency default speech. `zonos_gguf`, `qwen3_tts`, and `fish_speech_s2` are one-shot/subprocess engines, so expect higher latency.
 - WebSocket endpoint: `ws://localhost:17493/voice-chat/ws`
 - REST status: `GET /voice-chat/status` — returns session count, active flag.
 
@@ -28,7 +28,7 @@ tool calling through voice.
 | VAD | Silero VAD v5 | threshold=0.3, min_speech=5 frames, min_silence=10 frames |
 | STT | faster-whisper | 16 kHz mono input; barge-in cancels transcription on new speech |
 | LLM | gguf_llm | jackrong Qwen3.5 via llama.cpp server; temperature default 0.7 |
-| TTS | any streaming TTS | Kokoro (fast CPU), Fish Speech (multilingual), Zonos (emotion) |
+| TTS | low-latency speech | `kokoro` by default; subprocess/one-shot engines add latency |
 
 Constants: `SAMPLE_RATE=16000`, `ENERGY_THRESHOLD=0.02`,
 `SILENCE_FRAMES_TRIGGER=10`, `MIN_SPEECH_FRAMES=5`.

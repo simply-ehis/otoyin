@@ -32,4 +32,4 @@ UPDATED: 2026-07-19
 - **MCP Tools:** (none — BYOK is managed via Settings UI)
 - **REST Endpoints:** `GET /model-providers`, `POST /model-providers`, `GET /model-providers/{id}`, `PATCH /model-providers/{id}`, `DELETE /model-providers/{id}`
 - **Key Backend Files:** `backend/routes/model_providers.py`, `backend/services/model_providers.py`
-- **Key Frontend Files:** `app/src/components/ServerTab/ApiKeysPage.tsx`
+- **Key Frontend Files:** `app/src/features/settings/ApiKeysPage.tsx`

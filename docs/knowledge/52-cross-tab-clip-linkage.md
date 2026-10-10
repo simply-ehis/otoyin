@@ -1,9 +1,9 @@
 # Cross-Tab Clip Linkage & Autosave
 
 PURPOSE: Copy any audio output as a linked clip and paste it into another tab; persist editor state per tab with autosave + compulsory explicit Save.
-OWNS: backend/routes/clipboard.py, backend/routes/_session_store.py, backend/routes/comping_sessions.py, backend/routes/mixer_sessions.py, backend/routes/standalone.py, backend/routes/audio_studio.py, app/src/lib/clip.ts, app/src/components/StoriesTab/StoryContent.tsx, app/src/features/audioStudio/AudioStudio.tsx, app/src/components/Workspace/MultiTakeCompingView.tsx, app/src/components/Workspace/MixerView.tsx, app/src/components/StandaloneProject/StandaloneProjectPage.tsx
+OWNS: backend/routes/clipboard.py, backend/routes/_session_store.py, backend/routes/comping_sessions.py, backend/routes/mixer_sessions.py, backend/routes/standalone.py, backend/routes/audio_studio.py, app/src/lib/clip.ts, app/src/features/stories/StoryContent.tsx, app/src/features/audioStudio/AudioStudio.tsx, app/src/features/workspace/MultiTakeCompingView.tsx, app/src/features/workspace/MixerView.tsx, app/src/features/content/StandaloneProjectPage.tsx
 READ-WHEN: Wiring a new copy source, adding a paste destination, or changing session persistence.
-KEY-FILES: app/src/lib/clip.ts (copyClip/getClip/clearClip/resolveAudioDurationMs), backend/routes/_session_store.py (build_session_router), worksheets/cross-tab-clip-linkage-plan.md
+KEY-FILES: app/src/lib/clip.ts (copyClip/getClip/clearClip/resolveAudioDurationMs), backend/routes/_session_store.py (build_session_router)
 INVARIANTS: A clip is a LINK by backend entity id (generation_id or sample id), not a copy of audio bytes. Autosave writes a hidden is_autosave row; explicit Save promotes it to a named, visible session (SessionResponse.is_autosave flips false). List endpoints hide autosave rows by default (include_autosave=true to surface). Every cross-window transport is the shared backend over HTTP — no Tauri event plumbing.
 GOTCHAS: Comping paste bakes the clip WAV to base64 (same shape as a recorded take) so the existing /comping/assemble path is unchanged; AudioStudio/Mixer pastes store the source audioUrl and degrade gracefully if the source is later deleted. Stories clips re-resolve generation_id at playback; a deleted source shows a "Source unavailable" badge (ClipWaveform.onUnavailable) instead of silently failing. Single clipboard slot (copy replaces). StandaloneProject persists JSON (project_id) to standalone_projects; create returns project_id, save upserts by id.
 UPDATED: 2026-07-19 (Voices sample copy source added)
@@ -37,7 +37,7 @@ Generic `build_session_router(prefix, model, tag, db_dep)` in `_session_store.py
 - useStoryPlayback preload already catches 404s gracefully (no throw).
 
 ## Future
-- 5-snapshot rolling autosave history: see worksheets/future-rolling-autosave-history.md (deferred).
+- 5-snapshot rolling autosave history: deferred (plan archived under `docs/archive/worksheets/`).
 
 ## Agent Callable
 - **MCP Tools:** (none — clipboard is internal)

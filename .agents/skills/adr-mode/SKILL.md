@@ -15,7 +15,7 @@ The agent STAGES takes/selection but never mutates the live audio graph.
 
 ## Prerequisites
 - Engine/model: none required for scoring/align (analysis-only); takes are recorded/imported WAV.
-- Tool surface: REST only (`/adr/...`). There is NO MCP `21labs.*` ADR tool — drive via REST.
+- Tool surface: REST `/adr/...` and MCP `21labs.adr_*` for session setup, guide/take retrieval, selection, scoring, alignment, and waveforms.
 - Guide track must be uploaded before scoring/auto-select (GOTCHA in 35-dialogue-methodology.md).
 
 ## Parameters / Schema (backend/routes/adr.py)
@@ -54,7 +54,7 @@ curl -X POST localhost:17493/adr/sessions/s1/lines/l1/select/t3
 ```
 
 ## Pitfalls / Gotchas
-- **No MCP ADR tool.** ADR is REST-only; do not invent `21labs.adr_*`.
+- **MCP session shape differs from REST.** MCP `21labs.adr_create_session` accepts `video_path` and an optional name; REST session creation accepts lines. Use REST when dialogue lines must be included at creation.
 - **Guide first.** Scoring/auto-select read take quality, but alignment cross-correlation assumes a
   guide exists; uploading the guide is required before meaningful alignment.
 - **Destructive alignment is UI-side.** `POST /adr/align` returns an offset (ms); committing the

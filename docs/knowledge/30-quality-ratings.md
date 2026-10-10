@@ -3,7 +3,7 @@
 PURPOSE: 10-star quality scoring per model in the marketplace, categorized by domain (TTS, STT, LLM, Music, SFX).
 OWNS: Quality score display, per-category ranking, StarRating component, marketplace catalog quality_score.
 READ-WHEN: You touch model listings, marketplace cards, or model detail views.
-KEY-FILES: app/src/components/Store/StarRating.tsx, app/src/components/Store/StoreProductCard.tsx, app/src/components/Store/StoreDetailModal.tsx, backend/services/marketplace_catalog.py
+KEY-FILES: app/src/features/store/StarRating.tsx, app/src/features/store/StoreProductCard.tsx, app/src/features/store/StoreDetailModal.tsx, backend/services/marketplace_catalog.py
 INVARIANTS: Scores are 1–10 per category; gold ≥8, amber ≥6, neutral <6; similar products section uses category + quality for ranking.
 GOTCHAS: quality_score is optional on MarketplaceProduct — some legacy entries may not have it.
 UPDATED: 2026-08-21
@@ -44,12 +44,9 @@ Scores are per-category, not global:
 
 | Component | File | Usage |
 |-----------|------|-------|
-| `StarRating` | `app/src/components/ui/star-rating.tsx` | Full star display (xs/sm/md) |
-| `CompactRating` | `app/src/components/ui/star-rating.tsx` | Compact badge (number + stars) |
-| `StoreProductCard` | `app/src/components/Store/StoreProductCard.tsx` | Card with stars |
-| `StoreDetailModal` | `app/src/components/Store/StoreDetailModal.tsx` | Detail modal with stars + similar products |
-| `ModelList` | `app/src/components/ServerSettings/ModelList.tsx` | Settings model list with compact rating |
-| `ModelDetailDialog` | `app/src/components/ServerSettings/ModelDetailDialog.tsx` | Detail dialog with full rating |
+| `StarRating` | `app/src/features/store/StarRating.tsx` | Star display used by store reviews/cards |
+| `StoreProductCard` | `app/src/features/store/StoreProductCard.tsx` | Card with stars |
+| `StoreDetailModal` | `app/src/features/store/StoreDetailModal.tsx` | Detail modal with stars + similar products |
 
 ### Similar Products
 Store detail modal shows top 3 same-category products ranked by quality_score:

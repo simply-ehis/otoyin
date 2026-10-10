@@ -50,6 +50,14 @@ WAV.
 5. `reorder` to sequence chapters; `move` to place on tracks.
 6. `export_story_audio(story_id)` → base64 / mixed WAV.
 
+## Also real, but REST-only
+- `PUT .../items/{item_id}/pan`, `PUT .../items/{item_id}/speed`
+- `POST .../match-loudness`
+- `POST .../items/{item_id}/crossfade`
+- `POST .../items/merge`
+- `POST .../undo`, `POST .../redo`
+- `GET .../export`, `GET .../export-epub`, `GET .../export-pdf`
+
 ## Worked example
 ```python
 sid = await twentylabs_create_story("Chapter 1", "Intro narration")

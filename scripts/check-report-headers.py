@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mechanical header-convention checker for docs/reports/.
+"""Mechanical header-convention checker for docs/archive/reports/.
 
 Every report (md/txt) must carry, within its first 10 lines:
     **Date:** YYYY-MM-DD
@@ -12,7 +12,7 @@ Exit codes: 0 = conforming (warnings allowed), 1 = structural violation.
 been re-verified in STALE_DAYS — that warning list *is* the staleness sweep.
 
 Exempt: README.md (defines the convention) and LOOP_STATUS.md (the dashboard —
-its per-row table IS the status). See docs/reports/README.md.
+its per-row table IS the status). See docs/archive/reports/README.md.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-REPORTS_DIR = ROOT / "docs" / "reports"
+REPORTS_DIR = ROOT / "docs" / "archive" / "reports"
 EXEMPT = {"README.md", "LOOP_STATUS.md"}
 HEADER_WINDOW = 10
 STALE_DAYS = 30
@@ -158,7 +158,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--root", type=Path, default=ROOT, help="repo root (for tests)")
     args = parser.parse_args(argv)
-    reports = args.root / "docs" / "reports"
+    reports = args.root / "docs" / "archive" / "reports"
 
     if not reports.is_dir():
         print(f"error: {reports} not found", file=sys.stderr)
@@ -179,7 +179,7 @@ def main(argv: list[str] | None = None) -> int:
         for v in violations:
             print(f"  FAIL   {v}", file=sys.stderr)
         print(
-            f"{len(violations)} header violation(s) — see docs/reports/README.md",
+            f"{len(violations)} header violation(s) — see docs/archive/reports/README.md",
             file=sys.stderr,
         )
         return 1

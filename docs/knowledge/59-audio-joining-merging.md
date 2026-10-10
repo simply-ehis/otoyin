@@ -68,4 +68,4 @@ Verification: tests/test_mixer.py (7 tests: SR unify, gain staging, reverb tail,
 - **MCP Tools:** `21labs.bounce`, `21labs.bounce_preview`, `21labs.master_audio`, `21labs.run_recipe`
 - **REST Endpoints:** `POST /audio/bounce`, `POST /audio/bounce-preview`, `POST /audio/master`, `POST /recipe/run`
 - **Key Backend Files:** `backend/services/mixer.py`, `backend/services/mastering.py`, `backend/services/recipe_runner.py`, `backend/routes/audio.py`
-- **Key Frontend Files:** `app/src/components/Workspace/MixerView.tsx`, `app/src/stores/playerStore.ts`
+- **Key Frontend Files:** `app/src/features/workspace/MixerView.tsx`, `app/src/stores/playerStore.ts`

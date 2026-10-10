@@ -25,7 +25,7 @@ def register_conversation_tools(mcp: FastMCP) -> None:
         ),
     )
     async def twentylabs_conversation_auto_duck(lines: list[dict[str, Any]]) -> dict[str, Any]:
-        return await _rest("POST", "/conversation/auto-duck", json={"lines": lines})
+        return await _rest("POST", "/conversation/auto-duck", json=lines)
 
     @mcp.tool(
         name="21labs.conversation_auto_level",
@@ -35,7 +35,7 @@ def register_conversation_tools(mcp: FastMCP) -> None:
         ),
     )
     async def twentylabs_conversation_auto_level(lines: list[dict[str, Any]]) -> dict[str, Any]:
-        return await _rest("POST", "/conversation/auto-level", json={"lines": lines})
+        return await _rest("POST", "/conversation/auto-level", json=lines)
 
 
 def register_batch_tools(mcp: FastMCP) -> None:

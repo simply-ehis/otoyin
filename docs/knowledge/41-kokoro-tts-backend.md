@@ -89,4 +89,4 @@ On this machine (CPU only) a short sentence took ~25s (model load included on fi
 - **MCP Tools:** `21labs.speak` (uses kokoro engine when profile is kokoro-based)
 - **REST Endpoints:** `GET /profiles/presets/kokoro`, `POST /generate` (with `engine: "kokoro"`)
 - **Key Backend Files:** `backend/backends/kokoro_backend.py`, `backend/backends/kokoro_onnx_backend.py`, `backend/utils/chunked_tts.py`
-- **Key Frontend Files:** `app/src/components/Generation/EngineModelSelector.tsx`
+- **Key Frontend Files:** `app/src/features/generate/Composer.tsx`

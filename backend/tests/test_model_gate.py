@@ -281,24 +281,35 @@ def _install_fake_onnxruntime(monkeypatch):
 
 
 def test_kokoro_onnx_weights_offline(monkeypatch):
-    import backend.backends._onnx_precision as onnx_prec
+    """Kokoro must resolve a cached quantized graph without touching the network.
+
+    Regression history: the backend used to resolve *only* through the HF mirror
+    (fp32, 326 MB). It now prefers an int8/fp16 variant downloaded from the
+    kokoro-onnx GitHub release and cached under data/models/kokoro-onnx. When
+    that cache already holds a variant, no download of any kind may happen.
+    """
     import backend.backends.kokoro_onnx_backend as kok
     from backend.backends.kokoro_onnx_backend import KokoroONNXBackend
 
-    calls = {}
-
     def fake_hf(repo_id, filename, **kw):
-        calls["kw"] = kw
-        return "/fake/m.onnx"
+        raise AssertionError("must not hit HF when a cached variant exists")
 
     monkeypatch.setattr(kok, "hf_hub_download", fake_hf)
-    monkeypatch.setattr(onnx_prec, "resolve_session_path", lambda d, s: ("/fake/m.onnx", "fp16"))
+    # Point the variants root at a tmp dir that already holds an int8 graph.
+    import tempfile
+    from pathlib import Path
+
+    tmp = Path(tempfile.mkdtemp())
+    (tmp / "kokoro-v1.0_int8.onnx").write_bytes(b"stub")
+    monkeypatch.setattr(KokoroONNXBackend, "_variants_root", lambda self: str(tmp))
     monkeypatch.setattr(KokoroONNXBackend, "_resolve_voices_path", lambda self: "/fake/voices.bin")
 
     inst = KokoroONNXBackend.__new__(KokoroONNXBackend)
-    m, _v = inst._resolve_paths()
-    assert calls["kw"].get("local_files_only") is True
-    assert m == "/fake/m.onnx"
+    model_path, voices = inst._resolve_paths()
+    assert model_path.endswith("kokoro-v1.0_int8.onnx"), model_path
+    assert voices == "/fake/voices.bin"
+    # The cached path must be reported as cached so the Models tab agrees.
+    assert inst._cached_variant() == (model_path, "int8")
 
 
 def test_demucs_onnx_config_registered():

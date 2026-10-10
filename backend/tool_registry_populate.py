@@ -167,6 +167,16 @@ def _register_mcp_tools() -> None:
                         endpoint=existing.endpoint or endpoint,
                         method=existing.method if existing.endpoint else method,
                         surfaces=surfaces,
+                        # Preserve client-command status across re-population.
+                        # Without this, populate() is not idempotent: the second
+                        # call rebuilt every merged ToolDef with the default
+                        # client_command=False, which downgraded the six
+                        # UI-executed assistant tools (the studio track/volume/
+                        # import trio and the three voice-changer toggles) and
+                        # made verify_assistant_vs_tr() report them as having no
+                        # endpoint. Only surfaced in the full suite, where
+                        # another test had already populated the registry.
+                        client_command=existing.client_command,
                     )
                 )
             elif endpoint:

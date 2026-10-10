@@ -66,7 +66,7 @@ Legend: ✔ = supported · – = not supported. Quality = `config/catalog` when 
 |---|---|---|---|---|---|---|
 | Qwen3.5-0.8B Opus-Distilled | $0 free fallback | 4/4 | Q5_K_M | 700 | 10 | — |
 | Qwen3.5-2B Opus-Distilled | **$0 free default** (⚠ PRICING_PLAN says PAID $20 — catalog wins) | 7/6 | Q4_K_M | 1700 | 10 | — |
-| LFM2.5-2.6B QAD-Q4_0 | $13 special offer | 9/9 | Q4_0 | 1590 | 26 | thinking, tool_call, json_mode; supports_instruct ✔ |
+| LFM2.5-2.6B QAD-Q4_0 | Free | 9/9 | Q4_0 | 1590 | 26 | thinking, tool_call, json_mode; supports_instruct ✔ |
 | Ministral-3-3B-Reasoning-2512 | $30 | 8/8 | Q4_K_M | 2000 | 10 | — |
 | Qwopus3.5-4B-v3 | $40 | 10/9 | Q4_K_M | 2800 | 10 | — |
 
@@ -82,9 +82,10 @@ Legend: ✔ = supported · – = not supported. Quality = `config/catalog` when 
 
 ## Catalog coverage (resolved 2026-08-26)
 
-All 46 downloadable configs now have catalog products, except the in-progress
-BYOK cloud entries (`music-cloud`, `vc-cloud` — active session, pending product
-decision). Quality drift fully resolved: catalog mirrors config scores for all
+All downloadable configs now have catalog products where marketplace items are
+appropriate. Cloud LLM subscription tiers are listed as coming soon and blocked
+from checkout. Cloud STT/VC/Music BYOK entries are no longer marketplace products.
+Quality drift fully resolved: catalog mirrors config scores for all
 15 previously-drifted pairs (turbo STT uses max across its two engine configs).
 
 **TTS equation cross-check (params_b × $20, free < $3, NC = free + flagged):**

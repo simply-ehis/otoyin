@@ -22,20 +22,18 @@ Convert speech to text with optional speaker diarization, and export as timed su
 ### 1. Transcribe the audio
 ```
 MCP: 21labs.transcribe(
-  audio_path="recording.wav",
+  audio_base64="<b64>",
   language="en",
-  model_size="base"
+  model="base.en"
 )
 ```
+`audio_path` works only for loopback callers; MCP `model` keys are `tiny.en` and `base.en`.
 
-Model sizes:
-| Size | Speed | Accuracy | RAM |
-|------|-------|----------|-----|
-| tiny | Fastest | Basic | ~1GB |
-| base | Fast | Good | ~1GB |
-| small | Medium | Better | ~2GB |
-| medium | Slow | Great | ~5GB |
-| large | Slowest | Best | ~10GB |
+Model guidance:
+| Model key | Speed | Accuracy |
+|-----------|-------|----------|
+| tiny.en | Fastest | Basic |
+| base.en | Fast | Good |
 
 ### 2. Optional: diarize speakers
 ```
@@ -49,9 +47,10 @@ Returns segments with speaker labels (SPEAKER_00, SPEAKER_01, etc.).
 ### 3. Export as subtitles
 ```
 MCP: 21labs.export_subtitles(
-  transcription_id="transcription-uuid",
-  format="srt",
-  max_chars_per_line=42
+  audio_path="recording.wav",
+  fmt="srt",
+  model="base.en",
+  language="en"
 )
 ```
 
@@ -76,16 +75,13 @@ For recordings made in otoyin, use the Captures tab:
 
 ## Pitfalls / Gotchas
 - Accuracy depends on audio quality — clean audio first if noisy
-- Non-English audio needs a multilingual model (small or larger)
 - Speaker diarization works best with 2-5 speakers
 - Timestamps come from the STT model — don't fabricate them
 - Very long audio (> 1 hour) should be chunked for reliability
 
 ## Cross-links
-- `32-stt-backends.md` — STT model registry
-- `stt-whisper` — Whisper engine reference
-- `40-loudness-and-subtitles.md` — Subtitle export details
-- `ABOUT-CAPTURES.md` — Captures tab overview
+- [stt-whisper](../stt-whisper/SKILL.md) — Whisper engine reference
+- [transcript-edit](../transcript-edit/SKILL.md) — Word-level edits
 
 ## Validation
 - Transcription matches the audio content (spot-check 3-5 segments)

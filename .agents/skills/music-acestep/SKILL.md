@@ -4,13 +4,11 @@ description: Generate full songs/music from a text prompt on-device via the ACE-
 ---
 # ACE-Step Music Generation
 
-> **REMOVED — 2026-08.** The `acestep` engine is no longer registered in
-> `MUSIC_ENGINES` (`backend/backends/protocols.py::MUSIC_ENGINES`); no `acestep_backend.py`
-> exists, `get_music_backend` raises `ValueError: Unknown music engine`, and the
-> `generate_music` / `arrange_music` MCP tools and `/generate/music` route are gone.
-> This page is retained for historical reference only — do not use it for current work.
-> SFX / musical beds today come from Stable Audio (`generate_sfx`). See
-> [engine-atlas](../engine-atlas/SKILL.md).
+> **RENAMED — engine key is now `acestep_gguf`.** `MUSIC_ENGINES` contains
+> `acestep_gguf`, `heartmula`, and `minimax_music3` for music, plus
+> `stable_audio` and `sa3_sfx` for SFX. `21labs.generate_music` and
+> `POST /generate/music` are live. Use this page for ACE-Step-family music; for
+> SFX use [sfx-stable-audio](../sfx-stable-audio/SKILL.md).
 
 ## Purpose
 ACE-Step (`ACE-Step/ACE-Step-1.0`) renders complete songs from a text prompt with
@@ -35,14 +33,15 @@ engines (the other is Stable Audio for SFX). Fully offline, returns `(audio, sr)
 | mood | str | "neutral" | folded into prompt |
 | tempo | int \| None | None | if set, appended as `{tempo} bpm`; may be None |
 | seed | int \| None | None | sets `torch.manual_seed` for reproducibility |
-| engine | str | "acestep" | only `get_music_backend` key here |
+| engine | str | "acestep_gguf" | `acestep_gguf` (default), `heartmula`, or `minimax_music3` |
+| mode | `generate`, `cover`, `repaint` | `generate` | cover/repaint use the same prompt/style controls |
 
 Return shape (MCP): `audio_base64` (WAV), `sample_rate` (44100), `duration`, `engine`, `prompt`.
 REST returns a streamed `audio/wav`.
 
 ## Agent procedure
-1. `21labs.list_models` → confirm `acestep` is downloadable/available.
-2. Call `21labs.generate_music(prompt, duration_seconds, genre, mood, tempo, seed)`.
+1. `21labs.list_models` → confirm `acestep_gguf` is downloadable/available.
+2. Call `21labs.generate_music(prompt, duration_seconds, genre, mood, tempo, seed, mode)`.
 3. Decode the base64 WAV and bounce/mix with other clips via `21labs.bounce` if needed.
 4. Finish with mastering — see [mastering](../mastering/SKILL.md); effects via [effects-field-guide](../effects-field-guide/SKILL.md).
 
@@ -55,7 +54,7 @@ TWENTYLABS.generate_music(
     mood="calm",
     tempo=90,
 )
-# -> {"audio_base64": "...", "sample_rate": 44100, "duration": 45.0, "engine": "acestep"}
+# -> {"audio_base64": "...", "sample_rate": 44100, "duration": 45.0, "engine": "acestep_gguf"}
 ```
 REST:
 ```bash

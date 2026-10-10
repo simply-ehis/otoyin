@@ -46,4 +46,4 @@ Parameter automation with keyframe curves and hotkey-triggered cue points.
 - **MCP Tools:** (none — automation is UI-initiated)
 - **REST Endpoints:** `GET /automation/parameters`, `GET /automation/crossfade-curves`, `POST /automation/interpolate`
 - **Key Backend Files:** `backend/routes/automation.py`
-- **Key Frontend Files:** `app/src/components/Workspace/AutomationView.tsx`, `app/src/stores/storyStore.ts`
+- **Key Frontend Files:** `app/src/features/workspace/AutomationView.tsx`, `app/src/stores/storyStore.ts`

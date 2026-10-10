@@ -86,12 +86,12 @@ curl -X POST "http://localhost:17493/effects/preview/{generation_id}" \
 - Out-of-range params → `validate_effects_chain` returns 400 with the offending index.
 
 ## Cross-links
-- [effects-dynamics](../../effects-dynamics/SKILL.md)
-- [effects-tone](../../effects-tone/SKILL.md)
-- [effects-space](../../effects-space/SKILL.md)
-- [effects-cleanup](../../effects-cleanup/SKILL.md)
-- [mastering](../../mastering/SKILL.md)
-- [conversation-mode](../../conversation-mode/SKILL.md)
+- [effects-dynamics](../effects-dynamics/SKILL.md)
+- [effects-tone](../effects-tone/SKILL.md)
+- [effects-space](../effects-space/SKILL.md)
+- [effects-cleanup](../effects-cleanup/SKILL.md)
+- [mastering](../mastering/SKILL.md)
+- [conversation-mode](../conversation-mode/SKILL.md)
 
 ## Validation
 - After `/effects/preview`, A/B the returned WAV against the clean source.

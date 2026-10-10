@@ -1,7 +1,7 @@
 # 19 — Voice Changer (Live Mode)
 
 ## VoiceChangerView at `/voice-changer`
-- **Component:** `VoiceChangerView` in `app/src/components/Workspace/VoiceChangerView.tsx`
+- **Component:** `VoiceChangerView` in `app/src/features/workspace/VoiceChangerView.tsx`
 - **What:** Real-time voice transformation UI. Start/stop button with pulsing red dot, pitch/formant sliders, reverb mix, and latency display.
 
 ## Start/Stop Button
@@ -46,4 +46,4 @@
 - **MCP Tools:** `21labs.voice_changer_capabilities`, `21labs.list_voice_packs`, `21labs.convert_voice`
 - **REST Endpoints:** `GET /voice-changer/capabilities`, `GET /voice-packs`, `POST /voice-convert`, `POST /settings/voice-changer/spawn`, `POST /settings/voice-changer/kill`, `GET /settings/voice-changer/status`
 - **Key Backend Files:** `backend/routes/voice_convert.py`, `backend/routes/features.py`, `backend/routes/settings.py`, `backend/backends/rvc_backend.py`, `backend/backends/seed_vc_backend.py`, `backend/backends/openvoice_backend.py`
-- **Key Frontend Files:** `app/src/components/Workspace/VoiceChangerView.tsx`, `app/src/components/Workspace/VoiceConverterView.tsx`, `app/src/stores/voiceChangerStore.ts`
+- **Key Frontend Files:** `app/src/features/workspace/VoiceChangerView.tsx`, `app/src/features/workspace/VoiceConverterView.tsx`, `app/src/stores/voiceChangerStore.ts`

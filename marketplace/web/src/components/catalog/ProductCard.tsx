@@ -22,6 +22,7 @@ export function ProductCard({ product, compact = false, onWishlistToggle }: Prod
 
   const discount = product.baseline_usd && product.baseline_usd > product.price_usd;
   const savings = product.baseline_usd ? product.baseline_usd - product.price_usd : 0;
+  const priceLabel = product.coming_soon ? 'Coming Soon' : product.paid ? `$${product.price_usd}` : 'Free';
 
   const categoryLabels: Record<string, string> = {
     tts: 'Voice',
@@ -59,14 +60,14 @@ export function ProductCard({ product, compact = false, onWishlistToggle }: Prod
                 ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
                 : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
             )}>
-              {product.paid ? `$${product.price_usd}` : 'Free'}
+              {priceLabel}
             </span>
             <span className="text-[10px] text-muted-foreground capitalize">{product.category}</span>
           </div>
           <h3 className="font-semibold text-sm leading-tight line-clamp-1">{product.name}</h3>
           <div className="flex items-center gap-1 mt-1">
             <span className="text-xs text-muted-foreground">
-              ${product.price_usd}
+              {priceLabel}
             </span>
             {product.avg_rating && product.avg_rating > 0 && (
               <span className="text-xs text-amber-400">{product.avg_rating.toFixed(1)} ★</span>
@@ -113,7 +114,7 @@ export function ProductCard({ product, compact = false, onWishlistToggle }: Prod
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 mb-1">
               <Badge variant={product.paid ? 'default' : 'success'} className="text-[10px] h-5 px-2">
-                {product.paid ? `$${product.price_usd}` : 'Free'}
+                {priceLabel}
               </Badge>
               <Badge variant="outline" className="text-[10px] h-5 px-2 capitalize">
                 {product.category}
@@ -154,7 +155,7 @@ export function ProductCard({ product, compact = false, onWishlistToggle }: Prod
           <div className="flex items-center justify-between">
             <div className="flex items-baseline gap-1.5">
               <span className="text-xl font-bold text-foreground">
-                {product.paid ? `$${product.price_usd}` : 'Free'}
+                {priceLabel}
               </span>
               {product.baseline_usd && product.baseline_usd > product.price_usd && (
                 <>

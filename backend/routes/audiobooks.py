@@ -139,6 +139,51 @@ def _book_to_resp(book: DBAudiobook, db: Session) -> AudiobookResponse:
     )
 
 
+# ── Static sub-paths ────────────────────────────────────────────────────
+# Declared BEFORE `/audiobooks/{book_id}` on purpose: FastAPI/Starlette matches
+# routes in registration order, so any static path registered after the catch-all
+# is shadowed — the catch-all swallows it and 404s on a book lookup.
+
+
+@router.get("/audiobooks/cached-engines")
+async def list_cached_engines():
+    """List only TTS engines that are downloaded/cached — no download, no default forcing."""
+    from ..backends import get_all_model_configs
+    from ..services.model_registry import is_downloaded
+
+    cached = []
+    for cfg in get_all_model_configs():
+        if cfg.category != "tts":
+            continue
+        try:
+            if is_downloaded(cfg.model_name, cfg.model_size):
+                cached.append(
+                    {
+                        "engine": cfg.engine,
+                        "model_name": cfg.model_name,
+                        "display_name": cfg.display_name,
+                        "model_size": cfg.model_size,
+                    }
+                )
+        except Exception:
+            logger.debug("Engine config check failed for %s (skipping)", cfg.engine, exc_info=True)
+            continue
+    # dedupe by engine
+    seen = {}
+    for c in cached:
+        if c["engine"] not in seen:
+            seen[c["engine"]] = c
+    return {"engines": list(seen.values())}
+
+
+@router.get("/audiobooks/formats")
+async def list_formats():
+    """Supported export formats + whether ffmpeg is reachable."""
+    from ..services.audio_conversion import SUPPORTED_FORMATS, ffmpeg_available
+
+    return {"formats": SUPPORTED_FORMATS, "ffmpeg_available": ffmpeg_available()}
+
+
 # ── CRUD ────────────────────────────────────────────────────────────────
 
 
@@ -605,37 +650,6 @@ async def clear_utterances(book_id: str, chapter_id: str, db: Session = Depends(
     return {"message": "Utterances cleared"}
 
 
-@router.get("/audiobooks/cached-engines")
-async def list_cached_engines():
-    """List only TTS engines that are downloaded/cached — no download, no default forcing."""
-    from ..backends import get_all_model_configs
-    from ..services.model_registry import is_downloaded
-
-    cached = []
-    for cfg in get_all_model_configs():
-        if cfg.category != "tts":
-            continue
-        try:
-            if is_downloaded(cfg.model_name, cfg.model_size):
-                cached.append(
-                    {
-                        "engine": cfg.engine,
-                        "model_name": cfg.model_name,
-                        "display_name": cfg.display_name,
-                        "model_size": cfg.model_size,
-                    }
-                )
-        except Exception:
-            logger.debug("Engine config check failed for %s (skipping)", cfg.engine, exc_info=True)
-            continue
-    # dedupe by engine
-    seen = {}
-    for c in cached:
-        if c["engine"] not in seen:
-            seen[c["engine"]] = c
-    return {"engines": list(seen.values())}
-
-
 # ── Render ──────────────────────────────────────────────────────────────
 
 
@@ -708,9 +722,10 @@ async def export_audiobook(book_id: str, db: Session = Depends(get_db)):
     import subprocess
     import tempfile
 
-    from ..services.audio_conversion import ffmpeg_available
+    from ..services.audio_conversion import ffmpeg_path
 
-    if not ffmpeg_available():
+    ffmpeg = ffmpeg_path()
+    if not ffmpeg:
         raise HTTPException(status_code=500, detail=ERR_FFMPEG_MISSING)
     with tempfile.TemporaryDirectory() as td:
         lst = Path(td) / "list.txt"
@@ -718,14 +733,14 @@ async def export_audiobook(book_id: str, db: Session = Depends(get_db)):
         out = Path(td) / "out.wav"
         await asyncio.to_thread(
             subprocess.run,
-            ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy", str(out)],
+            [ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy", str(out)],
             capture_output=True,
             check=False,
         )
         if not out.exists():
             await asyncio.to_thread(
                 subprocess.run,
-                ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(lst), str(out)],
+                [ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", str(lst), str(out)],
                 capture_output=True,
                 check=True,
             )
@@ -799,10 +814,3 @@ async def convert_audio_endpoint(data: ConvertRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
-
-
-@router.get("/audiobooks/formats")
-async def list_formats():
-    from ..services.audio_conversion import SUPPORTED_FORMATS, ffmpeg_available
-
-    return {"formats": SUPPORTED_FORMATS, "ffmpeg_available": ffmpeg_available()}

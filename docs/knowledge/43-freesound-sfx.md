@@ -34,4 +34,4 @@ its public API. Search metadata + previews are cached under `data/sounds/`.
 - **MCP Tools:** `21labs.search_freesound`, `21labs.download_freesound`
 - **REST Endpoints:** `GET /sounds/search`, `POST /sounds/download/{soundId}`
 - **Key Backend Files:** `backend/services/freesound.py`, `backend/routes/sounds.py`
-- **Key Frontend Files:** `app/src/components/Workspace/SoundEffectsView.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/SoundEffectsView.tsx`

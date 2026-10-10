@@ -1,4 +1,4 @@
-"""Webhook handler — receives Paddle Billing events and signs licenses."""
+"""Webhook handler — receives Dodo Payments events and signs licenses."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .. import paddle
+from .. import dodo
 from ..config import settings
 from ..models import License, Order, Product, async_session
 from ..rate_limit import license_limiter
@@ -77,61 +77,63 @@ async def fulfill_order(order: Order, db: AsyncSession, provider_txn_id: str) ->
 
 @router.post("")
 async def handle_webhook(request: Request, db: AsyncSession = Depends(get_db)):
-    """Paddle Billing webhook.
+    """Dodo Payments webhook (Standard Webhooks spec).
 
-    Verifies ``Paddle-Signature`` against the RAW body, then dispatches:
-    ``transaction.completed`` → fulfill; ``transaction.canceled`` /
-    ``transaction.payment_failed`` → mark; ``adjustment.created`` with a
-    refund action → revoke. Anything else is acknowledged and ignored.
-    Responds 2xx fast — Paddle treats anything else as delivery failure.
+    Verifies the signature against the RAW body, then dispatches:
+    ``payment.succeeded`` → fulfill; ``payment.cancelled`` /
+    ``payment.failed`` → mark; ``refund.succeeded`` → revoke.
+    Anything else is acknowledged and ignored.
+    Responds 2xx fast — Dodo treats anything else as delivery failure.
     """
     raw_body = await request.body()
-    signature = request.headers.get("Paddle-Signature", "")
+    headers = {
+        "webhook-id": request.headers.get("webhook-id", ""),
+        "webhook-signature": request.headers.get("webhook-signature", ""),
+        "webhook-timestamp": request.headers.get("webhook-timestamp", ""),
+    }
 
-    if settings.paddle_webhook_secret:
-        if not paddle.verify_signature(raw_body, signature):
+    if settings.dodo_webhook_secret:
+        if not dodo.verify_signature(raw_body, headers):
             raise HTTPException(401, detail={"code": "invalid_signature", "message": "Webhook signature invalid"})
-    elif paddle.is_configured():
-        # Paddle is live but no webhook secret — misconfiguration that allows
+    elif dodo.is_configured():
+        # Dodo is live but no webhook secret — misconfiguration that allows
         # forged webhooks to mint free licenses. Reject.
-        logger.error("Paddle webhook rejected: live mode but no webhook secret configured")
+        logger.error("Dodo webhook rejected: live mode but no webhook secret configured")
         raise HTTPException(500, detail={"code": "webhook_secret_missing", "message": "Webhook secret not configured"})
     elif not settings.debug:
         # No API key and not in debug mode — refuse unsigned webhooks rather
         # than minting licenses from forged events in a misconfigured prod.
-        logger.error("Paddle webhook rejected: payments not configured (set MARKETPLACE_DEBUG=true for local dev)")
+        logger.error("Dodo webhook rejected: payments not configured (set MARKETPLACE_DEBUG=true for local dev)")
         raise HTTPException(503, detail={"code": "payment_not_configured", "message": "Payments not configured"})
     else:
-        logger.warning("Paddle webhook accepted without signature (dev mode — no API key)")
+        logger.warning("Dodo webhook accepted without signature (dev mode — no API key)")
 
     try:
         event = json.loads(raw_body)
     except json.JSONDecodeError:
         raise HTTPException(400, detail={"code": "invalid_payload", "message": "Invalid JSON payload"}) from None
 
-    event_type = event.get("event_type", "")
+    event_type = event.get("type", "")
     data = event.get("data", {})
-    custom = data.get("custom_data") or {}
+    custom = data.get("metadata") or {}
 
-    if event_type == "transaction.completed":
+    if event_type == "payment.succeeded":
         order = await _find_order(db, custom.get("order_ref", ""), data.get("id", ""))
         if order is None:
-            raise HTTPException(404, detail={"code": "order_not_found", "message": "Order not found for transaction"})
+            raise HTTPException(404, detail={"code": "order_not_found", "message": "Order not found for payment"})
         return await fulfill_order(order, db, provider_txn_id=data.get("id", ""))
 
-    if event_type in ("transaction.canceled", "transaction.payment_failed"):
+    if event_type in ("payment.cancelled", "payment.failed"):
         order = await _find_order(db, custom.get("order_ref", ""), data.get("id", ""))
         if order is not None and order.status == "pending":
-            order.status = "canceled" if event_type == "transaction.canceled" else "failed"
+            order.status = "canceled" if event_type == "payment.cancelled" else "failed"
             await db.commit()
         return {"status": "ok", "message": f"Order marked {order.status if order else 'unknown'}"}
 
-    if event_type == "adjustment.created" and (data.get("action") or "") == "refund":
-        order = await _find_order(db, (data.get("custom_data") or {}).get("order_ref", ""), "")
-        if order is None and data.get("transaction_id"):
-            # Adjustments don't always echo custom_data — fall back to the
-            # original transaction link.
-            order = await _find_order(db, "", data["transaction_id"])
+    if event_type == "refund.succeeded":
+        order = await _find_order(db, (data.get("metadata") or {}).get("order_ref", ""), "")
+        if order is None and data.get("payment_id"):
+            order = await _find_order(db, "", data["payment_id"])
         if order is not None:
             order.status = "refunded"
             await db.commit()
@@ -139,7 +141,7 @@ async def handle_webhook(request: Request, db: AsyncSession = Depends(get_db)):
             return {"status": "ok", "message": "License revoked"}
         return {"status": "ok", "message": "Refund for unknown order"}
 
-    logger.debug("Unhandled Paddle event: %s", event_type)
+    logger.debug("Unhandled Dodo event: %s", event_type)
     return {"status": "ignored", "event_type": event_type}
 
 

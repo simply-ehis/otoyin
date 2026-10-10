@@ -1,4 +1,4 @@
-"""Checkout API — initiates Paddle Billing payment sessions."""
+"""Checkout API — initiates Dodo Payments checkout sessions."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .. import paddle
+from .. import dodo
 from ..config import settings
 from ..models import Order, Product, async_session, hash_email
 from ..rate_limit import checkout_limiter
@@ -42,15 +42,15 @@ async def get_db():
 
 @router.post("", response_model=CheckoutResponse)
 async def create_checkout(req: CheckoutRequest, request: Request, db: AsyncSession = Depends(get_db)):
-    """Create a Paddle transaction and return its checkout URL.
+    """Create a Dodo checkout session and return its checkout URL.
 
     Flow:
     1. Client calls POST /v1/checkout with product_id + device_id
-    2. Server creates an Order row and a Paddle transaction
+    2. Server creates an Order row and a Dodo checkout session
     3. Server returns the checkout_url — client opens it in system browser
-    4. User pays → Paddle calls our webhook → server signs license
+    4. User pays → Dodo calls our webhook → server signs license
 
-    Dev mode (no ``MARKETPLACE_PADDLE_API_KEY``): the order is fulfilled
+    Dev mode (no ``MARKETPLACE_DODO_API_KEY``): the order is fulfilled
     immediately and the checkout URL deep-links back into the app, so the
     full buy → poll → install loop works with no provider account.
     """
@@ -66,6 +66,11 @@ async def create_checkout(req: CheckoutRequest, request: Request, db: AsyncSessi
     if product is None:
         raise HTTPException(
             404, detail={"code": "product_not_found", "message": f"Product '{req.product_id}' not found"}
+        )
+    if product.coming_soon:
+        raise HTTPException(
+            409,
+            detail={"code": "product_coming_soon", "message": f"Product '{req.product_id}' is coming soon"},
         )
     if not product.paid:
         raise HTTPException(
@@ -86,7 +91,7 @@ async def create_checkout(req: CheckoutRequest, request: Request, db: AsyncSessi
     )
     existing = result.scalar_one_or_none()
     if existing is not None:
-        if not paddle.is_configured():
+        if not dodo.is_configured():
             if settings.debug:
                 # Dev mode fulfills immediately (same as the create branch
                 # below) — otherwise a retried checkout would poll a
@@ -100,9 +105,9 @@ async def create_checkout(req: CheckoutRequest, request: Request, db: AsyncSessi
                 product_id=req.product_id,
                 amount_usd=product.price_usd,
             )
-        # Re-fetch from Paddle to get the checkout URL
+        # Re-fetch from Dodo to get the checkout URL
         try:
-            txn = await paddle.get_transaction(existing.payment_session_id)
+            txn = await dodo.get_transaction(existing.payment_session_id)
             return CheckoutResponse(
                 order_ref=existing.order_ref,
                 checkout_url=txn["checkout_url"],
@@ -123,13 +128,13 @@ async def create_checkout(req: CheckoutRequest, request: Request, db: AsyncSessi
         email=hash_email(req.email),
         status="pending",
         amount_usd=product.price_usd,
-        payment_provider="paddle",
+        payment_provider="dodo",
     )
     db.add(order)
     await db.commit()
     await db.refresh(order)
 
-    if not paddle.is_configured():
+    if not dodo.is_configured():
         if not settings.debug:
             raise HTTPException(
                 503,
@@ -145,20 +150,20 @@ async def create_checkout(req: CheckoutRequest, request: Request, db: AsyncSessi
             amount_usd=product.price_usd,
         )
 
-    price_id = paddle.price_id_for(req.product_id)
+    price_id = dodo.price_id_for(req.product_id)
     if not price_id:
         raise HTTPException(
             500,
             detail={
                 "code": "price_not_configured",
                 "message": (
-                    f"Product '{req.product_id}' has no Paddle price — create it in the "
-                    "Paddle dashboard and set MARKETPLACE_PADDLE_PRICE_MAP."
+                    f"Product '{req.product_id}' has no Dodo product — create it in the "
+                    "Dodo dashboard and set MARKETPLACE_DODO_PRODUCT_MAP."
                 ),
             },
         )
     try:
-        txn = await paddle.create_transaction(
+        txn = await dodo.create_transaction(
             order_ref=order_ref,
             product_id=req.product_id,
             device_id=req.device_id,
@@ -182,7 +187,7 @@ async def create_checkout(req: CheckoutRequest, request: Request, db: AsyncSessi
 # Deliberate scope call: donations are NOT catalog products. A fixed-price
 # catalog row can't express "pay what you want", and stuffing a magic
 # $0/$1 product into the catalog would confuse pricing, offers, and the
-# store grid. Donations use non-catalog Paddle pricing inline (zero
+    # store grid. Donations use non-catalog Dodo pricing inline (zero
 # dashboard setup) and mint NO license — the thank-you is the product.
 
 DONATION_PRODUCT_ID = "donation"
@@ -235,13 +240,13 @@ async def create_donation(req: DonateRequest, request: Request, db: AsyncSession
         email=hash_email(req.email),
         status="pending",
         amount_usd=amount_cents / 100,
-        payment_provider="paddle",
+        payment_provider="dodo",
     )
     db.add(order)
     await db.commit()
     await db.refresh(order)
 
-    if not paddle.is_configured():
+    if not dodo.is_configured():
         if not settings.debug:
             raise HTTPException(
                 503,
@@ -257,7 +262,7 @@ async def create_donation(req: DonateRequest, request: Request, db: AsyncSession
         )
 
     try:
-        txn = await paddle.create_donation_transaction(
+        txn = await dodo.create_donation_transaction(
             order_ref=order_ref,
             device_id=req.device_id,
             email=req.email,

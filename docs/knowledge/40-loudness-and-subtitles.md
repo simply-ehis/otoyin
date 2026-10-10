@@ -39,6 +39,6 @@ After generating a clip, call `analyze_loudness` to confirm level, `master_audio
 - **MCP Tools:** `21labs.analyze_loudness`, `21labs.export_subtitles`
 - **REST Endpoints:** `POST /audio/analyze-loudness`, `POST /transcription/export-subtitles`
 - **Key Backend Files:** `backend/services/loudness.py`, `backend/services/subtitles.py`, `backend/routes/audio_processing.py`, `backend/routes/transcription.py`
-- **Key Frontend Files:** `app/src/components/Workspace/AudioEnhanceView.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/AudioEnhanceView.tsx`
 
 UPDATED: 2026-07-16

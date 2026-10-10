@@ -134,13 +134,17 @@ def _get_tts_configs() -> list[ModelConfig]:
         ]
     return [
         # --- Kokoro 82M (ONNX): torch-free, same 45 voices, 8 languages ---
+        # quant=int8: the backend prefers kokoro-v1.0.int8.onnx (114 MB) from the
+        # kokoro-onnx GitHub release, falling back to fp16 then the fp32 HF
+        # mirror. Upstream reports 0.916 spectral correlation vs fp32. This is
+        # ~212 MB smaller per install than the fp32-only mirror graph.
         ModelConfig(
             model_name="kokoro-onnx",
             display_name="Kokoro 82M",
             engine="kokoro",
             hf_repo_id="Heliosoph/kokoro-v1.0-onnx",
-            size_mb=340,
-            min_ram_mb=400,
+            size_mb=114,
+            min_ram_mb=250,
             languages=["en", "es", "fr", "hi", "it", "pt", "ja", "zh"],
             supports_voice_mixing=True,
             structured_preset_voices=_KOKORO_STRUCTURED_VOICES,
@@ -224,7 +228,7 @@ def _get_tts_configs() -> list[ModelConfig]:
             display_name="MOSS-TTS-Nano",
             engine="moss_tts_nano",
             hf_repo_id="OpenMOSS-Team/MOSS-TTS-Nano-100M-ONNX",
-            size_mb=763,
+            size_mb=640,
             min_ram_mb=800,
             min_vram_mb=0,
             clone_voice=True,
@@ -252,7 +256,11 @@ def _get_tts_configs() -> list[ModelConfig]:
                 "sv",
                 "fi",
             ],
-            quant="int8",
+            # fp32, not int8: the official OpenMOSS-Team export ships no int8
+            # graphs. A third-party int8 build exists
+            # (REALBITS/MOSS-TTS-Nano-100M-ONNX-int8, ~198 MB) but it is a
+            # community upload tuned for ORT-Mobile, not the reference export.
+            quant="fp32",
         ),
         # --- KittenTTS mini: Apache-2.0, lightest TTS (no torch, CPU-only).
         # Checkpoint is selectable via KITTEN_SIZE env (mini=80MB / micro=40MB /
@@ -278,7 +286,11 @@ def _get_tts_configs() -> list[ModelConfig]:
                 PresetVoiceConfig(id="Leo", name="Leo", gender="male", language="en"),
             ],
             languages=["en"],
-            quant="int8",
+            # fp32, not int8: KittenML/kitten-tts-mini-0.8 publishes only
+            # kitten_tts_mini_v0_8.onnx (78,268,016 B). Upstream ships int8 only
+            # for the *nano* size (KittenML/kitten-tts-nano-0.8-int8), not mini.
+            # Claiming int8 here overstated the saving; the real graph is fp32.
+            quant="fp32",
         ),
         # --- Qwen3-TTS 12Hz 1.7B Base (GGUF): llama-tts sidecar ------------
         # Apache-2.0 weights, sellable (catalog id qwen3-tts-1.7b, $40).

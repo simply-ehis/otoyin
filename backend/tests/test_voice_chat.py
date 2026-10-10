@@ -226,17 +226,22 @@ class TestToolConfirmation:
         resolve_tool_confirmation(session, True)
 
     @pytest.mark.asyncio
-    async def test_request_tool_confirmation_timeout(self):
-        from backend.services.voice_chat import _request_tool_confirmation
+    async def test_request_tool_confirmation_timeout(self, monkeypatch):
+        """An unanswered prompt must deny (fail-closed) without waiting 30s."""
+        from backend.services import voice_chat as vc
 
+        monkeypatch.setattr(vc, "TOOL_CONFIRMATION_TIMEOUT_S", 0.05)
         session = VoiceChatSession(session_id="test-timeout")
-        result = await _request_tool_confirmation(
+        result = await vc._request_tool_confirmation(
             session,
             "test_tool",
             {},
             "test reason",
         )
         assert result is False  # Timed out, default is False
+        # Cleanup must still run on the timeout path.
+        assert session.tool_confirmation_future is None
+        assert session.tool_confirmation_info is None
 
     @pytest.mark.asyncio
     async def test_request_tool_confirmation_resolves(self):

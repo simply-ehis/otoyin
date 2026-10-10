@@ -42,7 +42,6 @@ export const webPlatform: Platform = {
 		startServer: async () => "",
 		stopServer: noopAsync,
 		restartServer: async () => "",
-		setKeepServerRunning: noopAsync,
 		setupWindowCloseHandler: noopAsync,
 		subscribeToServerLogs: () => () => {},
 		subscribeToServerErrors: () => () => {},

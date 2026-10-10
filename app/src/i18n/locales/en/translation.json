@@ -907,16 +907,8 @@
 				"updatedDescription": "Backend is now serving on port {{port}}",
 				"invalid": "Enter a port between 1024 and 65535",
 				"busy": "That port is already in use — pick a free one.",
-				"devHint": "Port {{port}} saved. Restart your backend with OTOYIN_PORT={{port}} to apply it."
-			},
-			"keepServerRunning": {
-				"title": "Keep server running when app closes",
-				"description": "The server will continue running in the background after closing the app.",
-				"failedTitle": "Failed to update setting",
-				"failedDescription": "Could not sync setting to backend.",
-				"updatedTitle": "Setting updated",
-				"runningDescription": "Server will continue running when app closes",
-				"stoppedDescription": "Server will stop when app closes"
+				"devHint": "Port {{port}} saved. Restart your backend with OTOYIN_PORT={{port}} to apply it.",
+				"failedTitle": "Failed to update the port"
 			},
 			"networkAccess": {
 				"title": "Allow network access",

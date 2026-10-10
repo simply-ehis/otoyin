@@ -34,11 +34,19 @@
 	--border-subtle: hsl(28 4% 22%);
 	--border-strong: hsl(28 4% 34%);
 
-	/* ── Accent (flat rose brand hue — never a gradient sweep) ─────── */
-	--accent: hsl(348 68% 58%);
-	--accent-hover: hsl(348 68% 63%);
-	--accent-muted: hsl(348 28% 22%);
-	--accent-foreground: hsl(0 0% 98%);
+	/* ── Accent (tracks the active theme's accent) ───────────────────
+     Bare HSL triplets (shadcn convention), NOT finished hsl() colors:
+     consumers wrap them, which also lets them pass an alpha component —
+     hsl(var(--accent)) / hsl(var(--accent) / 0.3). A finished color here
+     would make every one of those wrappers parse as hsl(hsl(...)) and
+     resolve to transparent. --accent aliases --theme-accent (set inline
+     per named theme by applyThemeAccent) with brand rose as the plain-
+     theme fallback, so waveform, track, EQ and focus-ring consumers all
+     follow the active theme instead of staying rose. */
+	--accent: var(--theme-accent, 348 68% 58%);
+	--accent-hover: 348 68% 63%;
+	--accent-muted: 348 28% 22%;
+	--accent-foreground: 0 0% 98%;
 
 	/* ── Status colors — consistent 4-level severity scale ───────────
      Values mirror the consumer aliases in index.css @theme
@@ -83,7 +91,7 @@
 	--ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
 	/* ── Focus ring (accessibility floor) ──────────────────────────── */
-	--focus-ring: var(--accent);
+	--focus-ring: hsl(var(--accent));
 }
 
 /* Press feedback (desktop-ui-motion core pattern) — scale(0.97),

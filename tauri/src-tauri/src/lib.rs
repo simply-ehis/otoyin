@@ -18,7 +18,7 @@ mod server;
 mod window_state;
 
 use std::sync::atomic::Ordering;
-use tauri::{Emitter, Listener, Manager, WindowEvent};
+use tauri::{Manager, WindowEvent};
 
 /// Shared application state handed to commands via `tauri::State`.
 #[derive(Default)]
@@ -79,29 +79,6 @@ fn install_panic_hook(app: &tauri::AppHandle) {
     }));
 }
 
-fn register_window_close_handling(app: &tauri::AppHandle) {
-    // The renderer owns the decision: it stops the backend first (unless
-    // keep-running) and only then emits `window-close-allowed`.
-    let handle = app.clone();
-    let _ = app.listen_any("window-close-allowed", move |_| {
-        let app = handle.clone();
-        tauri::async_runtime::spawn(async move {
-            let state = app.state::<AppState>();
-            // Fallback kill in case the renderer did not stop it first.
-            if !state.server.keep_running.load(Ordering::SeqCst) {
-                server::stop_if_ours(&state);
-            }
-            state
-                .server
-                .close_in_progress
-                .store(false, Ordering::SeqCst);
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.destroy();
-            }
-        });
-    });
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
@@ -114,7 +91,6 @@ pub fn run() {
             server::start_server,
             server::stop_server,
             server::restart_server,
-            server::set_keep_server_running,
             audio::is_system_audio_supported,
             audio::start_system_audio_capture,
             audio::stop_system_audio_capture,
@@ -133,8 +109,6 @@ pub fn run() {
             window_state::apply_startup_geometry(app.handle());
             #[cfg(desktop)]
             {
-                register_window_close_handling(app.handle());
-
                 // Log platform-specific mic permission guidance
                 mic_webview::init_mic_permission_handler();
 
@@ -152,32 +126,29 @@ pub fn run() {
         .on_window_event(|window, event| {
             window_state::handle_window_event(window, event);
             if let WindowEvent::CloseRequested { api, .. } = event {
+                // Closing the app always stops the backend we started.
+                //
+                // This used to depend on a renderer round-trip: Rust asked the
+                // webview for permission, and a second handler in the webview
+                // (`win.onCloseRequested`) also called `preventDefault()` and
+                // fired a fire-and-forget `stop_server`. Two handlers racing on
+                // one event, with the kill wrapped in `catch {}`, meant a close
+                // could complete while the backend survived — which is exactly
+                // the orphaned `otoyin-server.exe` that kept squatting port
+                // 17493 across launches. The kill is now unconditional, on the
+                // Rust side, before the window is allowed to close.
                 api.prevent_close();
                 let state = window.state::<AppState>();
                 let already = state.server.close_in_progress.swap(true, Ordering::SeqCst);
                 if !already {
-                    // Ask the renderer whether the backend should be kept
-                    // running; it answers with `window-close-allowed`.
-                    let _ = window.emit("window-close-requested", ());
-                    // Fallback: never let a silent renderer strand the user
-                    // on a window that cannot close.
                     let handle = window.app_handle().clone();
-                    tauri::async_runtime::spawn(async move {
-                        tokio::time::sleep(std::time::Duration::from_secs(3)).await;
-                        let state = handle.state::<AppState>();
-                        if state.server.close_in_progress.load(Ordering::SeqCst) {
-                            if !state.server.keep_running.load(Ordering::SeqCst) {
-                                server::stop_if_ours(&state);
-                            }
-                            state
-                                .server
-                                .close_in_progress
-                                .store(false, Ordering::SeqCst);
-                            if let Some(win) = handle.get_webview_window("main") {
-                                let _ = win.destroy();
-                            }
-                        }
-                    });
+                    // Stop first, then close. Synchronous so the child is gone
+                    // before the process can exit and orphan it.
+                    server::stop_if_ours(&state);
+                    server::release_ownership(&handle.state::<AppState>().models_dir());
+                    if let Some(win) = handle.get_webview_window("main") {
+                        let _ = win.destroy();
+                    }
                 }
             }
         })
@@ -186,12 +157,11 @@ pub fn run() {
 
     app.run(|app_handle, event| {
         // Any exit path (Cmd+Q, crash, window close) must not strand the
-        // backend unless the user asked for keep-running.
+        // backend. Same rule as window close: always stop what we started.
         if let tauri::RunEvent::Exit = event {
             let state = app_handle.state::<AppState>();
-            if !state.server.keep_running.load(Ordering::SeqCst) {
-                server::stop_if_ours(&state);
-            }
+            server::stop_if_ours(&state);
+            server::release_ownership(&state.models_dir());
         }
     });
 }

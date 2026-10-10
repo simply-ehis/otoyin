@@ -1,10 +1,13 @@
 """Extended audio import with ffmpeg support."""
 
-import shutil
 import subprocess
 from pathlib import Path
 
-FFMPEG_PATH = shutil.which("ffmpeg")
+from .audio_conversion import ffmpeg_path
+
+# Resolved at call time (not import time): honouring the bundled ffmpeg that
+# ships next to a frozen Otoyin install must not add filesystem probing to
+# process startup, and the result is cached inside ffmpeg_path() anyway.
 
 # Inputs must be real local media files: no URLs (ffmpeg would happily fetch
 # http://... — an SSRF vector), no UNC/network paths, and only extensions this
@@ -33,7 +36,7 @@ _FFMPEG_INPUT_GUARD = ["-nostdin", "-protocol_whitelist", "file,crypto"]
 
 
 def check_ffmpeg_available() -> bool:
-    return FFMPEG_PATH is not None
+    return ffmpeg_path() is not None
 
 
 def _validate_media_input(path_str: str) -> Path:
@@ -57,7 +60,7 @@ def get_supported_formats() -> list[dict]:
         {"ext": "flac", "type": "audio", "description": "FLAC audio"},
         {"ext": "ogg", "type": "audio", "description": "OGG audio"},
     ]
-    if FFMPEG_PATH:
+    if ffmpeg_path():
         formats.extend(
             [
                 {"ext": "m4a", "type": "audio", "description": "M4A/AAC audio"},
@@ -78,7 +81,8 @@ def extract_audio_from_video(
     sample_rate: int = 48000,
     channels: int = 1,
 ) -> str:
-    if not FFMPEG_PATH:
+    ffmpeg = ffmpeg_path()
+    if not ffmpeg:
         raise RuntimeError("ffmpeg not found. Install ffmpeg to strip audio from video.")
 
     src = _validate_media_input(video_path)
@@ -86,7 +90,7 @@ def extract_audio_from_video(
         output_path = str(src.with_suffix(".wav"))
 
     cmd = [
-        FFMPEG_PATH,
+        ffmpeg,
         *_FFMPEG_INPUT_GUARD,
         "-i",
         str(src),
@@ -121,11 +125,12 @@ def convert_audio(
     if output_path is None:
         output_path = str(src.with_suffix(f".{fmt}"))
 
-    if not FFMPEG_PATH:
+    ffmpeg = ffmpeg_path()
+    if not ffmpeg:
         raise RuntimeError("ffmpeg not found. Install ffmpeg for format conversion.")
 
     cmd = [
-        FFMPEG_PATH,
+        ffmpeg,
         *_FFMPEG_INPUT_GUARD,
         "-i",
         str(src),
@@ -143,13 +148,14 @@ def convert_audio(
 
 
 def get_audio_info(file_path: str) -> dict:
-    if not FFMPEG_PATH:
+    ffmpeg = ffmpeg_path()
+    if not ffmpeg:
         return {"error": "ffmpeg not available"}
     try:
         src = _validate_media_input(file_path)
     except (ValueError, OSError) as e:
         return {"error": str(e)}
-    cmd = [FFMPEG_PATH, *_FFMPEG_INPUT_GUARD, "-i", str(src), "-f", "null", "-"]
+    cmd = [ffmpeg, *_FFMPEG_INPUT_GUARD, "-i", str(src), "-f", "null", "-"]
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
     stderr = result.stderr
     info = {}

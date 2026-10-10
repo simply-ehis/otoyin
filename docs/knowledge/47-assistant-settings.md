@@ -1,10 +1,10 @@
 PURPOSE: Persist agent/LLM preferences (context + token budget, memory toggle, thinking toggle) and expose them so the user can override the RAM-aware default with a clear warning.
 
-OWNS: `backend/database/models.py` (`AssistantSettings` singleton), `backend/models.py` (`AssistantSettingsResponse`/`Update`), `backend/services/settings.py` (`get/update_assistant_settings`, `compute_effective_tokens`, `get_assistant_token_settings_for`), `backend/routes/settings.py` (`GET/PUT /settings/assistant`), `backend/routes/assistant_stream.py` (reads override via `get_assistant_token_settings_for` and passes `ctx_override`+`max_tokens` to `backend.generate`), `app/src/lib/api/{client,types}.ts`, `app/src/components/Assistant/AssistantSettings.tsx` (Context & Token Budget UI).
+OWNS: `backend/database/models.py` (`AssistantSettings` singleton), `backend/models.py` (`AssistantSettingsResponse`/`Update`), `backend/services/settings.py` (`get/update_assistant_settings`, `compute_effective_tokens`, `get_assistant_token_settings_for`), `backend/routes/settings.py` (`GET/PUT /settings/assistant`), `backend/routes/assistant_stream.py` (reads override via `get_assistant_token_settings_for` and passes `ctx_override`+`max_tokens` to `backend.generate`), `app/src/lib/api/{client,types}.ts`, `app/src/features/assistant/AssistantSettings.tsx` (Context & Token Budget UI).
 
 READ-WHEN: You change agent settings persistence, the context/token budget, or the settings UI.
 
-KEY-FILES: `docs/knowledge/46-llm-context.md` (the RAM formula + max_tokens rule), `worksheets/assistant-expansion-plan.md` (Slice C2).
+KEY-FILES: `docs/knowledge/46-llm-context.md` (the RAM formula + max_tokens rule).
 
 INVARIANTS:
 - The RAM-aware default (from utils.llm_context) is ONLY a default. A persisted
@@ -37,6 +37,6 @@ GOTCHAS:
 - **MCP Tools:** (none — assistant settings are UI-configured)
 - **REST Endpoints:** `GET /settings/assistant`, `PUT /settings/assistant`, `GET /assistant/models`, `POST /assistant/validate-key`
 - **Key Backend Files:** `backend/routes/settings.py`, `backend/routes/assistant.py`, `backend/services/settings.py`, `backend/models.py`
-- **Key Frontend Files:** `app/src/components/Assistant/AssistantSettings.tsx`, `app/src/components/Assistant/AssistantPanel.tsx`
+- **Key Frontend Files:** `app/src/features/assistant/AssistantSettings.tsx`, `app/src/features/assistant/AssistantPanel.tsx`
 
 UPDATED: 2026-07-17

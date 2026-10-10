@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>otoyin — connections, flows &amp; diagram</title>
+<style>
+  :root { --bg:#141312; --panel:#1c1a19; --line:#2e2a28; --fg:#e8e2dc;
+    --dim:#9a9088; --rose:#d76742; --ok:#6fae7a; --warn:#d3a84a; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+    font:15px/1.55 ui-sans-serif,-apple-system,"Segoe UI",sans-serif; }
+  header { padding:34px 30px 20px; border-bottom:1px solid var(--line); }
+  h1 { margin:0 0 6px; font-size:23px; letter-spacing:-.2px; }
+  .sub { color:var(--dim); font-size:13px; }
+  main { padding:26px 30px 70px; max-width:1180px; }
+  h2 { font-size:12px; text-transform:uppercase; letter-spacing:.13em;
+    color:var(--dim); margin:38px 0 14px; padding-bottom:8px;
+    border-bottom:1px solid var(--line); }
+  .grid { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); }
+  .stat { background:var(--panel); border:1px solid var(--line);
+    border-radius:9px; padding:15px 16px; }
+  .stat b { display:block; font-size:25px; color:var(--rose); line-height:1.15; }
+  .stat span { color:var(--dim); font-size:11.5px; text-transform:uppercase;
+    letter-spacing:.07em; }
+  .panel { background:var(--panel); border:1px solid var(--line);
+    border-radius:9px; padding:18px; overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; font-size:10.5px; text-transform:uppercase;
+    letter-spacing:.09em; color:var(--dim); padding:0 10px 8px 0; }
+  td { padding:7px 10px 7px 0; border-top:1px solid var(--line); vertical-align:top; }
+  td.ep { font:12px ui-monospace,monospace; color:var(--rose); white-space:nowrap; }
+  td.n, .tagx { color:var(--dim); }
+  ul.routes { columns:4; list-style:none; padding:0; margin:0; }
+  ul.routes li { padding:2px 0; break-inside:avoid; }
+  .feat { display:flex; justify-content:space-between; padding:6px 11px;
+    background:var(--panel); border:1px solid var(--line); border-radius:7px;
+    font-size:12.5px; margin-bottom:5px; }
+  .feat span { color:var(--dim); font-size:11px; }
+  .mirror { display:flex; flex-wrap:wrap; gap:7px; align-items:center;
+    padding:9px 12px; background:var(--panel); border:1px solid var(--line);
+    border-radius:7px; margin-bottom:7px; }
+  .badge { background:#3a2420; color:var(--rose); padding:2px 9px;
+    border-radius:5px; font-size:11.5px; font-weight:600; }
+  .find { background:var(--panel); border:1px solid var(--line);
+    border-left:3px solid var(--rose); border-radius:0 9px 9px 0;
+    padding:13px 17px; margin-bottom:11px; }
+  .find.good { border-left-color:var(--ok); }
+  .find.warn { border-left-color:var(--warn); }
+  .find h3 { margin:0 0 5px; font-size:14px; }
+  .find p { margin:0; color:var(--dim); font-size:13px; }
+  .find b { color:var(--fg); }
+  code { font:12px/1.5 ui-monospace,"Cascadia Code",Consolas,monospace;
+    color:#cbb9ad; }
+  footer { padding:20px 30px 40px; color:var(--dim); font-size:12px;
+    border-top:1px solid var(--line); }
+</style></head><body>
+<header>
+  <h1>otoyin — connections, flows &amp; diagram</h1>
+  <div class="sub">Counts measured from the source tree. Regenerate with
+    <code>scripts/gen-codebase-connections.py</code>.</div>
+</header>
+<main>
+
+<h2>At a glance</h2>
+<div class="grid">
+  <div class="stat"><b>69</b><span>routes</span></div>
+  <div class="stat"><b>70</b><span>lazy() boundaries</span></div>
+  <div class="stat"><b>14</b><span>feature modules</span></div>
+  <div class="stat"><b>0</b><span>mirrored components</span></div>
+  <div class="stat"><b>0</b><span>dead component dirs</span></div>
+  <div class="stat"><b>15</b><span>distinct endpoints</span></div>
+</div>
+
+<h2>Flow diagram</h2>
+<div class="panel"><svg viewBox="0 0 800 570" width="100%" style="max-width:800px" role="img" aria-label="otoyin request and module flow diagram"><defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a423e"/></marker></defs><path d="M135,57 Q260,43 385,57" fill="none" stroke="#4a423e" stroke-width="1.4" marker-end="url(#a)"/><text x="260" y="53" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">IPC</text><path d="M385,57 Q260,163 135,297" fill="none" stroke="#4a423e" stroke-width="1.4" marker-end="url(#a)"/><text x="260" y="173" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">navigate</text><path d="M135,297 Q260,343 385,417" fill="none" stroke="#4a423e" stroke-width="1.4" marker-end="url(#a)"/><text x="260" y="353" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">render</text><path d="M385,57 Q512,43 640,57" fill="none" stroke="#4a423e" stroke-width="1.4" marker-end="url(#a)"/><text x="512" y="53" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">fetch</text><path d="M385,57 Q385,103 385,177" fill="none" stroke="#4a423e" stroke-width="1.4" marker-end="url(#a)"/><text x="385" y="113" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">import</text><path d="M385,177 Q512,103 640,57" fill="none" stroke="#4a423e" stroke-width="1.4" marker-end="url(#a)"/><text x="512" y="113" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">extends</text><path d="M385,57 Q512,103 640,177" fill="none" stroke="#4a423e" stroke-width="1.4" marker-end="url(#a)"/><text x="512" y="113" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">read</text><path d="M385,57 Q512,223 640,417" fill="none" stroke="#4a423e" stroke-width="1.4" marker-end="url(#a)"/><text x="512" y="233" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">subscribe</text><path d="M640,57 Q388,268 135,507" fill="none" stroke="#4a423e" stroke-width="1.4" marker-end="url(#a)"/><text x="388" y="278" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">HTTP loopback :17493</text><path d="M640,417 Q388,448 135,507" fill="none" stroke="#4a423e" stroke-width="1.4" marker-end="url(#a)"/><text x="388" y="458" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">SSE + WS</text><path d="M135,507 Q260,493 385,507" fill="none" stroke="#4a423e" stroke-width="1.4" marker-end="url(#a)"/><text x="260" y="503" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">downloads</text><path d="M385,417 Q512,343 640,297" fill="none" stroke="#4a423e" stroke-width="1.4" marker-end="url(#a)"/><text x="512" y="353" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">still imports</text><rect x="40" y="30" width="190" height="54" rx="8" fill="#1c1a19" stroke="#c9a8d4" stroke-width="1.3"/><text x="135" y="51" fill="#e8e2dc" font-size="12.5" font-weight="600" text-anchor="middle">Tauri shell</text><text x="135" y="67" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">Rust · lib.rs / server.rs</text><rect x="290" y="30" width="190" height="54" rx="8" fill="#1c1a19" stroke="#c9a8d4" stroke-width="1.3"/><text x="385" y="51" fill="#e8e2dc" font-size="12.5" font-weight="600" text-anchor="middle">React app</text><text x="385" y="67" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">AppFrame → router.tsx</text><rect x="540" y="30" width="200" height="54" rx="8" fill="#1c1a19" stroke="#c9a8d4" stroke-width="1.3"/><text x="640" y="51" fill="#e8e2dc" font-size="12.5" font-weight="600" text-anchor="middle">API client</text><text x="640" y="67" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">clientCore.ts</text><rect x="290" y="150" width="190" height="54" rx="8" fill="#1c1a19" stroke="#e0b08a" stroke-width="1.3"/><text x="385" y="171" fill="#e8e2dc" font-size="12.5" font-weight="600" text-anchor="middle">lib/api/client*.ts</text><text x="385" y="187" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">29 domain files</text><rect x="540" y="150" width="200" height="54" rx="8" fill="#1c1a19" stroke="#e0b08a" stroke-width="1.3"/><text x="640" y="171" fill="#e8e2dc" font-size="12.5" font-weight="600" text-anchor="middle">Stores (zustand)</text><text x="640" y="187" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">server / player / ui</text><rect x="40" y="270" width="190" height="54" rx="8" fill="#1c1a19" stroke="#e0b08a" stroke-width="1.3"/><text x="135" y="291" fill="#e8e2dc" font-size="12.5" font-weight="600" text-anchor="middle">70 lazy routes</text><text x="135" y="307" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">0 eager page imports</text><rect x="290" y="390" width="190" height="54" rx="8" fill="#1c1a19" stroke="#e0b08a" stroke-width="1.3"/><text x="385" y="411" fill="#e8e2dc" font-size="12.5" font-weight="600" text-anchor="middle">14 feature modules</text><text x="385" y="427" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">@/features/*</text><rect x="540" y="270" width="200" height="54" rx="8" fill="#1c1a19" stroke="#e0b08a" stroke-width="1.3"/><text x="640" y="291" fill="#e8e2dc" font-size="12.5" font-weight="600" text-anchor="middle">components/* tree</text><text x="640" y="307" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">legacy, 0 mirrored</text><rect x="40" y="480" width="190" height="54" rx="8" fill="#1c1a19" stroke="#96d0a4" stroke-width="1.3"/><text x="135" y="501" fill="#e8e2dc" font-size="12.5" font-weight="600" text-anchor="middle">FastAPI</text><text x="135" y="517" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">routes/ + services/</text><rect x="290" y="480" width="190" height="54" rx="8" fill="#1c1a19" stroke="#96d0a4" stroke-width="1.3"/><text x="385" y="501" fill="#e8e2dc" font-size="12.5" font-weight="600" text-anchor="middle">Egress (guarded)</text><text x="385" y="517" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">SSRF: is_url_safe</text><rect x="540" y="390" width="200" height="54" rx="8" fill="#1c1a19" stroke="#96d0a4" stroke-width="1.3"/><text x="640" y="411" fill="#e8e2dc" font-size="12.5" font-weight="600" text-anchor="middle">Frontend streams</text><text x="640" y="427" fill="#8a8078" font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">2× SSE · 1× WS</text></svg></div>
+
+<h2>Feature modules <span class="sub">(live tree, by importer count)</span></h2>
+<div class="feat"><b>capture</b><span>9 importer(s)</span></div><div class="feat"><b>workspace</b><span>8 importer(s)</span></div><div class="feat"><b>audioStudio</b><span>6 importer(s)</span></div><div class="feat"><b>generate</b><span>4 importer(s)</span></div><div class="feat"><b>clipboard</b><span>4 importer(s)</span></div><div class="feat"><b>voices</b><span>4 importer(s)</span></div><div class="feat"><b>instruments</b><span>4 importer(s)</span></div><div class="feat"><b>onboarding</b><span>3 importer(s)</span></div><div class="feat"><b>settings</b><span>3 importer(s)</span></div><div class="feat"><b>voiceChat</b><span>2 importer(s)</span></div><div class="feat"><b>effects</b><span>2 importer(s)</span></div><div class="feat"><b>store</b><span>1 importer(s)</span></div><div class="feat"><b>help</b><span>1 importer(s)</span></div><div class="feat"><b>stories</b><span>1 importer(s)</span></div>
+
+<h2>Endpoints touched from the frontend</h2>
+<table><thead><tr><th>endpoint</th><th>sites</th><th>first call site</th></tr></thead>
+<tbody><tr><td class="ep">REST /v1</td><td class="n">14</td><td class="sites"><code>app/src/lib/marketplace.ts:114</code></td></tr><tr><td class="ep">REST /audiobooks</td><td class="n">6</td><td class="sites"><code>app/src/features/audiobooks/ImportWizard.tsx:127</code></td></tr><tr><td class="ep">REST /clipboard</td><td class="n">5</td><td class="sites"><code>app/src/lib/clip.ts:58</code></td></tr><tr><td class="ep">REST /api</td><td class="n">5</td><td class="sites"><code>app/src/lib/regionCurrency.ts:145</code></td></tr><tr><td class="ep">REST /health</td><td class="n">4</td><td class="sites"><code>app/src/features/settings/CapturesPage.tsx:612</code></td></tr><tr><td class="ep">REST /stt</td><td class="n">3</td><td class="sites"><code>app/src/lib/hooks/useStreamingSTT.ts:139</code></td></tr><tr><td class="ep">WS /getWsUrl(</td><td class="n">1</td><td class="sites"><code>app/src/stores/voiceChatStore.ts:185</code></td></tr><tr><td class="ep">SSE /${serverUrl}/backend/cuda-progress</td><td class="n">1</td><td class="sites"><code>app/src/features/settings/GpuPage.tsx:157</code></td></tr><tr><td class="ep">REST /export</td><td class="n">1</td><td class="sites"><code>app/src/features/settings/LottieExportPage.tsx:43</code></td></tr><tr><td class="ep">REST /import</td><td class="n">1</td><td class="sites"><code>app/src/features/workspace/VideoPreviewView.tsx:67</code></td></tr><tr><td class="ep">REST /captures</td><td class="n">1</td><td class="sites"><code>app/src/lib/api/clientCaptures.ts:109</code></td></tr><tr><td class="ep">REST /${baseUrl()}${path}</td><td class="n">1</td><td class="sites"><code>app/src/lib/api/clientSkills.ts:10</code></td></tr><tr><td class="ep">REST /exports</td><td class="n">1</td><td class="sites"><code>app/src/lib/api/clientStoriesA.ts:466</code></td></tr><tr><td class="ep">REST /dsp</td><td class="n">1</td><td class="sites"><code>app/src/lib/api/clientStoriesA.ts:1164</code></td></tr><tr><td class="ep">SSE /${serverUrl}/models/progress/${modelName}</td><td class="n">1</td><td class="sites"><code>app/src/lib/hooks/useModelDownloadToast.tsx:69</code></td></tr></tbody></table>
+
+<h2>Routes</h2>
+<ul class="routes"><li><code>/</code></li><li><code>/about</code></li><li><code>/adr</code></li><li><code>/api-keys</code></li><li><code>/audio-enhance</code></li><li><code>/audio-plan</code></li><li><code>/audio-studio</code></li><li><code>/audiobooks</code></li><li><code>/automation</code></li><li><code>/batch</code></li><li><code>/captures</code></li><li><code>/community-presets</code></li><li><code>/comping</code></li><li><code>/conversation</code></li><li><code>/diarize</code></li><li><code>/download</code></li><li><code>/dsp</code></li><li><code>/dubbing</code></li><li><code>/effects</code></li><li><code>/export</code></li><li><code>/generation</code></li><li><code>/gpu</code></li><li><code>/help</code></li><li><code>/instruments</code></li><li><code>/launcher</code></li><li><code>/library</code></li><li><code>/live-transcript</code></li><li><code>/logs</code></li><li><code>/lottie-export</code></li><li><code>/mcp</code></li><li><code>/mixer</code></li><li><code>/models</code></li><li><code>/music-gen</code></li><li><code>/noise-reduction</code></li><li><code>/offers</code></li><li><code>/pitch</code></li><li><code>/plugins</code></li><li><code>/privacy</code></li><li><code>/projects</code></li><li><code>/scripting</code></li><li><code>/server</code></li><li><code>/settings</code></li><li><code>/shortcuts</code></li><li><code>/songwriter</code></li><li><code>/sounds</code></li><li><code>/spatial</code></li><li><code>/spectrogram</code></li><li><code>/store</code></li><li><code>/stories</code></li><li><code>/studio</code></li><li><code>/support</code></li><li><code>/system</code></li><li><code>/telemetry</code></li><li><code>/timecode</code></li><li><code>/timeline</code></li><li><code>/transcript</code></li><li><code>/translate</code></li><li><code>/video</code></li><li><code>/vocal-isolation</code></li><li><code>/voice-changer</code></li><li><code>/voice-converter</code></li><li><code>/voices</code></li><li><code>/whats-new</code></li><li><code>/workspace</code></li></ul>
+
+<h2>Dead component directories <span class="sub">(no live importer &mdash; direct, relative, dynamic, or via the barrel)</span></h2>
+<table><thead><tr><th>directory</th><th>files</th><th>status</th></tr></thead>
+<tbody></tbody></table>
+
+<h2>components/Workspace dependents <span class="sub">(every remaining pull into the legacy tree)</span></h2>
+<div class="find good"><h3>components/Workspace — no inbound imports</h3><p>Every router entry resolves through <code>@/features/workspace</code>; nothing in the legacy tree is referenced.</p></div>
+
+<h2>Mirrored modules <span class="sub">(components/ vs features/ — migration in progress)</span></h2>
+
+
+<h2>Findings</h2>
+
+<div class="find good"><h3>Nav contrast — now WCAG AA in all 7 themes</h3>
+<p>Only the <b>active</b> nav link failed (accent on accent-muted:
+<b>3.40 / 3.26 / 3.65</b>). Inactive links already passed. Introduced
+<code>--color-accent-ink</code> — same hue and saturation as the accent, only
+lightness moves. Measured after: <b>4.51 / 4.51 / 5.36 / 12.96 / 4.83 / 5.94</b>.
+Rejected two alternatives: crushing the tint to 11% (kills coastal-light) and
+retuning the brand accent itself.</p></div>
+
+<div class="find good"><h3>Duplicated health poller — fixed</h3>
+<p><b>useBootReadiness</b> polled <code>/health/ready</code> every 1.5s while
+<b>BackendStatusBanner</b> ran an independent query on the same URL — measured
+<b>18 requests per 20s</b>. One ref-counted poller now serves both:
+<b>18 &rarr; 9</b>. The regression test fails at 19 polls if the shared poller
+is removed.</p></div>
+
+<div class="find good"><h3>Stale vite.config.js shadowed the maintained config</h3>
+<p>An untracked transpiled copy sat beside <code>vite.config.ts</code>. Vite
+resolves <code>.js</code> first, so <b>every edit to the maintained config was
+silently ignored</b> — which is why an earlier chunking fix produced a
+byte-identical bundle. Deleted; <code>app/</code> and <code>tauri/</code>
+configs now agree.</p></div>
+
+<div class="find good"><h3>388 KB eager chunk removed</h3>
+<p><code>manualChunks</code> on app-code directories hoisted whole route trees
+into one preloaded chunk. Every chunk in the app — down to 1 KB icon chunks —
+statically imported it. Removed; Rollup now splits per <code>import()</code>
+boundary. Startup bytes are ~flat (746 &rarr; 771 KB) because the code
+redistributed into correctly-attributed vendor chunks — the win is correct
+lazy boundaries, not saved bytes. Build time 2m40s &rarr; 41s.</p></div>
+
+<div class="find warn"><h3>Icon barrel imports are a dev-only cost</h3>
+<p><code>@heroicons/react</code> shows ~730 KB in Vite dev, but the package is
+<code>sideEffects:false</code> and Rollup tree-shakes it: production startup
+contains <b>zero</b> heroicons bytes. Deep-importing 325 modules would be churn
+against a phantom.</p></div>
+
+<div class="find warn"><h3>components/ &rarr; features/ migration unfinished</h3>
+<p><b>0</b> modules exist in both trees and <b>0</b>
+component directories have no live importer — 
+form one unreachable cluster: the router now resolves through
+<code>@/features/workspace</code>, so every remaining reference to them comes
+either from the unused <code>components/index.ts</code> barrel or from another
+directory in this same list. Not a live bug —
+<code>components/ui/use-toast</code> is already a documented shim onto the
+canonical store — but it is the main source of the oversized files, and the
+cluster is deletable once its barrel entries are pruned.</p></div>
+
+<div class="find"><h3>Telemetry egress exists but is off</h3>
+<p><code>backend/services/telemetry.py</code> can POST to
+<code>telemetry.otoyin.app</code>, defaulting to <code>enabled: false</code>.
+<code>enable_telemetry()</code> is never called at startup.</p></div>
+
+<div class="find"><h3>Global theme pattern</h3>
+<p>One <code>line-in-motion</code> tile for all 7 themes, painted through a CSS
+mask so <code>background-color</code> carries each theme's own accent. Opacity
+0.055, <code>pointer-events:none</code>. Verified by pixel-diff in every theme —
+computed style alone had hidden a transparent-light bug.</p></div>
+
+</main>
+<footer>otoyin &middot; 21labs &middot; all figures from live source inspection</footer>
+</body></html>

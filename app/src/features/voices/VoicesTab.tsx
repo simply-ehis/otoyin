@@ -24,6 +24,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
 import { QuickCloneDialog } from "./QuickCloneDialog";
 import { ReferenceVoicesBrowser } from "./ReferenceVoicesBrowser";
+import { VoiceFormDialog } from "./VoiceFormDialog";
 import { VoiceInspector } from "./VoiceInspector";
 
 /**
@@ -136,6 +137,18 @@ export function VoicesTab() {
 						<PlusIcon className="mr-1.5 size-4" aria-hidden="true" />
 						{t("voicesTab.newVoice")}
 					</Button>
+					<Button
+						size="sm"
+						variant="outline"
+						onClick={() => {
+							const store = useUIStore.getState();
+							store.setEditingProfileId(null);
+							store.setProfileDialogOpen(true);
+						}}
+						title="Full voice form (clone, preset, or designed source)"
+					>
+						Full form
+					</Button>
 				</div>
 
 				<TabsContent value="my-voices" className="mt-3 min-h-0 flex-1">
@@ -240,6 +253,7 @@ export function VoicesTab() {
 					setSelectedId(id);
 				}}
 			/>
+			<VoiceFormDialog />
 		</div>
 	);
 }

@@ -14,11 +14,9 @@
  */
 import { getVersion } from "@tauri-apps/api/app";
 import { invoke } from "@tauri-apps/api/core";
-import { emit, listen } from "@tauri-apps/api/event";
+import { listen } from "@tauri-apps/api/event";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check, type Update } from "@tauri-apps/plugin-updater";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useServerStore } from "@/stores/serverStore";
 import type {
 	Platform,
 	ServerError,
@@ -71,27 +69,17 @@ export const tauriPlatform: Platform = {
 			});
 			return url;
 		},
-		setKeepServerRunning: async (keep) => {
-			await invoke("set_keep_server_running", { keepRunning: keep });
-		},
 		setupWindowCloseHandler: async () => {
-			// The Rust side prevents the close and waits for our verdict
-			// (`window-close-allowed`), with a 3s fallback that consults
-			// the same keep-running flag — so this handler and the
-			// fallback can never disagree.
-			const win = getCurrentWindow();
-			await win.onCloseRequested(async (event) => {
-				event.preventDefault();
-				const keep = useServerStore.getState().keepServerRunningOnClose;
-				if (!keep) {
-					try {
-						await invoke("stop_server");
-					} catch {
-						// Rust fallback kills it anyway; never strand the close.
-					}
-				}
-				await emit("window-close-allowed");
-			});
+			// Intentionally empty.
+			//
+			// This registered a second close handler (`win.onCloseRequested`)
+			// alongside the Rust `on_window_event` handler. Both called
+			// preventDefault on the same event, and the kill was a
+			// fire-and-forget `invoke("stop_server")` in a `catch {}`. That
+			// race is what let the window close while `otoyin-server.exe`
+			// survived and kept holding the port. Rust now stops the backend
+			// unconditionally before destroying the window, so a second
+			// handler here would only reintroduce the race.
 		},
 		subscribeToServerLogs: (callback: (entry: ServerLogEntry) => void) => {
 			let unlisten: (() => void) | undefined;

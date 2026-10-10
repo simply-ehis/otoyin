@@ -11,14 +11,14 @@ Use this skill when building "Upgrade plan," "Switch tier," or "Change subscript
 
 This is the _initiating_ side of subscription changes. Pair it with:
 
-- `subscription-sync` — your webhook handler will get a `subscription.updated` event after the change. Your DB mirror picks up the new plan, status, and pricing.
-- `subscription-cancel` — same auth/ownership shape; if you're building both, share the helpers.
+- `paddle-subscription-sync` — your webhook handler will get a `subscription.updated` event after the change. Your DB mirror picks up the new plan, status, and pricing.
+- `paddle-subscription-cancel` — same auth/ownership shape; if you're building both, share the helpers.
 
 ## Prerequisites
 
 - A Paddle account with **at least two prices** the user can switch between (e.g. monthly Starter and monthly Pro). Sandbox is fine.
 - Server-side `PADDLE_API_KEY` available — Server Action only.
-- Customer + subscription state mirrored from webhooks (see `subscription-sync`).
+- Customer + subscription state mirrored from webhooks (see `paddle-subscription-sync`).
 - An auth system. Examples use Supabase.
 
 ```bash
@@ -213,7 +213,7 @@ The Node SDK uses camelCase (`onPaymentFailure`); the wire format is `on_payment
 
 - **Wrong `prorationBillingMode`.** The defaults table is the heart of this skill. `do_not_bill` for a self-serve upgrade is a billing-accounting hole; `full_immediately` overcharges; `prorated_next_billing_period` surprises users who expected a charge. For "Upgrade to Pro" UX, **always `prorated_immediately`**.
 - **Appending instead of replacing items.** Pulling `subscription.items` from the mirror, concatenating the new item, and sending the combined array results in a subscription billed for two plans. The endpoint replaces — pass only what you want.
-- **No ownership check.** Same as `subscription-cancel`: trusting the `subscriptionId` input lets any authenticated user upgrade any subscription's plan.
+- **No ownership check.** Same as `paddle-subscription-cancel`: trusting the `subscriptionId` input lets any authenticated user upgrade any subscription's plan.
 - **No auth check.** Server Actions are callable from anywhere — anonymous, scripted, or via direct POST. Always verify the session.
 - **Optimistic UI based on the action's return.** The action returning `{ success: true }` means Paddle accepted the change request. It does NOT mean the prorated charge succeeded. Wait for `transaction.completed` (via webhook) before granting features that depend on payment success.
 - **Missing `revalidatePath`.** UI shows the old plan until manual refresh.

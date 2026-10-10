@@ -49,7 +49,7 @@ When `source === 'agent'` or `source === 'mcp'`, auto-play is skipped — agents
 | Component | File | Purpose |
 |-----------|------|---------|
 | `useGenerationProgress` | `app/src/lib/hooks/useGenerationProgress.ts` | SSE listener + chunk queue management |
-| `GenerateButton` | `app/src/components/Generation/GenerateButton.tsx` | Generation trigger with streaming flag |
+| Generate submit | `app/src/features/generate/Composer.tsx` | Generation trigger with streaming flag |
 | `playerStore` | `app/src/stores/playerStore.ts` | Audio playback state + setAudioWithAutoPlay |
 
 ## Backend Endpoints

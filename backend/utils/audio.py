@@ -168,7 +168,7 @@ def trim_tts_output(
     if frame_len == 0 or len(audio) < frame_len:
         return audio
 
-    n_frames = len(audio) // frame_len
+    n_frames = -(-len(audio) // frame_len)  # ceil: floor drops the tail and breaks the pad below
     threshold_linear = 10 ** (silence_threshold_db / 20)
 
     # Compute per-frame RMS (vectorized reshape instead of per-frame loop)

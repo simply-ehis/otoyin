@@ -1,7 +1,7 @@
 """Full verification of tool schema validity, harness coherence, and system integration.
 
 Checks:
-- All 211 tools have valid OpenAI function-calling schema
+- All tools have valid OpenAI function-calling schema
 - No duplicate tool names
 - required[] fields all exist in properties
 - HarnessState doesn't reference stale tool names
@@ -32,7 +32,7 @@ from backend.routes.assistant_tools.tool_call_middleware import (
 
 
 def test_tool_count():
-    assert len(TOOLS) == 212, f"Expected 212 tools, got {len(TOOLS)}"
+    assert len(TOOLS) == 214, f"Expected 214 tools, got {len(TOOLS)}"
 
 
 def test_all_tools_have_function_wrapper():

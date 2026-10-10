@@ -268,8 +268,11 @@ build-server: _ensure-venv
     Remove-Item "{{ tauri_dir }}/src-tauri/binaries/otoyin-server" -Recurse -Force -ErrorAction SilentlyContinue; \
     Copy-Item "backend/dist/otoyin-server" "{{ tauri_dir }}/src-tauri/binaries/otoyin-server" -Recurse -Force; \
     $triple = (rustc --print host-tuple); \
-    Copy-Item "{{ tauri_dir }}/src-tauri/binaries/otoyin-server/otoyin-server.exe" "{{ tauri_dir }}/src-tauri/binaries/otoyin-server/otoyin-server-$triple.exe" -Force; \
-    Write-Host "Copied server bundle: otoyin-server/ (sidecar: otoyin-server-$triple.exe)"
+    # No triple-suffixed copy of the server: it is shipped via bundle.resources \
+    # and loaded from {resource_dir}/otoyin-server/ (see src-tauri/src/server.rs \
+    # resolve_binary). Listing it in externalBin as well only produced a second, \
+    # never-executed 92 MB copy at the bundle root.
+    Write-Host "Copied server bundle: otoyin-server/ (shipped as a resource, single copy)"
 
 [unix]
 build-server: _ensure-venv
@@ -277,10 +280,12 @@ build-server: _ensure-venv
     mkdir -p {{ tauri_dir }}/src-tauri/binaries
     # Clear first: cp -r merges into an existing dir (nesting
     # otoyin-server/ inside itself) instead of replacing it.
-    rm -rf {{ tauri_dir }}/src-tauri/binaries/otoyin-server
-    cp -r backend/dist/otoyin-server {{ tauri_dir }}/src-tauri/binaries/otoyin-server
-    cp {{ tauri_dir }}/src-tauri/binaries/otoyin-server/otoyin-server {{ tauri_dir }}/src-tauri/binaries/otoyin-server/otoyin-server-$(rustc --print host-tuple)
-    @echo "Copied server bundle: otoyin-server/ (sidecar triple-suffixed for externalBin)"
+rm -rf {{ tauri_dir }}/src-tauri/binaries/otoyin-server
+cp -r backend/dist/otoyin-server {{ tauri_dir }}/src-tauri/binaries/otoyin-server
+# No triple-suffixed copy here — the server ships via bundle.resources and is
+# loaded from {resource_dir}/otoyin-server/. Listing it in externalBin too only
+# produced a second, never-executed ~92 MB copy at the bundle root.
+@echo "Copied server bundle: otoyin-server/ (shipped as a resource, single copy)"
 
 # Build MCP shim binary (tiny stdio↔HTTP proxy, no ML deps)
 [unix]

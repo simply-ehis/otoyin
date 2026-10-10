@@ -7,7 +7,7 @@ description: Create the Paddle products and prices that other Paddle skills depe
 
 ## When to use this skill
 
-The user is starting a Paddle integration and their account doesn't yet have the products and prices that other Paddle skills (`checkout-web`, `pricing-pages`, `sandbox-testing`, `webhooks`) depend on. Use this skill to create them.
+The user is starting a Paddle integration and their account doesn't yet have the products and prices that other Paddle skills (`paddle-checkout-web`, `paddle-pricing-pages`, `paddle-sandbox-testing`, `paddle-webhooks`) depend on. Use this skill to create them.
 
 This is typically a one-time setup per project. Once the catalog exists, you don't revisit this skill — only when the user wants to add new products or prices.
 
@@ -236,7 +236,7 @@ Whichever method you used, before declaring this skill complete:
 
 1. **Confirm the products and prices exist.** Via MCP — one `execute` call: `client.products.list({ include: ["prices"] })`. Via SDK: `paddle.products.list({ include: "prices" })`. Or ask the user to check **Paddle > Catalog > Products** in the dashboard.
 2. **Confirm the IDs you reported match.** Via MCP: `client.products.get(productId, { include: ["prices"] })` for each new product (note `productId` is a positional path param). Via SDK: `paddle.products.get(id)`. Check name + tax category.
-3. **Suggest the next step.** Recommend the user complete `checkout-web` next, using one of the new price IDs, to confirm the catalog actually works in checkout.
+3. **Suggest the next step.** Recommend the user complete `paddle-checkout-web` next, using one of the new price IDs, to confirm the catalog actually works in checkout.
 
 ## Common pitfalls
 

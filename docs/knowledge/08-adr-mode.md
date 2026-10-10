@@ -1,7 +1,7 @@
 # 08 — ADR Mode
 
 ## ADRView at `/workspace/adr`
-- **Component:** `ADRView` in `app/src/components/Workspace/ADRView.tsx`
+- **Component:** `ADRView` in `app/src/features/workspace/adr/ADRView.tsx`
 - **What:** Automated Dialogue Replacement — guide track waveform, take list with thumbnails, record countdown, alignment controls.
 
 ## Guide Track Waveform
@@ -38,4 +38,4 @@
 - **MCP Tools:** (none — ADR is UI-initiated)
 - **REST Endpoints:** `POST /adr/sessions`, `GET /adr/sessions`, `GET /adr/sessions/{id}`, `DELETE /adr/sessions/{id}`, `POST /adr/sessions/{id}/guide`, `POST /adr/sessions/{id}/lines/{lineId}/takes`, `POST /adr/sessions/{id}/lines/{lineId}/select/{takeId}`, `POST /adr/align`, `POST /adr/score`, `POST /adr/auto-select`, `GET /adr/waveform/{takeId}`, `GET /adr/sessions/{id}/guide-waveform`
 - **Key Backend Files:** `backend/services/adr.py`, `backend/routes/adr.py`
-- **Key Frontend Files:** `app/src/components/Workspace/ADRView.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/adr/ADRView.tsx`

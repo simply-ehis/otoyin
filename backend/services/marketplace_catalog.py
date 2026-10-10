@@ -210,23 +210,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "paid": True,
         "note": "1.7B params → $34. 52 languages, INT4 quant, near-cloud accuracy offline. 1.7GB.",
     },
-    # --- Cloud STT/VC (BYOK, no local weights) ---
-    {
-        "id": "stt-cloud",
-        "name": "Cloud STT (BYOK)",
-        "category": "stt",
-        "price_usd": 0,
-        "paid": False,
-        "note": "Bring your own API key. No local download.",
-    },
-    {
-        "id": "vc-cloud",
-        "name": "Cloud VC (BYOK)",
-        "category": "vc",
-        "price_usd": 0,
-        "paid": False,
-        "note": "Bring your own API key. No local download.",
-    },
     # --- Paid TTS ---
     {
         "id": "bark-small",
@@ -358,14 +341,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "paid": True,
         "note": "1.7GB GGUF, sound effects generation (Foley, impacts, ambiences). 2.5GB+ RAM.",
     },
-    {
-        "id": "music-cloud",
-        "name": "Cloud Music (BYOK)",
-        "category": "music",
-        "price_usd": 0,
-        "paid": False,
-        "note": "Bring your own API key. No local download.",
-    },
     # --- Paid Assistant planners (LLM) ---
     {
         "id": "planner-4b",
@@ -385,11 +360,11 @@ PRODUCTS: list[dict[str, Any]] = [
     },
     {
         "id": "planner-lfm2-2.6b",
-        "name": "LFM2.5-2.6B ($13)",
+        "name": "LFM2.5-2.6B (Free)",
         "category": "llm",
-        "price_usd": 13,
-        "paid": True,
-        "note": "LiquidAI LFM2.5-2.6B — 128K context, 24 languages, tool calling + thinking tags. Strong multilingual reasoning at a tiny footprint.",
+        "price_usd": 0,
+        "paid": False,
+        "note": "LiquidAI LFM2.5-2.6B — free multilingual planner: 128K context, 24 languages, tool calling + thinking tags. Strong multilingual reasoning at a tiny footprint.",
     },
     {
         "id": "planner-spark-x-2.5-4b",
@@ -423,30 +398,33 @@ PRODUCTS: list[dict[str, Any]] = [
         "paid": True,
         "note": "PrismML Bonsai 2 27B — 27B ternary quantized, 5.95 GB, 98.2% of FP16 quality. Apache 2.0. Requires PrismML llama.cpp fork (TWENTYLABS_LLAMA_SERVER_BONSAI env).",
     },
-    # --- Cloud LLM subscription tiers ---
+    # --- Cloud LLM subscription tiers (coming soon) ---
     {
         "id": "llm-cloud-starter",
-        "name": "Cloud Starter ($10/mo)",
+        "name": "Cloud Starter — Coming Soon ($10/mo)",
         "category": "llm",
         "price_usd": 10,
         "paid": True,
-        "note": "Cloud-hosted LLM — Starter tier. Requires active subscription. Faster than local, no download needed.",
+        "coming_soon": True,
+        "note": "Planned cloud-hosted LLM Starter tier. No download, faster than local, subscription billing coming soon.",
     },
     {
         "id": "llm-cloud-pro",
-        "name": "Cloud Pro ($20/mo)",
+        "name": "Cloud Pro — Coming Soon ($20/mo)",
         "category": "llm",
         "price_usd": 20,
         "paid": True,
-        "note": "Cloud-hosted LLM — Pro tier. Requires active subscription. Smarter model, better reasoning.",
+        "coming_soon": True,
+        "note": "Planned cloud-hosted LLM Pro tier. Smarter model, better reasoning, subscription billing coming soon.",
     },
     {
         "id": "llm-cloud-max",
-        "name": "Cloud Max ($50/mo)",
+        "name": "Cloud Max — Coming Soon ($50/mo)",
         "category": "llm",
         "price_usd": 50,
         "paid": True,
-        "note": "Cloud-hosted LLM — Max tier. Requires active subscription. Top-tier model, maximum capability.",
+        "coming_soon": True,
+        "note": "Planned cloud-hosted LLM Max tier. Top-tier model, maximum capability, subscription billing coming soon.",
     },
     # --- Free downloadable utilities (not bundled, install from Marketplace) ---
     {

@@ -51,4 +51,4 @@ interface ConversationRequest {
 - **MCP Tools:** `21labs.list_conversation_presets`, `21labs.conversation_auto_duck`, `21labs.conversation_auto_level`, `21labs.run_recipe`
 - **REST Endpoints:** `GET /conversation/presets`, `POST /conversation/auto-duck`, `POST /conversation/auto-level`
 - **Key Backend Files:** `backend/routes/conversation.py`, `backend/services/recipe_runner.py`
-- **Key Frontend Files:** `app/src/components/Workspace/ConversationView.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/ConversationView.tsx`

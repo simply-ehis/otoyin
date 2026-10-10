@@ -87,4 +87,4 @@ Stories is a long-form audio composition tool. You create stories, add clips (ge
 - **MCP Tools:** `21labs.list_stories`, `21labs.get_story`, `21labs.create_story`, `21labs.export_story_audio`
 - **REST Endpoints:** `GET /stories`, `POST /stories`, `GET /stories/{id}`, `PUT /stories/{id}`, `DELETE /stories/{id}`, `POST /stories/{id}/items`, `DELETE /stories/{id}/items/{itemId}`, `PUT /stories/{id}/items/times`, `PUT /stories/{id}/items/reorder`, `GET /stories/{id}/export-audio`
 - **Key Backend Files:** `backend/routes/stories.py`, `backend/services/stories/`
-- **Key Frontend Files:** `app/src/components/StoriesTab/StoriesTab.tsx`, `app/src/components/StoriesTab/StoryList.tsx`, `app/src/components/StoriesTab/StoryContent.tsx`, `app/src/components/StoriesTab/StoryTrackEditor.tsx`, `app/src/stores/storyStore.ts`
+- **Key Frontend Files:** `app/src/features/stories/StoriesTab.tsx`, `app/src/features/stories/StoryList.tsx`, `app/src/features/stories/StoryContent.tsx`, `app/src/features/stories/editor/StoryTrackEditor.tsx`, `app/src/stores/storyStore.ts`

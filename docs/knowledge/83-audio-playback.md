@@ -1,9 +1,9 @@
 # 83 — Audio Playback (WaveSurfer + Fallback)
 
 PURPOSE: How every clip plays, why autoplay can fail, and how the fallback saves it.
-OWNS: app/src/components/AudioPlayer/AudioPlayer.tsx, app/src/stores/playerStore.ts, backend/routes/generations.py
+OWNS: app/src/layouts/AudioPlayer/AudioPlayer.tsx, app/src/stores/playerStore.ts, backend/routes/generations.py
 READ-WHEN: Playback is silent, waveform is empty, or "Audio not loaded" sticks.
-KEY-FILES: app/src/components/AudioPlayer/AudioPlayer.tsx, app/src/lib/hooks/useGenerationProgress.ts, backend/routes/generations.py
+KEY-FILES: app/src/layouts/AudioPlayer/AudioPlayer.tsx, app/src/lib/hooks/useGenerationProgress.ts, backend/routes/generations.py
 INVARIANTS: One shared player (playerStore.audioUrl); SSE completion auto-plays only when idle and not an agent speak.
 GOTCHAS: WaveSurfer WebAudio decode fails on some webviews/codecs — the plain <audio> fallback is the supported path, not an error.
 UPDATED: 2026-09-11 (compact pill pass)
@@ -40,4 +40,4 @@ Preset voices are synthesis parameters, not audio files, so hearing one costs a 
 ## Agent Callable
 - **MCP Tools:** `21labs.speak` (returns generation with audio), `21labs.generation_version_audio`
 - **REST:** `GET /audio/{generation_id}`, `GET /generations/{id}/chunk/{i}`, `GET /captures/{id}/audio`, `POST /profiles/preset-voice-preview`
-- **Key Files:** `app/src/components/AudioPlayer/AudioPlayer.tsx`, `app/src/stores/playerStore.ts`, `app/src/features/generate/usePresetAudition.ts`, `app/src/features/voices/PresetVoiceAuditionList.tsx`, `backend/services/preset_preview.py`
+- **Key Files:** `app/src/layouts/AudioPlayer/AudioPlayer.tsx`, `app/src/stores/playerStore.ts`, `app/src/features/generate/usePresetAudition.ts`, `app/src/features/voices/PresetVoiceAuditionList.tsx`, `backend/services/preset_preview.py`

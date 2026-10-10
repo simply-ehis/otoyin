@@ -16,7 +16,7 @@ serves the MCP server at `/mcp` (Streamable HTTP) for agent control.
 (GGML GGUF, `whisper_cpp_backend.py`, Tiny — base/large/MLX variants removed;
 see PRICING_PLAN.md for the locked STT lineup). The assistant LLM runs on
 **llama.cpp `server.exe`** (`gguf_llm` backend, replaces llama-cpp-python) with
-4 curated planner GGUFs: jackrong 0.8B (free fallback), jackrong 2B (free default), LFM2.5-2.6B ($13 special), Qwopus3.5-4B-v3 (paid $40), Ministral-3-3B-Reasoning-2512 (paid $30) —
+7 curated planner GGUFs: Qwopus 4B (free default), LFM2.5-2.6B (free multilingual), Qwopus 4B v3 / Spark-X / LFM2.5-8B-A1B / Ling-3.0-tiny / Bonsai 2 27B (paid one-time), plus cloud tiers —
 prices locked in `docs/PRICING_PLAN.md`.
 
 **Model Interfaces (one protocol + factory per modality):**

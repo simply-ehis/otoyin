@@ -2,14 +2,14 @@
 
 ## Model Management Page
 - **What:** UI for downloading, viewing, and managing AI models.
-- **Where:** `app/src/components/ServerSettings/ModelManagement.tsx`
+- **Where:** `app/src/features/store/StorePage.tsx` (Marketplace)
 - **Features:**
   - Download status per model (not downloaded / downloading / ready)
   - Storage usage display
   - Model descriptions and requirements
 
 ## Model Descriptions
-- **Where:** `app/src/components/ServerSettings/ModelManagement.tsx` → `MODEL_DESCRIPTIONS`
+- **Where:** `app/src/features/store/storeUtils.ts` (`MODEL_DESCRIPTIONS`), UI in `app/src/features/store/StorePage.tsx`
 
 ### TTS Models
 | Model | Size | Description |
@@ -48,4 +48,4 @@
 - **MCP Tools:** `21labs.models_list`, `21labs.models_download`, `21labs.models_load`, `21labs.models_unload`, `21labs.model_cache_dir`, `21labs.model_progress`
 - **REST Endpoints:** `GET /models/status`, `POST /models/download`, `POST /models/download/cancel`, `DELETE /models/{name}`, `POST /models/load`, `POST /models/unload`, `GET /models/cache-dir`, `GET /models/progress/{name}`, `GET /models/recommended`, `GET /models/capabilities`, `POST /models/migrate`, `GET /models/migrate/progress`
 - **Key Backend Files:** `backend/routes/models/status.py`, `backend/routes/models/download.py`, `backend/routes/models/load_unload.py`, `backend/routes/models/cache.py`, `backend/routes/models/capabilities.py`, `backend/routes/models/recommended.py`, `backend/routes/models/migrations.py`
-- **Key Frontend Files:** `app/src/components/ModelsTab/ModelsTab.tsx`, `app/src/components/ServerSettings/ModelManagement.tsx`, `app/src/lib/hooks/useModelDownloadToast.tsx`
+- **Key Frontend Files:** `app/src/features/store/StorePage.tsx`, `app/src/lib/hooks/useModelDownloadToast.tsx`

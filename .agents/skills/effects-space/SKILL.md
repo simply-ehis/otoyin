@@ -48,15 +48,14 @@ effects chain.
 ## Spatial audio (`backend/routes/spatial.py`)
 | endpoint | purpose |
 |----------|---------|
-| `GET /spatial/presets` | environments: car_interior, coffee_shop, bedroom, church, studio_booth |
-| `GET /spatial/convolution-presets` | IRs: room, hall, cathedral, plate |
-| `POST /spatial/render` | apply positioning + environment convolution to sources |
-| `POST /spatial/binaural` | stereo mix → binaural HRTF-like panning |
+| `GET /spatial/presets` | spatializer presets: `headphone_binaural`, `stereo_front` |
+| `GET /spatial/convolution-presets` | environments: `car_interior`, `coffee_shop`, `bedroom`, `church`, `studio_booth` |
+| `POST /spatial/apply-binaural` | binaural panning from a `SpatialPosition` body |
+| `POST /spatial/apply-convolution` | environmental convolution with `audio_path`, `environment`, `wet_dry_mix` |
+| `POST /spatial/apply-doppler` | doppler with `audio_path` and `speed` |
+| `POST /spatial/render` | binaural + convolution render from a `SpatialPosition` body |
 
-Model: each source has (x,y) on a 400×300 stage, listener at center (200,150).
-Distance → gain attenuation; angle → stereo pan; Doppler intensity scales
-frequency shift by velocity. Environments: studio_booth = dead/no reflections;
-church = large/long tail; car_interior = small/dry/low-freq resonance.
+Model: source coordinates use `x,y,z` in `[-1,1]`, `distance` in `[0.1,10]`, and `gain_db` in `[-30,12]`.
 
 ## Worked example
 ```bash
@@ -68,7 +67,7 @@ curl -X POST "http://localhost:17493/effects/preview/{generation_id}" \
   ]}'
 
 # Binaural fold-down of a finished stereo mix (spatial route)
-curl -X POST "http://localhost:17493/spatial/binaural" -H "..." -d '{"audio_path":"..."}'
+curl -X POST "http://localhost:17493/spatial/apply-binaural" -H 'Content-Type: application/json' -d '{"audio_path":"...","x":0,"y":0,"z":0,"distance":1.0,"gain_db":0.0}'
 ```
 
 ## Pitfalls
@@ -77,8 +76,8 @@ curl -X POST "http://localhost:17493/spatial/binaural" -H "..." -d '{"audio_path
 - Convolution IR presets need the IR assets present; verify before calling.
 
 ## Cross-links
-- [effects-field-guide](../../effects-field-guide/SKILL.md)
-- [mastering](../../mastering/SKILL.md)
+- [effects-field-guide](../effects-field-guide/SKILL.md)
+- [mastering](../mastering/SKILL.md)
 
 ## Validation
 - Reverb: subtle room sense, no washy tail drowning consonants.

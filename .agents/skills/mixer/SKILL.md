@@ -17,15 +17,15 @@ speech sits above a music bed. Engine: `backend/services/mixer.py` `mix_with_bus
 ## Tool surface / endpoints
 | endpoint | purpose |
 |----------|---------|
-| `POST /mixer/preview` | mix story items → streamed WAV (no save). Body: `MixerExportRequest{story_id, mixer_state{buses, master_volume}}` |
-| `POST /audio/loudness` | channel-level LUFS metering (drives VU levels) |
+| `POST /mixer/preview` | mix DB story items → streamed WAV (no save). Body: `MixerExportRequest{story_id, mixer_state{tracks, buses, master_volume}}` |
+| `21labs.bounce`, `21labs.bounce_preview` | mix ad-hoc base64 tracks → WAV. Body: `{tracks:[{audio_data|midi_notes, plugin_chain, volume, pan}], sample_rate, master_volume}` |
+| `POST /audio/analyze-loudness` | LUFS metering for one stored clip |
 | `POST /conversation/auto-duck` | compute per-speaker duck gains (MCP `21labs.conversation_auto_duck`) |
 | `POST /conversation/auto-level` | level-match all speakers to -16 LUFS (MCP `21labs.conversation_auto_level`) |
 | `GET /conversation/presets` | debate / podcast_interview / podcast_panel / dramatic_dialogue |
 
 ## Mixer model (REAL, `backend/services/mixer.py`)
-- `TrackConfig(id, name, volume, bus_id, effects_chain)` — volume default ~0.75;
-  pan via bus. `BusConfig(id, name, volume, pan)`.
+- `TrackConfig(id, name, volume=1.0, pan=0.0, bus_id, effects_chain)`; `BusConfig(id, name, volume=1.0, pan=0.0, effects_chain)`.
 - Each track's `effects_chain` (list of `EffectConfig`) is applied via
   `apply_effects_chain` before mixing — so EQ/compressor/deesser per track work here.
 - `mix_with_buses(track_data, bus_data, sr, total_samples, master_volume)` → (left, right).
@@ -55,15 +55,15 @@ speech sits above a music bed. Engine: `backend/services/mixer.py` `mix_with_bus
 ```bash
 # 1) Compute duck gains for overlapping speakers
 curl -X POST "http://localhost:17493/conversation/auto-duck" -H "Content-Type: application/json" \
-  -d '{"lines":[
+  -d '[
     {"id":"l1","text":"...","speaker":"Host","start_offset_ms":0,"track":0},
     {"id":"l2","text":"...","speaker":"Guest","start_offset_ms":4200,"track":0}
-  ]}'
+  ]'
 # -> {"gains":[0.0, -4.8]}  (0.8 s overlap -> -6*0.8 = -4.8 dB)
 
-# 2) Mix a story (tracks already carry effects_chain + volume)
+# 2) Mix DB story items (tracks/buses/master volume come from mixer state)
 curl -X POST "http://localhost:17493/mixer/preview" -H "Content-Type: application/json" \
-  -d '{"story_id":"<id>","mixer_state":{"buses":[],"master_volume":0.9}}'
+  -d '{"story_id":"<id>","mixer_state":{"tracks":[],"buses":[],"master_volume":0.9}}'
 ```
 
 ## Pitfalls
@@ -73,9 +73,9 @@ curl -X POST "http://localhost:17493/mixer/preview" -H "Content-Type: applicatio
 - For music-under-speech, use `run_recipe(music_path=...)`, not auto-duck.
 
 ## Cross-links
-- [effects-field-guide](../../effects-field-guide/SKILL.md)
-- [conversation-mode](../../conversation-mode/SKILL.md)
-- [mastering](../../mastering/SKILL.md)
+- [effects-field-guide](../effects-field-guide/SKILL.md)
+- [conversation-mode](../conversation-mode/SKILL.md)
+- [mastering](../mastering/SKILL.md)
 
 ## Validation
 - Mix preview plays all tracks balanced; speech clearly above music bed.

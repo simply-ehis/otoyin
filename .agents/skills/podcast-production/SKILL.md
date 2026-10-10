@@ -15,23 +15,21 @@ master to −16 LUFS, and export as stereo MP3.
 - Need a broadcast-ready file (stereo MP3, −16 LUFS).
 
 ## Prerequisites
-- Tool surface: `21labs.generate` (Conversation mode), `21labs.run_recipe`,
-  `POST /audio/bounce`, `POST /transcription` (optional chapter markers).
-- Engines: 2+ TTS voices for speakers; music bed via Stable Audio Open (`generate_sfx`).
+- Tool surface: `21labs.speak`, `21labs.run_recipe`, `21labs.analyze_loudness`,
+  `21labs.apply_export_preset`, `POST /export/apply-preset`, and `POST /transcribe` for chapter markers.
+- Engines: 2+ TTS voices for speakers; music bed via Stable Audio Open (`21labs.generate_sfx`).
 - Loudness target: podcast = −16 LUFS (stereo, MP3).
 
-## Workflow (REAL, from `agent-operating-guide` + `loudness-metering`)
+## Workflow
 1. **Script** → split into speaker turns with a `speaker:` prefix.
-2. **Generate** each turn with `21labs.generate(text=...)`. Use different
-   profiles for each speaker. For conversational flow, use **Conversation mode**
-   (`POST /conversation` — renders → auto-ducks → auto-levels).
-3. **Music bed** → `21labs.generate_sfx(prompt="<mood> ambient bed")` with Stable Audio Open.
-4. **AutoDuck** → applies RMS-smoothed sidechain: duckGain + duckMeter (attack 0.3s,
-   release 0.02s), triggered by speech energy above −20 dBFS.
-5. **Master** → `21labs.run_recipe(preset="podcast")` masters to −16 LUFS.
-   The mastering chain: de-ess + spectral denoise per segment + master.
-6. **Export** → `POST /audio/bounce` with `{"format": "mp3", "channels": 2}`
-   produces a stereo MP3.
+2. **Generate** each turn with `21labs.speak(text=..., profile=..., engine=...)`.
+   Use different profiles for each speaker. There is no `POST /conversation` render endpoint.
+3. **Music bed** → `21labs.generate_sfx(prompt="<mood> ambient bed", duration_seconds=<seconds>)` with Stable Audio Open.
+4. **Sequence/mix** → use `21labs.run_recipe(recipe="podcast", segments=[...], music_path="...")`
+   (`POST /recipe/run`) for crossfade concat, music-bed ducking, and mastering.
+5. **Verify** → `21labs.analyze_loudness(audio_path="<mix>")` should read near −16 LUFS.
+6. **Export** → `21labs.apply_export_preset(preset_name="podcast", audio_path="<mix>")`
+   (`POST /export/apply-preset`) for stereo MP3.
 
 ## Loudness targets (from AGENTS.md)
 | target | LUFS | export preset |
@@ -48,15 +46,15 @@ master to −16 LUFS, and export as stereo MP3.
 ## Tools
 | MCP | REST | purpose |
 |-----|------|---------|
-| `21labs.generate` | `POST /generate` | render a TTS line |
+| `21labs.speak` | `POST /generate` | render a TTS line |
 | `21labs.generate_sfx` | `POST /generate/sfx` | music bed |
-| `21labs.run_recipe` | `POST /audio/run_recipe` | one-step master to target LUFS |
-| `21labs.measure_loudness` | `POST /dsp/measure-loudness` | verify level before export |
+| `21labs.run_recipe` | `POST /recipe/run` | sequence, duck, and master to target LUFS |
+| `21labs.analyze_loudness` | `POST /audio/analyze-loudness` | verify level before export |
+| `21labs.apply_export_preset` | `POST /export/apply-preset` | stereo MP3 delivery |
 | `21labs.transcribe` | `POST /transcribe` | chapter markers from final mix |
 
 ## Pitfalls / Gotchas
-- **AutoDuck is not a plugin** — it's baked into Conversation mode's real-time
-  mixer. You cannot toggle it per-track; it's always on for the music bed.
+- **Conversation auto-duck/auto-level return gain math, not mixed audio.** Use `run_recipe` for the actual mix.
 - **Export stereo** — even mono voice tracks are mixed to stereo for podcast.
 - **Chapter markers** require a separate `transcribe` pass over the final mix.
 - **Offline only** — all engines must be downloaded. Missing engine → HTTP 400.
@@ -68,6 +66,6 @@ master to −16 LUFS, and export as stereo MP3.
 - [loudness-metering](../loudness-metering/SKILL.md)
 
 ## Validation
-- After `run_recipe`, `measure_loudness` returns −16.0 ±0.5 LUFS.
+- After `run_recipe`, `analyze_loudness` returns −16.0 ±0.5 LUFS.
 - Export produces a stereo MP3 that plays back at the right level.
 - Multi-speaker renders have smooth transitions (no dead air between turns).

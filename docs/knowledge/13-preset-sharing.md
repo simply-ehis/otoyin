@@ -1,7 +1,7 @@
 # 13 — Preset Sharing
 
 ## CommunityPresetsPage at `/community-presets`
-- **Component:** `CommunityPresetsPage` in `app/src/components/CommunityPresets/CommunityPresetsPage.tsx`
+- **Component:** `CommunityPresetsPage` in `app/src/features/content/CommunityPresetsPage.tsx`
 - **What:** Browsable collection of shared effect presets with search, category filter, preset cards, and import.
 - **Features:** Search by name/description, filter by category, preset cards showing author/tags/downloads/rating/featured badge, import via `importPresetFromCommunity()`.
 
@@ -26,4 +26,4 @@
 - **MCP Tools:** `21labs.list_builtin_presets`, `21labs.export_preset`, `21labs.import_preset`, `21labs.list_community_presets`, `21labs.list_community_preset_categories`
 - **REST Endpoints:** `GET /presets/builtin`, `POST /presets/export`, `POST /presets/import`, `GET /community-presets`, `GET /community-presets/categories`
 - **Key Backend Files:** `backend/services/presets.py`, `backend/services/community_presets.py`, `backend/routes/features.py`, `backend/routes/phase2.py`
-- **Key Frontend Files:** `app/src/components/CommunityPresets/CommunityPresetsPage.tsx`
+- **Key Frontend Files:** `app/src/features/content/CommunityPresetsPage.tsx`

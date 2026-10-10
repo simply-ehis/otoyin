@@ -27,11 +27,11 @@ Finalize the changelog draft, bump the version across all tracked files, and cre
 
 2. **Determine the bump level.**
 
-   Ask the user if not specified: `patch`, `minor`, or `major`. Check the current version:
+   Ask the user if not specified: `patch`, `minor`, or `major`. First confirm the repository's current version tooling; if `.bumpversion.cfg` is absent, do not assume it exists.
 
-   ```bash
-   grep '^current_version' .bumpversion.cfg
-   ```
+    ```bash
+    ls .bumpversion.cfg bumpversion.toml 2>/dev/null || true
+    ```
 
 3. **Stamp the changelog.**
 
@@ -52,10 +52,12 @@ Finalize the changelog draft, bump the version across all tracked files, and cre
    - Change the `[Unreleased]` link to compare against the new tag
    - Add a new link for the new version
 
-   ```markdown
-   [Unreleased]: https://github.com/21-labs/21-labs/compare/vX.Y.Z...HEAD
-   [X.Y.Z]: https://github.com/21-labs/21-labs/compare/vPREVIOUS...vX.Y.Z
-   ```
+    Confirm the repository remote before stamping links; the examples below assume the configured GitHub owner/repo.
+
+    ```markdown
+    [Unreleased]: https://github.com/<owner>/<repo>/compare/vX.Y.Z...HEAD
+    [X.Y.Z]: https://github.com/<owner>/<repo>/compare/vPREVIOUS...vX.Y.Z
+    ```
 
 4. **Stage the changelog.**
 
@@ -83,17 +85,16 @@ Finalize the changelog draft, bump the version across all tracked files, and cre
    git tag --list "v*" --sort=-v:refname | head -n 5
    ```
 
-   Confirm the commit contains:
-   - `CHANGELOG.md`
-   - `.bumpversion.cfg`
-   - `tauri/src-tauri/tauri.conf.json`
-   - `tauri/src-tauri/Cargo.toml`
-   - `package.json`
-   - `app/package.json`
-   - `tauri/package.json`
-   - `landing/package.json`
-   - `web/package.json`
-   - `backend/__init__.py`
+    Confirm the commit contains:
+    - `CHANGELOG.md`
+    - the repository's version-bump configuration, if one exists
+    - `tauri/src-tauri/tauri.conf.json`
+    - `tauri/src-tauri/Cargo.toml`
+    - `package.json`
+    - `app/package.json`
+    - `tauri/package.json`
+    - `landing/package.json`
+    - `backend/__init__.py`
 
    Confirm the new tag exists.
 

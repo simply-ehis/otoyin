@@ -242,13 +242,13 @@ if __name__ == "__main__":
         parser.add_argument(
             "--host",
             type=str,
-            default=os.environ.get("TWENTYLABS_HOST", "127.0.0.1"),
+            default=os.environ.get("OTOYIN_HOST") or os.environ.get("TWENTYLABS_HOST", "127.0.0.1"),
             help="Host to bind to (use 0.0.0.0 for remote access)",
         )
         parser.add_argument(
             "--port",
             type=int,
-            default=int(os.environ.get("TWENTYLABS_PORT", "17493")),
+            default=int(os.environ.get("OTOYIN_PORT") or os.environ.get("TWENTYLABS_PORT", "17493")),
             help="Port to bind to",
         )
         parser.add_argument(

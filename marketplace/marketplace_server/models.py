@@ -8,7 +8,7 @@ from __future__ import annotations
 import datetime as dt
 import hashlib
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, Numeric, String, Text, text
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -49,6 +49,7 @@ class Product(Base):
     long_description: Mapped[str] = mapped_column(Text, default="")  # about — what the model does
     price_usd: Mapped[float] = mapped_column(Numeric(10, 2))
     paid: Mapped[bool] = mapped_column(Boolean, default=True)
+    coming_soon: Mapped[bool] = mapped_column(Boolean, default=False)
     quality_score: Mapped[int] = mapped_column(Integer, default=5)
     avg_rating: Mapped[float] = mapped_column(Float, default=0.0)  # 0-5, computed from reviews
     review_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -104,7 +105,7 @@ class Order(Base):
     email: Mapped[str] = mapped_column(String(256), default="")
     status: Mapped[str] = mapped_column(String(32), default="pending")
     amount_usd: Mapped[float] = mapped_column(Numeric(10, 2))
-    payment_provider: Mapped[str] = mapped_column(String(64), default="paddle")
+    payment_provider: Mapped[str] = mapped_column(String(64), default="dodo")
     payment_session_id: Mapped[str] = mapped_column(String(256), default="")
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(dt.UTC), default=lambda: dt.datetime.now(dt.UTC))
     paid_at: Mapped[dt.datetime | None] = mapped_column(DateTime(dt.UTC), nullable=True)
@@ -180,3 +181,13 @@ async def init_db():
     """Create all tables."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        if conn.dialect.name == "postgresql":
+            await conn.execute(
+                text("ALTER TABLE products ADD COLUMN IF NOT EXISTS coming_soon BOOLEAN NOT NULL DEFAULT FALSE")
+            )
+        elif conn.dialect.name == "sqlite":
+            columns = await conn.execute(text("PRAGMA table_info(products)"))
+            if "coming_soon" not in {row[1] for row in columns}:
+                await conn.execute(
+                    text("ALTER TABLE products ADD COLUMN coming_soon BOOLEAN NOT NULL DEFAULT 0")
+                )

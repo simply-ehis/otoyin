@@ -38,4 +38,4 @@ UPDATED: 2026-08-17
 - **MCP Tools:** `21labs.plan_workflow`, `21labs.execute_plan`, `21labs.plan_templates`, `21labs.app_help`
 - **REST Endpoints:** `POST /assistant/chat` (SSE streaming), `GET /assistant/models`, `GET /assistant/tool-parity`, `POST /assistant/validate-key`
 - **Key Backend Files:** `backend/routes/assistant.py`, `backend/services/workflow.py`, `backend/mcp_server/tools/workflow.py`, `backend/services/llm.py`
-- **Key Frontend Files:** `app/src/components/Assistant/AssistantPanel.tsx`, `app/src/components/Assistant/AssistantSettings.tsx`, `app/src/components/VoiceChat/VoiceChatOverlay.tsx`
+- **Key Frontend Files:** `app/src/features/assistant/AssistantPanel.tsx`, `app/src/features/assistant/AssistantSettings.tsx`, `app/src/features/voiceChat/VoiceChatOverlay.tsx`

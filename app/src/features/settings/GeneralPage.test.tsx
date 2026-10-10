@@ -27,6 +27,58 @@ vi.mock("@/lib/api/client", () => ({
 	},
 }));
 
+// Same seam as UseCaseWizard.test: provide t() without booting i18next.
+// Real i18next's LanguageDetector + async locale IIFE can exceed the 5s
+// default testTimeout on a cold module under load — the first test in a
+// file pays that cost and flakes. Mock it deterministically instead.
+// GeneralPage also renders LanguageSelect (reads i18n.language) and uses
+// <Trans>, so the mock supplies both.
+const EN: Record<string, string> = {
+	"settings.general.updates.check.title": "Check for updates",
+	"settings.general.updates.check.available": "Version {{version}} available",
+	"settings.general.updates.check.button": "Check",
+	"settings.general.updates.error": "Update error",
+	"settings.general.updates.download.title": "Update to {{version}}",
+	"settings.general.updates.download.button": "Download",
+	"settings.general.updates.ready.title": "Update ready to install",
+	"settings.general.updates.ready.button": "Restart Now",
+	"settings.general.updates.devMode.title": "Development mode",
+};
+function interpolate(raw: string, values?: Record<string, unknown>): string {
+	if (!values) {
+		return raw;
+	}
+	return raw.replace(/\{\{(\w+)\}\}/g, (_, name) => String(values[name] ?? ""));
+}
+vi.mock("react-i18next", () => ({
+	useTranslation: () => ({
+		t: (key: string, opts?: string | Record<string, unknown>) => {
+			const raw =
+				EN[key] ??
+				(typeof opts === "string"
+					? opts
+					: (opts as { defaultValue?: string } | undefined)?.defaultValue ??
+						key);
+			return interpolate(
+				raw,
+				typeof opts === "object" ? opts : undefined,
+			);
+		},
+		i18n: { language: "en" },
+	}),
+	Trans: ({
+		i18nKey,
+		values,
+	}: {
+		i18nKey: string;
+		values?: Record<string, unknown>;
+	}) => interpolate(EN[i18nKey] ?? i18nKey, values),
+	// @/i18n/index.ts (pulled in via LanguageSelect) calls
+	// i18n.use(initReactI18next) at module load — stub the plugin so
+	// i18next's .use() chain doesn't crash on the missing export.
+	initReactI18next: { type: "3rdParty", init: () => {} },
+}));
+
 import { apiClient } from "@/lib/api/client";
 
 const mockedApi = {

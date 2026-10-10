@@ -38,39 +38,39 @@ MCP: 21labs.transcribe(audio_path="input.wav")
 
 | Problem | Solution | Tool |
 |---------|----------|------|
-| Background noise/hum | Noise reduction | `noise_reduce` |
-| Harsh sibilance | De-esser | `apply_effects` (deesser) |
-| Too quiet | Normalization | `normalize_audio` |
-| Clipping | Limiting | `apply_effects` (limiter) |
-| Dead air/silence | Silence removal | `trim_audio` |
-| muddy low end | High-pass filter | `apply_effects` (eq) |
-| Room reverb | Denoise | `apply_effects` (spectral_denoise) |
+| Background noise/hum | Noise reduction | `21labs.noise_reduce` |
+| Harsh sibilance | De-esser | `21labs.apply_effects` with a generation ID |
+| Too quiet | Peak level adjustment | `21labs.normalize_audio` |
+| Clipping | True-peak limiting/mastering | `21labs.master_audio` |
+| Dead air/silence | Silence removal | `21labs.trim_silence` or `21labs.silence_removal` |
+| muddy low end | High-pass filter | `21labs.apply_effects` with EQ |
+| Room reverb | Denoise | `spectral_denoise` effect |
 
 ### 3. Apply noise reduction first
 ```
 MCP: 21labs.noise_reduce(
-  audio_path="input.wav",
-  method="rnnoise"  # or "spectral" for stationary noise
+  audio_path="input.wav"
 )
 ```
-- **RNNoise**: Best for non-stationary noise (voices, traffic, music)
-- **Spectral denoise**: Best for stationary noise (fans, hum, hiss)
+The current backend uses DeepFilterNet; `vad_threshold` is accepted but inert. For stationary noise, prefer the `spectral_denoise` effect.
 
 ### 4. Apply de-esser if needed
 ```
 MCP: 21labs.apply_effects(
-  audio_path="denoised.wav",
-  effects=[{"type": "deesser", "params": {"frequency": 5000, "threshold": -20}}]
+  generation_id="<generation-id>",
+  effects_chain=[{"type": "deesser", "enabled": true, "params": {"threshold_db": -18, "reduction_db": -6, "strength": 0.6}}]
 )
 ```
 
 ### 5. Fix levels
 ```
-MCP: 21labs.normalize_audio(
+MCP: 21labs.master_audio(
   audio_path="processed.wav",
-  target_lufs=-16
+  target_lufs=-16.0,
+  true_peak_db=-1.0
 )
 ```
+`normalize_audio` adjusts peak level only; use `master_audio` or an export preset for LUFS delivery.
 
 ### 6. Verify
 ```
@@ -97,12 +97,12 @@ Always process in this order for best results:
 - **Some noise is natural** — a completely silent background sounds robotic
 
 ## Cross-links
-- `noise-reduction` — RNNoise vs spectral denoise comparison
-- `effects-cleanup` — De-esser, spectral denoise, noise gate reference
-- `effects-dynamics` — Compressor and limiter
-- `effects-tone` — EQ for cleanup
-- `loudness-metering` — LUFS measurement
-- `mastering` — Final processing chain
+- [noise-reduction](../noise-reduction/SKILL.md) — DeepFilterNet behavior
+- [effects-cleanup](../effects-cleanup/SKILL.md) — De-esser, spectral denoise, noise gate reference
+- [effects-dynamics](../effects-dynamics/SKILL.md) — Compressor behavior
+- [effects-tone](../effects-tone/SKILL.md) — EQ behavior
+- [loudness-metering](../loudness-metering/SKILL.md) — LUFS measurement
+- [mastering](../mastering/SKILL.md) — Final processing chain
 
 ## Validation
 - Measure loudness before and after (should be within 3dB)

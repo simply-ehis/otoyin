@@ -31,4 +31,4 @@
 - **MCP Tools:** `21labs.noise_reduce`
 - **REST Endpoints:** `POST /audio/noise-reduce`
 - **Key Backend Files:** `backend/services/noise_reduction.py`, `backend/routes/features.py`
-- **Key Frontend Files:** `app/src/components/Workspace/NoiseReductionView.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/NoiseReductionView.tsx`

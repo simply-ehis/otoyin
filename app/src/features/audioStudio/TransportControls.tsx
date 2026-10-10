@@ -13,7 +13,7 @@ import {
 	MagnifyingGlassMinusIcon as ZoomOut,
 } from "@heroicons/react/24/outline";
 import { useEffect, useRef, useState } from "react";
-import { VoiceChatOverlay } from "@/components/VoiceChat/VoiceChatOverlay";
+import { VoiceChatOverlay } from "@/features/voiceChat/VoiceChatOverlay";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/ui/button";
 import {
@@ -27,6 +27,7 @@ import { Slider } from "@/ui/slider";
 import type { StudioTrack } from "./AudioStudioStore";
 import { useAudioStudioStore } from "./AudioStudioStore";
 import { formatTime } from "./formatTime";
+import { MonitorRecorder } from "./MonitorRecorder";
 
 interface TransportControlsProps {
 	isPlaying: boolean;
@@ -43,6 +44,7 @@ interface TransportControlsProps {
 	onToggleLoop: () => void;
 	onStartRecording: () => void;
 	onStopRecording: () => void;
+	onRecordComplete: (blob: Blob, duration: number) => void;
 	onSetSelectedTrackIndex: (i: number) => void;
 	onAddMarker: (time: number) => void;
 	onSetMasterVolume: (v: number) => void;
@@ -106,6 +108,7 @@ export function TransportControls({
 	onToggleLoop,
 	onStartRecording,
 	onStopRecording,
+	onRecordComplete,
 	onSetSelectedTrackIndex,
 	onAddMarker,
 	onSetMasterVolume,
@@ -204,6 +207,7 @@ export function TransportControls({
 				>
 					<Circle className={cn("size-3.5", isRecording && "animate-pulse")} />
 				</Button>
+				<MonitorRecorder onRecordComplete={onRecordComplete} />
 
 				{!isRecording && tracks.length > 0 && (
 					<Select

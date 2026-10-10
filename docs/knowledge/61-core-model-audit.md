@@ -61,4 +61,4 @@ Scope: "pre-installed / core" = things the app declares, bundles, or assumes pre
 - **MCP Tools:** `21labs.models_list`, `21labs.cuda_status`
 - **REST Endpoints:** `GET /models/status`, `GET /backend/cuda-status`
 - **Key Backend Files:** `backend/requirements.txt`, `backend/backends/whisper_cpp_backend.py`, `backend/backends/kokoro_backend.py`, `backend/services/deepfilter_onnx.py`, `backend/backends/gguf_server_backend.py`
-- **Key Frontend Files:** `app/src/components/ModelsTab/ModelsTab.tsx`
+- **Key Frontend Files:** `app/src/features/store/StorePage.tsx`

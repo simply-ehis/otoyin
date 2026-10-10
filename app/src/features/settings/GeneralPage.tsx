@@ -12,8 +12,8 @@ import { useForm } from "react-hook-form";
 import { Trans, useTranslation } from "react-i18next";
 import * as z from "zod";
 import { useAutoUpdater } from "@/hooks/useAutoUpdater";
-import { showStudioErrorToast } from "@/lib/errors";
 import { apiClient } from "@/lib/api/client";
+import { showStudioErrorToast } from "@/lib/errors";
 import { useBackendRestart } from "@/lib/hooks/useBackendRestart";
 import { useServerHealth } from "@/lib/hooks/useServer";
 import { usePerformanceSettings } from "@/lib/hooks/useSettings";
@@ -48,8 +48,6 @@ export function GeneralPage() {
 	const platform = usePlatform();
 	const serverUrl = useServerStore((s) => s.serverUrl);
 	const setServerUrl = useServerStore((s) => s.setServerUrl);
-	const keepRunning = useServerStore((s) => s.keepServerRunningOnClose);
-	const setKeepRunning = useServerStore((s) => s.setKeepServerRunningOnClose);
 	const mode = useServerStore((s) => s.mode);
 	const setMode = useServerStore((s) => s.setMode);
 	const { toast } = useToast();
@@ -112,7 +110,7 @@ export function GeneralPage() {
 			toast({
 				title: busy
 					? t("settings.general.serverPort.busy")
-					: t("settings.general.keepServerRunning.failedTitle"),
+					: t("settings.general.serverPort.failedTitle"),
 				description: busy ? undefined : msg || undefined,
 				variant: "destructive",
 			});
@@ -295,44 +293,6 @@ export function GeneralPage() {
 					{restartError ? (
 						<p className="mt-1.5 text-xs text-destructive">{restartError}</p>
 					) : null}
-				</SettingRow>
-
-				<SettingRow
-					title={t("settings.general.keepServerRunning.title")}
-					description={t("settings.general.keepServerRunning.description")}
-				>
-					<Switch
-						checked={keepRunning}
-						label={t("settings.general.keepServerRunning.title")}
-						onCheckedChange={(checked) => {
-							setKeepRunning(checked);
-							platform.lifecycle
-								.setKeepServerRunning(checked)
-								.then(() => {
-									toast({
-										title: t("settings.general.keepServerRunning.updatedTitle"),
-										description: checked
-											? t(
-													"settings.general.keepServerRunning.runningDescription",
-												)
-											: t(
-													"settings.general.keepServerRunning.stoppedDescription",
-												),
-									});
-								})
-								.catch((error: unknown) => {
-									showStudioErrorToast(error);
-									setKeepRunning(!checked);
-									toast({
-										title: t("settings.general.keepServerRunning.failedTitle"),
-										description: t(
-											"settings.general.keepServerRunning.failedDescription",
-										),
-										variant: "destructive",
-									});
-								});
-						}}
-					/>
 				</SettingRow>
 
 				<SettingRow

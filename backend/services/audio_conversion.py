@@ -1,11 +1,19 @@
-"""Audio format conversion + .m4b export helpers (ffmpeg, offline)."""
+"""Audio format conversion + .m4b export helpers (ffmpeg, offline).
+
+Also owns the single ffmpeg resolver: a frozen Otoyin build ships its own ffmpeg
+next to the sidecar, so a bare ``"ffmpeg"`` on PATH is not enough. Every ffmpeg
+call site must go through :func:`ffmpeg_path`.
+"""
 
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
+from functools import lru_cache
 from pathlib import Path
 
 SUPPORTED_FORMATS = {
@@ -18,9 +26,80 @@ SUPPORTED_FORMATS = {
     "opus": {"ext": "opus", "codec": "libopus", "mime": "audio/opus"},
 }
 
+# Formats encoded at a fixed bitrate. Vorbis is deliberately excluded: libvorbis
+# is a VBR codec and fails to open the encoder for arbitrary bitrates (e.g. 128k
+# errors with "Error while opening encoder"), so ogg uses quality mode instead.
+_BITRATE_FORMATS = frozenset({"mp3", "m4a", "m4b", "opus"})
+
+# libvorbis quality scale (-1..10); 5 is roughly 128kbps-equivalent transparency.
+OGG_QUALITY = 5
+
+_EXE = ".exe" if sys.platform == "win32" else ""
+
+
+def _candidate_dirs() -> list[Path]:
+    """Directories that may hold a bundled ffmpeg, most specific first.
+
+    A frozen install puts the server at ``<resources>/otoyin-server/`` and the
+    bundled ffmpeg at ``<resources>/ffmpeg/bin/``, so the executable's own
+    directory *and its parent* both need checking.
+    """
+    dirs: list[Path] = []
+
+    override = os.environ.get("OTOYIN_FFMPEG")
+    if override:
+        dirs.append(Path(override).parent)
+
+    # PyInstaller onedir: binaries live beside sys.executable.
+    if getattr(sys, "frozen", False):
+        exe_dir = Path(sys.executable).resolve().parent
+        dirs += [exe_dir, exe_dir.parent]
+    else:  # dev: repo root / backend
+        here = Path(__file__).resolve()
+        dirs += [here.parent.parent.parent, here.parent.parent]
+
+    # Expand over a snapshot — appending into the list being iterated is an
+    # infinite loop (the list grows as fast as it is consumed).
+    expanded: list[Path] = []
+    for base in list(dirs):
+        expanded += [base / "ffmpeg" / "bin", base / "ffmpeg", base / "bin"]
+    return expanded
+
+
+@lru_cache(maxsize=1)
+def ffmpeg_path() -> str | None:
+    """Absolute path to a usable ffmpeg, or None.
+
+    Resolution order: OTOYIN_FFMPEG override -> bundled alongside the app ->
+    PATH. Cached, so repeated conversions do no filesystem probing; call
+    :func:`ffmpeg_cache_clear` if ffmpeg is installed while the app is running.
+    """
+    override = os.environ.get("OTOYIN_FFMPEG")
+    if override and Path(override).is_file():
+        return override
+
+    for d in _candidate_dirs():
+        cand = d / f"ffmpeg{_EXE}"
+        if cand.is_file():
+            return str(cand)
+
+    return shutil.which("ffmpeg")
+
+
+def ffmpeg_cache_clear() -> None:
+    """Forget the cached ffmpeg path (after installing ffmpeg at runtime)."""
+    ffmpeg_path.cache_clear()
+
 
 def ffmpeg_available() -> bool:
-    return shutil.which("ffmpeg") is not None
+    return ffmpeg_path() is not None
+
+
+def _require_ffmpeg() -> str:
+    path = ffmpeg_path()
+    if not path:
+        raise RuntimeError("ffmpeg not found — cannot convert audio (set OTOYIN_FFMPEG or install ffmpeg)")
+    return path
 
 
 def convert_audio_file(
@@ -30,14 +109,11 @@ def convert_audio_file(
     sample_rate: int | None = None,
 ) -> Path:
     """Convert `input_path` to `output_format` via ffmpeg. Returns output Path."""
-    import re
-
     fmt = output_format.lower().lstrip(".")
     if fmt not in SUPPORTED_FORMATS:
         raise ValueError(f"Unsupported format: {output_format} (supported: {', '.join(SUPPORTED_FORMATS)})")
-    if not ffmpeg_available():
-        raise RuntimeError("ffmpeg not found on PATH — cannot convert audio")
-    # Validate bitrate to prevent ffmpeg option injection
+    # Validate caller input before touching the environment: a bad argument is a
+    # bad argument whether or not ffmpeg happens to be installed.
     if not re.match(r"^\d+[kKmM]?$", bitrate):
         raise ValueError(f"Invalid bitrate: {bitrate!r} (expected e.g. '128k', '64k', '320k')")
 
@@ -45,11 +121,15 @@ def convert_audio_file(
     if not inp.exists():
         raise FileNotFoundError(str(inp))
 
+    ffmpeg = _require_ffmpeg()
+
     tmp = Path(tempfile.mktemp(suffix=f".{SUPPORTED_FORMATS[fmt]['ext']}"))
     codec = SUPPORTED_FORMATS[fmt]["codec"]
-    cmd = ["ffmpeg", "-y", "-i", str(inp), "-c:a", codec]
-    if fmt in ("mp3", "m4a", "m4b", "ogg", "opus"):
+    cmd = [ffmpeg, "-y", "-i", str(inp), "-c:a", codec]
+    if fmt in _BITRATE_FORMATS:
         cmd += ["-b:a", bitrate]
+    if fmt == "ogg":
+        cmd += ["-q:a", str(OGG_QUALITY)]
     if sample_rate:
         cmd += ["-ar", str(sample_rate)]
     if fmt in ("m4a", "m4b"):
@@ -72,8 +152,7 @@ def build_m4b(
     bitrate: str = "64k",
 ) -> Path:
     """Concat chapter WAVs → single .m4b with chapter marks + optional cover."""
-    if not ffmpeg_available():
-        raise RuntimeError("ffmpeg not found — cannot build .m4b")
+    ffmpeg = _require_ffmpeg()
     if not chapter_wavs:
         raise ValueError("No chapters to export")
 
@@ -116,7 +195,7 @@ def build_m4b(
         # Intermediate concat wav
         concat_wav = td_path / "concat.wav"
         subprocess.run(
-            ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list), "-c", "copy", str(concat_wav)],
+            [ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list), "-c", "copy", str(concat_wav)],
             capture_output=True,
             timeout=300,
             check=False,
@@ -124,13 +203,13 @@ def build_m4b(
         if not concat_wav.exists():
             # fallback: re-encode concat
             subprocess.run(
-                ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list), str(concat_wav)],
+                [ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list), str(concat_wav)],
                 capture_output=True,
                 timeout=300,
                 check=True,
             )
 
-        cmd = ["ffmpeg", "-y", "-i", str(concat_wav), "-i", str(meta)]
+        cmd = [ffmpeg, "-y", "-i", str(concat_wav), "-i", str(meta)]
         if cover_path and cover_path.exists():
             cmd += ["-i", str(cover_path)]
             # map: 0 audio, 1 metadata, 2 cover

@@ -18,8 +18,8 @@ per-clip renders) without blocking on each one. It is the correct tool when N>1;
 - Backend: `backend/services/batch.py` (`BatchQueue`, `max_concurrent=1` — serial worker).
 - Tool surface: `21labs.create_batch_job` / `get_batch_job` / `list_batch_jobs` /
   `cancel_batch_job` (MCP) or `POST/GET /batch/jobs*` (REST). See
-  [mcp-tool-reference](./mcp-tool-reference/SKILL.md).
-- See [agent-operating-guide](./agent-operating-guide/SKILL.md) and [troubleshooting](./troubleshooting/SKILL.md).
+  [mcp-tool-reference](../mcp-tool-reference/SKILL.md).
+- See [agent-operating-guide](../agent-operating-guide/SKILL.md) and [troubleshooting](../troubleshooting/SKILL.md).
 
 ## Create
 ```
@@ -53,7 +53,7 @@ On a `failed` item (`get_batch_job` shows `status="failed"`, `error=...`):
 1. **Retry with a smaller chunk** — split long text at clause/paragraph boundaries (Kokoro chunks at
    250 chars; whisper caps 200 MB). Re-enqueue via `create_batch_job`.
 2. **Different engine** — if the target engine is missing/throwing, apply the
-   [engine-atlas](./engine-atlas/SKILL.md) fallback (heavy→fish_speech; clone→pocket_tts/fish_speech).
+   [engine-atlas](../engine-atlas/SKILL.md) fallback (heavy→fish_speech; clone→pocket_tts/fish_speech).
 3. **Split long-form** into chapter/clip segments rather than one huge job.
 4. **Alert** the user if the same item fails repeatedly after retries — do not loop silently.
 5. **Cancel** a stuck job before re-enqueueing to avoid a zombie pending entry.
@@ -65,26 +65,28 @@ On a `failed` item (`get_batch_job` shows `status="failed"`, `error=...`):
 
 ## Worked example
 ```
-21labs.create_batch_job(name="Audiobook ch1", func_name="generate_speech", func_args={...})
+21labs.create_batch_job(name="Audiobook ch1", func_name="tts_generate", func_args={...})
 → { "id": "<job_id>", "status": "pending", ... }
 # poll
 21labs.get_batch_job(job_id="<job_id>")   # until status=="completed"
 # on failure
 21labs.cancel_batch_job(job_id="<job_id>")
-21labs.create_batch_job(name="Audiobook ch1 retry", func_name="generate_speech", func_args={ smaller text })
+21labs.create_batch_job(name="Audiobook ch1 retry", func_name="tts_generate", func_args={ smaller text })
 ```
 
 ## Pitfalls / Gotchas
 - `max_concurrent=1` — jobs run **serially**, not in parallel. Expect throughput = one at a time.
+- `POST /batch/jobs` and `POST /batch/jobs/bulk` are localhost-only; remote callers get 403.
 - `get_batch_job` returns 404 for unknown ids (not "pending") — don't treat 404 as "still running".
-- `func_name` must be a real scripting function; unknown name → job fails at runtime.
+- `func_name` must be listed by `21labs.list_scripting_functions`; unknown names return 400. For TTS, use `tts_generate`, not `generate_speech`.
+- Bulk grouping uses REST `POST /batch/jobs/bulk` with `{jobs, group_id}`; MCP `21labs.batch_create_from_list` sends `batch_name`, which grouping does not use.
 - Cancel only works on pending/running; completed/failed jobs are terminal.
 
 ## Cross-links
-- [engine-atlas](./engine-atlas/SKILL.md)
-- [agent-operating-guide](./agent-operating-guide/SKILL.md)
-- [mcp-tool-reference](./mcp-tool-reference/SKILL.md)
-- [troubleshooting](./troubleshooting/SKILL.md)
+- [engine-atlas](../engine-atlas/SKILL.md)
+- [agent-operating-guide](../agent-operating-guide/SKILL.md)
+- [mcp-tool-reference](../mcp-tool-reference/SKILL.md)
+- [troubleshooting](../troubleshooting/SKILL.md)
 
 ## Validation
 - Job reaches `status="completed"` with a non-empty `result_path` before declaring done.

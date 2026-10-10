@@ -16,6 +16,7 @@ import asyncio
 import logging
 import shutil
 import subprocess
+import sys
 import tempfile
 import uuid
 from dataclasses import dataclass, field
@@ -74,15 +75,27 @@ _jobs: dict[str, DubJob] = {}
 
 
 def _which_ffmpeg() -> str | None:
-    return shutil.which("ffmpeg")
+    """Prefer the bundled ffmpeg (frozen install) over whatever is on PATH."""
+    from .audio_conversion import ffmpeg_path
+
+    return ffmpeg_path()
 
 
 def _which_ffprobe() -> str | None:
+    """ffprobe ships in the same dir as ffmpeg — resolve it as a sibling."""
+    from .audio_conversion import ffmpeg_path
+
+    ffmpeg = ffmpeg_path()
+    if ffmpeg:
+        sibling = Path(ffmpeg).with_name("ffprobe.exe" if sys.platform == "win32" else "ffprobe")
+        if sibling.is_file():
+            return str(sibling)
     return shutil.which("ffprobe")
 
 
-FFMPEG = _which_ffmpeg()
-FFPROBE = _which_ffprobe()
+# Resolved at call time (not import time) so process startup does no filesystem
+# probing; _which_ffmpeg()/_which_ffprobe() are cheap after the first call
+# because audio_conversion.ffmpeg_path() is cached.
 
 # ---------------------------------------------------------------------------
 # Diarization (optional — torch-free via Resemblyzer + Silero VAD + sklearn)
@@ -420,7 +433,7 @@ def _time_stretch_audio(audio_path: str, target_duration: float, output_path: st
     """Stretch or compress audio to match a target duration using atempo."""
     import soundfile as sf
 
-    ffmpeg = _which_ffmpeg() or FFMPEG
+    ffmpeg = _which_ffmpeg()
     if not ffmpeg:
         raise RuntimeError("ffmpeg not found — cannot stretch audio")
     info = sf.info(audio_path)
@@ -464,8 +477,8 @@ def _mux_video_with_audio(
     sample_rate: int = 48000,
 ) -> str:
     """Replace the audio track of a video with dubbed segments, preserving timing."""
-    ffmpeg = _which_ffmpeg() or FFMPEG
-    ffprobe = _which_ffprobe() or FFPROBE
+    ffmpeg = _which_ffmpeg()
+    ffprobe = _which_ffprobe()
     if not ffmpeg:
         raise RuntimeError("ffmpeg not found — cannot mux video")
     if not ffprobe:

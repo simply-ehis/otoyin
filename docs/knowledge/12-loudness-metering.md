@@ -29,4 +29,4 @@
 - **MCP Tools:** `21labs.analyze_loudness`, `21labs.normalize_audio`, `21labs.master_audio`
 - **REST Endpoints:** `POST /audio/loudness`, `POST /audio/normalize`, `POST /audio/master`
 - **Key Backend Files:** `backend/services/loudness.py`, `backend/services/mastering.py`, `backend/routes/audio_processing.py`
-- **Key Frontend Files:** `app/src/components/Workspace/AudioEnhanceView.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/AudioEnhanceView.tsx`

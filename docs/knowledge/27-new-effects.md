@@ -43,4 +43,4 @@ chorus, reverb, compressor, gain, highpass, lowpass, delay, pitch_shift — all 
 - **MCP Tools:** `21labs.emotion_tone`, `21labs.breath_pause`, `21labs.adjust_pauses`, `21labs.fade_in`, `21labs.fade_out`, `21labs.splice`, `21labs.delete_region`, `21labs.insert_silence`, `21labs.trim_silence`, `21labs.apply_audio_tags`, `21labs.list_audio_tags`, `21labs.sample_manifest`
 - **REST Endpoints:** `GET /effects/available`, `POST /audio/emotion-tone`, `POST /audio/breath-pause`, `POST /audio/adjust-pauses`, `POST /audio/fade-in`, `POST /audio/fade-out`, `POST /audio/splice`, `POST /audio/delete-region`, `POST /audio/insert-silence`, `POST /audio/trim-silence`, `POST /audio/apply-tags`, `GET /audio/tags`, `GET /audio/sample-manifest`, `POST /audio/tag-preview`
 - **Key Backend Files:** `backend/services/effects.py`, `backend/services/effects_extended.py`, `backend/routes/audio_effects.py`, `backend/services/audio_tags.py`, `backend/services/audio_sample_library.py`
-- **Key Frontend Files:** `app/src/components/Workspace/EffectsView.tsx`, `app/src/components/EffectsTab/EffectsTab.tsx`
+- **Key Frontend Files:** `app/src/features/effects/EffectsTab.tsx`

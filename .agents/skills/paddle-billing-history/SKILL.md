@@ -11,13 +11,13 @@ Use this skill when adding a "Billing history" or "Invoices" section to the auth
 
 This is the _read_ side of transaction data. Pair it with:
 
-- `subscription-sync` — provides the `customers` table you join on to find the user's Paddle `customer_id`.
-- `webhooks` — populates the `customers` table from `customer.created` events.
-- `customer-portal` — an alternative if you want Paddle to host the entire billing UI (see "Should you build this yourself?" below).
+- `paddle-subscription-sync` — provides the `customers` table you join on to find the user's Paddle `customer_id`.
+- `paddle-webhooks` — populates the `customers` table from `customer.created` events.
+- `paddle-customer-portal` — an alternative if you want Paddle to host the entire billing UI (see "Should you build this yourself?" below).
 
 ## Should you build this yourself?
 
-The Paddle customer portal already provides a hosted billing-history view (see `customer-portal`). Build your own when:
+The Paddle customer portal already provides a hosted billing-history view (see `paddle-customer-portal`). Build your own when:
 
 - You want the billing surface to live inside your dashboard, with consistent navigation and styling.
 - You want to combine billing data with app-specific context (e.g. usage details, custom invoice fields).
@@ -29,7 +29,7 @@ If none of those apply, send users to the portal and skip this skill.
 
 - A Paddle account with at least one customer that has transactions (sandbox is fine).
 - Server-side `PADDLE_API_KEY` available — this action runs in a Server Action, never in the browser.
-- A `customers` table mirrored from webhooks (see `subscription-sync`). You'll look up the authenticated user's Paddle `customer_id` here via the email bridge.
+- A `customers` table mirrored from webhooks (see `paddle-subscription-sync`). You'll look up the authenticated user's Paddle `customer_id` here via the email bridge.
 - An auth system. Examples use Supabase.
 
 ```bash
@@ -220,7 +220,7 @@ The output is a locale-aware string like `"$30.00"`, `"€29,99"`, or `"¥1,200"
 - **Skipping the zero-decimal currency branch.** Dividing JPY/KRW/CLP by 100 turns ¥1,200 into ¥12. The three currencies Paddle marks as zero-decimal are JPY, KRW, and CLP — always branch on currency before dividing.
 - **Summing line items manually instead of using the precomputed total.** Paddle has already calculated `details.totals.total` including discounts, credits, tax, and currency conversion. Re-summing `lineItems` with your own tax math will diverge from the actual charge.
 - **Hardcoding the locale to `'en-US'` everywhere.** Reading `navigator.language` (in the browser) or accepting a locale prop gives users their native formatting. The starter kit falls back to `'en-US'` when `navigator` is undefined (server side) — fine as a default, but better if you can pass the user's locale through.
-- **Confusing the Transaction shape with the PricePreview shape.** `Paddle.PricePreview()` (client-side, for pricing pages) returns `formattedTotals.total` already formatted — see `pricing-pages`. `Transaction` does not. Use the right pattern for each.
+- **Confusing the Transaction shape with the PricePreview shape.** `Paddle.PricePreview()` (client-side, for pricing pages) returns `formattedTotals.total` already formatted — see `paddle-pricing-pages`. `Transaction` does not. Use the right pattern for each.
 
 ## Pagination — cursor pattern
 

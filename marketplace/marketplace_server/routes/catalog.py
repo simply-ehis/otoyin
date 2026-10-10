@@ -6,12 +6,14 @@ import base64
 import datetime as dt
 import json
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from .. import dodo
 from ..models import Product, Review, Wishlist, async_session
+from ..rate_limit import preview_limiter
 from ..signing import get_signer
 
 router = APIRouter(prefix="/v1/catalog", tags=["catalog"])
@@ -25,6 +27,7 @@ class ProductOut(BaseModel):
     long_description: str = ""
     price_usd: float
     paid: bool
+    coming_soon: bool = False
     quality_score: int
     avg_rating: float = 0.0
     review_count: int = 0
@@ -73,6 +76,7 @@ async def get_catalog(db: AsyncSession = Depends(get_db)):
             "long_description": p.long_description or p.description,
             "price_usd": p.price_usd,
             "paid": p.paid,
+            "coming_soon": p.coming_soon,
             "quality_score": p.quality_score,
             "avg_rating": p.avg_rating,
             "review_count": p.review_count,
@@ -127,6 +131,110 @@ async def get_product(product_id: str, db: AsyncSession = Depends(get_db)):
     # Include baseline_usd in response
     d["baseline_usd"] = product.baseline_usd
     return ProductOut.model_validate(d)
+
+
+class PricingPreviewRequest(BaseModel):
+    country_code: str
+    product_ids: list[str] = []
+
+
+class PricingPreviewItem(BaseModel):
+    product_id: str
+    currency: str
+    amount: float
+    formatted_total: str
+
+
+class PricingPreviewResponse(BaseModel):
+    country_code: str
+    currency: str
+    prices: list[PricingPreviewItem]
+
+
+_ZERO_DECIMAL_CURRENCIES = {"JPY", "KRW", "CLP"}
+
+
+@router.post("/pricing/preview", response_model=PricingPreviewResponse)
+async def preview_pricing(
+    req: PricingPreviewRequest, request: Request, db: AsyncSession = Depends(get_db)
+):
+    """Return Dodo buyer-facing totals for products in a country.
+
+    This is the source of truth for localized display: Dodo applies
+    adaptive currency conversion, so the app does not have to guess
+    with FX conversion. Products without a configured Dodo product are
+    omitted; free and coming-soon products are never previewed.
+    """
+    client_ip = request.client.host if request.client else "unknown"
+    if not preview_limiter.allow(f"pricing:{client_ip}"):
+        raise HTTPException(
+            429, detail={"code": "rate_limited", "message": "Too many pricing requests — try again later"}
+        )
+    country = (req.country_code or "").strip().upper()
+    if len(country) != 2 or not country.isalpha():
+        raise HTTPException(
+            400, detail={"code": "bad_country", "message": "country_code must be a 2-letter country code"}
+        )
+
+    result = await db.execute(
+        select(Product).where(
+            Product.active == True,  # noqa: E712
+            Product.paid == True,  # noqa: E712
+            Product.coming_soon == False,  # noqa: E712
+        )
+    )
+    products = result.scalars().all()
+    if req.product_ids:
+        wanted = set(req.product_ids)
+        products = [p for p in products if p.id in wanted]
+
+    price_to_product: dict[str, str] = {}
+    for product in products:
+        price_id = dodo.price_id_for(product.id)
+        if price_id and price_id not in price_to_product:
+            price_to_product[price_id] = product.id
+    if not price_to_product:
+        return PricingPreviewResponse(country_code=country, currency="USD", prices=[])
+
+    try:
+        preview = await dodo.preview_prices(country_code=country, price_ids=list(price_to_product))
+    except RuntimeError as exc:
+        message = str(exc)
+        if "not configured" in message:
+            raise HTTPException(
+                503,
+                detail={"code": "payment_not_configured", "message": "Payments are not configured on this server"},
+            ) from exc
+        raise HTTPException(502, detail={"code": "provider_error", "message": message}) from exc
+
+    currency = str(preview.get("currency_code") or "USD").upper()
+    details = preview.get("details") or {}
+    lines = details.get("line_items") or []
+    by_price = {((line.get("price") or {}).get("id")): line for line in lines if isinstance(line, dict)}
+
+    prices: list[PricingPreviewItem] = []
+    for price_id, product_id in price_to_product.items():
+        line = by_price.get(price_id) or {}
+        totals = line.get("totals") or {}
+        formatted = line.get("formatted_totals") or {}
+        try:
+            total_minor = int(str(totals.get("total")))
+        except (TypeError, ValueError):
+            continue
+        amount = (
+            float(total_minor)
+            if currency in _ZERO_DECIMAL_CURRENCIES
+            else round(total_minor / 100, 2)
+        )
+        prices.append(
+            PricingPreviewItem(
+                product_id=product_id,
+                currency=currency,
+                amount=amount,
+                formatted_total=str(formatted.get("total") or f"{amount:.2f} {currency}"),
+            )
+        )
+    return PricingPreviewResponse(country_code=country, currency=currency, prices=prices)
 
 
 class ReviewOut(BaseModel):

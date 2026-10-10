@@ -1,24 +1,24 @@
 ---
 name: effects-cleanup
-description: De-esser, spectral denoise, noise_gate, and RNNoise/VAD cleanup for otoyin — which to use, real params, and that deesser/spectral_denoise are the only ones run_recipe accepts per segment.
+description: De-esser, spectral denoise, noise_gate, and DeepFilterNet cleanup for otoyin — which to use, real params, and that deesser/spectral_denoise are the only ones run_recipe accepts per segment.
 ---
-# Effects — Cleanup (De-esser, Denoise, Gate, RNNoise)
+# Effects — Cleanup (De-esser, Denoise, Gate, DeepFilterNet)
 
 ## Purpose
 Remove unwanted artifacts: sibilance (**deesser**), stationary background noise
-(**spectral_denoise**, **RNNoise**), and low-level floor between phrases
+(**spectral_denoise**, **DeepFilterNet**), and low-level floor between phrases
 (**noise_gate**). This is the "clean before you shape" layer.
 
 ## When to use
 - Harsh "s"/"sh" (de-esser).
-- Fan/AC/hiss under the voice (spectral_denoise or RNNoise).
+- Fan/AC/hiss under the voice (spectral_denoise or DeepFilterNet).
 - Hum/breath/room tone between words (noise_gate).
-- Bulk cleaning of a raw capture (RNNoise via `/audio/noise-reduce`).
+- Bulk cleaning of a raw capture (DeepFilterNet via `/audio/noise-reduce`).
 
 ## CRITICAL — which cleanup effects `run_recipe` accepts
 `run_recipe` (`21labs.run_recipe`, `recipe_runner.recipe_run`) applies per-segment
 `effects` containing **ONLY** `deesser` and `spectral_denoise`. `noise_gate` and
-RNNoise are NOT part of the recipe path — they live in the 10-effect chain
+DeepFilterNet are NOT part of the recipe path — they live in the 10-effect chain
 (path A) or the noise-reduce route respectively.
 
 So: put `deesser`/`spectral_denoise` inside the recipe segment `effects`; add
@@ -48,22 +48,18 @@ subtraction. Safe to run BEFORE de-esser in a chain.
 ### noise_gate (10-effect chain, `plugins.py`)
 threshold [-60,0] dB, default -40. (See effects-dynamics.)
 
-### RNNoise (`backend/services/noise_reduction.py`)
-- `POST /audio/noise-reduce` → `reduce_noise_rnnoise(audio_path, vad_threshold)`.
-- The RNNoise path (`_apply_rnnoise`) **ignores `vad_threshold`** — it denoises every
-  frame (480 samples @48k) of the whole signal; it never spares "clean" passages.
-- `vad_threshold` [0.0–1.0], default **0.5** is used ONLY by the spectral-gate fallback
-  (when RNNoise is not installed).
-- Falls back to spectral gating if RNNoise not installed.
+### DeepFilterNet (`backend/services/noise_reduction.py`)
+- `POST /audio/noise-reduce` → `reduce_noise_deepfilternet(audio_path, vad_threshold)`.
+- `vad_threshold` [0.0–1.0], default **0.5**, is accepted by the API but currently unused by the DeepFilterNet path.
 
 ## When to use each
 | problem | tool | note |
 |---------|------|------|
 | Sibilance "s/sh" | deesser | end of vocal chain; recipe-compatible |
 | Steady hiss/fan | spectral_denoise | needs 100 ms clean head; recipe-compatible |
-| General raw cleanup | RNNoise `/audio/noise-reduce` | deep-learning denoise (whole signal; ignores `vad_threshold`) |
+| General raw cleanup | DeepFilterNet `/audio/noise-reduce` | deep-learning denoise |
 | Gate floor between phrases | noise_gate | 10-effect chain only |
-| Hum/plosives/breath | spectral_repair (extended) | see 27-new-effects |
+| Hum/plosives/breath | spectral_denoise or targeted EQ | verify the exact effect before using an unverified extended effect |
 
 ## Worked example (recipe segment + gate)
 ```json
@@ -81,14 +77,11 @@ Then apply a noise_gate via the chain path before/around the recipe, or run
   it subtracts speech onset. Leave room tone at the head.
 - deesser `reduction_db >= 0` or `strength == 0` → returns audio unchanged.
 - `noise_gate` is not accepted by `run_recipe` — don't put it in segment `effects`.
-- RNNoise absent → silent fallback to spectral gating (weaker).
-- RNNoise's denoise path **ignores `vad_threshold`** — it always processes every frame and
-  does NOT spare clean passages. `vad_threshold` only gates the spectral-gate fallback.
 
 ## Cross-links
-- [effects-field-guide](../../effects-field-guide/SKILL.md)
-- [effects-dynamics](../../effects-dynamics/SKILL.md)
-- [mastering](../../mastering/SKILL.md)
+- [effects-field-guide](../effects-field-guide/SKILL.md)
+- [effects-dynamics](../effects-dynamics/SKILL.md)
+- [mastering](../mastering/SKILL.md)
 
 ## Validation
 - De-esser: "s" less piercing, consonants still intelligible.

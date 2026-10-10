@@ -11,14 +11,14 @@ Use this skill when building the "Cancel subscription" button (or equivalent) on
 
 This is the _initiating_ side of subscription cancellation. Pair it with:
 
-- `subscription-sync` for the _receiving_ side — your webhook handler will get a `subscription.updated` event reflecting the schedule change, then a `subscription.canceled` event when the period actually ends.
-- `webhooks` if you haven't set up the webhook endpoint yet.
+- `paddle-subscription-sync` for the _receiving_ side — your webhook handler will get a `subscription.updated` event reflecting the schedule change, then a `subscription.canceled` event when the period actually ends.
+- `paddle-webhooks` if you haven't set up the webhook endpoint yet.
 
 ## Prerequisites
 
 - A working Paddle account with at least one active subscription (sandbox is fine).
 - Server-side `PADDLE_API_KEY` available — this action runs in a Server Action, never in the browser.
-- A `customers` table and a `subscriptions` table mirrored from webhooks (see `subscription-sync`). You need to know which Paddle customer the authenticated user is, and which subscription they're trying to cancel.
+- A `customers` table and a `subscriptions` table mirrored from webhooks (see `paddle-subscription-sync`). You need to know which Paddle customer the authenticated user is, and which subscription they're trying to cancel.
 - An auth system. The examples use Supabase, but any session-based auth works.
 
 ```bash
@@ -115,7 +115,7 @@ export async function cancelSubscription(subscriptionId: string) {
 A successful cancel does **not** flip the subscription's `status` to `canceled` immediately. Two events fire over time:
 
 1. **Right now (synchronous):** the SDK call returns. Paddle stores `status: 'active'` with `scheduledChange.action: 'cancel'` and `scheduledChange.effectiveAt: '<period-end-date>'`.
-2. **Right now (asynchronous):** Paddle fires a `subscription.updated` webhook with the same payload. Your `subscription-sync` handler upserts the row. The mirrored row now has `subscription_status: 'active'` and `scheduled_change: <date>`.
+2. **Right now (asynchronous):** Paddle fires a `subscription.updated` webhook with the same payload. Your `paddle-subscription-sync` handler upserts the row. The mirrored row now has `subscription_status: 'active'` and `scheduled_change: <date>`.
 3. **At the end of the period:** Paddle fires a second `subscription.updated` (or `subscription.canceled`) webhook. The mirrored row's `subscription_status` becomes `'canceled'` and `scheduled_change` clears.
 
 Your access-gating logic should read from the _mirrored_ row, not from anything you compute optimistically in this action. The user keeps access until step 3 actually happens.

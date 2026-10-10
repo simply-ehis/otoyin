@@ -10,12 +10,12 @@ they are stricter (e.g. file/function size caps).
 
 ## READ-WHEN
 - Touching TTS engines → `backend/backends/*.py`, `backend/backends/configs.py`
-- Touching voice profiles → `backend/services/profiles.py`, `app/src/components/VoiceProfiles/`
-- Touching the story editor → `app/src/components/StoriesTab/StoryTrackEditor.tsx` (1000+ lines)
+- Touching voice profiles → `backend/services/profiles.py`, `app/src/features/voices/` (live UI; `components/VoiceProfiles/` holds dead legacy only)
+- Touching the story editor → `app/src/features/stories/editor/StoryTrackEditor.tsx` (1000+ lines)
 - Touching audio studio → `app/src/features/audioStudio/AudioStudio.tsx` + `usePlaybackEngine.ts`, `AudioStudioStore.ts` (moved from `components/AudioStudio/` 2026-08-19)
 - Touching API client → `app/src/lib/api/client*.ts` (one file per domain)
 - Touching MCP tools → `backend/mcp_server/tools/` (10 files, 110 tools)
-- Touching models/downloads → `backend/routes/models/`, `app/src/components/ServerSettings/`
+- Touching models/downloads → `backend/routes/models/`, `app/src/features/store/`
 
 ## KEY-FILES
 - `app/src/lib/api/client.ts` — API client entry point (all backend calls)

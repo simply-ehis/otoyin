@@ -30,4 +30,4 @@ Returns all 34+ models with download/load status.
 - **MCP Tools:** `21labs.models_list`, `21labs.models_download`, `21labs.models_load`, `21labs.models_unload`, `21labs.model_cache_dir`, `21labs.model_progress`
 - **REST Endpoints:** `GET /models/status`, `POST /models/download`, `POST /models/download/cancel`, `DELETE /models/{name}`, `POST /models/load`, `POST /models/unload`, `GET /models/cache-dir`, `GET /models/progress/{name}`, `GET /models/recommended`, `GET /models/capabilities`
 - **Key Backend Files:** `backend/routes/models/status.py`, `backend/routes/models/download.py`, `backend/routes/models/load_unload.py`, `backend/routes/models/cache.py`
-- **Key Frontend Files:** `app/src/components/ModelsTab/ModelsTab.tsx`, `app/src/components/ServerSettings/ModelManagement.tsx`
+- **Key Frontend Files:** `app/src/features/store/StorePage.tsx` (Marketplace is the only model download/delete UI)

@@ -64,4 +64,4 @@ Full per-recipe playbooks: `.agents/skills/otoyin-studio/recipe-*.md`.
 - **MCP Tools:** `21labs.run_recipe`, `21labs.list_models`, `21labs.analyze_loudness`, `21labs.master_audio`, `21labs.export_reaper_project`
 - **REST Endpoints:** `POST /recipe/run`, `POST /audio/master`, `POST /audio-studio/sessions/{id}/export-reaper`, `GET /conversation/presets`, `GET /export/presets`
 - **Key Backend Files:** `backend/services/recipe_runner.py`, `backend/routes/recipe.py`, `backend/services/daw_export.py`, `backend/routes/audio_studio.py`
-- **Key Frontend Files:** `app/src/components/Workspace/ConversationView.tsx`, `app/src/components/Workspace/PlatformExportView.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/ConversationView.tsx`, `app/src/features/workspace/PlatformExportView.tsx`

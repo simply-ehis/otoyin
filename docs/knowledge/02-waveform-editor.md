@@ -1,7 +1,7 @@
 # 02 — Waveform Editor
 
 ## TimelineView at `/workspace`
-- **Component:** `TimelineView` in `app/src/components/Workspace/TimelineView.tsx`
+- **Component:** `TimelineView` in `app/src/features/workspace/TimelineView.tsx`
 - **What:** Main multi-track timeline with transport controls, waveform display, track list, and import/scrub capabilities.
 
 ## Transport Controls
@@ -22,26 +22,23 @@
 
 ## ImportModal
 - **What:** Audio file import dialog wired into TimelineView via `ImportModal` component
-- **Where:** `app/src/components/Import/ImportModal.tsx`
+- **Where:** `app/src/features/workspace/ImportModal.tsx`
 - **Triggered by:** Upload button in TimelineView toolbar
 - **Supports:** Audio file import (M4A/AAC/AIFF/WAV/MP3) and video audio extraction (MP4/MOV)
 - **Options:** Sample rate selection (44100/48000/96000), channel mode (mono/stereo)
 - **Format info:** Displays duration, codec, sample rate, channels on file selection
 
 ## TapeScrubber
-- **What:** Variable-speed waveform scrubber wired into TimelineView
-- **Where:** `app/src/components/TapeScrubber/TapeScrubber.tsx`
-- **Controls:** Slider for position seek, speed control (0.1x–4x), nudge backward/forward buttons
-- **Display:** Current time and duration in `MM:SS:FF` format, speed multiplier indicator
-- **Behavior:** Pauses playback on scrub start, resumes on scrub end
+- **What:** Variable-speed waveform scrubber (historical `components/TapeScrubber/TapeScrubber.tsx` was removed 2026-10-09; no live equivalent in the current TimelineView — scrub via transport seek)
+- **Behavior:** Historically paused playback on scrub start and resumed on scrub end
 
 ## Editing Tools (Backend)
 - Trim, split, duplicate, delete, volume, fade, gain, normalize, reverse, silence removal, regenerate, version picker
-- **Where:** `app/src/components/StoriesTab/StoryTrackEditor.tsx` (legacy StoriesTab)
+- **Where:** `app/src/features/stories/editor/StoryTrackEditor.tsx`
 - **API endpoints:** `PUT /stories/{id}/items/{id}/trim`, `POST /stories/{id}/items/{id}/split`, etc.
 
 ## Agent Callable
 - **MCP Tools:** `21labs.splice`, `21labs.delete_region`, `21labs.trim_silence`, `21labs.fade_in`, `21labs.fade_out`, `21labs.insert_silence`
 - **REST Endpoints:** `PUT /stories/{id}/items/{itemId}/trim`, `POST /stories/{id}/items/{itemId}/split`, `POST /stories/{id}/items/{itemId}/duplicate`, `POST /audio/splice`, `POST /audio/delete-region`, `POST /audio/insert-silence`, `POST /audio/trim-silence`
 - **Key Backend Files:** `backend/routes/stories.py`, `backend/routes/audio_effects.py`, `backend/services/stories/processing.py`
-- **Key Frontend Files:** `app/src/components/Workspace/TimelineView.tsx`, `app/src/components/StoriesTab/StoryTrackEditor.tsx`, `app/src/components/Workspace/InlineWaveformEditor.tsx`, `app/src/stores/storyStore.ts`
+- **Key Frontend Files:** `app/src/features/workspace/TimelineView.tsx`, `app/src/features/stories/editor/StoryTrackEditor.tsx`, `app/src/stores/storyStore.ts`

@@ -1,16 +1,16 @@
 # 81 — Waveform-Playlist Adapter (StoryTrackEditor)
 
 PURPOSE: Document the StoryTrackEditor waveform-playlist v15 adapter — the authority split (playlist paints/zooms; otoyin owns audio, selection, mutations, gestures), the engine's zoom-ladder constraint, the capture-phase pointer bridge, and the ms↔sample mapping.
-OWNS: app/src/components/StoriesTab/waveformPlaylist.ts, WaveformPlaylistEditor.tsx, WaveformPlaylistStage.tsx, usePlaylistPointerBridge.ts, TrackLabelCell.tsx. The library internals live upstream (@waveform-playlist/*).
+OWNS: app/src/features/stories/editor/waveformPlaylist.ts, WaveformPlaylistEditor.tsx, WaveformPlaylistStage.tsx, usePlaylistPointerBridge.ts, TrackLabelCell.tsx. The library internals live upstream (@waveform-playlist/*).
 READ-WHEN: Touching the story track editor's clip rendering, zoom, or pointer handling; debugging misplaced clips (sample-rate mismatch is the usual cause); upgrading @waveform-playlist packages.
-KEY-FILES: app/src/components/StoriesTab/StoryTrackEditor.tsx, useStoryTrim.ts, useStoryCrossfade.ts, node_modules/@waveform-playlist/core/dist/index.d.ts.
+KEY-FILES: app/src/features/stories/editor/StoryTrackEditor.tsx, useStoryTrim.ts, useStoryCrossfade.ts, node_modules/@waveform-playlist/core/dist/index.d.ts.
 INVARIANTS: The playlist engine stays SILENT (otoyin's playback owns audio); all zoom paths snap through ZOOM_LADDER_SPP (the engine throws off-ladder); the library's drag engine is never engaged (its collision constraint forbids the overlaps crossfades require).
 GOTCHAS: `waveform-playlist` on npm is the legacy v4 UMD package — the v15 API is the scoped trio; DOM facts (data-scroll-container, data-clip-id) live in @waveform-playlist/ui-components, not the browser dist; AudioClip has no pan field (per-clip pan stays at playback).
 UPDATED: 2026-09-08
 
 ## Why
 
-`docs/reports/2026-09-05-media-stack-research.md` decided to replace the
+`docs/archive/reports/2026-09-05-media-stack-research.md` decided to replace the
 StoryTrackEditor's hand-rolled canvas/SVG waveform stack with
 `naomiaro/waveform-playlist` for peak rendering, clip geometry, timescale, and
 zoom — while otoyin keeps authority over playback, selection, mutations,

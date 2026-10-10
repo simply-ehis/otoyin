@@ -45,5 +45,8 @@ class RateLimiter:
 # Checkout: 10 requests per minute per IP
 checkout_limiter = RateLimiter(max_requests=10, window_seconds=60)
 
+# Pricing preview: 30 requests per minute per IP
+preview_limiter = RateLimiter(max_requests=30, window_seconds=60)
+
 # License fetch: 20 requests per minute per IP
 license_limiter = RateLimiter(max_requests=20, window_seconds=60)

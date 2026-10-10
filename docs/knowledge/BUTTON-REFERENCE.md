@@ -3,10 +3,10 @@
 > **PURPOSE:** Every button, dropdown, and control across all otoyin tabs with exact actions.
 > **OWNS:** Complete UI interaction reference
 > **READ-WHEN:** Adding new buttons, debugging UI, auditing features
-> **KEY-FILES:** All `app/src/components/**/*.tsx`
+> **KEY-FILES:** All `app/src/features/**/*.tsx` + shared UI primitives in `app/src/components/ui/`
 > **INVARIANTS:** Organized by tab; each entry has label, action, condition
 > **GOTCHAS:** Some buttons are conditional (persona only if profile has personality)
-> **UPDATED:** 2026-08-07
+> **UPDATED:** 2026-10-09
 
 ## Sidebar (Global Navigation)
 
@@ -67,13 +67,10 @@
 
 | Action | Description |
 |---|---|
-| Play | Play audio |
-| Export Audio | Download audio file |
-| Export Package | Export generation + metadata |
-| Apply Effects | Open effects dialog |
-| Regenerate | Re-run TTS |
-| Edit Audio | Open editor (AudioEditorPanel) |
-| Copy Clip | Copy to clipboard |
+| Download audio | Download audio file |
+| Export package | Export generation + metadata |
+| Retry | Re-run failed generation |
+| Regenerate | Re-run TTS generation |
 | Delete | Remove generation |
 
 ---

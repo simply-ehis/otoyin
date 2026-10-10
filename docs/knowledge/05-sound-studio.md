@@ -1,7 +1,7 @@
 # 05 — Sound Studio
 
 ## StudioView at `/workspace/studio`
-- **Component:** `StudioView` in `app/src/components/Workspace/StudioView.tsx`
+- **Component:** `StudioView` in `app/src/features/workspace/StudioView.tsx`
 - **What:** 3 sub-tabs for generating audio content beyond TTS: Instruments, SFX, Noise.
 
 ## Instruments Tab
@@ -31,4 +31,4 @@
 - **MCP Tools:** `21labs.generate_sfx`, `21labs.generate_music`, `21labs.play_piano_note`, `21labs.play_synth_note`, `21labs.play_drum_pad`, `21labs.generate_noise`
 - **REST Endpoints:** `POST /generate/sfx`, `POST /generate/music`, `POST /instruments/piano`, `POST /instruments/synth`, `POST /instruments/drum`, `POST /instruments/noise`, `GET /dsp/capabilities`, `POST /dsp/synth`, `POST /dsp/effect`
 - **Key Backend Files:** `backend/routes/generate.py`, `backend/routes/instruments.py`, `backend/routes/dsp.py`, `backend/services/instruments.py`, `backend/services/dsp_synth.py`
-- **Key Frontend Files:** `app/src/components/Workspace/StudioView.tsx`, `app/src/components/Workspace/SoundEffectsView.tsx`, `app/src/components/Workspace/DspView.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/StudioView.tsx`, `app/src/features/workspace/SoundEffectsView.tsx`, `app/src/features/workspace/DspView.tsx`

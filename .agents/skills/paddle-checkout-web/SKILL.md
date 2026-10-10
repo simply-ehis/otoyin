@@ -11,9 +11,9 @@ Use this skill when adding a hosted Paddle checkout to a Next.js (App Router) ap
 
 This skill is client-side only. Pair it with:
 
-- `webhooks` to receive `transaction.completed` / `subscription.created` events on your server.
-- `subscription-sync` to mirror Paddle subscription state into your database.
-- `sandbox-testing` to test the integration end-to-end in the Paddle sandbox.
+- `paddle-webhooks` to receive `transaction.completed` / `subscription.created` events on your server.
+- `paddle-subscription-sync` to mirror Paddle subscription state into your database.
+- `paddle-sandbox-testing` to test the integration end-to-end in the Paddle sandbox.
 
 ## Prerequisites
 
@@ -22,7 +22,7 @@ You need:
 - A Paddle account, with the **sandbox** environment active during development.
   - Sign up for sandbox: https://sandbox-vendors.paddle.com/
   - Sign up for live: https://vendors.paddle.com/
-- At least one product and price set up. Use `catalog-setup` if you haven't yet — note the price ID (looks like `pri_01h...`) for use below.
+- At least one product and price set up. Use `paddle-catalog-setup` if you haven't yet — note the price ID (looks like `pri_01h...`) for use below.
 - Your domain approved for checkout under **Paddle > Checkout > Website approval**. Domains are approved automatically in sandbox.
 - Your default payment link set under **Paddle > Checkout > Checkout settings > Default payment link**. You can use `https://localhost/` for sandbox, then change later.
 - Two environment variables from **Paddle > Developer tools > Authentication**:
@@ -268,7 +268,7 @@ When checkout completes, two things happen in parallel:
 1. The user's browser is sent to your `successUrl` (or your custom event handler).
 2. Paddle fires a `transaction.completed` (and possibly `subscription.created`) webhook to your server.
 
-**Provisioning belongs in the webhook**, not the redirect. The redirect is for UX (showing "Thanks for your order"); the webhook is the durable, retried, signed event you can trust. See `webhooks` for setup.
+**Provisioning belongs in the webhook**, not the redirect. The redirect is for UX (showing "Thanks for your order"); the webhook is the durable, retried, signed event you can trust. See `paddle-webhooks` for setup.
 
 ## Common pitfalls
 
@@ -290,7 +290,7 @@ When checkout completes, two things happen in parallel:
    - The browser lands on your `successUrl`.
    - The `checkout.completed` event fired (`console.log` from `eventCallback`).
    - In the Paddle dashboard (sandbox), the transaction shows under **Transactions**.
-5. To test the webhook side, see `sandbox-testing` for the simulator.
+5. To test the webhook side, see `paddle-sandbox-testing` for the simulator.
 
 ## Related docs
 

@@ -66,4 +66,4 @@
 - **MCP Tools:** `21labs.list_profiles`, `21labs.speak`, `21labs.list_captures`
 - **REST Endpoints:** `POST /profiles`, `GET /profiles`, `GET /profiles/{id}`, `PUT /profiles/{id}`, `DELETE /profiles/{id}`, `POST /profiles/{id}/samples`, `GET /profiles/{id}/samples`, `DELETE /profiles/samples/{id}`, `POST /profiles/import`, `GET /profiles/{id}/export`, `POST /profiles/{id}/avatar`, `GET /profiles/{id}/avatar`, `DELETE /profiles/{id}/avatar`, `PUT /profiles/{id}/channels`, `GET /profiles/{id}/channels`, `PUT /profiles/{id}/effects`, `POST /profiles/{id}/compose`, `GET /profiles/presets/{engine}`
 - **Key Backend Files:** `backend/services/profiles.py`, `backend/routes/profiles.py`
-- **Key Frontend Files:** `app/src/components/VoicesTab/VoicesTab.tsx`, `app/src/components/VoicesTab/VoiceInspector.tsx`, `app/src/components/VoiceProfiles/ProfileForm.tsx`, `app/src/components/VoiceProfiles/QuickCloneDialog.tsx`
+- **Key Frontend Files:** `app/src/features/voices/VoicesTab.tsx`, `app/src/features/voices/VoiceInspector.tsx`, `app/src/features/voices/VoiceFormDialog.tsx`, `app/src/features/voices/QuickCloneDialog.tsx`

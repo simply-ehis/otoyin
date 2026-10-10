@@ -57,40 +57,65 @@ export default defineConfig({
 		outDir: "dist",
 		rollupOptions: {
 			output: {
+				// GOTCHA (rolldown 1.2.7 / vite 8): a module shared between manual
+				// chunks is placed in the ALPHABETICALLY FIRST chunk that imports
+				// it — its own returned name below is overridden. The react chunk
+				// was named "vendor-react", which sorts AFTER "vendor-dnd"/
+				// "vendor-forms", so react got swallowed into vendor-dnd and
+				// entry/index.html preloaded all 153 KB of dnd at boot. That is
+				// why react lives in "vendor-core": every OTHER vendor-* chunk
+				// here imports react, and "core" sorts before all of them
+				// (c < d,f,m,r,s,t,u,w). Renaming this chunk to anything that
+				// sorts >= "vendor-dnd" re-breaks entry preloading.
 				manualChunks(id: string) {
+					let name: string | undefined;
 					if (
 						id.includes("node_modules/react-dom") ||
 						id.includes("node_modules/react/")
-					)
-						return "vendor-react";
-					if (
+					) {
+						name = "vendor-core";
+					} else if (
 						id.includes("@tanstack/react-query") ||
 						id.includes("@tanstack/react-router") ||
 						id.includes("@tanstack/query-core")
-					)
-						return "vendor-tanstack";
-					if (
+					) {
+						name = "vendor-tanstack";
+					} else if (
 						id.includes("framer-motion") ||
 						id.includes("node_modules/motion")
-					)
-						return "vendor-ui";
-					if (id.includes("@radix-ui")) return "vendor-radix";
-					if (id.includes("@dnd-kit")) return "vendor-dnd";
-					if (id.includes("zustand")) return "vendor-state";
-					if (
+					) {
+						name = "vendor-ui";
+					} else if (id.includes("@radix-ui")) {
+						name = "vendor-radix";
+					} else if (id.includes("@dnd-kit")) {
+						name = "vendor-dnd";
+					} else if (id.includes("zustand")) {
+						name = "vendor-state";
+					} else if (
 						id.includes("react-hook-form") ||
 						id.includes("@hookform/resolvers") ||
 						id.includes("zod")
-					)
-						return "vendor-forms";
-					if (id.includes("react-markdown") || id.includes("remark-"))
-						return "vendor-markdown";
-					if (id.includes("react-syntax-highlighter")) return "vendor-syntax";
-					if (id.includes("wavesurfer")) return "vendor-wavesurfer";
-					if (id.includes("src/components/Store")) return "page-store";
-					if (id.includes("src/features/audioStudio"))
-						return "page-audio-studio";
-					if (id.includes("src/components/Workspace")) return "page-workspace";
+					) {
+						name = "vendor-forms";
+					} else if (id.includes("react-markdown") || id.includes("remark-")) {
+						name = "vendor-markdown";
+					} else if (id.includes("react-syntax-highlighter")) {
+						name = "vendor-syntax";
+					} else if (id.includes("wavesurfer")) {
+						name = "vendor-wavesurfer";
+					}
+
+					// NOTE: no manualChunks for app code.
+					//
+					// Naming a route directory here (e.g. "src/components/Workspace"
+					// -> "page-workspace") hoists the ENTIRE directory into one
+					// eagerly-preloaded chunk. That defeats lazy(): every route inside
+					// it becomes a startup dependency, so the 379 KB workspace chunk
+					// shipped in index.html's modulepreloads. Rollup's automatic
+					// splitting already splits per dynamic import() boundary, which is
+					// what router.tsx's 70 lazy() routes rely on. Vendor splitting
+					// above stays because those ARE genuinely shared across routes.
+					return name;
 				},
 			},
 		},

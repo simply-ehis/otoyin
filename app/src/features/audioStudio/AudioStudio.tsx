@@ -1,7 +1,7 @@
 import { PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
-import WaveformVisualizer from "@/components/WaveformVisualizer/WaveformVisualizer";
+import WaveformVisualizer from "@/features/audioStudio/WaveformVisualizer";
 import type { IsolationStem } from "@/features/workspace/VocalIsolationView";
 import { apiClient } from "@/lib/api/client";
 import { DEMUCS_MODEL_NAME } from "@/lib/audio/ensureModel";
@@ -15,6 +15,7 @@ import { logger } from "@/lib/utils/debug";
 import { useToast } from "@/ui/use-toast";
 import { useAudioStudioStore } from "./AudioStudioStore";
 import { SessionDialogs } from "./SessionDialogs";
+import { StitchDialog } from "./StitchDialog";
 import { StudioToolbar } from "./StudioToolbar";
 import { TimelineRuler } from "./TimelineRuler";
 import { TrackList } from "./TrackList";
@@ -32,7 +33,6 @@ import { useStudioDrag } from "./useStudioDrag";
 import { useStudioIsolation } from "./useStudioIsolation";
 import { useStudioRenderFx } from "./useStudioRenderFx";
 import { useStudioStitch } from "./useStudioStitch";
-import { StitchDialog } from "./StitchDialog";
 
 export function AudioStudio() {
 	const { toast } = useToast();
@@ -170,20 +170,17 @@ export function AudioStudio() {
 		masterVolume,
 	});
 
-	const {
-		handleRecordingComplete: _handleRecordingComplete,
-		handleStartRecording,
-		handleStopRecording,
-	} = useRecordingManager({
-		tracks,
-		selectedTrackIndex,
-		setRecordingTrackIndex,
-		setIsRecording,
-		updateTrack,
-		setTrackAudio,
-		pushUndo,
-		audioBuffersRef,
-	});
+	const { handleRecordingComplete, handleStartRecording, handleStopRecording } =
+		useRecordingManager({
+			tracks,
+			selectedTrackIndex,
+			setRecordingTrackIndex,
+			setIsRecording,
+			updateTrack,
+			setTrackAudio,
+			pushUndo,
+			audioBuffersRef,
+		});
 
 	const sensors = useSensors(
 		useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -570,6 +567,7 @@ export function AudioStudio() {
 				}}
 				onStartRecording={handleStartRecording}
 				onStopRecording={handleStopRecording}
+				onRecordComplete={handleRecordingComplete}
 				onSetSelectedTrackIndex={setSelectedTrackIndex}
 				onAddMarker={addMarker}
 				onSetMasterVolume={setMasterVolume}

@@ -46,4 +46,4 @@ The 2026-07-19 story-editing audit fixed 5 real bugs here (reorder uses effectiv
 - **MCP Tools:** `21labs.list_stories`, `21labs.get_story`, `21labs.create_story`, `21labs.export_story_audio`
 - **REST Endpoints:** `GET /stories`, `POST /stories`, `GET /stories/{id}`, `PUT /stories/{id}`, `DELETE /stories/{id}`, `POST /stories/{id}/items`, `DELETE /stories/{id}/items/{itemId}`, `PUT /stories/{id}/items/times`, `PUT /stories/{id}/items/reorder`, `PUT /stories/{id}/items/{itemId}/move`, `PUT /stories/{id}/items/{itemId}/trim`, `POST /stories/{id}/items/{itemId}/split`, `GET /stories/{id}/export-audio`, `POST /adr/sessions`, `GET /adr/sessions`
 - **Key Backend Files:** `backend/routes/stories.py`, `backend/routes/adr.py`, `backend/services/stories/`, `backend/services/adr.py`
-- **Key Frontend Files:** `app/src/components/StoriesTab/StoriesTab.tsx`, `app/src/components/StoriesTab/StoryTrackEditor.tsx`, `app/src/components/Workspace/ADRView.tsx`
+- **Key Frontend Files:** `app/src/features/stories/StoriesTab.tsx`, `app/src/features/stories/editor/StoryTrackEditor.tsx`, `app/src/features/workspace/adr/ADRView.tsx`

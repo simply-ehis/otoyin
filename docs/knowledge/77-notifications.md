@@ -4,7 +4,7 @@ PURPOSE: Push-style notices shipped to installed apps without an app release,
 merged into the existing in-app announcement/bell surface.
 OWNS: backend/services/announcements.py, marketplace/marketplace_server/routes/notices.py
 READ-WHEN: You touch the announcement banner, notification bell, or want to send a message to users.
-KEY-FILES: backend/routes/content.py, app/src/components/Banner/AnnouncementBanner.tsx, app/src/components/Notifications/NotificationBell.tsx
+KEY-FILES: backend/routes/content.py, app/src/layouts/Banner/AnnouncementBanner.tsx, app/src/layouts/Notifications/NotificationBell.tsx
 INVARIANTS: Offline-first — any fetch failure is silent; bundled content always works.
 GOTCHAS: Remote items must match the frontend `Announcement` type shape (id, title, message, severity, cta, starts_at, ends_at).
 

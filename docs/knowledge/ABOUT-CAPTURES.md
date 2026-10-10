@@ -57,4 +57,4 @@ Captures handles speech-to-text: import audio files for transcription or dictate
 - **MCP Tools:** `21labs.list_captures`, `21labs.captures_refine`, `21labs.captures_retranscribe`, `21labs.transcribe`
 - **REST Endpoints:** `POST /captures`, `GET /captures`, `GET /captures/{id}`, `DELETE /captures/{id}`, `POST /captures/{id}/refine`, `POST /captures/{id}/retranscribe`, `GET /capture/readiness`, `POST /transcribe`
 - **Key Backend Files:** `backend/routes/captures.py`, `backend/services/captures.py`, `backend/routes/transcription.py`
-- **Key Frontend Files:** `app/src/components/CapturesTab/CapturesTab.tsx`, `app/src/components/CapturesTab/CapturesListPane.tsx`, `app/src/components/CapturesTab/CaptureDetailPane.tsx`, `app/src/components/CapturesTab/CapturesActionBar.tsx`
+- **Key Frontend Files:** `app/src/features/captures/CapturesTab.tsx`, `app/src/features/captures/ListPane.tsx`, `app/src/features/captures/DetailPane.tsx`, `app/src/features/captures/ActionBar.tsx`

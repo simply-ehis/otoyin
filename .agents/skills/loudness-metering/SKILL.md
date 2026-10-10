@@ -74,10 +74,10 @@ the acceptance band when hand-checking; the code does NOT hard-enforce a toleran
 - Empty/silent audio returns −70.0 placeholders.
 
 ## Cross-links
-- [mastering](../../mastering/SKILL.md)
-- [platform-export](../../platform-export/SKILL.md)
-- [effects-field-guide](../../effects-field-guide/SKILL.md)
-- [engine-atlas](../../engine-atlas/SKILL.md)
+- [mastering](../mastering/SKILL.md)
+- [platform-export](../platform-export/SKILL.md)
+- [effects-field-guide](../effects-field-guide/SKILL.md)
+- [engine-atlas](../engine-atlas/SKILL.md)
 
 ## Validation
 - Re-measure the mastered file; `integrated_lufs` should equal `target_lufs` within

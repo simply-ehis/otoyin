@@ -1,7 +1,7 @@
 /**
  * Marketplace client — talks directly to the remote marketplace server.
  *
- * Fetches catalog from marketplace.21labs.app, handles checkout, and
+ * Fetches catalog from the hosted marketplace service, handles checkout, and
  * auto-installs licenses after payment. Falls back to bundled catalog
  * when offline.
  */
@@ -11,7 +11,10 @@ import { debug } from "./utils/debug";
 // In development, use Vite proxy to local marketplace backend
 // In production, use the actual marketplace URL
 const isDev = import.meta.env.DEV;
-const MARKETPLACE_URL = isDev ? "/api" : "https://marketplace.21labs.app";
+const MARKETPLACE_URL = isDev
+	? "/api"
+	: (import.meta.env.VITE_MARKETPLACE_URL ??
+		"https://marketplace-mauve-five.vercel.app");
 const LICENSE_POLL_INTERVAL_MS = 5_000;
 const LICENSE_POLL_MAX_ATTEMPTS = 60; // 5 min total — covers 3-D Secure/bank redirects
 
@@ -25,6 +28,8 @@ export interface MarketplaceProduct {
 	long_description?: string;
 	price_usd: number;
 	paid: boolean;
+	coming_soon?: boolean;
+	localized_price?: string;
 	avg_rating?: number;
 	review_count?: number;
 	size_mb?: number;
@@ -41,6 +46,19 @@ export interface CatalogResponse {
 	currency: string;
 	products: MarketplaceProduct[];
 	sig: string;
+}
+
+export interface PricePreviewItem {
+	product_id: string;
+	currency: string;
+	amount: number;
+	formatted_total: string;
+}
+
+export interface PricePreviewResponse {
+	country_code: string;
+	currency: string;
+	prices: PricePreviewItem[];
 }
 
 export interface CheckoutResponse {
@@ -280,6 +298,32 @@ class MarketplaceClient {
 			};
 		}
 		return resp.json();
+	}
+
+	async fetchPricePreview(
+		countryCode: string,
+		productIds: string[],
+	): Promise<PricePreviewResponse | null> {
+		if (!countryCode || productIds.length === 0) {
+			return null;
+		}
+		try {
+			const resp = await fetch(`${this.baseUrl}/v1/catalog/pricing/preview`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					country_code: countryCode,
+					product_ids: productIds,
+				}),
+				signal: AbortSignal.timeout(10_000),
+			});
+			if (!resp.ok) {
+				return null;
+			}
+			return (await resp.json()) as PricePreviewResponse;
+		} catch {
+			return null;
+		}
 	}
 
 	// ── Tax Preview ───────────────────────────────────────────────

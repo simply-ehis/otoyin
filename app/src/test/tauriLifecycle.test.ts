@@ -1,12 +1,16 @@
 /**
  * Tauri lifecycle bridge tests — the platform layer must actually drive the
- * Rust sidecar commands (previously these were web stubs, so the GPU
- * restart buttons and keep-running toggle were placebo).
- * invoke/listen/window are mocked: no Rust needed.
+ * Rust sidecar commands (previously these were web stubs, so the GPU restart
+ * buttons were placebo).
+ * invoke/listen are mocked: no Rust needed.
+ *
+ * Note there is deliberately NO close-handler test asserting that JS calls
+ * `stop_server`. Closing the app is owned entirely by Rust
+ * (`on_window_event` -> `stop_if_ours`); a JS-side handler racing it was the
+ * cause of the orphaned backend. `closing_the_app_is_owned_by_rust` pins that.
  */
 import { invoke } from "@tauri-apps/api/core";
-import { emit, listen } from "@tauri-apps/api/event";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { listen } from "@tauri-apps/api/event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { tauriPlatform } from "@/platform/tauriPlatform";
 
@@ -19,26 +23,12 @@ vi.mock("@tauri-apps/api/event", () => ({
 	listen: vi.fn(),
 }));
 
-vi.mock("@tauri-apps/api/window", () => ({
-	getCurrentWindow: vi.fn(),
-}));
-
-vi.mock("@/stores/serverStore", () => ({
-	useServerStore: {
-		getState: () => ({ keepServerRunningOnClose: false }),
-	},
-}));
-
 const mockedInvoke = vi.mocked(invoke);
-const mockedEmit = vi.mocked(emit);
 const mockedListen = vi.mocked(listen);
-const mockedGetCurrentWindow = vi.mocked(getCurrentWindow);
 
 beforeEach(() => {
 	mockedInvoke.mockReset();
-	mockedEmit.mockReset();
 	mockedListen.mockReset();
-	mockedGetCurrentWindow.mockReset();
 });
 
 describe("tauriPlatform.lifecycle", () => {
@@ -62,31 +52,12 @@ describe("tauriPlatform.lifecycle", () => {
 		});
 	});
 
-	it("setKeepServerRunning invokes the command", async () => {
-		mockedInvoke.mockResolvedValue(undefined);
-		await tauriPlatform.lifecycle.setKeepServerRunning(true);
-		expect(mockedInvoke).toHaveBeenCalledWith("set_keep_server_running", {
-			keepRunning: true,
-		});
-	});
-
-	it("close handler stops the server then allows close", async () => {
-		mockedInvoke.mockResolvedValue(undefined);
-		mockedEmit.mockResolvedValue(undefined);
-		let handler: ((event: { preventDefault: () => void }) => void) | undefined;
-		mockedGetCurrentWindow.mockReturnValue({
-			onCloseRequested: vi.fn((h) => {
-				handler = h;
-				return Promise.resolve(() => {});
-			}),
-		} as never);
+	it("closing the app is owned by Rust, not by a JS handler", async () => {
+		// Registering a webview close handler here is what raced Rust's own
+		// handler and let the window close while the backend survived.
 		await tauriPlatform.lifecycle.setupWindowCloseHandler();
-		expect(handler).not.toBeNull();
-		const preventDefault = vi.fn();
-		await handler?.({ preventDefault });
-		expect(preventDefault).toHaveBeenCalled();
-		expect(mockedInvoke).toHaveBeenCalledWith("stop_server");
-		expect(mockedEmit).toHaveBeenCalledWith("window-close-allowed");
+		expect(mockedListen).not.toHaveBeenCalled();
+		expect(mockedInvoke).not.toHaveBeenCalled();
 	});
 
 	it("subscribes to server-error events", async () => {

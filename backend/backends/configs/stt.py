@@ -198,8 +198,9 @@ def _get_parakeet_configs() -> list[ModelConfig]:
             engine="parakeet",
             hf_repo_id="mudler/parakeet-cpp-gguf",
             model_size="v3-q8",
-            size_mb=600,
-            min_ram_mb=700,
+            # Real size of tdt-0.6b-v3-q8_0.gguf is 940,663,680 B (~897 MB).
+            size_mb=897,
+            min_ram_mb=1000,
             min_vram_mb=0,
             category="stt",
             languages=[
@@ -236,8 +237,11 @@ def _get_parakeet_configs() -> list[ModelConfig]:
             engine="parakeet",
             hf_repo_id="mudler/parakeet-cpp-gguf",
             model_size="v3-f16",
-            size_mb=220,
-            min_ram_mb=300,
+            # Real size of tdt-0.6b-v3-f16.gguf is 1,441,046,400 B (~1375 MB).
+            # This was declared as 220 MB, which made fp16 look *smaller* than the
+            # q8 graph and under-stated the download by ~1.1 GB.
+            size_mb=1375,
+            min_ram_mb=1500,
             min_vram_mb=0,
             category="stt",
             languages=[

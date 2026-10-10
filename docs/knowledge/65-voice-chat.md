@@ -3,7 +3,7 @@
 PURPOSE: Real-time voice agent pipeline (VAD→STT→LLM→TTS) with tool calling, barge-in, streaming, memory, and OpenAI Realtime-compatible endpoint.
 OWNS: backend/services/vad.py, backend/services/voice_chat.py, backend/routes/voice_chat.py, backend/routes/realtime.py, backend/services/observability.py, app/src/stores/voiceChatStore.ts, app/src/components/VoiceChat/
 READ-WHEN: Touching voice chat pipeline, VAD, voice agent, real-time speech, tool confirmation, or OpenAI Realtime protocol.
-KEY-FILES: backend/services/vad.py (Silero VAD), backend/services/voice_chat.py (pipeline core), backend/routes/voice_chat.py (WebSocket), backend/routes/realtime.py (OpenAI Realtime), backend/services/observability.py (metrics), app/src/stores/voiceChatStore.ts (frontend state), app/src/components/VoiceChat/VoiceChatOverlay.tsx (UI)
+KEY-FILES: backend/services/vad.py (Silero VAD), backend/services/voice_chat.py (pipeline core), backend/routes/voice_chat.py (WebSocket), backend/routes/realtime.py (OpenAI Realtime), backend/services/observability.py (metrics), app/src/stores/voiceChatStore.ts (frontend state), app/src/features/voiceChat/VoiceChatOverlay.tsx (UI)
 INVARIANTS: All audio 16kHz mono float32 PCM; VAD singleton per process; barge-in cancels playback; tool confirmation waits up to 30s; rate limiter enforces global/per-client/concurrent limits; partial transcripts best-effort.
 GOTCHAS: SQLAlchemy 1.4 vs 2.0 mismatch in models.py blocks test imports (pre-existing); route processing uses asyncio.create_task to allow confirm_tool/deny_tool during LLM call; MockWebSocket raises Exception("Connection closed") on empty queue.
 UPDATED: 2026-08-05
@@ -100,4 +100,4 @@ When the LLM calls a destructive or confirmation-required tool:
 - **MCP Tools:** (voice chat is a WebSocket session, not individual MCP calls)
 - **REST Endpoints:** `GET /voice-chat/status`, `GET /voice-chat/sessions`, `GET /voice-chat/metrics`, WebSocket: `ws(s)://{host}/voice-chat/ws`
 - **Key Backend Files:** `backend/services/voice_chat.py`, `backend/services/vad.py`, `backend/routes/voice_chat.py`, `backend/routes/realtime.py`
-- **Key Frontend Files:** `app/src/components/VoiceChat/VoiceChatOverlay.tsx`, `app/src/components/VoiceChat/VoiceChatSettings.tsx`, `app/src/components/VoiceChat/ConversationHistoryBrowser.tsx`, `app/src/stores/voiceChatStore.ts`
+- **Key Frontend Files:** `app/src/features/voiceChat/VoiceChatOverlay.tsx`, `app/src/features/voiceChat/VoiceChatSettings.tsx`, `app/src/features/voiceChat/ConversationHistoryBrowser.tsx`, `app/src/stores/voiceChatStore.ts`

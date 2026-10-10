@@ -58,6 +58,31 @@ KOKORO_ONNX_VOICES_URL = (
     "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin"
 )
 
+# The HF mirror (Heliosoph/kokoro-v1.0-onnx) publishes ONLY the fp32 graph, so
+# _onnx_precision.resolve_session_path() always landed on fp32 (~326 MB). The
+# upstream thewh1teagle/kokoro-onnx GitHub release publishes the same weights in
+# fp16 and int8, and it is already the source of our voices file — so prefer
+# those and keep the mirror purely as an fp32 fallback.
+#
+# Published sizes / correlation vs fp32 (release model-files-v1.1):
+#   kokoro-v1.0.onnx      325,505,369 B  baseline
+#   kokoro-v1.0.fp16.onnx 163,527,961 B  0.999
+#   kokoro-v1.0.int8.onnx 114,119,327 B  0.916
+KOKORO_RELEASE_BASE = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1"
+
+# Ordered best-first: (release_filename, local_filename, expected_bytes).
+# local_filename must match _onnx_precision's naming exactly —
+# "<stem>.onnx" / "<stem>_int8.onnx" / "<stem>_fp16.onnx" — because that is what
+# resolve_session_path() globs for. Deriving it by slicing the release filename
+# is wrong here: the stem "kokoro-v1.0" itself ends in ".0", so slicing off
+# ".onnx" leaves "kokoro-v1.0.int8.onnx" (dot) instead of "kokoro-v1.0_int8.onnx"
+# (underscore) and the resolver silently misses it.
+KOKORO_ONNX_VARIANTS: tuple[tuple[str, str, int], ...] = (
+    ("kokoro-v1.0.int8.onnx", "kokoro-v1.0_int8.onnx", 114_119_327),
+    ("kokoro-v1.0.fp16.onnx", "kokoro-v1.0_fp16.onnx", 163_527_961),
+    ("kokoro-v1.0.onnx", "kokoro-v1.0.onnx", 325_505_369),
+)
+
 # Map our ISO language codes to the BCP-47-ish codes kokoro_onnx expects.
 ONNX_LANG_MAP = {
     "en": "en-us",
@@ -95,13 +120,72 @@ class KokoroONNXBackend(BackendBase):
 
     # -- loading -----------------------------------------------------------
 
-    def _resolve_paths(self) -> tuple[str, str]:
-        """Locate the ONNX model + voices files in the HF cache.
+    def _variants_root(self) -> str:
+        """Directory holding downloaded precision variants of the Kokoro graph."""
+        from .. import config
 
-        The model is resolved through ``hf_hub_download`` (it downloads from
-        the HF mirror on first use). The combined voice bank is only available
-        on the GitHub release, so it is fetched on demand if absent.
+        path = config.get_data_dir() / "models" / "kokoro-onnx"
+        os.makedirs(path, exist_ok=True)
+        return str(path)
+
+    def _cached_variant(self) -> tuple[str, str] | None:
+        """Return ``(path, precision)`` for an already-downloaded variant, if any.
+
+        Delegates to _onnx_precision so the int8 > fp16 > fp32 preference lives in
+        one place instead of being reimplemented per engine.
         """
+        from ._onnx_precision import resolve_session_path
+
+        try:
+            return resolve_session_path(self._variants_root(), "kokoro-v1.0")
+        except FileNotFoundError:
+            return None
+
+    def _download_best_variant(self) -> str | None:
+        """Fetch the smallest published variant that isn't already on disk.
+
+        Returns None when every variant is present (the caller then re-resolves),
+        and raises if a download fails so the fp32 mirror can take over.
+        """
+        root = self._variants_root()
+        for release_name, local_name, expected in KOKORO_ONNX_VARIANTS:
+            target = os.path.join(root, local_name)
+            if os.path.exists(target) and os.path.getsize(target) >= expected * 0.95:
+                continue  # already have this one
+            logger.info(
+                "Kokoro ONNX: fetching %s (~%d MB; int8 is ~212 MB lighter than fp32)",
+                release_name,
+                expected // (1024 * 1024),
+            )
+            self._download_file(f"{KOKORO_RELEASE_BASE}/{release_name}", target)
+            return target
+        return None
+
+    def _resolve_paths(self) -> tuple[str, str]:
+        """Locate the ONNX model + voices files.
+
+        Preference order:
+          1. an already-downloaded quantized variant (int8 > fp16 > fp32)
+          2. download the best variant published on the kokoro-onnx release
+          3. fall back to the HF mirror, which only ships fp32
+
+        The combined voice bank is only published on the GitHub release, so it is
+        fetched on demand if absent.
+        """
+        cached = self._cached_variant()
+        if cached is not None:
+            model_path, precision = cached
+            if precision != "fp32":
+                logger.info("Kokoro ONNX: using cached %s graph", precision)
+            return model_path, self._resolve_voices_path()
+
+        fetched = self._download_best_variant()
+        if fetched:
+            resolved = self._cached_variant()
+            if resolved is not None:
+                return resolved[0], self._resolve_voices_path()
+
+        # Fallback: the HF mirror (fp32 only).
         model_fp32 = hf_hub_download(
             repo_id=KOKORO_ONNX_REPO,
             filename=KOKORO_ONNX_MODEL_FILE,
@@ -175,11 +259,15 @@ class KokoroONNXBackend(BackendBase):
         return self._model is not None
 
     def _is_model_cached(self, model_size: str = "default") -> bool:
-        """Check if the Kokoro ONNX model weights are in the HF cache.
+        """True when a Kokoro graph is on disk — quantized variant or HF mirror.
 
-        The voices file is downloaded on-demand during ``load_model`` so it
-        does not need to be present for the engine to be considered cached.
+        The voices file is downloaded on-demand during ``load_model`` so it does
+        not need to be present for the engine to count as cached.
         """
+        # Preferred location: our downloaded precision variants.
+        if self._cached_variant() is not None:
+            return True
+
         from .base import is_model_cached
 
         return is_model_cached(KOKORO_ONNX_REPO, required_files=[KOKORO_ONNX_MODEL_FILE])

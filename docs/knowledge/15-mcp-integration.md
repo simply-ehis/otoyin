@@ -6,8 +6,8 @@
 ## MCP Server
 - **Where:** `backend/mcp_server/server.py` → `build_mcp_server()`
 - **Name:** "otoyin MCP"
-- **Transport:** Streamable HTTP at `/mcp` (one uvicorn process as the REST API, port 17493); stdio shim `21labs-mcp` bridges non-HTTP clients.
-- **Header:** `X-21labs-Client-Id: mcp`
+- **Transport:** Streamable HTTP at `/mcp` (one uvicorn process as the REST API, port 17493); stdio shim `otoyin-mcp` bridges non-HTTP clients.
+- **Header:** `X-otoyin-Client-Id: coding-agent` (legacy `X-21labs-Client-Id` is still accepted).
 
 ## Available Tools
 
@@ -45,17 +45,18 @@
 ## MCP Shim
 - **What:** Bridges MCP stdio transport to the backend's HTTP MCP endpoint.
 - **Where:** `backend/mcp_shim/__main__.py`
-- **Behavior:** Reads JSON-RPC from stdin, forwards to backend HTTP (`21labs-mcp`), writes response to stdout
+- **Behavior:** Reads JSON-RPC from stdin, forwards to backend HTTP (`http://127.0.0.1:17493/mcp/`), writes response to stdout
+- **Repo launcher:** `bin/otoyin-mcp.mjs` resolves the target-suffixed binary in `tauri/src-tauri/binaries/` and is referenced by `.mcp.json` so coding agents can auto-discover it.
 
 ## Frontend MCP Page
 - **What:** UI for configuring MCP server connection and viewing available tools.
-- **Where:** `app/src/components/ServerTab/MCPPage.tsx`
+- **Where:** `app/src/features/settings/MCPPage.tsx`
 
 ## Agent Callable
 - **MCP Tools:** `21labs.speak`, `21labs.transcribe`, `21labs.list_captures`, `21labs.list_profiles`, `21labs.list_models`, `21labs.generate_sfx`, `21labs.generate_music`, `21labs.bounce`, `21labs.noise_reduce`, `21labs.normalize_audio`, `21labs.master_audio`, `21labs.separate_audio`, `21labs.run_recipe`, `21labs.plan_workflow`, `21labs.execute_plan`
 - **REST Endpoints:** `GET /mcp/bindings`, `PUT /mcp/bindings`, `DELETE /mcp/bindings/{clientId}`, `GET /assistant/tool-parity`
 - **Key Backend Files:** `backend/mcp_server/server.py`, `backend/mcp_server/context.py`, `backend/mcp_server/tools/` (all tool files), `backend/routes/mcp_bindings.py`, `backend/routes/assistant.py`
-- **Key Frontend Files:** `app/src/components/ServerTab/MCPPage.tsx`, `app/src/lib/hooks/useMCPBindings.ts`
+- **Key Frontend Files:** `app/src/features/settings/MCPPage.tsx`, `app/src/lib/hooks/useMCPBindings.ts`
 ## Unified Tool Registry
 
 The tool registry () is the single source of truth for all MCP and assistant tools. It prevents drift between the two adapter layers.

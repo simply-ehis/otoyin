@@ -14,23 +14,21 @@ No cloud. This skill covers model sizes, the transcription tool surface, languag
 - Reference transcription for ADR or script alignment.
 
 ## Prerequisites
-- Engine: Whisper STT (faster-whisper). Fallback to transformers Whisper only if faster-whisper
-  is not installed (never breaks mid-upgrade).
-- Model downloaded: `21labs.models_download("whisper-<size>")` / `POST /models/download`.
+- Engine: Whisper STT (whisper.cpp by default; faster-whisper for catalog downloads and native word timestamps).
+- Model downloaded: `21labs.models_download(model_name="whisper-base-en")` / `POST /models/download`.
   Missing model → ValueError "is not yet downloaded".
 - Tool surface: `21labs.transcribe` (MCP) / `POST /transcribe` (REST).
-- See [engine-atlas](./engine-atlas/SKILL.md) and [mcp-tool-reference](./mcp-tool-reference/SKILL.md).
+- See [engine-atlas](../engine-atlas/SKILL.md) and [mcp-tool-reference](../mcp-tool-reference/SKILL.md).
 
-## Model sizes (WHISPER_HF_REPOS)
-| size | HF repo | note |
-|------|---------|------|
-| base | openai/whisper-base | lightest |
-| small | openai/whisper-small | |
-| medium | openai/whisper-medium | |
-| large | openai/whisper-large-v3 | |
-| turbo | openai/whisper-large-v3-turbo | fastest large |
+## Model sizes (MCP `model` keys vs store catalog names)
+| MCP `model` | backend | note |
+|-------------|---------|------|
+| `tiny.en` | whisper.cpp | lightest |
+| `base.en` | whisper.cpp | default accuracy/speed balance |
 
-Invalid `model` → ValueError listing the valid keys above.
+`small`, `medium`, `large`, `turbo`, and names such as `whisper-small-en` are Store/faster-whisper catalog names, not MCP `21labs.transcribe`/`21labs.diarize` model keys.
+
+Invalid MCP `model` → ValueError listing `tiny.en` and `base.en`.
 
 ## Parameters (21labs.transcribe)
 | param | range | default | notes |
@@ -38,7 +36,7 @@ Invalid `model` → ValueError listing the valid keys above.
 | audio_base64 | str | required (XOR audio_path) | decoded to temp .wav; max 200 MB |
 | audio_path | absolute path | loopback callers only | must be absolute; >200 MB rejected |
 | language | code? | auto-detect | e.g. en, es, fr (LANGUAGE_CODE_TO_NAME keys) |
-| model | base/small/medium/large/turbo | loaded size | |
+| model | `tiny.en`, `base.en` | MCP validation key | use faster-whisper catalog names only for downloads, not `21labs.transcribe` |
 
 ## Response shape
 ```
@@ -46,15 +44,15 @@ Invalid `model` → ValueError listing the valid keys above.
 ```
 
 ## Agent procedure
-1. Ensure model cached: `21labs.models_download("whisper-base")`.
-2. Call `21labs.transcribe(audio_base64="<b64>", model="base", language="en")`.
-3. For subtitles: `21labs.export_subtitles(audio_path, fmt="srt", model="base", language="en")`
+1. Ensure model cached: `21labs.models_download(model_name="whisper-base-en")`.
+2. Call `21labs.transcribe(audio_base64="<b64>", model="base.en", language="en")`.
+3. For subtitles: `21labs.export_subtitles(audio_path, fmt="srt", model="base.en", language="en")`
    → returns subtitle file path (`POST /transcription/export-subtitles`).
 
 Example:
 ```
-21labs.transcribe(audio_base64="UklGRg...", model="turbo")
-21labs.export_subtitles(audio_path="/data/captures/x.wav", fmt="srt", model="base")
+21labs.transcribe(audio_base64="UklGRg...", model="base.en")
+21labs.export_subtitles(audio_path="/data/captures/x.wav", fmt="srt", model="base.en")
 ```
 
 ## Pitfalls / Gotchas
@@ -65,9 +63,9 @@ Example:
 - Lang codes use the 10-key map (zh/en/ja/ko/de/fr/ru/pt/es/it) — others may not map.
 
 ## Cross-links
-- [engine-atlas](./engine-atlas/SKILL.md)
-- [mcp-tool-reference](./mcp-tool-reference/SKILL.md)
-- [agent-operating-guide](./agent-operating-guide/SKILL.md)
+- [engine-atlas](../engine-atlas/SKILL.md)
+- [mcp-tool-reference](../mcp-tool-reference/SKILL.md)
+- [agent-operating-guide](../agent-operating-guide/SKILL.md)
 
 ## Validation
 - `text` non-empty and language matches the clip; re-run with explicit `language` if auto-detect drifts.

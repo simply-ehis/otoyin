@@ -30,7 +30,7 @@ This skill pairs with `draft-release-notes` and `release-bump`: triage first, th
 ```bash
 git worktree list  # check for stale ones first
 git worktree prune
-git worktree add ../21-labs-pr-review -b pr-review-<VERSION> main
+git worktree add ../otoyin-pr-review -b pr-review-<VERSION> main
 ```
 
 Keep the main worktree for release-prep work (changelog drafts, direct-to-main follow-ups). Keep the review worktree for `gh pr checkout` — each checkout moves HEAD to a contributor branch, which you don't want to do in the main worktree.
@@ -121,16 +121,17 @@ For each PR in the tier-1 / tier-2 list:
 
 **a. Checkout in the review worktree:**
 ```bash
-cd ../21-labs-pr-review
+cd ../otoyin-pr-review
 git checkout pr-review-<VERSION>  # reset to neutral base
 gh pr checkout <N>
 ```
 
-**b. Read the *actual* commit, not `main..HEAD`:**
+**b. Read the *actual* commits, not `main..HEAD`:**
 
 ```bash
-git show HEAD                    # the PR's actual changes
-git show --stat HEAD             # files touched + line counts
+gh pr diff <N>                   # the PR's actual changes
+git show --stat <sha>            # files touched + line counts
+git show <sha>                   # one commit at a time for multi-commit PRs
 ```
 
 **Do NOT review via `git diff main..HEAD`** if the PR branch is older than main. That diff includes *every commit that landed on main after the PR was forked* as `-` (deletion) lines. A 3-line PR can look like a 700-line revert. This is the single easiest way to misjudge a PR.

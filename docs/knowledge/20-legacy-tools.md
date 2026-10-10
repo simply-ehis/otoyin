@@ -4,12 +4,12 @@ Tools inherited from the original Voicebox fork that remain in 21labs.
 
 ## Audio Capture
 - **What:** Capture system audio output for recording.
-- **Where:** `app/src/components/CapturesTab/`
+- **Where:** `app/src/features/captures/`
 - **Rust:** `start_system_audio_capture`, `stop_system_audio_capture`, `is_system_audio_supported`
 
 ## Audio Playback
 - **What:** Play audio to system output devices.
-- **Where:** `app/src/components/AudioPlayer/AudioPlayer.tsx`
+- **Where:** `app/src/layouts/AudioPlayer/AudioPlayer.tsx`
 - **Rust:** `play_audio_to_devices`, `stop_audio_playback`, `list_audio_output_devices`
 
 ## History

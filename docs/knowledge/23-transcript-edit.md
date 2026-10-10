@@ -48,4 +48,4 @@ interface DeleteWordsRequest {
 - **MCP Tools:** (none — transcript edit is UI-initiated)
 - **REST Endpoints:** `GET /transcript/{generationId}/words`, `POST /transcript/{generationId}/click-word`
 - **Key Backend Files:** `backend/routes/transcript_edit.py`
-- **Key Frontend Files:** `app/src/components/Workspace/TranscriptEditView.tsx`, `app/src/components/Workspace/LiveTranscriptView.tsx`
+- **Key Frontend Files:** `app/src/features/workspace/TranscriptEditView.tsx`, `app/src/features/workspace/LiveTranscriptView.tsx`

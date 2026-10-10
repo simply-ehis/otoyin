@@ -33,13 +33,13 @@ Output: **stereo float32, 48000 Hz**, peak-normalized to 0.9.
 ## Agent procedure
 1. `GET /instruments/gm-types` → confirm program mapping / SoundFont presence.
 2. Call `21labs.play_gm_instrument(program, note, duration, velocity)`.
-3. Decode WAV; bounce/mix via `21labs.bounce` if layering.
+3. Decode WAV; bounce/mix via `21labs.bounce_preview` using base64 `audio_data` tracks if layering.
 4. Finish with [mastering](../mastering/SKILL.md).
 
 ## Worked example
 ```python
-TWENTYLABS.play_gm_instrument(program=0, note=60, duration=1.0, velocity=0.8)   # piano C4
-TWENTYLABS.play_gm_instrument(program=112, note=84, duration=0.8)               # tinkle bell
+21labs.play_gm_instrument(program=0, note=60, duration=1.0, velocity=0.8)   # piano C4
+21labs.play_gm_instrument(program=112, note=84, duration=0.8)               # tinkle bell
 ```
 REST:
 ```bash

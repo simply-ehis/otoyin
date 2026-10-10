@@ -1,5 +1,21 @@
 ﻿import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils/cn";
+import { useUIStore } from "@/stores/uiStore";
+
+/**
+ * Canvas fillStyle does not resolve CSS custom properties — handing it
+ * "hsl(var(--accent))" silently paints black. Resolve the bare-triplet
+ * var() contract (tokens.css) against the element's computed style.
+ */
+function resolveCanvasColor(el: HTMLElement, color: string): string {
+	const match = /^hsl\(var\((--[\w-]+)\)\)$/.exec(color.trim());
+	if (!match) {
+		return color;
+	}
+	const triplet = getComputedStyle(el).getPropertyValue(match[1]).trim();
+	return triplet ? `hsl(${triplet})` : color;
+}
+
 export function WaveformCanvas({
 	peaks,
 	color,
@@ -14,7 +30,11 @@ export function WaveformCanvas({
 	channels?: number;
 }) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
+	// Redraw on theme change: --accent is resolved at draw time, so the
+	// waveform must re-render when the active theme swaps its triplet.
+	const theme = useUIStore((s) => s.theme);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: theme forces a redraw when the active theme swaps the --accent triplet this effect resolves at draw time
 	useEffect(() => {
 		const canvas = canvasRef.current;
 		if (!canvas || !peaks) {
@@ -30,11 +50,12 @@ export function WaveformCanvas({
 		canvas.height = height * dpr;
 		ctx.scale(dpr, dpr);
 		ctx.clearRect(0, 0, width, height);
+		const fill = resolveCanvasColor(canvas, color);
 
 		if (channels <= 2) {
 			const barWidth = Math.max(1, width / peaks.length - 1);
 			const halfHeight = height / 2;
-			ctx.fillStyle = color;
+			ctx.fillStyle = fill;
 			for (let i = 0; i < peaks.length; i++) {
 				const barH = Math.max(1, peaks[i] * halfHeight);
 				const x = i * (barWidth + 1);
@@ -42,7 +63,7 @@ export function WaveformCanvas({
 			}
 		} else {
 			const channelHeight = height / channels;
-			ctx.fillStyle = color;
+			ctx.fillStyle = fill;
 			ctx.globalAlpha = 0.7;
 			for (let ch = 0; ch < channels; ch++) {
 				const yOffset = ch * channelHeight;
@@ -59,7 +80,7 @@ export function WaveformCanvas({
 			}
 			ctx.globalAlpha = 1;
 		}
-	}, [peaks, color, height, channels]);
+	}, [peaks, color, height, channels, theme]);
 
 	if (!peaks) {
 		// Empty lane: render layout space only. The empty-track call to
