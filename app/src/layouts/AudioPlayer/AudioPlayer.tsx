@@ -1,4 +1,4 @@
-import {
+﻿import {
 	PauseIcon as Pause,
 	PlayIcon as Play,
 	ArrowUturnLeftIcon as Repeat,
@@ -92,6 +92,8 @@ function AudioPlayerInner() {
 	const previousAudioIdRef = useRef<string | null>(null);
 	const hasInitializedRef = useRef(false);
 	const isUsingNativePlaybackRef = useRef(false);
+	// Last URL the load effect ran for — resets fallback only on a real track change.
+	const lastLoadedUrlRef = useRef<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [wsReady, setWsReady] = useState(false);
@@ -324,7 +326,11 @@ function AudioPlayerInner() {
 		};
 	}, []);
 
-	// Load audio when URL changes (reuses the existing WaveSurfer instance)
+	// Load audio when URL changes (reuses the existing WaveSurfer instance).
+	// useFallback is intentionally NOT a dependency: a load failure flips it
+	// true, and depending on it here re-ran the effect, cleared the flag, and
+	// re-fetched forever (thousands of 404s against /audio/{id}). The URL ref
+	// resets fallback only when a new track is selected.
 	useEffect(() => {
 		const wavesurfer = wavesurferRef.current;
 		if (!wavesurfer || !wsReady) {
@@ -341,6 +347,7 @@ function AudioPlayerInner() {
 			setCurrentTime(0);
 			setError(null);
 			isUsingNativePlaybackRef.current = false;
+			lastLoadedUrlRef.current = null;
 			return;
 		}
 
@@ -369,8 +376,10 @@ function AudioPlayerInner() {
 		setCurrentTime(0);
 		setDuration(0);
 		// Retry WaveSurfer first on every new URL — a prior decode failure
-		// must not pin all later tracks to the fallback.
-		if (useFallback) {
+		// must not pin all later tracks to the fallback. Bail-out setState
+		// when already false means this is free on the happy path.
+		if (lastLoadedUrlRef.current !== audioUrl) {
+			lastLoadedUrlRef.current = audioUrl;
 			setUseFallback(false);
 		}
 
@@ -391,7 +400,7 @@ function AudioPlayerInner() {
 				setUseFallback(true);
 				setError(null);
 			});
-	}, [audioUrl, wsReady, setCurrentTime, setDuration, useFallback]);
+	}, [audioUrl, wsReady, setCurrentTime, setDuration]);
 
 	// Sync play/pause state (only when user clicks play/pause button, not auto-sync)
 	// This effect is kept for external state changes but should be minimal

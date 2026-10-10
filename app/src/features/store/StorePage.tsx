@@ -9,6 +9,7 @@ import { regionForLocale } from "@/lib/regionCurrency";
 import { cn } from "@/lib/utils/cn";
 import { debug } from "@/lib/utils/debug";
 import { isProductNew, useProductStore } from "@/stores/productStore";
+import { useUIStore } from "@/stores/uiStore";
 import { Button } from "@/ui/button";
 import { PageTabs } from "@/ui/tabs";
 import { useToast } from "@/ui/use-toast";
@@ -439,6 +440,12 @@ export function StorePage() {
 	const deleteMut = useMutation({
 		mutationFn: (id: string) => apiClient.deleteModel(id),
 		onSuccess: async (_data, id) => {
+			// Drop a stale engine selection that would 400 on the next load.
+			const deleted = models?.find((x) => x.model_name === id);
+			const ui = useUIStore.getState();
+			if (deleted?.engine && ui.selectedEngine === deleted.engine) {
+				ui.setSelectedEngine("");
+			}
 			toast({
 				title: "Model deleted",
 				description: `${id} removed. Re-download anytime from this marketplace.`,

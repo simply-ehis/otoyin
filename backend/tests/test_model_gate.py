@@ -222,6 +222,56 @@ def test_models_load_gates_unentitled(monkeypatch):
     assert "downloaded" in resp.json()["detail"].lower() or "models tab" in resp.json()["detail"].lower()
 
 
+def test_models_load_self_heals_when_files_present(monkeypatch):
+    """Manifest row missing + files on disk → re-seed, then load succeeds.
+
+    Regression: privacy wipe / recreated DB dropped model_downloads while
+    HF cache kept the weights. Status reported downloaded=True (filesystem)
+    but /models/load 400'd on the entitlement gate."""
+    client = _build_app("load_unload")
+    import backend.backends as backends
+    import backend.services.model_registry as mr
+    import backend.utils.model_lifecycle as lcm
+    import backend.utils.model_status as ms
+
+    cfg = _fake_cfg(model_name="kokoro-onnx", engine="kokoro")
+    sess = _make_session_factory()
+    real_is_downloaded = mr.is_downloaded
+
+    monkeypatch.setattr(mr, "SessionLocal", sess)
+    monkeypatch.setattr(backends, "get_all_model_configs", lambda: [cfg])
+    # Gate says no row (first call only) — after heal the real lookup applies.
+    call_count = {"n": 0}
+
+    def _gate(*a, **k):
+        call_count["n"] += 1
+        if call_count["n"] == 1:
+            return False
+        return real_is_downloaded(*a, **k)
+
+    monkeypatch.setattr(mr, "is_downloaded", _gate)
+    # Files still on disk after wipe.
+    monkeypatch.setattr(ms, "is_model_downloaded", lambda name: True)
+
+    loaded = {"called": False}
+
+    async def fake_load(target, size):
+        loaded["called"] = True
+
+    monkeypatch.setattr(backends, "load_engine_model", fake_load)
+    monkeypatch.setattr(backends, "check_model_loaded", lambda c: True)
+    monkeypatch.setattr(lcm.lifecycle_manager, "mark_model_used", lambda e: None)
+
+    resp = client.post(
+        "/models/load",
+        params={"engine": "kokoro", "model_name": "kokoro-onnx"},
+    )
+    assert resp.status_code == 200, resp.text
+    assert loaded["called"] is True
+    # Manifest row was re-seeded via the real session factory path.
+    assert real_is_downloaded("kokoro-onnx", "default") is True
+
+
 def test_load_engine_model_gates_unentitled(monkeypatch):
     """The shared TTS load chokepoint refuses unentitled models for every caller
     (Models-load route, generations pre-load route, generation service)."""

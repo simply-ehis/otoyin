@@ -354,7 +354,15 @@ def get_tts_backend_for_engine(engine: str) -> TTSBackend:
         if entry is None:
             raise ValueError(f"Unknown TTS engine: {engine}. Supported: {list(TTS_ENGINES.keys())}")
 
-        return resolve_tts_backend(entry)
+        backend = resolve_tts_backend(entry)
+        # resolve_tts_backend() caches into its own module-level dict (tts.py).
+        # Mirror the instance into THIS module's _tts_backends too — the
+        # single-resident offload loop and get_tts_backend_for_engine() both
+        # read this dict. Without the mirror, every call re-instantiated a
+        # fresh unloaded backend and check_model_loaded() always returned False
+        # ("backend did not report loaded after load" → 500).
+        _tts_backends[engine] = backend
+        return backend
 
 
 _stt_backends: dict[str, STTBackend] = {}
@@ -517,8 +525,11 @@ def get_music_backend(engine: str = "stable_audio") -> MusicBackend:
 def reset_backends():
     """Reset backend instances (useful for testing)."""
     global _tts_backend, _tts_backends, _stt_backend, _llm_backends, _music_backends
+    from . import tts as _tts_mod
+
     _tts_backend = None
     _tts_backends.clear()
+    _tts_mod._tts_backends.clear()
     _stt_backend = None
     _llm_backends.clear()
     _music_backends.clear()

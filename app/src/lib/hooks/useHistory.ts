@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { clearDeletedGenerationState } from "@/lib/cleanup/deleteCleanup";
 import { apiClient } from "@/lib/api/client";
 import type { HistoryQuery } from "@/lib/api/types";
 import { showStudioErrorToast } from "@/lib/errors";
@@ -25,8 +26,8 @@ export function useDeleteGeneration() {
 	return useMutation({
 		mutationFn: (generationId: string) =>
 			apiClient.deleteGeneration(generationId),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["history"] });
+		onSuccess: (_data, generationId) => {
+			clearDeletedGenerationState(queryClient, generationId);
 		},
 		onError: showStudioErrorToast,
 	});

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { clearDeletedProfileState } from "@/lib/cleanup/deleteCleanup";
 import { apiClient } from "@/lib/api/client";
 import type { VoiceProfileCreate } from "@/lib/api/types";
 import { usePlatform } from "@/platform/PlatformContext";
@@ -56,8 +57,8 @@ export function useDeleteProfile() {
 
 	return useMutation({
 		mutationFn: (profileId: string) => apiClient.deleteProfile(profileId),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["profiles"] });
+		onSuccess: (_data, profileId) => {
+			clearDeletedProfileState(queryClient, profileId);
 		},
 	});
 }

@@ -325,6 +325,16 @@ def delete_all_data(
 
     db.commit()
 
+    # Re-seed the download manifest from models still on disk. Wiping
+    # model_downloads must not leave Activate 400ing for files the user
+    # already has (status reports downloaded from the filesystem).
+    try:
+        from ..services.model_registry import reconcile_downloads
+
+        reconcile_downloads()
+    except Exception:
+        logger.debug("Manifest reconcile after wipe failed", exc_info=True)
+
     # Delete audio files
     audio_dir = data_dir / "audio"
     audio_deleted = 0

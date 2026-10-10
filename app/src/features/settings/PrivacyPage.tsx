@@ -2,7 +2,9 @@ import {
 	ArrowDownTrayIcon,
 	ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
+import { clearAllAppDataState } from "@/lib/cleanup/deleteCleanup";
 import { apiClient } from "@/lib/api/client";
 import { showStudioErrorToast } from "@/lib/errors";
 import { downloadBlob } from "@/lib/utils/download";
@@ -13,6 +15,7 @@ import { useToast } from "@/ui/use-toast";
 
 export function PrivacyPage() {
 	const { toast } = useToast();
+	const queryClient = useQueryClient();
 	const [exporting, setExporting] = useState(false);
 	const [deleting, setDeleting] = useState(false);
 	const [confirmationToken, setConfirmationToken] = useState<string | null>(
@@ -60,6 +63,7 @@ export function PrivacyPage() {
 		setDeleting(true);
 		try {
 			await apiClient.confirmDelete(confirmationToken);
+			clearAllAppDataState(queryClient);
 			setConfirmationToken(null);
 			toast({
 				title: "Data deleted",
@@ -70,7 +74,7 @@ export function PrivacyPage() {
 		} finally {
 			setDeleting(false);
 		}
-	}, [confirmationToken, toast]);
+	}, [confirmationToken, queryClient, toast]);
 
 	return (
 		<div className="flex flex-col h-full min-h-0">

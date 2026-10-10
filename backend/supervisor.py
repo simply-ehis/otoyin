@@ -37,10 +37,19 @@ MEMORY_CRITICAL_MB = 7168  # force-unload all models above this
 
 
 def _get_venv_python() -> str:
-    """Find the venv python executable."""
+    """Find the venv python executable.
+
+    The venv lives next to this package (``backend/venv``), not at the repo
+    root. Checking only the repo root made the supervisor fall back to the
+    system interpreter, which has none of the engine deps (kokoro_onnx etc.)
+    and every model load 500'd.
+    """
+    backend_dir = Path(__file__).resolve().parent
     candidates = [
-        Path(__file__).resolve().parent.parent / "venv" / "Scripts" / "python.exe",
-        Path(__file__).resolve().parent.parent / "venv" / "bin" / "python",
+        backend_dir / "venv" / "Scripts" / "python.exe",
+        backend_dir / "venv" / "bin" / "python",
+        backend_dir.parent / "venv" / "Scripts" / "python.exe",
+        backend_dir.parent / "venv" / "bin" / "python",
     ]
     for p in candidates:
         if p.exists():

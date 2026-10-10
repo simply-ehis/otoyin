@@ -16,7 +16,11 @@ from ..protocols import TTSBackend
 
 logger = logging.getLogger(__name__)
 
-# Global backend singletons live in registry.__init__; shared ref for lifecycle.
+# Cache of instances created by resolve_tts_backend(). Note: the
+# process-wide singleton dict used by get_tts_backend_for_engine /
+# the single-resident offload loop lives in registry.__init__ — that
+# function mirrors instances here after resolve. This dict exists so
+# resolve can self-register for lifecycle without a circular import.
 _tts_backends: dict[str, TTSBackend] = {}
 
 

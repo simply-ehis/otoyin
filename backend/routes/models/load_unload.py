@@ -59,7 +59,33 @@ async def load_model(engine: str | None = None, model_size: str = "default", mod
                 detail=f"Unknown engine: {target} — download its model from the Store first",
             )
     if not is_downloaded(cfg.model_name, cfg.model_size):
-        raise HTTPException(status_code=400, detail=f"{MODEL_NOT_DOWNLOADED_MSG} ({cfg.model_name})")
+        # Self-heal: files may still be on disk after a privacy wipe or a
+        # recreated DB dropped the manifest row. Re-seed instead of 400 so
+        # Activate keeps working for models the user already has.
+        healed = False
+        try:
+            from ...services.model_registry import seed_download
+            from ...utils.model_status import is_model_downloaded
+
+            if is_model_downloaded(cfg.model_name):
+                seed_download(
+                    (
+                        cfg.model_name,
+                        cfg.model_size,
+                        cfg.engine,
+                        cfg.hf_repo_id,
+                        None,
+                    )
+                )
+                healed = True
+                logger.info(
+                    "Manifest self-healed for %s (files present, row was missing)",
+                    cfg.model_name,
+                )
+        except Exception:
+            logger.debug("Manifest self-heal failed for %s", cfg.model_name, exc_info=True)
+        if not healed:
+            raise HTTPException(status_code=400, detail=f"{MODEL_NOT_DOWNLOADED_MSG} ({cfg.model_name})")
 
     # Integrity gate: a tampered/partial cache must not load silently.
     try:
