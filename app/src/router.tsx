@@ -8,10 +8,8 @@ import {
 } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useRef } from "react";
 import { AppFrame } from "@/layouts/AppFrame/AppFrame";
-import { AnnouncementBanner } from "@/layouts/Banner/AnnouncementBanner";
-import { ServerStatusBanner } from "@/layouts/Banner/ServerStatusBanner";
+import { TopBanners } from "@/layouts/Banner/TopBanners";
 import { ErrorBoundary } from "@/layouts/ErrorBoundary/ErrorBoundary";
-import { RecommendedModelsBanner } from "@/features/store/RecommendedModelsBanner";
 import { TabIntroMount } from "@/features/onboarding/TabIntro";
 import { AutoUpdateFlow } from "@/features/settings/AutoUpdateFlow";
 import { AppLoadingScreen } from "@/ui/AppLoadingScreen";
@@ -470,28 +468,24 @@ function RootLayout() {
 	return (
 		<AppFrame>
 			<div className="flex flex-1 min-h-0 overflow-hidden">
-				<Suspense fallback={<div className="w-16 bg-secondary shrink-0" />}>
+				<Suspense fallback={<div className="w-14 bg-secondary shrink-0" />}>
 					<ErrorBoundary
-						fallback={() => <div className="w-16 bg-secondary shrink-0" />}
+						fallback={() => <div className="w-14 bg-secondary shrink-0" />}
 					>
 						<Sidebar />
 					</ErrorBoundary>
 				</Suspense>
 
 				<main className="flex-1 overflow-hidden flex flex-col min-w-0">
+					{/* Single priority strip — replaces three stacked banners that
+					    each added mt-3 + full padding under the header. */}
 					<ErrorBoundary fallback={() => null}>
-						<RecommendedModelsBanner />
-					</ErrorBoundary>
-					<ErrorBoundary fallback={() => null}>
-						<AnnouncementBanner />
-					</ErrorBoundary>
-					<ErrorBoundary fallback={() => null}>
-						<ServerStatusBanner />
+						<TopBanners />
 					</ErrorBoundary>
 					<ErrorBoundary fallback={() => null}>
 						<TabIntroMount />
 					</ErrorBoundary>
-					<div className="container mx-auto px-8 max-w-[1800px] h-full overflow-hidden flex flex-col">
+					<div className="container mx-auto px-4 max-w-[1800px] h-full overflow-hidden flex flex-col">
 						{boot.ready ? (
 							<Suspense fallback={<AppLoadingScreen />}>
 								<ErrorBoundary>

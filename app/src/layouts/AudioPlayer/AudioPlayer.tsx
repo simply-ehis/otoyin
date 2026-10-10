@@ -149,7 +149,7 @@ function AudioPlayerInner() {
 					cursorWidth: 3,
 					barWidth: 2,
 					barRadius: 2,
-					height: 36,
+					height: 40,
 					normalize: true,
 					interact: true,
 					dragToSeek: { debounceTime: 0 },
@@ -848,18 +848,22 @@ function AudioPlayerInner() {
 	const timeLabel = `${formatAudioDuration(currentTime)} / ${formatAudioDuration(duration)}`;
 
 	return (
-		<div className="pointer-events-none fixed inset-x-0 bottom-3 z-50 flex justify-center px-3">
-			<div className="pointer-events-auto flex h-12 w-full max-w-2xl items-center gap-1.5 rounded-full border border-border bg-card/95 py-1.5 pl-1.5 pr-2 shadow-xl backdrop-blur">
+		<div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
+			<div className="pointer-events-auto flex h-14 w-full max-w-3xl items-center gap-2.5 rounded-2xl border border-border bg-card/95 px-2.5 py-2 shadow-xl backdrop-blur">
 				{/* Play/Pause Button */}
 				<button
 					type="button"
 					onClick={handlePlayPause}
 					disabled={isLoading || (duration === 0 && !useFallback)}
-					className="grid size-9 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground transition hover:brightness-110 disabled:opacity-40"
+					className="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground transition hover:brightness-110 disabled:opacity-40"
 					title={
-						duration === 0 && !isLoading && !useFallback
-							? "Audio not loaded"
-							: ""
+						isLoading
+							? "Loading…"
+							: duration === 0 && !useFallback
+								? "Audio not loaded"
+								: isPlaying
+									? "Pause (Space)"
+									: "Play (Space)"
 					}
 					aria-label={
 						duration === 0 && !isLoading && !useFallback
@@ -875,15 +879,15 @@ function AudioPlayerInner() {
 							aria-hidden="true"
 						/>
 					) : isPlaying ? (
-						<Pause className="size-4 fill-current" aria-hidden="true" />
+						<Pause className="size-5 fill-current" aria-hidden="true" />
 					) : (
-						<Play className="size-4 fill-current" aria-hidden="true" />
+						<Play className="size-5 fill-current" aria-hidden="true" />
 					)}
 				</button>
 
 				{/* Title */}
 				{title ? (
-					<p className="hidden max-w-[120px] shrink-0 truncate text-xs font-medium text-foreground sm:block">
+					<p className="hidden max-w-[140px] shrink-0 truncate text-xs font-medium text-foreground sm:block">
 						{title}
 					</p>
 				) : null}
@@ -900,7 +904,7 @@ function AudioPlayerInner() {
 								onClick={retryLoad}
 								title="Retry loading audio"
 								aria-label="Retry loading audio"
-								className="shrink-0 rounded-full border border-border px-2 py-0.5 text-xs text-foreground transition-colors hover:bg-secondary"
+								className="shrink-0 rounded-full border border-border px-2.5 py-0.5 text-xs text-foreground transition-colors hover:bg-secondary"
 							>
 								Retry
 							</button>
@@ -918,14 +922,17 @@ function AudioPlayerInner() {
 					) : (
 						<div
 							ref={waveformRef}
-							className="h-9 w-full select-none"
-							title="Click to seek"
+							className="h-10 w-full select-none"
+							title="Click or drag to seek"
 						/>
 					)}
 				</div>
 
 				{/* Time Display */}
-				<span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
+				<span
+					className="hidden shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground sm:inline"
+					title="Elapsed / total"
+				>
 					{timeLabel}
 				</span>
 
@@ -937,9 +944,9 @@ function AudioPlayerInner() {
 						const idx = steps.indexOf(playbackRate);
 						setPlaybackRate(steps[(idx + 1) % steps.length] ?? 1);
 					}}
-					className="grid h-7 min-w-9 shrink-0 place-items-center rounded-full px-1.5 font-mono text-[11px] tabular-nums text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-					title={`Listening speed ${playbackRate}× — click to change`}
-					aria-label={`Listening speed ${playbackRate} times. Activate to change speed.`}
+					className="grid h-8 min-w-10 shrink-0 place-items-center rounded-full px-2 font-mono text-[11px] tabular-nums text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+					title={`Playback speed ${playbackRate}× — click to change`}
+					aria-label={`Playback speed ${playbackRate} times. Activate to change speed.`}
 				>
 					{playbackRate}×
 				</button>
@@ -948,34 +955,34 @@ function AudioPlayerInner() {
 				<button
 					type="button"
 					onClick={toggleLoop}
-					className={`grid size-7 shrink-0 place-items-center rounded-full transition-colors ${
+					className={`grid size-8 shrink-0 place-items-center rounded-full transition-colors ${
 						isLooping
 							? "bg-accent text-accent-foreground"
 							: "text-muted-foreground hover:bg-secondary hover:text-foreground"
 					}`}
-					title="Toggle loop"
+					title={isLooping ? "Stop looping" : "Loop track"}
 					aria-label={isLooping ? "Stop looping" : "Loop"}
 					aria-pressed={isLooping}
 				>
-					<Repeat className="size-3.5" aria-hidden="true" />
+					<Repeat className="size-4" aria-hidden="true" />
 				</button>
 
 				{/* Volume Control */}
 				<button
 					type="button"
 					onClick={() => setIsMuted(!isMuted)}
-					className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+					className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
 					title={isMuted || volume === 0 ? "Unmute" : "Mute"}
 					aria-label={isMuted || volume === 0 ? "Unmute" : "Mute"}
 					aria-pressed={isMuted}
 				>
 					{isMuted || volume === 0 ? (
-						<VolumeX className="size-3.5" aria-hidden="true" />
+						<VolumeX className="size-4" aria-hidden="true" />
 					) : (
-						<Volume2 className="size-3.5" aria-hidden="true" />
+						<Volume2 className="size-4" aria-hidden="true" />
 					)}
 				</button>
-				<div className="hidden w-16 shrink-0 md:block">
+				<div className="hidden w-20 shrink-0 md:block">
 					<Slider
 						value={[isMuted ? 0 : volume * 100]}
 						onValueChange={handleVolumeChange}
@@ -983,6 +990,7 @@ function AudioPlayerInner() {
 						step={1}
 						className="w-full"
 						aria-label="Volume"
+						title={`${Math.round((isMuted ? 0 : volume) * 100)}% volume`}
 						aria-valuetext={`${Math.round((isMuted ? 0 : volume) * 100)}%`}
 					/>
 				</div>
@@ -991,11 +999,11 @@ function AudioPlayerInner() {
 				<button
 					type="button"
 					onClick={handleClose}
-					className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+					className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
 					title="Close player"
 					aria-label="Close player"
 				>
-					<X className="size-3.5" aria-hidden="true" />
+					<X className="size-4" aria-hidden="true" />
 				</button>
 			</div>
 			{/* Hidden fallback engine (WaveSurfer decode unsupported) */}

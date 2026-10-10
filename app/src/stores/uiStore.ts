@@ -102,7 +102,7 @@ export const useUIStore = create<UIStore>()(
 		(set) => ({
 			sidebarOpen: true,
 			setSidebarOpen: (open) => set({ sidebarOpen: open }),
-			sidebarWidth: 240,
+			sidebarWidth: 220,
 			setSidebarWidth: (width) => set({ sidebarWidth: width }),
 
 			profileDialogOpen: false,

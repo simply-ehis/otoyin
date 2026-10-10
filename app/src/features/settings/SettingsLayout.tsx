@@ -167,7 +167,7 @@ export function SettingsLayout() {
 		<div className="flex h-full min-h-0">
 			<nav
 				aria-label="Settings sections"
-				className="w-52 shrink-0 overflow-y-auto border-r border-border px-2 py-3"
+				className="w-48 shrink-0 overflow-y-auto border-r border-border px-1.5 py-2"
 			>
 				{TAB_GROUPS.map((group) => {
 					const visible = group.tabs.filter(
@@ -177,11 +177,11 @@ export function SettingsLayout() {
 						return null;
 					}
 					return (
-						<div key={group.label} className="mb-3 last:mb-0">
-							<p className="px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+						<div key={group.label} className="mb-2 last:mb-0">
+							<p className="px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
 								{group.label}
 							</p>
-							<ul className="flex flex-col gap-0.5">
+							<ul className="flex flex-col gap-px">
 								{visible.map((tab) => {
 									const active =
 										tab.path === "/settings"
@@ -192,8 +192,9 @@ export function SettingsLayout() {
 											<Link
 												to={tab.path}
 												aria-current={active ? "page" : undefined}
+												title={t(tab.labelKey)}
 												className={cn(
-													"relative flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-150",
+													"relative flex items-center gap-2 rounded-md px-2.5 py-1 text-[13px] font-medium transition-colors duration-150",
 													"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
 													active
 														? "bg-secondary text-foreground"
@@ -203,11 +204,11 @@ export function SettingsLayout() {
 												{active ? (
 													<span
 														aria-hidden="true"
-														className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r bg-accent"
+														className="absolute left-0 top-0.5 bottom-0.5 w-[3px] rounded-r bg-accent"
 													/>
 												) : null}
 												<tab.icon
-													className="size-4 shrink-0"
+													className="size-3.5 shrink-0"
 													aria-hidden="true"
 												/>
 												<span className="truncate">{t(tab.labelKey)}</span>
@@ -220,7 +221,7 @@ export function SettingsLayout() {
 					);
 				})}
 			</nav>
-			<div className="min-w-0 flex-1 overflow-y-auto px-6 pb-6 pt-6">
+			<div className="min-w-0 flex-1 overflow-y-auto px-4 pb-4 pt-3">
 				<Outlet />
 			</div>
 		</div>
