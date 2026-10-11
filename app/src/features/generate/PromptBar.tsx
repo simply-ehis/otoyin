@@ -16,6 +16,7 @@ import type {
 	ModelStatusListResponse,
 	PresetVoice,
 } from "@/lib/api/types";
+import { engineLabel } from "@/lib/constants/engines";
 import { getLanguageOptionsForEngine } from "@/lib/constants/languages";
 import { useGenerationForm } from "@/lib/hooks/useGenerationForm";
 import { useProfile, useProfiles } from "@/lib/hooks/useProfiles";
@@ -40,6 +41,7 @@ import { buildEffectsChain } from "./buildEffectsChain";
 import { usePresetAudition } from "./usePresetAudition";
 import {
 	applyEngineSelection,
+	preferredProfile,
 	resolveEngineLanguage,
 	selectableEngines,
 	useDownloadedEngines,
@@ -117,22 +119,39 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 		},
 	});
 
-	// Default-select the first voice
+	// Default-select a voice. Prefers one whose engine is installed so the app
+	// never boots into an unusable voice (see preferredProfile). A selection
+	// made here is tracked in autoSelectedId: model status arrives after the
+	// profile list, so the first pick may precede the engine data and is
+	// upgraded once it lands. A selection the user made is never overridden.
+	const autoSelectedId = useRef<string | null>(null);
+	const downloadedEngines = useDownloadedEngines();
 	useEffect(() => {
-		if (!selectedProfileId && profiles && profiles.length > 0 && profiles[0]) {
-			setSelectedProfileId(profiles[0].id);
+		if (!profiles || profiles.length === 0) {
 			return;
 		}
-		if (
-			selectedProfileId &&
-			profiles &&
-			!profiles.find((p) => p.id === selectedProfileId)
-		) {
-			setSelectedProfileId(
-				profiles.length > 0 && profiles[0] ? profiles[0].id : null,
-			);
+		const current = selectedProfileId
+			? profiles.find((p) => p.id === selectedProfileId)
+			: undefined;
+		if (current && autoSelectedId.current !== current.id) {
+			return;
 		}
-	}, [selectedProfileId, profiles, setSelectedProfileId]);
+		const pick = preferredProfile(profiles, downloadedEngines);
+		if (!pick) {
+			return;
+		}
+		if (current?.id === pick.id) {
+			autoSelectedId.current = null;
+			return;
+		}
+		autoSelectedId.current = pick.id;
+		setSelectedProfileId(pick.id);
+	}, [
+		selectedProfileId,
+		profiles,
+		downloadedEngines,
+		setSelectedProfileId,
+	]);
 
 	// Sync form language/engine when profile changes. Language precedence:
 	// explicit per-engine memory beats the profile default beats English —
@@ -177,6 +196,11 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 	}, [selectedProfile, effectPresets, form, languageByEngine]);
 
 	const engine = form.watch("engine") as string | undefined;
+	// Engine the selected voice needs when nothing installed can run it —
+	// surfaced on the engine-select fallback so the empty state is explainable
+	// instead of a generic "Get a TTS model".
+	const profileEngine =
+		selectedProfile?.default_engine ?? selectedProfile?.preset_engine ?? "";
 	const caps = useEngineCapabilities()[engine ?? ""];
 	const supportsInstruct = !!(caps?.emotion_control || caps?.supports_instruct);
 	const tags = caps?.paralinguistic_tags ? (caps.supported_tags ?? []) : [];
@@ -206,6 +230,12 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 		const seen = new Set<string>();
 		const out: PresetVoice[] = [];
 		for (const m of engineModels) {
+			// Only voices the engine can actually run now. Listing a
+			// not-yet-downloaded model's presets offered voices the engine
+			// select refused to run, so the picker and the engine disagreed.
+			if (!m.downloaded) {
+				continue;
+			}
 			for (const v of m.preset_voices ?? []) {
 				if (!seen.has(v.id)) {
 					seen.add(v.id);
@@ -223,8 +253,9 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 	const supportsDesign = engineModels.some((m) => !!m.voice_design);
 	const engineDownloaded = engineModels.some((m) => m.downloaded);
 
-	// Audition + search for the preset list. Snippets need the model on
-	// disk, so the play buttons stay disabled until it is downloaded.
+	// Audition + search for the preset list. Presets above are already
+	// download-gated, so the disabled state is defence in depth rather than
+	// the usual path.
 	const { audition, loadingVoiceId, isPreviewPlaying } = usePresetAudition(
 		engine ?? "",
 	);
@@ -652,15 +683,22 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 							))}
 						</SelectContent>
 					</Select>
-				) : (
-					<button
-						type="button"
-						onClick={() => navigate({ to: "/store" })}
-						className="flex items-center gap-1 rounded-md border border-dashed border-accent/40 bg-accent/5 px-2 py-1 text-xs text-accent transition-colors hover:bg-accent/10"
-					>
-						Get a TTS model
-					</button>
-				)}
+			) : (
+				<button
+					type="button"
+					onClick={() => navigate({ to: "/store" })}
+					title={
+						profileEngine
+							? `${selectedProfile?.name ?? "This voice"} needs ${engineLabel(profileEngine)} to generate — download it from the Store, or pick a Kokoro voice.`
+							: "Download a TTS model from the Store to start generating."
+					}
+					className="flex items-center gap-1 rounded-md border border-dashed border-accent/40 bg-accent/5 px-2 py-1 text-xs text-accent transition-colors hover:bg-accent/10"
+				>
+					{profileEngine
+						? `Get ${engineLabel(profileEngine)}`
+						: "Get a TTS model"}
+				</button>
+			)}
 
 				{/* Language selector — choice is remembered per engine */}
 				<Select

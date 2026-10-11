@@ -196,6 +196,37 @@ export function installableEngines(
 	return opts;
 }
 
+/**
+ * Voice to pre-select when the prompt bar has none (or a stale one).
+ *
+ * Preference: the first profile whose engine is actually *downloaded*. The
+ * alternative — taking `profiles[0]` — boots the app into a voice whose
+ * engine is missing: the picker lists that engine's presets while the engine
+ * select goes empty and only offers "Get a TTS model", so nothing can be
+ * generated. Falls back to the first profile when no engine is installed yet
+ * (the bar still renders, with an explainable download prompt).
+ */
+export function preferredProfile<
+	T extends { default_engine?: string; preset_engine?: string },
+>(
+	profiles: readonly T[] | undefined,
+	downloaded?: Set<string>,
+): T | undefined {
+	if (!profiles || profiles.length === 0) {
+		return undefined;
+	}
+	if (downloaded && downloaded.size > 0) {
+		const usable = profiles.find((p) => {
+			const engine = p.default_engine ?? p.preset_engine;
+			return engine ? downloaded.has(engine) : false;
+		});
+		if (usable) {
+			return usable;
+		}
+	}
+	return profiles[0];
+}
+
 /** Apply an engine choice: fix up language when the engine constrains it. */
 export function applyEngineSelection(
 	setEngine: (engine: GenerationFormValues["engine"]) => void,
