@@ -812,6 +812,7 @@
 	"settings": {
 		"tabs": {
 			"general": "常规",
+			"workspace": "工作区",
 			"generation": "生成",
 			"captures": "捕获",
 			"mcp": "MCP",

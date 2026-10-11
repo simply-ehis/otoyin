@@ -848,6 +848,7 @@
 	"settings": {
 		"tabs": {
 			"general": "General",
+			"workspace": "Arbeitsbereich",
 			"generation": "Generation",
 			"captures": "Captures",
 			"mcp": "MCP",

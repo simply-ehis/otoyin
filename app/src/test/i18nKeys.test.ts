@@ -54,6 +54,11 @@ const DYNAMIC_DEFAULT_RE =
 // therefore exempt — a static catalog entry would OVERRIDE it.
 const DV_ANY_RE =
 	/\bt\(\s*["']([A-Za-z0-9_.]+)["']\s*,\s*\{\s*defaultValue\s*:\s*([^}]{1,300}?)\s*[,}]/gs;
+// Key-holder properties (labelKey, titleKey, …) later passed to t().
+// These never appear as a direct t() call, so KEY_RE alone misses them —
+// which is how settings.tabs.workspace leaked the raw key into the rail.
+const KEY_PROP_RE =
+	/\b(?:labelKey|titleKey|descriptionKey|subtitleKey|ariaKey|tooltipKey|placeholderKey)\s*:\s*["']([A-Za-z0-9_.]+)["']/g;
 
 describe("i18n keys", () => {
 	it("every used key resolves in the English catalog", () => {
@@ -67,7 +72,7 @@ describe("i18n keys", () => {
 			if (file.includes(".test.")) {
 				continue;
 			}
-			for (const re of [KEY_RE, STR_DEFAULT_RE, DV_DEFAULT_RE, BT_DEFAULT_RE]) {
+			for (const re of [KEY_RE, KEY_PROP_RE, STR_DEFAULT_RE, DV_DEFAULT_RE, BT_DEFAULT_RE]) {
 				re.lastIndex = 0;
 				for (const m of text.matchAll(re)) {
 					const key = m[1];
