@@ -39,6 +39,7 @@ export function useAssistantProjects({
 	const [addingSource, setAddingSource] = useState(false);
 	const [creatingPlan, setCreatingPlan] = useState(false);
 	const [loadingConversation, setLoadingConversation] = useState(false);
+	const [loadingHistory, setLoadingHistory] = useState(false);
 	const [selectingProject, setSelectingProject] = useState(false);
 	const [historyConvs, setHistoryConvs] = useState<
 		Array<{ id: string; name?: string; updated_at?: string }>
@@ -68,6 +69,7 @@ export function useAssistantProjects({
 		if (view === "projects") {
 			loadProjects();
 		} else if (view === "history") {
+			setLoadingHistory(true);
 			apiClient
 				.listConversations("assistant", 30)
 				.then((c) =>
@@ -77,7 +79,8 @@ export function useAssistantProjects({
 				)
 				.catch((err) => {
 					debug.warn("[assistant] list history failed:", err);
-				});
+				})
+				.finally(() => setLoadingHistory(false));
 		}
 	}, [view, loadProjects]);
 
@@ -228,6 +231,7 @@ export function useAssistantProjects({
 		addingSource,
 		creatingPlan,
 		loadingConversation,
+		loadingHistory,
 		selectingProject,
 		historyConvs,
 		loadProjects,

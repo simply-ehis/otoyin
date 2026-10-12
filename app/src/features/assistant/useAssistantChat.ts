@@ -35,6 +35,7 @@ export function useAssistantChat({
 		null,
 	);
 	const [harnessState, setHarnessState] = useState<HarnessState | null>(null);
+	const [historyLoading, setHistoryLoading] = useState(false);
 
 	const endRef = useRef<HTMLDivElement>(null);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -79,6 +80,7 @@ export function useAssistantChat({
 
 	useEffect(() => {
 		if (open && messages.length === 0) {
+			setHistoryLoading(true);
 			apiClient
 				.listConversations("assistant", 1)
 				.then((convs) => {
@@ -103,7 +105,8 @@ export function useAssistantChat({
 				})
 				.catch((err) => {
 					debug.warn("[assistant] load conversations failed:", err);
-				});
+				})
+				.finally(() => setHistoryLoading(false));
 		}
 	}, [open, messages.length]);
 
@@ -453,6 +456,7 @@ export function useAssistantChat({
 		input,
 		setInput,
 		isStreaming,
+		historyLoading,
 		harnessState,
 		conversationId,
 		setConversationId,

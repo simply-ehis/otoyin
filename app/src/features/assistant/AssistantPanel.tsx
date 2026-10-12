@@ -78,6 +78,7 @@ export function AssistantPanel({
 		input,
 		setInput,
 		isStreaming,
+		historyLoading,
 		setConversationId,
 		attachments,
 		isRecording,
@@ -258,6 +259,7 @@ export function AssistantPanel({
 							input={input}
 							setInput={setInput}
 							isStreaming={isStreaming}
+							historyLoading={historyLoading}
 							attachments={attachments}
 							isRecording={isRecording}
 							inputRef={inputRef}
@@ -329,6 +331,7 @@ export function AssistantPanel({
 						<AssistantHistoryPanel
 							historyConvs={projects.historyConvs}
 							loadingConversation={projects.loadingConversation}
+							loadingHistory={projects.loadingHistory}
 							loadHistoryConversation={projects.loadHistoryConversation}
 						/>
 					)}

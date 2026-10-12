@@ -1,14 +1,15 @@
 import {
+	CheckIcon as Check,
 	PlusIcon as Plus,
 	TrashIcon as Trash,
 } from "@heroicons/react/24/outline";
-import { Button } from "@/ui/button";
-import { Spinner } from "@/ui/Spinner";
 import type {
 	AgentPlan,
 	AgentProject,
 	AgentProjectSource,
 } from "@/lib/api/clientAgents";
+import { Button } from "@/ui/button";
+import { Spinner } from "@/ui/Spinner";
 
 interface AssistantProjectPanelProps {
 	projects: AgentProject[];
@@ -283,8 +284,23 @@ export function AssistantProjectPanel({
 									</div>
 									<ul className="mt-1 space-y-0.5">
 										{p.steps.map((s) => (
-											<li key={s.id} className="text-xs text-muted-foreground">
-												{s.done ? "?" : "?"} {s.text}
+											<li
+												key={s.id}
+												className="flex items-center gap-1.5 text-xs text-muted-foreground"
+											>
+												{s.done ? (
+													<Check
+														className="size-3 shrink-0 text-success-text"
+														aria-label="Done"
+													/>
+												) : (
+													<span aria-hidden="true" className="shrink-0">
+														○
+													</span>
+												)}
+												<span className={s.done ? "line-through" : ""}>
+													{s.text}
+												</span>
 											</li>
 										))}
 									</ul>

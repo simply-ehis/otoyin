@@ -17,6 +17,7 @@ interface AssistantChatViewProps {
 	input: string;
 	setInput: (v: string) => void;
 	isStreaming: boolean;
+	historyLoading: boolean;
 	attachments: FileAttachment[];
 	isRecording: boolean;
 	inputRef: React.RefObject<HTMLTextAreaElement | null>;
@@ -43,6 +44,7 @@ export function AssistantChatView({
 	input,
 	setInput,
 	isStreaming,
+	historyLoading,
 	attachments,
 	isRecording,
 	inputRef,
@@ -74,30 +76,43 @@ export function AssistantChatView({
 				onDrop={handleDrop}
 			>
 				{messages.length === 0 ? (
-					<div className="flex flex-col items-center justify-center h-full text-center space-y-6">
-						<div className="size-16 rounded-full bg-accent-muted flex items-center justify-center">
-							<Sparkles className="size-8 text-accent/60" />
+					historyLoading ? (
+						<output
+							className="flex flex-col justify-center h-full px-4 space-y-3"
+							aria-label="Loading conversation"
+						>
+							<span className="ml-auto block h-9 w-2/5 animate-pulse rounded-lg bg-accent-muted" />
+							<span className="block h-14 w-4/5 animate-pulse rounded-lg bg-secondary" />
+							<span className="ml-auto block h-9 w-1/3 animate-pulse rounded-lg bg-accent-muted" />
+						</output>
+					) : (
+						<div className="flex flex-col items-center justify-center h-full text-center space-y-6">
+							<div className="size-16 rounded-full bg-accent-muted flex items-center justify-center">
+								<Sparkles className="size-8 text-accent/60" />
+							</div>
+							<div>
+								<p className="text-sm font-medium text-foreground">
+									Ask Otoyin
+								</p>
+								<p className="text-xs text-muted-foreground mt-1 max-w-[260px]">
+									Generate speech, apply effects, manage voices — all through
+									conversation.
+								</p>
+							</div>
+							<div className="space-y-2 w-full max-w-[320px]">
+								{SUGGESTED.map((p) => (
+									<button
+										key={p}
+										type="button"
+										onClick={() => sendMessage(p)}
+										className="w-full text-left px-3 py-2 rounded-lg border border-border text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground active:scale-[0.99]"
+									>
+										{p}
+									</button>
+								))}
+							</div>
 						</div>
-						<div>
-							<p className="text-sm font-medium text-foreground">Ask Otoyin</p>
-							<p className="text-xs text-muted-foreground mt-1 max-w-[260px]">
-								Generate speech, apply effects, manage voices — all through
-								conversation.
-							</p>
-						</div>
-						<div className="space-y-2 w-full max-w-[320px]">
-							{SUGGESTED.map((p) => (
-								<button
-									key={p}
-									type="button"
-									onClick={() => sendMessage(p)}
-									className="w-full text-left px-3 py-2 rounded-lg border border-border text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground active:scale-[0.99]"
-								>
-									{p}
-								</button>
-							))}
-						</div>
-					</div>
+					)
 				) : (
 					<VirtualMessageList
 						messages={messages}

@@ -3,6 +3,7 @@
 	MagnifyingGlassIcon as Search,
 } from "@heroicons/react/24/outline";
 import { Button } from "@/ui/button";
+import { Spinner } from "@/ui/Spinner";
 
 interface AssistantAssetsPanelProps {
 	assetsSource: "freesound" | "polyhaven";
@@ -54,6 +55,11 @@ export function AssistantAssetsPanel({
 			</div>
 			{assetsMsg && (
 				<p className="text-xs text-muted-foreground">{assetsMsg}</p>
+			)}
+			{assetsBusy && (
+				<output className="flex items-center gap-2 text-xs text-muted-foreground">
+					<Spinner size="xs" /> Searching…
+				</output>
 			)}
 			<div className="space-y-2">
 				{assetsResults.map((item, i) => (

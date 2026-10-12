@@ -27,6 +27,10 @@ The AI Assistant is a chat panel that can call MCP tools to interact with the ot
 
 Assistant messages render markdown through `MarkdownBody` (lazy `react-markdown` + `remark-gfm`): document typography via the prose component map, GFM tables in scrollable cards, and fenced code through `CodeBlock` (language label + copy button, Prism `vscDarkPlus` theme). Audio replies share one transport (`AudioTransport`). New messages fade in; the streaming tail shows an accent cursor. Rows are virtualized — every row div must keep `data-index` or the virtualizer silently falls back to estimated positions and growing bubbles overlap.
 
+## Empty & loading states
+
+Chat shows bubble-shaped skeletons while history loads, then the Ask Otoyin suggestions. History shows skeleton cards, then a guided empty state. Assets shows a Searching indicator while busy. Plan steps render read-only done/todo glyphs (no step-toggle endpoint exists — never imply they are interactive).
+
 ## Suggested Prompts
 
 The assistant shows 6 predefined suggestion buttons for common actions:
