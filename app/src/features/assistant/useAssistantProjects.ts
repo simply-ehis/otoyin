@@ -194,6 +194,7 @@ export function useAssistantProjects({
 						setMessages(
 							history.map((m) => ({
 								id: makeId(),
+								serverId: m.id,
 								role: m.role as Msg["role"],
 								content: m.content,
 							})),

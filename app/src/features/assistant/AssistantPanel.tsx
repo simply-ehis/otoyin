@@ -4,17 +4,19 @@
 	XMarkIcon as X,
 } from "@heroicons/react/24/outline";
 import { useEffect, useState } from "react";
-import { Button } from "@/ui/button";
 import { VoiceChatOverlay } from "@/features/voiceChat/VoiceChatOverlay";
 import { apiClient } from "@/lib/api/client";
 import { showStudioErrorToast } from "@/lib/errors";
+import { useUIStore } from "@/stores/uiStore";
+import { Button } from "@/ui/button";
 import { AssistantAssetsPanel } from "./AssistantAssetsPanel";
 import { AssistantChatView } from "./AssistantChatView";
 import { AssistantHistoryPanel } from "./AssistantHistoryPanel";
-import type { TabId } from "./AssistantPanel.types";
+import type { ApiProvider, LocalModel, TabId } from "./AssistantPanel.types";
 import { TABS } from "./AssistantPanel.types";
 import { AssistantProjectPanel } from "./AssistantProjectPanel";
 import { AssistantSettings } from "./AssistantSettings";
+import { clampAssistantWidth } from "./assistantWidth";
 import { ContextWindowIndicator } from "./ContextWindowIndicator";
 import { SkillBuilder } from "./SkillBuilder";
 import { useAssistantAssets } from "./useAssistantAssets";
@@ -28,18 +30,30 @@ export function AssistantPanel({
 	open: boolean;
 	onClose: () => void;
 }) {
-	const [localModels, setLocalModels] = useState<
-		Array<{ id: string; name: string; size: string }>
-	>([]);
-	const [apiProviders, setApiProviders] = useState<
-		Array<{ id: string; name: string; base_url: string }>
-	>([]);
+	const [localModels, setLocalModels] = useState<LocalModel[]>([]);
+	const [apiProviders, setApiProviders] = useState<ApiProvider[]>([]);
 	const [selectedModel, setSelectedModel] = useState("");
 	const [selectedProvider, setSelectedProvider] = useState("");
 	const [apiKey, setApiKey] = useState("");
 	const [apiBaseUrl, setApiBaseUrl] = useState("");
 	const [showSettings, setShowSettings] = useState(false);
 	const [view, setView] = useState<TabId>("chat");
+
+	// Panel width lives in uiStore (persisted). A stored width from a bigger
+	// screen can overfill a smaller one, so it is re-clamped on open.
+	const assistantWidth = useUIStore((s) => s.assistantWidth);
+	const setAssistantWidth = useUIStore((s) => s.setAssistantWidth);
+	useEffect(() => {
+		if (!open) {
+			return;
+		}
+		setAssistantWidth(
+			clampAssistantWidth(
+				useUIStore.getState().assistantWidth,
+				window.innerWidth,
+			),
+		);
+	}, [open, setAssistantWidth]);
 
 	useEffect(() => {
 		if (open && localModels.length === 0) {
@@ -70,8 +84,11 @@ export function AssistantPanel({
 		inputRef,
 		fileInputRef,
 		sendMessage,
+		stopStreaming,
 		handleKeyDown,
 		editMessage,
+		saveEditMessage,
+		cancelEditMessage,
 		deleteMessage,
 		branchMessage,
 		removeAttachment,
@@ -103,15 +120,63 @@ export function AssistantPanel({
 		return null;
 	}
 
+	// Dragging the left edge: panel sits on the right of the window, so moving
+	// the pointer left makes it wider and the main content reflows smaller.
+	const startWidthResize = (e: React.MouseEvent) => {
+		e.preventDefault();
+		const startX = e.clientX;
+		const startWidth = assistantWidth;
+		document.body.style.cursor = "col-resize";
+		document.body.style.userSelect = "none";
+		const onMove = (ev: MouseEvent) => {
+			setAssistantWidth(
+				clampAssistantWidth(
+					startWidth + (startX - ev.clientX),
+					window.innerWidth,
+				),
+			);
+		};
+		const onUp = () => {
+			document.body.style.cursor = "";
+			document.body.style.userSelect = "";
+			window.removeEventListener("mousemove", onMove);
+			window.removeEventListener("mouseup", onUp);
+		};
+		window.addEventListener("mousemove", onMove);
+		window.addEventListener("mouseup", onUp);
+	};
+
 	return (
 		<div
 			role="application"
 			aria-label="Assistant panel"
-			className="h-full shrink-0 w-[480px] bg-background border-l border-border shadow-2xl flex flex-row animate-in slide-in-from-right"
+			className="relative h-full shrink-0 bg-background border-l border-border shadow-2xl flex flex-row animate-in slide-in-from-right"
+			style={{ width: assistantWidth }}
 			onDragOver={handleDragOver}
 			onDragLeave={handleDragLeave}
 			onDrop={handleDrop}
 		>
+			<hr
+				aria-orientation="vertical"
+				aria-label="Resize assistant panel"
+				tabIndex={0}
+				className="absolute top-0 left-0 h-full w-1 -ml-0.5 cursor-col-resize hover:w-1.5 hover:bg-border bg-transparent transition-[width,background-color] touch-none border-none focus-visible:outline-none focus-visible:bg-accent z-20"
+				onKeyDown={(e) => {
+					const step = e.shiftKey ? 64 : 24;
+					if (e.key === "ArrowLeft") {
+						e.preventDefault();
+						setAssistantWidth(
+							clampAssistantWidth(assistantWidth - step, window.innerWidth),
+						);
+					} else if (e.key === "ArrowRight") {
+						e.preventDefault();
+						setAssistantWidth(
+							clampAssistantWidth(assistantWidth + step, window.innerWidth),
+						);
+					}
+				}}
+				onMouseDown={startWidthResize}
+			/>
 			<nav
 				aria-label="Assistant sections"
 				className="flex flex-col items-center gap-1 py-3 border-r border-border bg-sidebar shrink-0"
@@ -198,8 +263,11 @@ export function AssistantPanel({
 							inputRef={inputRef}
 							fileInputRef={fileInputRef}
 							sendMessage={sendMessage}
+							stopStreaming={stopStreaming}
 							handleKeyDown={handleKeyDown}
 							editMessage={editMessage}
+							saveEditMessage={saveEditMessage}
+							cancelEditMessage={cancelEditMessage}
 							deleteMessage={deleteMessage}
 							branchMessage={branchMessage}
 							removeAttachment={removeAttachment}

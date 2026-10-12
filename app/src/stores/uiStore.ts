@@ -53,6 +53,10 @@ interface UIStore {
 	sidebarWidth: number;
 	setSidebarWidth: (width: number) => void;
 
+	// Assistant panel (right side) — resizable, content reflows beside it
+	assistantWidth: number;
+	setAssistantWidth: (width: number) => void;
+
 	// Modals
 	profileDialogOpen: boolean;
 	setProfileDialogOpen: (open: boolean) => void;
@@ -105,6 +109,9 @@ export const useUIStore = create<UIStore>()(
 			sidebarWidth: 220,
 			setSidebarWidth: (width) => set({ sidebarWidth: width }),
 
+			assistantWidth: 480,
+			setAssistantWidth: (width) => set({ assistantWidth: width }),
+
 			profileDialogOpen: false,
 			setProfileDialogOpen: (open) => set({ profileDialogOpen: open }),
 			editingProfileId: null,
@@ -151,6 +158,7 @@ export const useUIStore = create<UIStore>()(
 				accentHue: state.accentHue,
 				sidebarOpen: state.sidebarOpen,
 				sidebarWidth: state.sidebarWidth,
+				assistantWidth: state.assistantWidth,
 				languageByEngine: state.languageByEngine,
 			}),
 		},

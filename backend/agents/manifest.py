@@ -25,10 +25,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-logger = logging.getLogger(__name__)
+from .instructions import AGENT_INSTRUCTIONS
 
-# Where the human-readable tool catalog lives (used as the base system prompt).
-_TOOL_REFERENCE_PATH = Path(__file__).resolve().parent.parent.parent / "docs" / "knowledge" / "TOOL-REFERENCE.md"
+logger = logging.getLogger(__name__)
 
 # MCP tool names are dotted (``21labs.speak``); the assistant uses the bare
 # snake_case stem. This maps canonical stems -> MCP-registered names so a tool
@@ -387,11 +386,8 @@ CANONICAL_TOOL_NAMES: set[str] = _LazyCanonicalNames()  # type: ignore[assignmen
 
 
 def _base_prompt() -> str:
-    """First 2000 chars of TOOL-REFERENCE.md as the shared base prompt."""
-    try:
-        return _TOOL_REFERENCE_PATH.read_text(encoding="utf-8")[:2000]
-    except FileNotFoundError:
-        return "You are otoyin' AI assistant for audio production."
+    """Crafted agent instructions shared by all surfaces (see agents/instructions)."""
+    return AGENT_INSTRUCTIONS
 
 
 def get_agent_system_prompt(
@@ -644,6 +640,7 @@ def _normalize_stem(name: str) -> str:
 
 
 __all__ = [
+    "AGENT_INSTRUCTIONS",
     "CANONICAL_TOOL_NAMES",
     "MCP_NAME_PREFIX",
     "get_agent_system_prompt",

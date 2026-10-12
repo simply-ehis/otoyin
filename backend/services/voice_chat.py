@@ -557,6 +557,9 @@ async def create_session(
             from .memory import get_history
 
             loaded_history = get_history(conversation_id, limit=20)
+            # get_history carries UI message ids — strip them so the LLM
+            # payload holds only role/content (+ tool fields).
+            loaded_history = [{k: v for k, v in m.items() if k != "id"} for m in loaded_history]
         except Exception as e:
             logger.debug("Failed to load history for %s: %s", conversation_id, e)
 

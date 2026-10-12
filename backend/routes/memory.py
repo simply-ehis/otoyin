@@ -2,7 +2,7 @@
 
 Provides endpoints for:
 - Conversation CRUD (list, get, create, delete)
-- Message history
+- Message history (list, add, edit, delete, branch-after)
 - Long-term memory (store, recall, forget)
 - Voice chat settings persistence
 """
@@ -17,6 +17,8 @@ from ..services.memory import (
     build_memory_context,
     create_conversation,
     delete_conversation,
+    delete_message,
+    delete_messages_after,
     forget_memory,
     get_conversation,
     get_history,
@@ -26,6 +28,7 @@ from ..services.memory import (
     recall_memory,
     save_voice_chat_settings,
     store_memory,
+    update_message,
 )
 
 logger = logging.getLogger(__name__)
@@ -64,6 +67,10 @@ class MessageAdd(BaseModel):
     tool_name: str | None = None
     tool_args: dict | None = None
     tool_result: str | None = None
+
+
+class MessageUpdate(BaseModel):
+    content: str = ""
 
 
 class MemoryStore(BaseModel):
@@ -221,6 +228,45 @@ def api_get_history(conversation_id: str, limit: int = 100):
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
     return get_history(conversation_id, limit=limit)
+
+
+@router.patch("/messages/{message_id}")
+def api_update_message(message_id: str, body: MessageUpdate):
+    """Replace a message's content (chat edit)."""
+    try:
+        ok = update_message(message_id, body.content)
+    except Exception as exc:
+        logger.debug("update_message failed", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to update message: {exc}") from exc
+    if not ok:
+        raise HTTPException(status_code=404, detail="Message not found")
+    return {"updated": True}
+
+
+@router.delete("/messages/{message_id}")
+def api_delete_message(message_id: str):
+    """Delete one message (chat delete)."""
+    try:
+        ok = delete_message(message_id)
+    except Exception as exc:
+        logger.debug("delete_message failed", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to delete message: {exc}") from exc
+    if not ok:
+        raise HTTPException(status_code=404, detail="Message not found")
+    return {"deleted": True}
+
+
+@router.delete("/conversations/{conversation_id}/messages/after/{message_id}")
+def api_delete_messages_after(conversation_id: str, message_id: str):
+    """Delete every message after the anchor (chat branch)."""
+    try:
+        count = delete_messages_after(conversation_id, message_id)
+    except Exception as exc:
+        logger.debug("delete_messages_after failed", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to branch conversation: {exc}") from exc
+    if count < 0:
+        raise HTTPException(status_code=404, detail="Anchor message not found")
+    return {"deleted": count}
 
 
 # ---------------------------------------------------------------------------

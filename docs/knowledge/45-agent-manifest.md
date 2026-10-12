@@ -4,7 +4,7 @@ OWNS: `backend/agents/manifest.py` (canonical prompt + `CANONICAL_TOOLS` + parit
 
 READ-WHEN: You add/change a tool, the agent system prompt, or MCP instructions; or you need to know which capabilities each agent surface exposes.
 
-KEY-FILES: `docs/knowledge/TOOL-REFERENCE.md` (human-readable tool catalog, base of the prompt), `39-instruments.md`, `00-index.md`.
+KEY-FILES: `backend/agents/instructions.py` (crafted AGENT_INSTRUCTIONS — the prompt base), `docs/knowledge/TOOL-REFERENCE.md` (human-readable tool catalog), `39-instruments.md`, `00-index.md`.
 
 INVARIANTS:
 - The assistant system prompt and the MCP `instructions` both derive from `manifest.get_agent_system_prompt` / `get_mcp_instructions` — edit the manifest, not the call sites.

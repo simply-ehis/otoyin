@@ -13,6 +13,7 @@ export interface Conversation {
 }
 
 export interface Message {
+	id?: string;
 	role: string;
 	content: string;
 	tool_name?: string;
@@ -87,6 +88,29 @@ export class MemoryMethods extends SpatialMethods {
 	async getHistory(conversationId: string, limit = 100): Promise<Message[]> {
 		return this.request(
 			`/memory/conversations/${conversationId}/history?limit=${limit}`,
+		);
+	}
+
+	async updateMessage(messageId: string, content: string): Promise<void> {
+		await this.request(`/memory/messages/${messageId}`, {
+			method: "PATCH",
+			body: JSON.stringify({ content }),
+		});
+	}
+
+	async deleteMessage(messageId: string): Promise<void> {
+		await this.request(`/memory/messages/${messageId}`, {
+			method: "DELETE",
+		});
+	}
+
+	async deleteMessagesAfter(
+		conversationId: string,
+		messageId: string,
+	): Promise<void> {
+		await this.request(
+			`/memory/conversations/${conversationId}/messages/after/${messageId}`,
+			{ method: "DELETE" },
 		);
 	}
 

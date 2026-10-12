@@ -4,10 +4,10 @@ import {
 	MicrophoneIcon as MicOff,
 	PaperAirplaneIcon as Send,
 	SparklesIcon as Sparkles,
+	StopIcon,
 	XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { Button } from "@/ui/button";
-import { Spinner } from "@/ui/Spinner";
 import type { FileAttachment, Msg } from "./AssistantPanel.types";
 import { SUGGESTED } from "./AssistantPanel.types";
 import { VirtualMessageList } from "./VirtualMessageList";
@@ -22,8 +22,11 @@ interface AssistantChatViewProps {
 	inputRef: React.RefObject<HTMLTextAreaElement | null>;
 	fileInputRef: React.RefObject<HTMLInputElement | null>;
 	sendMessage: (text?: string) => void;
+	stopStreaming: () => void;
 	handleKeyDown: (e: React.KeyboardEvent) => void;
 	editMessage: (id: string) => void;
+	saveEditMessage: (id: string, content: string) => void;
+	cancelEditMessage: (id: string) => void;
 	deleteMessage: (id: string) => void;
 	branchMessage: (id: string) => void;
 	removeAttachment: (att: FileAttachment) => void;
@@ -45,8 +48,11 @@ export function AssistantChatView({
 	inputRef,
 	fileInputRef,
 	sendMessage,
+	stopStreaming,
 	handleKeyDown,
 	editMessage,
+	saveEditMessage,
+	cancelEditMessage,
 	deleteMessage,
 	branchMessage,
 	removeAttachment,
@@ -85,7 +91,7 @@ export function AssistantChatView({
 									key={p}
 									type="button"
 									onClick={() => sendMessage(p)}
-									className="w-full text-left px-3 py-2 rounded-lg border border-border text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+									className="w-full text-left px-3 py-2 rounded-lg border border-border text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground active:scale-[0.99]"
 								>
 									{p}
 								</button>
@@ -97,6 +103,8 @@ export function AssistantChatView({
 						messages={messages}
 						isStreaming={isStreaming}
 						onEditMessage={editMessage}
+						onSaveEditMessage={saveEditMessage}
+						onCancelEditMessage={cancelEditMessage}
 						onDeleteMessage={deleteMessage}
 						onBranchMessage={branchMessage}
 					/>
@@ -198,17 +206,28 @@ export function AssistantChatView({
 						style={{ fieldSizing: "content" } as React.CSSProperties}
 						disabled={isStreaming}
 					/>
-					<Button
-						size="icon"
-						className="size-9 shrink-0"
-						onClick={() => sendMessage()}
-						disabled={
-							(!input.trim() && attachments.length === 0) || isStreaming
-						}
-						title="Send"
-					>
-						{isStreaming ? <Spinner size="md" /> : <Send className="size-4" />}
-					</Button>
+					{isStreaming ? (
+						<Button
+							size="icon"
+							variant="destructive"
+							className="size-9 shrink-0"
+							onClick={stopStreaming}
+							title="Stop generating"
+							aria-label="Stop generating"
+						>
+							<StopIcon className="size-4" />
+						</Button>
+					) : (
+						<Button
+							size="icon"
+							className="size-9 shrink-0"
+							onClick={() => sendMessage()}
+							disabled={!input.trim() && attachments.length === 0}
+							title="Send"
+						>
+							<Send className="size-4" />
+						</Button>
+					)}
 				</div>
 			</div>
 		</>

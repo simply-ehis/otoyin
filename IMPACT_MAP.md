@@ -6,6 +6,7 @@
 
 | System | Key Files | Owner | Dependencies |
 |---|---|---|---|
+| **AI Assistant panel** | `app/src/features/assistant/` (`AssistantPanel.tsx` resizable + `assistantWidth.ts` clamp/persist, `AssistantMessage.tsx` bubbles, `MarkdownBody.tsx` + `CodeBlock.tsx` markdown rendering, `AudioTransport.tsx`, `assistantTabs.ts`, `assistantStreamEvents.ts`, `useAssistantMessageActions.ts`, `settings/` sections), `app/src/stores/uiStore.ts` (`assistantWidth`), backend `routes/assistant*.py`, `routes/memory.py` (message edit/delete/branch), `services/memory.py`, `agents/manifest.py` + `agents/instructions.py` (AGENT_INSTRUCTIONS) | Both | react-markdown (lazy chunk), Prism, SSE `/assistant/chat`, MCP tools |
 | **API Client** | `app/src/lib/api/client.ts`, `client*.ts` | Frontend | Backend REST API |
 | **TTS Engine** | `backend/backends/*.py`, `routes/generate.py` | Backend | Model configs, database |
 | **Story Editor** | `app/src/features/stories/editor/StoryTrackEditor.tsx` | Frontend | API Client, Story Store |

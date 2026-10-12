@@ -156,6 +156,7 @@ def get_history(
         )
         return [
             {
+                "id": m.id,
                 "role": m.role,
                 "content": m.content,
                 **({"tool_name": m.tool_name} if m.tool_name else {}),
@@ -164,6 +165,76 @@ def get_history(
             }
             for m in messages
         ]
+    finally:
+        db.close()
+
+
+def update_message(message_id: str, content: str) -> bool:
+    """Replace a message's content (chat edit). False when the id is unknown."""
+    db = _get_db()
+    try:
+        msg = db.query(ConversationMessage).filter(ConversationMessage.id == message_id).first()
+        if not msg:
+            return False
+        msg.content = content
+        db.commit()
+        return True
+    finally:
+        db.close()
+
+
+def delete_message(message_id: str) -> bool:
+    """Delete one message (chat delete). False when the id is unknown."""
+    db = _get_db()
+    try:
+        msg = db.query(ConversationMessage).filter(ConversationMessage.id == message_id).first()
+        if not msg:
+            return False
+        conv_id = msg.conversation_id
+        db.delete(msg)
+        conv = db.query(Conversation).filter(Conversation.id == conv_id).first()
+        if conv:
+            conv.message_count = max((conv.message_count or 1) - 1, 0)
+        db.commit()
+        return True
+    finally:
+        db.close()
+
+
+def delete_messages_after(conversation_id: str, message_id: str) -> int:
+    """Delete every message created after the anchor (chat branch).
+
+    Returns the deleted count, or -1 when the anchor message is unknown.
+    """
+    db = _get_db()
+    try:
+        anchor = (
+            db.query(ConversationMessage)
+            .filter(
+                ConversationMessage.conversation_id == conversation_id,
+                ConversationMessage.id == message_id,
+            )
+            .first()
+        )
+        if not anchor:
+            return -1
+        doomed = (
+            db.query(ConversationMessage)
+            .filter(
+                ConversationMessage.conversation_id == conversation_id,
+                ConversationMessage.id != message_id,
+                ConversationMessage.created_at >= anchor.created_at,
+            )
+            .all()
+        )
+        count = len(doomed)
+        for m in doomed:
+            db.delete(m)
+        conv = db.query(Conversation).filter(Conversation.id == conversation_id).first()
+        if conv:
+            conv.message_count = max((conv.message_count or count) - count, 0)
+        db.commit()
+        return count
     finally:
         db.close()
 

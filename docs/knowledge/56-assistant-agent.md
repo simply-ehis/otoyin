@@ -21,10 +21,14 @@ UPDATED: 2026-08-17
 - `_validate_args` enforces schema `required` args (rejects missing with clear message instead of building a malformed URL) and sanitizes path args (rejects absolute/`..`/scheme://, normalizes relative). See docs/knowledge/TOOL-REFERENCE.md "Tool argument validation".
 
 ## Agent manifest (agents/manifest.py) — single source of truth
-- `_base_prompt()` = first 2000 chars of docs/knowledge/TOOL-REFERENCE.md. Both surfaces share it.
+- `_base_prompt()` = the crafted `AGENT_INSTRUCTIONS` in `backend/agents/instructions.py` (persona + behavior + tool policy + output style + safety). Both surfaces share it; the tool catalog is appended per surface, not sliced from a doc.
 - `get_canonical_tools()` → `assistant_tools.TOOLS` (111 tools). `CANONICAL_TOOL_NAMES` derived from it.
 - `get_tool_parity_report()` — observable divergence between assistant (bare snake_case) and MCP (dotted `21labs.` names). `_collect_mcp_tool_names()` scans `mcp_server/tools/` for `@mcp.tool` decorators (regex, no server import side effects).
 - `MCP_NAME_PREFIX = "21labs."`; `_normalize_stem` strips prefixes so names compare 1:1.
+
+## Chat persistence (routes/memory.py, services/memory.py)
+- History is append-only; `get_history` exposes server message `id`s so the chat UI can target mutations. Edit = `PATCH /memory/messages/{id}` (content replace); delete = `DELETE /memory/messages/{id}`; branch = `DELETE /memory/conversations/{cid}/messages/after/{mid}` (prunes everything created after the anchor, keeps counts consistent).
+- Voice chat loads the same history but strips the UI `id` key before passing messages to the LLM.
 
 ## Observations (audit findings — for later judgement, NO code change yet)
 1. **Tool parity is tracked but NOT enforced at runtime**: `get_tool_parity_report` is informational; nothing fails if a canonical tool has no MCP counterpart or vice versa. The docstring admits ADR/studio/spatial are assistant-only, RVC-packs/Freesound are MCP-only. A user on MCP cannot do ADR; a user on the assistant cannot pull RVC packs. Intentional for now, but the gap is invisible to end users.

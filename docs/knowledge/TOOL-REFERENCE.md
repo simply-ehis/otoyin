@@ -1,10 +1,10 @@
 # Assistant Tool Reference
 
-PURPOSE: System-prompt source for the in-app assistant — app overview + tool catalog.
+PURPOSE: Human-readable tool catalog for the in-app assistant — app overview + tool catalog.
 OWNS: backend/routes/assistant_tools/ (TOOLS, ENDPOINT_MAP), backend/routes/assistant.py
 READ-WHEN: Changing assistant capabilities, system prompt, or tool wiring.
-KEY-FILES: backend/routes/assistant_tools/, backend/routes/assistant_stream.py, app/src/components/Assistant/*
-INVARIANTS: First 2000 chars are loaded as the system prompt; every tool in TOOLS has a matching ENDPOINT_MAP entry or is a client command.
+KEY-FILES: backend/routes/assistant_tools/, backend/routes/assistant_stream.py, app/src/features/assistant/*
+INVARIANTS: The system prompt base is the crafted AGENT_INSTRUCTIONS in backend/agents/instructions.py (shared via agents/manifest.py); every tool in TOOLS has a matching ENDPOINT_MAP entry or is a client command.
 GOTCHAS: Tool execution is backend-side (HTTP to self); base_url comes from request.base_url, not a hardcoded port.
 GOTCHAS: `execute_tool` validates args BEFORE dispatch — missing `required` args and unsafe `audio_path`-style args are rejected with a clear string instead of building a malformed URL.
 UPDATED: 2026-08-26

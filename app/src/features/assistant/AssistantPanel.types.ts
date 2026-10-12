@@ -18,6 +18,7 @@ export interface Msg {
 		| "audio_preview"
 		| "thinking";
 	content: string;
+	serverId?: string;
 	toolName?: string;
 	toolArgs?: Record<string, unknown>;
 	toolResult?: string;
@@ -47,6 +48,18 @@ export type TabId = (typeof TABS)[number]["id"];
 
 let msgCounter = 0;
 export const makeId = () => `msg-${++msgCounter}-${Date.now()}`;
+
+export interface LocalModel {
+	id: string;
+	name: string;
+	size: string;
+}
+
+export interface ApiProvider {
+	id: string;
+	name: string;
+	base_url: string;
+}
 
 export interface FileAttachment {
 	file: File;

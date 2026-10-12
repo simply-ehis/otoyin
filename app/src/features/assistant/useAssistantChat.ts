@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "@/lib/api/client";
-import { dispatchAssistantCommand } from "@/lib/assistantCommands";
 import { showStudioErrorToast } from "@/lib/errors";
 import { debug } from "@/lib/utils/debug";
 import type { FileAttachment, Msg } from "./AssistantPanel.types";
 import { makeId } from "./AssistantPanel.types";
+import type { HarnessState, StreamEventData } from "./assistantStreamEvents";
+import { applyStreamEvent } from "./assistantStreamEvents";
+import { tabLabelForPath } from "./assistantTabs";
+import { useAssistantMessageActions } from "./useAssistantMessageActions";
 
 interface UseAssistantChatOptions {
 	open: boolean;
@@ -31,17 +34,7 @@ export function useAssistantChat({
 	const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
 		null,
 	);
-	const [harnessState, setHarnessState] = useState<{
-		session_id: string;
-		n_ctx: number;
-		context_pressure: number;
-		budget_remaining: number;
-		total_tool_calls: number;
-		successful_calls: number;
-		failed_calls: number;
-		tool_confidence: Record<string, number>;
-		steering_hints: string[];
-	} | null>(null);
+	const [harnessState, setHarnessState] = useState<HarnessState | null>(null);
 
 	const endRef = useRef<HTMLDivElement>(null);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -49,6 +42,9 @@ export function useAssistantChat({
 	const streamingRef = useRef(false);
 	const streamingBufferRef = useRef<string>("");
 	const streamingFlushTimerRef = useRef<number | null>(null);
+	const abortRef = useRef<AbortController | null>(null);
+	const streamReaderRef =
+		useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
 	const lastAssistantIdxRef = useRef<number>(-1);
 
 	const flushStreamingBuffer = useCallback(() => {
@@ -98,6 +94,7 @@ export function useAssistantChat({
 						setMessages(
 							history.map((m) => ({
 								id: makeId(),
+								serverId: m.id,
 								role: m.role as Msg["role"],
 								content: m.content,
 							})),
@@ -235,6 +232,7 @@ export function useAssistantChat({
 			streamingRef.current = true;
 			setInput("");
 			setIsStreaming(true);
+			abortRef.current = new AbortController();
 
 			let convId = conversationId;
 			if (!convId) {
@@ -252,14 +250,26 @@ export function useAssistantChat({
 			}
 
 			const finalContent = content || "Uploaded file(s)";
+			const userMsgId = makeId();
 			setMessages((prev) => [
 				...prev,
-				{ id: makeId(), role: "user", content: finalContent },
+				{ id: userMsgId, role: "user", content: finalContent },
 			]);
 
 			if (convId) {
 				try {
-					await apiClient.addMessage(convId, "user", finalContent);
+					const saved = await apiClient.addMessage(
+						convId,
+						"user",
+						finalContent,
+					);
+					if (saved?.id) {
+						setMessages((prev) =>
+							prev.map((m) =>
+								m.id === userMsgId ? { ...m, serverId: saved.id } : m,
+							),
+						);
+					}
 				} catch {
 					// Non-critical: message already in local state, server sync is best-effort
 				}
@@ -269,25 +279,7 @@ export function useAssistantChat({
 			setAttachments([]);
 
 			const currentPath = window.location.pathname;
-			const TAB_NAMES: Record<string, string> = {
-				"/": "Generate",
-				"/voices": "Voices",
-				"/stories": "Stories",
-				"/audiobooks": "Audiobooks",
-				"/audio-studio": "Audio Studio",
-				"/workspace": "Workspace",
-				"/instruments": "Instruments",
-				"/effects": "Effects",
-				"/captures": "Captures",
-				"/dubbing": "Dubbing",
-				"/library": "Library",
-				"/store": "Store",
-				"/settings": "Settings",
-				"/songwriter": "Songwriter",
-				"/launcher": "Launcher",
-				"/sounds": "Sounds",
-			};
-			const tabName = TAB_NAMES[currentPath] ?? currentPath;
+			const tabName = tabLabelForPath(currentPath);
 
 			const history = [
 				{
@@ -304,8 +296,11 @@ export function useAssistantChat({
 					selectedModel,
 					useApiKey ? apiKey : undefined,
 					useApiKey ? apiBaseUrl : undefined,
+					true,
+					abortRef.current?.signal,
 				);
 				const reader = stream.getReader();
+				streamReaderRef.current = reader;
 				const decoder = new TextDecoder();
 				let buffer = "";
 
@@ -327,98 +322,14 @@ export function useAssistantChat({
 							continue;
 						}
 						try {
-							const data = JSON.parse(dataStr);
-							if (data.type === "text") {
-								// Accumulate in ref, flush periodically to avoid per-chunk re-renders
-								streamingBufferRef.current += data.content;
-								if (streamingFlushTimerRef.current === null) {
-									// Schedule first flush in 50ms, subsequent flushes handled by flush function
-									streamingFlushTimerRef.current = window.setTimeout(
-										flushStreamingBuffer,
-										50,
-									);
-								}
-							} else if (data.type === "tool_call") {
-								setMessages((prev) => [
-									...prev,
-									{
-										id: makeId(),
-										role: "tool_call",
-										content: data.content,
-										toolName: data.tool_name,
-										toolArgs: data.tool_args,
-									},
-								]);
-							} else if (data.type === "tool_result") {
-								if (
-									data.tool_name &&
-									(data.tool_name === "generate_speech" ||
-										data.tool_name === "generate_sfx" ||
-										data.tool_name === "transcribe")
-								) {
-									setMessages((prev) => [
-										...prev,
-										{
-											id: makeId(),
-											role: "audio_preview",
-											content: data.tool_result,
-										},
-									]);
-								} else {
-									setMessages((prev) => [
-										...prev,
-										{
-											id: makeId(),
-											role: "tool_result",
-											content: data.content,
-											toolName: data.tool_name,
-											toolResult: data.tool_result,
-										},
-									]);
-								}
-							} else if (data.type === "thinking") {
-								setMessages((prev) => [
-									...prev,
-									{
-										id: makeId(),
-										role: "thinking",
-										content: data.content,
-									},
-								]);
-							} else if (data.type === "error") {
-								setMessages((prev) => [
-									...prev,
-									{ id: makeId(), role: "error", content: data.content },
-								]);
-							} else if (data.type === "command") {
-								dispatchAssistantCommand(data.intent, data.tool_args ?? {});
-							} else if (data.type === "harness_session") {
-								setHarnessState((prev) => ({
-									...(prev ?? {}),
-									session_id: data.session_id ?? prev?.session_id ?? "",
-									n_ctx: data.n_ctx ?? prev?.n_ctx ?? 0,
-									context_pressure: prev?.context_pressure ?? 0,
-									budget_remaining: prev?.budget_remaining ?? 100,
-									total_tool_calls: prev?.total_tool_calls ?? 0,
-									successful_calls: prev?.successful_calls ?? 0,
-									failed_calls: prev?.failed_calls ?? 0,
-									tool_confidence: prev?.tool_confidence ?? {},
-									steering_hints: prev?.steering_hints ?? [],
-								}));
-							} else if (data.type === "harness_summary") {
-								const s = data.summary ?? data;
-								setHarnessState({
-									session_id: s.session_id ?? "",
-									n_ctx: s.n_ctx ?? 0,
-									context_pressure: s.context_pressure ?? 0,
-									budget_remaining: s.budget_remaining ?? 100,
-									total_tool_calls: s.total_tool_calls ?? 0,
-									successful_calls: s.successful_calls ?? 0,
-									failed_calls: s.failed_calls ?? 0,
-									tool_confidence: s.tool_confidence ?? {},
-									steering_hints: s.steering_hints ?? [],
-								});
-							}
+							const data = JSON.parse(dataStr) as StreamEventData;
+							applyStreamEvent(data, {
+								setMessages,
+								setHarnessState,
+								streamingBufferRef,
+								streamingFlushTimerRef,
+								flushStreamingBuffer,
+							});
 						} catch {
 							// SSE parse error — ignore heartbeats and malformed chunks
 						}
@@ -426,14 +337,18 @@ export function useAssistantChat({
 				}
 			} catch (e: unknown) {
 				flushStreamingBuffer();
-				setMessages((prev) => [
-					...prev,
-					{
-						id: makeId(),
-						role: "error",
-						content: e instanceof Error ? e.message : "Stream failed",
-					},
-				]);
+				// A user-initiated Stop aborts the fetch: keep the partial reply
+				// and stay silent instead of posting an error bubble.
+				if (!abortRef.current?.signal.aborted) {
+					setMessages((prev) => [
+						...prev,
+						{
+							id: makeId(),
+							role: "error",
+							content: e instanceof Error ? e.message : "Stream failed",
+						},
+					]);
+				}
 			} finally {
 				flushStreamingBuffer();
 				if (convId) {
@@ -442,8 +357,18 @@ export function useAssistantChat({
 							.reverse()
 							.find((m) => m.role === "assistant");
 						if (lastAssistant?.content) {
+							const assistantId = lastAssistant.id;
 							apiClient
 								.addMessage(convId, "assistant", lastAssistant.content)
+								.then((saved) => {
+									if (saved?.id) {
+										setMessages((prev) =>
+											prev.map((m) =>
+												m.id === assistantId ? { ...m, serverId: saved.id } : m,
+											),
+										);
+									}
+								})
 								.catch((err) => {
 									debug.warn("[assistant] add message failed:", err);
 								});
@@ -453,6 +378,8 @@ export function useAssistantChat({
 				}
 				streamingRef.current = false;
 				setIsStreaming(false);
+				abortRef.current = null;
+				streamReaderRef.current = null;
 			}
 		},
 		[
@@ -470,6 +397,17 @@ export function useAssistantChat({
 		],
 	);
 
+	const stopStreaming = useCallback(() => {
+		abortRef.current?.abort();
+		const reader = streamReaderRef.current;
+		streamReaderRef.current = null;
+		if (reader) {
+			void reader.cancel().catch(() => {
+				// Reader already closed — the abort above already ended the stream.
+			});
+		}
+	}, []);
+
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent) => {
 			if (e.key === "Enter" && !e.shiftKey) {
@@ -480,29 +418,13 @@ export function useAssistantChat({
 		[sendMessage],
 	);
 
-	const editMessage = useCallback((id: string) => {
-		setMessages((prev) =>
-			prev.map((m) =>
-				m.id === id ? { ...m, isEditing: true, branchPoint: true } : m,
-			),
-		);
-	}, []);
-
-	const deleteMessage = useCallback((id: string) => {
-		setMessages((prev) => prev.filter((m) => m.id !== id));
-	}, []);
-
-	const branchMessage = useCallback((id: string) => {
-		setMessages((prev) => {
-			const idx = prev.findIndex((m) => m.id === id);
-			if (idx === -1) {
-				return prev;
-			}
-			return prev
-				.slice(0, idx + 1)
-				.map((m, i) => (i === idx ? { ...m, branchPoint: true } : m));
-		});
-	}, []);
+	const {
+		editMessage,
+		saveEditMessage,
+		cancelEditMessage,
+		deleteMessage,
+		branchMessage,
+	} = useAssistantMessageActions(messages, setMessages, conversationId);
 
 	const handleDragOver = useCallback((e: React.DragEvent) => {
 		e.preventDefault();
@@ -541,8 +463,11 @@ export function useAssistantChat({
 		inputRef,
 		fileInputRef,
 		sendMessage,
+		stopStreaming,
 		handleKeyDown,
 		editMessage,
+		saveEditMessage,
+		cancelEditMessage,
 		deleteMessage,
 		branchMessage,
 		uploadAttachments,

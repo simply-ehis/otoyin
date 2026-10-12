@@ -7,6 +7,8 @@ interface VirtualMessageListProps {
 	messages: Msg[];
 	isStreaming: boolean;
 	onEditMessage: (id: string) => void;
+	onSaveEditMessage: (id: string, content: string) => void;
+	onCancelEditMessage: (id: string) => void;
 	onDeleteMessage: (id: string) => void;
 	onBranchMessage: (id: string) => void;
 }
@@ -15,6 +17,8 @@ export function VirtualMessageList({
 	messages,
 	isStreaming,
 	onEditMessage,
+	onSaveEditMessage,
+	onCancelEditMessage,
 	onDeleteMessage,
 	onBranchMessage,
 }: VirtualMessageListProps) {
@@ -56,10 +60,7 @@ export function VirtualMessageList({
 			if (!node) {
 				return;
 			}
-			const id = node.dataset.msgId;
-			if (id) {
-				virtualizer.measureElement(node);
-			}
+			virtualizer.measureElement(node);
 		},
 		[virtualizer],
 	);
@@ -86,6 +87,7 @@ export function VirtualMessageList({
 					return (
 						<div
 							key={virtualRow.key}
+							data-index={virtualRow.index}
 							data-msg-id={msg.id}
 							ref={measureRef}
 							style={{
@@ -96,10 +98,13 @@ export function VirtualMessageList({
 								transform: `translateY(${virtualRow.start}px)`,
 							}}
 						>
-							<div className="pb-4">
+							<div className="pb-4 animate-in fade-in duration-150">
 								<AssistantMessage
 									msg={msg}
+									live={isStreaming && virtualRow.index === messages.length - 1}
 									onEditMessage={onEditMessage}
+									onSaveEditMessage={onSaveEditMessage}
+									onCancelEditMessage={onCancelEditMessage}
 									onDeleteMessage={onDeleteMessage}
 									onBranchMessage={onBranchMessage}
 								/>

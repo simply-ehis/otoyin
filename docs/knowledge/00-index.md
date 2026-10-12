@@ -304,7 +304,7 @@ Every knowledge doc should have an `## Agent Callable` section with exact MCP to
 - [mcp-audio-orchestration.md](mcp-audio-orchestration.md) — The 10 MCP tools for audio orchestration.
 - [PLUGIN_SYSTEM.md](PLUGIN_SYSTEM.md) — Marketplace plugin install/verify/launch + bundle authoring (`build_plugin_bundle.py`, `just plugin-bundle`) + external-app linking layer.
 - [UPGRADE_PATH.md](UPGRADE_PATH.md) — Consolidation roadmap, payment/license flow, and consolidation checklist for the plugin & marketplace system.
-- [TOOL-REFERENCE.md](TOOL-REFERENCE.md) — In-app assistant tool catalog + system prompt source.
+- [TOOL-REFERENCE.md](TOOL-REFERENCE.md) — In-app assistant tool catalog (prompt base lives in backend/agents/instructions.py).
 - [59-dsp-synth.md](59-dsp-synth.md) — Offline "Synth / DSP" tab: pure NumPy/SciPy synthesis + classical effects (audio-dsp lib), no AI/API.
 
 ### Agent knowledge
@@ -412,7 +412,7 @@ Every knowledge doc should have an `## Agent Callable` section with exact MCP to
 - [mcp-audio-orchestration.md](mcp-audio-orchestration.md) — The 10 MCP tools for audio orchestration.
 - [PLUGIN_SYSTEM.md](PLUGIN_SYSTEM.md) — Marketplace plugin install/verify/launch + bundle authoring (`build_plugin_bundle.py`, `just plugin-bundle`) + external-app linking layer.
 - [UPGRADE_PATH.md](UPGRADE_PATH.md) — Consolidation roadmap, payment/license flow, and consolidation checklist for the plugin & marketplace system.
-- [TOOL-REFERENCE.md](TOOL-REFERENCE.md) — In-app assistant tool catalog + system prompt source.
+- [TOOL-REFERENCE.md](TOOL-REFERENCE.md) — In-app assistant tool catalog (prompt base lives in backend/agents/instructions.py).
 - [59-dsp-synth.md](59-dsp-synth.md) — Offline "Synth / DSP" tab: pure NumPy/SciPy synthesis + classical effects (audio-dsp lib), no AI/API.
 
 ## Phase 2 feature docs (completed — archived 2026-08-17)

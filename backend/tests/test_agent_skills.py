@@ -21,6 +21,16 @@ def test_agent_prompt_contains_skill_router():
     assert "clean-master" in prompt
 
 
+def test_agent_prompt_has_crafted_instructions():
+    from backend.agents.manifest import AGENT_INSTRUCTIONS
+
+    assert "Otoyin" in AGENT_INSTRUCTIONS
+    assert "Plan before acting" in AGENT_INSTRUCTIONS
+    assert "non-destructive" in AGENT_INSTRUCTIONS
+    prompt = get_agent_system_prompt(with_tools=False, query=None)
+    assert prompt.startswith(AGENT_INSTRUCTIONS)
+
+
 def test_assistant_has_skill_discovery_tool():
     from backend.routes.assistant_tools import TOOLS
 

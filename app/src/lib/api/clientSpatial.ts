@@ -286,11 +286,13 @@ export class SpatialMethods extends ADRMethods {
 		apiKey?: string,
 		apiBaseUrl?: string,
 		tools = true,
+		signal?: AbortSignal,
 	): ReadableStream<Uint8Array> {
 		const url = `${this.getBaseUrl()}/assistant/chat`;
 		const response = fetch(url, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
+			signal,
 			body: JSON.stringify({
 				messages,
 				model_id: modelId,
