@@ -48,41 +48,41 @@ export function WorkspaceLanding() {
 					g.tools.some((t) => TOP_TOOL_IDS.includes(t.id)),
 				);
 
-		return (
-			<div className="flex h-full flex-col gap-4 overflow-y-auto">
-				<ScreenHeader title="Workspace" helpPath="/workspace" />
+	return (
+		<div className="flex h-full flex-col gap-4 overflow-y-auto">
+			<ScreenHeader title="Workspace" helpPath="/workspace" />
 
-				{/* Search */}
-				<div className="relative max-w-sm">
-					<MagnifyingGlassIcon className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-					<input
-						type="text"
-						placeholder="Search tools..."
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
-						className="w-full rounded-md border border-border bg-card py-1 pl-8 pr-2.5 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-ring"
-					/>
-				</div>
+			{/* Search */}
+			<div className="relative max-w-sm">
+				<MagnifyingGlassIcon className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+				<input
+					type="text"
+					placeholder="Search tools..."
+					value={search}
+					onChange={(e) => setSearch(e.target.value)}
+					className="w-full rounded-md border border-border bg-card py-1 pl-8 pr-2.5 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-ring"
+				/>
+			</div>
 
-				{/* Top tools — compact cards (hidden when searching) */}
-				{!search.trim() && (
-					<section aria-label="Quick access">
-						<ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-							{topTools.map((tool) => (
-								<li key={tool.id}>
-									<Link
-										to={tool.path}
-										className="group flex h-full flex-col items-center gap-2 rounded-lg border border-border bg-card p-3 text-center transition-colors hover:border-strong"
+			{/* Top tools — compact cards (hidden when searching) */}
+			{!search.trim() && (
+				<section aria-label="Quick access">
+					<ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+						{topTools.map((tool) => (
+							<li key={tool.id}>
+								<Link
+									to={tool.path}
+									className="group flex h-full flex-col items-center gap-2 rounded-lg border border-border bg-card p-3 text-center transition-colors hover:border-strong"
+								>
+									<span
+										aria-hidden="true"
+										className="grid size-9 place-items-center rounded-lg bg-secondary text-muted-foreground transition-colors group-hover:bg-accent-muted group-hover:text-accent"
 									>
-										<span
-											aria-hidden="true"
-											className="grid size-9 place-items-center rounded-lg bg-secondary text-muted-foreground transition-colors group-hover:bg-accent-muted group-hover:text-accent"
-										>
-											<tool.icon className="size-4" />
-										</span>
-										<span className="text-[13px] font-medium text-foreground">
-											{tool.label}
-										</span>
+										<tool.icon className="size-4" />
+									</span>
+									<span className="text-[13px] font-medium text-foreground">
+										{tool.label}
+									</span>
 									<span className="text-[11px] leading-snug text-muted-foreground">
 										{tool.description}
 									</span>

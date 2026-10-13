@@ -465,7 +465,11 @@ Review every affected dependency listed inside APP_MAP.md.
 ## Remaining Blockers
 - `llama-cpp-python` — source build failed; may need prebuilt Windows wheel
 - Steam Audio SDK — user says installed; verification pending
-- Tauri MSI/NSIS installer bundling fails (WiX tools issue) — exe itself works
+- ~~Tauri MSI/NSIS installer bundling fails (WiX tools issue) — exe itself works~~
+  RESOLVED 2026-10-13: `npx tauri build` produced both the release exe and
+  `Otoyin Studio_0.1.0_x64-setup.exe` (NSIS). Only the updater-signing step
+  exits non-zero on a local machine (no `TAURI_SIGNING_PRIVATE_KEY` env) —
+  expected; CI sets the secret (see DEPLOY.md signing-key lifecycle).
 
 # Completion Rule
 

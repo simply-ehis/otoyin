@@ -13,7 +13,7 @@ export async function openExternalUrl(url: string): Promise<void> {
   window.open(url, '_blank');
 }
 
-export const MARKETPLACE_URL = process.env.NEXT_PUBLIC_MARKETPLACE_URL ?? 'https://marketplace-mauve-five.vercel.app';
+export const MARKETPLACE_URL = process.env.NEXT_PUBLIC_MARKETPLACE_URL ?? 'http://localhost:8420';
 const LICENSE_POLL_INTERVAL_MS = 3_000;
 const LICENSE_POLL_MAX_ATTEMPTS = 20; // 1 min total polling
 
@@ -64,7 +64,7 @@ export interface LicenseRecord {
 class MarketplaceClient {
   private baseUrl: string;
 
-  constructor(baseUrl: string = '/api/marketplace') {
+  constructor(baseUrl: string = `${MARKETPLACE_URL.replace(/\/+$/, '')}/v1`) {
     this.baseUrl = baseUrl;
   }
 

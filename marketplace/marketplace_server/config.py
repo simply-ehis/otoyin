@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -35,6 +36,9 @@ class Settings(BaseSettings):
 
     # Admin API (notices, catalog management) — Bearer token for /v1/admin/*
     admin_key: str = ""
+
+    # JSON array of trusted browser origins for the public marketplace website.
+    allowed_origins: list[str] = Field(default_factory=list)
 
     # App settings
     app_url_scheme: str = "otoyin"  # Deep link scheme for redirect after payment

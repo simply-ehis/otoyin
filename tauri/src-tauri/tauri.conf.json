@@ -50,7 +50,7 @@
   "app": {
     "macOSPrivateApi": true,
     "security": {
-      "csp": "default-src 'self' blob: data: media:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob: data: media:; connect-src 'self' ipc: http://ipc.localhost http://localhost:* http://127.0.0.1:* http://[::1]:* https://api.frankfurter.dev; font-src 'self' data:",
+      "csp": "default-src 'self' blob: data: media:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob: data: media:; connect-src 'self' ipc: http://ipc.localhost http://localhost:* http://127.0.0.1:* http://[::1]:* https://api.frankfurter.dev https://api.marketplace.otoyin.app; font-src 'self' data:",
       "capabilities": ["default"]
     },
     "windows": [

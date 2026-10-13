@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'export',
   reactStrictMode: true,
   images: {
+    unoptimized: true,
     domains: ['marketplace.otoyin.app', 'localhost'],
     remotePatterns: [
       {
@@ -14,35 +16,6 @@ const nextConfig = {
         port: '8420',
       },
     ],
-  },
-  async rewrites() {
-    return [
-      {
-        source: '/api/marketplace/:path*',
-        destination: process.env.NEXT_PUBLIC_MARKETPLACE_API_URL || 'http://localhost:8420/v1/catalog/:path*',
-      },
-    ];
-  },
-  async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin',
-          },
-        ],
-      },
-    ];
   },
 };
 

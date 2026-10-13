@@ -1,0 +1,30 @@
+{
+	"name": "otoyin-marketplace-api",
+	"main": "worker/index.ts",
+	"compatibility_date": "2026-10-12",
+	"vars": {
+		"MARKETPLACE_DODO_SANDBOX": "true",
+		"MARKETPLACE_ALLOWED_ORIGINS": "[\"https://marketplace.otoyin.app\",\"https://otoyin-marketplace.pages.dev\"]"
+	},
+	"containers": [
+		{
+			"class_name": "MarketplaceContainer",
+			"image": "./Dockerfile",
+			"max_instances": 3
+		}
+	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "MARKETPLACE_CONTAINER",
+				"class_name": "MarketplaceContainer"
+			}
+		]
+	},
+	"exports": {
+		"MarketplaceContainer": {
+			"type": "durable-object",
+			"storage": "sqlite"
+		}
+	}
+}

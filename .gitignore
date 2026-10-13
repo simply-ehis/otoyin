@@ -57,11 +57,15 @@ logs/
 # Environment
 .env
 .env.local
+.dev.vars*
+!.dev.vars.example
 
 # Generated files
 app/openapi.json
 tauri/src-tauri/binaries/*
 tauri/src-tauri/.tauri-updater.key*
+# Marketplace license private key — never commit (public half: backend/data/marketplace_public_key.txt)
+marketplace/.license_private.key
 # Stale manual keygen experiments (incl. REAL private key material) — never commit
 tauri/src-tauri/*.pem
 tauri/src-tauri/minisign.zip

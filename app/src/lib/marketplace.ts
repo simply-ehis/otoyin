@@ -14,7 +14,7 @@ const isDev = import.meta.env.DEV;
 const MARKETPLACE_URL = isDev
 	? "/api"
 	: (import.meta.env.VITE_MARKETPLACE_URL ??
-		"https://marketplace-mauve-five.vercel.app");
+		"https://api.marketplace.otoyin.app");
 const LICENSE_POLL_INTERVAL_MS = 5_000;
 const LICENSE_POLL_MAX_ATTEMPTS = 60; // 5 min total — covers 3-D Secure/bank redirects
 
@@ -460,6 +460,33 @@ export function getDeviceId(): string {
 		}
 		return inMemoryDeviceId;
 	}
+}
+
+let licenseDeviceIdPromise: Promise<string> | null = null;
+
+/**
+ * Machine-bound device id for checkout and license polling.
+ *
+ * Asks the bundled backend for the same machine fingerprint
+ * licensing.verify_license() checks at install time — a random local id
+ * would bind the license to nothing and every real purchase would be
+ * rejected with `device_mismatch`. Falls back to the anonymous local id
+ * when the backend is unreachable (web mode / tests); failures are not
+ * cached so a later call retries.
+ */
+export async function getLicenseDeviceId(): Promise<string> {
+	if (!licenseDeviceIdPromise) {
+		licenseDeviceIdPromise = apiClient
+			.getLicenseDeviceId()
+			.then((d) => d.device_id)
+			.catch((e) => {
+				licenseDeviceIdPromise = null; // retry next call
+				debug.warn("getLicenseDeviceId backend unreachable, using local id", e);
+				return "";
+			});
+	}
+	const id = await licenseDeviceIdPromise;
+	return id || getDeviceId();
 }
 
 /**

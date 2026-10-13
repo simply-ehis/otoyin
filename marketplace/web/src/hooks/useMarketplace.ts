@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { marketplaceApi, MarketplaceProduct, Offer, Review } from '@/lib/api';
+import { marketplaceApi, MARKETPLACE_API_BASE, MarketplaceProduct, Offer, Review } from '@/lib/api';
 import { getDeviceId } from '@/lib/marketplace';
 
 export function useMarketplace() {
@@ -48,7 +48,7 @@ export function useMarketplace() {
     queryFn: async () => {
       try {
         const deviceId = getDeviceId();
-        const response = await fetch(`/api/marketplace/catalog/wishlist?device_id=${encodeURIComponent(deviceId)}`);
+        const response = await fetch(`${MARKETPLACE_API_BASE}/catalog/wishlist?device_id=${encodeURIComponent(deviceId)}`);
         if (!response.ok) throw new Error('Failed to fetch wishlist');
         return response.json();
       } catch {
@@ -82,7 +82,7 @@ export function useAddToWishlist() {
 
   return useMutation({
     mutationFn: async (productId: string) => {
-      await fetch(`/api/marketplace/catalog/wishlist/${encodeURIComponent(productId)}?device_id=${encodeURIComponent(deviceId)}`, {
+      await fetch(`${MARKETPLACE_API_BASE}/catalog/wishlist/${encodeURIComponent(productId)}?device_id=${encodeURIComponent(deviceId)}`, {
         method: 'POST',
       });
     },
@@ -97,7 +97,7 @@ export function useRemoveFromWishlist() {
 
   return useMutation({
     mutationFn: async (productId: string) => {
-      await fetch(`/api/marketplace/catalog/wishlist/${encodeURIComponent(productId)}?device_id=${encodeURIComponent(getDeviceId())}`, {
+      await fetch(`${MARKETPLACE_API_BASE}/catalog/wishlist/${encodeURIComponent(productId)}?device_id=${encodeURIComponent(getDeviceId())}`, {
         method: 'DELETE',
       });
     },
@@ -112,7 +112,7 @@ export function usePostReview() {
 
   return useMutation({
     mutationFn: async ({ productId, rating, comment }: { productId: string; rating: number; comment: string }) => {
-      await fetch(`/api/marketplace/catalog/product/${encodeURIComponent(productId)}/reviews`, {
+      await fetch(`${MARKETPLACE_API_BASE}/catalog/product/${encodeURIComponent(productId)}/reviews`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rating, comment, device_id: getDeviceId() }),
@@ -129,7 +129,7 @@ export function useFetchReviews(productId: string) {
   return useQuery({
     queryKey: ['marketplace', 'reviews', productId],
     queryFn: async () => {
-      const res = await fetch(`/api/marketplace/catalog/product/${encodeURIComponent(productId)}/reviews`);
+      const res = await fetch(`${MARKETPLACE_API_BASE}/catalog/product/${encodeURIComponent(productId)}/reviews`);
       if (!res.ok) throw new Error('Failed to fetch reviews');
       return res.json();
     },

@@ -15,15 +15,15 @@ export function Panel({
 	className,
 	...props
 }: React.HTMLAttributes<HTMLDivElement>) {
-		return (
-			<section
-				className={cn(
-					"rounded-lg border border-border bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.35)]",
-					className,
-				)}
-				{...props}
-			/>
-		);
+	return (
+		<section
+			className={cn(
+				"rounded-lg border border-border bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.35)]",
+				className,
+			)}
+			{...props}
+		/>
+	);
 }
 
 /**
@@ -39,15 +39,15 @@ export function SectionHeader({
 	action?: React.ReactNode;
 	className?: string;
 }) {
-		return (
-			<div className={cn("mb-4 flex items-baseline gap-3", className)}>
-				<h2 className="text-sm font-semibold tracking-tight text-foreground">
-					{title}
-				</h2>
-				<span aria-hidden="true" className="h-px flex-1 bg-border" />
-				{action}
-			</div>
-		);
+	return (
+		<div className={cn("mb-4 flex items-baseline gap-3", className)}>
+			<h2 className="text-sm font-semibold tracking-tight text-foreground">
+				{title}
+			</h2>
+			<span aria-hidden="true" className="h-px flex-1 bg-border" />
+			{action}
+		</div>
+	);
 }
 
 /**
@@ -67,28 +67,28 @@ export function ScreenHeader({
 	helpPath?: string;
 	className?: string;
 }) {
-		return (
-			<div className={cn("flex items-center justify-between gap-3", className)}>
-				<div className="min-w-0">
-					<h1 className="text-base font-semibold tracking-tight text-foreground">
-						{title}
-					</h1>
-					{description ? (
-						<p className="mt-0.5 max-w-[640px] text-xs text-muted-foreground">
-							{description}
-						</p>
-					) : null}
-				</div>
-				<div className="flex shrink-0 items-center gap-1.5">
-					{helpPath ? (
-						<Suspense fallback={null}>
-							<TabHelp tabPath={helpPath} />
-						</Suspense>
-					) : null}
-					{actions}
-				</div>
+	return (
+		<div className={cn("flex items-center justify-between gap-3", className)}>
+			<div className="min-w-0">
+				<h1 className="text-base font-semibold tracking-tight text-foreground">
+					{title}
+				</h1>
+				{description ? (
+					<p className="mt-0.5 max-w-[640px] text-xs text-muted-foreground">
+						{description}
+					</p>
+				) : null}
 			</div>
-		);
+			<div className="flex shrink-0 items-center gap-1.5">
+				{helpPath ? (
+					<Suspense fallback={null}>
+						<TabHelp tabPath={helpPath} />
+					</Suspense>
+				) : null}
+				{actions}
+			</div>
+		</div>
+	);
 }
 
 /**

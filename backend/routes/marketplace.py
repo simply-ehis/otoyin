@@ -20,6 +20,7 @@ from ..services.licensing import (
     active_entitlements,
     delete_license,
     entitlement_for_product,
+    get_device_id,
     install_license,
     list_licenses,
 )
@@ -116,6 +117,17 @@ async def refresh_catalog(force: bool = False) -> dict:
 def get_entitlements(db: Session = Depends(get_db)) -> dict:
     """List all entitlements currently granted by installed licenses."""
     return {"entitlements": sorted(active_entitlements(db))}
+
+
+@router.get("/marketplace/device-id")
+def get_marketplace_device_id() -> dict:
+    """Machine-bound device id used to bind purchased licenses to this install.
+
+    The same fingerprint licensing.verify_license() checks at install time,
+    so checkout must send THIS id (not a random local one) or every real
+    purchase would be rejected with ``device_mismatch``.
+    """
+    return {"device_id": get_device_id()}
 
 
 @router.get("/marketplace/offers")

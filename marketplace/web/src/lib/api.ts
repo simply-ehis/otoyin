@@ -1,9 +1,11 @@
-const API_BASE = process.env.NEXT_PUBLIC_MARKETPLACE_API_URL || 'http://localhost:8420';
+export const MARKETPLACE_API_BASE = (
+  process.env.NEXT_PUBLIC_MARKETPLACE_API_URL || 'http://localhost:8420/v1'
+).replace(/\/+$/, '');
 
 class MarketplaceApi {
   private baseUrl: string;
 
-  constructor(baseUrl: string = '/api/marketplace') {
+  constructor(baseUrl: string = MARKETPLACE_API_BASE) {
     this.baseUrl = baseUrl;
   }
 

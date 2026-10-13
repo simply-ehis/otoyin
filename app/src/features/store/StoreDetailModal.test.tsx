@@ -58,6 +58,7 @@ vi.mock("@/lib/marketplace", () => ({
 		previewTax: vi.fn(),
 	},
 	getDeviceId: () => "test-device",
+	getLicenseDeviceId: async () => "test-device",
 	openExternalUrl: vi.fn(),
 }));
 

@@ -102,9 +102,12 @@ describe("LanguageSelect", () => {
 		// Radix Select in jsdom: open via keyboard (clicks hit the
 		// dismissable-layer pointer-events gap) — same pattern as
 		// overlays.test.tsx "opens the listbox and chooses an option".
-		fireEvent.keyDown(screen.getByRole("combobox", { name: "Interface language" }), {
-			key: "ArrowDown",
-		});
+		fireEvent.keyDown(
+			screen.getByRole("combobox", { name: "Interface language" }),
+			{
+				key: "ArrowDown",
+			},
+		);
 		for (const code of EXPECTED) {
 			expect(
 				await screen.findByRole("option", {

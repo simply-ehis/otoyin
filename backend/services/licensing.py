@@ -17,14 +17,15 @@ License document shape::
         "sig": "ed25519:<base64>",
     }
 
-The public verifying key is injected at build/runtime via
-``TWENTYLABS_MARKETPLACE_PUBLIC_KEY`` and falls back to a **dev
-placeholder** used only for local development and tests. The matching
-private signing key lives ONLY on the marketplace license server
-(``TWENTYLABS_MARKETPLACE_PRIVATE_KEY``); it is never embedded in the
-shipped binary. In a production build (``TWENTYLABS_ENV=production``) a
-dev/unset public key is rejected, so real releases MUST inject the
-production public key.
+The public verifying key resolves in this order: the
+``TWENTYLABS_MARKETPLACE_PUBLIC_KEY`` env var, the production key
+bundled into frozen builds (``backend/data/marketplace_public_key.txt``),
+then a **dev placeholder** used only for local development and tests.
+The matching private signing key lives ONLY on the marketplace license
+server (``MARKETPLACE_LICENSE_PRIVATE_KEY``); it is never embedded in
+the shipped binary. In a production build (``TWENTYLABS_ENV=production``)
+a dev public key is rejected, so real releases MUST ship the bundled
+production key.
 """
 
 from __future__ import annotations
@@ -37,6 +38,7 @@ import os
 import sys
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
@@ -48,18 +50,45 @@ from ..database.models import Entitlement, License
 logger = logging.getLogger(__name__)
 
 # --- Keys -----------------------------------------------------------------
-# Dev placeholder pair — LOCAL DEV / TESTS ONLY. The real production public
-# key is injected via TWENTYLABS_MARKETPLACE_PUBLIC_KEY at build/runtime.
+# Dev placeholder pair — LOCAL DEV / TESTS ONLY. Frozen builds ship the real
+# production public key in backend/data/marketplace_public_key.txt (public
+# keys are not secret; the private half never leaves the license server).
 _DEV_PUBLIC_KEY = "kz/CSXHB6Pxhfsb+mlEgXsOXG5LlW2T3C9BRTQ8Kino="
 _DEV_PRIVATE_KEY = "CX4rwSuT6vi9s3aJZWHw9zzY8hPdtQ+cR6tjB80qRX8="
+
+_PUBLIC_KEY_FILENAME = "marketplace_public_key.txt"
 
 
 def _is_production() -> bool:
     return os.environ.get("TWENTYLABS_ENV", "development").lower() == "production"
 
 
-# Injected production verifying key; dev placeholder otherwise.
-MARKETPLACE_PUBLIC_KEY = os.environ.get("TWENTYLABS_MARKETPLACE_PUBLIC_KEY", _DEV_PUBLIC_KEY)
+def _bundled_public_key() -> str | None:
+    """Production verifying key shipped inside frozen builds.
+
+    PyInstaller bundles ``backend/data/marketplace_public_key.txt`` via
+    --add-data; source runs and tests return None and keep the dev
+    placeholder unless TWENTYLABS_MARKETPLACE_PUBLIC_KEY overrides it.
+    """
+    if not getattr(sys, "frozen", False):
+        return None
+    candidates: list[Path] = []
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        candidates.append(Path(meipass) / "backend" / "data" / _PUBLIC_KEY_FILENAME)
+    candidates.append(Path(__file__).resolve().parent.parent / "data" / _PUBLIC_KEY_FILENAME)
+    for path in candidates:
+        try:
+            text = path.read_text(encoding="utf-8").strip()
+        except OSError:
+            continue
+        if text and not text.startswith("#"):
+            return text
+    return None
+
+
+# Verifying key: env override > bundled production key > dev placeholder.
+MARKETPLACE_PUBLIC_KEY = os.environ.get("TWENTYLABS_MARKETPLACE_PUBLIC_KEY") or _bundled_public_key() or _DEV_PUBLIC_KEY
 
 _SIG_PREFIX = "ed25519:"
 

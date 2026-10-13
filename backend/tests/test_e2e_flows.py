@@ -4,7 +4,7 @@
   /stories/import → GET the copy (new IDs, same content).
 - Buy → install: marketplace dev checkout → license fetch → backend
   license install → entitlements (keypairs wired so both sides agree,
-  device "*" to skip machine binding).
+  device bound to the REAL machine fingerprint — the production path).
 - Crash loop: toggle on → report → list → clear.
 
 Backend runs on a temp SQLite DB + temp data dir; marketplace uses its
@@ -226,6 +226,13 @@ class TestBuyInstallFlow:
 
         import asyncio
 
+        from backend.services import licensing
+
+        # Production path: checkout carries the same machine fingerprint the
+        # backend verifies at install time (what GET /marketplace/device-id
+        # hands the frontend) — not the "*" wildcard.
+        device_id = licensing.get_device_id()
+
         async def _flow():
             await init_db()
             async with async_session() as db:
@@ -238,7 +245,7 @@ class TestBuyInstallFlow:
             async with AsyncClient(transport=transport, base_url="http://test") as mp:
                 co = await mp.post(
                     "/v1/checkout",
-                    json={"product_id": "e2e-voice", "device_id": "*", "email": ""},
+                    json={"product_id": "e2e-voice", "device_id": device_id, "email": ""},
                 )
                 assert co.status_code == 200, co.text
                 order_ref = co.json()["order_ref"]
@@ -253,6 +260,7 @@ class TestBuyInstallFlow:
             return signed
 
         signed = asyncio.run(_flow())
+        assert signed["device_id"] == device_id
 
         client, _ = backend_client
         inst = client.post("/marketplace/license", json={"license": signed})
@@ -260,6 +268,21 @@ class TestBuyInstallFlow:
         ent = client.get("/marketplace/entitlements")
         assert ent.status_code == 200
         assert "models:e2e-voice" in ent.json()["entitlements"]
+
+
+class TestDeviceIdEndpoint:
+    def test_device_id_matches_machine_fingerprint(self, backend_client):
+        """GET /marketplace/device-id returns what licensing verifies against."""
+        import re
+
+        from backend.services import licensing
+
+        client, _ = backend_client
+        resp = client.get("/marketplace/device-id")
+        assert resp.status_code == 200
+        device_id = resp.json()["device_id"]
+        assert device_id == licensing.get_device_id()
+        assert re.fullmatch(r"[0-9a-f]{64}", device_id), device_id
 
 
 class TestCrashLoopFlow:

@@ -15,7 +15,7 @@ import type {
 } from "@/lib/api/types";
 import { showStudioErrorToast } from "@/lib/errors";
 import {
-	getDeviceId,
+	getLicenseDeviceId,
 	marketplaceClient,
 	openExternalUrl,
 } from "@/lib/marketplace";
@@ -121,7 +121,7 @@ export function ProductActions({
 		// Poll for license (user completes payment in browser)
 		const license = await marketplaceClient.pollForLicense(
 			orderRef,
-			getDeviceId(),
+			await getLicenseDeviceId(),
 		);
 		// Auto-install the license
 		await marketplaceClient.installLicense(license);
@@ -135,13 +135,13 @@ export function ProductActions({
 	const handleCheckout = async () => {
 		setCheckingOut(true);
 		try {
-			const deviceId = getDeviceId();
+			const deviceId = await getLicenseDeviceId();
 			const checkout = await marketplaceClient.createCheckout(
 				product.id,
 				deviceId,
 				"",
 			);
-			// Open Paddle checkout in system browser
+			// Open Dodo checkout in system browser
 			await openExternalUrl(checkout.checkout_url);
 			setPendingOrderRef(checkout.order_ref);
 			await pollAndInstall(checkout.order_ref);
@@ -311,7 +311,7 @@ export function ProductActions({
 										fx.currency,
 										fx.locale,
 									)}{" "}
-							total (est. — Paddle finalizes at checkout)
+							total (est. — Dodo finalizes at checkout)
 						</p>
 					)}
 					<Button

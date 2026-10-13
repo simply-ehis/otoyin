@@ -37,6 +37,7 @@ vi.mock("@/lib/api/client", () => ({
 
 vi.mock("@/lib/marketplace", () => ({
 	getDeviceId: () => "device-test",
+	getLicenseDeviceId: async () => "device-test",
 	openExternalUrl: vi.fn().mockResolvedValue(undefined),
 	marketplaceClient: {
 		fetchCatalog: vi.fn(),

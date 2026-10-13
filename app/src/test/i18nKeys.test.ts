@@ -72,7 +72,13 @@ describe("i18n keys", () => {
 			if (file.includes(".test.")) {
 				continue;
 			}
-			for (const re of [KEY_RE, KEY_PROP_RE, STR_DEFAULT_RE, DV_DEFAULT_RE, BT_DEFAULT_RE]) {
+			for (const re of [
+				KEY_RE,
+				KEY_PROP_RE,
+				STR_DEFAULT_RE,
+				DV_DEFAULT_RE,
+				BT_DEFAULT_RE,
+			]) {
 				re.lastIndex = 0;
 				for (const m of text.matchAll(re)) {
 					const key = m[1];

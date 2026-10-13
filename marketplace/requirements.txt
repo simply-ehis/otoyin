@@ -1,5 +1,4 @@
-# Marketplace server dependencies for Vercel
-# Vercel installs from this file automatically
+# Marketplace API dependencies for the Cloudflare Containers image.
 fastapi>=0.115.0
 uvicorn[standard]>=0.30.0
 sqlalchemy[asyncio]>=2.0.0

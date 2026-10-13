@@ -1,31 +1,35 @@
-# Marketplace server — Vercel + Neon
+# Marketplace server — Cloudflare + Neon + Dodo Payments
 
 ## Setup
 
 1. Create a Neon database at https://neon.tech
 2. Copy the connection string from Neon dashboard
-3. Set environment variables in Vercel:
+3. Create a Cloudflare Workers Paid project and Pages project, then configure
+   the API's runtime secrets in Cloudflare:
    - `MARKETPLACE_DATABASE_URL` = your Neon connection string
    - `MARKETPLACE_LICENSE_PRIVATE_KEY` = base64-encoded Ed25519 private key
-   - `MARKETPLACE_PADDLE_API_KEY` = Paddle API key (sandbox key for staging)
-   - `MARKETPLACE_PADDLE_WEBHOOK_SECRET` = per-destination secret (`pdl_ntfset_...`)
-   - `MARKETPLACE_PADDLE_SANDBOX` = `false` in prod, `true` anywhere else
-   - `MARKETPLACE_PADDLE_PRICE_MAP` = JSON, e.g. `{"qwen3-tts": "pri_01j..."}` (one Paddle price per paid product)
+   - `MARKETPLACE_DEBUG` = `false` in production; only set `true` for local development
+   - `MARKETPLACE_DODO_API_KEY` = Dodo API key (test key for staging)
+   - `MARKETPLACE_DODO_WEBHOOK_SECRET` = signing secret for the webhook destination
+   - `MARKETPLACE_DODO_SANDBOX` = `false` in prod, `true` anywhere else
+   - `MARKETPLACE_DODO_PRODUCT_MAP` = JSON mapping catalog IDs to Dodo product IDs, e.g. `{"qwen3-tts": "pdt_..."}`
    - `MARKETPLACE_ADMIN_KEY` = Bearer token for `/v1/admin/*` routes (e.g. `POST /v1/notices/admin`)
 
-> **Payment provider:** Paddle Billing (Merchant of Record — tax/VAT handled
-> by Paddle, not here). Sandbox is the default (`MARKETPLACE_PADDLE_SANDBOX`
-> stays `true` until prod), so a misconfigured deploy can never charge.
-> Every paid catalog product needs a Paddle price or checkout returns
-> `price_not_configured`. Seller-payout setup (Payoneer for Nigerian sellers)
-> happens in the Paddle dashboard, not in code — see `PADDLE_TESTING.md`.
+> **Payment provider:** Dodo Payments (Merchant of Record). Sandbox is the
+> default (`MARKETPLACE_DODO_SANDBOX=true`), so a misconfigured deploy cannot
+> charge live. Every paid catalog product needs a Dodo product ID in the map or
+> checkout returns `price_not_configured`. Configure a Dodo webhook destination
+> for `payment.succeeded`, `payment.cancelled`, `payment.failed`, and
+> `refund.succeeded`; copy its signing secret to `MARKETPLACE_DODO_WEBHOOK_SECRET`.
+> Production startup now fails when the license private key is missing; do not
+> set `MARKETPLACE_DEBUG=true` on a public deployment.
 
 ## Endpoints
 
 - `GET /v1/catalog` — signed product catalog (the desktop app merges this
-  remotely; see prompt 07 plan)
-- `POST /v1/checkout` · `GET /v1/webhook/license/{order_ref}` — Paddle checkout + license
-- `POST /v1/checkout/donate` — custom-amount donations ($1–$10,000, non-catalog Paddle pricing, no license minted)
+  remotely)
+- `POST /v1/checkout` · `GET /v1/webhook/license/{order_ref}` — Dodo checkout + license
+- `POST /v1/checkout/donate` — custom-amount donations ($1–$10,000, no catalog product or license)
 - `POST /v1/crashes` · `GET /v1/crashes/admin` (Bearer `MARKETPLACE_ADMIN_KEY`) — opt-in crash ingest
 - `GET /v1/notices` — push-style announcements polled by the app on launch
   (offline-first; see `docs/knowledge/77-notifications.md`)
@@ -34,42 +38,66 @@
 - `POST /v1/notices/admin` — create/update a notice (Bearer `MARKETPLACE_ADMIN_KEY`)
 - `GET /v1/catalog/offers` · reviews · wishlist
 
-## Deploy
+## Deploy to Cloudflare
+
+The API uses `Dockerfile`, `worker/index.ts`, and `wrangler.jsonc`. The Worker
+starts a FastAPI container on demand, waits for `/health`, and forwards requests
+to it. The container requires outbound internet for Neon and Dodo. Workers
+Containers are available on the Cloudflare Workers Paid plan.
 
 ```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
 cd marketplace
-vercel
-
-# Set env vars
-vercel env add MARKETPLACE_DATABASE_URL
-vercel env add MARKETPLACE_LICENSE_PRIVATE_KEY
-# ... etc
-
-# Deploy to production
-vercel --prod
+npx wrangler@4 secret put MARKETPLACE_DATABASE_URL
+npx wrangler@4 secret put MARKETPLACE_LICENSE_PRIVATE_KEY
+npx wrangler@4 secret put MARKETPLACE_DODO_API_KEY
+npx wrangler@4 secret put MARKETPLACE_DODO_WEBHOOK_SECRET
+npx wrangler@4 secret put MARKETPLACE_DODO_PRODUCT_MAP
+npx wrangler@4 deploy --config wrangler.jsonc
 ```
+
+Set `MARKETPLACE_DODO_SANDBOX=false` and `MARKETPLACE_ALLOWED_ORIGINS` in the
+`vars` section of `wrangler.jsonc` only after production payment and browser
+origins are configured. The checked-in value keeps sandbox mode enabled. Keep
+the API in sandbox mode until a complete test purchase,
+webhook, refund, and license verification succeed.
+
+The website is a static Next.js export deployed to the Pages project
+`otoyin-marketplace`. Set `NEXT_PUBLIC_MARKETPLACE_API_URL` to the deployed API
+origin ending in `/v1` and `NEXT_PUBLIC_MARKETPLACE_URL` to the origin without
+`/v1`. The GitHub workflow deploys both API and site when `marketplace/**`
+changes; it requires `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets,
+and the Pages project must exist first.
+
+Neon connection, Ed25519 license keys, Dodo keys, product map, and admin key
+belong in Cloudflare Worker secrets/variables. Do not commit them or put them
+in public GitHub Actions variables.
 
 ## Local dev
 
 ```bash
-# SQLite (default)
+# SQLite (default); debug enables local auto-fulfillment without Dodo credentials
+```
+
+PowerShell:
+
+```powershell
+$env:MARKETPLACE_DEBUG = "true"
 python -m marketplace_server.seed
 python -m uvicorn marketplace_server.app:app --reload --port 8420
+```
 
-# Or with Neon
-MARKETPLACE_DATABASE_URL=postgresql+asyncpg://... python -m marketplace_server.seed
-MARKETPLACE_DATABASE_URL=postgresql+asyncpg://... python -m uvicorn marketplace_server.app:app --reload
+For Neon, use a shell with environment-variable assignment syntax:
+
+```bash
+MARKETPLACE_DEBUG=true MARKETPLACE_DATABASE_URL=postgresql+asyncpg://... python -m marketplace_server.seed
+MARKETPLACE_DEBUG=true MARKETPLACE_DATABASE_URL=postgresql+asyncpg://... python -m uvicorn marketplace_server.app:app --reload
 ```
 
 ## Generate Ed25519 keypair
 
 ```python
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, PublicFormat, NoEncryption
 import base64
 
 private_key = Ed25519PrivateKey.generate()

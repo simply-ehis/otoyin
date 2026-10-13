@@ -172,30 +172,81 @@ async def get_transaction(transaction_id: str) -> dict:
     return {"checkout_url": checkout_url}
 
 
-async def preview_prices(*, country_code: str, price_ids: list[str]) -> dict:
-    """Preview Dodo totals for product IDs in a buyer country.
+# Dodo checkout carts hold at most 20 items — preview in chunks of that size.
+_PREVIEW_CART_LIMIT = 20
 
-    Dodo uses adaptive currency — the checkout session auto-converts to the
-    buyer's local currency. This returns a simple USD response for the catalog
-    preview; the actual conversion happens at checkout time.
+_ZERO_DECIMAL_CURRENCIES = {"JPY", "KRW", "CLP"}
+
+
+def _fmt_minor(minor: int, currency: str) -> str:
+    """Format a minor-unit amount for display (e.g. ``3.78 GBP``)."""
+    value = float(minor) if currency in _ZERO_DECIMAL_CURRENCIES else minor / 100
+    return f"{value:.2f} {currency}"
+
+
+async def _preview_chunk(
+    client: httpx.AsyncClient, price_ids: list[str], country_code: str
+) -> dict:
+    """POST /checkouts/preview for one cart chunk (raw CalculateSessionResponse)."""
+    try:
+        resp = await client.post(
+            f"{base_url()}/checkouts/preview",
+            headers={
+                "Authorization": f"Bearer {settings.dodo_api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "product_cart": [{"product_id": pid, "quantity": 1} for pid in price_ids],
+                "billing_address": {"country": country_code},
+            },
+            timeout=15,
+        )
+        resp.raise_for_status()
+        return resp.json()
+    except httpx.HTTPError as exc:
+        logger.error("Dodo preview failed for %s: %s", country_code, exc)
+        raise RuntimeError(f"Dodo preview failed: {exc}") from exc
+    except ValueError as exc:
+        logger.error("Dodo preview returned invalid JSON: %s", exc)
+        raise RuntimeError(f"Dodo preview returned invalid response: {exc}") from exc
+
+
+async def preview_prices(*, country_code: str, price_ids: list[str]) -> dict:
+    """Buyer-facing totals via Dodo's preview endpoint.
+
+    Calls ``POST /checkouts/preview`` with the billing country so Dodo
+    computes the adaptive currency, discounts, and tax the buyer would
+    actually pay — the same math the hosted checkout applies. Carts hold at
+    most 20 items, so larger sets are chunked and merged. Returns the
+    ``{currency_code, details.line_items[]}`` shape the catalog route
+    parses. Raises ``RuntimeError`` when unconfigured or on failure (the
+    route maps it to 503/502).
     """
     if not is_configured():
         raise RuntimeError("Dodo API key is not configured")
     if not price_ids:
         return {"currency_code": "USD", "details": {"line_items": []}}
-    line_items = []
-    for pid in price_ids:
-        line_items.append(
-            {
-                "price": {"id": pid},
-                "totals": {"total": "0"},
-                "formatted_totals": {"total": "USD"},
-            }
-        )
-    return {
-        "currency_code": "USD",
-        "details": {"line_items": line_items},
-    }
+    currency = "USD"
+    line_items: list[dict] = []
+    async with httpx.AsyncClient() as client:
+        for start in range(0, len(price_ids), _PREVIEW_CART_LIMIT):
+            data = await _preview_chunk(
+                client, price_ids[start : start + _PREVIEW_CART_LIMIT], country_code
+            )
+            currency = str(data.get("currency") or currency).upper()
+            for item in data.get("product_cart") or []:
+                pid = str((item or {}).get("product_id") or "")
+                if not pid:
+                    continue
+                total = item.get("discounted_price", item.get("og_price", 0))
+                line_items.append(
+                    {
+                        "price": {"id": pid},
+                        "totals": {"total": str(int(total or 0))},
+                        "formatted_totals": {"total": _fmt_minor(int(total or 0), currency)},
+                    }
+                )
+    return {"currency_code": currency, "details": {"line_items": line_items}}
 
 
 def verify_signature(raw_body: bytes, headers: dict) -> bool:

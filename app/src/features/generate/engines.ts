@@ -208,10 +208,7 @@ export function installableEngines(
  */
 export function preferredProfile<
 	T extends { default_engine?: string; preset_engine?: string },
->(
-	profiles: readonly T[] | undefined,
-	downloaded?: Set<string>,
-): T | undefined {
+>(profiles: readonly T[] | undefined, downloaded?: Set<string>): T | undefined {
 	if (!profiles || profiles.length === 0) {
 		return undefined;
 	}

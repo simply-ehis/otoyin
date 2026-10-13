@@ -142,7 +142,10 @@ export function TopBanners() {
 	}, [announcements, dismissed, now]);
 
 	// Priority 1 — backend down / failed / initializing
-	if (!(isLoading && !healthError) && !(isConnected && health?.status === "healthy")) {
+	if (
+		!(isLoading && !healthError) &&
+		!(isConnected && health?.status === "healthy")
+	) {
 		const healthMsg = healthError instanceof Error ? healthError.message : "";
 		const isStartupFailed =
 			typeof health === "object" &&
@@ -179,7 +182,10 @@ export function TopBanners() {
 			);
 		}
 
-		if (boot.status === "initializing" || healthMsg.toLowerCase().includes("initializing")) {
+		if (
+			boot.status === "initializing" ||
+			healthMsg.toLowerCase().includes("initializing")
+		) {
 			return (
 				<Strip
 					model={{
@@ -211,9 +217,7 @@ export function TopBanners() {
 					icon: Icon,
 					title: a.title,
 					message: a.message,
-					cta: a.cta
-						? { label: a.cta.label, to: a.cta.to }
-						: undefined,
+					cta: a.cta ? { label: a.cta.label, to: a.cta.to } : undefined,
 					onDismiss: () => dismissAnnouncement(a.id),
 				}}
 				onCta={(to) => navigate({ to } as never)}
@@ -224,10 +228,7 @@ export function TopBanners() {
 	// Priority 3 — missing recommended models
 	if (recommended) {
 		return (
-			<Strip
-				model={recommended}
-				onCta={(to) => navigate({ to } as never)}
-			/>
+			<Strip model={recommended} onCta={(to) => navigate({ to } as never)} />
 		);
 	}
 

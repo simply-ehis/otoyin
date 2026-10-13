@@ -57,12 +57,9 @@ vi.mock("react-i18next", () => ({
 				EN[key] ??
 				(typeof opts === "string"
 					? opts
-					: (opts as { defaultValue?: string } | undefined)?.defaultValue ??
-						key);
-			return interpolate(
-				raw,
-				typeof opts === "object" ? opts : undefined,
-			);
+					: ((opts as { defaultValue?: string } | undefined)?.defaultValue ??
+						key));
+			return interpolate(raw, typeof opts === "object" ? opts : undefined);
 		},
 		i18n: { language: "en" },
 	}),

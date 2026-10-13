@@ -1,12 +1,12 @@
 # Deployment & Setup
 
-**Updated:** 2026-09-06 (release signing-key lifecycle documented; 2026-09-04: crash reporting — first-party opt-in pipeline, no SaaS; Paddle cutover; lockfile committed, CI on `npm ci`).
+**Updated:** 2026-10-12 (Cloudflare deployment path prepared; marketplace uses Dodo Payments).
 
 Three deployable units, documented separately:
 
 1. **Desktop app** (Tauri: `tauri/` + shared frontend `app/src` + bundled Python backend)
 2. **Main backend** (`backend/` — FastAPI; runs locally with the desktop app, optionally on Railway)
-3. **Marketplace service** (`marketplace/marketplace_server/` — Vercel + Neon)
+3. **Marketplace service and site** (`marketplace/` — Cloudflare Containers/Pages + Neon)
 
 Local dev is **npm-only** — no bun, no pnpm. See the migration note at the bottom.
 
@@ -35,6 +35,9 @@ just build             # server binary + Tauri app
   build (`TAURI_SIGNING_PRIVATE_KEY` secret) and uploads `latest.json`.
   Signing-key custody, rotation, and compromise recovery: see
   **Release signing-key lifecycle** below.
+- Tauri updater signatures are required to protect updates. Apple notarization
+  and Windows Authenticode certificates are separate and are currently omitted;
+  macOS Gatekeeper and Windows SmartScreen may warn users about unsigned builds.
 - Rebrand complete: bundle identifier is `com.otoyin.app` (renamed from `com.21labs.app`).
 
 ### Release signing-key lifecycle
@@ -122,6 +125,57 @@ If the private key (or the GitHub secret) is exposed or even suspected:
 5. Re-sign nothing retroactively. Installers signed while the key was safe
    remain valid artifacts; only the update channel is burned.
 
+### Marketplace license-signing key lifecycle
+
+Marketplace licenses (and the signed remote catalog) use a second Ed25519
+keypair, independent of the updater key. Frozen builds embed the PUBLIC key
+(`backend/data/marketplace_public_key.txt`, force-tracked — public keys
+aren't secret) and verify every install locally; the marketplace Worker
+signs with the private half via the `MARKETPLACE_LICENSE_PRIVATE_KEY`
+secret. Same trust model as the updater: an install verifies only against
+the key it shipped with.
+
+**Custody rules**
+
+- Public key: `backend/data/marketplace_public_key.txt` — committed;
+  bundled into frozen builds by `build_binary.py` (`--add-data` →
+  `<bundle>/backend/data`). Resolution order in
+  `backend/services/licensing.py`: `TWENTYLABS_MARKETPLACE_PUBLIC_KEY`
+  env > bundled file > committed dev placeholder (production rejects the
+  dev key, so real builds must ship the bundled file).
+- Private key: `marketplace/.license_private.key` — gitignored
+  (`.gitignore:68`), never committed. It exists in exactly two places:
+  the release manager's machine and the Cloudflare Worker secret.
+- Debug marketplace servers sign with the committed DEV pair (same pair
+  as the app's dev placeholder) so the local buy→install loop verifies;
+  the server lifespan still refuses to start non-debug without the real
+  secret.
+
+**Generation + install** (current pair generated 2026-10-13):
+
+```bash
+python -c "import base64; from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey as K; from cryptography.hazmat.primitives.serialization import Encoding,NoEncryption,PrivateFormat,PublicFormat; k=K.generate(); print(base64.b64encode(k.private_bytes(Encoding.Raw,PrivateFormat.Raw,NoEncryption())).decode()); print(base64.b64encode(k.public_key().public_bytes(Encoding.Raw,PublicFormat.Raw)).decode())"
+# private line -> marketplace/.license_private.key (+ offline backup)
+# public line  -> backend/data/marketplace_public_key.txt (force-add: git add -f)
+cd marketplace
+npx wrangler secret put MARKETPLACE_LICENSE_PRIVATE_KEY   # paste the private line
+```
+
+**Rotation** — same two-release crossover as the updater key: an installed
+app verifies only against the public key it shipped with, so a one-hop swap
+strands every existing install. With zero installed base it's one step —
+replace both files, `wrangler secret put` the new private half, ship. After
+installs exist: ship release N carrying the NEW public key while the Worker
+still signs with the OLD private key, then flip the Worker secret before
+N+1.
+
+**Compromise recovery** — a leaked private key lets anyone mint licenses
+that verify on installed apps. Generate a fresh pair, rotate the Worker
+secret and the bundled public key (two-release crossover), and treat
+licenses signed during the exposure window as untrustworthy; the offline
+model has no revocation list, so a forced-reinstall notice is the only
+remediation for abused entitlements.
+
 ## 2. Main backend (local, optional Railway)
 
 Runs at `127.0.0.1:17493` by default, sidecar-bundled in production; it can
@@ -140,17 +194,32 @@ python -m backend.main --host 0.0.0.0
 want the deployed backend to also merge remote notices). Legacy `TWENTYLABS_*`
 names are still honored with a deprecation warning for one release.
 
-## 3. Marketplace service (Vercel + Neon)
+## 3. Marketplace service and website (Cloudflare + Neon)
 
-See `marketplace/README.md` for full setup. Short version:
+See `marketplace/README.md` for setup. The API runs as a Dockerized FastAPI
+service in Cloudflare Workers Containers; its Durable Object keeps one named
+instance and forwards requests to the container. Neon remains the persistent
+database. The static Next.js site deploys to Cloudflare Pages.
 
-- Postgres (Neon) for products/orders/licenses/**notices**.
+- Workers Containers require Cloudflare's Workers Paid plan. Deploy locally with
+  `cd marketplace; npx wrangler@4 deploy --config wrangler.jsonc`, or let the
+  `marketplace-cloudflare.yml` GitHub workflow deploy both services.
+- Create the Pages project `otoyin-marketplace` once and set the GitHub
+  repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
+- Set repository variables `NEXT_PUBLIC_MARKETPLACE_API_URL` to the API origin
+  ending in `/v1` (for example `https://api.example.com/v1`) and
+  `NEXT_PUBLIC_MARKETPLACE_URL` to the API origin without `/v1`.
+- Add runtime Worker secrets in Cloudflare for database, license signing,
+  Dodo, and admin values; never put their values in GitHub variables or source.
+- Add the Pages origin to `MARKETPLACE_ALLOWED_ORIGINS` as a JSON array so the
+  API accepts browser requests from the deployed site.
+- Set the desktop build's `VITE_MARKETPLACE_URL` to the deployed API origin.
 - Env: `MARKETPLACE_DATABASE_URL`, `MARKETPLACE_LICENSE_PRIVATE_KEY`
-  (base64 Ed25519), `MARKETPLACE_PADDLE_API_KEY` (+ `MARKETPLACE_PADDLE_SANDBOX`,
-  `MARKETPLACE_PADDLE_WEBHOOK_SECRET`, `MARKETPLACE_PADDLE_PRICE_MAP` —
-  sandbox defaults ON, see `marketplace/README.md` and `PADDLE_TESTING.md`),
-  `MARKETPLACE_ADMIN_KEY` (Bearer token for `POST /v1/notices/admin` and
-  future admin routes).
+  (base64 Ed25519), `MARKETPLACE_DODO_API_KEY` (+ `MARKETPLACE_DODO_SANDBOX`,
+  `MARKETPLACE_DODO_WEBHOOK_SECRET`, `MARKETPLACE_DODO_PRODUCT_MAP` —
+  sandbox defaults ON, see `marketplace/README.md`),
+  `MARKETPLACE_ADMIN_KEY` (Bearer token for marketplace notice and crash
+  administration endpoints).
 - Serves: `/v1/catalog`, `/v1/checkout`, `/v1/webhook/*`, `/v1/notices`.
 - The desktop app polls `/v1/notices` on launch via `OTOYIN_NOTICES_URL`
   (offline-first; see `docs/knowledge/77-notifications.md`).
@@ -183,17 +252,18 @@ See `marketplace/README.md` for full setup. Short version:
 Source of truth: `backend/config.py` (`_env(new, old, default)` helper),
 `backend/main.py`, `backend/app.py`.
 
-### Marketplace service (Vercel)
+### Marketplace service (Cloudflare Worker + Container)
 
 | Variable | Required | Description |
 |---|---|---|
 | `MARKETPLACE_DATABASE_URL` | Yes | Neon connection string |
 | `MARKETPLACE_LICENSE_PRIVATE_KEY` | Yes | base64 Ed25519 private key |
-| `MARKETPLACE_PADDLE_API_KEY` | Yes* | Paddle API key (*sandbox key OK while testing; dev-mode fulfills free without it) |
-| `MARKETPLACE_PADDLE_SANDBOX` | No | `true` (default) — set `false` in prod only |
-| `MARKETPLACE_PADDLE_WEBHOOK_SECRET` | Yes* | Per-destination secret (`pdl_ntfset_...`); webhooks 401 without a match |
-| `MARKETPLACE_PADDLE_PRICE_MAP` | Yes* | JSON product_id → Paddle `pri_...` (paid products 500 without an entry) |
-| `MARKETPLACE_ADMIN_KEY` | No | Bearer token for `/v1/admin/*` routes (notices) |
+| `MARKETPLACE_DODO_API_KEY` | Yes* | Dodo API key (*test key OK while testing; local debug mode works without it) |
+| `MARKETPLACE_DODO_SANDBOX` | No | `true` (default) — set `false` in prod only |
+| `MARKETPLACE_DODO_WEBHOOK_SECRET` | Yes* | Webhook destination signing secret; production webhook calls fail closed without it |
+| `MARKETPLACE_DODO_PRODUCT_MAP` | Yes* | JSON catalog product ID → Dodo product ID (paid products fail checkout without an entry) |
+| `MARKETPLACE_ADMIN_KEY` | No | Bearer token for protected marketplace administration routes |
+| `MARKETPLACE_ALLOWED_ORIGINS` | No | JSON array of browser origins permitted by API CORS |
 
 ## Local dev (end-to-end, npm only)
 
@@ -231,14 +301,17 @@ Two supported paths — pick per need:
 
 ## Migration note (what moved where)
 
+- **Payments (Dodo):** Dodo Payments is the current provider in
+  `marketplace/marketplace_server/dodo.py`; `marketplace/README.md` documents
+  the required Dodo variables and webhook events. Older Paddle runbooks are
+  stale and must not be used for deployment.
 - **2026-09-04 — Payments (Paddle cutover):** PayProGlobal (`marketplace_server`
   checkout/webhook) and the in-repo Stripe stack (`backend/services/checkout.py`,
   `tax.py`, Stripe test files/docs, `/marketplace/checkout|webhook/stripe|
-  license/{ref}|tax/*` routes) are gone. Paddle Billing is the single Merchant
-  of Record — tax is calculated by Paddle, not locally. UI contract unchanged
-  (`POST /v1/checkout`, `GET /v1/webhook/license/{ref}`). Seller-side setup
-  (prices, destination secret, Payoneer payout) is dashboard work — see
-  `PADDLE_TESTING.md` go-live checklist.
+  license/{ref}|tax/*` routes) are gone. Paddle was the then-current Merchant
+  of Record — tax is calculated by the processor, not locally. UI contract unchanged
+  (`POST /v1/checkout`, `GET /v1/webhook/license/{ref}`). The implementation
+  has since moved to Dodo; use the current Dodo settings above.
 - **Package manager:** bun/pnpm → npm (root workspaces). CI uses
   `setup-node@v4` + `npm ci` against the committed root `package-lock.json`.
 - **Env names:** `TWENTYLABS_*` → `OTOYIN_*` (backward-compat shims in
@@ -249,8 +322,8 @@ Two supported paths — pick per need:
 - **Notices/notifications:** new — notices live in the marketplace service,
   merged by the main backend at startup (`OTOYIN_NOTICES_URL`), surfaced by the
   existing banner/bell UI.
-- **Payments:** single path — Paddle via the marketplace service (see the
-  2026-09-04 entry above). No in-repo payment code remains in the main backend.
+- **Payments:** Dodo via the marketplace service. No in-repo payment code
+  remains in the main backend.
 - **Updater:** functional wiring only — the JS flow + Rust plugin + endpoints
   + artifacts are in place; the desktop binary still needs the missing Rust
   engine commands (`start_server`, audio capture/playback) and a first signed

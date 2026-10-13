@@ -2,7 +2,7 @@ import { HeartIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import { showStudioErrorToast } from "@/lib/errors";
 import {
-	getDeviceId,
+	getLicenseDeviceId,
 	marketplaceClient,
 	openExternalUrl,
 } from "@/lib/marketplace";
@@ -13,7 +13,7 @@ import { useToast } from "@/ui/use-toast";
 const PRESETS = [5, 10, 25, 50];
 
 /**
- * Donate card: voluntary custom-amount contributions via Paddle.
+ * Donate card: voluntary custom-amount contributions via Dodo.
  * Not a catalog product (fixed prices can't express "pay what you want")
  * and mints no license — the thank-you is the product. Reuses the same
  * browser → poll loop as checkout, including Check-again recovery.
@@ -33,7 +33,7 @@ export function DonateCard() {
 	const pollDonation = async (orderRef: string) => {
 		const result = await marketplaceClient.pollForLicense(
 			orderRef,
-			getDeviceId(),
+			await getLicenseDeviceId(),
 		);
 		if (result.donated) {
 			setThankedAmount(Number(result.amount_usd) || parsedAmount);
@@ -60,7 +60,7 @@ export function DonateCard() {
 			}
 			const checkout = await marketplaceClient.createDonation(
 				parsedAmount,
-				getDeviceId(),
+				await getLicenseDeviceId(),
 				email.trim(),
 			);
 			await openExternalUrl(checkout.checkout_url);

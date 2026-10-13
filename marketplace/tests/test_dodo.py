@@ -199,6 +199,61 @@ async def test_pricing_preview_returns_localized_totals(client, monkeypatch):
     ]
 
 
+async def test_preview_prices_not_configured_raises(monkeypatch):
+    monkeypatch.setattr(settings, "dodo_api_key", "")
+    with pytest.raises(RuntimeError, match="not configured"):
+        await dodo.preview_prices(country_code="US", price_ids=["pdt_a"])
+
+
+async def test_preview_prices_chunks_merges_and_formats(monkeypatch):
+    monkeypatch.setattr(settings, "dodo_api_key", "key")
+    calls: list[list[str]] = []
+
+    async def _fake_chunk(client, price_ids, country_code):
+        assert country_code == "DE"
+        calls.append(list(price_ids))
+        return {
+            "currency": "EUR",
+            "product_cart": [
+                {"product_id": pid, "discounted_price": 378, "currency": "EUR"}
+                for pid in price_ids
+            ],
+        }
+
+    monkeypatch.setattr(dodo, "_preview_chunk", _fake_chunk)
+    price_ids = [f"pdt_{i:02d}" for i in range(25)]
+    result = await dodo.preview_prices(country_code="DE", price_ids=price_ids)
+
+    # 25 items exceed the 20-item Dodo cart limit -> two chunks, merged.
+    assert [len(c) for c in calls] == [20, 5]
+    assert result["currency_code"] == "EUR"
+    items = result["details"]["line_items"]
+    assert len(items) == 25
+    assert items[0] == {
+        "price": {"id": "pdt_00"},
+        "totals": {"total": "378"},
+        "formatted_totals": {"total": "3.78 EUR"},
+    }
+
+
+async def test_preview_prices_zero_decimal_currency(monkeypatch):
+    monkeypatch.setattr(settings, "dodo_api_key", "key")
+
+    async def _fake_chunk(client, price_ids, country_code):
+        return {
+            "currency": "JPY",
+            "product_cart": [
+                {"product_id": pid, "discounted_price": 500} for pid in price_ids
+            ],
+        }
+
+    monkeypatch.setattr(dodo, "_preview_chunk", _fake_chunk)
+    result = await dodo.preview_prices(country_code="JP", price_ids=["pdt_jpy"])
+    item = result["details"]["line_items"][0]
+    assert item["totals"] == {"total": "500"}
+    assert item["formatted_totals"] == {"total": "500.00 JPY"}
+
+
 async def test_checkout_missing_price_id_is_500(client, monkeypatch):
     monkeypatch.setattr(settings, "dodo_api_key", "live_key_but_no_prices")
     await _seed_product()

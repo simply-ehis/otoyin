@@ -85,6 +85,10 @@ export class ContentMethods extends AgentMethods {
 		});
 	}
 
+	async getLicenseDeviceId(): Promise<{ device_id: string }> {
+		return this.request<{ device_id: string }>("/marketplace/device-id");
+	}
+
 	// --- Marketplace extension plugins (safe install/lifecycle) ---
 
 	async listMarketplacePlugins(): Promise<MarketplacePlugin[]> {

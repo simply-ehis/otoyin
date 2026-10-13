@@ -8,6 +8,7 @@ import { DonateCard } from "./DonateCard";
 
 vi.mock("@/lib/marketplace", () => ({
 	getDeviceId: () => "dev-test",
+	getLicenseDeviceId: async () => "dev-test",
 	openExternalUrl: vi.fn().mockResolvedValue(undefined),
 	marketplaceClient: {
 		createDonation: vi.fn(),

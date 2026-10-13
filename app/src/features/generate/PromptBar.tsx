@@ -146,12 +146,7 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 		}
 		autoSelectedId.current = pick.id;
 		setSelectedProfileId(pick.id);
-	}, [
-		selectedProfileId,
-		profiles,
-		downloadedEngines,
-		setSelectedProfileId,
-	]);
+	}, [selectedProfileId, profiles, downloadedEngines, setSelectedProfileId]);
 
 	// Sync form language/engine when profile changes. Language precedence:
 	// explicit per-engine memory beats the profile default beats English —
@@ -683,22 +678,22 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 							))}
 						</SelectContent>
 					</Select>
-			) : (
-				<button
-					type="button"
-					onClick={() => navigate({ to: "/store" })}
-					title={
-						profileEngine
-							? `${selectedProfile?.name ?? "This voice"} needs ${engineLabel(profileEngine)} to generate — download it from the Store, or pick a Kokoro voice.`
-							: "Download a TTS model from the Store to start generating."
-					}
-					className="flex items-center gap-1 rounded-md border border-dashed border-accent/40 bg-accent/5 px-2 py-1 text-xs text-accent transition-colors hover:bg-accent/10"
-				>
-					{profileEngine
-						? `Get ${engineLabel(profileEngine)}`
-						: "Get a TTS model"}
-				</button>
-			)}
+				) : (
+					<button
+						type="button"
+						onClick={() => navigate({ to: "/store" })}
+						title={
+							profileEngine
+								? `${selectedProfile?.name ?? "This voice"} needs ${engineLabel(profileEngine)} to generate — download it from the Store, or pick a Kokoro voice.`
+								: "Download a TTS model from the Store to start generating."
+						}
+						className="flex items-center gap-1 rounded-md border border-dashed border-accent/40 bg-accent/5 px-2 py-1 text-xs text-accent transition-colors hover:bg-accent/10"
+					>
+						{profileEngine
+							? `Get ${engineLabel(profileEngine)}`
+							: "Get a TTS model"}
+					</button>
+				)}
 
 				{/* Language selector — choice is remembered per engine */}
 				<Select

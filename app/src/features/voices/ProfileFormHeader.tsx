@@ -2,11 +2,7 @@
 import type { UseFormReset } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/ui/button";
-import {
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@/ui/dialog";
+import { DialogDescription, DialogHeader, DialogTitle } from "@/ui/dialog";
 import type { ProfileFormValues } from "./profileFormHelpers";
 
 interface ProfileFormHeaderProps {

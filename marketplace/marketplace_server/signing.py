@@ -16,18 +16,21 @@ from cryptography.hazmat.primitives.serialization import (
     PublicFormat,
 )
 
+# Same dev pair as backend/services/licensing.py (_DEV_PRIVATE_KEY). A debug
+# server signing with this key verifies against the app's dev public key, so
+# the local buy -> install loop works out of the box. Frozen builds verify
+# against the bundled production key, so dev-signed licenses never install in
+# production; the app lifespan still refuses to start non-debug without
+# MARKETPLACE_LICENSE_PRIVATE_KEY.
+_DEV_PRIVATE_KEY_B64 = "CX4rwSuT6vi9s3aJZWHw9zzY8hPdtQ+cR6tjB80qRX8="
+
 
 class LicenseSigner:
     """Ed25519 license signer — holds the private key for signing."""
 
     def __init__(self, private_key_b64: str = ""):
-        if private_key_b64:
-            raw = base64.b64decode(private_key_b64)
-            self._private_key = Ed25519PrivateKey.from_private_bytes(raw)
-        else:
-            # Dev ephemeral key — generates a new one each startup.
-            # In production, always set MARKETPLACE_LICENSE_PRIVATE_KEY.
-            self._private_key = Ed25519PrivateKey.generate()
+        raw = base64.b64decode(private_key_b64 or _DEV_PRIVATE_KEY_B64)
+        self._private_key = Ed25519PrivateKey.from_private_bytes(raw)
 
         self._public_key = self._private_key.public_key()
         self._public_key_b64 = base64.b64encode(self._public_key.public_bytes(Encoding.Raw, PublicFormat.Raw)).decode()

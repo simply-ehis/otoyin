@@ -1,8 +1,8 @@
 """Unit tests for scripts/check-report-headers.py — the report-header convention
 gets its own regression floor: vocabulary, staleness, superseded pointers.
 
-Tests build synthetic docs/reports trees under tmp_path and call the checker's
-functions directly (no subprocess, no git), matching the pattern of
+Tests build synthetic docs/archive/reports trees under tmp_path and call the
+checker's functions directly (no subprocess, no git), matching the pattern of
 test_check_encoding.py.
 """
 
@@ -23,8 +23,8 @@ spec.loader.exec_module(crh)
 
 
 def make_repo(tmp_path: Path, files: dict[str, str]) -> Path:
-    """Create a fake repo root with docs/reports/ populated from `files`."""
-    reports = tmp_path / "docs" / "reports"
+    """Create a fake repo root with docs/archive/reports/ populated from `files`."""
+    reports = tmp_path / "docs" / "archive" / "reports"
     reports.mkdir(parents=True, exist_ok=True)
     for name, content in files.items():
         (reports / name).write_text(content, encoding="utf-8")
@@ -45,6 +45,7 @@ def write(tmp_path: Path, name: str, status: str, verified: str, extra: str = ""
     p = (
         make_repo(tmp_path, {name: HEADER.format(status=status, verified=verified, extra=extra)})
         / "docs"
+        / "archive"
         / "reports"
         / name
     )
@@ -74,13 +75,13 @@ def test_frozen_statuses_do_not_need_last_verified(tmp_path):
 
 
 def test_missing_status_flagged(tmp_path):
-    path = make_repo(tmp_path, {"r.md": "# report\n\nSome body.\n"}) / "docs" / "reports" / "r.md"
+    path = make_repo(tmp_path, {"r.md": "# report\n\nSome body.\n"}) / "docs" / "archive" / "reports" / "r.md"
     v = crh.check_file(path, tmp_path)
     assert any("missing **Status:**" in x for x in v)
 
 
 def test_missing_date_flagged(tmp_path):
-    path = make_repo(tmp_path, {"r.md": "# report\n\n**Status:** DONE\n"}) / "docs" / "reports" / "r.md"
+    path = make_repo(tmp_path, {"r.md": "# report\n\n**Status:** DONE\n"}) / "docs" / "archive" / "reports" / "r.md"
     v = crh.check_file(path, tmp_path)
     assert any("missing **Date:**" in x for x in v)
 
@@ -106,7 +107,7 @@ def test_superseded_without_pointer_flagged(tmp_path):
 def test_header_beyond_window_flagged(tmp_path):
     # Status on line 12 — outside the 10-line window → treated as missing.
     body = "# report\n\n" + "\n" * 10 + "**Status:** DONE\n**Last verified:** 2026-09-07\n"
-    path = make_repo(tmp_path, {"r.md": body}) / "docs" / "reports" / "r.md"
+    path = make_repo(tmp_path, {"r.md": body}) / "docs" / "archive" / "reports" / "r.md"
     v = crh.check_file(path, tmp_path)
     assert any("missing **Status:**" in x for x in v)
 
@@ -177,7 +178,7 @@ def test_collect_skips_readme_and_dashboard(tmp_path):
             "notes.txt": "txt reports count too\n",
         },
     )
-    names = [p.name for p in crh.collect(tmp_path / "docs" / "reports")]
+    names = [p.name for p in crh.collect(tmp_path / "docs" / "archive" / "reports")]
     assert "README.md" not in names and "LOOP_STATUS.md" not in names
     assert "2026-09-01-a.md" in names and "notes.txt" in names
 

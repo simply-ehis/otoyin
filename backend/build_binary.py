@@ -346,6 +346,20 @@ def build_server(cuda=False):
     else:
         logger.warning("Help catalog %s missing — Help Center will be empty", _help_catalog_src)
 
+    # Marketplace license verifying key (backend/data/marketplace_public_key.txt,
+    # force-tracked despite the data/ ignore). services/licensing.py loads it
+    # from <bundle>/backend/data when frozen; without it a production build
+    # falls back to the dev key and the production check rejects EVERY license.
+    _license_pubkey_src = backend_dir / "data" / "marketplace_public_key.txt"
+    if _license_pubkey_src.is_file():
+        args.extend(["--add-data", f"{_license_pubkey_src}{os.pathsep}backend/data"])
+        logger.info("Bundling marketplace public key from %s", _license_pubkey_src)
+    else:
+        logger.warning(
+            "Marketplace public key %s missing — paid licenses will NOT verify in this build",
+            _license_pubkey_src,
+        )
+
     # In-app content feed (backend/data/content.json: whats-new, banners,
     # offers). _content_dir() looks for <bundle>/data/content.json when
     # frozen; without this the support/content routes fall back to empty
