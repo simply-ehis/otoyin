@@ -2,8 +2,8 @@
 
 ## GitHub and public/private split
 
-- [ ] Create and push the complete source to a private GitHub repository. This
-  checkout currently has no remote, and no repository has been created.
+- [x] Create and push the complete source to a private GitHub repository
+  (https://github.com/simply-ehis/otoyin, private, `main`; pushed 2026-10-13).
 - [ ] Separate the public core from the private marketplace backend/catalog and
   model assets. The marketplace code is currently coupled to the app backend;
   inspect the exported source and built installers before publishing.
