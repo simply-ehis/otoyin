@@ -101,7 +101,7 @@ jobs:
         run: npm run build --workspace=@otoyin/app
 
       # ── Python backend: venv + deps + frozen server binary ────────────
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
