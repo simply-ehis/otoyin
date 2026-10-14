@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from .. import config
 from ..database import Audiobook as DBAudiobook, AudiobookChapter as DBChapter
+from ..utils.hidden_subprocess import run_hidden
 
 logger = logging.getLogger(__name__)
 
@@ -186,7 +187,6 @@ async def render_chapter(
 
                 # Simple concat with ffmpeg if available else via soundfile
                 try:
-                    import subprocess
                     import tempfile
                     from pathlib import Path
 
@@ -198,13 +198,13 @@ async def render_chapter(
                             lst = Path(td) / "list.txt"
                             lst.write_text("\n".join(f"file '{Path(p).resolve()}'" for p in wav_paths))
                             out = Path(td) / "chapter.wav"
-                            subprocess.run(
+                            run_hidden(
                                 [ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy", str(out)],
                                 capture_output=True,
                                 check=False,
                             )
                             if not out.exists():
-                                subprocess.run(
+                                run_hidden(
                                     [ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", str(lst), str(out)],
                                     capture_output=True,
                                     check=True,

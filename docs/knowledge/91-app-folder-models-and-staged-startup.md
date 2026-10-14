@@ -71,3 +71,64 @@ which stops the backend before destroying the window.
 Demucs HTDemucs is listed in `marketplace_catalog.py` (`demucs_onnx`,
 free, utilities, 316 MB) and installs into the app folder like every
 other model.
+
+## Invisible subprocesses (no console windows)
+
+Windows console binaries opened a visible terminal window on every model
+load, one-shot CLI call and even at app launch. `backend/utils/hidden_subprocess.py`
+now owns the flag:
+
+| Helper | Replaces |
+|---|---|
+| `popen_hidden(args, **kw)` | `subprocess.Popen` + `creationflags=CREATE_NO_WINDOW` |
+| `run_hidden(args, **kw)` | `subprocess.run` + same |
+| `popen_kwargs()` | for call sites that build their own command |
+
+All 38 production spawn sites route through it (llama-server, crispasr,
+s2, parakeet, ffmpeg/ffprobe, the model venv scripts, the voice-changer
+and the backend itself). The Rust shell got the same treatment in
+`server.rs`: `CREATE_NO_WINDOW` on both backend spawns (launch +
+auto-restart) and on the `tasklist`/`taskkill` probes — without it
+`otoyin-server.exe` flashed a console window at every app start.
+
+Tests and `build_binary.py` intentionally keep plain `subprocess` (a build
+visible in a terminal is a feature, and tests assert on it).
+
+## Model-operations audit (2026-10-14)
+
+Real defects found and fixed in the same pass:
+
+- **HIGH — delete freed nothing.** `DELETE /models/{name}` removed
+  `~/.cache/huggingface/hub/models--...`, but installs live in
+  `data/models/`. Every delete for a non-special-cased engine reported
+  "cache already gone" while the weights stayed on disk — no space
+  freed, model still installed. Now deletes the app-folder slug dir
+  *and* the legacy cache dir (`model_files.delete_model_files`), so
+  upgrades from the old layout actually reclaim disk; a directory that
+  survives (Windows file lock) is reported, not hidden.
+- **HIGH — quantization re-quantized everything.**
+  `_quantize_onnx_if_needed(model_dir=models_root)` globbed `*.onnx`
+  recursively across the whole models dir, so downloading one quantized
+  model rewrote every unrelated model's graph into duplicate
+  `.int8.onnx` copies (yamnet, deepfilter, kokoro variants — minutes of
+  CPU, hundreds of MB of dead files). Now scoped to the directories this
+  model actually installed into. Its "already quantized" check also never
+  fired (`Path.suffix` is only the last extension, so it could never
+  equal `.int8.onnx`) — that produced `<name>.int8.int8.onnx`; it now
+  matches the `.int8.` segment.
+- **MEDIUM — integrity baseline was blind.**
+  `model_integrity._iter_weight_files()` looked in the HF cache, so after
+  the app-folder switch it found zero files for most models: the SHA-256
+  sidecar was empty and `GET /models/verify` was meaningless. Now hashes
+  `data/models/<slug>/` (legacy cache as fallback). Verified end-to-end:
+  snapshot → verify passes → tampered file flips `ok` to False.
+- **MEDIUM — interrupted downloads leaked `.incomplete` files.** The
+  cancel and failure handlers only logged, leaving the partial download in
+  the HF cache — and nothing reads that cache any more, so a cancelled 3 GB
+  model left 3 GB of junk that grew on every retry. Both paths now call
+  `_discard_partial_download()`.
+- **LOW — installs are now atomic** (temp + `os.replace`), so a failed or
+  cancelled copy can't leave a truncated file that later passes
+  `is_model_installed()` and crashes the loader with a parse error.
+- **Startup regression test updated** for the staged contract: the warm-up
+  must run *after* readiness (in a background tier, off the event loop).

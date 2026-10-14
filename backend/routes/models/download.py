@@ -13,6 +13,7 @@ from ...services.licensing import entitlement_for_product, has_entitlement
 from ...services.marketplace_catalog import get_product
 from ...services.task_queue import create_background_task
 from ...utils.hf_progress import HFProgressTracker, create_hf_progress_callback
+from ...utils.hidden_subprocess import run_hidden
 from ...utils.progress import get_progress_manager
 from ...utils.rate_limiter import with_retry
 from ...utils.tasks import DownloadCancelledError, get_task_manager
@@ -64,9 +65,8 @@ def _ensure_venv(venv_name: str) -> str:
     venv_dir = get_data_dir() / "venvs" / venv_name
     if not venv_dir.exists():
         logger.info("Creating dedicated venv for %s: %s", venv_name, venv_dir)
-        import subprocess
 
-        subprocess.run([sys.executable, "-m", "venv", str(venv_dir)], check=True, timeout=60)
+        run_hidden([sys.executable, "-m", "venv", str(venv_dir)], check=True, timeout=60)
 
     if sys.platform == "win32":
         return str(venv_dir / "Scripts" / "python.exe")
@@ -114,8 +114,6 @@ def _ensure_engine_pip_deps(engine: str) -> None:
     except ImportError:
         pass
 
-    import subprocess
-
     # Determine python executable: dedicated venv or main env.
     if venv_name:
         python = _ensure_venv(venv_name)
@@ -124,7 +122,7 @@ def _ensure_engine_pip_deps(engine: str) -> None:
 
     logger.info("On-demand pip install for engine %s: %s (python=%s)", engine, deps, python)
     try:
-        subprocess.run(
+        run_hidden(
             [python, "-m", "pip", "install", *deps, "-q"],
             check=True,
             timeout=300,
@@ -148,11 +146,43 @@ def _friendly_download_error(e: Exception) -> str:
 
 
 def _quantize_onnx_if_needed(config, model_dir: Path):
-    """Quantize ONNX model to INT8 if not already quantized."""
-    model_dir = Path(model_dir)
+    """Quantize this model's ONNX files to INT8 if not already quantized.
 
-    # Look for ONNX model files
-    onnx_files = list(model_dir.glob("*.onnx")) + list(model_dir.rglob("*.onnx"))
+    Only the directories THIS model installed into are scanned. The old
+    version globbed the whole models dir recursively, so downloading one
+    quantized model re-quantized every unrelated model on disk
+    (yamnet, deepfilter, kokoro variants) into duplicate .int8.onnx
+    copies - minutes of CPU and hundreds of MB of dead files.
+    """
+    model_dir = Path(model_dir)
+    # Directories this model actually installed into (slug layout plus the
+    # engine-specific layouts the download branches use).
+    from ...services.model_files import app_snapshot_dir
+
+    candidates = [app_snapshot_dir(config.hf_repo_id), model_dir / config.model_name]
+    if config.engine == "whisper":
+        from ...backends.whisper_cpp_backend import WHISPER_CPP_FILES
+
+        fname = WHISPER_CPP_FILES.get(config.model_size, f"ggml-{config.model_size}.bin")
+        candidates.append(model_dir)
+        candidates.append(model_dir / fname)
+    elif config.engine == "faster-whisper":
+        candidates.append(model_dir / f"faster-whisper-{config.model_size}")
+    elif config.engine == "rvc_onnx":
+        candidates.append(model_dir / "rvc" / config.model_size)
+    elif config.engine == "kokoro":
+        candidates.append(model_dir / "kokoro-onnx")
+
+    onnx_files: list[Path] = []
+    for cand in candidates:
+        if cand.is_dir():
+            onnx_files.extend(cand.glob("*.onnx"))
+            onnx_files.extend(cand.rglob("*.onnx"))
+        elif cand.is_file() and cand.suffix == ".onnx":
+            onnx_files.append(cand)
+    # De-duplicate: a candidate dir can be scanned twice (dir + explicit
+    # file), and the models dir itself may contain the file.
+    onnx_files = list(dict.fromkeys(onnx_files))
     if not onnx_files:
         return
 
@@ -160,8 +190,13 @@ def _quantize_onnx_if_needed(config, model_dir: Path):
     from onnxruntime.quantization import QuantType, quantize_dynamic
 
     for model_path in onnx_files:
-        if model_path.suffix == ".int8.onnx" or model_path.suffix == ".int4.onnx":
-            continue  # Already quantized
+        # Path.suffix is only the LAST extension, so ".int8.onnx" never
+        # equals a model's suffix. Match the segment instead, or an
+        # already-quantized graph gets quantized again into
+        # "<name>.int8.int8.onnx".
+        name = model_path.name.lower()
+        if ".int8." in name or ".int4." in name or ".fp16." in name:
+            continue  # Already quantized (or a deliberately different precision)
 
         output_path = model_path.with_suffix(".int8.onnx")
         if output_path.exists():
@@ -188,6 +223,25 @@ def _quantize_onnx_if_needed(config, model_dir: Path):
             import logging
 
             logging.getLogger(__name__).warning("ONNX quantization failed for %s: %s", model_path, e)
+
+
+def _discard_partial_download(hf_repo_id: str, model_name: str) -> None:
+    """Drop the residue of an interrupted download from the HF cache.
+
+    ``hf_hub_download`` streams into ``.incomplete`` files under the
+    cache and never cleans them when the progress callback raises or the
+    connection drops. Because installed weights live in the app folder
+    (never the cache), that residue is dead weight - clear it on cancel
+    and on failure so repeated attempts cannot fill the disk.
+    """
+    if not hf_repo_id:
+        return
+    try:
+        from ...services.model_files import clear_hf_repo_cache
+
+        clear_hf_repo_cache(hf_repo_id)
+    except Exception:
+        logger.debug("Partial-download cleanup skipped for %s", model_name, exc_info=True)
 
 
 async def _download_model_files(config, model_name: str, tracker: HFProgressTracker, progress_manager):
@@ -675,9 +729,16 @@ async def trigger_model_download(request: models.ModelDownloadRequest, db: Sessi
             else:
                 logger.info("Download of %s finished after cancel; state left alone", _model_name)
         except DownloadCancelledError:
-            # Cancel route already cleared task + progress state — leave it.
+            # Cancel route already cleared task + progress state - leave it.
+            # The HF cache still holds the interrupted download's .incomplete
+            # files. Nothing reads that cache any more (the app folder is the
+            # source of truth), so the residue is pure junk - and for a
+            # cancelled 3 GB model that is 3 GB of junk. Drop it.
+            _discard_partial_download(_hf_repo_id, _model_name)
             logger.info("Download of %s cancelled by user", _model_name)
         except Exception as e:
+            # Same residue after a mid-file failure (network drop, OOM).
+            _discard_partial_download(_hf_repo_id, _model_name)
             logger.debug("Model download failed: %s", _model_name, exc_info=True)
             if task_manager.is_active_download(_model_name, task):
                 friendly = _friendly_download_error(e)
@@ -825,34 +886,35 @@ async def delete_model(model_name: str):
         return {"message": f"Model {model_name} deleted successfully"}
 
     hf_repo_id = config.hf_repo_id
-    cache_dir = hf_constants.HF_HUB_CACHE
-    repo_cache_dir = Path(cache_dir) / ("models--" + hf_repo_id.replace("/", "--"))
+    from ...services.model_files import app_snapshot_dir, delete_model_files
 
-    if not repo_cache_dir.exists():
+    # The app folder is the source of truth for installed weights; the HF
+    # cache is only a transient download buffer. Delete both, so an upgrade
+    # from the old cache-resident layout actually frees disk.
+    repo_dir = app_snapshot_dir(hf_repo_id)
+    legacy_cache_dir = Path(hf_constants.HF_HUB_CACHE) / ("models--" + hf_repo_id.replace("/", "--"))
+    if not repo_dir.exists() and not legacy_cache_dir.exists():
         _forget()
-        return {"message": f"Model {model_name} cache already gone; manifest cleaned"}
+        return {"message": f"Model {model_name} already removed; manifest cleaned"}
 
-    import shutil
-
-    # Windows holds file locks briefly after unload — retry a few times
+    # Windows holds file locks briefly after unload. Retry a few times
     # before giving up, but ALWAYS clean the manifest afterwards.
     deleted = False
     last_err: Exception | None = None
     for attempt in range(3):
         try:
-            await asyncio.to_thread(shutil.rmtree, repo_cache_dir, True)
-            deleted = not repo_cache_dir.exists()
+            await asyncio.to_thread(delete_model_files, hf_repo_id)
+            deleted = not repo_dir.exists() and not legacy_cache_dir.exists()
             if deleted:
                 break
         except OSError as e:
             last_err = e
             logger.warning("Delete attempt %d for %s failed: %s", attempt + 1, model_name, e)
             await asyncio.sleep(0.5 * (attempt + 1))
-    if not deleted and repo_cache_dir.exists():
-        # Last resort on Windows: schedule remaining files for removal is
-        # overkill — report honestly but still free the manifest slot so the
-        # user can re-download cleanly.
-        logger.warning("Failed to fully delete model cache for %s: %s", model_name, last_err)
+    if not deleted and (repo_dir.exists() or legacy_cache_dir.exists()):
+        # Report honestly but still free the manifest slot so the user can
+        # re-download cleanly.
+        logger.warning("Failed to fully delete model files for %s: %s", model_name, last_err)
 
     _forget()
     # Verify the manifest row is actually gone — the frontend keys its

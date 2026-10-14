@@ -8,6 +8,7 @@ is cleared, so the cache is a transient download buffer only.
 
 import contextlib
 import logging
+import os
 import shutil
 from pathlib import Path
 
@@ -67,6 +68,32 @@ def clear_hf_repo_cache(repo_id: str) -> None:
         logger.debug("Repo cache cleanup skipped for %s", repo_id, exc_info=True)
 
 
+def delete_model_files(repo_id: str) -> list[Path]:
+    """Remove every app-folder copy of a repo, plus any legacy HF cache.
+
+    Returns the paths that were removed. The app folder is the source of
+    truth, so a sub-directory that cannot be removed (Windows file lock
+    right after unload) must be reported rather than silently skipped —
+    a "deleted" model that still occupies disk is the exact bug this
+    guards against.
+    """
+    removed: list[Path] = []
+    targets = [app_snapshot_dir(repo_id)]
+    try:
+        from huggingface_hub import constants as hf_constants
+
+        # Legacy layout: installs made before the app-folder switch lived
+        # in the HF cache. Clean those too so upgrades actually free space.
+        targets.append(Path(hf_constants.HF_HUB_CACHE) / ("models--" + repo_id.replace("/", "--")))
+    except Exception:
+        logger.debug("HF cache path unavailable for %s", repo_id, exc_info=True)
+    for target in targets:
+        if target.is_dir():
+            shutil.rmtree(target, ignore_errors=False)
+            removed.append(target)
+    return removed
+
+
 def app_snapshot_dir(repo_id: str) -> Path:
     """App-folder home of a whole-repo install (data/models/<slug>/)."""
     from .. import config as cfg_mod
@@ -107,9 +134,7 @@ def install_snapshot(repo_id: str, allow_patterns: list[str] | None = None) -> P
         if src.is_dir() or ".no_exist" in src.parts:
             continue
         rel = src.relative_to(snap)
-        target = dest / rel
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, target)
+        _atomic_copy(src, dest / rel)
     clear_hf_repo_cache(repo_id)
     logger.info("Installed snapshot %s into app folder", repo_id)
     return dest
@@ -118,6 +143,26 @@ def install_snapshot(repo_id: str, allow_patterns: list[str] | None = None) -> P
 def is_model_installed(repo_id: str, filename: str) -> bool:
     """True when the file lives in the app's own models folder."""
     return _app_model_path(repo_id, filename).is_file()
+
+
+def _atomic_copy(src: Path, dest: Path) -> None:
+    """Copy src to dest atomically: a partial file must never be visible.
+
+    A half-written weight file would pass ``is_model_installed()`` and
+    later fail to load with a confusing parse error, so the copy lands in
+    a sibling temp file and is renamed over the destination in one step
+    (``os.replace`` is atomic within a volume). Any failure removes the
+    temp file and leaves the destination untouched.
+    """
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_name(dest.name + ".part")
+    try:
+        shutil.copy2(src, tmp)
+        os.replace(tmp, dest)
+    except BaseException:
+        with contextlib.suppress(OSError):
+            tmp.unlink(missing_ok=True)
+        raise
 
 
 def install_model_file(repo_id: str, filename: str, **hf_kwargs) -> Path:
@@ -133,8 +178,7 @@ def install_model_file(repo_id: str, filename: str, **hf_kwargs) -> Path:
     if local.is_file():
         return local
     cached = Path(hf_hub_download(repo_id=repo_id, filename=filename, **hf_kwargs))
-    local.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(cached, local)
+    _atomic_copy(cached, local)
     _clear_cache_entry(cached)
     logger.info("Installed %s/%s into app folder", repo_id, filename)
     return local
@@ -153,8 +197,7 @@ def install_model_file_to(repo_id: str, filename: str, dest: Path) -> Path:
     if dest.is_file():
         return dest
     cached = Path(hf_hub_download(repo_id=repo_id, filename=filename))
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(cached, dest)
+    _atomic_copy(cached, dest)
     _clear_cache_entry(cached)
     logger.info("Installed %s/%s to %s", repo_id, filename, dest)
     return dest

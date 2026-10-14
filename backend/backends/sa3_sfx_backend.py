@@ -27,6 +27,7 @@ from pathlib import Path
 import numpy as np
 
 from ..utils.audio import load_audio
+from ..utils.hidden_subprocess import run_hidden
 from .audio_cpp import find_audiocpp
 
 logger = logging.getLogger(__name__)
@@ -162,7 +163,7 @@ class SA3SfxBackend:
                 duration_seconds=duration_seconds,
                 output=out_wav,
             )
-            proc = subprocess.run(
+            proc = run_hidden(
                 [str(binary), *args],
                 capture_output=True,
                 text=True,

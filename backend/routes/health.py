@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 from .. import config, models
 from ..services import tts
+from ..utils.hidden_subprocess import popen_hidden, run_hidden
 from ..utils.platform_detect import get_backend_type
 
 logger = logging.getLogger(__name__)
@@ -627,7 +628,7 @@ async def health_check():
             biome_bin = shutil.which("biome") or shutil.which("biome.exe")
             if biome_bin:
                 try:
-                    proc = subprocess.run([biome_bin, "--version"], capture_output=True, text=True, timeout=5)
+                    proc = run_hidden([biome_bin, "--version"], capture_output=True, text=True, timeout=5)
                     ver = (proc.stdout or proc.stderr).strip()
                     return {"ok": proc.returncode == 0, "version": ver[:120] if ver else None}
                 except subprocess.TimeoutExpired:
@@ -636,7 +637,7 @@ async def health_check():
                     return {"ok": False, "error": str(e)[:200], "version": None}
             # Fallback via npx
             try:
-                proc = subprocess.run(["npx", "biome", "--version"], capture_output=True, text=True, timeout=5)
+                proc = run_hidden(["npx", "biome", "--version"], capture_output=True, text=True, timeout=5)
                 ver = (proc.stdout or proc.stderr).strip()
                 return {"ok": proc.returncode == 0, "version": ver[:120] if ver else None}
             except subprocess.TimeoutExpired:
@@ -652,7 +653,7 @@ async def health_check():
             if not ruff_bin:
                 return {"ok": False, "error": "ruff not found", "version": None}
             try:
-                proc = subprocess.run([ruff_bin, "--version"], capture_output=True, text=True, timeout=5)
+                proc = run_hidden([ruff_bin, "--version"], capture_output=True, text=True, timeout=5)
                 ver = (proc.stdout or proc.stderr).strip()
                 return {"ok": proc.returncode == 0, "version": ver[:120] if ver else None}
             except subprocess.TimeoutExpired:
@@ -668,7 +669,7 @@ async def health_check():
             # Also try npx tsc
             cmd = [tsc_bin, "--version"] if tsc_bin else ["npx", "tsc", "--version"]
             try:
-                proc = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+                proc = run_hidden(cmd, capture_output=True, text=True, timeout=5)
                 ver = (proc.stdout or proc.stderr).strip()
                 return {"ok": proc.returncode == 0, "version": ver[:120] if ver else None}
             except subprocess.TimeoutExpired:

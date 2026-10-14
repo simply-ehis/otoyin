@@ -1,8 +1,8 @@
 """Extended audio import with ffmpeg support."""
 
-import subprocess
 from pathlib import Path
 
+from ..utils.hidden_subprocess import run_hidden
 from .audio_conversion import ffmpeg_path
 
 # Resolved at call time (not import time): honouring the bundled ffmpeg that
@@ -104,7 +104,7 @@ def extract_audio_from_video(
         "-y",
         output_path,
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+    result = run_hidden(cmd, capture_output=True, text=True, timeout=120)
     if result.returncode != 0:
         raise RuntimeError(f"ffmpeg failed: {result.stderr}")
     return output_path
@@ -141,7 +141,7 @@ def convert_audio(
         "-y",
         output_path,
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+    result = run_hidden(cmd, capture_output=True, text=True, timeout=120)
     if result.returncode != 0:
         raise RuntimeError(f"ffmpeg failed: {result.stderr}")
     return output_path
@@ -156,7 +156,7 @@ def get_audio_info(file_path: str) -> dict:
     except (ValueError, OSError) as e:
         return {"error": str(e)}
     cmd = [ffmpeg, *_FFMPEG_INPUT_GUARD, "-i", str(src), "-f", "null", "-"]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    result = run_hidden(cmd, capture_output=True, text=True, timeout=30)
     stderr = result.stderr
     info = {}
     for line in stderr.split("\n"):

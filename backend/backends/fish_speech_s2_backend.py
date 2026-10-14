@@ -31,6 +31,7 @@ from pathlib import Path
 
 import numpy as np
 
+from ..utils.hidden_subprocess import run_hidden
 from .base import combine_voice_prompts as _combine_voice_prompts
 
 logger = logging.getLogger(__name__)
@@ -204,7 +205,7 @@ class FishSpeechS2Backend:
             )
 
             def _run_sync() -> None:
-                proc = subprocess.run(
+                proc = run_hidden(
                     [str(binary), *args],
                     capture_output=True,
                     text=True,

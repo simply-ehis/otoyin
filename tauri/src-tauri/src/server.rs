@@ -13,6 +13,10 @@ use serde::Serialize;
 use std::io::{BufRead, BufReader, Read};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
+/// `creation_flags` (CREATE_NO_WINDOW) lives on the Windows extension
+/// trait, so it must be in scope at every call site.
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::Mutex;
 use std::time::Duration;
@@ -27,6 +31,13 @@ const MAX_AUTO_RESTARTS: u32 = 5;
 const RESTART_COOLDOWN_MS: u64 = 2000;
 /// How long the process must run to be considered "stable" (resets restart counter).
 const STABLE_SECONDS: u64 = 30;
+
+/// Windows: CREATE_NO_WINDOW (0x0800_0000). Without it every console
+/// child we spawn - the bundled backend at launch, and the taskkill /
+/// tasklist probes - flashes a terminal window on screen. Applied to
+/// every Command we build so the app never shows one.
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 /// Runtime state for the local backend process.
 pub struct ServerState {
@@ -165,8 +176,10 @@ fn pid_alive(pid: u32) -> bool {
     {
         // tasklist is present on every supported Windows; filtering by PID
         // avoids OpenProcess handle/permission surprises.
-        std::process::Command::new("tasklist")
-            .args(["/FI", &format!("PID eq {}", pid), "/NH"])
+        let mut cmd = std::process::Command::new("tasklist");
+        #[cfg(windows)]
+        cmd.creation_flags(CREATE_NO_WINDOW);
+        cmd.args(["/FI", &format!("PID eq {}", pid), "/NH"])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).contains(&pid.to_string()))
             .unwrap_or(false)
@@ -453,7 +466,10 @@ pub fn stop_if_ours(state: &State<'_, AppState>) {
 fn kill_process_tree(pid: u32) {
     #[cfg(windows)]
     {
-        match std::process::Command::new("taskkill")
+        let mut cmd = std::process::Command::new("taskkill");
+        #[cfg(windows)]
+        cmd.creation_flags(CREATE_NO_WINDOW);
+        match cmd
             .args(["/PID", &pid.to_string(), "/T", "/F"])
             .output()
         {
@@ -565,6 +581,9 @@ fn spawn_bundled(
     cmd.stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .stdin(Stdio::null());
+    // Never show a console window for the backend (CREATE_NO_WINDOW).
+    #[cfg(windows)]
+    cmd.creation_flags(CREATE_NO_WINDOW);
     // Own process group on Unix so stop_if_ours can signal the whole
     // tree; without it a killed parent can leave the port held.
     #[cfg(unix)]
@@ -854,6 +873,9 @@ fn spawn_bundled_silent(
     cmd.stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .stdin(Stdio::null());
+    // Never show a console window for the backend (CREATE_NO_WINDOW).
+    #[cfg(windows)]
+    cmd.creation_flags(CREATE_NO_WINDOW);
     // Same process-group treatment as spawn_bundled — an auto-restarted
     // child must be killable as a tree too, or close hangs or orphans
     // its workers.

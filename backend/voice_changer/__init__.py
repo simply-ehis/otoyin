@@ -15,6 +15,8 @@ import subprocess
 import sys
 from typing import Optional
 
+from ..utils.hidden_subprocess import popen_hidden, run_hidden
+
 logger = logging.getLogger(__name__)
 
 # Module-level reference to the spawned subprocess (if any)
@@ -62,7 +64,7 @@ def spawn_voice_changer(port: int = 17494, host: str = "127.0.0.1") -> subproces
     try:
         python = sys.executable
         cmd = [python, "-m", "backend.voice_changer", "--host", host, "--port", str(port)]
-        _vc_process = subprocess.Popen(
+        _vc_process = popen_hidden(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

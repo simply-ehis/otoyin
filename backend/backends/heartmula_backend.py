@@ -23,6 +23,7 @@ from pathlib import Path
 import numpy as np
 
 from ..utils.audio import load_audio
+from ..utils.hidden_subprocess import run_hidden
 from .audio_cpp import find_audiocpp
 
 logger = logging.getLogger(__name__)
@@ -162,7 +163,7 @@ class HeartMuLaBackend:
                 output=out_wav,
                 seed=seed,
             )
-            proc = subprocess.run(
+            proc = run_hidden(
                 [str(binary), *args],
                 capture_output=True,
                 text=True,

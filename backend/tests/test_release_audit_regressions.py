@@ -599,23 +599,39 @@ def test_health_route_offloads_blocking_probes():
     )
 
 
-def test_startup_warms_health_snapshot_before_signalling_ready():
-    """Startup must warm the expensive health probes before readiness.
+def test_startup_warms_health_snapshot_off_the_readiness_path():
+    """Startup must keep the ~6 s health warm-up off the readiness path.
 
-    Without this the cost is merely moved into the first user request (still
-    ~6 s), just off the loop. Warming before ``_signal_ready()`` moves it into
-    the background start-up window, so the first client request is served in
-    tens of milliseconds.
+    Staged startup (2026-10-14): ``_signal_ready()`` fires as soon as the DB
+    and queue are up so the app is usable immediately, and the expensive
+    probes run in a background tier (>1 s later, off the event loop). The
+    regression this guards is the warm-up being awaited *before* readiness
+    again - that would make every launch pay for torch's import before the
+    window is useful.
     """
     app_py = Path(ac.__file__).resolve().parent.parent / "app.py"
     text = app_py.read_text(encoding="utf-8")
 
     warm_at = text.find("_warm_health_snapshot")
     ready_at = text.find("_signal_ready()")
+    tier_at = text.find("_tier1_health_warm")
     assert warm_at != -1, "app.py no longer warms the health snapshot"
     assert ready_at != -1, "app.py no longer calls _signal_ready()"
-    assert warm_at < ready_at, (
-        "health warm-up must happen before _signal_ready(), otherwise the first request still pays the full probe cost"
+    assert tier_at != -1, "app.py no longer defers the warm-up to a background tier"
+
+    # The warm-up must live inside the tiered task, not in the core path.
+    tier_body = text[tier_at:]
+    assert warm_at < len(text) and "_warm_health_snapshot" in tier_body, (
+        "the health warm-up must be scheduled by the background tier, not awaited in core startup"
+    )
+    # Readiness fires before the tier is scheduled, and the tier sleeps first.
+    assert ready_at < tier_at, (
+        "_signal_ready() must fire before the warm-up tier is scheduled, "
+        "otherwise the first launch still blocks on torch's import"
+    )
+    assert "await asyncio.sleep" in tier_body, "the warm-up tier must yield before heating the GPU probes"
+    assert "asyncio.to_thread(_warm_health_snapshot)" in text, (
+        "the warm-up must run in a thread so it never blocks the event loop"
     )
 
 

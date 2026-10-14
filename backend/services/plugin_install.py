@@ -35,6 +35,7 @@ from sqlalchemy.orm import Session
 from .. import config
 from ..database.models import InstalledPlugin
 from ..plugins.manifest import validate_manifest, verify_checksums
+from ..utils.hidden_subprocess import popen_hidden
 
 logger = logging.getLogger(__name__)
 
@@ -276,7 +277,7 @@ def launch_plugin(plugin_id: str) -> dict:
     if plugin_id in _PROCESSES and _PROCESSES[plugin_id].poll() is None:
         raise RuntimeError("Plugin already running")
 
-    proc = subprocess.Popen(
+    proc = popen_hidden(
         args,
         cwd=str(install_dir),
         env=env,
@@ -336,7 +337,7 @@ def launch_external_plugin(plugin_id: str) -> dict:
     if plugin_id in _PROCESSES and _PROCESSES[plugin_id].poll() is None:
         raise RuntimeError("Plugin already running")
 
-    proc = subprocess.Popen(
+    proc = popen_hidden(
         args,
         cwd=str(Path(row.install_path).resolve()),
         env=env,

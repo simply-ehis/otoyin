@@ -43,6 +43,8 @@ from pathlib import Path
 import psutil
 import requests
 
+from ..utils.hidden_subprocess import popen_hidden
+
 logger = logging.getLogger(__name__)
 
 # Health-check deadline for the spawned server. Override with
@@ -363,7 +365,7 @@ class GGUFServerProcess:
                 attempt + 1,
             )
             try:
-                self._proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                self._proc = popen_hidden(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 _register_owner(self._proc.pid)
                 self._wait_until_healthy()
                 self.load_error = None

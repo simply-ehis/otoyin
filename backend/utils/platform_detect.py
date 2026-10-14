@@ -9,6 +9,8 @@ import platform
 import sys
 from typing import Literal
 
+from .hidden_subprocess import popen_hidden, run_hidden
+
 logger = logging.getLogger(__name__)
 
 BackendType = Literal["onnx", "pytorch"]
@@ -69,7 +71,7 @@ def _detect_gpu_name() -> str | None:
         if is_macos():
             import subprocess
 
-            result = subprocess.run(
+            result = run_hidden(
                 ["system_profiler", "SPDisplaysDataType"],
                 capture_output=True,
                 text=True,
@@ -84,7 +86,7 @@ def _detect_gpu_name() -> str | None:
             import subprocess
 
             # PowerShell Get-CimInstance — wmic is deprecated on Windows 11 24H2+
-            result = subprocess.run(
+            result = run_hidden(
                 [
                     "powershell",
                     "-NoProfile",

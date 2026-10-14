@@ -15,12 +15,13 @@ from __future__ import annotations
 import asyncio
 import logging
 import shutil
-import subprocess
 import sys
 import tempfile
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
+
+from ..utils.hidden_subprocess import run_hidden
 
 logger = logging.getLogger(__name__)
 
@@ -464,7 +465,7 @@ def _time_stretch_audio(audio_path: str, target_duration: float, output_path: st
         "-y",
         output_path,
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+    result = run_hidden(cmd, capture_output=True, text=True, timeout=120)
     if result.returncode != 0:
         raise RuntimeError(f"atempo failed: {result.stderr}")
     return output_path
@@ -496,7 +497,7 @@ def _mux_video_with_audio(
             "default=noprint_wrappers=1:nokey=1",
             video_path,
         ]
-        probe_result = subprocess.run(probe_cmd, capture_output=True, text=True, timeout=30)
+        probe_result = run_hidden(probe_cmd, capture_output=True, text=True, timeout=30)
         video_duration = float(probe_result.stdout.strip() or "0")
 
         # Create full-length silence
@@ -512,7 +513,7 @@ def _mux_video_with_audio(
             "-y",
             silence_path,
         ]
-        subprocess.run(silence_cmd, capture_output=True, text=True, timeout=60, check=True)
+        run_hidden(silence_cmd, capture_output=True, text=True, timeout=60, check=True)
 
         # Place each segment at its timestamp using adelay + amix
         input_args = ["-i", silence_path]
@@ -549,7 +550,7 @@ def _mux_video_with_audio(
             "-y",
             dubbed_audio,
         ]
-        result = subprocess.run(audio_cmd, capture_output=True, text=True, timeout=300)
+        result = run_hidden(audio_cmd, capture_output=True, text=True, timeout=300)
         if result.returncode != 0:
             raise RuntimeError(f"Audio mix failed: {result.stderr}")
 
@@ -570,7 +571,7 @@ def _mux_video_with_audio(
             "-y",
             output_path,
         ]
-        result = subprocess.run(mux_cmd, capture_output=True, text=True, timeout=300)
+        result = run_hidden(mux_cmd, capture_output=True, text=True, timeout=300)
         if result.returncode != 0:
             raise RuntimeError(f"Video mux failed: {result.stderr}")
 

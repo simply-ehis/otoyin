@@ -737,3 +737,41 @@ clean; `pytest` 279 passed across the affected model/download suites;
 `vitest` for the touched components green; `/health/ready` observed
 answering ~2 s after process start with the torch warm-up in the
 background. Docs: `docs/knowledge/91-app-folder-models-and-staged-startup.md`.
+
+### Model-operations audit + invisible subprocesses (2026-10-14, done)
+
+- **Console windows eliminated.** New `backend/utils/hidden_subprocess.py`
+  (`popen_hidden` / `run_hidden` / `popen_kwargs`) wraps
+  `CREATE_NO_WINDOW`; all 38 production spawn sites route through it
+  (llama-server, crispasr, s2, parakeet, ffmpeg, model venv scripts,
+  voice-changer, backend). Rust `server.rs` does the same with
+  `CommandExt::creation_flags` on both backend spawns and the
+  `tasklist`/`taskkill` probes — `otoyin-server.exe` no longer flashes a
+  terminal at every app launch.
+- **HIGH — delete freed nothing**: `DELETE /models/{name}` still targeted
+  `~/.cache/huggingface`, so it reported success while `data/models/`
+  weights stayed on disk. Now removes the app-folder slug dir *and* the
+  legacy cache dir; surviving files are reported, not hidden.
+- **HIGH — quantization re-quantified every model**:
+  `_quantize_onnx_if_needed` globbed `*.onnx` recursively across the whole
+  models dir, rewriting unrelated graphs (yamnet, deepfilter, kokoro
+  variants) into duplicate `.int8.onnx` copies. Scoped to this model's own
+  directories; its "already quantized" guard compared `Path.suffix`
+  against `.int8.onnx`, which can never match, producing
+  `<name>.int8.int8.onnx`.
+- **MEDIUM — integrity baseline blind**: `model_integrity` hashed the HF
+  cache, so it found zero files post-switch and `/models/verify` was
+  meaningless. Now hashes `data/models/<slug>/` (legacy cache fallback);
+  tamper detection re-verified end-to-end.
+- **MEDIUM — interrupted downloads leaked** `.incomplete` files in the HF
+  cache (up to the model's full size per cancelled attempt). Cancel and
+  failure paths now clear them.
+- **LOW — atomic installs** (temp + `os.replace`) so an interrupted copy
+  can't leave a truncated file that passes `is_model_installed()`.
+
+**Guards**: `cargo check` + `cargo test` (15) clean; ruff check + format
+clean; `pytest` 303 passed across the model/download/audit suites;
+encoding + report-header gates clean; delete/scoped-quantize/integrity/
+partial-cleanup each verified with a targeted functional test. Docs:
+`docs/knowledge/91-app-folder-models-and-staged-startup.md`.
+

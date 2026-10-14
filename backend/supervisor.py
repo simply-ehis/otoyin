@@ -22,6 +22,8 @@ import threading
 import time
 from pathlib import Path
 
+from .utils.hidden_subprocess import popen_hidden
+
 logger = logging.getLogger("supervisor")
 
 # ── Configuration ──────────────────────────────────────────────────────────
@@ -288,7 +290,7 @@ class Supervisor:
         logger.info("Starting backend: %s", " ".join(cmd))
 
         try:
-            self._process = subprocess.Popen(
+            self._process = popen_hidden(
                 cmd,
                 stdout=sys.stdout,
                 stderr=sys.stderr,

@@ -57,11 +57,20 @@ def _iter_weight_files(model_name: str) -> list[Path]:
             found.extend([p for p in d.rglob("*") if p.is_file()])
         return found
 
-    # Generic HF cache layout.
+    # App folder layout (source of truth): data/models/<repo-slug>/.
+    # Fall back to the legacy HF cache for installs that predate the
+    # app-folder switch, so their baseline still verifies.
     if cfg.hf_repo_id:
-        repo_dir = Path(hf_constants.HF_HUB_CACHE) / ("models--" + cfg.hf_repo_id.replace("/", "--"))
-        snaps = repo_dir / "snapshots"
-        if snaps.is_dir():
+        from .model_files import app_snapshot_dir
+
+        snap_dirs = [app_snapshot_dir(cfg.hf_repo_id)]
+        legacy_snaps = Path(hf_constants.HF_HUB_CACHE) / ("models--" + cfg.hf_repo_id.replace("/", "--")) / "snapshots"
+        if legacy_snaps.is_dir():
+            snap_dirs.append(legacy_snaps)
+
+        for snaps in snap_dirs:
+            if not snaps.is_dir():
+                continue
             for p in snaps.rglob("*"):
                 if p.is_file() and p.suffix.lower() in (
                     ".safetensors",

@@ -10,11 +10,12 @@ from __future__ import annotations
 import os
 import re
 import shutil
-import subprocess
 import sys
 import tempfile
 from functools import lru_cache
 from pathlib import Path
+
+from ..utils.hidden_subprocess import run_hidden
 
 SUPPORTED_FORMATS = {
     "wav": {"ext": "wav", "codec": "pcm_s16le", "mime": "audio/wav"},
@@ -136,7 +137,7 @@ def convert_audio_file(
         cmd += ["-movflags", "+faststart"]
     cmd.append(str(tmp))
 
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    result = run_hidden(cmd, capture_output=True, text=True, timeout=300)
     if result.returncode != 0 or not tmp.exists():
         raise RuntimeError(f"ffmpeg failed: {result.stderr[:800]}")
     return tmp
@@ -194,7 +195,7 @@ def build_m4b(
 
         # Intermediate concat wav
         concat_wav = td_path / "concat.wav"
-        subprocess.run(
+        run_hidden(
             [ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list), "-c", "copy", str(concat_wav)],
             capture_output=True,
             timeout=300,
@@ -202,7 +203,7 @@ def build_m4b(
         )
         if not concat_wav.exists():
             # fallback: re-encode concat
-            subprocess.run(
+            run_hidden(
                 [ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list), str(concat_wav)],
                 capture_output=True,
                 timeout=300,
@@ -247,7 +248,7 @@ def build_m4b(
                 str(output_path),
             ]
 
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        result = run_hidden(cmd, capture_output=True, text=True, timeout=300)
         if result.returncode != 0 or not output_path.exists():
             raise RuntimeError(f"m4b build failed: {result.stderr[:1000]}")
     return output_path

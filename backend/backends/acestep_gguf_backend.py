@@ -28,6 +28,7 @@ from pathlib import Path
 
 import numpy as np
 
+from ..utils.hidden_subprocess import run_hidden
 from .base import BackendBase, ModelNotCachedError
 
 logger = logging.getLogger(__name__)
@@ -237,7 +238,7 @@ class AceStepGGUFBackend(BackendBase):
                     "--lm",
                     str(models_dir / LM_FILE),
                 ]
-                proc = subprocess.run(
+                proc = run_hidden(
                     args,
                     capture_output=True,
                     text=True,
@@ -269,7 +270,7 @@ class AceStepGGUFBackend(BackendBase):
                     "--out",
                     out_wav,
                 ]
-                proc = subprocess.run(
+                proc = run_hidden(
                     args,
                     capture_output=True,
                     text=True,

@@ -21,6 +21,7 @@ from pathlib import Path
 
 from .. import __version__
 from ..config import get_data_dir
+from ..utils.hidden_subprocess import run_hidden
 from ..utils.progress import get_progress_manager
 
 logger = logging.getLogger(__name__)
@@ -350,13 +351,12 @@ async def _download_cuda_binary_locked(version: str | None = None):
 
 def get_cuda_binary_version() -> str | None:
     """Get the version of the installed CUDA binary, or None if not installed."""
-    import subprocess
 
     cuda_path = get_cuda_binary_path()
     if not cuda_path:
         return None
     try:
-        result = subprocess.run(
+        result = run_hidden(
             [str(cuda_path), "--version"],
             capture_output=True,
             text=True,
