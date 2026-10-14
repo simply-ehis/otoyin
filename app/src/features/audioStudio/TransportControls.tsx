@@ -41,6 +41,7 @@ interface TransportControlsProps {
 	masterAnalyser: AnalyserNode | null;
 	onTogglePlayPause: () => void;
 	onStop: () => void;
+	onSkipToStart: () => void;
 	onToggleLoop: () => void;
 	onStartRecording: () => void;
 	onStopRecording: () => void;
@@ -105,6 +106,7 @@ export function TransportControls({
 	masterAnalyser,
 	onTogglePlayPause,
 	onStop,
+	onSkipToStart,
 	onToggleLoop,
 	onStartRecording,
 	onStopRecording,
@@ -146,7 +148,7 @@ export function TransportControls({
 						variant="ghost"
 						size="icon"
 						className="size-7"
-						onClick={onStop}
+						onClick={onSkipToStart}
 						title="Skip to start"
 						aria-label="Skip to start"
 					>

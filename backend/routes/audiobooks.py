@@ -712,7 +712,8 @@ async def export_audiobook(book_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=ERR_EMPTY_RENDERED)
     # Concat via ffmpeg if multiple, else direct
     if len(wav_paths) == 1:
-        data = wav_paths[0].read_bytes()
+        # Off the event loop — an audiobook WAV can be hundreds of MB.
+        data = await asyncio.to_thread(wav_paths[0].read_bytes)
         return StreamingResponse(
             io.BytesIO(data),
             media_type="audio/wav",
@@ -744,7 +745,7 @@ async def export_audiobook(book_id: str, db: Session = Depends(get_db)):
                 capture_output=True,
                 check=True,
             )
-        data = out.read_bytes()
+        data = await asyncio.to_thread(out.read_bytes)
         return StreamingResponse(
             io.BytesIO(data),
             media_type="audio/wav",
@@ -776,7 +777,8 @@ async def export_m4b(book_id: str, bitrate: str = "64k", db: Session = Depends(g
         await async_build_m4b(
             wav_paths, titles, out, cover_path=cover_path, author=book.author, title=book.title, bitrate=bitrate
         )
-        data = out.read_bytes()
+        # Off the event loop — a full audiobook can be hundreds of MB.
+        data = await asyncio.to_thread(out.read_bytes)
         return StreamingResponse(
             io.BytesIO(data),
             media_type="audio/mp4",

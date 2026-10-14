@@ -360,6 +360,16 @@ def build_server(cuda=False):
             _license_pubkey_src,
         )
 
+    # Store test-mode marker (backend/data/store_test_mode.flag): only
+    # bin/build-test.ps1 creates it, before the build, and strips it right
+    # after — production bundles never carry it. licensing.store_test_mode()
+    # honors the flag ONLY when bundled (env vars cannot activate test mode
+    # in frozen builds). Absent is the production norm: stay quiet.
+    _test_flag_src = backend_dir / "data" / "store_test_mode.flag"
+    if _test_flag_src.is_file():
+        args.extend(["--add-data", f"{_test_flag_src}{os.pathsep}backend/data"])
+        logger.info("TEST BUILD: bundling store test-mode flag from %s", _test_flag_src)
+
     # In-app content feed (backend/data/content.json: whats-new, banners,
     # offers). _content_dir() looks for <bundle>/data/content.json when
     # frozen; without this the support/content routes fall back to empty
@@ -426,6 +436,28 @@ def build_server(cuda=False):
         logger.info("Bundling YAMNet model from %s", _yamnet_srcs[0].parent)
     else:
         logger.warning("YAMNet weights missing — event detection will be unavailable")
+
+    # DeepFilterNet ONNX denoiser (bundled model, ~8.6 MB). The voice
+    # changer and audio-cleanup paths need it on a fresh install:
+    # services/deepfilter_onnx.py resolves <bundle>/deepfilter/ when frozen
+    # and never downloads weights on first use, so without this copy the
+    # denoiser is silently skipped for every installer user. Stem separation
+    # (Demucs, 300 MB) is deliberately NOT bundled — too large to ship; it
+    # stays a first-run download.
+    _deepfilter_src = None
+    try:
+        from huggingface_hub import hf_hub_download
+
+        _deepfilter_src = Path(
+            hf_hub_download(repo_id="soniqo/DeepFilterNet3-ONNX", filename="deepfilter.onnx")
+        )
+    except Exception as exc:
+        logger.warning("DeepFilterNet fetch failed (%s) — denoise will be unavailable", exc)
+    if _deepfilter_src is not None and _deepfilter_src.is_file():
+        args.extend(["--add-data", f"{_deepfilter_src}{os.pathsep}deepfilter"])
+        logger.info("Bundling DeepFilterNet ONNX from %s", _deepfilter_src)
+    else:
+        logger.warning("DeepFilterNet weights missing — denoise will be unavailable")
 
     # Add CUDA-specific hidden imports
     if cuda:

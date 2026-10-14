@@ -223,6 +223,15 @@ def create_app() -> FastAPI:
 
         return JSONResponse(status_code=400, content={"detail": "Model not cached"})
 
+    from .config import PathTraversalError
+
+    @application.exception_handler(PathTraversalError)
+    async def path_traversal_handler(request, exc):
+        """Bad client path — a 400, not a 500 with a crash-report entry."""
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=400, content={"detail": str(exc)})
+
     @application.exception_handler(Exception)
     async def unhandled_exception_handler(request, exc):
         logger.exception("Unhandled exception on %s %s", request.method, request.url.path)

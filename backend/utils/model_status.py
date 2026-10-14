@@ -19,8 +19,10 @@ logger = logging.getLogger(__name__)
 
 # Ordered recommended pack — Kokoro 82M is the default voice (tiny, fast,
 # Apache-2.0). Whisper-tiny powers transcription/STT input, Qwopus 4B is the
-# on-device assistant brain. DeepFilterNet + LavaSR need no download — they
-# ship inside the ``audiosronnx`` dependency.
+# on-device assistant brain. DeepFilterNet ships inside the frozen bundle
+# (build_binary.py stages it at <bundle>/deepfilter/, 8.6 MB); LavaSR is not
+# bundled — audiosronnx resolves it on first use and caches it under
+# ~/.local/share/audiosronnx.
 RECOMMENDED_MODELS: list[dict] = [
     {
         "model_name": "kokoro-onnx",

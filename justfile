@@ -332,6 +332,12 @@ build-tauri:
 build-tauri:
     Set-Location "{{ tauri_dir }}"; npm run tauri build
 
+# Build the payment-free TEST copy of the app (unlocks every Store product;
+# separate identity "Otoyin Studio Test" — see bin/build-test.ps1 for details)
+[windows]
+build-test:
+    pwsh -File bin/build-test.ps1
+
 # Build web app
 [unix]
 build-web:

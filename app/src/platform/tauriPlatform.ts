@@ -150,6 +150,16 @@ export const tauriPlatform: Platform = {
 			}
 			setStatus({ downloading: true, error: undefined });
 			try {
+				// The Windows updater runs the NSIS installer and then calls
+				// process::exit directly — the Rust RunEvent::Exit cleanup
+				// never fires, so stop the bundled backend here or its locked
+				// exe image blocks the installer from replacing files
+				// (failed/partial update + orphaned backend).
+				try {
+					await invoke("stop_server");
+				} catch {
+					// Backend not running or not ours — nothing to stop.
+				}
 				let contentLength: number | undefined;
 				let downloadedBytes = 0;
 				await update.downloadAndInstall((event) => {

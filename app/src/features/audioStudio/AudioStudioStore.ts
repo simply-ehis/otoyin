@@ -99,6 +99,11 @@ export interface AudioStudioSnapshot {
 interface UndoEntry {
 	snapshot: AudioStudioSnapshot;
 	description: string;
+	/** Restores state the snapshot cannot hold (the decoded-AudioBuffer
+	 *  playback cache lives in a ref) when this entry is applied by undo. */
+	onUndo?: () => void;
+	/** Mirror of onUndo for redo — re-installs the post-mutation cache entry. */
+	onRedo?: () => void;
 }
 
 interface AudioStudioStore {
@@ -179,7 +184,11 @@ interface AudioStudioStore {
 	setDuckingGain: (gain: number) => void;
 	setMasterBusSend: (trackId: string, level: number) => void;
 
-	pushUndo: (description: string) => void;
+	pushUndo: (
+		description: string,
+		onUndo?: () => void,
+		onRedo?: () => void,
+	) => void;
 	undo: () => void;
 	redo: () => void;
 
@@ -610,10 +619,13 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 		}));
 	},
 
-	pushUndo: (description) => {
+	pushUndo: (description, onUndo, onRedo) => {
 		const snapshot = takeSnapshot(get);
 		set((state) => ({
-			undoStack: [...state.undoStack.slice(-29), { snapshot, description }],
+			undoStack: [
+				...state.undoStack.slice(-29),
+				{ snapshot, description, onUndo, onRedo },
+			],
 			redoStack: [],
 		}));
 	},
@@ -629,7 +641,12 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 			undoStack: undoStack.slice(0, -1),
 			redoStack: [
 				...redoStack,
-				{ snapshot: currentSnapshot, description: entry.description },
+				{
+					snapshot: currentSnapshot,
+					description: entry.description,
+					onUndo: entry.onUndo,
+					onRedo: entry.onRedo,
+				},
 			],
 			tracks: entry.snapshot.tracks,
 			groups: entry.snapshot.groups,
@@ -642,6 +659,7 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 			tempoMap: entry.snapshot.tempoMap,
 			timeSignature: entry.snapshot.timeSignature,
 		});
+		entry.onUndo?.();
 	},
 
 	redo: () => {
@@ -655,7 +673,12 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 			redoStack: redoStack.slice(0, -1),
 			undoStack: [
 				...undoStack,
-				{ snapshot: currentSnapshot, description: entry.description },
+				{
+					snapshot: currentSnapshot,
+					description: entry.description,
+					onUndo: entry.onUndo,
+					onRedo: entry.onRedo,
+				},
 			],
 			tracks: entry.snapshot.tracks,
 			groups: entry.snapshot.groups,
@@ -668,11 +691,15 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 			tempoMap: entry.snapshot.tempoMap,
 			timeSignature: entry.snapshot.timeSignature,
 		});
+		entry.onRedo?.();
 	},
 
 	exportSession: () => takeSnapshot(get),
 
 	importSession: (snapshot) => {
+		// Reset the live playhead ref too — the `currentTime` state field is
+		// display-only; playback reads currentTimeRef.
+		get().currentTimeRef.current = 0;
 		set({
 			tracks: snapshot.tracks.map((t) => ({
 				...t,
@@ -697,7 +724,8 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 		});
 	},
 
-	reset: () =>
+	reset: () => {
+		get().currentTimeRef.current = 0;
 		set({
 			tracks: [],
 			groups: [],
@@ -715,9 +743,11 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 			timeSignature: [4, 4],
 			undoStack: [],
 			redoStack: [],
-		}),
+		});
+	},
 
-	resetToTemplate: (snapshot) =>
+	resetToTemplate: (snapshot) => {
+		get().currentTimeRef.current = 0;
 		set({
 			tracks: snapshot.tracks.map((t) => ({
 				...t,
@@ -749,5 +779,6 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 			showAutomation: false,
 			undoStack: [],
 			redoStack: [],
-		}),
+		});
+	},
 }));

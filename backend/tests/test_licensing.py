@@ -93,6 +93,39 @@ def test_has_entitlement(db_session):
     assert licensing.has_entitlement(db_session, "models:zonos") is False
 
 
+# ── Store test mode (bin/build-test.ps1 / TWENTYLABS_STORE_TEST_MODE) ──────
+
+
+def test_store_test_mode_env_toggle(monkeypatch):
+    monkeypatch.delenv("TWENTYLABS_STORE_TEST_MODE", raising=False)
+    assert licensing.store_test_mode() is False
+    for on in ("1", "true", "YES", "yes"):
+        monkeypatch.setenv("TWENTYLABS_STORE_TEST_MODE", on)
+        assert licensing.store_test_mode() is True
+    monkeypatch.setenv("TWENTYLABS_STORE_TEST_MODE", "0")
+    assert licensing.store_test_mode() is False
+
+
+def test_test_mode_off_grants_nothing(db_session, monkeypatch):
+    monkeypatch.delenv("TWENTYLABS_STORE_TEST_MODE", raising=False)
+    assert licensing.active_entitlements(db_session) == set()
+    assert licensing.has_entitlement(db_session, "models:orpheus") is False
+
+
+def test_test_mode_grants_every_catalog_product(db_session, monkeypatch):
+    from backend.services import marketplace_catalog
+
+    monkeypatch.setenv("TWENTYLABS_STORE_TEST_MODE", "true")
+    # Exact per-product ids (what the Store UI's owned-set reads) plus the
+    # wildcard that carries the download/verify gates.
+    expected = {"models:*"} | {f"models:{p['id']}" for p in marketplace_catalog.PRODUCTS}
+    assert licensing.active_entitlements(db_session) == expected
+    assert licensing.has_entitlement(db_session, "models:any-product") is True
+    # Test grants stack on top of real licenses without hiding them.
+    licensing.install_license(db_session, _make_license(entitlements=["plugins:beta"]))
+    assert "plugins:beta" in licensing.active_entitlements(db_session)
+
+
 def test_delete_license(db_session):
     row = licensing.install_license(db_session, _make_license())
     assert licensing.delete_license(db_session, row.id) is True

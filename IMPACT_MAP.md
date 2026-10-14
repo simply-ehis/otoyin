@@ -668,3 +668,33 @@ themselves have zero non-test importers) → deleted 25 roots + their private de
 `StoriesTab/WaveformPlaylistStage.test`, `VoiceProfiles/QuickCloneDialog.test`);
 `npx vite build` 9.3s; `npx biome lint` clean; `scripts/check-encoding.py`
 1731 files clean; `scripts/check-report-headers.py` 22 files OK.
+
+### Production audit fixes + Store test mode + test-copy build (2026-10-14, done)
+
+- **Store test mode** (`backend/services/licensing.py::store_test_mode`): frozen
+  builds honor ONLY the bundled `backend/data/store_test_mode.flag`;
+  `bin/build-test.ps1` writes it, `build_binary.py --add-data`s it, and the
+  script's `finally` strips it. Source runs use `TWENTYLABS_STORE_TEST_MODE`.
+  `active_entitlements(db)` adds `models:*` + per-product `models:<id>` ids.
+  Test identity lives in `tauri/src-tauri/tauri.test.conf.json` (productName
+  "Otoyin Studio Test", `com.otoyin.app.test`, updater off, `targets: ["nsis"]`,
+  `createUpdaterArtifacts: false` — the base `true` would demand the signing key).
+- **Audit fixes**: 30 findings across frontend/Tauri/backend, all high + surgical
+  medium/low fixed — `docs/knowledge/90-audit-fixes-2026-10.md`. Deferrals in
+  `TODO_REMAINING.md`.
+- **DeepFilterNet bundling** (`build_binary.py` + `services/deepfilter_onnx.py`):
+  the weights were declared bundled by `scripts/download_required_models.py` but
+  never staged, and the service only looked in the HF cache
+  (`local_files_only=True`) — denoise was dead in every installer. Now
+  `<bundle>/deepfilter/deepfilter.onnx` resolves first when frozen, HF cache
+  second (same idiom as `yamnet_onnx_backend._resolve_files`). Demucs (303 MB)
+  and LavaSR stay runtime-resolved by design.
+- **Test-copy artifact**: `tauri/src-tauri/target/release/bundle/nsis/Otoyin Studio
+  Test_0.1.0_x64-setup.exe` (372.7 MB, NSIS-only, no updater artifacts) — built
+  2026-10-14. Side effect to remember: `tauri/src-tauri/binaries/otoyin-server`
+  now holds the TEST backend; re-stage before a production build.
+
+**Guards**: `cargo check` clean; `tsc --noEmit` clean; ruff clean; biome lint +
+format clean; backend `pytest` 2495 passed (2 exonerated); `vitest` 607/607;
+`test_audio_enhancer` + `test_model_gate` + `test_files_and_health_features`
+68 passed with DeepFilterNet weights present (those tests previously skipped).

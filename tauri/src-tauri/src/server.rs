@@ -173,7 +173,13 @@ fn pid_alive(pid: u32) -> bool {
     }
     #[cfg(not(windows))]
     {
-        Path::new(&format!("/proc/{}", pid)).exists()
+        // `ps -p` works on both macOS (no /procfs) and Linux: exit status
+        // 0 means a process with this pid exists.
+        std::process::Command::new("ps")
+            .args(["-p", &pid.to_string()])
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
     }
 }
 
@@ -280,13 +286,19 @@ fn plan_bind(desired: u16, models_dir: &Option<String>, state: &AppState) -> Res
             Ok(BindPlan::Spawn(desired))
         }
         PortOccupancy::OursAlive(lock) => {
-            // A healthy backend we started is already serving this port.
-            // Spawning a second one would only fail with EADDRINUSE.
+            // A healthy backend from a previous launch is serving this
+            // port. Claim ownership: without it, app close deletes the
+            // lock while the process keeps running and nothing can ever
+            // manage (or kill) it again — the permanent orphan.
             eprintln!(
                 "otoyin: adopting running backend (pid {}) on port {}",
                 lock.pid, desired
             );
             set_current_port_inner(state, desired);
+            state
+                .server
+                .started_by_us
+                .store(true, Ordering::SeqCst);
             Ok(BindPlan::Adopt(desired))
         }
         PortOccupancy::Foreign => Err(format!(
@@ -419,6 +431,16 @@ pub fn stop_if_ours(state: &State<'_, AppState>) {
             if let Err(e) = child.wait() {
                 eprintln!("otoyin: waiting for backend pid {pid} failed: {e}");
             }
+        } else {
+            // Adopted backend (plan_bind claimed a previous launch's
+            // process): no Child handle, but we own it via the lock —
+            // kill by pid so close never disowns a running backend.
+            let models_dir = state.models_dir();
+            if let Some(lock) = read_owner_lock(&models_dir) {
+                if pid_alive(lock.pid) {
+                    kill_process_tree(lock.pid);
+                }
+            }
         }
     }
 }
@@ -446,8 +468,11 @@ fn kill_process_tree(pid: u32) {
     #[cfg(not(windows))]
     {
         // Negative pid targets the process group created in spawn_bundled.
+        // `/bin/kill` needs the flag and target as SEPARATE args — a single
+        // "-TERM -123" element is rejected and no signal is ever sent.
         let _ = std::process::Command::new("kill")
-            .arg(format!("-TERM {}", -(pid as i32)))
+            .arg("-TERM")
+            .arg(format!("-{}", pid as i32))
             .status();
     }
 }
@@ -455,6 +480,18 @@ fn kill_process_tree(pid: u32) {
 /// Drop the owner lock for a data dir the app is shutting down.
 pub fn release_ownership(models_dir: &Option<String>) {
     clear_owner_lock(models_dir);
+}
+
+/// True while a Child handle is stored — i.e. a backend we spawned is
+/// booting or running. The monitor removes the handle once it observes
+/// death, so `started_by_us` alone is not proof of life.
+fn child_handle_held(state: &AppState) -> bool {
+    state
+        .server
+        .child
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .is_some()
 }
 
 fn emit_error(app: &AppHandle, stage: &str, message: String) {
@@ -687,6 +724,20 @@ fn spawn_restart_monitor(app: AppHandle, models_dir: Option<String>, port: u16) 
                             errors: None,
                         },
                     );
+                    // Leave no lie behind: a dead child with started_by_us
+                    // still true would make every later start report
+                    // success for a port nothing listens on.
+                    {
+                        let mut guard = state
+                            .server
+                            .child
+                            .lock()
+                            .unwrap_or_else(|e| e.into_inner());
+                        if let Some(mut child) = guard.take() {
+                            let _ = child.wait();
+                        }
+                    }
+                    state.server.started_by_us.store(false, Ordering::SeqCst);
                     return;
                 }
 
@@ -709,6 +760,21 @@ fn spawn_restart_monitor(app: AppHandle, models_dir: Option<String>, port: u16) 
                     .load(Ordering::SeqCst)
                 {
                     return;
+                }
+                // A manual Restart during the cooldown already spawned a
+                // fresh backend (and a new monitor). Spawning here too
+                // would race it — both would see the port unbound during
+                // startup and one live Child handle would be dropped,
+                // orphaning that process.
+                {
+                    let guard = state
+                        .server
+                        .child
+                        .lock()
+                        .unwrap_or_else(|e| e.into_inner());
+                    if guard.is_some() {
+                        return;
+                    }
                 }
 
                 state
@@ -736,6 +802,10 @@ fn spawn_restart_monitor(app: AppHandle, models_dir: Option<String>, port: u16) 
                             errors: None,
                         },
                     );
+                    // spawn_bundled_silent only fails before claiming the
+                    // child — clear the dead spawn's ownership so a later
+                    // start actually respawns instead of short-circuiting.
+                    state.server.started_by_us.store(false, Ordering::SeqCst);
                     return;
                 }
 
@@ -784,6 +854,14 @@ fn spawn_bundled_silent(
     cmd.stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .stdin(Stdio::null());
+    // Same process-group treatment as spawn_bundled — an auto-restarted
+    // child must be killable as a tree too, or close hangs or orphans
+    // its workers.
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        cmd.process_group(0);
+    }
 
     let mut child = cmd
         .spawn()
@@ -826,7 +904,11 @@ fn spawn_bundled_silent(
 pub async fn ensure_started(app: &AppHandle, models_dir: Option<String>) -> Result<String, String> {
     let state = app.state::<AppState>();
     let port = current_port(&state);
-    if state.server.started_by_us.load(Ordering::SeqCst) {
+    // started_by_us is only proof of life while a Child handle is still
+    // held (booting or running). Trusting the flag alone returns a URL
+    // for a dead port after an auto-restart give-up, and the UI polls
+    // health forever.
+    if state.server.started_by_us.load(Ordering::SeqCst) && child_handle_held(&state) {
         return Ok(server_url(port));
     }
     if backend_http_ready(port) {
@@ -868,7 +950,10 @@ pub async fn start_server(
         .auto_restart_disabled
         .store(false, Ordering::SeqCst);
     state.server.restart_count.store(0, Ordering::SeqCst);
-    if state.server.started_by_us.load(Ordering::SeqCst) || backend_http_ready(active_port) {
+    if state.server.started_by_us.load(Ordering::SeqCst) && child_handle_held(&state) {
+        return Ok(server_url(active_port));
+    }
+    if backend_http_ready(active_port) {
         return Ok(server_url(active_port));
     }
     match spawn_bundled(&app, models_dir, port) {

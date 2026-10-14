@@ -55,6 +55,7 @@ export function usePlaybackEngine({
 	>(new Map());
 	const animFrameRef = useRef<number | null>(null);
 	const startTimeRef = useRef<number>(0);
+	const isStartingRef = useRef(false);
 	const [trackAnalysers, setTrackAnalysers] = useState<
 		Map<string, AnalyserNode>
 	>(new Map());
@@ -171,7 +172,7 @@ export function usePlaybackEngine({
 		}
 	}, [setIsPlaying]);
 
-	const startPlayback = useCallback(async () => {
+	const startPlaybackInner = useCallback(async () => {
 		if (tracks.length === 0 || tracks.every((t) => !t.audioUrl)) {
 			toast({
 				title: "No audio to play",
@@ -246,6 +247,21 @@ export function usePlaybackEngine({
 		}
 
 		if (!trackHasAudio) {
+			// Undo the master-graph setup above — otherwise the gain/analyser
+			// chain (and the published master analyser) leaks until the next
+			// startPlayback happens to tear it down.
+			analyser.disconnect();
+			duckGain.disconnect();
+			duckMeter.disconnect();
+			masterGain.disconnect();
+			analyserRef.current = null;
+			duckNodeRef.current = null;
+			duckMeterRef.current = null;
+			duckDataRef.current = null;
+			masterGainRef.current = null;
+			if (usePlayerStore.getState().masterAnalyser === analyser) {
+				usePlayerStore.getState().setMasterAnalyser(null);
+			}
 			toast({ title: "No unmuted audio tracks to play" });
 			return;
 		}
@@ -478,13 +494,28 @@ export function usePlaybackEngine({
 		audioBuffersRef,
 	]);
 
+	// Guard against double-start: isPlaying flips only after the async
+	// startup completes, so rapid re-triggers would otherwise schedule
+	// duplicate AudioBufferSourceNodes (audible doubling + orphaned rAF).
+	const startPlayback = useCallback(() => {
+		if (isStartingRef.current) {
+			return;
+		}
+		isStartingRef.current = true;
+		startPlaybackInner()
+			.catch((e) => {
+				debug.log("AudioStudio: startPlayback failed", e);
+			})
+			.finally(() => {
+				isStartingRef.current = false;
+			});
+	}, [startPlaybackInner]);
+
 	const togglePlayPause = useCallback(() => {
 		if (useAudioStudioStore.getState().isPlaying) {
 			stopPlayback();
 		} else {
-			void startPlayback().catch((e) => {
-				debug.log("AudioStudio: startPlayback failed", e);
-			});
+			startPlayback();
 		}
 	}, [stopPlayback, startPlayback]);
 
@@ -503,9 +534,7 @@ export function usePlaybackEngine({
 		(time: number) => {
 			setCurrentTime(time);
 			if (useAudioStudioStore.getState().isPlaying) {
-				void startPlayback().catch((e) => {
-					debug.log("AudioStudio: seek restart failed", e);
-				});
+				startPlayback();
 			}
 		},
 		[setCurrentTime, startPlayback],

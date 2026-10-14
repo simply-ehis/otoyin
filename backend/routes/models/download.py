@@ -15,7 +15,7 @@ from ...services.task_queue import create_background_task
 from ...utils.hf_progress import HFProgressTracker, create_hf_progress_callback
 from ...utils.progress import get_progress_manager
 from ...utils.rate_limiter import with_retry
-from ...utils.tasks import get_task_manager
+from ...utils.tasks import DownloadCancelledError, get_task_manager
 from .common import _cpu_executor, _download_executor, _download_steam_audio_sdk, router
 
 logger = logging.getLogger(__name__)
@@ -517,7 +517,17 @@ async def trigger_model_download(request: models.ModelDownloadRequest, db: Sessi
             loop = asyncio.get_running_loop()
             await loop.run_in_executor(_cpu_executor, lambda: _ensure_engine_pip_deps(_engine))
 
-            progress_callback = create_hf_progress_callback(_model_name, progress_manager)
+            base_progress = create_hf_progress_callback(_model_name, progress_manager)
+
+            def progress_callback(snapshot):
+                # A cancelled (or replaced) task must neither keep writing
+                # progress state nor keep transferring bytes — raising here
+                # aborts snapshot_download mid-file, and the cancelled-error
+                # name in rate_limiter stops with_retry from retrying it.
+                if task.cancel_event.is_set() or not task_manager.is_active_download(_model_name, task):
+                    raise DownloadCancelledError(_model_name)
+                base_progress(snapshot)
+
             tracker = HFProgressTracker(progress_callback)
 
             # Transient HuggingFace failures (rate limits, dropped
@@ -631,6 +641,9 @@ async def trigger_model_download(request: models.ModelDownloadRequest, db: Sessi
                     fresh_db.close()
             else:
                 logger.info("Download of %s finished after cancel; state left alone", _model_name)
+        except DownloadCancelledError:
+            # Cancel route already cleared task + progress state — leave it.
+            logger.info("Download of %s cancelled by user", _model_name)
         except Exception as e:
             logger.debug("Model download failed: %s", _model_name, exc_info=True)
             if task_manager.is_active_download(_model_name, task):

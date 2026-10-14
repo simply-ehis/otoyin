@@ -334,6 +334,9 @@ export function AudioStudio() {
 		<div
 			ref={rootRef}
 			tabIndex={-1}
+			// Marker for the global AudioPlayer's Space shortcut to skip —
+			// the studio's own transport owns Space inside this subtree.
+			data-audio-studio=""
 			className="flex flex-col h-full min-h-0 outline-none"
 		>
 			<StudioToolbar
@@ -481,6 +484,8 @@ export function AudioStudio() {
 							const { getPeakWaveform } = await import("./getPeakWaveform");
 							const { getAudioDuration } = await import("@/lib/utils/audio");
 							const url = URL.createObjectURL(blob);
+							// Snapshot BEFORE addTrack so undo drops the new track.
+							pushUndo("Add podcast mix");
 							const id = addTrack("Podcast mix");
 							const duration = await getAudioDuration(
 								new File([blob], "podcast-mix.wav", { type: "audio/wav" }),
@@ -491,7 +496,6 @@ export function AudioStudio() {
 								waveformData: getPeakWaveform(buf, 200),
 								channels: buf.numberOfChannels,
 							});
-							pushUndo("Add podcast mix");
 							toast({ title: "Podcast added to timeline" });
 						} catch {
 							toast({
@@ -558,6 +562,10 @@ export function AudioStudio() {
 				masterAnalyser={liveAnalyser}
 				onTogglePlayPause={togglePlayPause}
 				onStop={stopPlayback}
+				onSkipToStart={() => {
+					stopPlayback();
+					setCurrentTime(0);
+				}}
 				onToggleLoop={() => {
 					const next = !isLooping;
 					setIsLooping(next);

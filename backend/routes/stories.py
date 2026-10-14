@@ -1,5 +1,6 @@
 """Story endpoints."""
 
+import asyncio
 import io
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
@@ -439,7 +440,10 @@ async def export_story_archive(
         raise HTTPException(status_code=404, detail=ERR_STORY_NOT_FOUND)
 
     try:
-        zip_bytes = export_import.export_story_to_zip(story_id, db)
+        # DEFLATE-compressing every WAV takes seconds — off the event
+        # loop or SSE keepalives, health checks and the generation queue
+        # all stall behind it.
+        zip_bytes = await asyncio.to_thread(export_import.export_story_to_zip, story_id, db)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:

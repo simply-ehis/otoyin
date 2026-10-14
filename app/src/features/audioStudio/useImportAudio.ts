@@ -24,7 +24,7 @@ interface UseImportAudioOptions {
 		file: File | Blob,
 		duration: number,
 	) => void;
-	pushUndo: (label: string) => void;
+	pushUndo: (label: string, onUndo?: () => void, onRedo?: () => void) => void;
 }
 
 export function useImportAudio(opts: UseImportAudioOptions) {
@@ -75,6 +75,29 @@ export function useImportAudio(opts: UseImportAudioOptions) {
 				return;
 			}
 
+			// Undo must snapshot BEFORE the first mutation (the revoke below
+			// is one) and swap the decoded-buffer playback cache back — the
+			// cache lives in this ref, so the store snapshot cannot restore it.
+			const prevBuffer = audioBuffersRef.current?.get(targetTrack.id) ?? null;
+			let importedBuffer: AudioBuffer | null = null;
+			pushUndo(
+				`Import audio to ${targetTrack.name}`,
+				() => {
+					if (prevBuffer) {
+						audioBuffersRef.current?.set(targetTrack.id, prevBuffer);
+					} else {
+						audioBuffersRef.current?.delete(targetTrack.id);
+					}
+				},
+				() => {
+					if (importedBuffer) {
+						audioBuffersRef.current?.set(targetTrack.id, importedBuffer);
+					} else {
+						audioBuffersRef.current?.delete(targetTrack.id);
+					}
+				},
+			);
+
 			// Revoke previous URL if any
 			if (targetTrack.audioUrl?.startsWith("blob:")) {
 				try {
@@ -99,6 +122,7 @@ export function useImportAudio(opts: UseImportAudioOptions) {
 				const arrayBuffer = await file.arrayBuffer();
 				// decodeAudioData detaches the buffer — no copy needed.
 				const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+				importedBuffer = audioBuffer;
 				const peaks = getPeakWaveform(audioBuffer, 200);
 				if (needsClose) {
 					await ctx.close();
@@ -118,7 +142,6 @@ export function useImportAudio(opts: UseImportAudioOptions) {
 			}
 
 			setTrackAudio(targetTrack.id, url, file, duration);
-			pushUndo(`Import audio to ${targetTrack.name}`);
 		};
 		fileInput.click();
 	}, [

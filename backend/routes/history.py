@@ -1,5 +1,6 @@
 """Generation history endpoints."""
 
+import asyncio
 import io
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
@@ -147,7 +148,8 @@ async def export_generation(
         raise HTTPException(status_code=404, detail=ERR_GENERATION_NOT_FOUND)
 
     try:
-        zip_bytes = export_import.export_generation_to_zip(generation_id, db)
+        # DEFLATE-compressing audio takes seconds — off the event loop.
+        zip_bytes = await asyncio.to_thread(export_import.export_generation_to_zip, generation_id, db)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:

@@ -9,7 +9,7 @@ import { useServerStore } from "@/stores/serverStore";
 import { Spinner } from "@/ui/primitives";
 import { Progress } from "@/ui/progress";
 import type { Toast } from "@/ui/use-toast";
-import { useToast } from "@/ui/use-toast";
+import { dismissToast, useToast } from "@/ui/use-toast";
 
 interface UseModelDownloadToastOptions {
 	modelName: string;
@@ -35,6 +35,9 @@ export function useModelDownloadToast({
 	const toastIdRef = useRef<string | null>(null);
 	const toastUpdateRef = useRef<((props: Toast) => void) | null>(null);
 	const eventSourceRef = useRef<EventSource | null>(null);
+	// True once the toast reached a terminal state (complete/error) — the
+	// cleanup may then leave it alone to finish auto-dismissing.
+	const settledRef = useRef(false);
 
 	const formatBytes = useCallback((bytes: number): string => {
 		if (bytes === 0) {
@@ -50,6 +53,7 @@ export function useModelDownloadToast({
 		if (!enabled || !serverUrl || !modelName) {
 			return;
 		}
+		settledRef.current = false;
 
 		// Create initial toast
 		const toastResult = toast({
@@ -140,6 +144,7 @@ export function useModelDownloadToast({
 					const isError = progress.status === "error";
 
 					if (isComplete || isError) {
+						settledRef.current = true;
 						eventSource.close();
 						eventSourceRef.current = null;
 
@@ -171,6 +176,7 @@ export function useModelDownloadToast({
 		};
 
 		eventSource.onerror = () => {
+			settledRef.current = true;
 			eventSource.close();
 			eventSourceRef.current = null;
 
@@ -196,7 +202,15 @@ export function useModelDownloadToast({
 				eventSourceRef.current.close();
 				eventSourceRef.current = null;
 			}
-			// Note: We don't dismiss the toast here as it might still be showing completion state
+			// An in-progress toast with no live subscription can never
+			// update or complete — dismiss it instead of leaving a pinned
+			// "Preparing download…" spinner forever. Terminal toasts carry
+			// their own auto-dismiss duration, so leave those alone.
+			if (!settledRef.current && toastIdRef.current) {
+				dismissToast(toastIdRef.current);
+				toastIdRef.current = null;
+				toastUpdateRef.current = null;
+			}
 		};
 	}, [
 		enabled,

@@ -102,7 +102,10 @@ export function useStudioRenderFx(opts: UseStudioRenderFxOptions) {
 					await rendered.arrayBuffer(),
 				);
 				const peaks = getPeakWaveform(audioBuffer, 200);
-				const id = addTrack(`${source.name} (rendered)`);
+				const label = `${source.name} (rendered)`;
+				// Snapshot BEFORE addTrack so undo drops the rendered track.
+				pushUndo(label);
+				const id = addTrack(label);
 				audioBuffersRef?.current?.set(id, audioBuffer);
 				updateTrack(id, {
 					waveformData: peaks,
@@ -112,7 +115,6 @@ export function useStudioRenderFx(opts: UseStudioRenderFxOptions) {
 					duration = audioBuffer.duration;
 				}
 				setTrackAudio(id, url, rendered, duration);
-				pushUndo(`Render FX on ${source.name}`);
 				if (skipped.length > 0) {
 					toast({
 						title: "Rendered with skips",

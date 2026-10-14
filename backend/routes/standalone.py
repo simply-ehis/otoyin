@@ -6,6 +6,7 @@ returns a stable ``project_id``; explicit Save upserts by that id; Load reads
 it back.
 """
 
+import asyncio
 import io
 import json
 
@@ -259,7 +260,9 @@ async def export_project(project_id: str, db: Session = Depends(get_db)):
     from ..services.export_import import export_standalone_project_to_zip
 
     try:
-        zip_bytes = export_standalone_project_to_zip(project_id, db)
+        # DEFLATE-compressing project audio takes seconds — off the
+        # event loop or every other request stalls behind it.
+        zip_bytes = await asyncio.to_thread(export_standalone_project_to_zip, project_id, db)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
     project = json.loads(db.query(StandaloneProjectRow).filter_by(id=project_id).first().project_json)

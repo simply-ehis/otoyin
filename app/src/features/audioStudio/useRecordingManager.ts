@@ -19,7 +19,7 @@ interface UseRecordingManagerOptions {
 		blob: Blob,
 		duration: number,
 	) => void;
-	pushUndo: (desc: string) => void;
+	pushUndo: (desc: string, onUndo?: () => void, onRedo?: () => void) => void;
 	audioBuffersRef: React.MutableRefObject<Map<string, AudioBuffer>>;
 }
 
@@ -57,6 +57,29 @@ export function useRecordingManager({
 				return;
 			}
 
+			// Undo must snapshot BEFORE the first mutation and swap the
+			// decoded-buffer playback cache back — the cache lives in this
+			// ref, so the store snapshot cannot restore it.
+			const prevBuffer = audioBuffersRef.current.get(targetTrack.id) ?? null;
+			let recordedBuffer: AudioBuffer | null = null;
+			pushUndo(
+				`Record to ${targetTrack.name}`,
+				() => {
+					if (prevBuffer) {
+						audioBuffersRef.current.set(targetTrack.id, prevBuffer);
+					} else {
+						audioBuffersRef.current.delete(targetTrack.id);
+					}
+				},
+				() => {
+					if (recordedBuffer) {
+						audioBuffersRef.current.set(targetTrack.id, recordedBuffer);
+					} else {
+						audioBuffersRef.current.delete(targetTrack.id);
+					}
+				},
+			);
+
 			const url = URL.createObjectURL(blob);
 			let duration = recordedDuration || 0;
 			try {
@@ -72,6 +95,7 @@ export function useRecordingManager({
 			try {
 				const arrayBuffer = await blob.arrayBuffer();
 				const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+				recordedBuffer = audioBuffer;
 				const peaks = getPeakWaveform(audioBuffer, 200);
 				audioBuffersRef.current.set(targetTrack.id, audioBuffer);
 				updateTrack(targetTrack.id, {
@@ -90,7 +114,6 @@ export function useRecordingManager({
 			}
 
 			setTrackAudio(targetTrack.id, url, blob, duration);
-			pushUndo(`Record to ${targetTrack.name}`);
 			setRecordingTrackIndex(null);
 			setIsRecording(false);
 			recordingTrackIdRef.current = null;

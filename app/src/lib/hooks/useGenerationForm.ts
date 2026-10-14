@@ -263,7 +263,9 @@ export function useGenerationForm(options: UseGenerationFormOptions = {}) {
 			options.onSuccess?.(result.id);
 		} catch (error) {
 			showStudioErrorToast(error);
-		} finally {
+			// Disarm only on error: on success the download-toast must stay
+			// armed so it can track the real download to completion (it
+			// dismisses itself on the terminal progress event).
 			setDownloadingModelName(null);
 			setDownloadingDisplayName(null);
 		}

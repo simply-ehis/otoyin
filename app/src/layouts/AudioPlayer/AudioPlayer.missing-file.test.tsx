@@ -95,9 +95,16 @@ describe("AudioPlayer missing-file load", () => {
 			</QueryClientProvider>,
 		);
 
-		await waitFor(() => {
-			expect(loadMock).toHaveBeenCalled();
-		});
+		// 3s headroom: jsdom schedules the WaveSurfer init via
+		// requestAnimationFrame + 50 ms container-wait retries, which can
+		// lag past the default 1 s waitFor on a loaded machine. The
+		// exactly-once assertion below is the real regression guard.
+		await waitFor(
+			() => {
+				expect(loadMock).toHaveBeenCalled();
+			},
+			{ timeout: 3000 },
+		);
 
 		// Give any (regressed) effect loop time to re-enter, then freeze.
 		await act(async () => {

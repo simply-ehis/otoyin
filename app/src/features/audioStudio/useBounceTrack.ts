@@ -16,7 +16,7 @@ interface UseBounceTrackOptions {
 		duration: number,
 	) => void;
 	updateTrack: (id: string, updates: Partial<StudioTrack>) => void;
-	pushUndo: (label: string) => void;
+	pushUndo: (label: string, onUndo?: () => void, onRedo?: () => void) => void;
 }
 
 export function useBounceTrack(opts: UseBounceTrackOptions) {
@@ -69,7 +69,23 @@ export function useBounceTrack(opts: UseBounceTrackOptions) {
 			const blob = new Blob([wavData], { type: "audio/wav" });
 			const url = URL.createObjectURL(blob);
 
-			pushUndo(`Bounce ${track.name}`);
+			// Undo restores the pre-bounce track metadata via the snapshot but
+			// cannot reach the decoded-buffer cache (it lives in this ref) —
+			// swap it back explicitly, or playback keeps the bounced audio.
+			const prevBuffer = audioBuffersRef.current?.get(track.id) ?? null;
+			pushUndo(
+				`Bounce ${track.name}`,
+				() => {
+					if (prevBuffer) {
+						audioBuffersRef.current?.set(track.id, prevBuffer);
+					} else {
+						audioBuffersRef.current?.delete(track.id);
+					}
+				},
+				() => {
+					audioBuffersRef.current?.set(track.id, rendered);
+				},
+			);
 			setTrackAudio(track.id, url, blob, rendered.duration);
 			updateTrack(track.id, {
 				pluginChain: [],

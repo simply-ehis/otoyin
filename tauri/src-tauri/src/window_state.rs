@@ -183,7 +183,15 @@ fn current_geometry(window: &WebviewWindow) -> Option<SavedGeometry> {
 
 fn last_save() -> &'static Mutex<Instant> {
     static CELL: OnceLock<Mutex<Instant>> = OnceLock::new();
-    CELL.get_or_init(|| Mutex::new(Instant::now() - std::time::Duration::from_secs(3600)))
+    CELL.get_or_init(|| {
+        // checked_sub, not `-`: on Unix the monotonic clock is
+        // boot-relative, so `now - 1h` panics on machines booted <1h ago.
+        Mutex::new(
+            Instant::now()
+                .checked_sub(std::time::Duration::from_secs(3600))
+                .unwrap_or_else(Instant::now),
+        )
+    })
 }
 
 /// Persist on move/resize (throttled). Also pulls a maximized frameless

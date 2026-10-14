@@ -1,5 +1,6 @@
 """Voice profile endpoints."""
 
+import asyncio
 import io
 import json as _json
 import logging
@@ -244,17 +245,23 @@ async def add_profile_sample(
     file_suffix = _uploaded_ext if _uploaded_ext in _allowed_audio_exts else ".wav"
 
     with tempfile.NamedTemporaryFile(suffix=file_suffix, delete=False) as tmp:
-        total_size = 0
-        while chunk := await file.read(SAMPLE_UPLOAD_CHUNK_SIZE):
-            total_size += len(chunk)
-            if total_size > SAMPLE_MAX_FILE_SIZE:
-                Path(tmp.name).unlink(missing_ok=True)
-                raise HTTPException(
-                    status_code=413,
-                    detail=f"File too large (max {SAMPLE_MAX_FILE_SIZE // (1024 * 1024)} MB)",
-                )
-            tmp.write(chunk)
         tmp_path = tmp.name
+        total_size = 0
+        try:
+            while chunk := await file.read(SAMPLE_UPLOAD_CHUNK_SIZE):
+                total_size += len(chunk)
+                if total_size > SAMPLE_MAX_FILE_SIZE:
+                    raise HTTPException(
+                        status_code=413,
+                        detail=f"File too large (max {SAMPLE_MAX_FILE_SIZE // (1024 * 1024)} MB)",
+                    )
+                tmp.write(chunk)
+        except BaseException:
+            # A read failure (client disconnect, size cap) happens before
+            # the post-profile cleanup finally exists — delete here or the
+            # delete=False temp file leaks forever.
+            Path(tmp_path).unlink(missing_ok=True)
+            raise
 
     try:
         sample = await profiles.add_profile_sample(
@@ -381,7 +388,9 @@ async def export_profile(
         if not profile:
             raise HTTPException(status_code=404, detail="Profile not found")
 
-        zip_bytes = export_import.export_profile_to_zip(profile_id, db)
+        # DEFLATE-compressing sample audio takes seconds — off the event
+        # loop or every other request stalls behind it.
+        zip_bytes = await asyncio.to_thread(export_import.export_profile_to_zip, profile_id, db)
 
         safe_name = "".join(c for c in profile.name if c.isalnum() or c in (" ", "-", "_")).strip()
         if not safe_name:

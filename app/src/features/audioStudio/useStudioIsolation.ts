@@ -106,6 +106,13 @@ export function useStudioIsolation(opts: UseStudioIsolationOptions) {
 			const label = invert
 				? `${isolateStem[0].toUpperCase()}${isolateStem.slice(1)} removed`
 				: `${isolateStem[0].toUpperCase()}${isolateStem.slice(1)} (isolated)`;
+			// Snapshot BEFORE addTrack — the snapshot must capture the
+			// timeline without the new stem track.
+			pushUndo(
+				invert
+					? `Remove ${isolateStem} from ${targetTrack.name}`
+					: `Isolate ${isolateStem} from ${targetTrack.name}`,
+			);
 			const id = addTrack(label);
 			if (audioBuffersRef?.current) {
 				audioBuffersRef.current.set(id, audioBuffer);
@@ -120,11 +127,6 @@ export function useStudioIsolation(opts: UseStudioIsolationOptions) {
 					: { stem: isolateStem, color: STEM_WAVEFORM[isolateStem] }),
 			});
 			setTrackAudio(id, url, stemBlob, audioBuffer.duration);
-			pushUndo(
-				invert
-					? `Remove ${isolateStem} from ${targetTrack.name}`
-					: `Isolate ${isolateStem} from ${targetTrack.name}`,
-			);
 		} catch (error) {
 			showStudioErrorToast(error);
 		} finally {

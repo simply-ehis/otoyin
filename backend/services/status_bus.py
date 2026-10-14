@@ -41,6 +41,19 @@ async def notify_generation_status(generation_id: str, status: str, payload: dic
 
         # Snapshot the subscriber list under the lock to avoid iteration race
         queues = list(_status_subscribers.get(generation_id, []))
+    # The `status` parameter is authoritative — payloads don't always
+    # carry a "status" key.
+    terminal = status in ("completed", "failed")
     for q in queues:
+        if terminal:
+            # Never drop a terminal event: the SSE consumer only exits on
+            # completed/failed, so a dropped one strands the stream open
+            # forever. Make room by expiring the oldest queued event (an
+            # intermediate progress update) instead of blocking the producer.
+            if q.full():
+                with contextlib.suppress(asyncio.QueueEmpty):
+                    q.get_nowait()
+            q.put_nowait(payload)
+            continue
         with contextlib.suppress(asyncio.QueueFull):
             q.put_nowait(payload)

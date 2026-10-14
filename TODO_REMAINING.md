@@ -50,3 +50,38 @@
   [the support plan](docs/SUPPORT_FEEDBACK_PLAN.md).
 - [ ] Choose the private contact route and response-time expectation for
   purchase, refund, license, and model-delivery support.
+
+## Audit fixes and deferrals (2026-10-14)
+
+A three-part production audit (frontend, Tauri, backend) found 30 issues; all
+high-severity and the surgical medium/low findings were fixed (summary:
+`docs/knowledge/90-audit-fixes-2026-10.md`). These were deliberately deferred:
+
+- [ ] Frontend: `importSession` / `resetToTemplate` do not stop playback
+  before swapping track audio (audit finding #12). The zustand store cannot
+  reach the playback engine's `stopPlayback()`; wire an
+  `onBeforeSessionSwap` callback from `AudioStudio` (which owns
+  `usePlaybackEngine`) into the store, then re-enable session import during
+  playback.
+- [ ] Tauri: add `tauri-plugin-single-instance`. Two app instances race for
+  port 17493 (the adoption/ownership logic now keeps this safe, but a second
+  window is still poor UX). Blocked on the "no new dependencies without spec
+  approval" rule — approve the plugin, then add it to `Cargo.toml` and
+  `lib.rs`.
+- [ ] Tauri: the macOS microphone/accessibility permission IPC commands are
+  unregistered and cannot be exercised on the Windows dev box. Implement and
+  verify on macOS hardware before an Apple release.
+- [ ] Tauri: `fs:scope` in `capabilities/default.json` covers the standard
+  save locations ($HOME, $DESKTOP, $DOWNLOAD, $DOCUMENT, $AUDIO, $VIDEO,
+  $PICTURES). Exports to other roots (removable drives, custom paths) are
+  rejected by the fs plugin — widen the scope or move export writes to the
+  Rust side if this becomes a real complaint.
+- [ ] Bundle: Demucs v4 (`htdemucs.onnx`, 303 MB) is listed in
+  `backend/scripts/download_required_models.py::RUNTIME_WEIGHTS` and resolves
+  from the HF cache on first use — deliberately not shipped, since bundling it
+  would grow every installer by more than the rest of the bundle. Revisit only
+  if stem separation becomes a headline offline feature.
+- [ ] Bundle: LavaSR is fetched on first use by the `audiosronnx` resolver
+  (cache: `~/.local/share/audiosronnx`), so a truly air-gapped install cannot
+  use bandwidth extension. Same trade-off as Demucs; bundle if offline
+  completeness outgrows installer size.

@@ -72,6 +72,10 @@ export function useAudioPlayer() {
 	const busRegRef = useRef<{ unregister: () => void } | null>(null);
 	const { toast } = useToast();
 
+	// Identity of the File backing the current <audio> element — playPause
+	// must swap elements when a DIFFERENT file is requested.
+	const loadedFileRef = useRef<File | null>(null);
+
 	const clearAnalyser = useCallback(() => {
 		const current = usePlayerStore.getState().masterAnalyser;
 		if (current && current === sharedAnalyser) {
@@ -83,6 +87,22 @@ export function useAudioPlayer() {
 		(file: File | null | undefined) => {
 			if (!file) {
 				return;
+			}
+
+			// A different file than the loaded one: tear the current element
+			// down first — otherwise the new file is silently ignored and the
+			// previous audio replays (e.g. previewing a second voice take).
+			if (audioRef.current && loadedFileRef.current !== file) {
+				audioRef.current.pause();
+				audioRef.current = null;
+				setIsPlaying(false);
+				busRegRef.current?.unregister();
+				busRegRef.current = null;
+				if (blobUrlRef.current) {
+					URL.revokeObjectURL(blobUrlRef.current);
+					blobUrlRef.current = null;
+				}
+				clearAnalyser();
 			}
 
 			if (audioRef.current) {
@@ -112,6 +132,7 @@ export function useAudioPlayer() {
 				blobUrlRef.current = url;
 				audio.src = url;
 				audioRef.current = audio;
+				loadedFileRef.current = file;
 
 				const analyser = getSharedAnalyser();
 				if (analyser && sharedContext) {

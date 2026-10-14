@@ -2,8 +2,18 @@
 Task tracking for active downloads and generations.
 """
 
+import threading
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+
+
+class DownloadCancelledError(Exception):
+    """Raised inside a download worker when the user cancelled the task.
+
+    Its name is listed in ``rate_limiter._NON_RETRYABLE_NAMES`` so
+    ``with_retry`` gives up immediately instead of retrying a deliberate
+    cancel three times.
+    """
 
 
 @dataclass
@@ -14,6 +24,9 @@ class DownloadTask:
     status: str = "downloading"  # downloading, extracting, complete, error
     started_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     error: str | None = None
+    # Set by TaskManager.cancel_download; the worker polls it to abort
+    # mid-file instead of downloading to completion behind the UI's back.
+    cancel_event: threading.Event = field(default_factory=threading.Event)
 
 
 @dataclass
@@ -88,8 +101,16 @@ class TaskManager:
         return list(self._active_generations.values())
 
     def cancel_download(self, model_name: str) -> bool:
-        """Cancel/dismiss a download task (removes it from active list)."""
-        return self._active_downloads.pop(model_name, None) is not None
+        """Cancel/dismiss a download task (removes it from active list).
+
+        Signals the task's cancel event first so the background worker
+        aborts the in-flight transfer instead of finishing it.
+        """
+        task = self._active_downloads.pop(model_name, None)
+        if task is None:
+            return False
+        task.cancel_event.set()
+        return True
 
     def clear_all(self) -> None:
         """Clear all download and generation tasks."""

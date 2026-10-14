@@ -113,7 +113,10 @@ export function useStudioStitch(opts: UseStudioStitchOptions) {
 						await stitched.arrayBuffer(),
 					);
 					const peaks = getPeakWaveform(audioBuffer, 200);
-					const id = addTrack(`${source.name} + ${target.name}`);
+					const label = `${source.name} + ${target.name}`;
+					// Snapshot BEFORE addTrack so undo drops the stitched track.
+					pushUndo(label);
+					const id = addTrack(label);
 					audioBuffersRef?.current?.set(id, audioBuffer);
 					updateTrack(id, {
 						waveformData: peaks,
@@ -123,7 +126,6 @@ export function useStudioStitch(opts: UseStudioStitchOptions) {
 						duration = audioBuffer.duration;
 					}
 					setTrackAudio(id, url, stitched, duration);
-					pushUndo(`Stitch ${source.name} + ${target.name}`);
 					return true;
 				} finally {
 					if (needsClose) {

@@ -16,6 +16,7 @@ import pytest
 
 from backend.utils.chunked_tts import (
     STREAMING_CHUNK_THRESHOLD,
+    concatenate_audio_chunks,
     generate_chunked,
 )
 from backend.utils.text_preprocessing import split_sentences
@@ -39,6 +40,42 @@ class FakeTTSModel:
         t = np.arange(duration_samples) / self.sample_rate
         audio = (8000 * np.sin(2 * np.pi * 440 * t)).astype(np.float32)
         return audio, self.sample_rate
+
+
+# ── Concatenation (crossfade buffer sizing) ───────────────────────────
+
+
+class TestConcatenateAudioChunks:
+    """Regression: output preallocation must track the REAL write position.
+
+    The overlap precompute used raw prefix sums; whenever a boundary's
+    actual write position was smaller than its prefix (always after a
+    short chunk), ``out`` was under-allocated and the write crashed with
+    a NumPy broadcast error.
+    """
+
+    @staticmethod
+    def _sine(seconds: float, sr: int) -> np.ndarray:
+        t = np.arange(int(sr * seconds)) / sr
+        return np.sin(2 * np.pi * 440 * t).astype(np.float32)
+
+    @pytest.mark.parametrize(
+        ("crossfade_ms", "chunk_seconds", "expected_len"),
+        [
+            # 500 ms crossfade over 400/450 ms chunks: boundary 1 is
+            # limited to 9600 (the chunk), boundary 2 to 10800 (the real
+            # write position 20400-9600, NOT the raw 20400 prefix).
+            (500, [0.4, 0.45, 5.0], 120000),
+            # 20 ms chunks with a 50 ms crossfade — both boundaries
+            # shrink below the crossfade length.
+            (50, [0.02, 0.02, 5.0], 120000),
+        ],
+    )
+    def test_short_chunks_do_not_underallocate(self, crossfade_ms, chunk_seconds, expected_len):
+        sr = 24000
+        chunks = [self._sine(s, sr) for s in chunk_seconds]
+        out = concatenate_audio_chunks(chunks, sr, crossfade_ms=crossfade_ms)
+        assert len(out) == expected_len
 
 
 # ── Sentence splitting ────────────────────────────────────────────────

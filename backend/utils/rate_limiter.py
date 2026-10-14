@@ -98,6 +98,7 @@ _NON_RETRYABLE_NAMES = frozenset(
     {
         "ModelNotCachedError",
         "ModelNotDownloadedError",
+        "DownloadCancelledError",  # deliberate user cancel — never retry
         "ValueError",
         "LookupError",
         "KeyError",

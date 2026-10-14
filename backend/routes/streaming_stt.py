@@ -21,6 +21,10 @@ router = APIRouter(prefix="/stt/stream", tags=["streaming-stt"])
 SESSION_TIMEOUT_S = 300
 DEFAULT_ENERGY_THRESHOLD = 0.02
 SILENCE_FRAMES_TRIGGER = 8
+# Force-finalize once this much audio is buffered without a VAD break —
+# bounds memory for hot-mic / background-noise sessions where the
+# silence trigger never fires.
+MAX_UTTERANCE_SECONDS = 30
 
 
 class StartSessionRequest(BaseModel):
@@ -182,6 +186,11 @@ async def send_chunk(req: ChunkRequest):
         elif not is_loud and session.silence_count >= 1:
             # Immediate quiet after speech — short utterance path
             should_finalize = True
+    # Hard cap: continuous audio above the VAD threshold never satisfies
+    # the silence trigger, so the buffer would grow for the whole session
+    # (last_activity keeps refreshing, defeating the 300 s idle expiry).
+    if not should_finalize and len(session.audio_buffer) > session.sample_rate * MAX_UTTERANCE_SECONDS:
+        should_finalize = True
     if should_finalize:
         text = await _transcribe_buffer(session)
         chunk_ms = int(len(session.audio_buffer) / session.sample_rate * 1000)

@@ -210,12 +210,21 @@ def to_storage_path(path: str | Path) -> str:
         return str(resolved_path)
 
 
+class PathTraversalError(ValueError):
+    """A client-supplied path contains traversal (``..``) components.
+
+    Subclasses ValueError so routes that already map ValueError → 400 keep
+    working; routes that don't get a 400 (not a 500 + crash-report entry)
+    from the dedicated handler registered in app.py.
+    """
+
+
 def _reject_traversal(path: str) -> None:
-    """Raise ValueError if path contains traversal components."""
+    """Raise PathTraversalError if path contains traversal components."""
     normalized = Path(path)
     parts = normalized.parts
     if ".." in parts:
-        raise ValueError(f"Path traversal not allowed: {path}")
+        raise PathTraversalError(f"Path traversal not allowed: {path}")
 
 
 def resolve_storage_path(path: str | Path | None) -> Path | None:

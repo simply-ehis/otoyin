@@ -266,8 +266,12 @@ def concatenate_audio_chunks(
         prefix.append(prefix[-1] + len(c))
     total_overlap = 0
     for i in range(1, len(chunks)):
-        overlap = min(crossfade_samples, prefix[i], len(chunks[i]))
-        total_overlap += overlap
+        # Simulate the real write position below (prefix[i] minus overlaps
+        # consumed by earlier chunks) — using the raw prefix over-counts the
+        # overlap whenever a boundary's position is smaller, under-allocating
+        # `out` and crashing the write with a broadcast error.
+        pos_i = prefix[i] - total_overlap
+        total_overlap += min(crossfade_samples, pos_i, len(chunks[i]))
     out_len = prefix[-1] - total_overlap
     out = np.empty(max(1, out_len), dtype=np.float32)
 

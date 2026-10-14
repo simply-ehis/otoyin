@@ -17,20 +17,27 @@ import sys
 
 logger = logging.getLogger(__name__)
 
-# Only ONNX weights that ship inside the frozen binary.
+# ONNX weights bundled into the frozen binary by build_binary.py.
 BUNDLED_WEIGHTS = [
     {
         "label": "DeepFilterNet ONNX",
         "repo_id": "soniqo/DeepFilterNet3-ONNX",
         "filename": "deepfilter.onnx",
     },
+    # Silero VAD ships inside the silero-vad pip wheel — no HF download.
+    # LavaSR is fetched on first use by the audiosronnx resolver (it caches
+    # under ~/.local/share/audiosronnx); the wheel itself ships no weights.
+]
+
+# Weights deliberately NOT bundled: at 303 MB, Demucs would grow every
+# installer by more than the rest of the bundle. Pre-fetching it here still
+# helps dev machines; installs resolve it from the HuggingFace cache.
+RUNTIME_WEIGHTS = [
     {
         "label": "Demucs v4 ONNX",
         "repo_id": "MrCitron/demucs-v4-onnx",
         "filename": "htdemucs.onnx",
     },
-    # Silero VAD ships inside the silero-vad pip wheel — no HF download.
-    # LavaSR ships inside the audiosronnx pip wheel — no HF download.
 ]
 
 
@@ -50,15 +57,15 @@ def download_required() -> int:
     from huggingface_hub import hf_hub_download
 
     fetched = 0
-    for entry in BUNDLED_WEIGHTS:
+    for entry in [*BUNDLED_WEIGHTS, *RUNTIME_WEIGHTS]:
         repo_id = entry["repo_id"]
         filename = entry["filename"]
         label = entry["label"]
         if _is_cached(repo_id, filename):
-            print(f"  ✓ {label} already cached")
+            print(f"  [cached] {label}")
         else:
             hf_hub_download(repo_id=repo_id, filename=filename)
-            print(f"  ↓ {label} downloaded")
+            print(f"  [fetched] {label}")
             fetched += 1
 
     print(f"\nDone. {fetched} file(s) newly downloaded.")

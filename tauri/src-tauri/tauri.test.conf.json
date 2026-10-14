@@ -1,0 +1,14 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Otoyin Studio Test",
+  "identifier": "com.otoyin.app.test",
+  "bundle": {
+    "targets": ["nsis"],
+    "createUpdaterArtifacts": false
+  },
+  "plugins": {
+    "updater": {
+      "active": false
+    }
+  }
+}

@@ -109,10 +109,11 @@ function AudioPlayerInner() {
 			return; // already created
 		}
 
+		let retryTimer: ReturnType<typeof setTimeout> | null = null;
 		const initWaveSurfer = () => {
 			const container = waveformRef.current;
 			if (!container) {
-				setTimeout(initWaveSurfer, 50);
+				retryTimer = setTimeout(initWaveSurfer, 50);
 				return;
 			}
 
@@ -125,7 +126,7 @@ function AudioPlayerInner() {
 				style.visibility !== "hidden";
 
 			if (!isVisible) {
-				setTimeout(initWaveSurfer, 50);
+				retryTimer = setTimeout(initWaveSurfer, 50);
 				return;
 			}
 
@@ -296,6 +297,12 @@ function AudioPlayerInner() {
 
 		return () => {
 			cancelAnimationFrame(rafId);
+			// Also cancel the init-retry timer — otherwise the 50 ms retry
+			// loop survives unmount (the container ref is permanently null)
+			// and leaks a timer per mount for the session's lifetime.
+			if (retryTimer !== null) {
+				clearTimeout(retryTimer);
+			}
 		};
 		// Only run on mount-like conditions. audioUrl is here so we create the instance
 		// when the player first appears, but we guard against re-creation above.
@@ -552,6 +559,13 @@ function AudioPlayerInner() {
 				return;
 			}
 			if (e.code === "Space") {
+				// Inside AudioStudio the studio's own transport owns Space —
+				// this capture-phase handler must not steal it (it would
+				// stopPropagation before the element-level handler sees it).
+				const target = e.target as HTMLElement | null;
+				if (target?.closest?.("[data-audio-studio]")) {
+					return;
+				}
 				if (audioUrl && duration > 0) {
 					e.preventDefault();
 					e.stopPropagation();
@@ -1028,7 +1042,15 @@ function AudioPlayerInner() {
 					}
 					onPlay={() => setIsPlaying(true)}
 					onPause={() => setIsPlaying(false)}
-					onEnded={() => setIsPlaying(false)}
+					onEnded={() => {
+						setIsPlaying(false);
+						// Mirror the WaveSurfer "finish" path: streaming chunk
+						// chaining depends on this global slot firing.
+						const onFinish = usePlayerStore.getState().onFinish;
+						if (onFinish) {
+							onFinish();
+						}
+					}}
 					onError={() =>
 						setError(
 							"Audio file could not be played — re-generate or check the backend.",

@@ -8,6 +8,20 @@
     "fs:default",
     "process:default",
     "shell:default",
-    "updater:default"
+    "updater:default",
+    "fs:allow-write-file",
+    "fs:allow-write-text-file",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        { "path": "$HOME/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$DOCUMENT/**" },
+        { "path": "$AUDIO/**" },
+        { "path": "$VIDEO/**" },
+        { "path": "$PICTURES/**" }
+      ]
+    }
   ]
 }

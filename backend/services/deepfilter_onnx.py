@@ -12,12 +12,14 @@ DSP: 48 kHz, 960-point FFT, 480-sample hop, Vorbis window, 32 ERB bands.
 """
 
 import logging
+from pathlib import Path
 
 import numpy as np
 
 logger = logging.getLogger(__name__)
 
 ONNX_REPO = "soniqo/DeepFilterNet3-ONNX"
+ONNX_FILE = "deepfilter.onnx"
 INTERNAL_SR = 48000
 FFT_SIZE = 960
 HOP_SIZE = 480
@@ -35,10 +37,30 @@ def is_onnx_available() -> bool:
         return False
 
 
+def _bundled_model_path() -> Path | None:
+    """Weights shipped inside the frozen bundle, or None when absent.
+
+    ``build_binary.py`` stages deepfilter.onnx at ``<bundle>/deepfilter/``
+    (mirroring the YAMNet layout). Dev runs — and any install whose bundle
+    predates the weights — fall back to the HuggingFace cache.
+    """
+    import sys
+
+    if getattr(sys, "frozen", False):
+        meipass = getattr(sys, "_MEIPASS", None)
+        if meipass:
+            candidate = Path(meipass) / "deepfilter" / ONNX_FILE
+            if candidate.is_file():
+                return candidate
+    return None
+
+
 def _is_model_cached() -> bool:
     from ..backends.base import is_model_cached
 
-    return is_model_cached(ONNX_REPO, required_files=["deepfilter.onnx"])
+    if _bundled_model_path() is not None:
+        return True
+    return is_model_cached(ONNX_REPO, required_files=[ONNX_FILE])
 
 
 _session = None
@@ -70,10 +92,13 @@ def _get_session():
             "this app never downloads model weights on first use."
         )
     import onnxruntime as ort
-    from huggingface_hub import hf_hub_download
 
-    path = hf_hub_download(ONNX_REPO, "deepfilter.onnx", local_files_only=True)
-    _session = ort.InferenceSession(path)
+    model_path = _bundled_model_path()
+    if model_path is None:
+        from huggingface_hub import hf_hub_download
+
+        model_path = hf_hub_download(ONNX_REPO, ONNX_FILE, local_files_only=True)
+    _session = ort.InferenceSession(model_path)
     logger.info("DeepFilterNet ONNX loaded")
     return _session
 

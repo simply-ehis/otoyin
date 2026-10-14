@@ -90,6 +90,33 @@ def _bundled_public_key() -> str | None:
 # Verifying key: env override > bundled production key > dev placeholder.
 MARKETPLACE_PUBLIC_KEY = os.environ.get("TWENTYLABS_MARKETPLACE_PUBLIC_KEY") or _bundled_public_key() or _DEV_PUBLIC_KEY
 
+
+# --- Store test mode --------------------------------------------------------
+# Builds made by bin/build-test.ps1 bundle this flag file; source runs use
+# TWENTYLABS_STORE_TEST_MODE instead.
+_TEST_MODE_FLAG = "store_test_mode.flag"
+
+
+def store_test_mode() -> bool:
+    """True when this backend is a payment-free test copy.
+
+    Frozen builds honor ONLY a bundled flag file
+    (``backend/data/store_test_mode.flag``, written by ``bin/build-test.ps1``
+    before the build and stripped after) — production installers cannot
+    activate it via environment variables. Source runs (dev/tests) honor
+    ``TWENTYLABS_STORE_TEST_MODE`` instead. Test mode grants every catalog
+    product so the Store works without the payment infrastructure.
+    """
+    if getattr(sys, "frozen", False):
+        candidates: list[Path] = []
+        meipass = getattr(sys, "_MEIPASS", None)
+        if meipass:
+            candidates.append(Path(meipass) / "backend" / "data" / _TEST_MODE_FLAG)
+        candidates.append(Path(__file__).resolve().parent.parent / "data" / _TEST_MODE_FLAG)
+        return any(p.is_file() for p in candidates)
+    return os.environ.get("TWENTYLABS_STORE_TEST_MODE", "").lower() in {"1", "true", "yes"}
+
+
 _SIG_PREFIX = "ed25519:"
 
 
@@ -276,6 +303,26 @@ def delete_license(db, license_id: str) -> bool:
     return True
 
 
+def _test_mode_entitlements() -> set[str]:
+    """Test-mode grants: exact per-product ids (Store UI) + wildcard (gates).
+
+    The Store UI builds its owned-set from exact ``models:<id>`` strings
+    (it doesn't understand wildcards), while the download/verify gates
+    match through ``_matches`` — enumerate both so every surface agrees.
+    """
+    if not store_test_mode():
+        return set()
+    grants = {"models:*"}
+    try:
+        # Lazy: marketplace_catalog imports this module at load time.
+        from . import marketplace_catalog
+
+        grants.update(f"models:{p['id']}" for p in marketplace_catalog.PRODUCTS)
+    except Exception:  # wildcard alone still unlocks the gates
+        logger.debug("store test mode: catalog enumeration unavailable", exc_info=True)
+    return grants
+
+
 def active_entitlements(db) -> set[str]:
     """Set of all entitlements granted by currently-valid stored licenses."""
     granted: set[str] = set()
@@ -283,6 +330,7 @@ def active_entitlements(db) -> set[str]:
         if not lic["valid"]:
             continue
         granted.update(lic["entitlements"])
+    granted.update(_test_mode_entitlements())
     return granted
 
 

@@ -280,9 +280,12 @@ def launch_plugin(plugin_id: str) -> dict:
         args,
         cwd=str(install_dir),
         env=env,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        # DEVNULL, not PIPE: transport is socket-based and nothing ever
+        # reads these pipes — an unread PIPE freezes the plugin once its
+        # ~64 KB stdout/stderr buffer fills up.
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
         shell=False,
     )
     _PROCESSES[plugin_id] = proc
@@ -337,9 +340,12 @@ def launch_external_plugin(plugin_id: str) -> dict:
         args,
         cwd=str(Path(row.install_path).resolve()),
         env=env,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        # DEVNULL, not PIPE: transport is socket-based and nothing ever
+        # reads these pipes — an unread PIPE freezes the plugin once its
+        # ~64 KB stdout/stderr buffer fills up.
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
         shell=False,
     )
     _PROCESSES[plugin_id] = proc

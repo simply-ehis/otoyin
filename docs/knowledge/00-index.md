@@ -15,6 +15,7 @@ UPDATED: 2026-09-11
 - [85-theme-switching.md](85-theme-switching.md) — Full-coverage light/dark/special tokens, `light`-class invariant.
 - [87-voice-design-offerings.md](87-voice-design-offerings.md) — All-model offerings menu, grouped accent/nationality + style pickers, shared options module.
 - [86-marketplace-utilities.md](86-marketplace-utilities.md) — Utilities shelf at the bottom, pack collapse, category ordering.
+- [90-audit-fixes-2026-10.md](90-audit-fixes-2026-10.md) — 2026-10-14 production audit: fixed findings (undo, playback, SSE, server lifecycle) + deferral reasons.
 
 ## Master Agent-Callable Reference
 
@@ -406,6 +407,7 @@ Every knowledge doc should have an `## Agent Callable` section with exact MCP to
 - [31-cancellation-ui.md](31-cancellation-ui.md) — Generation cancellation UI: cancel button in history + editor, backend CancelledError handling.
 - [32-stt-backends.md](32-stt-backends.md) — STT model registry: Whisper, Parakeet, Qwen3-ASR with multilingual support, C++ backends.
 - [88-takes-pipeline.md](88-takes-pipeline.md) — Local takes pipeline (words+speakers+YAMNet events) with Scribe-shaped JSON, packed view, highlights, chapters; video-use-compatible.
+- [89-store-test-mode.md](89-store-test-mode.md) — Payment-free test copy: bundled flag unlocks every Store product (frozen-only, env for dev); test identity via tauri.test.conf.json; `just build-test`.
 - [36-feature-completeness.md](36-feature-completeness.md) — Feature completeness audit: 55 features across 7 categories, 100% wired to backend + MCP + frontend.
 - [backend-music-interface.md](backend-music-interface.md) — `MusicBackend` protocol + factory (Stable Audio).
 - [errors.md](errors.md) — Error shapes and handling.
