@@ -25,7 +25,6 @@ from typing import Union
 
 import numpy as np
 import onnxruntime as ort
-from huggingface_hub import hf_hub_download
 from safetensors import safe_open
 
 try:
@@ -267,7 +266,9 @@ class PocketTTSOnnx:
         return embeddings
 
     def _hf_model_state(self, filename: str) -> dict[str, dict[str, np.ndarray]]:
-        cached = hf_hub_download(repo_id=self.HF_REPO_ID, filename=filename)
+        from ..services.model_files import install_model_file
+
+        cached = str(install_model_file(repo_id=self.HF_REPO_ID, filename=filename))
         result: dict[str, dict[str, np.ndarray]] = {}
         with safe_open(cached, framework="np") as handle:
             for key in handle:

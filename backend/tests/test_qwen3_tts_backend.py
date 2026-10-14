@@ -222,19 +222,19 @@ def test_backend_factory_returns_singleton():
 def test_download_fetches_backbone_and_mmproj(monkeypatch):
     fetched = []
 
-    def fake_download(repo_id, filename, **kwargs):
+    def fake_install(repo_id, filename, **kwargs):
         fetched.append(filename)
+        return "/app/models/x.gguf"
 
     def fake_resolve(repo_id, quant_tag):
         return "Qwen3-TTS-12Hz-1.7B-Base-Q4_K_M.gguf"
 
     # download.py imports these inside the function body — patch the sources.
-    import huggingface_hub
-
     import backend.backends.gguf_server_backend as gguf_srv
+    import backend.services.model_files as model_files
 
     monkeypatch.setattr(gguf_srv, "_resolve_gguf_filename", fake_resolve)
-    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_download)
+    monkeypatch.setattr(model_files, "install_model_file", fake_install)
 
     import asyncio
 

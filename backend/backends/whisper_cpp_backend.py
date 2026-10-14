@@ -86,6 +86,9 @@ class WhisperCppSTTBackend(BackendBase):
         dest = self._model_path(model_size)
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(cached, dest)
+        from ..services.model_files import clear_hf_repo_cache
+
+        clear_hf_repo_cache(HF_REPO)
         logger.info("whisper.cpp model cached at %s", dest)
         return str(dest)
 

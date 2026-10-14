@@ -194,7 +194,7 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
     """Fetch the model files for one config (single attempt)."""
     import os
 
-    from huggingface_hub import hf_hub_download, snapshot_download
+    from huggingface_hub import hf_hub_download
 
     # Prevent hf_hub_download from blocking indefinitely on slow networks.
     os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "120")
@@ -203,25 +203,31 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
 
     with tracker.patch_download():
         if config.engine == "whisper":
+            from ... import config as cfg_mod
             from ...backends.whisper_cpp_backend import HF_REPO, WHISPER_CPP_FILES
+            from ...services.model_files import install_model_file_to
 
             filename = WHISPER_CPP_FILES.get(config.model_size, f"ggml-{config.model_size}.bin")
             await loop.run_in_executor(
                 _download_executor,
-                lambda: hf_hub_download(
-                    repo_id=HF_REPO,
-                    filename=filename,
+                lambda: install_model_file_to(
+                    HF_REPO,
+                    filename,
+                    cfg_mod.get_models_dir() / filename,
                 ),
             )
         elif config.engine == "faster-whisper":
+            from ... import config as cfg_mod
             from ...backends.faster_whisper_backend import HF_REPO_PREFIX, MODEL_FILE
+            from ...services.model_files import install_model_file_to
 
             repo_id = f"{HF_REPO_PREFIX}{config.model_size}"
             await loop.run_in_executor(
                 _download_executor,
-                lambda: hf_hub_download(
-                    repo_id=repo_id,
-                    filename=MODEL_FILE,
+                lambda: install_model_file_to(
+                    repo_id,
+                    MODEL_FILE,
+                    cfg_mod.get_models_dir() / f"faster-whisper-{config.model_size}" / MODEL_FILE,
                 ),
             )
         elif config.engine == "rvc_onnx":
@@ -264,6 +270,9 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
                         )
 
             await loop.run_in_executor(_download_executor, _download_rvc)
+            from ...services.model_files import clear_hf_repo_cache
+
+            await loop.run_in_executor(_download_executor, lambda: clear_hf_repo_cache(desc["repo"]))
         elif config.engine == "seed_vc":
             from ...backends import get_vc_backend
 
@@ -282,9 +291,11 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
                 _download_executor, lambda: _resolve_gguf_filename(config.hf_repo_id, config.quant)
             )
 
+            from ...services.model_files import install_model_file
+
             await loop.run_in_executor(
                 _download_executor,
-                lambda: hf_hub_download(
+                lambda: install_model_file(
                     repo_id=config.hf_repo_id,
                     filename=filename,
                 ),
@@ -298,25 +309,31 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
             backbone = await loop.run_in_executor(
                 _download_executor, lambda: _resolve_gguf_filename(config.hf_repo_id, config.quant)
             )
+            from ...services.model_files import install_model_file
+
             for filename in (backbone, MMPROJ_FILENAME):
                 await loop.run_in_executor(
                     _download_executor,
-                    lambda f=filename: hf_hub_download(repo_id=config.hf_repo_id, filename=f),
+                    lambda f=filename: install_model_file(repo_id=config.hf_repo_id, filename=f),
                 )
         elif config.engine == "minimax_music3":
             # MiniMax Music 3 is accessed via the diffusers ModularPipeline; no
             # binary download is needed — the model files are obtained from HF
             # (accept the Community License first).  The generic
             # snapshot_download else-branch handles the HF retrieval.
+            from ...services.model_files import install_snapshot
+
             await loop.run_in_executor(
                 _download_executor,
-                lambda: snapshot_download(repo_id=config.hf_repo_id),
+                lambda: install_snapshot(repo_id=config.hf_repo_id),
             )
         elif config.engine == "sa3_sfx":
             # Single Q8_0 GGUF packs the whole Stable Audio 3 Small SFX stack.
+            from ...services.model_files import install_model_file
+
             await loop.run_in_executor(
                 _download_executor,
-                lambda: hf_hub_download(
+                lambda: install_model_file(
                     repo_id=config.hf_repo_id,
                     filename="Stable-Audio-3-Small-SFX-GGUF/stable-audio-3-small-sfx-q8_0.gguf",
                 ),
@@ -330,9 +347,11 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
             backbone = await loop.run_in_executor(
                 _download_executor, lambda: _resolve_gguf_filename(config.hf_repo_id, config.quant)
             )
+            from ...services.model_files import install_model_file
+
             await loop.run_in_executor(
                 _download_executor,
-                lambda: hf_hub_download(repo_id=config.hf_repo_id, filename=backbone),
+                lambda: install_model_file(repo_id=config.hf_repo_id, filename=backbone),
             )
             for voice_id in config.preset_voices:
                 await loop.run_in_executor(_download_executor, lambda vid=voice_id: bark_backend.pack_voice_npz(vid))
@@ -340,20 +359,24 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
             # Single Q8_0 GGUF packs the whole HeartMuLa stack (MuLa
             # generator + HeartCodec decoder) - no companion files.
             from ...backends.heartmula_backend import HEARTMULA_GGUF
+            from ...services.model_files import install_model_file
 
             await loop.run_in_executor(
                 _download_executor,
-                lambda: hf_hub_download(repo_id=config.hf_repo_id, filename=HEARTMULA_GGUF),
+                lambda: install_model_file(repo_id=config.hf_repo_id, filename=HEARTMULA_GGUF),
             )
         elif config.engine == "demucs_onnx":
-            # Demucs HTDemucs ONNX — single htdemucs.onnx graph powers
+            # Demucs HTDemucs ONNX: single htdemucs.onnx graph powers
             # stem separation (vocals/drums/bass/other). Torch-free path;
-            # `pip install demucs` is only needed for the fallback path.
+            # pip install demucs is only needed for the fallback path.
+            # Installed into the app folder (HF cache entry cleared):
+            # the separator resolves data/models only, never the cache.
+            from ...services.model_files import install_model_file
             from ...services.stem_separation_onnx import ONNX_FILE, ONNX_REPO
 
             await loop.run_in_executor(
                 _download_executor,
-                lambda: hf_hub_download(
+                lambda: install_model_file(
                     repo_id=ONNX_REPO,
                     filename=ONNX_FILE,
                 ),
@@ -422,32 +445,42 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
             )
         elif config.engine == "fish_speech_s2":
             from ...backends.fish_speech_s2_backend import S2_CPP_GGUF_DEFAULT, S2_CPP_TOKENIZER
+            from ...services.model_files import install_model_file
 
             for filename in (S2_CPP_GGUF_DEFAULT, S2_CPP_TOKENIZER):
                 await loop.run_in_executor(
                     _download_executor,
-                    lambda f=filename: hf_hub_download(repo_id=config.hf_repo_id, filename=f),
+                    lambda f=filename: install_model_file(repo_id=config.hf_repo_id, filename=f),
                 )
         elif config.engine == "voxcpm2":
+            from ...services.model_files import install_model_file
+
             await loop.run_in_executor(
                 _download_executor,
-                lambda: hf_hub_download(repo_id=config.hf_repo_id, filename="voxcpm2-q8_0.gguf"),
+                lambda: install_model_file(repo_id=config.hf_repo_id, filename="voxcpm2-q8_0.gguf"),
             )
         elif config.engine == "moonshine":
             from ...backends.moonshine_backend import _MODELS
 
             info = _MODELS.get(config.model_size)
+            from ... import config as cfg_mod
+            from ...services.model_files import install_model_file_to
+
             if info:
                 await loop.run_in_executor(
                     _download_executor,
-                    lambda: hf_hub_download(repo_id=info["repo"], filename=info["file"]),
+                    lambda: install_model_file_to(
+                        info["repo"],
+                        info["file"],
+                        cfg_mod.get_models_dir() / info["file"],
+                    ),
                 )
         else:
+            from ...services.model_files import install_snapshot
+
             await loop.run_in_executor(
                 _download_executor,
-                lambda: snapshot_download(
-                    repo_id=config.hf_repo_id,
-                ),
+                lambda: install_snapshot(repo_id=config.hf_repo_id),
             )
 
 

@@ -57,9 +57,9 @@ def find_crispasr() -> Path | None:
 
 
 def _local_file(filename: str) -> str:
-    from huggingface_hub import hf_hub_download
+    from .services.model_files import resolve_model_file
 
-    return hf_hub_download(repo_id=HF_REPO, filename=filename, force_offline_if_cached=True)
+    return str(resolve_model_file(HF_REPO, filename))
 
 
 def build_tts_args(
@@ -103,9 +103,9 @@ class VoxCPM2Backend:
     # -- cache / path resolution -------------------------------------------
 
     def _is_model_cached(self) -> bool:
-        from .base import is_model_cached
+        from ..services.model_files import is_model_installed
 
-        return is_model_cached(HF_REPO, required_files=[f"voxcpm2-{BACKBONE_QUANT}.gguf"])
+        return is_model_installed(HF_REPO, f"voxcpm2-{BACKBONE_QUANT}.gguf")
 
     def _get_model_path(self, model_size: str) -> str:
         return _local_file(f"voxcpm2-{BACKBONE_QUANT}.gguf")

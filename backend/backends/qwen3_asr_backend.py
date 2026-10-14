@@ -259,6 +259,9 @@ class Qwen3ASRBackend(BackendBase):
                     filename=filename,
                     local_dir=str(model_dir),
                 )
+        from ..services.model_files import clear_hf_repo_cache
+
+        clear_hf_repo_cache(repo_id)
         logger.info("Qwen3-ASR model cached at %s", model_dir)
 
     def _load_embed_tokens(self, path: Path) -> np.ndarray:

@@ -150,6 +150,9 @@ def _download_gguf(model_name: str) -> Path:
         filename=info["file"],
         local_dir=str(dest),
     )
+    from .services.model_files import clear_hf_repo_cache
+
+    clear_hf_repo_cache(info["repo"])
     return Path(local)
 
 

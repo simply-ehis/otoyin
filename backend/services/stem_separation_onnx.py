@@ -30,9 +30,9 @@ def is_onnx_available() -> bool:
 
 
 def _is_model_cached() -> bool:
-    from ..backends.base import is_model_cached
+    from .model_files import is_model_installed
 
-    return is_model_cached(ONNX_REPO, required_files=[ONNX_FILE])
+    return is_model_installed(ONNX_REPO, ONNX_FILE)
 
 
 def _get_session(model_name: str = "htdemucs"):
@@ -45,9 +45,10 @@ def _get_session(model_name: str = "htdemucs"):
             "Models tab — this app never downloads model weights on first use."
         )
     import onnxruntime as ort
-    from huggingface_hub import hf_hub_download
 
-    path = hf_hub_download(ONNX_REPO, ONNX_FILE, local_files_only=True)
+    from .model_files import resolve_model_file
+
+    path = resolve_model_file(ONNX_REPO, ONNX_FILE)
     _session = ort.InferenceSession(path)
     _model_name = model_name
     logger.info("Demucs ONNX loaded (%s)", model_name)

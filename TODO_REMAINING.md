@@ -77,11 +77,17 @@ high-severity and the surgical medium/low findings were fixed (summary:
   rejected by the fs plugin — widen the scope or move export writes to the
   Rust side if this becomes a real complaint.
 - [ ] Bundle: Demucs v4 (`htdemucs.onnx`, 303 MB) is listed in
-  `backend/scripts/download_required_models.py::RUNTIME_WEIGHTS` and resolves
-  from the HF cache on first use — deliberately not shipped, since bundling it
+  `backend/scripts/download_required_models.py::RUNTIME_WEIGHTS` and installs
+  into `data/models/` on first use (HF cache copy cleared) — deliberately not shipped, since bundling it
   would grow every installer by more than the rest of the bundle. Revisit only
   if stem separation becomes a headline offline feature.
 - [ ] Bundle: LavaSR is fetched on first use by the `audiosronnx` resolver
   (cache: `~/.local/share/audiosronnx`), so a truly air-gapped install cannot
   use bandwidth extension. Same trade-off as Demucs; bundle if offline
   completeness outgrows installer size.
+- [ ] Models: NeuTTS / Kokoro-torch / PocketTTS / KittenTTS take a repo id
+  and resolve internally (their loaders' own HF cache use is
+  library-managed). The app layers (install, status, `_is_model_cached`)
+  already follow the app-folder rule
+  (`docs/knowledge/91-app-folder-models-and-staged-startup.md`); convert
+  the loaders to local directories if those libraries ever accept them.

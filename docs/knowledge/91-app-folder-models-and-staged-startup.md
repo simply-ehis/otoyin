@@ -1,0 +1,73 @@
+# 91 — App-folder model storage + staged startup + window controls
+
+PURPOSE: Why the app's own `data/models/` folder is the single source of truth for model weights (the HuggingFace cache is a transient download buffer), and how startup is tiered so the app is usable instantly.
+OWNS: `backend/services/model_files.py` (install/resolve/clear helpers), `backend/routes/models/download.py` (install branches), `backend/app.py` (staged startup tiers), `tauri/src-tauri/src/window_state.rs` (default-view geometry), `app/src/layouts/TitleBarDragRegion.tsx` (window controls), `app/src/router.tsx` (non-blocking boot gate)
+READ-WHEN: A model fails to load, a download lands in the wrong place, the HF cache reappears after installs, startup feels slow, or the window opens with an unexpected size.
+KEY-FILES: `backend/services/model_files.py`, `backend/app.py`, `tauri/src-tauri/src/window_state.rs`, `app/src/layouts/TitleBarDragRegion.tsx`, `app/src/router.tsx`
+INVARIANTS: The HF cache is NEVER read as a fallback — after install, `data/models/` is the only copy and the cache entry (file AND blob) is deleted; readiness (`_signal_ready`) fires after DB + queue + worker only; the main window always opens at the default size (saved geometry is tracked but not restored); the frameless shell gets close/minimize/maximize buttons on Windows.
+GOTCHAS: `hf_hub_download` returns a snapshot SYMLINK — unlinking only it leaves the content-addressed blob behind; `_clear_cache_entry` resolves the symlink and deletes both. Engines whose third-party loader takes a repo id (NeuTTS, Kokoro-torch, pocket-tts) cannot be forced to a local dir; their `_is_model_cached` checks the app folder and the library's own cache use is documented as library-managed.
+UPDATED: 2026-10-14
+
+## Model storage: app folder only
+
+`backend/services/model_files.py` is the one seam between "download from
+HuggingFace" and "read a model". Nothing else in the app reads the HF cache.
+
+| Helper | Used by | Effect |
+|---|---|---|
+| `is_model_installed(repo, file)` | every `_is_model_cached()` | app-folder existence check |
+| `install_model_file(repo, file)` | install branches, on-demand loads | download → copy to `data/models/<slug>/` → **clear cache entry** |
+| `install_model_file_to(repo, file, dest)` | whisper / faster-whisper / moonshine | same, but to a backend-specific layout |
+| `install_snapshot(repo)` | whole-repo engines (minimax, stable-audio, generic) | snapshot copy → clear repo cache |
+| `resolve_model_file(repo, file)` | runtime loaders | app folder first, install if missing |
+| `clear_hf_repo_cache(repo)` | after an engine downloads into its own dir | wipes the repo dir incl. blobs |
+| `is_snapshot_installed(repo)` | whole-repo status checks | any weight file under the slug dir |
+
+Two pre-existing bugs this removed: `force_offline_if_cached=True` was
+being passed to `hf_hub_download` as if it were a parameter (it is not —
+every one of those calls raised `TypeError`), and several backends left
+their weights in the HF cache while reading them straight out of it.
+
+### What stays library-managed
+
+`NeuTTS`, `Kokoro(torch)`, `PocketTTS(torch)` and `KittenTTS` receive a
+repo id and resolve internally. Their `_is_model_cached()` still checks
+the app folder so the Models tab is truthful; the loader's own cache use
+is marked in a comment at each call site. If those libraries ever accept
+local directories, converting them is a three-line change per backend.
+
+## Staged startup (`backend/app.py`)
+
+| Tier | Fires | Work |
+|---|---|---|
+| Core (instant) | before readiness | DB init, queue, batch worker → `_signal_ready()` |
+| Tier 1 | +2 s | `/health` snapshot warm-up (torch/CUDA import ≈5-9 s, in a thread) |
+| Tier 2 | +4 s | stale-state cleanup (data-dir scan) + profile/generation counts |
+
+Voice-changer is **not** spawned at boot — `routes/voice_chat.py` calls
+`ensure_vc_spawned()` on first WebSocket connect. The frontend renders
+its shell immediately and shows a one-line status while the backend
+warms up (`router.tsx` no longer blocks the router on `boot.ready`), so
+there is no blank window. A `startup_failed` status still takes over the
+content area with the restart button.
+
+Verified: `/health/ready` answers ~2 s after process start while the
+torch warm-up continues in the background.
+
+## Window
+
+`apply_startup_geometry` always applies `default_size` + centering; the
+saved `window-state.json` is still written on move/resize/close (tracked
+for a future restore opt-in) but never restored. `load_saved` and
+`rect_visible` are kept with `#[allow(dead_code)]`.
+
+`TitleBarDragRegion.tsx` renders minimize/maximize/close buttons on
+Windows (macOS keeps native traffic lights) wired to the Tauri window
+API. Close flows through the existing Rust `CloseRequested` handler,
+which stops the backend before destroying the window.
+
+## Marketplace
+
+Demucs HTDemucs is listed in `marketplace_catalog.py` (`demucs_onnx`,
+free, utilities, 316 MB) and installs into the app folder like every
+other model.

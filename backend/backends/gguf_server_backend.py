@@ -180,13 +180,12 @@ class GGUFServerLLMBackend(BackendBase):
         return self._server is not None and self._server.is_alive
 
     def _is_model_cached(self, model_size: str) -> bool:
-        from huggingface_hub import hf_hub_download
+        from ..services.model_files import is_model_installed
 
         try:
             repo, quant, _is_moe = _gguf_models()[model_size]
             filename = _resolve_gguf_filename(repo, quant)
-            hf_hub_download(repo_id=repo, filename=filename, local_files_only=True)
-            return True
+            return is_model_installed(repo, filename)
         except Exception:
             logger.debug("GGUF planner model not cached", exc_info=True)
             return False
@@ -220,8 +219,6 @@ class GGUFServerLLMBackend(BackendBase):
         await asyncio.to_thread(self._load_model_sync, model_size, ctx_override)
 
     def _load_model_sync(self, model_size: str, ctx_override: int | None = None) -> None:
-        from huggingface_hub import hf_hub_download
-
         from ..utils.hf_offline_patch import force_offline_if_cached
         from ..utils.llm_context import compute_llm_context
         from .base import model_load_progress
@@ -230,10 +227,13 @@ class GGUFServerLLMBackend(BackendBase):
         repo, quant, is_moe = _gguf_models()[model_size]
         n_ctx = compute_llm_context(model_size, override=ctx_override)
 
-        # Model is already verified as cached in load_model(), so load from local cache only
+        # Model is already verified as installed in load_model(), so resolve
+        # from the app folder (never the HF cache).
+        from ..services.model_files import resolve_model_file
+
         filename = _resolve_gguf_filename(repo, quant)
         with model_load_progress(progress_model_name, True), force_offline_if_cached(True, progress_model_name):
-            model_path = hf_hub_download(repo_id=repo, filename=filename, local_files_only=True)
+            model_path = str(resolve_model_file(repo, filename))
 
         from ..services.settings import (
             get_assistant_gpu_layers,

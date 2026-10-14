@@ -96,14 +96,16 @@ class FishSpeechS2Backend:
         self.load_error: str | None = None
 
     def _is_model_cached(self) -> bool:
-        from .base import is_model_cached
+        from ..services.model_files import is_model_installed
 
-        return is_model_cached(S2_CPP_REPO, required_files=[S2_CPP_GGUF_DEFAULT, S2_CPP_TOKENIZER])
+        return is_model_installed(S2_CPP_REPO, S2_CPP_GGUF_DEFAULT) and is_model_installed(
+            S2_CPP_REPO, S2_CPP_TOKENIZER
+        )
 
     def _local_file(self, filename: str) -> str:
-        from huggingface_hub import hf_hub_download
+        from ..services.model_files import resolve_model_file
 
-        return hf_hub_download(repo_id=S2_CPP_REPO, filename=filename, force_offline_if_cached=True)
+        return str(resolve_model_file(S2_CPP_REPO, filename))
 
     def _get_model_path(self, model_size: str) -> str:
         return self._local_file(S2_CPP_GGUF_DEFAULT)

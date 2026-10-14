@@ -46,14 +46,13 @@ class NeuTTSBackend(BackendBase):
         return self.tts is not None
 
     def _is_model_cached(self) -> bool:
-        from huggingface_hub import hf_hub_download
+        # App folder is the source of truth (installed via the Models tab;
+        # the HF cache is never read as a fallback). NOTE: the third-party
+        # NeuTTS loader itself resolves by repo id internally, so its own
+        # cache behavior is library-managed.
+        from ..services.model_files import is_model_installed
 
-        try:
-            hf_hub_download(repo_id=BACKBONE_REPO, filename="neutts-air-q4_0.gguf", local_files_only=True)
-            return True
-        except Exception:
-            logger.debug("NeuTTS model not cached", exc_info=True)
-            return False
+        return is_model_installed(BACKBONE_REPO, "neutts-air-q4_0.gguf")
 
     async def load_model(self, model_size: str = "default") -> None:
         if self.tts is not None:
@@ -179,18 +178,15 @@ class NeuTTS2EBackend(BackendBase):
         return self.tts is not None
 
     def _is_model_cached(self, model_size: str | None = None) -> bool:
-        from huggingface_hub import hf_hub_download
+        # Same app-folder rule as above; the NeuTTS-2E loader resolves by
+        # repo id internally (library-managed).
+        from ..services.model_files import is_model_installed
 
         quant = model_size or "q4"
         repo = self._QUANT_REPOS.get(quant, self._QUANT_REPOS["q4"])
         # Filename uses uppercase quant: neutts-2e-Q4_0.gguf, neutts-2e-Q8_0.gguf
         filename = f"neutts-2e-{quant.upper()}_0.gguf"
-        try:
-            hf_hub_download(repo_id=repo, filename=filename, local_files_only=True)
-            return True
-        except Exception:
-            logger.debug("NeuTTS-2E model not cached", exc_info=True)
-            return False
+        return is_model_installed(repo, filename)
 
     async def load_model(self, model_size: str = "q4") -> None:
         if self.tts is not None:

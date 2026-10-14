@@ -292,16 +292,15 @@ def test_download_fetches_single_gguf(monkeypatch):
     import asyncio
     from types import SimpleNamespace
 
-    import huggingface_hub
-
+    import backend.services.model_files as model_files
     from backend.routes.models import download as dl
     from backend.utils.hf_progress import HFProgressTracker
 
     fetched = []
     monkeypatch.setattr(
-        huggingface_hub,
-        "hf_hub_download",
-        lambda repo_id, filename: fetched.append((repo_id, filename)) or "/cache/x.gguf",
+        model_files,
+        "install_model_file",
+        lambda repo_id, filename, **kw: fetched.append((repo_id, filename)) or "/app/models/x.gguf",
     )
     cfg = SimpleNamespace(engine="heartmula", hf_repo_id="audio-cpp/audio.cpp-gguf")
     asyncio.run(dl._download_model_files(cfg, "heartmula-3b", HFProgressTracker(), None))

@@ -13,7 +13,6 @@ ranked lightest-first so the auto-selected engine uses the least resources.
 
 import logging
 from functools import lru_cache
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -215,20 +214,19 @@ def get_tts_preference_order() -> list[str]:
 
 
 def _hf_repo_cached(repo_id: str) -> bool:
-    """True if the HuggingFace repo has model files in the local cache."""
+    """True if the repo's weights live in the app's own models folder.
+
+    The HuggingFace cache is never read as a fallback: installs copy
+    weights into data/models/ and clear the cache entry.
+    """
     if not repo_id:
         return False
     try:
-        from huggingface_hub import constants as hf_constants
+        from ..services.model_files import is_snapshot_installed
 
-        repo_cache = Path(hf_constants.HF_HUB_CACHE) / ("models--" + repo_id.replace("/", "--"))
-        if not repo_cache.exists():
-            return False
-        return any(
-            repo_cache.rglob(pattern) for pattern in ("*.bin", "*.safetensors", "*.pt", "*.pth", "*.gguf", "*.onnx")
-        )
+        return is_snapshot_installed(repo_id)
     except Exception:
-        logger.debug("HF cache check failed for %s", repo_id, exc_info=True)
+        logger.debug("App-folder check failed for %s", repo_id, exc_info=True)
         return False
 
 

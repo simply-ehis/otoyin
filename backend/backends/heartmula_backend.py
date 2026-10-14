@@ -91,14 +91,14 @@ class HeartMuLaBackend:
     # -- cache / path resolution -------------------------------------------
 
     def _is_model_cached(self) -> bool:
-        from .base import is_model_cached
+        from ..services.model_files import is_model_installed
 
-        return is_model_cached(HF_REPO, required_files=[HEARTMULA_GGUF])
+        return is_model_installed(HF_REPO, HEARTMULA_GGUF)
 
     def _local_gguf(self) -> str:
-        from huggingface_hub import hf_hub_download
+        from ..services.model_files import resolve_model_file
 
-        return hf_hub_download(repo_id=HF_REPO, filename=HEARTMULA_GGUF, force_offline_if_cached=True)
+        return str(resolve_model_file(HF_REPO, HEARTMULA_GGUF))
 
     def _model_dir(self) -> str:
         """audio.cpp loads a family GGUF from the directory it is given."""

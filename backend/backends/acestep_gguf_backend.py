@@ -80,9 +80,10 @@ def find_ace_synth() -> Path | None:
 
 
 def _local_file(filename: str) -> str:
-    from huggingface_hub import hf_hub_download
+    # Module-level helper: single-dot import (this file IS backend/backends/).
+    from ..services.model_files import resolve_model_file
 
-    return hf_hub_download(repo_id=HF_REPO, filename=filename, force_offline_if_cached=True)
+    return str(resolve_model_file(HF_REPO, filename))
 
 
 class AceStepGGUFBackend(BackendBase):
@@ -122,6 +123,9 @@ class AceStepGGUFBackend(BackendBase):
                     shutil.copy2(src, dest)
                 except Exception as e:
                     logger.warning("Failed to download %s: %s", filename, e)
+        from ..services.model_files import clear_hf_repo_cache
+
+        clear_hf_repo_cache(HF_REPO)
 
     def _models_cached(self) -> bool:
         return all((self._models_dir() / f).exists() for f in ALL_MODEL_FILES)

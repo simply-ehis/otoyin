@@ -463,27 +463,49 @@ async def _run_startup(application: FastAPI) -> None:
     except Exception as exc:
         logger.warning("Batch worker failed to start (generations may queue but not process): %s", exc)
 
-    # Run comprehensive startup stale-state detection and cleanup.
-    # Purges leftover sentinels, orphaned records, stale autosave snapshots,
-    # and orphaned audio files left behind by crashed/killed sessions.
-    db = next(get_db())
-    try:
-        from .utils.startup_cleanup import purge_stale_state
+    # -- Signal readiness -------------------------------------------------
+    # Core is instant: DB + queue + worker. Everything else rolls out in
+    # staged background tiers so the app is usable immediately.
+    _signal_ready()
 
-        purge_stale_state(db, config.get_data_dir())
+    # Tier 1 (+2 s): warm the health snapshot (torch/CUDA init, ~5.9 s cold).
+    # Runs in a thread because every probe inside is blocking.
+    async def _tier1_health_warm() -> None:
+        await asyncio.sleep(2.0)
+        try:
+            import time as _time
 
-        from .database import Generation as DBGeneration, VoiceProfile as DBVoiceProfile
+            warm_t0 = _time.perf_counter()
+            await asyncio.to_thread(_warm_health_snapshot)
+            logger.info("Health snapshot warmed in %.0f ms", (_time.perf_counter() - warm_t0) * 1000)
+        except Exception as e:
+            logger.warning("Health snapshot warm-up skipped: %s", e, exc_info=True)
 
-        profile_count = db.query(DBVoiceProfile).count()
-        generation_count = db.query(DBGeneration).count()
-        logger.info("Profiles: %d, Generations: %d", profile_count, generation_count)
+    create_background_task(_tier1_health_warm())
 
-        db.commit()
-    except Exception as e:
-        db.rollback()
-        logger.warning("Startup cleanup failed: %s", e)
-    finally:
-        db.close()
+    # Tier 2 (+4 s): stale-state cleanup (file scan over the data dir).
+    async def _tier2_cleanup() -> None:
+        await asyncio.sleep(4.0)
+        db = next(get_db())
+        try:
+            from .utils.startup_cleanup import purge_stale_state
+
+            purge_stale_state(db, config.get_data_dir())
+
+            from .database import Generation as DBGeneration, VoiceProfile as DBVoiceProfile
+
+            profile_count = db.query(DBVoiceProfile).count()
+            generation_count = db.query(DBGeneration).count()
+            logger.info("Profiles: %d, Generations: %d", profile_count, generation_count)
+
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            logger.warning("Startup cleanup failed: %s", e)
+        finally:
+            db.close()
+
+    create_background_task(_tier2_cleanup())
 
     from .utils.platform_detect import log_platform_info
 
@@ -503,41 +525,14 @@ async def _run_startup(application: FastAPI) -> None:
     except Exception as e:
         logger.warning("Could not create HuggingFace cache directory: %s", e)
 
-    # ── Warm the health snapshot ─────────────────────────────────────────
-    # GET /health probes the GPU (torch/CUDA init) and scans the TTS engine
-    # registry. Cold, that costs ~5.9 s and used to happen inside the first
-    # request, freezing the event loop and making the app look hung right
-    # after launch. Warm it here — before readiness — so the first client
-    # request is served in single-digit milliseconds. Runs in a thread
-    # because every probe inside is blocking.
-    try:
-        import time as _time
-
-        warm_t0 = _time.perf_counter()
-        await asyncio.to_thread(_warm_health_snapshot)
-        logger.info("Health snapshot warmed in %.0f ms", (_time.perf_counter() - warm_t0) * 1000)
-    except Exception as e:
-        # Warning, not debug: a skipped warm-up means the first /health request
-        # pays ~6 s of blocking work, which is exactly what this prevents.
-        logger.warning("Health snapshot warm-up skipped: %s", e, exc_info=True)
-
-    # ── Signal readiness ────────────────────────────────────────────────
-    # Server is ready to accept requests after DB + queue + cleanup.
-    # Engine registration, MCP build, preloads all happen lazily on first use.
-    _signal_ready()
-
     try:
         progress_manager = get_progress_manager()
         progress_manager._set_main_loop(asyncio.get_running_loop())
     except Exception as e:
         logger.warning("Could not initialize progress manager event loop: %s", e)
 
-    # Lazy startup — services initialize on first use via startup_defer.
-    # Voice-changer spawn (already gated on settings, kept here for
-    # backward compat with the startup sequence).
-    from .utils.startup_defer import ensure_vc_spawned
-
-    create_background_task(ensure_vc_spawned())
+    # Voice-changer is NOT spawned at boot - it starts on first use via
+    # voice_chat.py's ensure_vc_spawned() call.
 
     from .utils.memory import available_mb, get_system_total_mb
 

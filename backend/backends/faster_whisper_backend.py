@@ -96,6 +96,9 @@ class FasterWhisperSTTBackend(BackendBase):
         import shutil
 
         shutil.copy2(cached, dest)
+        from ..services.model_files import clear_hf_repo_cache
+
+        clear_hf_repo_cache(f"{HF_REPO_PREFIX}{model_size}")
         logger.info("faster-whisper model cached at %s", dest)
         return str(dest)
 

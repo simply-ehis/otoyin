@@ -52,9 +52,9 @@ def find_crispasr() -> Path | None:
 
 
 def _local_file(repo: str, filename: str) -> str:
-    from huggingface_hub import hf_hub_download
+    from ..services.model_files import resolve_model_file
 
-    return hf_hub_download(repo_id=repo, filename=filename, force_offline_if_cached=True)
+    return str(resolve_model_file(repo, filename))
 
 
 def build_tts_args(
@@ -107,9 +107,9 @@ class ZonosGGUFBackend:
     # -- cache / path resolution -------------------------------------------
 
     def _is_model_cached(self) -> bool:
-        from .base import is_model_cached
+        from ..services.model_files import is_model_installed
 
-        return is_model_cached(HF_REPO, required_files=[f"zonos-v0.1-transformer-{BACKBONE_QUANT}.gguf"])
+        return is_model_installed(HF_REPO, f"zonos-v0.1-transformer-{BACKBONE_QUANT}.gguf")
 
     def _get_backbone_path(self) -> str:
         return _local_file(HF_REPO, f"zonos-v0.1-transformer-{BACKBONE_QUANT}.gguf")

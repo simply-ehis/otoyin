@@ -56,11 +56,11 @@ def _bundled_model_path() -> Path | None:
 
 
 def _is_model_cached() -> bool:
-    from ..backends.base import is_model_cached
+    from .model_files import is_model_installed
 
     if _bundled_model_path() is not None:
         return True
-    return is_model_cached(ONNX_REPO, required_files=[ONNX_FILE])
+    return is_model_installed(ONNX_REPO, ONNX_FILE)
 
 
 _session = None
@@ -95,9 +95,9 @@ def _get_session():
 
     model_path = _bundled_model_path()
     if model_path is None:
-        from huggingface_hub import hf_hub_download
+        from .model_files import resolve_model_file
 
-        model_path = hf_hub_download(ONNX_REPO, ONNX_FILE, local_files_only=True)
+        model_path = resolve_model_file(ONNX_REPO, ONNX_FILE)
     _session = ort.InferenceSession(model_path)
     logger.info("DeepFilterNet ONNX loaded")
     return _session

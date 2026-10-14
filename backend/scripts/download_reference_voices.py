@@ -366,6 +366,19 @@ def download_voices():
     manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
     logger.info("Manifest written to %s", manifest_path)
 
+    # Standalone script (no package context): clear the HF zip from the
+    # cache directly so only the extracted app-folder copies remain.
+    try:
+        import shutil
+
+        from huggingface_hub import constants as hf_constants
+
+        repo_cache = Path(hf_constants.HF_HUB_CACHE) / ("models--" + HF_REPO.replace("/", "--"))
+        if repo_cache.is_dir():
+            shutil.rmtree(repo_cache, ignore_errors=True)
+    except Exception:
+        logger.debug("Reference-voices cache cleanup skipped", exc_info=True)
+
     count = len(manifest["voices"])
     logger.info("Done! %d reference voices ready.", count)
     return count

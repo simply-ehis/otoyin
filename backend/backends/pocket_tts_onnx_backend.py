@@ -55,11 +55,12 @@ def _resolve_bundle_dir() -> str:
     """
     from pathlib import Path
 
-    from huggingface_hub import hf_hub_download
+    from ..services.model_files import install_model_file
 
-    # marker = <snapshot>/onnx/<language>/bundle.json → bundle root is its
-    # grandparent (<snapshot>/onnx).
-    marker = hf_hub_download(ONNX_REPO, f"onnx/{DEFAULT_LANGUAGE}/bundle.json")
+    # marker = <app-folder>/onnx/<language>/bundle.json → bundle root is its
+    # grandparent (<app-folder>/onnx). Installed (HF cache cleared),
+    # never read from the cache.
+    marker = install_model_file(ONNX_REPO, f"onnx/{DEFAULT_LANGUAGE}/bundle.json")
     return str(Path(marker).parent.parent)
 
 
@@ -78,10 +79,9 @@ class PocketTTSOnnxBackend(BackendBase):
         return ONNX_REPO
 
     def _is_model_cached(self, model_size: str = "default") -> bool:
-        return is_model_cached(
-            ONNX_REPO,
-            required_files=[f"onnx/{DEFAULT_LANGUAGE}/bundle.json"],
-        )
+        from ..services.model_files import is_model_installed
+
+        return is_model_installed(ONNX_REPO, f"onnx/{DEFAULT_LANGUAGE}/bundle.json")
 
     async def load_model(self, model_size: str = "default") -> None:
         if self._engine is not None:

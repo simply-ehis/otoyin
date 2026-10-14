@@ -122,16 +122,11 @@ class OrpheusBackend(BackendBase):
         return self.llm is not None and self.llm.is_alive
 
     def _is_model_cached(self, model_size: str | None = None) -> bool:
-        from huggingface_hub import hf_hub_download
+        from ..services.model_files import is_model_installed
 
         quant = model_size or "Q4_K_M"
         repo, filename = GGUF_REPOS.get(quant, GGUF_REPOS["Q4_K_M"])
-        try:
-            hf_hub_download(repo_id=repo, filename=filename, local_files_only=True)
-            return True
-        except Exception:
-            logger.debug("Orpheus model not cached", exc_info=True)
-            return False
+        return is_model_installed(repo, filename)
 
     async def load_model(self, model_size: str = "Q8_0") -> None:
         # Guard on is_loaded() (sidecar health), not just a non-None handle,
@@ -152,18 +147,23 @@ class OrpheusBackend(BackendBase):
         stream first-run progress to the client). ``quant`` defaults to Q4_K_M
         so cache checks from callers that don't pin a quant still work.
         """
-        from huggingface_hub import hf_hub_download
+        from ..services.model_files import install_model_file, resolve_model_file
 
         quant = quant or "Q4_K_M"
         if quant not in GGUF_REPOS:
             raise ValueError(f"Unknown Orpheus quant: {quant}. Use Q4_K_M or Q8_0.")
         repo, filename = GGUF_REPOS[quant]
-        kwargs: dict = {}
         if progress_cb is not None:
-            kwargs["progress_callbacks"] = [
-                lambda p: progress_cb(getattr(p, "completed", 0) or 0, getattr(p, "total", 0) or 0)
-            ]
-        return hf_hub_download(repo_id=repo, filename=filename, **kwargs)
+            return str(
+                install_model_file(
+                    repo,
+                    filename,
+                    progress_callbacks=[
+                        lambda p: progress_cb(getattr(p, "completed", 0) or 0, getattr(p, "total", 0) or 0)
+                    ],
+                )
+            )
+        return str(resolve_model_file(repo, filename))
 
     def _start_server(self, quant: str, model_path: str) -> None:
         """Spawn the llama.cpp server sidecar serving the GGUF."""
@@ -206,9 +206,10 @@ class OrpheusBackend(BackendBase):
         """Load the SNAC 24kHz decoder — onnxruntime first, torch as fallback."""
         try:
             import onnxruntime as ort
-            from huggingface_hub import hf_hub_download
 
-            snac_path = hf_hub_download(repo_id=SNAC_REPO, filename=SNAC_FILENAME)
+            from ..services.model_files import resolve_model_file
+
+            snac_path = str(resolve_model_file(SNAC_REPO, SNAC_FILENAME))
             self._snac_session = ort.InferenceSession(snac_path, providers=["CPUExecutionProvider"])
             self._snac_backend_name = "onnx"
             self._decode_fn = self._decode_with_onnx

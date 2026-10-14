@@ -158,13 +158,14 @@ class KokoroTTSBackend(BackendBase):
         return KOKORO_HF_REPO
 
     def _is_model_cached(self, model_size: str = "default") -> bool:
-        """Check if Kokoro model files are cached locally."""
-        from .base import is_model_cached
+        """Check if Kokoro model files are in the app folder.
 
-        return is_model_cached(
-            KOKORO_HF_REPO,
-            required_files=["config.json", "kokoro-v1_0.pth"],
-        )
+        NOTE: the third-party kokoro loader (KModel/KPipeline) resolves by
+        repo id internally, so its own cache behavior is library-managed.
+        """
+        from ..services.model_files import is_snapshot_installed
+
+        return is_snapshot_installed(KOKORO_HF_REPO)
 
     async def load_model(self, model_size: str = "default") -> None:
         """Load the Kokoro model."""

@@ -134,6 +134,9 @@ class RVCOnnxBackend(BackendBase):
             except Exception:
                 src = hf_hub_download(repo_id=BASE_REPO, filename=RMVPE_FILE_Q8)
                 shutil.copy2(src, rmvpe_path)
+        from ..services.model_files import clear_hf_repo_cache
+
+        clear_hf_repo_cache(BASE_REPO)
 
     def _load_base_sessions(self) -> None:
         """Load ONNX sessions for ContentVec and RMVPE."""

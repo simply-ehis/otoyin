@@ -60,10 +60,10 @@ class KittenTTSOnnxBackend(BackendBase):
         return self._engine.available_voices
 
     def _is_model_cached(self, model_size: str = "default") -> bool:
-        from .base import is_model_cached
+        from ..services.model_files import is_model_installed
 
         repo = KITTEN_REPOS[self._size]
-        return is_model_cached(repo, required_files=["config.json", "voices.npz"])
+        return is_model_installed(repo, "config.json") and is_model_installed(repo, "voices.npz")
 
     async def load_model(self, model_size: str = "default") -> None:
         if self._engine is not None:

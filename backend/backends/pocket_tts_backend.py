@@ -14,7 +14,6 @@ import numpy as np
 
 from .base import (
     BackendBase,
-    is_model_cached,
     model_load_progress,
 )
 
@@ -61,7 +60,11 @@ class PocketTTSBackend(BackendBase):
         return POCKET_HF_REPO
 
     def _is_model_cached(self, model_size: str = "default") -> bool:
-        return is_model_cached(POCKET_HF_REPO)
+        # NOTE: pocket_tts.TTSModel.load_model() resolves internally
+        # (library-managed cache); the app layers check the app folder.
+        from ..services.model_files import is_snapshot_installed
+
+        return is_snapshot_installed(POCKET_HF_REPO)
 
     async def load_model(self, model_size: str = "default") -> None:
         if self.model is not None:

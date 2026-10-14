@@ -444,13 +444,18 @@ def build_server(cuda=False):
     # denoiser is silently skipped for every installer user. Stem separation
     # (Demucs, 300 MB) is deliberately NOT bundled — too large to ship; it
     # stays a first-run download.
-    _deepfilter_src = None
+    # Source of truth is the app folder (populated by
+    # download_required_models.py); HF is only the fallback fetch.
+    _deepfilter_src = backend_dir / "data" / "models" / "soniqo--DeepFilterNet3-ONNX" / "deepfilter.onnx"
+    if not _deepfilter_src.is_file():
+        _deepfilter_src = None
     try:
-        from huggingface_hub import hf_hub_download
+        if _deepfilter_src is None:
+            from huggingface_hub import hf_hub_download
 
-        _deepfilter_src = Path(
-            hf_hub_download(repo_id="soniqo/DeepFilterNet3-ONNX", filename="deepfilter.onnx")
-        )
+            _deepfilter_src = Path(
+                hf_hub_download(repo_id="soniqo/DeepFilterNet3-ONNX", filename="deepfilter.onnx")
+            )
     except Exception as exc:
         logger.warning("DeepFilterNet fetch failed (%s) — denoise will be unavailable", exc)
     if _deepfilter_src is not None and _deepfilter_src.is_file():

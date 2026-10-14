@@ -250,12 +250,13 @@ def test_subprocess_engine_skips_vram():
 def test_download_fetches_gguf_and_tokenizer(monkeypatch):
     fetched = []
 
-    def fake_download(repo_id, filename, **kwargs):
+    def fake_install(repo_id, filename, **kwargs):
         fetched.append(filename)
+        return "/app/models/x.gguf"
 
-    import huggingface_hub
+    import backend.services.model_files as model_files
 
-    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_download)
+    monkeypatch.setattr(model_files, "install_model_file", fake_install)
     import asyncio
 
     from backend.routes.models import download as dl

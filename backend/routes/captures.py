@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 
 from .. import config, models
 from ..backends import get_llm_model_configs, get_stt_model_configs
-from ..backends.base import is_model_cached
 from ..database import Capture as DBCapture, get_db
 from ..errors import (
     ERR_AUDIO_NOT_FOUND,
@@ -24,6 +23,7 @@ from ..errors import (
 )
 from ..services import captures as captures_service, settings as settings_service
 from ..services.chapters import build_chapters
+from ..services.model_files import is_snapshot_installed
 from ..services.refinement import RefinementFlags
 from ..services.scribe_json import words_json_path
 
@@ -252,7 +252,7 @@ async def capture_readiness_endpoint(db: Session = Depends(get_db)):
             )
             if stt_cfg is None
             else models.ModelReadiness(
-                ready=is_model_cached(stt_cfg.hf_repo_id),
+                ready=is_snapshot_installed(stt_cfg.hf_repo_id),
                 model_name=stt_cfg.model_name,
                 display_name=stt_cfg.display_name,
                 size=stt_cfg.model_size,
@@ -267,7 +267,7 @@ async def capture_readiness_endpoint(db: Session = Depends(get_db)):
             )
             if llm_cfg is None
             else models.ModelReadiness(
-                ready=is_model_cached(llm_cfg.hf_repo_id),
+                ready=is_snapshot_installed(llm_cfg.hf_repo_id),
                 model_name=llm_cfg.model_name,
                 display_name=llm_cfg.display_name,
                 size=llm_cfg.model_size,
@@ -277,14 +277,14 @@ async def capture_readiness_endpoint(db: Session = Depends(get_db)):
 
     return models.CaptureReadinessResponse(
         stt=models.ModelReadiness(
-            ready=is_model_cached(stt_cfg.hf_repo_id),
+            ready=is_snapshot_installed(stt_cfg.hf_repo_id),
             model_name=stt_cfg.model_name,
             display_name=stt_cfg.display_name,
             size=stt_cfg.model_size,
             size_mb=stt_cfg.size_mb or None,
         ),
         llm=models.ModelReadiness(
-            ready=is_model_cached(llm_cfg.hf_repo_id),
+            ready=is_snapshot_installed(llm_cfg.hf_repo_id),
             model_name=llm_cfg.model_name,
             display_name=llm_cfg.display_name,
             size=llm_cfg.model_size,

@@ -60,10 +60,10 @@ class MossTTSNanoOnnxBackend(BackendBase):
         return self._engine is not None
 
     def _is_model_cached(self, model_size: str = "default") -> bool:
-        from .base import is_model_cached
+        from ..services.model_files import is_model_installed
 
-        return is_model_cached(ONNX_REPO_TTS, required_files=ONNX_COMPONENTS) and is_model_cached(
-            ONNX_REPO_CODEC, required_files=["codec_browser_onnx_meta.json"]
+        return all(is_model_installed(ONNX_REPO_TTS, name) for name in ONNX_COMPONENTS) and (
+            is_model_installed(ONNX_REPO_CODEC, "codec_browser_onnx_meta.json")
         )
 
     async def load_model(self, model_size: str = "default") -> None:
@@ -81,16 +81,16 @@ class MossTTSNanoOnnxBackend(BackendBase):
             logger.info("MOSS-TTS-Nano ONNX loaded")
 
     def _do_load(self) -> MossTTSNanoOnnx:
-        from huggingface_hub import hf_hub_download
+        from ..services.model_files import resolve_model_file
 
         tts_dir = None
         for name in ("browser_poc_manifest.json", "tts_browser_onnx_meta.json", "tokenizer.model"):
-            path = hf_hub_download(ONNX_REPO_TTS, name)
+            path = resolve_model_file(ONNX_REPO_TTS, name)
             if tts_dir is None:
                 tts_dir = str(Path(path).parent)
         codec_dir = None
         for name in ("codec_browser_onnx_meta.json",):
-            path = hf_hub_download(ONNX_REPO_CODEC, name)
+            path = resolve_model_file(ONNX_REPO_CODEC, name)
             if codec_dir is None:
                 codec_dir = str(Path(path).parent)
 

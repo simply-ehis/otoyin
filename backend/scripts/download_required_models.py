@@ -41,30 +41,24 @@ RUNTIME_WEIGHTS = [
 ]
 
 
-def _is_cached(repo_id: str, filename: str) -> bool:
-    """Return True if the file is fully present in the local HF cache."""
-    from huggingface_hub import hf_hub_download
-
-    try:
-        hf_hub_download(repo_id=repo_id, filename=filename, local_files_only=True)
-        return True
-    except Exception:
-        return False
-
-
 def download_required() -> int:
-    """Download bundled weights. Returns the number of files fetched."""
-    from huggingface_hub import hf_hub_download
+    """Install required weights into the app folder (HF cache cleared).
+
+    The app folder is the source of truth: build_binary.py stages bundled
+    weights from data/models/, and runtime resolution never reads the HF
+    cache as a fallback.
+    """
+    from ..services.model_files import install_model_file, is_model_installed
 
     fetched = 0
     for entry in [*BUNDLED_WEIGHTS, *RUNTIME_WEIGHTS]:
         repo_id = entry["repo_id"]
         filename = entry["filename"]
         label = entry["label"]
-        if _is_cached(repo_id, filename):
+        if is_model_installed(repo_id, filename):
             print(f"  [cached] {label}")
         else:
-            hf_hub_download(repo_id=repo_id, filename=filename)
+            install_model_file(repo_id, filename)
             print(f"  [fetched] {label}")
             fetched += 1
 

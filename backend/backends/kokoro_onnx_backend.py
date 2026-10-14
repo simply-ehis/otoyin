@@ -28,7 +28,6 @@ import threading
 from typing import Any
 
 import numpy as np
-from huggingface_hub import hf_hub_download
 
 from ..utils.chunked_tts import concatenate_audio_chunks, split_text_into_chunks
 from .base import (
@@ -185,12 +184,11 @@ class KokoroONNXBackend(BackendBase):
             if resolved is not None:
                 return resolved[0], self._resolve_voices_path()
 
-        # Fallback: the HF mirror (fp32 only).
-        model_fp32 = hf_hub_download(
-            repo_id=KOKORO_ONNX_REPO,
-            filename=KOKORO_ONNX_MODEL_FILE,
-            local_files_only=True,
-        )
+        # Fallback: the HF mirror (fp32 only), installed into the app
+        # folder (HF cache entry cleared) - never read from the cache.
+        from ..services.model_files import install_model_file
+
+        model_fp32 = str(install_model_file(KOKORO_ONNX_REPO, KOKORO_ONNX_MODEL_FILE))
         from ._onnx_precision import resolve_session_path
 
         model_path, _precision = resolve_session_path(os.path.dirname(model_fp32), "kokoro-v1.0")
@@ -208,29 +206,11 @@ class KokoroONNXBackend(BackendBase):
         return self._voices_local_path()
 
     def _voices_local_path(self) -> str:
-        return os.path.join(
-            os.path.expanduser("~"),
-            ".cache",
-            "huggingface",
-            "hub",
-            f"models--{KOKORO_ONNX_REPO.replace('/', '--')}",
-            "snapshots",
-            "onnx-voices",
-            KOKORO_ONNX_VOICES_FILE,
-        )
+        # App folder (alongside the graph variants) - never the HF cache.
+        return os.path.join(self._variants_root(), KOKORO_ONNX_VOICES_FILE)
 
     def _voices_cached_path(self) -> str | None:
-        """Return a voices path only if the file is already on disk."""
-        try:
-            hf_path = hf_hub_download(
-                repo_id=KOKORO_ONNX_REPO,
-                filename=KOKORO_ONNX_VOICES_FILE,
-                local_files_only=True,
-            )
-            if os.path.getsize(hf_path) > 1_000_000:
-                return hf_path
-        except Exception:
-            logger.debug("Kokoro ONNX voices not in HF cache", exc_info=True)
+        """Return the app-folder voices path only if already on disk."""
         local = self._voices_local_path()
         if os.path.exists(local) and os.path.getsize(local) > 1_000_000:
             return local
@@ -268,9 +248,9 @@ class KokoroONNXBackend(BackendBase):
         if self._cached_variant() is not None:
             return True
 
-        from .base import is_model_cached
+        from ..services.model_files import is_model_installed
 
-        return is_model_cached(KOKORO_ONNX_REPO, required_files=[KOKORO_ONNX_MODEL_FILE])
+        return is_model_installed(KOKORO_ONNX_REPO, KOKORO_ONNX_MODEL_FILE)
 
     async def load_model(self, model_size: str = "default") -> None:
         if self._model is not None:

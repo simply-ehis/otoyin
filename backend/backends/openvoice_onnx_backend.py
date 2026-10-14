@@ -64,6 +64,9 @@ class OpenVoiceOnnxBackend(BackendBase):
                     shutil.copy2(src, dest)
                 except Exception as e:
                     logger.warning("Failed to download %s: %s", filename, e)
+        from ..services.model_files import clear_hf_repo_cache
+
+        clear_hf_repo_cache(ONNX_REPO)
 
     def _load_sessions(self) -> None:
         """Load ONNX sessions for tone extraction and color transfer."""

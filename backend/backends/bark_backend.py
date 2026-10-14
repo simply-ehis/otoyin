@@ -128,14 +128,14 @@ class BarkBackend:
     # -- cache / path resolution -------------------------------------------
 
     def _is_model_cached(self) -> bool:
-        from .base import is_model_cached
+        from ..services.model_files import is_model_installed
 
-        return is_model_cached(HF_REPO, required_files=[f"bark-small-{BACKBONE_QUANT}.gguf"])
+        return is_model_installed(HF_REPO, f"bark-small-{BACKBONE_QUANT}.gguf")
 
     def _local_file(self, filename: str) -> str:
-        from huggingface_hub import hf_hub_download
+        from ..services.model_files import resolve_model_file
 
-        return hf_hub_download(repo_id=HF_REPO, filename=filename, force_offline_if_cached=True)
+        return str(resolve_model_file(HF_REPO, filename))
 
     def _get_model_path(self, model_size: str) -> str:
         return self._local_file(f"bark-small-{BACKBONE_QUANT}.gguf")
@@ -149,15 +149,15 @@ class BarkBackend:
         expects a *stored* (uncompressed) zip of plain npy blobs — hence
         ``np.savez`` rather than ``np.savez_compressed``.
         """
-        from huggingface_hub import hf_hub_download
-
         out = voice_npz_path(voice_id)
         if out.exists():
             return out
 
         arrays: dict[str, np.ndarray] = {}
         for filename in voice_npy_filenames(voice_id):
-            path = hf_hub_download(repo_id=VOICES_REPO, filename=filename, force_offline_if_cached=True)
+            from ..services.model_files import install_model_file
+
+            path = str(install_model_file(VOICES_REPO, filename))
             # The CrispASR parser matches exact member names
             # ("semantic_prompt" / "coarse_prompt" / "fine_prompt"), so we
             # keep only the kind part of the source filename.

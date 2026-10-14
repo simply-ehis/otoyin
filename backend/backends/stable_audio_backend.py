@@ -1,10 +1,11 @@
 """Stable Audio Open SFX generation backend."""
 
 import importlib
+from pathlib import Path
 
 import numpy as np
 
-from .base import BackendBase, ModelNotCachedError, is_model_cached
+from .base import BackendBase, ModelNotCachedError
 
 STABLE_AUDIO_HF_REPO = "StabilityAI/stable-audio-open-1.0"
 
@@ -24,15 +25,21 @@ class StableAudioBackend(BackendBase):
         import torch
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        from ..services.model_files import app_snapshot_dir, is_snapshot_installed
+
         repo = self.model_path or STABLE_AUDIO_HF_REPO
-        if not is_model_cached(repo):
+        if self.model_path:
+            local_dir = Path(self.model_path)
+        else:
+            local_dir = app_snapshot_dir(repo)
+        if not local_dir.is_dir() or not is_snapshot_installed(repo):
             raise ModelNotCachedError(
                 f"Model '{repo}' is not downloaded. Use the Model Downloads page to download it first."
             )
         try:
             from stable_audio_open import StableAudioPipeline
 
-            self.model = StableAudioPipeline.from_pretrained(repo).to(self.device)
+            self.model = StableAudioPipeline.from_pretrained(str(local_dir)).to(self.device)
         except ImportError as exc:
             raise RuntimeError("Stable Audio Open not installed. Install with: pip install stable-audio-open") from exc
 

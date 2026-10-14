@@ -322,19 +322,19 @@ def test_download_fetches_gguf_and_packs_voices(monkeypatch):
     fetched = []
     packed = []
 
-    def fake_download(repo_id, filename, **kwargs):
+    def fake_install(repo_id, filename, **kwargs):
         fetched.append(filename)
+        return "/app/models/x.gguf"
 
     def fake_resolve(repo_id, quant_tag):
         return "bark-small-q4_k.gguf"
 
     # download.py imports these inside the function body — patch the sources.
-    import huggingface_hub
-
     import backend.backends.gguf_server_backend as gguf_srv
+    import backend.services.model_files as model_files
 
     monkeypatch.setattr(gguf_srv, "_resolve_gguf_filename", fake_resolve)
-    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_download)
+    monkeypatch.setattr(model_files, "install_model_file", fake_install)
     monkeypatch.setattr(bark.bark_backend, "pack_voice_npz", lambda vid: packed.append(vid) or Path("x"))
 
     from backend.routes.models import download as dl

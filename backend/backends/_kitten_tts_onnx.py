@@ -100,18 +100,19 @@ class KittenTTSOnnx:
     """ONNX Runtime inference wrapper for the KittenTTS v0.8 family."""
 
     def __init__(self, model_dir: str, size: str = "mini", providers: list[str] | None = None):
-        from huggingface_hub import hf_hub_download
         from onnxruntime import InferenceSession
 
+        from ..services.model_files import install_model_file
+
         repo = KITTEN_REPOS[size]
-        config_path = hf_hub_download(repo_id=repo, filename="config.json")
+        config_path = install_model_file(repo_id=repo, filename="config.json")
         with open(config_path, encoding="utf-8") as fh:
             config = json.load(fh)
 
         model_file = config["model_file"]
         voices_file = config["voices"]
-        model_path = hf_hub_download(repo_id=repo, filename=model_file)
-        voices_path = hf_hub_download(repo_id=repo, filename=voices_file)
+        model_path = install_model_file(repo_id=repo, filename=model_file)
+        voices_path = install_model_file(repo_id=repo, filename=voices_file)
 
         self._voices = np.load(voices_path)
         self._voice_aliases = config.get("voice_aliases", {})

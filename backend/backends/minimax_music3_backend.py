@@ -73,17 +73,20 @@ class MiniMaxMusic3Backend(BackendBase):
     # ----------------------------------------------------------------- #
 
     def _is_model_cached(self) -> bool:
-        """Check that the model files exist on disk (HF has already been
-        downloaded and the license accepted)."""
-        from .base import is_model_cached
+        """Check that the model files exist in the app folder (installed
+        via the Models tab; the HF cache is never read as a fallback)."""
+        from ..services.model_files import is_snapshot_installed
 
-        return is_model_cached(self.repo_id)
+        return is_snapshot_installed(self.repo_id)
 
     def _local_pipe(self) -> object:
-        """Load the diffusers ModularPipeline from the local cache."""
+        """Load the diffusers ModularPipeline from the app folder."""
+        from ..services.model_files import app_snapshot_dir
+
         diffusers, _torch = _import_diffusers()
 
-        pipe = diffusers.ModularPipeline.from_pretrained(self.repo_id, device="cpu", offload_text_encoder=True)
+        local_dir = app_snapshot_dir(self.repo_id)
+        pipe = diffusers.ModularPipeline.from_pretrained(str(local_dir), device="cpu", offload_text_encoder=True)
         return pipe
 
     # ----------------------------------------------------------------- #

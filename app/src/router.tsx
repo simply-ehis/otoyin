@@ -486,35 +486,37 @@ function RootLayout() {
 						<TabIntroMount />
 					</ErrorBoundary>
 					<div className="container mx-auto px-4 max-w-[1800px] h-full overflow-hidden flex flex-col">
-						{boot.ready ? (
+						{!boot.ready && boot.status !== "startup_failed" && (
+							<output className="py-1 text-center text-xs text-muted-foreground">
+								{bootLabel}
+							</output>
+						)}
+						{boot.status === "startup_failed" ? (
+							<div className="flex flex-1 flex-col items-center justify-center gap-4">
+								<div className="flex max-w-md flex-col items-center gap-2 text-center">
+									<p className="text-sm text-destructive">
+										{boot.error ?? "The backend reported a startup failure."}
+									</p>
+									{serverMode === "local" && (
+										<Button
+											size="sm"
+											disabled={restartPhase !== "idle"}
+											onClick={() => void restartBackend()}
+											title="Restart the backend process"
+										>
+											{restartPhase === "idle"
+												? "Restart backend"
+												: "Restarting…"}
+										</Button>
+									)}
+								</div>
+							</div>
+						) : (
 							<Suspense fallback={<AppLoadingScreen />}>
 								<ErrorBoundary>
 									<Outlet />
 								</ErrorBoundary>
 							</Suspense>
-						) : (
-							<div className="flex flex-1 flex-col items-center justify-center gap-4">
-								<AppLoadingScreen label={bootLabel} />
-								{boot.status === "startup_failed" && (
-									<div className="flex max-w-md flex-col items-center gap-2 text-center">
-										<p className="text-sm text-destructive">
-											{boot.error ?? "The backend reported a startup failure."}
-										</p>
-										{serverMode === "local" && (
-											<Button
-												size="sm"
-												disabled={restartPhase !== "idle"}
-												onClick={() => void restartBackend()}
-												title="Restart the backend process"
-											>
-												{restartPhase === "idle"
-													? "Restart backend"
-													: "Restarting…"}
-											</Button>
-										)}
-									</div>
-								)}
-							</div>
 						)}
 					</div>
 				</main>

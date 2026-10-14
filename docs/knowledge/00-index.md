@@ -15,7 +15,8 @@ UPDATED: 2026-09-11
 - [85-theme-switching.md](85-theme-switching.md) — Full-coverage light/dark/special tokens, `light`-class invariant.
 - [87-voice-design-offerings.md](87-voice-design-offerings.md) — All-model offerings menu, grouped accent/nationality + style pickers, shared options module.
 - [86-marketplace-utilities.md](86-marketplace-utilities.md) — Utilities shelf at the bottom, pack collapse, category ordering.
-- [90-audit-fixes-2026-10.md](90-audit-fixes-2026-10.md) — 2026-10-14 production audit: fixed findings (undo, playback, SSE, server lifecycle) + deferral reasons.
+- [90-audit-fixes-2026-10.md](90-audit-fixes-2026-10.md) - 2026-10-14 production audit: fixed findings (undo, playback, SSE, server lifecycle) + deferral reasons.
+- [91-app-folder-models-and-staged-startup.md](91-app-folder-models-and-staged-startup.md) - 2026-10-14 model storage in data/models/ only (HF cache cleared, never read), tiered backend startup, default window geometry, title-bar controls.
 
 ## Master Agent-Callable Reference
 

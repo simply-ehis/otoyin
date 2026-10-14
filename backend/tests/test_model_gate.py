@@ -338,13 +338,17 @@ def test_kokoro_onnx_weights_offline(monkeypatch):
     kokoro-onnx GitHub release and cached under data/models/kokoro-onnx. When
     that cache already holds a variant, no download of any kind may happen.
     """
-    import backend.backends.kokoro_onnx_backend as kok
-    from backend.backends.kokoro_onnx_backend import KokoroONNXBackend
+    import huggingface_hub
 
-    def fake_hf(repo_id, filename, **kw):
+    from backend.backends.kokoro_onnx_backend import KokoroONNXBackend
+    from backend.services import model_files
+
+    def fake_hf(*args, **kwargs):
         raise AssertionError("must not hit HF when a cached variant exists")
 
-    monkeypatch.setattr(kok, "hf_hub_download", fake_hf)
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_hf)
+    monkeypatch.setattr(huggingface_hub, "snapshot_download", fake_hf)
+    monkeypatch.setattr(model_files, "install_model_file", lambda *args, **kwargs: fake_hf())
     # Point the variants root at a tmp dir that already holds an int8 graph.
     import tempfile
     from pathlib import Path
@@ -385,61 +389,69 @@ def test_demucs_onnx_config_registered():
     assert product["category"] == "utilities"
 
 
-def test_stem_onnx_offline_and_gate(monkeypatch):
+def test_stem_onnx_offline_and_gate(monkeypatch, tmp_path):
+    """Stem separation resolves from the app folder; HF is never a fallback.
+
+    Installed weights load with zero HF calls; missing weights raise the
+    friendly error, also with zero HF calls (no silent re-download).
+    """
     import huggingface_hub
 
-    from backend.services import stem_separation_onnx as stem
+    from backend.services import model_files, stem_separation_onnx as stem
 
-    calls = []
+    weights = tmp_path / "htdemucs.onnx"
+    weights.write_bytes(b"fake")
+    monkeypatch.setattr(model_files, "_app_model_path", lambda repo_id, filename: weights)
 
-    def fake(repo_id, filename, **kw):
-        calls.append(kw)
-        return "/fake.onnx"
+    def fake_hf(*args, **kwargs):
+        raise AssertionError("must not hit HF: app folder is the source of truth")
 
-    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake)
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_hf)
+    monkeypatch.setattr(huggingface_hub, "snapshot_download", fake_hf)
     _install_fake_onnxruntime(monkeypatch)
 
-    monkeypatch.setattr(stem, "_is_model_cached", lambda: True)
     stem._session = None
     stem._model_name = None
     stem._get_session()
-    assert calls[-1].get("local_files_only") is True
+    assert stem._session is not None
 
-    # not cached -> friendly error, no download
-    calls.clear()
-    monkeypatch.setattr(stem, "_is_model_cached", lambda: False)
+    # missing -> friendly error, still no HF call
+    weights.unlink()
     stem._session = None
     stem._model_name = None
     with pytest.raises(RuntimeError, match="not downloaded"):
         stem._get_session()
-    assert calls == []
 
 
-def test_deepfilter_offline_and_gate(monkeypatch):
+def test_deepfilter_offline_and_gate(monkeypatch, tmp_path):
+    """DeepFilterNet resolves from the bundle or app folder, never HF cache.
+
+    Same contract as stem separation: zero HF calls whether the weights
+    are present (load) or absent (friendly error).
+    """
     import huggingface_hub
 
-    from backend.services import deepfilter_onnx as df
+    from backend.services import deepfilter_onnx as df, model_files
 
-    calls = []
+    weights = tmp_path / "deepfilter.onnx"
+    weights.write_bytes(b"fake")
+    monkeypatch.setattr(model_files, "_app_model_path", lambda repo_id, filename: weights)
 
-    def fake(repo_id, filename, **kw):
-        calls.append(kw)
-        return "/fake.onnx"
+    def fake_hf(*args, **kwargs):
+        raise AssertionError("must not hit HF: bundle/app folder is the source of truth")
 
-    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake)
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_hf)
+    monkeypatch.setattr(huggingface_hub, "snapshot_download", fake_hf)
     _install_fake_onnxruntime(monkeypatch)
 
-    monkeypatch.setattr(df, "_is_model_cached", lambda: True)
     df._session = None
     df._get_session()
-    assert calls[-1].get("local_files_only") is True
+    assert df._session is not None
 
-    calls.clear()
-    monkeypatch.setattr(df, "_is_model_cached", lambda: False)
+    weights.unlink()
     df._session = None
     with pytest.raises(RuntimeError, match="not downloaded"):
         df._get_session()
-    assert calls == []
 
 
 def test_health_models_lists_engines():

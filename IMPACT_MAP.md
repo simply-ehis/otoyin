@@ -698,3 +698,42 @@ themselves have zero non-test importers) → deleted 25 roots + their private de
 format clean; backend `pytest` 2495 passed (2 exonerated); `vitest` 607/607;
 `test_audio_enhancer` + `test_model_gate` + `test_files_and_health_features`
 68 passed with DeepFilterNet weights present (those tests previously skipped).
+
+### App-folder model storage + staged startup + window controls (2026-10-14, done)
+
+- **`data/models/` is the only source of truth for model weights.** New
+  `backend/services/model_files.py` owns every "download then read" seam:
+  install helpers copy into `data/models/<slug>/` and delete the HF cache
+  entry (symlink *and* blob), resolvers read the app folder only. Both
+  `deepfilter_onnx` / `stem_separation_onnx` and every TTS/STT/VC/music
+  backend (`kokoro`, `orpheus`, `gguf`, `neutts`, `parler`, `zonos`,
+  `voxcpm2`, `bark`, `heartmula`, `fish_speech_s2`, `qwen3_tts`,
+  `moonshine`, `sa3_sfx`, `minimax`, `stable_audio`, `acestep`,
+  `moss_tts_nano`, `openvoice`, `pocket`, `rvc`, `yamnet`, `kitten`,
+  `whisper*`) go through it, as do `is_model_downloaded`, the captures
+  readiness flags, `download_required_models.py` and `build_binary.py`
+  staging. Fixed en route: `force_offline_if_cached=True` was being passed
+  to `hf_hub_download` as a parameter (it is not one) in ~10 backends, so
+  every one of those load paths raised TypeError.
+- **Library-managed loaders are documented, not force-converted**: NeuTTS,
+  Kokoro-torch, PocketTTS, KittenTTS receive a repo id and resolve
+  internally; their `_is_model_cached()` checks the app folder so the
+  Models tab stays truthful, and each call site carries a comment. Tracked
+  in `TODO_REMAINING.md`.
+- **Staged startup** (`backend/app.py`): readiness after DB + queue + worker
+  (core, instant); health warm-up (torch import) at +2 s in a thread;
+  stale-state cleanup at +4 s. Voice-changer no longer spawns at boot -
+  `routes/voice_chat.py` triggers `ensure_vc_spawned()` on first connect.
+- **Frontend no longer blocks on the boot handshake**: `router.tsx` renders
+  the shell immediately with a one-line status line instead of a blank pane
+  (`startup_failed` still takes over with the restart button).
+- **Window**: always opens at the default size (`window_state.rs` no longer
+  restores saved geometry; tracking remains for a future restore opt-in) and
+  `TitleBarDragRegion.tsx` now renders close/minimize/maximize buttons on
+  Windows for the frameless shell.
+
+**Guards**: `cargo check` clean; `tsc --noEmit` clean; ruff check + format
+clean; `pytest` 279 passed across the affected model/download suites;
+`vitest` for the touched components green; `/health/ready` observed
+answering ~2 s after process start with the torch warm-up in the
+background. Docs: `docs/knowledge/91-app-folder-models-and-staged-startup.md`.

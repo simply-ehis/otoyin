@@ -71,6 +71,8 @@ pub fn centered(area: &WorkArea, w: f64, h: f64) -> (f64, f64) {
 }
 
 /// True when the rect intersects any of the given monitor rects.
+/// Kept for the off-screen-restore guard if restore is ever re-enabled.
+#[allow(dead_code)]
 pub fn rect_visible(x: f64, y: f64, w: f64, h: f64, monitors: &[(f64, f64, f64, f64)]) -> bool {
     monitors
         .iter()
@@ -147,6 +149,9 @@ fn state_path(app: &AppHandle) -> Option<PathBuf> {
         .map(|d| d.join(STATE_FILE))
 }
 
+/// Kept (tracking still persists on move/resize/close) for a future
+/// restore opt-in. Not read at startup: every launch uses the default view.
+#[allow(dead_code)]
 fn load_saved(app: &AppHandle) -> Option<SavedGeometry> {
     let path = state_path(app)?;
     let text = std::fs::read_to_string(path).ok()?;
@@ -242,8 +247,10 @@ pub fn save_now(app: &AppHandle) {
     }
 }
 
-/// Size the main window at startup: restore the user's geometry when it is
-/// still sane, otherwise fit the default size into the work area centered.
+/// Size the main window at startup: always the default size, centered in
+/// the work area. The saved geometry is intentionally NOT restored — every
+/// launch opens on the default view. Geometry is still tracked while the
+/// app runs (move/resize/close persist for a future restore opt-in).
 /// Never maximizes.
 pub fn apply_startup_geometry(app: &AppHandle) {
     let Some(window) = app.get_webview_window("main") else {
@@ -253,39 +260,6 @@ pub fn apply_startup_geometry(app: &AppHandle) {
         Some(area) => area,
         None => return, // Leave the configured default alone.
     };
-    if let Some(saved) = load_saved(app) {
-        let (w, h) = clamp_size(saved.width, saved.height, area.w, area.h);
-        // Accept the saved rect only if it lands on a real monitor.
-        let monitors: Vec<(f64, f64, f64, f64)> = app
-            .available_monitors()
-            .unwrap_or_default()
-            .iter()
-            .map(|m| {
-                let scale = m.scale_factor();
-                let size = m.size();
-                let pos = m.position();
-                (
-                    pos.x as f64 / scale,
-                    pos.y as f64 / scale,
-                    size.width as f64 / scale,
-                    size.height as f64 / scale,
-                )
-            })
-            .collect();
-        let visible = monitors.is_empty() || rect_visible(saved.x, saved.y, w, h, &monitors);
-        if visible {
-            // Re-clamp position inside the work area so an unplugged-monitor
-            // restore can't strand the window off-screen.
-            let x = saved.x.max(area.x).min((area.x + area.w - w).max(area.x));
-            let y = saved.y.max(area.y).min((area.y + area.h - h).max(area.y));
-            let _ = window.set_size(Size::Logical(LogicalSize {
-                width: w,
-                height: h,
-            }));
-            let _ = window.set_position(Position::Logical(LogicalPosition { x, y }));
-            return;
-        }
-    }
     let (w, h) = default_size(&area);
     let (x, y) = centered(&area, w, h);
     let _ = window.set_size(Size::Logical(LogicalSize {
