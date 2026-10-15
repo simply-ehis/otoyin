@@ -111,6 +111,7 @@ async def _render_text_via_generation(
         try:
             effects_chain = _json.loads(profile.effects_chain)  # type: ignore
         except Exception:
+            logger.debug("suppressed exception in audiobook_render.py:113", exc_info=True)
             effects_chain = None
     ctx = GenerationContext(
         generation_id=gen_id,
@@ -233,6 +234,7 @@ async def render_chapter(
                             chapter.audio_path = config.to_storage_path(final)
                 except Exception:
                     # fallback: use first utterance's audio as chapter audio
+                    logger.debug("suppressed exception in audiobook_render.py:234", exc_info=True)
                     chapter.audio_path = utterances[0].audio_path if utterances else None
                 chapter.duration_ms = total_ms
                 chapter.status = "done"

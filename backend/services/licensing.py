@@ -153,12 +153,14 @@ def get_device_id() -> str:
             ) as key:
                 fingerprint = winreg.QueryValueEx(key, "MachineGuid")[0]
         except Exception:  # best-effort fingerprint
+            logger.debug("suppressed exception in licensing.py:155", exc_info=True)
             fingerprint = None
     if not fingerprint and os.path.exists("/etc/machine-id"):
         try:
             with open("/etc/machine-id", encoding="utf-8") as f:
                 fingerprint = f.read().strip()
         except Exception:  # best-effort fingerprint
+            logger.debug("suppressed exception in licensing.py:161", exc_info=True)
             fingerprint = None
     if not fingerprint:
         fingerprint = str(uuid.UUID(int=uuid.getnode()))

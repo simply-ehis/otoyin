@@ -366,6 +366,6 @@ async def voice_changer_ws(websocket: WebSocket) -> None:
                 if output:
                     logger.debug("Flushed %d leftover samples", len(output))
             except Exception:
-                pass
+                logger.debug("suppressed exception in server.py:368", exc_info=True)
         if websocket.client_state == WebSocketState.CONNECTED:
             await websocket.close()

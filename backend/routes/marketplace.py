@@ -65,6 +65,7 @@ def _annotate_rating_summary(products: list[dict]) -> None:
     try:
         summaries = get_all_rating_summaries()
     except Exception:
+        logger.debug("suppressed exception in marketplace.py:67", exc_info=True)
         return
     for product in products:
         summary = summaries.get(product.get("id", ""))

@@ -684,7 +684,7 @@ async def process_audio_chunk(
                                 sample_rate = sr
                                 all_frames.append(data)
                             except Exception:
-                                pass
+                                logger.debug("suppressed exception in voice_chat.py:686", exc_info=True)
                     if all_frames:
                         combined = np.concatenate(all_frames) if len(all_frames) > 1 else all_frames[0]
                         buf = _io.BytesIO()

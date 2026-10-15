@@ -7,6 +7,7 @@ call site must go through :func:`ffmpeg_path`.
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 import shutil
@@ -16,6 +17,8 @@ from functools import lru_cache
 from pathlib import Path
 
 from ..utils.hidden_subprocess import run_hidden
+
+logger = logging.getLogger(__name__)
 
 SUPPORTED_FORMATS = {
     "wav": {"ext": "wav", "codec": "pcm_s16le", "mime": "audio/wav"},
@@ -179,6 +182,7 @@ def build_m4b(
                 info = sf.info(str(wav))
                 durations_ms.append(int(info.duration * 1000))
             except Exception:
+                logger.debug("suppressed exception in audio_conversion.py:184", exc_info=True)
                 durations_ms.append(30000)
 
         cursor = 0

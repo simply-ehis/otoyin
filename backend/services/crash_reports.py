@@ -123,6 +123,7 @@ def collect_diagnostics() -> dict:
         diag["ram_free_mb"] = available_mb()
         diag["ram_total_mb"] = get_system_total_mb()
     except Exception as e:
+        logger.debug("suppressed exception in crash_reports.py:125", exc_info=True)
         diag["ram_error"] = str(e)[:120]
     try:
         from ..utils.vram_pressure import get_vram_status
@@ -135,6 +136,7 @@ def collect_diagnostics() -> dict:
             "pressure": str(getattr(vram, "pressure", ""))[:40],
         }
     except Exception as e:
+        logger.debug("suppressed exception in crash_reports.py:137", exc_info=True)
         diag["vram_error"] = str(e)[:120]
     try:
         from ..utils.model_lifecycle import lifecycle_manager
@@ -145,9 +147,11 @@ def collect_diagnostics() -> dict:
                 if handle.is_loaded():
                     loaded.append(name)
             except Exception:
+                logger.debug("suppressed exception in crash_reports.py:147", exc_info=True)
                 continue
         diag["loaded_engines"] = sorted(loaded)
     except Exception as e:
+        logger.debug("suppressed exception in crash_reports.py:150", exc_info=True)
         diag["engines_error"] = str(e)[:120]
     try:
         from ..utils.tasks import get_task_manager
@@ -156,6 +160,7 @@ def collect_diagnostics() -> dict:
         diag["active_downloads"] = len(tm.get_active_downloads())
         diag["active_generations"] = len(tm.get_active_generations())
     except Exception as e:
+        logger.debug("suppressed exception in crash_reports.py:158", exc_info=True)
         diag["queue_error"] = str(e)[:120]
     return diag
 

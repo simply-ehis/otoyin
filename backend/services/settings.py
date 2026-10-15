@@ -7,6 +7,7 @@ defaults. Each has a ``get_*`` that lazily creates the row with defaults and
 an ``update_*`` that accepts a partial payload.
 """
 
+import logging
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -21,6 +22,8 @@ from ..utils.capture_chords import (
     default_push_to_talk_chord,
     default_toggle_to_talk_chord,
 )
+
+logger = logging.getLogger(__name__)
 
 SINGLETON_ID = 1
 
@@ -140,6 +143,7 @@ def _get_or_create_performance_row(db: Session) -> DBPerformanceSettings:
         try:
             row.per_engine_keepalive = _json.loads(raw) if raw else {}
         except Exception:
+            logger.debug("suppressed exception in settings.py:145", exc_info=True)
             row.per_engine_keepalive = {}
         needs_commit = True
     if needs_commit:
@@ -147,6 +151,7 @@ def _get_or_create_performance_row(db: Session) -> DBPerformanceSettings:
             db.commit()
             db.refresh(row)
         except Exception:
+            logger.debug("suppressed exception in settings.py:152", exc_info=True)
             db.rollback()
     return row
 
@@ -167,6 +172,7 @@ def update_performance_settings(db: Session, patch: dict[str, Any]) -> DBPerform
             try:
                 existing = _json.loads(existing)
             except Exception:
+                logger.debug("suppressed exception in settings.py:172", exc_info=True)
                 existing = {}
         if not isinstance(existing, dict):
             existing = {}
@@ -215,6 +221,7 @@ def get_per_engine_keepalive() -> dict[str, bool]:
             try:
                 raw = _json.loads(raw)
             except Exception:
+                logger.debug("suppressed exception in settings.py:220", exc_info=True)
                 raw = {}
         if not isinstance(raw, dict):
             return {}
@@ -244,6 +251,7 @@ def is_engine_keepalive(engine: str) -> bool:
             try:
                 raw = _json.loads(raw)
             except Exception:
+                logger.debug("suppressed exception in settings.py:249", exc_info=True)
                 raw = {}
         if not isinstance(raw, dict):
             raw = {}
@@ -326,6 +334,7 @@ def get_available_ram_mb() -> int:
 
         return int(psutil.virtual_memory().available / (1024 * 1024))
     except Exception:
+        logger.debug("suppressed exception in settings.py:331", exc_info=True)
         return 0
 
 

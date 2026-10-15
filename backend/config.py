@@ -140,6 +140,7 @@ def read_persisted_port(data_dir: Path | None = None) -> int | None:
         port = int(json.loads(row[0]))
         return port if 1024 <= port <= 65535 else None
     except Exception:
+        logger.debug("suppressed exception in config.py:142", exc_info=True)
         return None
 
 

@@ -106,7 +106,7 @@ def _get_gpu_info() -> tuple[int, int, str | None, str | None]:
                 "cuda",
             )
     except Exception:
-        pass
+        logger.debug("suppressed exception in device_capabilities.py:108", exc_info=True)
 
     # Try DirectML (Windows)
     try:
@@ -117,7 +117,7 @@ def _get_gpu_info() -> tuple[int, int, str | None, str | None]:
             # DirectML doesn't expose VRAM via torch; fall back to None
             return 0, 0, info.get("name"), "directml"
     except Exception:
-        pass
+        logger.debug("suppressed exception in device_capabilities.py:119", exc_info=True)
 
     # Try MPS (macOS)
     try:
@@ -127,7 +127,7 @@ def _get_gpu_info() -> tuple[int, int, str | None, str | None]:
             # MPS doesn't expose VRAM; use unified memory = system RAM
             return 0, 0, "Apple Silicon (MPS)", "mps"
     except Exception:
-        pass
+        logger.debug("suppressed exception in device_capabilities.py:129", exc_info=True)
 
     return 0, 0, None, None
 
@@ -138,6 +138,7 @@ def _get_cpu_cores() -> int:
 
         return os.cpu_count() or 0
     except Exception:
+        logger.debug("suppressed exception in device_capabilities.py:140", exc_info=True)
         return 0
 
 

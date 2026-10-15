@@ -176,6 +176,7 @@ def local_status_for(model_name: str, model_size: str | None = None) -> str:
         if is_downloaded(model_name, model_size):
             return "cached"
     except Exception:
+        logger.debug("suppressed exception in model_registry.py:178", exc_info=True)
         return "not_downloaded"
     if get_model_config(model_name) is None:
         # Non-model product — ships with the app (no manifest entry expected).

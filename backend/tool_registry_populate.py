@@ -11,6 +11,10 @@ verify all tools are registered correctly.
 
 from __future__ import annotations
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 try:
     from backend.tool_registry import TR, ToolDef
 except ImportError:
@@ -53,7 +57,7 @@ def populate() -> None:
                 # SAFETY: input is a local schema file, not user data
                 exec(compile(tree2, str(tools_file), "exec"), schema_ns)
             except Exception:
-                pass
+                logger.debug("suppressed exception in tool_registry_populate.py:58", exc_info=True)
     TOOLS = schema_ns.get("TOOLS", [])  # noqa: N806
 
     # Build a lookup of tool_name -> schema from the assistant TOOLS list
@@ -133,6 +137,7 @@ def _register_mcp_tools() -> None:
         try:
             content = tool_file.read_text(encoding="utf-8", errors="replace")
         except Exception:
+            logger.debug("suppressed exception in tool_registry_populate.py:138", exc_info=True)
             continue
 
         for match in tool_pattern.finditer(content):
@@ -212,7 +217,7 @@ def _register_mcp_tools() -> None:
                     if tool_name not in _m.NAME_MAP:
                         _m.NAME_MAP[tool_name] = None
                 except Exception:
-                    pass
+                    logger.debug("suppressed exception in tool_registry_populate.py:217", exc_info=True)
 
 
 def sync_from_mcp_server(mcp) -> int:
@@ -262,7 +267,8 @@ def sync_from_mcp_server(mcp) -> int:
                 )
                 added += 1
     except Exception:
-        pass  # Best-effort: don't crash startup if MCP introspection fails
+        logger.debug("suppressed exception in tool_registry_populate.py:267", exc_info=True)
+        # Best-effort: don't crash startup if MCP introspection fails
     return added
 
 

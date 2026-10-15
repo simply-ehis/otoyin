@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
+
+logger = logging.getLogger(__name__)
 
 CHARACTER_RE = re.compile(r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b")
 DIALOGUE_RE = re.compile(r'"([^"]{3,})"|\'([^\']{3,})\'|—\s*([^\n]{3,})')
@@ -59,6 +62,7 @@ async def llm_extract_characters(chapters: list[dict], sample_chars: int = 6000)
         try:
             cached = backend._is_model_cached(size) if size else backend._is_model_cached(backend.model_size)  # type: ignore
         except Exception:
+            logger.debug("suppressed exception in audiobook_llm.py:64", exc_info=True)
             cached = False
         if not cached:
             return heuristic_characters(sample)
@@ -84,6 +88,7 @@ async def llm_extract_characters(chapters: list[dict], sample_chars: int = 6000)
                 )
         return out if out else heuristic_characters(sample)
     except Exception:
+        logger.debug("suppressed exception in audiobook_llm.py:89", exc_info=True)
         return heuristic_characters(sample)
 
 

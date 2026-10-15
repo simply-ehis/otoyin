@@ -127,10 +127,12 @@ def _stamp_last_seen(client_id: str) -> None:
         from ..database import get_db
         from ..database.models import MCPClientBinding
     except Exception:
+        logger.debug("suppressed exception in context.py:129", exc_info=True)
         return
     try:
         db = next(get_db())
     except Exception:
+        logger.debug("suppressed exception in context.py:133", exc_info=True)
         return
     try:
         row = db.query(MCPClientBinding).filter(MCPClientBinding.client_id == client_id).first()

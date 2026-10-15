@@ -123,6 +123,7 @@ class RVCOnnxBackend(BackendBase):
                 shutil.copy2(src, contentvec_path)
             except Exception:
                 # Try Q8 quantized version
+                logger.debug("suppressed exception in rvc_onnx_backend.py:124", exc_info=True)
                 src = hf_hub_download(repo_id=BASE_REPO, filename=CONTENTVEC_FILE_Q8)
                 shutil.copy2(src, contentvec_path)
 
@@ -132,6 +133,7 @@ class RVCOnnxBackend(BackendBase):
                 src = hf_hub_download(repo_id=BASE_REPO, filename=RMVPE_FILE)
                 shutil.copy2(src, rmvpe_path)
             except Exception:
+                logger.debug("suppressed exception in rvc_onnx_backend.py:134", exc_info=True)
                 src = hf_hub_download(repo_id=BASE_REPO, filename=RMVPE_FILE_Q8)
                 shutil.copy2(src, rmvpe_path)
         from ..services.model_files import clear_hf_repo_cache

@@ -83,6 +83,7 @@ async def get_telemetry_summary(since: str | None = None):
                     active.add(_dt.fromisoformat(ev.get("timestamp", "")).date().isoformat())
             active_days = len(active)
         except Exception:
+            logger.debug("suppressed exception in telemetry.py:85", exc_info=True)
             active_days = summary.get("active_days", 0)
         # Count by type for filtered window
         by_type: dict[str, int] = {}

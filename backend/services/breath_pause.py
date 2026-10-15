@@ -7,9 +7,12 @@ when available (online or locally cached).
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 # Pre-recorded breath sample directory (populated by download script or user)
 _BREATH_SAMPLES_DIR = Path(__file__).parent.parent.parent / "data" / "breath_samples"
@@ -114,6 +117,7 @@ def _load_prepared_breath(duration_ms: float, sample_rate: int) -> np.ndarray | 
             audio = resample(audio, int(len(audio) * sample_rate / sr))
         return audio.astype(np.float32)
     except Exception:
+        logger.debug("suppressed exception in breath_pause.py:119", exc_info=True)
         return None
 
 

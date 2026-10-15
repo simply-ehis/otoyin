@@ -38,6 +38,7 @@ def _filter_missing_deps(args):
             try:
                 importlib.import_module(name)
             except Exception:
+                logger.debug("suppressed exception in build_binary.py:40", exc_info=True)
                 skip.add(name)
     if not skip:
         return args

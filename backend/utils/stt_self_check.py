@@ -97,6 +97,7 @@ async def _check_single_backend(
     try:
         is_cached = backend._is_model_cached(backend.model_size)
     except Exception:
+        logger.debug("suppressed exception in stt_self_check.py:99", exc_info=True)
         is_cached = False
 
     if not is_cached:

@@ -48,7 +48,7 @@ def _read_free_mb() -> int:
                 if line.startswith("FreePhysicalMemory="):
                     return int(line.split("=", 1)[1]) // 1024  # KB → MB
         except Exception:
-            pass
+            logger.debug("suppressed exception in memory.py:50", exc_info=True)
     try:
         with open("/proc/meminfo") as f:
             for line in f:
@@ -131,5 +131,5 @@ def get_system_total_mb() -> int:
                 if line.startswith("TotalPhysicalMemory="):
                     return int(line.split("=", 1)[1]) // (1024 * 1024)
         except Exception:
-            pass
+            logger.debug("suppressed exception in memory.py:133", exc_info=True)
     return -1

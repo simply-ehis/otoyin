@@ -316,4 +316,5 @@ def validate_and_load_reference_audio(
 
         return True, None, audio, sr
     except Exception as e:
+        logger.debug("suppressed exception in audio.py:318", exc_info=True)
         return False, f"Error validating audio: {e!s}", None, None

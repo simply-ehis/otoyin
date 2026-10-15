@@ -116,6 +116,7 @@ async def execute_tool(
                 error_data = resp.json()
                 detail = error_data.get("detail", error_data.get("message", error_body))
             except Exception:
+                logger.debug("suppressed exception in dispatcher.py:118", exc_info=True)
                 detail = error_body
             # Add human-readable context based on status code
             if resp.status_code == 404:

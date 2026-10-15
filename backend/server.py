@@ -21,6 +21,7 @@ def _is_writable(stream):
         stream.write("")
         return True
     except Exception:
+        logger.debug("suppressed exception in server.py:23", exc_info=True)
         return False
 
 

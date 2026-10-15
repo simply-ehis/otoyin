@@ -203,7 +203,7 @@ def get_summary() -> dict:
                 dt = datetime.fromisoformat(ts)
                 active_days_set.add(dt.date().isoformat())
             except Exception:
-                pass
+                logger.debug("suppressed exception in telemetry.py:205", exc_info=True)
 
     generation_ok = by_type.get("generation_completed", 0)
     generation_fail = by_type.get("generation_failed", 0)

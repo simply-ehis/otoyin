@@ -17,6 +17,7 @@ UPDATED: 2026-09-11
 - [86-marketplace-utilities.md](86-marketplace-utilities.md) — Utilities shelf at the bottom, pack collapse, category ordering.
 - [90-audit-fixes-2026-10.md](90-audit-fixes-2026-10.md) - 2026-10-14 production audit: fixed findings (undo, playback, SSE, server lifecycle) + deferral reasons.
 - [91-app-folder-models-and-staged-startup.md](91-app-folder-models-and-staged-startup.md) - 2026-10-14 model storage in data/models/ only (HF cache cleared, never read), tiered backend startup, default window geometry, title-bar controls.
+- [92-except-and-overflow-audit.md](92-except-and-overflow-audit.md) - 2026-10-14 broad-except audit (497 blocks classified, 60 true swallowers -> 15) + overflow-pattern scan findings.
 
 ## Master Agent-Callable Reference
 

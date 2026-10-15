@@ -183,6 +183,7 @@ def _probe_subsystems() -> list[models.HealthSubsystem]:
         detail = f"{depth} queued" if depth > 0 else "idle"
         subsystems.append(models.HealthSubsystem(name="task_queue", healthy=healthy, detail=detail))
     except Exception as e:
+        logger.debug("suppressed exception in health.py:185", exc_info=True)
         subsystems.append(models.HealthSubsystem(name="task_queue", healthy=False, detail=str(e)[:120]))
 
     # Lifecycle manager state
@@ -193,6 +194,7 @@ def _probe_subsystems() -> list[models.HealthSubsystem]:
         detail = f"{len(loaded)} engines loaded" if loaded else "no engines loaded"
         subsystems.append(models.HealthSubsystem(name="lifecycle", healthy=True, detail=detail))
     except Exception as e:
+        logger.debug("suppressed exception in health.py:195", exc_info=True)
         subsystems.append(models.HealthSubsystem(name="lifecycle", healthy=False, detail=str(e)[:120]))
 
     # Database connectivity
@@ -208,6 +210,7 @@ def _probe_subsystems() -> list[models.HealthSubsystem]:
                 conn.execute(text("SELECT 1"))
             subsystems.append(models.HealthSubsystem(name="database", healthy=True, detail="connected"))
     except Exception as e:
+        logger.debug("suppressed exception in health.py:210", exc_info=True)
         subsystems.append(models.HealthSubsystem(name="database", healthy=False, detail=str(e)[:120]))
 
     return subsystems
@@ -362,6 +365,7 @@ def _build_health_response() -> models.HealthResponse:
         ram_total = get_system_total_mb()
         ram_free = available_mb()
     except Exception:
+        logger.debug("suppressed exception in health.py:364", exc_info=True)
         ram_total = ram_free = None
 
     return models.HealthResponse(
@@ -513,10 +517,12 @@ async def health_models():
             try:
                 is_loaded = bool(handle.is_loaded())
             except Exception:
+                logger.debug("suppressed exception in health.py:515", exc_info=True)
                 is_loaded = False
             try:
                 always_on = bool(handle.always_on)
             except Exception:
+                logger.debug("suppressed exception in health.py:519", exc_info=True)
                 always_on = False
             last_used_mono = getattr(handle, "last_used", None)
             if isinstance(last_used_mono, (int, float)):
@@ -532,6 +538,7 @@ async def health_models():
             try:
                 always_on = bool(is_engine_always_on(engine))
             except Exception:
+                logger.debug("suppressed exception in health.py:534", exc_info=True)
                 always_on = False
 
         per_engine_keepalive = per_keep.get(engine) if isinstance(per_keep, dict) else None
@@ -606,6 +613,7 @@ async def health_check():
             try:
                 unmapped = check_name_map()
             except Exception as e:
+                logger.debug("suppressed exception in health.py:608", exc_info=True)
                 return {"ok": False, "error": str(e)[:200], "missing": [], "count": 0}
             return {"ok": len(unmapped) == 0, "missing": sorted(unmapped)[:10], "count": len(unmapped)}
 
@@ -618,6 +626,7 @@ async def health_check():
             try:
                 bad = scan()
             except Exception as e:
+                logger.debug("suppressed exception in health.py:620", exc_info=True)
                 return {"ok": False, "error": str(e)[:200], "count": 0, "issues": []}
             return {"ok": len(bad) == 0, "count": len(bad), "issues": bad[:5]}
 
@@ -634,6 +643,7 @@ async def health_check():
                 except subprocess.TimeoutExpired:
                     return {"ok": False, "error": "timeout", "version": None}
                 except Exception as e:
+                    logger.debug("suppressed exception in health.py:636", exc_info=True)
                     return {"ok": False, "error": str(e)[:200], "version": None}
             # Fallback via npx
             try:
@@ -643,6 +653,7 @@ async def health_check():
             except subprocess.TimeoutExpired:
                 return {"ok": False, "error": "timeout", "version": None}
             except Exception as e:
+                logger.debug("suppressed exception in health.py:645", exc_info=True)
                 return {"ok": False, "error": str(e)[:200], "version": None}
 
         return await asyncio.to_thread(_run)
@@ -659,6 +670,7 @@ async def health_check():
             except subprocess.TimeoutExpired:
                 return {"ok": False, "error": "timeout", "version": None}
             except Exception as e:
+                logger.debug("suppressed exception in health.py:661", exc_info=True)
                 return {"ok": False, "error": str(e)[:200], "version": None}
 
         return await asyncio.to_thread(_run)
@@ -675,6 +687,7 @@ async def health_check():
             except subprocess.TimeoutExpired:
                 return {"ok": False, "error": "timeout", "version": None}
             except Exception as e:
+                logger.debug("suppressed exception in health.py:677", exc_info=True)
                 return {"ok": False, "error": str(e)[:200], "version": None}
 
         return await asyncio.to_thread(_run)
@@ -719,6 +732,7 @@ def _probe_feature(module_name: str) -> dict:
     except ImportError:
         return {"available": False, "version": None}
     except Exception as exc:
+        logger.debug("suppressed exception in health.py:721", exc_info=True)
         return {"available": False, "version": None, "error": str(exc)[:120]}
 
 

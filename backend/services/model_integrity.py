@@ -140,6 +140,7 @@ def verify_model_hashes(model_name: str) -> dict:
     try:
         baseline = json.loads(sidecar.read_text(encoding="utf-8"))
     except Exception as e:
+        logger.debug("suppressed exception in model_integrity.py:142", exc_info=True)
         return {"ok": False, "reason": f"unreadable_baseline: {e}"}
     expected = {e["path"]: e["sha256"] for e in baseline.get("files", [])}
     files = _iter_weight_files(model_name)

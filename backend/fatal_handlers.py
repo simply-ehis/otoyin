@@ -38,6 +38,7 @@ def _fatal_log_path():
         log_dir.mkdir(parents=True, exist_ok=True)
         return str(log_dir / "fatal.log")
     except Exception:
+        logger.debug("suppressed exception in fatal_handlers.py:40", exc_info=True)
         return None
 
 
@@ -53,7 +54,7 @@ def _capture_uncaught(exc_type, exc_value, exc_tb, *, origin: str) -> None:
             context={"origin": origin},
         )
     except Exception:
-        pass
+        logger.debug("suppressed exception in fatal_handlers.py:55", exc_info=True)
 
 
 def _excepthook(exc_type, exc_value, exc_tb) -> None:
@@ -71,6 +72,7 @@ def _unraisablehook(unraisable) -> None:
     try:
         exc = unraisable.exc_value
     except Exception:
+        logger.debug("suppressed exception in fatal_handlers.py:73", exc_info=True)
         return
     if exc is None:
         return
@@ -99,6 +101,7 @@ def install_fatal_handlers() -> bool:
                 # Keep a reference so the file is not GC-closed.
                 globals()["_fatal_file"] = _fatal_file
             except Exception:
+                logger.debug("suppressed exception in fatal_handlers.py:101", exc_info=True)
                 faulthandler.enable()
         else:
             faulthandler.enable()

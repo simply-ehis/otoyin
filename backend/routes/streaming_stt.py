@@ -136,6 +136,7 @@ async def _transcribe_buffer(session: StreamingSession) -> str:
             try:
                 await model.load_model_async(session.model_id)
             except Exception:
+                logger.debug("suppressed exception in streaming_stt.py:138", exc_info=True)
                 return ""
         text = await asyncio.to_thread(model.transcribe, tmp_path, session.language, session.model_id)
         return text.strip() if text else ""

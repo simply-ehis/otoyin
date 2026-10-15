@@ -385,7 +385,7 @@ class Supervisor:
             self._process.wait(timeout=3)
             logger.warning("Backend force-killed")
         except Exception:
-            pass
+            logger.debug("suppressed exception in supervisor.py:387", exc_info=True)
 
     def _handle_signal(self, signum, frame) -> None:
         """Handle shutdown signals."""

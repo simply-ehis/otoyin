@@ -246,7 +246,7 @@ def create_app() -> FastAPI:
                 context={"path": request.url.path, "method": request.method},
             )
         except Exception:
-            pass
+            logger.debug("suppressed exception in app.py:248", exc_info=True)
         from fastapi.responses import JSONResponse
 
         return JSONResponse(
@@ -406,6 +406,7 @@ def _get_gpu_status() -> str:
             try:
                 xpu_name = torch.xpu.get_device_name(0)
             except Exception:
+                logger.debug("suppressed exception in app.py:408", exc_info=True)
                 xpu_name = "Intel GPU"
             return f"XPU ({xpu_name})"
     except ImportError:
@@ -445,6 +446,7 @@ async def _run_startup(application: FastAPI) -> None:
     try:
         database.init_db()
     except Exception as exc:
+        logger.debug("suppressed exception in app.py:447", exc_info=True)
         _signal_startup_error(f"Database initialization failed: {exc}")
         return  # don't continue — the rest of startup depends on the DB
 
@@ -567,6 +569,7 @@ async def _run_shutdown() -> None:
             try:
                 _vc_process.wait(timeout=5)
             except Exception:
+                logger.debug("suppressed exception in app.py:569", exc_info=True)
                 _vc_process.kill()
     except Exception:
         logger.debug("Voice-changer shutdown skipped (not running)", exc_info=True)

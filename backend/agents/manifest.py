@@ -446,7 +446,8 @@ def get_skill_catalog(surface: str | None = None, query: str | None = None) -> l
             finally:
                 db.close()
     except Exception:
-        pass  # database not ready or table missing — return built-in only
+        logger.debug("suppressed exception in manifest.py:448", exc_info=True)
+        # database not ready or table missing — return built-in only
 
     if query and query.strip():
         terms = [term.strip(".,!?;:") for term in query.lower().split() if len(term.strip(".,!?;:")) >= 3]

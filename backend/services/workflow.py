@@ -268,6 +268,7 @@ async def execute_plan(
             )
             completed_steps.add(step.step_id)
         except Exception as e:
+            logger.debug("suppressed exception in workflow.py:270", exc_info=True)
             duration = (time.perf_counter() - step_start) * 1000
             step_result = StepResult(
                 step_id=step.step_id,

@@ -470,6 +470,7 @@ async def stream_api(
                     if "tool_calls" in delta:
                         _accumulate_tool_calls(delta["tool_calls"], tool_calls_data)
         except Exception as e:
+            logger.debug("suppressed exception in assistant_stream.py:472", exc_info=True)
             yield sse_event("error", f"API request failed: {e}")
             return
 

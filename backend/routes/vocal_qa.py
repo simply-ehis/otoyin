@@ -151,6 +151,7 @@ async def vocal_qa(data: VocalQARequest, db: Session = Depends(get_db)):
                     str(resolved), language=data.language, model_size=data.model
                 )
             except Exception:
+                logger.debug("suppressed exception in vocal_qa.py:153", exc_info=True)
                 words_raw = None
         if not words_raw:
             # faster-whisper unavailable: fall back to whisper.cpp (segment

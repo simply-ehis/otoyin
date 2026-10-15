@@ -54,6 +54,7 @@ def _has_cuda_gpu() -> bool:
 
         return torch.cuda.is_available()
     except Exception:
+        logger.debug("suppressed exception in model_status.py:56", exc_info=True)
         return False
 
 
@@ -175,6 +176,7 @@ def dynamic_tts_preference_order() -> list[str]:
             try:
                 cached = is_engine_cached(engine)
             except Exception:
+                logger.debug("suppressed exception in model_status.py:177", exc_info=True)
                 cached = False
             scored.append((_score_engine(engine, cached), engine))
         else:

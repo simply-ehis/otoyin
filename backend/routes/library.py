@@ -8,6 +8,7 @@ persisted in library_tags + library_item_tags.
 from __future__ import annotations
 
 import contextlib
+import logging
 import uuid
 from datetime import UTC, datetime
 from typing import Literal
@@ -21,6 +22,8 @@ from .. import config
 from ..database import Capture as DBCapture, Generation as DBGeneration, ProfileSample as DBProfileSample
 from ..database.models import LibraryItemTag as DBLibraryItemTag, LibraryTag as DBLibraryTag
 from ..database.session import get_db
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -468,6 +471,7 @@ async def batch_delete(payload: LibraryBatchDeleteRequest, db: Session = Depends
                 DBLibraryItemTag.item_id == iid, DBLibraryItemTag.item_kind == kind
             ).delete()
         except Exception:
+            logger.debug("suppressed exception in library.py:473", exc_info=True)
             continue
     db.commit()
     return {"deleted": deleted}

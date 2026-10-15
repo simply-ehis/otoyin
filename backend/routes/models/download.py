@@ -100,7 +100,7 @@ def _ensure_engine_pip_deps(engine: str) -> None:
                 venv_name = cfg.venv_name
                 break
     except Exception:
-        pass
+        logger.debug("suppressed exception in download.py:102", exc_info=True)
     if not deps:
         deps = _ENGINE_PIP_DEPS.get(engine, [])
     if not deps:

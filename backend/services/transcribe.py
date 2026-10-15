@@ -2,7 +2,11 @@
 STT (Speech-to-Text) module - delegates to backend abstraction layer.
 """
 
+import logging
+
 from ..backends import STTBackend, get_stt_backend
+
+logger = logging.getLogger(__name__)
 
 
 def get_whisper_model() -> STTBackend:
@@ -73,6 +77,7 @@ def _audio_duration_s(audio_path: str) -> float | None:
         if info.samplerate > 0:
             return info.frames / float(info.samplerate)
     except Exception:
+        logger.debug("suppressed exception in transcribe.py:75", exc_info=True)
         return None
     return None
 
