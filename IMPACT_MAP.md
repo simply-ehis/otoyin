@@ -345,6 +345,24 @@ outes/models/download.py bark branch (gguf + per-voice pack_voice_npz), services
 - **Frontend done (streaming TTS):** `app/src/lib/hooks/useStreamingTTS.ts` — wraps existing `streamTts` SSE client (`/tts/stream`) and `useStreamingAudioPlayer` Web Audio chunk player; exposes `start(text)`, `stop()`, `isPlaying`, `isLoading`, `error`, `audioPath`, `generationId`. Biome + typecheck clean.
 - **Tests:** 33 STT + tool_registry tests pass, ruff clean.
 
+## Frontend Audit (this session)
+- **Hardcoded STT defaults removed (3 fixes):**
+  - `voiceChatStore.ts:214` — `stt_model: config?.sttModel ?? "base"` → `config?.sttModel` (no default)
+  - `VoiceChatSettings.tsx:52` — `DEFAULT_SETTINGS.stt_model: "base"` → `""`
+  - `VoiceChatSettings.tsx:99` — `(s.stt_model as string) || "base"` → `|| ""`
+- **Hardcoded Kokoro voice key removed (2 fixes):**
+  - `useStreamingTtsPreview.ts` — `play(text, voice, language)` → `play(text, voicePrompt?, language)`; `voicePrompt: { kokoro_voice: voice }` → `voicePrompt: voicePrompt ?? {}`
+  - `ClonePage.tsx:88` — `preview.play(script.trim(), selectedVoiceId, "en")` → `preview.play(script.trim(), { kokoro_voice: selectedVoiceId }, "en")`
+  - `streamingTts.ts` — JSDoc example clarified as backend-specific key
+- **Bug fixed:** `ClonePage.tsx:171` — `streamProgress` (undefined variable) → `preview.state.progress`
+- **Bug fixed:** `ClonePage.tsx` — removed unused `showStudioErrorToast` import
+- **Type error fixed:** `StreamingTtsPreviewButton.tsx` — `size?: "sm" | "md" | "lg"` → `size?: "sm" | "lg"` (md not a valid Button size)
+- **Dead code documented:** `StreamingTtsPreviewButton.tsx` — component defined but never imported anywhere
+- **Route conflict identified:** `GET /effects/presets` exists in both `routes/effects.py` (Pedalboard) and `routes/audio_pipeline/presets.py` (DB presets). audio_pipeline is registered first so Pedalboard version is shadowed.
+- **Mojibake:** None found.
+- **Icons:** No Lucide icons found (heroicons only, per project rules).
+- **Verification:** Biome lint/format clean, TypeScript clean on all changed files.
+
 ## Critical Flows
 
 ### TTS Generation Flow
@@ -812,9 +830,12 @@ partial-cleanup each verified with a targeted functional test. Docs:
 - **Invariants honored:** heroicons only (no lucide), glass allowed on overlays/timeline surface only, `useLocation` search type fixed via native URLSearchParams.
 - **Verification:** `tsc --noEmit` clean for all touched files (remaining errors are pre-existing in unrelated files); `biome check` clean on all touched files.
 
-### Phase 18 — Backend Performance Plan Part 2: Lazy Engine Imports + Engine-Needed Detection (2026-10-26, done)
-- **Goal:** Week 1 quick wins from docs/BACKEND_PERFORMANCE_PLAN_PART2.md — reduce Python cold-start time and memory by making engine imports lazy and skipping backend registration for engines with no downloaded models.
+### Phase 18 — Backend Performance Plan Part 2: Lazy Engine Imports + Engine-Needed Detection + Zero Preload (2026-10-26, done)
+- **Goal:** Week 1 quick wins from docs/BACKEND_PERFORMANCE_PLAN_PART2.md — reduce Python cold-start time and memory by making engine imports lazy, skipping backend registration for engines with no downloaded models, and preloading no models at startup.
 - **startup_defer.py** (`backend/utils/startup_defer.py`, edited): Wired `engine_needed()` into `ensure_engines_registered()` — before creating each backend instance (TTS, STT whisper, LLM gguf_llm, VC rvc_onnx/seed_vc, Music stable_audio), checks the download manifest via `engine_needed()`. If no model is downloaded for that engine, the backend is never instantiated — avoiding heavy library imports (torch, onnxruntime, etc.) and saving ~200MB+ RAM per skipped engine.
-- **Already in place (verified, not new):** `backends/__init__.py` lazy `__getattr__` (~3s cold-start savings), `backends/registry/` lazy backend instantiation, `app.py` MCP lazy build + staged startup tiers, `startup_defer.py` per-engine preload functions with cache + entitlement checks, no eager torch/onnx/sherpa imports anywhere in backends or services.
-- **Verification:** `py_compile` syntax OK, `ruff check` clean, 1073/1074 pytest pass (1 pre-existing failure in test_fish_speech_s2.py — unrelated path resolution issue), backend starts successfully with `model_loaded: False`, `no engines loaded` at /health.
+- **configs/tts.py** (`backends/configs/tts.py`, edited): kokoro-onnx `preload_priority` changed 2 → 0 (no preload).
+- **configs/stt.py** (`backends/configs/stt.py`, edited): moonshine-streaming-small `preload_priority` changed 2 → 0 (no preload).
+- **Result:** Zero models preloaded at startup. `ensure_models_preloaded()` filters `c.preload_priority > 0` — with none matching, it's a no-op. Fresh install starts with `model_loaded: False`, `no engines loaded` at /health.
+- **Already in place (verified, not new):** `backends/__init__.py` lazy `__getattr__` (~3s cold-start savings), `backends/registry/` lazy backend instantiation, `app.py` MCP lazy build + staged startup tiers, no eager torch/onnx/sherpa imports anywhere in backends or services.
+- **Verification:** `py_compile` syntax OK, `ruff check` clean, 1073/1074 pytest pass (1 pre-existing failure in test_fish_speech_s2.py — unrelated path resolution issue).
 

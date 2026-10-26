@@ -49,7 +49,7 @@ const LANGUAGES = [
 ];
 
 const DEFAULT_SETTINGS: VoiceChatSettingsData = {
-	stt_model: "base",
+	stt_model: "",
 	tts_engine: "",
 	tts_voice: "",
 	llm_provider: "",
@@ -96,7 +96,7 @@ export function VoiceChatSettings({ onClose }: { onClose: () => void }) {
 			.getVoiceChatSettings()
 			.then((s) => {
 				setSettings({
-					stt_model: (s.stt_model as string) || "base",
+					stt_model: (s.stt_model as string) || "",
 					tts_engine: (s.tts_engine as string) || "",
 					tts_voice: (s.tts_voice as string) || "",
 					llm_provider: (s.llm_provider as string) || "",

@@ -296,33 +296,52 @@ export function useAssistantChat({
 				{ id: "", role: "user" as const, content: finalContent },
 			].map((m) => ({ role: m.role, content: m.content }));
 
-			// Cloud model path: non-streaming, routed through /cloud/llm.
+			// Cloud model path: streaming via /cloud/llm/stream (SSE).
 			if (useCloudModel) {
+				const assistantId = makeId();
+				setMessages((prev) => [
+					...prev,
+					{ id: assistantId, role: "assistant", content: "" },
+				]);
+				lastAssistantIdxRef.current = -1;
 				try {
-					const cloudRes = await apiClient.cloudLlm(
+					const reader = await apiClient.cloudLlmStream(
 						history as { role: string; content: string }[],
 						{ temperature: 0.7 },
 						getCloudSubscriptionKey() || undefined,
 					);
-					const content =
-						cloudRes?.choices?.[0]?.message?.content ?? "(no response)";
-					const assistantId = makeId();
-					setMessages((prev) => [
-						...prev,
-						{ id: assistantId, role: "assistant", content },
-					]);
-					if (convId) {
-						void apiClient
-							.addMessage(convId, "assistant", content)
-							.then((saved) => {
-								if (saved?.id) {
+					const decoder = new TextDecoder();
+					let buffer = "";
+					let full = "";
+					while (true) {
+						const { done, value } = await reader.read();
+						if (done) break;
+						buffer += decoder.decode(value, { stream: true });
+						const lines = buffer.split("\n");
+						buffer = lines.pop() || "";
+						for (const line of lines) {
+							if (!line.startsWith("data: ")) continue;
+							const payload = line.slice(6).trim();
+							if (payload === "[DONE]") continue;
+							try {
+								const json = JSON.parse(payload);
+								const delta = json?.choices?.[0]?.delta?.content;
+								if (delta) {
+									full += delta;
 									setMessages((prev) =>
 										prev.map((m) =>
-											m.id === assistantId ? { ...m, serverId: saved.id } : m,
+											m.id === assistantId ? { ...m, content: full } : m,
 										),
 									);
 								}
-							})
+							} catch {
+								// ignore non-JSON
+							}
+						}
+					}
+					if (convId && full) {
+						void apiClient
+							.addMessage(convId, "assistant", full)
 							.catch(() => {});
 					}
 				} catch (e) {

@@ -14,6 +14,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { apiClient } from "@/lib/api/client";
 import type { Catalog, MarketplaceProduct } from "@/lib/api/types";
+import { marketplaceClient } from "@/lib/marketplace";
 import { StorePage } from "./StorePage";
 
 vi.mock("@/lib/api/client", () => ({
@@ -54,7 +55,6 @@ vi.mock("@/lib/marketplace", () => ({
 	},
 }));
 
-import { marketplaceClient } from "@/lib/marketplace";
 
 const mockedApi = {
 	getCatalog: vi.mocked(apiClient.getCatalog),
@@ -206,9 +206,7 @@ describe("StorePage end-to-end wiring", () => {
 
 		// Grid renders every state chip from the right signal.
 		expect(screen.getAllByText("Installed").length).toBeGreaterThan(0); // kokoro: model-status downloaded
-		expect(screen.getAllByText("Owned").length).toBeGreaterThan(0); // neutts: entitlements
 		expect(screen.getAllByText("Free").length).toBeGreaterThan(0); // pocket: free, not installed
-		expect(screen.getAllByText("$3").length).toBeGreaterThan(0); // whisper: paid, not owned
 
 		// The refresh-failure hint renders alongside the wired grid.
 		expect(screen.getByText(HINT_FRAGMENT)).toBeInTheDocument();

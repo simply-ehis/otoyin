@@ -12,7 +12,11 @@ export interface StreamingTtsPreviewState {
 }
 
 export interface StreamingTtsPreviewControls {
-	play: (text: string, voice: string, language?: string) => void;
+	play: (
+		text: string,
+		voicePrompt?: Record<string, unknown>,
+		language?: string,
+	) => void;
 	stop: () => void;
 	state: StreamingTtsPreviewState;
 }
@@ -38,16 +42,23 @@ export function useStreamingTtsPreview(): StreamingTtsPreviewControls {
 	const abortRef = useRef<(() => void) | null>(null);
 
 	const play = useCallback(
-		(text: string, voice: string, language = "en") => {
+		(text: string, voicePrompt?: Record<string, unknown>, language = "en") => {
 			if (!text.trim()) {
 				return;
 			}
-			setState({ isPlaying: true, isLoading: true, progress: 0, error: null, audioPath: null, generationId: null });
+			setState({
+				isPlaying: true,
+				isLoading: true,
+				progress: 0,
+				error: null,
+				audioPath: null,
+				generationId: null,
+			});
 			player.reset();
 
 			const abort = streamTts({
 				text: text.trim(),
-				voicePrompt: { kokoro_voice: voice },
+				voicePrompt: voicePrompt ?? {},
 				language,
 				onChunk: (audio, sampleRate, isFinal) => {
 					player.playChunk(audio, sampleRate, isFinal);
@@ -79,7 +90,14 @@ export function useStreamingTtsPreview(): StreamingTtsPreviewControls {
 	const stop = useCallback(() => {
 		abortRef.current?.();
 		player.stop();
-		setState({ isPlaying: false, isLoading: false, progress: 0, error: null, audioPath: null, generationId: null });
+		setState({
+			isPlaying: false,
+			isLoading: false,
+			progress: 0,
+			error: null,
+			audioPath: null,
+			generationId: null,
+		});
 	}, [player]);
 
 	return { play, stop, state };

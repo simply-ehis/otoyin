@@ -5,7 +5,7 @@
  *   const abort = streamTts({
  *     text: "Hello world",
  *     engine: "kokoro",
- *     voicePrompt: { kokoro_voice: "af_heart" },
+ *     voicePrompt: { kokoro_voice: "af_heart" }, // backend-specific key
  *     onChunk: (audio, sampleRate, isFinal) => { ... },
  *     onError: (err) => { ... },
  *   });

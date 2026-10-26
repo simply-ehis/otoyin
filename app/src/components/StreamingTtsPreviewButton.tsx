@@ -4,20 +4,23 @@ import { Button } from "@/ui/button";
 
 export interface StreamingTtsPreviewButtonProps {
 	text: string;
-	voice: string;
+	voicePrompt?: Record<string, unknown>;
 	language?: string;
 	label?: string;
-	size?: "sm" | "md" | "lg";
+	size?: "sm" | "lg";
 	disabled?: boolean;
 }
 
 /**
  * Drop-in button for streaming TTS preview with audio playback.
  * Shows play/stop toggle with progress indicator.
+ *
+ * Note: this component is defined but not currently imported anywhere.
+ * Wire it into a feature page when streaming TTS preview is needed.
  */
 export function StreamingTtsPreviewButton({
 	text,
-	voice,
+	voicePrompt = {},
 	language = "en",
 	label = "Preview",
 	size = "sm",
@@ -30,7 +33,7 @@ export function StreamingTtsPreviewButton({
 		if (isPlaying) {
 			preview.stop();
 		} else {
-			preview.play(text, voice, language);
+			preview.play(text, voicePrompt, language);
 		}
 	};
 

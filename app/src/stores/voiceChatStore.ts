@@ -211,7 +211,7 @@ export function connectVoiceChat(
 					type: "start",
 					language: config?.language ?? store.language,
 					system_prompt: config?.systemPrompt,
-					stt_model: config?.sttModel ?? "base",
+					stt_model: config?.sttModel,
 					tts_engine: config?.ttsEngine,
 					enable_tools: config?.enableTools ?? store.enableTools,
 				}),

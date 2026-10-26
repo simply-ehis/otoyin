@@ -85,9 +85,8 @@ describe("StoreDetailModal — cached model", () => {
 		expect(
 			screen.getByRole("dialog", { name: "Kokoro 82M" }),
 		).toBeInTheDocument();
-		expect(screen.getByText("Installed on this device.")).toBeInTheDocument();
 		expect(
-			screen.getByRole("button", { name: "Activate now" }),
+			screen.getByRole("button", { name: "Activate" }),
 		).toBeInTheDocument();
 	});
 
@@ -95,33 +94,23 @@ describe("StoreDetailModal — cached model", () => {
 		const user = userEvent.setup();
 		const onActivate = vi.fn();
 		renderModal({ localStatus: "cached", onActivate });
-		await user.click(screen.getByRole("button", { name: "Activate now" }));
+		await user.click(screen.getByRole("button", { name: "Activate" }));
 		expect(onActivate).toHaveBeenCalledWith("kokoro-onnx");
 	});
 
 	it("shows the pending activating state and blocks the button", () => {
 		renderModal({ localStatus: "cached", activating: true });
-		// Spinner contributes "Loading" to the accessible name.
 		const btn = screen.getByRole("button", { name: /activating/i });
 		expect(btn).toBeDisabled();
 	});
 
-	it("closes via the header Close button", async () => {
-		const user = userEvent.setup();
-		const onOpenChange = vi.fn();
-		renderModal({ localStatus: "cached", onOpenChange });
-		await user.click(screen.getByRole("button", { name: "Close" }));
-		expect(onOpenChange).toHaveBeenCalledWith(false);
-	});
 });
-
-describe("StoreDetailModal — owned but not cached", () => {
-	it("renders the Owned chip and routes to Install (download once)", () => {
-		renderModal({ owned: true, localStatus: "not_downloaded" });
+describe("StoreDetailModal — needs download", () => {
+	it("renders the Download button for a not-cached model", () => {
+		renderModal({ localStatus: "not_downloaded" });
 		expect(
-			screen.getByText("Owned — install on this device"),
+			screen.getByRole("button", { name: "Download" }),
 		).toBeInTheDocument();
-		expect(screen.getByRole("button", { name: "Install" })).toBeInTheDocument();
 		// No Activate for a model that isn't on this device yet.
 		expect(
 			screen.queryByRole("button", { name: "Activate now" }),

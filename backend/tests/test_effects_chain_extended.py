@@ -219,7 +219,7 @@ class TestTrimRegion:
         sr = 16000
         # 1 second of silence with a loud tone at the very end
         audio = _silence(duration=1.0, sr=sr)
-        audio[-sr // 10:] = 0.5  # loud tone in last 100ms
+        audio[-sr // 10 :] = 0.5  # loud tone in last 100ms
         chain = [
             EffectConfig(
                 effect_type="distortion",

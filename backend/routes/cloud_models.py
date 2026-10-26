@@ -42,6 +42,7 @@ class LlmRequest(BaseModel):
     model: Optional[str] = None
     temperature: float = 0.7
     max_tokens: int = 1024
+    stream: bool = False
 
 
 class TtsRequest(BaseModel):
@@ -87,6 +88,43 @@ async def cloud_llm(
             return r.json()
     except httpx.HTTPError as e:
         logger.exception("cloud llm failed")
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.post("/llm/stream")
+async def cloud_llm_stream(
+    req: LlmRequest,
+    _sub: str = Depends(require_subscription),
+):
+    """Stream LLM tokens as SSE from the cloud router."""
+    if not ROUTER_URL:
+        raise HTTPException(status_code=503, detail="Cloud router not configured")
+    try:
+        client = httpx.AsyncClient(timeout=120.0)
+        r = await client.post(
+            f"{ROUTER_URL}/v1/chat/completions",
+            json={
+                "model": req.model,
+                "messages": req.messages,
+                "temperature": req.temperature,
+                "max_tokens": req.max_tokens,
+                "stream": True,
+            },
+            headers=_headers(),
+        )
+        r.raise_for_status()
+
+        async def _stream():
+            try:
+                async for chunk in r.aiter_bytes():
+                    yield chunk
+            finally:
+                await r.aclose()
+                await client.aclose()
+
+        return StreamingResponse(_stream(), media_type="text/event-stream")
+    except httpx.HTTPError as e:
+        logger.exception("cloud llm stream failed")
         raise HTTPException(status_code=502, detail=str(e))
 
 

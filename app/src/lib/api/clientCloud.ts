@@ -26,6 +26,29 @@ export class ClientCloudMethods extends ClientInstrumentPackMethods {
 		});
 	}
 
+	async cloudLlmStream(
+		messages: CloudLlmMessage[],
+		opts?: { model?: string; temperature?: number; maxTokens?: number },
+		subscriptionKey?: string,
+	): Promise<ReadableStreamDefaultReader<Uint8Array>> {
+		const res = await this.fetchWithAuth("/cloud/llm/stream", {
+			method: "POST",
+			body: JSON.stringify({
+				messages,
+				model: opts?.model,
+				temperature: opts?.temperature ?? 0.7,
+				max_tokens: opts?.maxTokens ?? 1024,
+				stream: true,
+			}),
+			headers: subscriptionKey
+				? { "X-Subscription-Key": subscriptionKey }
+				: undefined,
+		});
+		const reader = res.body?.getReader();
+		if (!reader) throw new Error("No response body");
+		return reader;
+	}
+
 	async cloudTts(
 		text: string,
 		opts?: { voice?: string; format?: string },

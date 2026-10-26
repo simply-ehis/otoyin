@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "@/lib/api/client";
-import { inferStudioError, showStudioErrorToast } from "@/lib/errors";
+import { inferStudioError } from "@/lib/errors";
 import { useStreamingTtsPreview } from "@/lib/hooks/useStreamingTtsPreview";
 import { Button } from "@/ui/button";
 import { Textarea } from "@/ui/input";
@@ -85,7 +85,7 @@ export function ClonePage() {
 			return;
 		}
 		setGenerating(true);
-		preview.play(script.trim(), selectedVoiceId, "en");
+		preview.play(script.trim(), { kokoro_voice: selectedVoiceId }, "en");
 	};
 
 	const handleStop = () => {
@@ -168,7 +168,7 @@ export function ClonePage() {
 						)}
 						<div className="flex items-center justify-between gap-3">
 							<span className="text-xs text-muted-foreground">
-								{generating ? `Streaming… ${streamProgress}%` : "Ready"}
+								{generating ? `Streaming… ${preview.state.progress}%` : "Ready"}
 							</span>
 						</div>
 					</footer>
