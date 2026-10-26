@@ -11,9 +11,10 @@ import contextlib
 import logging
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
@@ -522,3 +523,80 @@ async def batch_tag(payload: LibraryBatchTagRequest, db: Session = Depends(get_d
                 affected += 1
     db.commit()
     return {"tag": LibraryTagResponse.model_validate(tag), "affected": affected}
+
+
+@router.post("/library/save-generated-audio", response_model=dict)
+async def save_generated_audio(
+    file: UploadFile = File(...),
+    title: str = Form(...),
+    kind: str = Form("capture"),
+    source: str = Form("file"),
+    db: Session = Depends(get_db),
+):
+    """Save generated audio (e.g. from Music Generator) to the library.
+
+    Stores the audio file as a Capture record so it appears in the unified
+    Library tab and can be played, tagged, and exported like any other item.
+    """
+    from ..database import Capture as DBCapture
+
+    # Validate kind
+    if kind not in ("capture", "generation"):
+        raise HTTPException(status_code=400, detail=f"Invalid kind: {kind}")
+
+    # Read audio bytes
+    audio_chunks: list[bytes] = []
+    total_size = 0
+    while chunk := await file.read(1024 * 1024):
+        total_size += len(chunk)
+        if total_size > 100 * 1024 * 1024:  # 100 MB limit
+            raise HTTPException(status_code=413, detail="Audio file too large")
+        audio_chunks.append(chunk)
+    audio_bytes = b"".join(audio_chunks)
+
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Empty audio file")
+
+    # Determine file extension from uploaded filename
+    suffix = Path(file.filename or "audio.wav").suffix.lower()
+    if suffix not in (".wav", ".mp3", ".m4a", ".flac", ".ogg", ".opus"):
+        suffix = ".wav"
+
+    # Save to captures directory
+    capture_id = str(uuid.uuid4())
+    captures_dir = config.get_captures_dir()
+    audio_path = captures_dir / f"{capture_id}{suffix}"
+    audio_path.write_bytes(audio_bytes)
+
+    # Try to get duration via soundfile
+    duration_ms = None
+    try:
+        import soundfile as sf
+
+        info = sf.info(str(audio_path))
+        duration_ms = int(info.duration * 1000)
+    except Exception:
+        logger.debug("Could not determine duration for %s", audio_path)
+
+    # Create capture record
+    row = DBCapture(
+        id=capture_id,
+        audio_path=config.to_storage_path(audio_path),
+        source=source,
+        language=None,
+        duration_ms=duration_ms,
+        transcript_raw="",
+        stt_model=None,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+
+    return {
+        "id": row.id,
+        "kind": "capture",
+        "title": title,
+        "audio_path": config.to_storage_path(audio_path),
+        "duration_ms": duration_ms,
+        "created_at": row.created_at.isoformat() if row.created_at else "",
+    }

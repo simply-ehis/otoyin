@@ -369,6 +369,11 @@ outes/models/download.py bark branch (gguf + per-voice pack_voice_npz), services
 - **Frontend:** `app/src/features/workspace/PlatformExportView.tsx` — metadata editing form (title, artist, album, genre, year, track #, comment), cover image upload/remove, source-based export filename, preset-dependent metadata hint (ignored for WAV/AIFF).
 - **Frontend:** `app/src/lib/api/clientStoriesB.ts` — `applyExportPreset` accepts optional metadata fields; new `uploadExportCover(file)` method.
 
+## MusicGenView "Save to Library" (this session)
+- **Backend:** `backend/routes/library.py` — new `POST /library/save-generated-audio` endpoint that saves raw audio bytes as a Capture record so it appears in the unified Library tab.
+- **Frontend:** `app/src/features/workspace/MusicGenView.tsx` — "Save to Library" button appears after generation, with optional title input; saves the generated blob to the library via `apiClient.saveGeneratedAudio()`.
+- **Frontend:** `app/src/lib/api/clientLibrary.ts` — new `saveGeneratedAudio(file, title, kind, source)` method.
+
 ## Critical Flows
 
 ### TTS Generation Flow

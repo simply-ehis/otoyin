@@ -4,11 +4,10 @@ import { apiClient } from "@/lib/api/client";
 import type { MusicGenerateRequest } from "@/lib/api/types";
 import { showStudioErrorToast } from "@/lib/errors";
 import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Textarea } from "@/ui/input";
+import { Input, Textarea } from "@/ui/input";
 import { Label } from "@/ui/primitives";
-import { useToast } from "@/ui/use-toast";
 import { ScreenHeader } from "@/ui/states";
+import { useToast } from "@/ui/use-toast";
 
 const GENRES = [
 	"pop",
@@ -53,6 +52,8 @@ export function MusicGenView() {
 	const [duration, setDuration] = useState(30);
 	const [tempo, setTempo] = useState<number | "">("");
 	const [seed, setSeed] = useState<number | "">("");
+	const [generatedBlob, setGeneratedBlob] = useState<Blob | null>(null);
+	const [saveTitle, setSaveTitle] = useState("");
 
 	const generateMutation = useMutation({
 		mutationFn: async (req: MusicGenerateRequest) => {
@@ -60,6 +61,7 @@ export function MusicGenView() {
 			return blob;
 		},
 		onSuccess: async (blob) => {
+			setGeneratedBlob(blob);
 			const url = URL.createObjectURL(blob);
 			const audio = new Audio(url);
 			audio.addEventListener("ended", () => URL.revokeObjectURL(url));
@@ -71,7 +73,35 @@ export function MusicGenView() {
 		},
 	});
 
+	const saveMutation = useMutation({
+		mutationFn: async () => {
+			if (!generatedBlob) {
+				throw new Error("No audio to save");
+			}
+			const title =
+				saveTitle.trim() || `Music ${new Date().toLocaleTimeString()}`;
+			return apiClient.saveGeneratedAudio(
+				generatedBlob,
+				title,
+				"capture",
+				"file",
+			);
+		},
+		onSuccess: () => {
+			setGeneratedBlob(null);
+			setSaveTitle("");
+			toast({
+				title: "Saved to Library",
+				description: "Your music is now in the Library tab.",
+			});
+		},
+		onError: (err: Error) => {
+			showStudioErrorToast(err);
+		},
+	});
+
 	const canGenerate = useMemo(() => prompt.trim().length > 0, [prompt]);
+	const canSave = Boolean(generatedBlob);
 
 	const handleGenerate = () => {
 		if (!canGenerate) {
@@ -90,6 +120,13 @@ export function MusicGenView() {
 			req.seed = seed;
 		}
 		generateMutation.mutate(req);
+	};
+
+	const handleSave = () => {
+		if (!canSave) {
+			return;
+		}
+		saveMutation.mutate();
 	};
 
 	return (
@@ -196,6 +233,33 @@ export function MusicGenView() {
 					{generateMutation.isPending ? "Generating..." : "Generate Music"}
 				</Button>
 			</div>
+
+			{generatedBlob && (
+				<div className="max-w-lg flex flex-col gap-2 pt-4 border-t border-border pt-4">
+					<div className="flex items-center justify-between gap-2">
+						<Label htmlFor="mg-save-title">Save to Library</Label>
+						<Input
+							id="mg-save-title"
+							value={saveTitle}
+							onChange={(e) => setSaveTitle(e.target.value)}
+							placeholder="Title (optional)"
+							className="h-9 flex-1"
+						/>
+					</div>
+					<Button
+						type="button"
+						disabled={saveMutation.isPending}
+						onClick={handleSave}
+						className="w-full"
+					>
+						{saveMutation.isPending ? "Saving…" : "Save to Library"}
+					</Button>
+					<p className="text-xs text-muted-foreground">
+						Saved audio appears in the Library tab and can be played, tagged,
+						and exported from there.
+					</p>
+				</div>
+			)}
 		</div>
 	);
 }

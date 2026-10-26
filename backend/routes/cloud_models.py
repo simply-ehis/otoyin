@@ -74,10 +74,6 @@ class TtsRequest(BaseModel):
     format: str = "wav"
 
 
-class DonateRequest(BaseModel):
-    amount: float
-    email: Optional[str] = None
-
 
 @router.get("/status")
 def status(_sub: str = Depends(require_subscription)) -> dict[str, Any]:
@@ -179,24 +175,4 @@ async def cloud_tts(
         return StreamingResponse(_stream(), media_type=content_type)
     except httpx.HTTPError as e:
         logger.exception("cloud tts failed")
-        raise HTTPException(status_code=502, detail=str(e))
-
-
-@router.post("/donate")
-async def cloud_donate(req: DonateRequest) -> dict[str, Any]:
-    if not ROUTER_URL:
-        raise HTTPException(status_code=503, detail="Cloud router not configured")
-    if req.amount < 1:
-        raise HTTPException(status_code=400, detail="Minimum donation is $1")
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            r = await client.post(
-                f"{ROUTER_URL}/v1/donations",
-                json={"amount": req.amount, "email": req.email},
-                headers=_headers(),
-            )
-            r.raise_for_status()
-            return r.json()
-    except httpx.HTTPError as e:
-        logger.exception("cloud donate failed")
         raise HTTPException(status_code=502, detail=str(e))

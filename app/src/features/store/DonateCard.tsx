@@ -1,27 +1,18 @@
 import { HeartIcon } from "@heroicons/react/24/solid";
 import { useState } from "react";
-import { apiClient } from "@/lib/api/client";
-import { showStudioErrorToast } from "@/lib/errors";
 import { Button } from "@/ui/button";
 
 const PRESETS = [5, 10, 25, 50];
 
+// Donation checkout page — replace with your Stripe/Payment link.
+const DONATE_CHECKOUT_URL = "https://buy.stripe.com/test_donation";
+
 export function DonateCard() {
 	const [amount, setAmount] = useState(10);
-	const [busy, setBusy] = useState(false);
 
-	const openDonate = async () => {
-		setBusy(true);
-		try {
-			const res = await apiClient.cloudDonate(amount);
-			if (res.checkout_url) {
-				window.open(res.checkout_url, "_blank", "noopener,noreferrer");
-			}
-		} catch (e) {
-			showStudioErrorToast(e);
-		} finally {
-			setBusy(false);
-		}
+	const openDonate = () => {
+		const url = `${DONATE_CHECKOUT_URL}?amount=${amount}`;
+		window.open(url, "_blank", "noopener,noreferrer");
 	};
 
 	return (
@@ -80,15 +71,14 @@ export function DonateCard() {
 
 			<Button
 				size="sm"
-				disabled={busy}
 				onClick={openDonate}
 				className="relative mt-5 w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:from-pink-400 hover:to-purple-400"
 			>
-				<HeartIcon className="size-3.5" /> {busy ? "Opening…" : `Donate $${amount}`}
+				<HeartIcon className="size-3.5" /> Donate ${amount}
 			</Button>
 
 			<p className="relative mt-3 text-center text-[11px] text-muted-foreground">
-				Processed via the same cloud payment route
+				Opens checkout in your browser
 			</p>
 		</div>
 	);

@@ -72,4 +72,35 @@ export class ApiClientLibrary extends DiarizeMethods {
 		}
 		return "";
 	}
+
+	async saveGeneratedAudio(
+		file: Blob | File,
+		title: string,
+		kind: "capture" | "generation" = "capture",
+		source: string = "file",
+	): Promise<{
+		id: string;
+		kind: string;
+		title: string;
+		audio_path: string;
+		duration_ms: number | null;
+		created_at: string;
+	}> {
+		const form = new FormData();
+		form.append("file", file, "audio.wav");
+		form.append("title", title);
+		form.append("kind", kind);
+		form.append("source", source);
+		const res = await fetch(`${this.getBaseUrl()}/library/save-generated-audio`, {
+			method: "POST",
+			body: form,
+		});
+		if (!res.ok) {
+			const error = await res.json().catch(() => ({ detail: res.statusText }));
+			throw new Error(
+				`${error.detail || `HTTP error! status: ${res.status}`}`,
+			);
+		}
+		return res.json();
+	}
 }
