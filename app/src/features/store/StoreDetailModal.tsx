@@ -143,13 +143,21 @@ export const StoreDetailModal = memo(function StoreDetailModal({
 
 				<div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
 					{/* quick specs */}
-					<div className="grid grid-cols-3 gap-2 text-xs">
+					<div className="grid grid-cols-4 gap-2 text-xs">
 						<div className="rounded-lg border bg-secondary px-3 py-2">
 							<div className="uppercase tracking-wider text-muted-foreground">
 								License
 							</div>
 							<div className="mt-0.5 font-medium text-foreground">
 								Free · Open
+							</div>
+						</div>
+						<div className="rounded-lg border bg-secondary px-3 py-2">
+							<div className="uppercase tracking-wider text-muted-foreground">
+								Quality
+							</div>
+							<div className="mt-0.5 font-medium text-foreground">
+								{(product.quality_rating ?? product.avg_rating ?? 0).toFixed(1)} ★
 							</div>
 						</div>
 						<div className="rounded-lg border bg-secondary px-3 py-2">

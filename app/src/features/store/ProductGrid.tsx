@@ -1,5 +1,5 @@
 import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
-import { useState } from "react";
+import { memo, useState } from "react";
 import type {
 	ActiveDownloadTask,
 	MarketplaceProduct,
@@ -91,7 +91,7 @@ export function ProductGrid({
 								</span>
 							</button>
 							{expanded && (
-								<div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+								<div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 [content-visibility:auto] [contain-intrinsic-size:0_280px]">
 									{items.map((p) => (
 										<GridCard
 											key={p.id}
@@ -126,7 +126,7 @@ export function ProductGrid({
 								{CATEGORY_LABELS[category] ?? category}
 							</h2>
 						)}
-						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 [content-visibility:auto] [contain-intrinsic-size:0_280px]">
 							{items.map((p) => (
 								<GridCard
 									key={p.id}
@@ -157,7 +157,7 @@ export function ProductGrid({
 	);
 }
 
-function GridCard({
+const GridCard = memo(function GridCard({
 	p,
 	models,
 	modelCompat,
@@ -219,4 +219,4 @@ function GridCard({
 			onDelete={onDelete}
 		/>
 	);
-}
+});
