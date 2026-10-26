@@ -383,6 +383,11 @@ const SupportPage = lazy(() =>
 		default: m.SupportPage,
 	})),
 );
+const CloudModelsPage = lazy(() =>
+	import("@/features/settings/CloudModelsPage").then((m) => ({
+		default: m.CloudModelsPage,
+	})),
+);
 const ModelHealthPage = lazy(() =>
 	import("@/features/settings/ModelHealthPage").then((m) => ({
 		default: m.ModelHealthPage,
@@ -1032,6 +1037,13 @@ const settingsSupportRoute = createRoute({
 	component: SupportPage,
 });
 
+// Settings → Cloud models sub-route
+const settingsCloudModelsRoute = createRoute({
+	getParentRoute: () => settingsRoute,
+	path: "/cloud-models",
+	component: CloudModelsPage,
+});
+
 // Redirect old /server path to /settings
 const serverRedirectRoute = createRoute({
 	getParentRoute: () => rootRoute,
@@ -1110,6 +1122,7 @@ const routeTree = rootRoute.addChildren([
 		settingsApiKeysRoute,
 		settingsWorkspaceRoute,
 		settingsSupportRoute,
+	settingsCloudModelsRoute,
 	]),
 	projectsRoute,
 	communityPresetsRoute,

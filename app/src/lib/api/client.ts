@@ -6,8 +6,8 @@
  *     → ContentMethods → AgentMethods → HelpMethods → MemoryMethods
  *       → SpatialMethods → ADRMethods → StoriesBMethods → ... → ApiClientCore
  */
-import { ClientInstrumentPackMethods } from "./clientInstrumentPacks";
+import { ClientCloudMethods } from "./clientCloud";
 
-export class ApiClient extends ClientInstrumentPackMethods {}
+export class ApiClient extends ClientCloudMethods {}
 
 export const apiClient = new ApiClient();

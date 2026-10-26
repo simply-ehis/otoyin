@@ -153,6 +153,13 @@ export const ChainEditor = memo(function ChainEditor({
 		[value, onChange],
 	);
 
+	const setTrim = useCallback(
+		(index: number, field: "trim_start_ms" | "trim_end_ms", v: number) => {
+			onChange(value.map((e, i) => (i === index ? { ...e, [field]: v } : e)));
+		},
+		[value, onChange],
+	);
+
 	const onDragEnd = useCallback(
 		(event: DragEndEvent) => {
 			const { active, over } = event;
@@ -238,6 +245,7 @@ export const ChainEditor = memo(function ChainEditor({
 							onRemove={() => removeAt(index)}
 							onToggle={() => toggleAt(index)}
 							onParam={(name, v) => setParam(index, name, v)}
+							onTrim={(field, v) => setTrim(index, field, v)}
 						/>
 					))}
 				</SortableContext>
@@ -271,6 +279,7 @@ function ChainRow({
 	onRemove,
 	onToggle,
 	onParam,
+	onTrim,
 }: {
 	id: string;
 	effect: EffectConfig;
@@ -280,6 +289,7 @@ function ChainRow({
 	onRemove: () => void;
 	onToggle: () => void;
 	onParam: (name: string, value: number) => void;
+	onTrim?: (field: "trim_start_ms" | "trim_end_ms", v: number) => void;
 }) {
 	const { t } = useTranslation();
 	const {
@@ -401,6 +411,58 @@ function ChainRow({
 							</div>
 						);
 					})}
+					{onTrim ? (
+						<div className="mt-2 pt-2 border-t border-border">
+							<p className="mb-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+								{t("effects.chain.trimRegion")}
+							</p>
+							<div className="grid grid-cols-2 gap-2">
+								<div>
+									<Label className="text-xs text-muted-foreground block mb-1">
+										{t("effects.chain.trimStart")}
+									</Label>
+									<input
+										type="number"
+										value={effect.trim_start_ms ?? 0}
+										onChange={(e) =>
+											onTrim(
+												"trim_start_ms",
+												Math.max(0, Number(e.target.value) || 0),
+											)
+										}
+										className="w-full h-6 rounded-md border border-input bg-input px-2 text-xs"
+										aria-label={t("effects.chain.trimStart")}
+									/>
+									<span className="text-[10px] text-muted-foreground">
+										{t("effects.chain.trimStartMs")}
+									</span>
+								</div>
+								<div>
+									<Label className="text-xs text-muted-foreground block mb-1">
+										{t("effects.chain.trimEnd")}
+									</Label>
+									<input
+										type="number"
+										value={effect.trim_end_ms ?? 0}
+										onChange={(e) =>
+											onTrim(
+												"trim_end_ms",
+												Math.max(0, Number(e.target.value) || 0),
+											)
+										}
+										className="w-full h-6 rounded-md border border-input bg-input px-2 text-xs"
+										aria-label={t("effects.chain.trimEnd")}
+									/>
+									<span className="text-[10px] text-muted-foreground">
+										{t("effects.chain.trimEndMs")}
+									</span>
+								</div>
+							</div>
+							<p className="mt-1 text-[10px] text-muted-foreground">
+								{t("effects.chain.trimHint")}
+							</p>
+						</div>
+					) : null}
 				</div>
 			) : null}
 		</div>

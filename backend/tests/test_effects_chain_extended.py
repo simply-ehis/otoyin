@@ -204,3 +204,117 @@ class TestEdgeCases:
         result = apply_effects_chain(audio, 16000, chain)
         # Silent input should remain silent (or near-silent)
         assert np.max(np.abs(result)) < 0.01
+
+
+# ---------------------------------------------------------------------------
+# 4. Trim region tests
+# ---------------------------------------------------------------------------
+
+
+class TestTrimRegion:
+    """Effects should only modify the trimmed [start_ms, end_ms] region,
+    leaving the rest of the audio untouched."""
+
+    def test_trim_start_only_changes_region_after_start(self):
+        sr = 16000
+        # 1 second of silence with a loud tone at the very end
+        audio = _silence(duration=1.0, sr=sr)
+        audio[-sr // 10:] = 0.5  # loud tone in last 100ms
+        chain = [
+            EffectConfig(
+                effect_type="distortion",
+                enabled=True,
+                params={"gain": 10.0, "mix": 1.0},
+                trim_start_ms=500.0,
+            )
+        ]
+        result = apply_effects_chain(audio, sr, chain)
+        # First half should be untouched (still silence)
+        assert np.max(np.abs(result[: sr // 2])) < 1e-6
+        # Region after trim_start should have the tone distorted
+        assert np.max(np.abs(result[sr // 2 :])) > 0.1
+
+    def test_trim_end_only_changes_region_before_end(self):
+        sr = 16000
+        audio = _silence(duration=1.0, sr=sr)
+        audio[: sr // 10] = 0.5  # loud tone in first 100ms
+        chain = [
+            EffectConfig(
+                effect_type="distortion",
+                enabled=True,
+                params={"gain": 10.0, "mix": 1.0},
+                trim_end_ms=500.0,
+            )
+        ]
+        result = apply_effects_chain(audio, sr, chain)
+        # Region before trim_end should have the tone distorted
+        assert np.max(np.abs(result[: sr // 2])) > 0.1
+        # After trim_end should be untouched (still silence)
+        assert np.max(np.abs(result[sr // 2 :])) < 1e-6
+
+    def test_trim_both_changes_only_middle_region(self):
+        sr = 16000
+        audio = np.ones(sr, dtype=np.float32) * 0.5  # constant 0.5 everywhere
+        chain = [
+            EffectConfig(
+                effect_type="distortion",
+                enabled=True,
+                params={"gain": 10.0, "mix": 1.0},
+                trim_start_ms=250.0,
+                trim_end_ms=750.0,
+            )
+        ]
+        result = apply_effects_chain(audio, sr, chain)
+        # Before trim_start: untouched (still 0.5)
+        assert np.allclose(result[: int(0.24 * sr)], 0.5, atol=1e-3)
+        # Middle region: distorted (not 0.5 anymore)
+        assert not np.allclose(result[int(0.3 * sr) : int(0.7 * sr)], 0.5, atol=1e-3)
+        # After trim_end: untouched (still 0.5)
+        assert np.allclose(result[int(0.76 * sr) :], 0.5, atol=1e-3)
+
+    def test_trim_zero_means_entire_audio(self):
+        sr = 16000
+        audio = np.ones(sr, dtype=np.float32) * 0.5
+        chain = [
+            EffectConfig(
+                effect_type="distortion",
+                enabled=True,
+                params={"gain": 10.0, "mix": 1.0},
+                trim_start_ms=0.0,
+                trim_end_ms=0.0,
+            )
+        ]
+        result = apply_effects_chain(audio, sr, chain)
+        # No trim — entire audio should be distorted (not 0.5 anymore)
+        assert not np.allclose(result, 0.5, atol=1e-3)
+
+    def test_trim_disabled_effect_not_applied(self):
+        sr = 16000
+        audio = np.ones(sr, dtype=np.float32) * 0.5
+        chain = [
+            EffectConfig(
+                effect_type="distortion",
+                enabled=False,
+                params={"gain": 10.0, "mix": 1.0},
+                trim_start_ms=250.0,
+                trim_end_ms=750.0,
+            )
+        ]
+        result = apply_effects_chain(audio, sr, chain)
+        # Disabled effect — audio unchanged everywhere
+        np.testing.assert_array_equal(result, audio)
+
+    def test_trim_region_preserves_duration(self):
+        sr = 16000
+        audio = _tone(duration=0.5, sr=sr)
+        chain = [
+            EffectConfig(
+                effect_type="distortion",
+                enabled=True,
+                params={"gain": 10.0, "mix": 1.0},
+                trim_start_ms=100.0,
+                trim_end_ms=400.0,
+            )
+        ]
+        result = apply_effects_chain(audio, sr, chain)
+        assert len(result) == len(audio)

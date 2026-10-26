@@ -1,15 +1,4 @@
-"""Cloud models router — proxies LLM/TTS requests to a private cloud router.
-
-This replaces the marketplace's per-model purchase flow with two
-subscription tiers: a premium LLM router and a premium TTS router.
-The upstream router URL and API key are configured via environment
-variables (CLOUD_ROUTER_URL, CLOUD_ROUTER_API_KEY) so the same code
-works against a self-hosted or hosted router.
-
-Access is gated by a subscription API key supplied by the client in
-the ``X-Subscription-Key`` header (or ``CLOUD_SUBSCRIPTION_KEY`` env
-for local/dev use).
-"""
+"""Cloud models router — proxies LLM/TTS/donation requests to a private cloud router."""
 
 from __future__ import annotations
 
@@ -29,12 +18,15 @@ router = APIRouter(prefix="/cloud", tags=["cloud-models"])
 ROUTER_URL = os.getenv("CLOUD_ROUTER_URL", "").rstrip("/")
 ROUTER_KEY = os.getenv("CLOUD_ROUTER_API_KEY", "")
 DEV_SUBSCRIPTION_KEY = os.getenv("CLOUD_SUBSCRIPTION_KEY", "")
+ALLOWED_KEYS = [k.strip() for k in os.getenv("CLOUD_ALLOWED_KEYS", "").split(",") if k.strip()]
 
 
 def require_subscription(x_subscription_key: Optional[str] = Header(default=None)) -> str:
     key = x_subscription_key or DEV_SUBSCRIPTION_KEY
     if not key:
         raise HTTPException(status_code=401, detail="Missing subscription key")
+    if ALLOWED_KEYS and key not in ALLOWED_KEYS and key != DEV_SUBSCRIPTION_KEY:
+        raise HTTPException(status_code=403, detail="Invalid subscription key")
     return key
 
 
@@ -56,6 +48,11 @@ class TtsRequest(BaseModel):
     text: str
     voice: Optional[str] = None
     format: str = "wav"
+
+
+class DonateRequest(BaseModel):
+    amount: float
+    email: Optional[str] = None
 
 
 @router.get("/status")
@@ -121,4 +118,24 @@ async def cloud_tts(
         return StreamingResponse(_stream(), media_type=content_type)
     except httpx.HTTPError as e:
         logger.exception("cloud tts failed")
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.post("/donate")
+async def cloud_donate(req: DonateRequest) -> dict[str, Any]:
+    if not ROUTER_URL:
+        raise HTTPException(status_code=503, detail="Cloud router not configured")
+    if req.amount < 1:
+        raise HTTPException(status_code=400, detail="Minimum donation is $1")
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            r = await client.post(
+                f"{ROUTER_URL}/v1/donations",
+                json={"amount": req.amount, "email": req.email},
+                headers=_headers(),
+            )
+            r.raise_for_status()
+            return r.json()
+    except httpx.HTTPError as e:
+        logger.exception("cloud donate failed")
         raise HTTPException(status_code=502, detail=str(e))

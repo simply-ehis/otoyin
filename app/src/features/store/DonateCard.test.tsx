@@ -1,10 +1,13 @@
-/**
- * DonateCard tests — distinct donation card.
- */
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { DonateCard } from "./DonateCard";
+
+vi.mock("@/lib/api/client", () => ({
+	apiClient: {
+		cloudDonate: vi.fn().mockResolvedValue({ checkout_url: "https://pay.example/d1" }),
+	},
+}));
 
 describe("DonateCard", () => {
 	it("renders the support heading", () => {
@@ -24,9 +27,7 @@ describe("DonateCard", () => {
 	});
 
 	it("opens the donation link when clicked", async () => {
-		const openSpy = vi
-			.spyOn(window, "open")
-			.mockImplementation(() => null);
+		const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
 		const user = userEvent.setup();
 		render(<DonateCard />);
 		await user.click(screen.getByRole("button", { name: /Donate \$10/i }));

@@ -9,9 +9,9 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from ..backends.effects import (
+    PEDALBOARD_AVAILABLE,
     get_available_effects,
     get_available_presets,
-    PEDALBOARD_AVAILABLE,
     process_audio,
 )
 
@@ -33,6 +33,8 @@ class ProcessEffectsRequest(BaseModel):
     sample_rate: int = 44100
     chain: list[dict[str, Any]] = []
     preset: str | None = None
+    start_ms: float | None = None
+    end_ms: float | None = None
 
 
 @router.get("/available")
@@ -56,7 +58,6 @@ async def process_effects(request: ProcessEffectsRequest):
         raise HTTPException(status_code=503, detail="pedalboard not installed")
 
     from .. import config
-    from pathlib import Path
 
     audio_path = config.resolve_storage_path(request.audio_path)
     if audio_path is None or not audio_path.exists():
@@ -69,9 +70,12 @@ async def process_effects(request: ProcessEffectsRequest):
             sample_rate=request.sample_rate,
             chain=request.chain,
             preset=request.preset,
+            start_ms=request.start_ms,
+            end_ms=request.end_ms,
         )
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     from fastapi.responses import Response
+
     return Response(content=result, media_type="audio/wav")

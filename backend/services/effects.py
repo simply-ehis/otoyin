@@ -33,6 +33,46 @@ class EffectConfig:
     effect_type: str
     enabled: bool = True
     params: dict = field(default_factory=dict)
+    trim_start_ms: float = 0.0
+    trim_end_ms: float = 0.0
+
+
+def _apply_effect_to_region(
+    audio: np.ndarray, sample_rate: int, effect: EffectConfig, start_sample: int, end_sample: int
+) -> np.ndarray:
+    """Apply a single effect to a time-region of audio, leaving the rest
+    untouched. The effected region is spliced back with a short crossfade
+    to avoid clicks at the boundaries."""
+    n = len(audio)
+    start = max(0, min(start_sample, n))
+    end = max(start, min(end_sample, n))
+    if end <= start:
+        return audio
+
+    region = audio[start:end].copy()
+    processed = apply_effect(region, sample_rate, effect)
+
+    # If the effect changed the region length (e.g. time_stretch, reverb
+    # tail), we still splice back into the same [start, end] window so the
+    # overall duration is preserved.  Pad or truncate to fit.
+    if len(processed) != len(region):
+        if len(processed) > len(region):
+            processed = processed[: len(region)]
+        else:
+            processed = np.pad(processed, (0, len(region) - len(processed)))
+
+    result = audio.copy()
+    # Short crossfade (5 ms) at each boundary to avoid clicks.
+    fade = max(1, int(0.005 * sample_rate))
+    fade_in = np.linspace(0.0, 1.0, fade)
+    fade_out = np.linspace(1.0, 0.0, fade)
+
+    result[start:end] = processed
+    if start + fade <= end:
+        result[start : start + fade] *= fade_in
+        result[end - fade : end] *= fade_out
+
+    return result
 
 
 def apply_effects_chain(audio: np.ndarray, sample_rate: int, chain: list[EffectConfig]) -> np.ndarray:
@@ -40,7 +80,13 @@ def apply_effects_chain(audio: np.ndarray, sample_rate: int, chain: list[EffectC
     for effect in chain:
         if not effect.enabled:
             continue
-        result = apply_effect(result, sample_rate, effect)
+        if effect.trim_start_ms == 0.0 and effect.trim_end_ms == 0.0:
+            # No trim — apply to entire audio (existing behaviour).
+            result = apply_effect(result, sample_rate, effect)
+            continue
+        start_sample = int(effect.trim_start_ms / 1000.0 * sample_rate)
+        end_sample = int(effect.trim_end_ms / 1000.0 * sample_rate)
+        result = _apply_effect_to_region(result, sample_rate, effect, start_sample, end_sample)
     return result
 
 

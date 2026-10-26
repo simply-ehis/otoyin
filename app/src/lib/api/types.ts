@@ -84,6 +84,9 @@ export interface EffectConfig {
 	type: string;
 	enabled: boolean;
 	params: Record<string, number>;
+	/** Optional trim: apply this effect only to [trim_start_ms, trim_end_ms]. */
+	trim_start_ms?: number;
+	trim_end_ms?: number;
 }
 
 export interface GenerationRequest {
@@ -1295,4 +1298,8 @@ export interface InstrumentPackResponse {
 export interface InstrumentUploadResponse {
 	pack: InstrumentPackResponse;
 	instrumentCount: number;
+}
+
+export interface CloudLlmResponse {
+	choices?: { message?: { content?: string } }[];
 }
