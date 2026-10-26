@@ -87,7 +87,7 @@ export function HelpCenter() {
 									{item.name}
 								</span>
 								<span className="text-xs text-muted-foreground">
-									{item.category} · {item.where}
+									{item.where}
 								</span>
 							</p>
 							<p className="mt-1 text-[13px] text-muted-foreground">

@@ -151,6 +151,11 @@ def _get_tts_configs() -> list[ModelConfig]:
             category="tts",
             quant="int8",
             pip_packages=["kokoro>=0.9.4", "misaki[en,ja,zh]>=0.9.4"],
+            preload_priority=2,
+            cold_start_ms=3000,
+            warm_start_ms=500,
+            streaming=True,
+            execution_provider="CPU",
         ),
         # --- Fish Audio S2 Pro (GGUF, 4.56B Dual-AR): s2.cpp sidecar -----
         # Fish Audio Research License (non-commercial research). Q4_K_M GGUF

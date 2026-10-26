@@ -92,6 +92,20 @@
 
 	/* ── Focus ring (accessibility floor) ──────────────────────────── */
 	--focus-ring: hsl(var(--accent));
+
+	/* ── Glass surfaces (selective — overlays / capture pill / bottom player only) ──
+	   Frosted fill + hairline border + subtle shadow. Solid cards keep
+	   --surface-raised; glass is additive and opt-in via .glass-panel.
+
+	   RAM-conscious: backdrop-filter only on small surfaces (pill ~200x40,
+	   player ~1200x100). Never on scrolling panels where blur RAM scales
+	   with viewport size. Surface is semi-opaque so a lighter blur reads
+	   well without a heavy texture cache. */
+	--glass-surface: hsl(28 6% 9% / 0.78);
+	--glass-surface-solid: hsl(28 6% 11%);
+	--glass-border: hsl(28 4% 22% / 0.5);
+	--glass-highlight: hsl(0 0% 100% / 0.08);
+	--glass-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 /* Press feedback (desktop-ui-motion core pattern) — scale(0.97),

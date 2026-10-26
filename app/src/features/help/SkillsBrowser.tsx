@@ -126,7 +126,7 @@ export function SkillsBrowser() {
 					</Button>
 				</div>
 			</div>
-			<Field label="Description (optional)" htmlFor="skill-description">
+			<Field label="Description" htmlFor="skill-description">
 				<Textarea
 					id="skill-description"
 					value={form.description}
@@ -146,10 +146,7 @@ export function SkillsBrowser() {
 					onRetry={() => void load()}
 				/>
 			) : skills.length === 0 ? (
-				<EmptyState
-					title="No custom skills yet"
-					body="Create one above — give it triggers and steps, and agents can run it."
-				/>
+				<EmptyState title="No custom skills yet" />
 			) : (
 				<ul className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
 					{skills.map((skill) => (

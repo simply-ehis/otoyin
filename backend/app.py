@@ -509,6 +509,16 @@ async def _run_startup(application: FastAPI) -> None:
 
     create_background_task(_tier2_cleanup())
 
+    # Tier 3 (+6 s): preload models with preload_priority > 0 (Kokoro ONNX,
+    # Moonshine STT, etc.). Runs in background so the app is usable immediately.
+    async def _tier3_model_preload() -> None:
+        await asyncio.sleep(6.0)
+        from .utils.startup_defer import ensure_models_preloaded
+
+        await ensure_models_preloaded()
+
+    create_background_task(_tier3_model_preload())
+
     from .utils.platform_detect import log_platform_info
 
     log_platform_info()

@@ -2,85 +2,41 @@ import {
 	BookOpenIcon as BookOpen,
 	ChevronDoubleLeftIcon,
 	ChevronLeftIcon,
-	FolderOpenIcon as FolderOpen,
-	GlobeAltIcon as Translate,
+	CogIcon as Settings,
 	HomeIcon as Home,
-	LanguageIcon as Language,
 	MicrophoneIcon as Mic,
 	MusicalNoteIcon as Music,
-	PencilSquareIcon as PenLine,
-	PlayCircleIcon as PlayCircle,
 	PuzzlePieceIcon as PuzzlePiece,
-	RectangleStackIcon as RectangleStack,
-	CogIcon as Settings,
-	ShoppingBagIcon as ShoppingBag,
-	SignalIcon as Signal,
-	SparklesIcon as Sparkles,
-	SpeakerWaveIcon as SpeakerWave,
-	Squares2X2Icon as Squares,
+	ShoppingBagIcon as Store,
+	SignalIcon as Captures,
+	SparklesIcon as Effects,
 } from "@heroicons/react/24/outline";
 import { Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils/cn";
 import { useUIStore } from "@/stores/uiStore";
-import { type TabPath, useWorkspaceStore } from "@/stores/workspaceStore";
 import { ClipboardIndicator } from "@/features/clipboard/ClipboardIndicator";
 
 interface NavItem {
-	/** i18n key under "sidebar.*" */
 	label: string;
-	/** Heroicon component */
 	icon: typeof Home;
-	/** Route path */
-	path: TabPath;
+	path: string;
 }
 
-/** Logical groups for visual separation in the sidebar. */
-const NAV_GROUPS: { items: NavItem[] }[] = [
-	{
-		items: [
-			{ path: "/", label: "sidebar.generate", icon: Home },
-			{ path: "/audio-studio", label: "sidebar.audioStudio", icon: Music },
-		],
-	},
-	{
-		items: [
-			{ path: "/stories", label: "sidebar.stories", icon: BookOpen },
-			{ path: "/songwriter", label: "sidebar.songwriter", icon: PenLine },
-			{ path: "/launcher", label: "sidebar.launcher", icon: Squares },
-			{ path: "/instruments", label: "sidebar.instruments", icon: Music },
-			{
-				path: "/audiobooks",
-				label: "sidebar.audiobooks",
-				icon: RectangleStack,
-			},
-		],
-	},
-	{
-		items: [
-			{ path: "/voices", label: "sidebar.voices", icon: Mic },
-			{ path: "/captures", label: "sidebar.captures", icon: Signal },
-			{ path: "/dubbing", label: "sidebar.dubbing", icon: Language },
-		],
-	},
-	{
-		items: [
-			{ path: "/effects", label: "sidebar.effects", icon: Sparkles },
-			{ path: "/workspace", label: "sidebar.workspace", icon: SpeakerWave },
-			{ path: "/sounds", label: "sidebar.sounds", icon: PlayCircle },
-			{ path: "/translate", label: "sidebar.translate", icon: Translate },
-		],
-	},
-	{
-		items: [
-			{ path: "/library", label: "sidebar.library", icon: FolderOpen },
-			{ path: "/store", label: "sidebar.store", icon: ShoppingBag },
-		],
-	},
-	{
-		items: [{ path: "/settings", label: "sidebar.settings", icon: Settings }],
-	},
+/** 8 primary destinations. The long tail (audiobooks, songwriter, launcher,
+ *  instruments, dubbing, sounds, translate, workspace sub-views …) lives
+ *  inside each workspace's internal navigation — not as top-level peers.
+ *  One icon per destination keeps the rail scannable at a glance. */
+const NAV_ITEMS: NavItem[] = [
+	{ path: "/", label: "sidebar.generate", icon: Home },
+	{ path: "/stories", label: "sidebar.stories", icon: BookOpen },
+	{ path: "/audio-studio", label: "sidebar.audioStudio", icon: Music },
+	{ path: "/voices", label: "sidebar.voices", icon: Mic },
+	{ path: "/captures", label: "sidebar.captures", icon: Captures },
+	{ path: "/effects", label: "sidebar.effects", icon: Effects },
+	{ path: "/store", label: "sidebar.store", icon: Store },
+	{ path: "/settings", label: "sidebar.settings", icon: Settings },
 ];
 
 export function Sidebar() {
@@ -90,50 +46,8 @@ export function Sidebar() {
 	const sidebarOpen = useUIStore((s) => s.sidebarOpen);
 	const setSidebarOpen = useUIStore((s) => s.setSidebarOpen);
 	const storeSidebarWidth = useUIStore((s) => s.sidebarWidth);
-	const setStoreSidebarWidth = useUIStore((s) => s.setSidebarWidth);
 	const [sidebarWidth, setSidebarWidth] = useState(() => storeSidebarWidth);
 	const isResizing = useRef(false);
-	const visibleTabs = useWorkspaceStore((s) => s.visibleTabs);
-
-	// Filter NAV_GROUPS by visible tabs. null = show all.
-	const filteredGroups =
-		visibleTabs === null
-			? NAV_GROUPS
-			: NAV_GROUPS.map((group) => ({
-					items: group.items.filter((item) => visibleTabs.includes(item.path)),
-				})).filter((group) => group.items.length > 0);
-
-	const hiddenCount =
-		visibleTabs === null
-			? 0
-			: NAV_GROUPS.reduce(
-					(acc, group) =>
-						acc +
-						group.items.filter((item) => !visibleTabs.includes(item.path))
-							.length,
-					0,
-				);
-
-	useEffect(() => {
-		if (typeof window === "undefined") {
-			return;
-		}
-		if (window.innerWidth < 1000 && sidebarOpen) {
-			setSidebarOpen(false);
-		}
-		const onResize = () => {
-			if (window.innerWidth < 1000 && useUIStore.getState().sidebarOpen) {
-				setSidebarOpen(false);
-			}
-		};
-		window.addEventListener("resize", onResize);
-		return () => window.removeEventListener("resize", onResize);
-	}, [sidebarOpen, setSidebarOpen]);
-
-	useEffect(() => {
-		localStorage.setItem("otoyin-sidebar-width", String(sidebarWidth));
-		setStoreSidebarWidth(sidebarWidth);
-	}, [sidebarWidth, setStoreSidebarWidth]);
 
 	const isActive = (path: string) =>
 		location.pathname === path || location.pathname.startsWith(`${path}/`);
@@ -177,72 +91,46 @@ export function Sidebar() {
 				/>
 			)}
 			<div className="flex h-full flex-col">
-				{/* Navigation */}
+				{/* Navigation — 8 destinations, icon + label when open */}
 				<nav
 					className="flex-1 overflow-y-auto py-2 px-1.5 scrollbar-thin"
 					aria-label={t("sidebar.navigation")}
 				>
-					<div className="space-y-0.5">
-						{filteredGroups.map((group, gi) => (
-							<div key={group.items[0]?.path ?? gi}>
-								{gi > 0 && (
-									<div
-										className="my-1.5 border-t border-border/50 mx-1.5"
-										aria-hidden="true"
-									/>
-								)}
-								<ul className="space-y-px">
-									{group.items.map((item) => {
-										const active = isActive(item.path);
-										return (
-											<li key={item.path}>
-												<Link
-													to={item.path}
-													title={t(item.label)}
-													aria-label={t(item.label)}
-													className={cn(
-														"flex items-center gap-2.5 min-w-0 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors border-l-2 relative",
-														active
-															? // text-accent-ink, not text-accent: the accent on its own
-																// muted tint is only 2.6-3.4:1 in four themes, and WCAG AA
-																// for normal text needs 4.5. The ink keeps the accent's
-																// hue and saturation and moves only lightness.
-																"bg-accent-muted text-accent-ink border-accent"
-															: "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent",
-													)}
-													aria-current={active ? "page" : undefined}
-													data-active={active ? "true" : undefined}
-												>
-													<item.icon
-														className="size-4 shrink-0"
-														aria-hidden="true"
-													/>
-													<span
-														className={cn(
-															"truncate transition-opacity duration-150",
-															sidebarOpen ? "opacity-100" : "sr-only",
-														)}
-													>
-														{t(item.label)}
-													</span>
-												</Link>
-											</li>
-										);
-									})}
-								</ul>
-							</div>
-						))}
-						{hiddenCount > 0 && sidebarOpen && (
-							<Link
-								to="/settings/workspace"
-								title={t("sidebar.showMoreTabs", { count: hiddenCount })}
-								className="flex items-center gap-2 rounded-md px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-							>
-								<Squares className="size-3.5" aria-hidden="true" />
-								<span>{t("sidebar.showMoreTabs", { count: hiddenCount })}</span>
-							</Link>
-						)}
-					</div>
+					<ul className="space-y-0.5">
+						{NAV_ITEMS.map((item) => {
+							const active = isActive(item.path);
+							return (
+								<li key={item.path}>
+									<Link
+										to={item.path}
+										title={t(item.label)}
+										aria-label={t(item.label)}
+										className={cn(
+											"flex items-center gap-2.5 min-w-0 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors border-l-2 relative",
+											active
+												? "bg-accent-muted text-accent-ink border-accent"
+												: "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent",
+										)}
+										aria-current={active ? "page" : undefined}
+										data-active={active ? "true" : undefined}
+									>
+										<item.icon
+											className="size-4 shrink-0"
+											aria-hidden="true"
+										/>
+										<span
+											className={cn(
+												"truncate transition-opacity duration-150",
+												sidebarOpen ? "opacity-100" : "sr-only",
+											)}
+										>
+											{t(item.label)}
+										</span>
+									</Link>
+								</li>
+							);
+						})}
+					</ul>
 				</nav>
 
 				{/* Clipboard indicator — shows clip status + opens panel */}

@@ -164,12 +164,12 @@
 
 | Tool | Backend | What it does |
 |------|---------|--------------|
-| Piano note | `backend/routes/instruments.py:78-82` | Additive synthesis piano |
-| Drum pad | `backend/routes/instruments.py:85-89` | Synthesized drum hits |
-| Synth note | `backend/routes/instruments.py:92-96` | Oscillator-based synth |
-| Noise generator | `backend/routes/instruments.py:99-103` | White/pink/brown noise |
-| GM instruments | `backend/routes/instruments.py:124-131` | General MIDI SoundFont rendering |
-| Drum machine | `backend/routes/instruments.py:134-138` | 16-step pattern loop synthesis |
+| Piano note | `backend/routes/instruments.py:98-102` | Additive synthesis piano |
+| Drum pad | `backend/routes/instruments.py:105-109` | Synthesized drum hits |
+| Synth note | `backend/routes/instruments.py:112-116` | Oscillator-based synth |
+| Noise generator | `backend/routes/instruments.py:119-123` | White/pink/brown noise |
+| GM instruments | `backend/routes/instruments.py:144-151` | General MIDI SoundFont rendering |
+| Drum machine | `backend/routes/instruments.py:154-164` | Lane-grid (per-step velocity + swing) or step-list loop synthesis |
 
 ## 13. Multi-track & Mixing
 

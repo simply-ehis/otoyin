@@ -1,15 +1,20 @@
 """Instrument and noise generation endpoints."""
 
 import io
+from typing import Annotated
 
 import numpy as np
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from ..errors import ERR_INSTRUMENT_MISSING
 from ..services.drum_machine import render_drum_pattern
-from ..services.gm_instrument import render_gm_note
+from ..services.gm_instrument import (
+    gm_program_catalog,
+    render_gm_note,
+    render_gm_pattern_multi,
+)
 from ..services.instruments import (
     NOISE_TYPES,
     generate_drum_pad,
@@ -54,13 +59,31 @@ class GMNoteRequest(BaseModel):
 
 
 class DrumMachineRequest(BaseModel):
-    pattern: list = Field(
-        ...,
+    _StepVelocity = Annotated[float, Field(ge=0, le=1)]
+
+    pattern: list | None = Field(
+        default=None,
         description="List of steps; each step is a voice name or list of voice names: kick/snare/hihat/clap/tom",
+    )
+    lanes: dict[str, list[_StepVelocity]] | None = Field(
+        default=None,
+        description="Per-voice step velocities (0..1, 0 = rest). Bar = longest lane. Takes precedence over `pattern`.",
+    )
+    swing: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=0.5,
+        description="Off-step delay as a fraction of a step; 0.5 is a full triplet shuffle",
     )
     step_duration: float = Field(default=0.125, ge=0.02, le=1.0)
     bars: int = Field(default=1, ge=1, le=16)
     velocity: float = Field(default=0.8, ge=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def _require_pattern_or_lanes(self) -> "DrumMachineRequest":
+        if self.pattern is None and not self.lanes:
+            raise ValueError("`pattern` (list of steps) is required when `lanes` is not provided")
+        return self
 
 
 def _audio_response(audio: np.ndarray, sample_rate: int, filename: str) -> StreamingResponse:
@@ -134,8 +157,15 @@ async def play_gm_instrument(data: GMNoteRequest):
 
 @router.post("/instruments/drum-machine")
 async def play_drum_machine(data: DrumMachineRequest):
-    """Render a 16-step (or N-step) drum pattern loop from synthesized drum hits."""
-    audio = render_drum_pattern(data.pattern, data.step_duration, data.bars, velocity=data.velocity)
+    """Render a drum pattern loop (lane grid or legacy step list) from synthesized hits."""
+    audio = render_drum_pattern(
+        data.pattern,
+        data.step_duration,
+        data.bars,
+        velocity=data.velocity,
+        lanes=data.lanes,
+        swing=data.swing,
+    )
     return _audio_response(audio, 48000, "drum_machine.wav")
 
 
@@ -146,4 +176,54 @@ async def list_gm_types():
         "note": "General MIDI programs 0-127. Examples: 0 piano, 32 bass, 40 strings, "
         "56 trumpet, 73 pad, 112 tinkle bell. Requires a SoundFont: any "
         "instrument-pack bank from the Store, or an .sf2/.sf3 in data/soundfonts.",
+        "programs": gm_program_catalog(),
     }
+
+
+class GmPatternNote(BaseModel):
+    """One note in one step of a GM pattern: program + pitch + velocity."""
+
+    program: int = Field(
+        ge=0,
+        le=127,
+        description="GM program 0-127 (0 piano, 32 bass, 40 strings, ...)",
+    )
+    note: int = Field(
+        ge=21,
+        le=108,
+        description="MIDI note 21-108 (A0-C8, piano keyboard range)",
+    )
+    velocity: float = Field(
+        default=0.8,
+        ge=0.0,
+        le=1.0,
+        description="Note velocity 0-1 (0 = silent)",
+    )
+
+
+class GmPatternRequest(BaseModel):
+    steps: list[list[GmPatternNote]] = Field(
+        default_factory=list,
+        description="One entry per step: the notes (program, note, velocity) that play together at that step.",
+    )
+    step_duration: float = Field(default=0.25, ge=0.02, le=1.0)
+    bars: int = Field(default=1, ge=1, le=16)
+
+
+@router.post("/instruments/gm-pattern")
+async def play_gm_pattern(data: GmPatternRequest):
+    """Render a multi-instrument GM pattern loop from a beat-map grid.
+
+    Each step plays its listed notes together; all steps are mixed into one
+    looped WAV. Returns 501 when no SoundFont is installed.
+    """
+    steps = [[(note.program, note.note, note.velocity) for note in step] for step in data.steps]
+    try:
+        audio = render_gm_pattern_multi(
+            steps,
+            data.step_duration,
+            data.bars,
+        )
+    except RuntimeError:
+        raise HTTPException(status_code=501, detail=ERR_INSTRUMENT_MISSING) from None
+    return _audio_response(audio, 48000, "gm_pattern.wav")

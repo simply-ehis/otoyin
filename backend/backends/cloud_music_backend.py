@@ -8,8 +8,11 @@ contract to it and decodes the returned audio. No local model is loaded.
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
-import numpy as np
+if TYPE_CHECKING:
+    import numpy as np
+
 
 from ..services.cloud_provider import generate_music_via_cloud
 

@@ -10,6 +10,7 @@ import {
 	XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
+import { PresetVoiceAuditionList } from "@/features/voices/PresetVoiceAuditionList";
 import type {
 	ActiveDownloadTask,
 	MarketplaceProduct,
@@ -22,7 +23,6 @@ import { Button } from "@/ui/button";
 import { Card } from "@/ui/card";
 import { Spinner } from "@/ui/primitives";
 import { Progress } from "@/ui/progress";
-import { PresetVoiceAuditionList } from "@/features/voices/PresetVoiceAuditionList";
 import {
 	CATEGORY_ACCENT,
 	CATEGORY_LABELS,
@@ -93,10 +93,19 @@ export function StoreProductCard({
 	const description = getDisplayDescription(product, model);
 	const chips = getCapabilityChips(model);
 	const sizeLabel = model?.size_mb ? formatSize(model.size_mb) : null;
+	const speedLabel =
+		model?.warm_start_ms && model.warm_start_ms > 0
+			? model.warm_start_ms < 500
+				? "Fast"
+				: model.warm_start_ms < 2000
+					? "Medium"
+					: "Slow"
+			: null;
 	const accent = CATEGORY_ACCENT[product.category] ?? CATEGORY_ACCENT.extras;
 
 	return (
 		<Card
+			glass
 			className={cn(
 				"group relative flex flex-col overflow-hidden p-0",
 				cached
@@ -165,15 +174,6 @@ export function StoreProductCard({
 						>
 							<CheckBadgeIcon className="size-3" /> Installed
 						</span>
-					) : ownedNotInstalled ? (
-						<span
-							className={cn(
-								chipClass,
-								"bg-info-soft text-info-text border-accent/30",
-							)}
-						>
-							<KeyIcon className="size-3" /> Owned
-						</span>
 					) : product.coming_soon ? (
 						<span
 							className={cn(
@@ -182,15 +182,6 @@ export function StoreProductCard({
 							)}
 						>
 							Coming Soon
-						</span>
-					) : product.paid ? (
-						<span
-							className={cn(
-								chipClass,
-								"bg-warning-soft text-warning-text border-warning/40",
-							)}
-						>
-							{priceLabel}
 						</span>
 					) : (
 						<span
@@ -221,6 +212,21 @@ export function StoreProductCard({
 					</span>
 					{sizeLabel && (
 						<span className="text-xs text-muted-foreground">{sizeLabel}</span>
+					)}
+					{speedLabel && (
+						<span
+							className={cn(
+								"inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium",
+								speedLabel === "Fast"
+									? "bg-success-soft text-success-text"
+									: speedLabel === "Medium"
+										? "bg-warning-soft text-warning-text"
+										: "bg-muted text-muted-foreground",
+							)}
+							title={`Estimated load time: ${model?.warm_start_ms}ms`}
+						>
+							{speedLabel}
+						</span>
 					)}
 					{compatibility && !compatibility.compatible && !cached && (
 						<span
@@ -383,7 +389,7 @@ export function StoreProductCard({
 							Details
 						</Button>
 					</>
-				) : product.paid && !owned ? (
+				) : false ? (
 					<>
 						<Button
 							size="sm"

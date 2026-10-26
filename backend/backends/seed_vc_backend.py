@@ -16,7 +16,6 @@ import logging
 import threading
 from pathlib import Path
 
-import numpy as np
 
 from .. import config
 from .base import BackendBase
@@ -113,7 +112,8 @@ class SeedVCBackend(BackendBase):
                 self._load_model_sync()
 
             with tempfile.NamedTemporaryFile(suffix=".wav") as tmp_in:
-                sf.write(tmp_in, np.asarray(audio, dtype=np.float32), int(sample_rate))
+                import numpy as np
+    sf.write(tmp_in, np.asarray(audio, dtype=np.float32), int(sample_rate))
                 result = self.model.convert_voice(
                     source=tmp_in.name,
                     target=reference_audio_path,
@@ -131,7 +131,8 @@ class SeedVCBackend(BackendBase):
                 else:
                     wav = result
                     sr = int(sample_rate)
-                wav = np.asarray(wav, dtype=np.float32)
+                import numpy as np
+    wav = np.asarray(wav, dtype=np.float32)
                 if wav.ndim > 1:
                     wav = wav.mean(axis=1)
                 return wav, int(sr)

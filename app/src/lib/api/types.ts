@@ -217,7 +217,13 @@ export interface HistoryListResponse {
 	total: number;
 }
 
-export type WhisperModelSize = "tiny.en" | "base.en" | "cloud";
+export type WhisperModelSize =
+	| "moonshine-tiny"
+	| "moonshine-base"
+	| "moonshine-streaming-small"
+	| "tiny.en"
+	| "base.en"
+	| "cloud";
 
 export type PlannerModelSize =
 	| "4B-Q4_K_M"
@@ -557,6 +563,12 @@ export interface ModelStatus {
 	// the model's category. 10 = best-in-class; scores are per-category so
 	// TTS scores are only compared against other TTS models, etc.
 	category?: string; // tts | stt | llm | music | sfx | vc
+	// Performance tags
+	preload_priority?: number;
+	cold_start_ms?: number;
+	warm_start_ms?: number;
+	streaming?: boolean;
+	execution_provider?: string;
 }
 
 export interface HuggingFaceModelInfo {
@@ -1081,6 +1093,7 @@ export interface MarketplaceProduct {
 	localized_price?: string;
 	note?: string;
 	avg_rating?: number;
+	quality_rating?: number;
 	review_count?: number;
 	size_mb?: number;
 	languages?: string[];

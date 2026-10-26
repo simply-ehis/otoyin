@@ -7,12 +7,15 @@ import { cn } from "@/lib/utils/cn";
  */
 export function Card({
 	className,
+	glass = false,
 	...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+}: React.HTMLAttributes<HTMLDivElement> & { glass?: boolean }) {
 	return (
 		<div
 			className={cn(
-				"rounded-lg border border-border bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.35)]",
+				glass
+					? "rounded-lg border border-white/10 bg-white/5 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.35)] backdrop-blur-sm"
+					: "rounded-lg border border-border bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.35)]",
 				"transition-transform duration-150 ease-out",
 				className,
 			)}

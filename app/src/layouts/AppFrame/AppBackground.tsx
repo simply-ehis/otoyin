@@ -142,10 +142,7 @@ function AppBackgroundInner() {
 			{/* Mesh breathing glow */}
 			{isMesh && <div className="gs-mesh-glow" />}
 
-			{/* Wave overlay (di-stefano) */}
-			{isDiStefano && <div className="absolute inset-0 gs-wave-overlay" />}
-
-			{/* Film grain (di-stefano) */}
+		{/* Film grain (di-stefano) */}
 			{isDiStefano && (
 				<div
 					className="absolute inset-0 opacity-[0.03] mix-blend-soft-light"

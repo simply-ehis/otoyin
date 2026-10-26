@@ -24,10 +24,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import onnxruntime as ort
 
 import numpy as np
-import onnxruntime as ort
 
 SAMPLE_MODE_GREEDY = "greedy"
 SAMPLE_MODE_FIXED = "fixed"
@@ -312,6 +314,7 @@ class MossTTSNanoOnnx:
         return resolved
 
     def _session(self, path_value: Path) -> ort.InferenceSession:
+        import onnxruntime as ort
         options = ort.SessionOptions()
         options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
         options.intra_op_num_threads = self.thread_count

@@ -30,7 +30,7 @@ they are stricter (e.g. file/function size caps).
 ## INVARIANTS
 - Tauri IPC only — no HTTP/CLI/localhost for inter-window communication
 - otoyin is a separate Tauri window in the same process — NOT a standalone sidecar
-- Rose is the only motion in the visual identity (Caravaggio-style, warm single-source light)
+- Visual identity: dark-first, rose brand accent used sparingly (brand color, NOT motion), selective frosted-glass on overlays / capture pill / bottom player only, solid cards elsewhere, minimal transform+opacity motion.
 - Everything offline/on-device — no cloud dependencies for core features
 - All edits non-destructive (undo/redo on every operation)
 - Icons: heroicons only (`@heroicons/react/24/outline`). No Lucide, no other icon libs.
@@ -54,15 +54,15 @@ they are stricter (e.g. file/function size caps).
 - Use existing libraries — no new dependencies without spec approval
 
 ## Branding
-- "21labs" — all user-facing text, docs, README, LICENSE
-- Rose is the only motion in the visual identity (Caravaggio-style, warm single-source light)
+- "Otoyin" — all user-facing text, docs, README, LICENSE
+- Visual identity: dark-first, rose brand accent used sparingly (brand color, NOT motion), selective frosted-glass on overlays / capture pill / bottom player only, solid cards elsewhere, minimal transform+opacity motion.
 - Everything offline/on-device — no cloud dependencies
 - All edits non-destructive
 
 ## Architecture
 - Tauri IPC only — no HTTP/CLI/localhost for inter-window communication
 - otoyin is a separate Tauri window in the same process — NOT a standalone sidecar
-- Rose SVG at ~0.08 opacity behind UI via CSS; audio-reactive glow via player store `isPlaying`
+- Rose used as brand accent only (spare), selective glass on overlays/pill/player, audio-reactive glow via player store `isPlaying`
 
 ## Knowledge
 - Every tool built must have a corresponding knowledge doc in `docs/knowledge/`

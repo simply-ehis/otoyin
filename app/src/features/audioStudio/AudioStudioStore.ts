@@ -121,6 +121,8 @@ interface AudioStudioStore {
 	zoomLevel: number;
 	showAutomation: boolean;
 	markers: TimelineMarker[];
+	stopPlayback: (() => void) | undefined;
+	registerStopPlayback: (fn: () => void) => void;
 
 	undoStack: UndoEntry[];
 	redoStack: UndoEntry[];
@@ -251,12 +253,16 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 	isLooping: false,
 	currentTime: 0,
 	currentTimeRef: { current: 0 },
+	stopPlayback: undefined,
 	masterVolume: 1,
 	playbackSpeed: 1,
 	recordingTrackIndex: null,
 	zoomLevel: 1,
 	showAutomation: false,
 	markers: [],
+	registerStopPlayback: (fn) => {
+		set({ stopPlayback: fn });
+	},
 	undoStack: [],
 	redoStack: [],
 	tempoMap: [{ time: 0, bpm: 120 }],
@@ -697,6 +703,7 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 	exportSession: () => takeSnapshot(get),
 
 	importSession: (snapshot) => {
+		get().stopPlayback?.();
 		// Reset the live playhead ref too — the `currentTime` state field is
 		// display-only; playback reads currentTimeRef.
 		get().currentTimeRef.current = 0;
@@ -725,6 +732,7 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 	},
 
 	reset: () => {
+		get().stopPlayback?.();
 		get().currentTimeRef.current = 0;
 		set({
 			tracks: [],
@@ -739,6 +747,7 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 			zoomLevel: 1,
 			showAutomation: false,
 			markers: [],
+
 			tempoMap: [{ time: 0, bpm: 120 }],
 			timeSignature: [4, 4],
 			undoStack: [],
@@ -747,6 +756,7 @@ export const useAudioStudioStore = create<AudioStudioStore>((set, get) => ({
 	},
 
 	resetToTemplate: (snapshot) => {
+		get().stopPlayback?.();
 		get().currentTimeRef.current = 0;
 		set({
 			tracks: snapshot.tracks.map((t) => ({

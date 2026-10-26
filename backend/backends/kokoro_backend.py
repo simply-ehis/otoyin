@@ -296,6 +296,39 @@ class KokoroTTSBackend(BackendBase):
         audio = concatenate_audio_chunks(audio_chunks, KOKORO_SAMPLE_RATE, crossfade_ms=KOKORO_CROSSFADE_MS)
         return audio, KOKORO_SAMPLE_RATE
 
+    async def generate_stream(
+        self,
+        text: str,
+        voice_prompt: dict,
+        language: str = "en",
+        seed: int | None = None,
+        instruct: str | None = None,
+        temperature: float | None = None,
+    ):
+        await self.load_model()
+
+        voice_name = voice_prompt.get("preset_voice_id") or voice_prompt.get("kokoro_voice") or KOKORO_DEFAULT_VOICE
+
+        chunks = split_text_into_chunks(text, KOKORO_CHUNK_MAX_CHARS)
+
+        if len(chunks) <= 1:
+            audio, sr = await self._generate_chunk(text, voice_name, language, seed, KOKORO_SINGLE_TIMEOUT)
+            if audio is not None and len(audio):
+                import numpy as np
+                yield audio.astype(np.float32), sr, True
+            return
+
+        for i, chunk in enumerate(chunks):
+            chunk_seed = (seed + i) if seed is not None else None
+            try:
+                audio, _sr = await self._generate_chunk(chunk, voice_name, language, chunk_seed, KOKORO_CHUNK_TIMEOUT)
+            except Exception as exc:
+                raise RuntimeError(f"Kokoro chunk {i + 1}/{len(chunks)} failed: {exc}") from exc
+            if audio is not None and len(audio):
+                import numpy as np
+                is_final = (i == len(chunks) - 1)
+                yield audio.astype(np.float32), KOKORO_SAMPLE_RATE, is_final
+
     async def _generate_chunk(
         self,
         chunk_text: str,

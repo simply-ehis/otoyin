@@ -1,11 +1,14 @@
+import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
 import { RecordTakeButton } from "@/features/capture/RecordTakeButton";
+import { BeatMapPanel } from "@/features/instruments/BeatMapPanel";
+import { DrumMachinePanel } from "@/features/instruments/DrumMachinePanel";
+import { InstrumentBrowser } from "@/features/instruments/InstrumentBrowser";
 import { InstrumentPreview } from "@/features/instruments/InstrumentPreview";
 import { apiClient } from "@/lib/api/client";
-import { cn } from "@/lib/utils/cn";
 import { ERR_DESC_SFX_FAILED, ERR_TITLE_SFX } from "@/lib/errorMessages";
+import { cn } from "@/lib/utils/cn";
 import { Button } from "@/ui/button";
 import { Textarea } from "@/ui/input";
 import { Label, Spinner } from "@/ui/primitives";
@@ -189,6 +192,15 @@ export function StudioView() {
 				</TabsList>
 				<TabsContent value="instruments">
 					<InstrumentPreview />
+					<Section title="Instruments">
+						<InstrumentBrowser />
+					</Section>
+					<Section title="Drum machine">
+						<DrumMachinePanel />
+					</Section>
+					<Section title="Beat map">
+						<BeatMapPanel />
+					</Section>
 					<Section title="Record a take">
 						<p className="text-xs text-muted-foreground">
 							Play along with anything above, or record a line to keep.

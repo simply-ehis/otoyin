@@ -141,7 +141,7 @@ export function TransportControls({
 
 	return (
 		<div className="border-t border-border bg-card px-3 shrink-0">
-			<div className="flex items-center gap-2 h-9">
+			<div className="flex items-center gap-1.5 h-8">
 				{/* Transport buttons */}
 				<div className="flex items-center gap-0.5">
 					<Button
@@ -160,7 +160,7 @@ export function TransportControls({
 						className="size-7"
 						onClick={onTogglePlayPause}
 						disabled={tracks.every((t) => !t.audioUrl)}
-						title={isPlaying ? "Pause (Space)" : "Play (Space)"}
+						title={isPlaying ? "Pause" : "Play"}
 						aria-label={isPlaying ? "Pause" : "Play"}
 					>
 						{isPlaying ? (
@@ -204,7 +204,7 @@ export function TransportControls({
 					size="icon"
 					className="size-7"
 					onClick={isRecording ? onStopRecording : onStartRecording}
-					title={isRecording ? "Stop recording (R)" : "Record (R)"}
+					title={isRecording ? "Stop recording" : "Record"}
 					aria-label={isRecording ? "Stop recording" : "Record"}
 				>
 					<Circle className={cn("size-3.5", isRecording && "animate-pulse")} />
@@ -222,7 +222,7 @@ export function TransportControls({
 						}}
 					>
 						<SelectTrigger
-							className="h-6 text-xs w-24"
+							className="h-5 text-xs w-20"
 							aria-label="Record destination track"
 						>
 							<SelectValue />

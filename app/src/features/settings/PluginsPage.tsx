@@ -19,7 +19,7 @@ import { Badge, Label, Separator, Spinner } from "@/ui/primitives";
 import { Slider } from "@/ui/slider";
 import { EmptyState, ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
-import { MarketplacePlugins } from "./MarketplacePlugins";
+// (removed) MarketplacePlugins import
 
 interface PluginParam {
 	min: number;
@@ -199,7 +199,7 @@ export function PluginsPage() {
 			</div>
 
 			{view === "marketplace" ? (
-				<MarketplacePlugins />
+				null
 			) : (
 				<div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
 					<div className="w-72 shrink-0 overflow-y-auto border-r border-border pr-3">

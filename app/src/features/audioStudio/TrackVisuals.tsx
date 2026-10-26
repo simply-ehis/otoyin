@@ -7,8 +7,8 @@ import { AutomationOverlay } from "./AutomationOverlay";
 import { CrossfadeCanvas } from "./CrossfadeCanvas";
 import { MidiPianoRoll } from "./MidiPianoRoll";
 import { PluginChainPanel } from "./PluginChainPanel";
-import { WaveformCanvas } from "./WaveformCanvas";
 import { STEM_HUE, STEM_LABEL } from "./stemColors";
+import { WaveformCanvas } from "./WaveformCanvas";
 
 export function TrackVisuals({
 	track,

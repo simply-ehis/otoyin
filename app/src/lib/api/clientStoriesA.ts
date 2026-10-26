@@ -931,8 +931,14 @@ export class StoriesAMethods extends ChannelsMethods {
 		);
 	}
 
-	async listGMTypes(): Promise<{ note: string }> {
-		return this.request<{ note: string }>("/instruments/gm-types");
+	async listGMTypes(): Promise<{
+		note: string;
+		programs: Array<{ program: number; name: string; family: string }>;
+	}> {
+		return this.request<{
+			note: string;
+			programs: Array<{ program: number; name: string; family: string }>;
+		}>("/instruments/gm-types");
 	}
 
 	async playGMInstrument(data: {
@@ -952,8 +958,30 @@ export class StoriesAMethods extends ChannelsMethods {
 		return res.blob();
 	}
 
+	async playGmPattern(data: {
+		steps: Array<Array<{
+			program: number;
+			note: number;
+			velocity: number;
+		}>>;
+		step_duration?: number;
+		bars?: number;
+	}): Promise<Blob> {
+		const res = await this.fetchWithAuth(
+			"/instruments/gm-pattern",
+			{
+				method: "POST",
+				body: JSON.stringify(data),
+			},
+			120_000,
+		);
+		return res.blob();
+	}
+
 	async playDrumMachine(data: {
-		pattern: Array<string | string[]>;
+		pattern?: Array<string | string[]>;
+		lanes?: Record<string, number[]>;
+		swing?: number;
 		step_duration?: number;
 		bars?: number;
 		velocity?: number;

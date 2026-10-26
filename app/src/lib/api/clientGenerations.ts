@@ -10,8 +10,8 @@ import type {
 	HistoryListResponse,
 	HistoryQuery,
 	HistoryResponse,
-	SFXGenerateRequest,
 	MusicGenerateRequest,
+	SFXGenerateRequest,
 	TranscriptionResponse,
 	WhisperModelSize,
 } from "./types";

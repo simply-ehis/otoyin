@@ -8,12 +8,17 @@ This module defines the public type surface for the backends package:
 - The supported-engine registries the factory functions dispatch on.
 """
 
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import numpy as np
 import threading
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
-import numpy as np
 from typing_extensions import runtime_checkable
 
 logger = logging.getLogger(__name__)
@@ -97,6 +102,12 @@ class ModelConfig:
     # llama-server (needed for models with custom kernels like Bonsai's
     # ternary PTQ1_0 format which requires PrismML-Eng/llama.cpp fork).
     custom_binary_env: str | None = None
+    # Model loading / performance tags (for UI speed badges and loading order)
+    preload_priority: int = 0  # 0=none, 1=background, 2=high, 3=critical
+    cold_start_ms: int = 0  # estimated cold start time in ms
+    warm_start_ms: int = 0  # estimated warm start time in ms
+    streaming: bool = False  # supports streaming inference
+    execution_provider: str = ""  # onnxruntime EP: CPU, CUDA, DirectML, CoreML
 
     def __post_init__(self):
         """Validate quantization field based on engine type."""

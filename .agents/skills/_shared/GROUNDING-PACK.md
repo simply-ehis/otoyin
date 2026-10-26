@@ -63,8 +63,8 @@ CLONING_ENGINES = {fish_speech, zonos, styletts2, f5_tts, pocket_tts} —
 Offline via `tinysoundfont` + a SoundFont in `data/soundfonts/` (FreePats / FluidR3_GM.sf2 / FluidR3_GS.sf2). Missing → HTTP 501 with install hint.
 - GM program is 0-BASED: 0 piano, 32 bass, 40 strings, 56 trumpet, 73 pad, 112 tinkle bell. (Do NOT add 1.)
 - `play_gm_instrument(program, note=60, duration=1.0, velocity=0.8)` → `POST /instruments/gm`
-- `play_drum_machine(pattern, step_duration=0.125, bars=1, velocity=0.8)` → `POST /instruments/drum-machine`. `pattern` = list of steps, each a voice name ("kick") or list (["kick","hihat"]). Voices: kick/snare/hihat/clap/tom. step_duration 0.125 s = 120 BPM sixteenths.
-- `GET /instruments/gm-types` for discovery. Stereo 48000 Hz.
+- `play_drum_machine(pattern | lanes, swing=0.0, step_duration=0.125, bars=1, velocity=0.8)` → `POST /instruments/drum-machine`. `pattern` = list of steps, each a voice name ("kick") or list (["kick","hihat"]); OR `lanes` = {voice: [per-step velocity 0..1]} (longest lane = bar, wins over `pattern`). `swing` 0..0.5 delays off-steps. Voices: kick/snare/hihat/clap/tom. step_duration 0.125 s = 120 BPM sixteenths.
+- `GET /instruments/gm-types` for discovery (`note` + `programs`: all 128 GM names with families). Stereo 48000 Hz.
 
 ## MCP tool surface — `backend/mcp_server/tools/` (namespace `21labs.*`)
 **~106 tools** across 10 files in the `tools/` package (one module per domain). Core tools:

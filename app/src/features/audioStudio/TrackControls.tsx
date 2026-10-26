@@ -520,7 +520,7 @@ export function TrackControlsColumn({
 	onAssignGroup: (trackId: string, groupId: string | null) => void;
 }) {
 	return (
-		<div className="flex w-24 shrink-0 flex-col items-center gap-0.5 border-r border-border bg-card px-2 py-1.5">
+		<div className="flex w-20 shrink-0 flex-col items-center gap-0.5 border-r border-border bg-card px-1.5 py-1">
 			<TrackIdentity track={track} />
 			{track.midiNotes.length > 0 && (
 				<span className="text-[8px] text-accent font-semibold">MIDI</span>
@@ -564,27 +564,31 @@ export function TrackControlsColumn({
 				/>
 				<TrackMeter analyser={trackAnalysers.get(track.id) ?? null} />
 			</div>
-			<TrackPan track={track} onPan={onPan} />
-			<TrackToolButtons
-				track={track}
-				showAutomation={showAutomation}
-				showPlugins={showPlugins}
-				setShowPlugins={setShowPlugins}
-				showCrossfade={showCrossfade}
-				setShowCrossfade={setShowCrossfade}
-				otherTracks={otherTracks}
-				onAddAutomation={onAddAutomation}
-				onAddPanAutomation={onAddPanAutomation}
-				onClearAutomation={onClearAutomation}
-				updateTrack={updateTrack}
-				onTranscribe={onTranscribe}
-			/>
-			{showCrossfade && (
-				<TrackCrossfadeControls
-					track={track}
-					showCrossfade={showCrossfade}
-					updateTrack={updateTrack}
-				/>
+			{track.expanded && (
+				<>
+					<TrackPan track={track} onPan={onPan} />
+					<TrackToolButtons
+						track={track}
+						showAutomation={showAutomation}
+						showPlugins={showPlugins}
+						setShowPlugins={setShowPlugins}
+						showCrossfade={showCrossfade}
+						setShowCrossfade={setShowCrossfade}
+						otherTracks={otherTracks}
+						onAddAutomation={onAddAutomation}
+						onAddPanAutomation={onAddPanAutomation}
+						onClearAutomation={onClearAutomation}
+						updateTrack={updateTrack}
+						onTranscribe={onTranscribe}
+					/>
+					{showCrossfade && (
+						<TrackCrossfadeControls
+							track={track}
+							showCrossfade={showCrossfade}
+							updateTrack={updateTrack}
+						/>
+					)}
+				</>
 			)}
 			<span className="text-xs font-mono tabular-nums text-muted-foreground">
 				{track.duration

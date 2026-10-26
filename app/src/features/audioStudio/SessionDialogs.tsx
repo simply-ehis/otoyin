@@ -160,9 +160,6 @@ export function SessionDialogs({
 					<DialogHeader>
 						<DialogTitle>New Session</DialogTitle>
 					</DialogHeader>
-					<p className="text-xs text-muted-foreground mb-3">
-						Pick a starting template or start blank.
-					</p>
 					<div className="grid grid-cols-1 gap-2">
 						{PROJECT_TEMPLATES.map((t, i) => (
 							<button
@@ -181,7 +178,7 @@ export function SessionDialogs({
 									</p>
 								</div>
 								<span className="shrink-0 text-[10px] text-muted-foreground/60 tabular-nums">
-									{t.trackCount} track{t.trackCount !== 1 ? "s" : ""}
+									{t.trackCount}t
 								</span>
 							</button>
 						))}

@@ -23,6 +23,12 @@ import { useToast } from "@/ui/use-toast";
 const MODEL_OPTIONS: { value: WhisperModelSize; label: string }[] = [
 	{ value: "tiny.en", label: "Tiny EN (75MB)" },
 	{ value: "base.en", label: "Base EN (142MB)" },
+	{ value: "moonshine-tiny", label: "Moonshine Tiny (35MB)" },
+	{ value: "moonshine-base", label: "Moonshine Base (74MB)" },
+	{
+		value: "moonshine-streaming-small",
+		label: "Moonshine Streaming Small (189MB)",
+	},
 	{ value: "cloud", label: "Cloud (BYOK)" },
 ];
 
@@ -32,7 +38,7 @@ const LANG_OPTIONS = Object.entries(ALL_LANGUAGES).map(([code, name]) => ({
 }));
 
 export function LiveTranscriptView() {
-	const [model, setModel] = useState<WhisperModelSize>("tiny.en");
+	const [model, setModel] = useState<WhisperModelSize | undefined>(undefined);
 	const [lang, setLang] = useState<LanguageCode>("en");
 	const [useLang, setUseLang] = useState(true);
 	const { toast } = useToast();
@@ -43,6 +49,14 @@ export function LiveTranscriptView() {
 	});
 
 	async function handleStart() {
+		if (!model) {
+			toast({
+				title: "No STT model selected",
+				description: "Please select an STT model before recording.",
+				variant: "destructive",
+			});
+			return;
+		}
 		try {
 			await stt.start();
 		} catch (err: unknown) {
@@ -80,14 +94,14 @@ export function LiveTranscriptView() {
 				actions={
 					<div className="flex flex-wrap items-center gap-2">
 						<Select
-							value={model}
+							value={model ?? ""}
 							onValueChange={(v) => setModel(v as WhisperModelSize)}
 						>
 							<SelectTrigger
 								className="h-8 w-36 text-xs"
 								aria-label="STT model"
 							>
-								<SelectValue />
+								<SelectValue>{model ?? "Select a model"}</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
 								{MODEL_OPTIONS.map((m) => (

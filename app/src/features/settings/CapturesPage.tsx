@@ -327,13 +327,15 @@ function StreamingSettings() {
 					description={t("settings.captures.transcription.model.description")}
 					action={
 						<Select
-							value={settings?.stt_model ?? "tiny.en"}
+							value={settings?.stt_model ?? ""}
 							onValueChange={(v) =>
 								update({ stt_model: v as WhisperModelSize })
 							}
 						>
 							<SelectTrigger className="w-full max-w-[300px]">
-								<SelectValue />
+								<SelectValue>
+									{settings?.stt_model ?? "Select a model"}
+								</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="tiny.en">
@@ -347,6 +349,28 @@ function StreamingSettings() {
 											"settings.captures.transcription.model.tail.balanced",
 										),
 									})}
+								</SelectItem>
+								<SelectItem value="moonshine-tiny">
+									{t("settings.captures.transcription.model.moonshineTiny", {
+										tail: t("settings.captures.transcription.model.tail.fast"),
+									})}
+								</SelectItem>
+								<SelectItem value="moonshine-base">
+									{t("settings.captures.transcription.model.moonshineBase", {
+										tail: t(
+											"settings.captures.transcription.model.tail.balanced",
+										),
+									})}
+								</SelectItem>
+								<SelectItem value="moonshine-streaming-small">
+									{t(
+										"settings.captures.transcription.model.moonshineStreamingSmall",
+										{
+											tail: t(
+												"settings.captures.transcription.model.tail.streaming",
+											),
+										},
+									)}
 								</SelectItem>
 								<SelectItem value="cloud">Cloud (BYOK)</SelectItem>
 							</SelectContent>
@@ -385,13 +409,15 @@ function StreamingSettings() {
 					)}
 					action={
 						<Select
-							value={settings?.streaming_stt_model ?? "tiny.en"}
+							value={settings?.streaming_stt_model ?? ""}
 							onValueChange={(v) =>
 								update({ streaming_stt_model: v as WhisperModelSize })
 							}
 						>
 							<SelectTrigger className="w-full max-w-[300px]">
-								<SelectValue />
+								<SelectValue>
+									{settings?.streaming_stt_model ?? "Select a model"}
+								</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="tiny.en">
@@ -405,6 +431,16 @@ function StreamingSettings() {
 											"settings.captures.transcription.model.tail.balanced",
 										),
 									})}
+								</SelectItem>
+								<SelectItem value="moonshine-streaming-small">
+									{t(
+										"settings.captures.transcription.streamingModel.moonshineStreamingSmall",
+										{
+											tail: t(
+												"settings.captures.transcription.model.tail.streaming",
+											),
+										},
+									)}
 								</SelectItem>
 							</SelectContent>
 						</Select>

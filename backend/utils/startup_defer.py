@@ -142,6 +142,98 @@ async def ensure_planner_preloaded() -> None:
             logger.debug("Planner preload skipped", exc_info=True)
 
 
+# ── General model preload ────────────────────────────────────────────────
+_models_preloaded_event = asyncio.Event()
+_models_preloaded_lock = asyncio.Lock()
+
+
+async def ensure_models_preloaded() -> None:
+    """Preload all models with ``preload_priority > 0`` on startup.
+
+    Iterates every model config, groups by engine (TTS vs STT), loads in
+    priority order (3 = critical first, then 2 = high, then 1 = background).
+    Only loads models already cached on disk — never triggers a download.
+    Safe to call multiple times; subsequent calls are no-ops.
+    """
+    if _models_preloaded_event.is_set():
+        return
+    async with _models_preloaded_lock:
+        if _models_preloaded_event.is_set():
+            return
+        try:
+            from ..backends import get_stt_backend, get_tts_backend_for_engine
+            from ..backends.configs import get_all_model_configs
+            from ..services.model_registry import is_downloaded
+
+            configs = [c for c in get_all_model_configs() if c.preload_priority > 0]
+            if not configs:
+                _models_preloaded_event.set()
+                return
+
+            # Priority descending: 3 (critical) → 2 (high) → 1 (background)
+            configs.sort(key=lambda c: c.preload_priority, reverse=True)
+
+            # Group by engine so we load each backend once
+            tts_by_engine: dict[str, list] = {}
+            stt_by_engine: dict[str, list] = {}
+            for cfg in configs:
+                if cfg.category == "tts":
+                    tts_by_engine.setdefault(cfg.engine, []).append(cfg)
+                elif cfg.category == "stt":
+                    stt_by_engine.setdefault(cfg.engine, []).append(cfg)
+
+            for engine, cfgs in tts_by_engine.items():
+                try:
+                    backend = get_tts_backend_for_engine(engine)
+                    if not backend:
+                        continue
+                    # Preload the first (highest-priority) model for this engine
+                    cfg = cfgs[0]
+                    if not is_downloaded(cfg.model_name, cfg.model_size):
+                        logger.debug("%s not entitled — skipping preload", cfg.model_name)
+                        continue
+                    if not backend._is_model_cached(cfg.model_size):
+                        logger.debug("%s not cached — skipping preload", cfg.model_name)
+                        continue
+                    await backend.load_model(cfg.model_name)
+                    logger.info(
+                        "Preloaded TTS %s (%s) priority=%d",
+                        engine,
+                        cfg.model_name,
+                        cfg.preload_priority,
+                    )
+                except Exception:
+                    logger.debug("TTS preload %s skipped", engine, exc_info=True)
+
+            for engine, cfgs in stt_by_engine.items():
+                try:
+                    backend = get_stt_backend(engine)
+                    if not backend:
+                        continue
+                    cfg = cfgs[0]
+                    if not is_downloaded(cfg.model_name, cfg.model_size):
+                        logger.debug("%s not entitled — skipping preload", cfg.model_name)
+                        continue
+                    if not backend._is_model_cached(cfg.model_size):
+                        logger.debug("%s not cached — skipping preload", cfg.model_name)
+                        continue
+                    await backend.load_model(cfg.model_name)
+                    logger.info(
+                        "Preloaded STT %s (%s) priority=%d",
+                        engine,
+                        cfg.model_name,
+                        cfg.preload_priority,
+                    )
+                except Exception:
+                    logger.debug("STT preload %s skipped", engine, exc_info=True)
+
+            _models_preloaded_event.set()
+            logger.info("Model preload complete")
+        except Exception:
+            logger.debug("General model preload skipped", exc_info=True)
+            _models_preloaded_event.set()
+
+
 # ── Voice-changer spawn ───────────────────────────────────────────────
 async def ensure_vc_spawned() -> None:
     """Spawn voice-changer if enabled in settings.

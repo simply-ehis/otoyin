@@ -146,7 +146,7 @@ export function SupportPage() {
 						placeholder="Tell us what is going on…"
 					/>
 				</Field>
-				<div>
+<div className="flex flex-wrap items-center gap-3">
 					<Button
 						type="submit"
 						disabled={support.isPending}
@@ -155,6 +155,18 @@ export function SupportPage() {
 						<EnvelopeIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
 						{support.isPending ? "Sending…" : "Send message"}
 					</Button>
+					<a
+						href={`https://github.com/simply-ehis/otoyin/issues/new?title=${encodeURIComponent(
+							`[${category}] ${message.slice(0, 60)}`,
+						)}&body=${encodeURIComponent(
+							`**Category:** ${category}\n\n**Message:**\n${message}\n\n---\n_Submitted via Otoyin support page_`,
+						)}`}
+						target="_blank"
+						rel="noreferrer"
+						className="inline-flex items-center rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-secondary"
+					>
+						Report on GitHub instead
+					</a>
 				</div>
 			</form>
 			<CrashDiagnostics />

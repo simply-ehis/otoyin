@@ -23,19 +23,77 @@ INSTRUMENTS_TOOLS = [
         "type": "function",
         "function": {
             "name": "play_drum_machine",
-            "description": "Render a drum pattern loop from synthesized hits (kick/snare/hihat/clap/tom). Each step is a voice name or list of names.",
+            "description": "Render a drum pattern loop from synthesized hits (kick/snare/hihat/clap/tom). Give either `pattern` (list of steps; each step a voice name or list of names) or `lanes` (per-voice step velocities 0..1).",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "pattern": {
                         "type": "array",
-                        "description": "List of steps; each step a voice name or list of names",
+                        "description": "List of steps; each step a voice name or list of names. Required unless `lanes` is given",
+                    },
+                    "lanes": {
+                        "type": "object",
+                        "description": "Per-voice step velocities (0..1, 0 = rest); bar = longest lane. Takes precedence over `pattern`",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {"type": "number", "minimum": 0, "maximum": 1},
+                        },
+                    },
+                    "swing": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 0.5,
+                        "default": 0.0,
+                        "description": "Off-step delay as a fraction of a step; 0.5 is a full triplet shuffle",
                     },
                     "step_duration": {"type": "number", "default": 0.125},
                     "bars": {"type": "integer", "default": 1},
                     "velocity": {"type": "number", "default": 0.8},
                 },
-                "required": ["pattern"],
+                "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "play_gm_pattern",
+            "description": "Render a multi-instrument General-MIDI pattern loop via a SoundFont: each step plays its listed notes (program, MIDI note, velocity 0-1) together, mixed into one looped WAV.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "steps": {
+                        "type": "array",
+                        "description": "One entry per step; each entry a list of {program: integer 0-127, note: integer 21-108, velocity: number 0-1}",
+                        "items": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "program": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 127,
+                                    },
+                                    "note": {
+                                        "type": "integer",
+                                        "minimum": 21,
+                                        "maximum": 108,
+                                    },
+                                    "velocity": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 1,
+                                    },
+                                },
+                                "required": ["program", "note"],
+                            },
+                        },
+                    },
+                    "step_duration": {"type": "number", "default": 0.25},
+                    "bars": {"type": "integer", "default": 1},
+                },
+                "required": [],
             },
         },
     },

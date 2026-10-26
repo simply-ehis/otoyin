@@ -167,7 +167,7 @@ export function CapturePill({
 	return (
 		<div
 			className={cn(
-				"inline-flex h-10 items-center gap-3 rounded-full border border-border bg-card px-4 text-accent shadow-[0_4px_12px_rgba(0,0,0,0.45)]",
+				"glass-panel inline-flex h-10 items-center gap-3 rounded-full border border-border bg-card px-4 text-accent shadow-[0_4px_12px_rgba(0,0,0,0.45)]",
 				"transition-opacity duration-200",
 				visible ? "opacity-100" : "pointer-events-none opacity-0",
 				className,

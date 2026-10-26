@@ -26,9 +26,6 @@ export const NATIVE_PREVIEW_IDS = new Set([
 	"builtin-gain",
 	"builtin-chorus",
 	"builtin-distortion",
-	"builtin-telephone",
-	"builtin-megaphone",
-	"builtin-resonant_filter_sweep",
 ]);
 
 /** Offline-first fallback: the panel works with these when the backend is unreachable. */
@@ -70,6 +67,41 @@ export const FALLBACK_CATALOG: PluginCatalogEntry[] = [
 		id: "builtin-gain",
 		name: "Gain",
 		defaults: { gain: 1.0 },
+	},
+	{
+		id: "builtin-chorus",
+		name: "Chorus",
+		defaults: { rate: 1.0, depth: 0.25, mix: 0.5 },
+	},
+	{
+		id: "builtin-phaser",
+		name: "Phaser",
+		defaults: { rate: 1.0, depth: 0.5, mix: 0.5 },
+	},
+	{
+		id: "builtin-flanger",
+		name: "Flanger",
+		defaults: { rate: 0.5, depth: 0.5, mix: 0.5 },
+	},
+	{
+		id: "builtin-limiter",
+		name: "Limiter",
+		defaults: { threshold_db: -3, release_ms: 50 },
+	},
+	{
+		id: "builtin-distortion",
+		name: "Distortion",
+		defaults: { drive_db: 12 },
+	},
+	{
+		id: "builtin-pitch_shift",
+		name: "Pitch Shift",
+		defaults: { semitones: 0 },
+	},
+	{
+		id: "builtin-resample",
+		name: "Resample",
+		defaults: { sample_rate: 44100 },
 	},
 ];
 
@@ -193,11 +225,7 @@ const ENGINE_FALLBACK_META: Record<string, Record<string, ParamMeta>> = {
 };
 
 /** Extra panel keys the registry omits but the engine honors. */
-const ENGINE_EXTRA_KEYS: Record<string, Record<string, ParamMeta>> = {
-	resonant_filter_sweep: {
-		filter_type: { label: "Type", min: 0, max: 2, step: 1, unit: "" },
-	},
-};
+const ENGINE_EXTRA_KEYS: Record<string, Record<string, ParamMeta>> = {};
 
 const ENGINE_FALLBACK_DEFAULTS: Record<string, string> = {
 	formant_shift: "Formant Shift",

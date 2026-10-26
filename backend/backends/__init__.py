@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from .configs import (
         engine_has_model_sizes,
         engine_needs_trim,
+        engine_needed,
         get_all_model_configs,
         get_llm_model_configs,
         get_model_config,
@@ -84,6 +85,7 @@ _LAZY_MAP: dict[str, tuple[str, str]] = {
     # From .configs
     "engine_has_model_sizes": (".configs", "engine_has_model_sizes"),
     "engine_needs_trim": (".configs", "engine_needs_trim"),
+    "engine_needed": (".configs", "engine_needed"),
     "get_all_model_configs": (".configs", "get_all_model_configs"),
     "get_llm_model_configs": (".configs", "get_llm_model_configs"),
     "get_model_config": (".configs", "get_model_config"),

@@ -32,6 +32,30 @@ from .vc import (
 )
 
 
+def engine_needed(engine: str) -> bool:
+    """Check if any installed/downloaded model uses the given engine.
+
+    Returns True if at least one model config with the given engine
+    has been downloaded/cached. Used to skip loading unused inference
+    engines (torch, onnxruntime, sherpa, etc.) at startup.
+    """
+    try:
+        from ...services.model_registry import is_downloaded
+
+        all_configs = (
+            get_tts_model_configs()
+            + get_stt_model_configs()
+            + get_llm_model_configs()
+        )
+        for cfg in all_configs:
+            if cfg.engine == engine and is_downloaded(cfg.model_name):
+                return True
+        return False
+    except Exception:
+        # If we can't determine, assume engine is needed (safe default)
+        return True
+
+
 def get_vc_backend(engine: str):
     """Return the voice-conversion backend for the requested engine.
 

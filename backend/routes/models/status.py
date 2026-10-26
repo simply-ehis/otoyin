@@ -233,6 +233,11 @@ async def get_model_status():
             "license_note": getattr(cfg, "license_note", ""),
             "commercial_use": getattr(cfg, "commercial_use", True),
             "category": cfg.category,
+            "preload_priority": getattr(cfg, "preload_priority", 0),
+            "cold_start_ms": getattr(cfg, "cold_start_ms", 0),
+            "warm_start_ms": getattr(cfg, "warm_start_ms", 0),
+            "streaming": getattr(cfg, "streaming", False),
+            "execution_provider": getattr(cfg, "execution_provider", ""),
             "check_loaded": lambda c=cfg: check_model_loaded(c),
         }
         for cfg in registry_configs

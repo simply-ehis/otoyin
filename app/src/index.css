@@ -480,50 +480,6 @@
 	--color-ring: hsl(var(--theme-accent));
 }
 
-/* Di Stefano subtle noise overlay for depth */
-.di-stefano::before {
-	content: "";
-	position: fixed;
-	inset: 0;
-	pointer-events: none;
-	z-index: 0;
-	opacity: 0.015;
-	background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-	background-size: 256px;
-	animation: noise-shift 8s linear infinite;
-}
-
-@keyframes noise-shift {
-	0% {
-		transform: translate(0, 0);
-	}
-	100% {
-		transform: translate(256px, 256px);
-	}
-}
-
-/* Di Stefano wave animation */
-@keyframes di-stefano-wave {
-	0% {
-		background-position: -200% center;
-	}
-	100% {
-		background-position: 200% center;
-	}
-}
-
-.di-stefano .gs-wave-overlay {
-	background: linear-gradient(
-		90deg,
-		transparent 0%,
-		hsl(var(--theme-accent) / 0.04) 50%,
-		transparent 100%
-	);
-	background-size: 200% 100%;
-	animation: di-stefano-wave 8s ease-in-out infinite;
-	pointer-events: none;
-}
-
 /* Di Stefano active tab indicator — rose accent bar */
 .di-stefano nav [data-active="true"],
 .di-stefano nav .active {
@@ -1040,16 +996,6 @@
 	animation: logo-breath 6s ease-in-out infinite;
 }
 
-/* ── Wave animation (cheap GPU compositing) ── */
-@keyframes gs-wave {
-	0% {
-		background-position: -200% center;
-	}
-	100% {
-		background-position: 200% center;
-	}
-}
-
 /* ── Base layer ── */
 @layer base {
 	* {
@@ -1094,18 +1040,6 @@
 	.work-surface {
 		background: hsl(28 8% 7%);
 		color: hsl(30 12% 92%);
-	}
-
-	.gs-wave-overlay {
-		background: linear-gradient(
-			90deg,
-			transparent 0%,
-			hsl(0 0% 100% / 0.03) 50%,
-			transparent 100%
-		);
-		background-size: 200% 100%;
-		animation: gs-wave 8s ease-in-out infinite;
-		pointer-events: none;
 	}
 
 	/* ── Typography utilities ── */
@@ -1266,6 +1200,27 @@
 		box-shadow:
 			0 4px 12px rgba(0, 0, 0, 0.12),
 			0 1px 2px rgba(0, 0, 0, 0.08);
+	}
+
+	/* Frosted glass — opt-in for overlays, capture pill, bottom player.
+	   Small surfaces only so the blurred offscreen texture stays tiny;
+	   never applied to scrolling panels where blur RAM scales with size. */
+	.glass-panel {
+		background: var(--glass-surface-solid);
+		border: 1px solid var(--glass-border);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--glass-shadow);
+	}
+
+	@supports (backdrop-filter: blur(14px)) or (-webkit-backdrop-filter: blur(14px)) {
+		.glass-panel {
+			background: var(--glass-surface);
+			backdrop-filter: blur(14px) saturate(160%);
+			-webkit-backdrop-filter: blur(14px) saturate(160%);
+			border-top-color: var(--glass-highlight);
+			border-left-color: var(--glass-highlight);
+			box-shadow: var(--glass-shadow);
+		}
 	}
 }
 

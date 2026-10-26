@@ -42,7 +42,7 @@ export function useStreamingSTT(
 	options: StreamingSTTOptions = {},
 ): UseStreamingSTTReturn {
 	const {
-		modelId = "base",
+		modelId,
 		language,
 		sampleRate = 16000,
 		chunkIntervalMs: _chunkIntervalMs = 200,

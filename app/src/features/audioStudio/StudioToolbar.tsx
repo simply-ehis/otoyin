@@ -109,7 +109,7 @@ export function StudioToolbar({
 	const [showToolsMenu, setShowToolsMenu] = useState(false);
 
 	return (
-		<div className="flex items-center gap-1 h-8 px-3 border-b border-border bg-sidebar shrink-0">
+		<div className="flex items-center gap-1 h-7 px-3 border-b border-border bg-sidebar shrink-0">
 			{/* File group */}
 			<Button
 				variant="ghost"
@@ -118,7 +118,7 @@ export function StudioToolbar({
 				onClick={() => {
 					if (unsaved) {
 						const ok = window.confirm(
-							"You have unsaved changes. Start a new session? Unsaved work will be lost.",
+							"Unsaved changes will be lost. Start new session?",
 						);
 						if (!ok) {
 							return;
@@ -136,7 +136,7 @@ export function StudioToolbar({
 				size="sm"
 				className="h-7 text-xs px-2"
 				onClick={onSave}
-				title="Save session (Ctrl+S)"
+				title="Save session"
 			>
 				Save
 				{unsaved && (
@@ -153,7 +153,7 @@ export function StudioToolbar({
 				size="sm"
 				className="h-7 text-xs px-2"
 				onClick={onLoad}
-				title="Load session (Ctrl+O)"
+				title="Load session"
 			>
 				<FolderOpenIcon className="size-3 mr-1" />
 				Load
@@ -168,7 +168,7 @@ export function StudioToolbar({
 				className="size-7"
 				onClick={onUndo}
 				disabled={undoStackLength === 0}
-				title="Undo (Ctrl+Z)"
+				title="Undo"
 			>
 				<ArrowUturnLeftIcon className="size-3.5" />
 			</Button>
@@ -178,7 +178,7 @@ export function StudioToolbar({
 				className="size-7"
 				onClick={onRedo}
 				disabled={redoStackLength === 0}
-				title="Redo (Ctrl+Y)"
+				title="Redo"
 			>
 				<ArrowUturnRightIcon className="size-3.5" />
 			</Button>
@@ -191,9 +191,7 @@ export function StudioToolbar({
 				size="sm"
 				className="h-7 text-xs px-2"
 				onClick={onToggleAutomation}
-				title={
-					showAutomation ? "Hide automation lanes" : "Show automation lanes"
-				}
+				title={showAutomation ? "Hide automation" : "Show automation"}
 			>
 				Automation
 			</Button>
@@ -334,7 +332,6 @@ export function StudioToolbar({
 									onRenderFx();
 								}}
 								disabled={renderingFx || !canRenderFx}
-								title="Render the selected track's full chain (including render-only effects) to a new track via the backend"
 							>
 								{renderingFx ? "Rendering…" : "Render FX…"}
 							</button>
@@ -346,11 +343,6 @@ export function StudioToolbar({
 									onStitch();
 								}}
 								disabled={!canStitch}
-								title={
-									canStitch
-										? "Stitch the selected track end-to-end with another track"
-										: "Need at least two tracks with audio to stitch"
-								}
 							>
 								Stitch Tracks…
 							</button>
@@ -462,9 +454,6 @@ export function StudioToolbar({
 								disabled={exporting || !tracksHaveAudio}
 							>
 								<div className="font-medium">Export WAV</div>
-								<div className="text-muted-foreground text-[10px]">
-									Offline render — all tracks mixed
-								</div>
 							</button>
 							<button
 								type="button"
@@ -476,9 +465,6 @@ export function StudioToolbar({
 								disabled={exportWithPlugins || !tracksHaveAnyContent}
 							>
 								<div className="font-medium">Export with FX</div>
-								<div className="text-muted-foreground text-[10px]">
-									Server bounce — applies effect chains
-								</div>
 							</button>
 							<button
 								type="button"
@@ -490,9 +476,6 @@ export function StudioToolbar({
 								disabled={exportingReaper || !canExportReaper}
 							>
 								<div className="font-medium">Reaper Project</div>
-								<div className="text-muted-foreground text-[10px]">
-									.rpp file for DAW handoff
-								</div>
 							</button>
 						</div>
 					</>

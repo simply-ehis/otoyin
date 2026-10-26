@@ -1,6 +1,6 @@
 import {
-	Bars3Icon as GripVertical,
 	Square2StackIcon as Copy,
+	Bars3Icon as GripVertical,
 	TrashIcon as Trash2,
 } from "@heroicons/react/24/outline";
 import type { StudioTrack } from "./AudioStudioStore";

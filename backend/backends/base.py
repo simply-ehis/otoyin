@@ -5,12 +5,13 @@ Eliminates duplication of cache checking, device detection,
 voice prompt combination, and model loading progress tracking.
 """
 
+from __future__ import annotations
+
 import logging
 import platform
 from contextlib import contextmanager
 from pathlib import Path
 
-import numpy as np
 
 from ..utils.audio import load_audio, normalize_audio
 from ..utils.hf_progress import HFProgressTracker, create_hf_progress_callback
@@ -289,6 +290,8 @@ async def combine_voice_prompts(
         reference_texts: Corresponding transcripts.
         sample_rate: If set, resample audio to this rate during loading.
     """
+    import numpy as np
+
     combined_audio = []
 
     for path in audio_paths:

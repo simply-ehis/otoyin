@@ -10,6 +10,7 @@ import {
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils/cn";
 import {
 	USE_CASE_PROFILES,
 	type UseCaseKey,
@@ -23,7 +24,6 @@ import {
 	DialogFooter,
 	DialogTitle,
 } from "@/ui/dialog";
-import { cn } from "@/lib/utils/cn";
 
 const USE_CASE_ICONS: Record<UseCaseKey, typeof SparklesIcon> = {
 	tts: MicrophoneIcon,
@@ -205,10 +205,7 @@ function WelcomeStep({
 				{t("onboarding.welcome.title", "Welcome to otoyin")}
 			</DialogTitle>
 			<DialogDescription>
-				{t(
-					"onboarding.welcome.description",
-					"A quick tour before you start — under a minute.",
-				)}
+				{t("onboarding.welcome.description", "")}
 			</DialogDescription>
 			<ul className="flex flex-col gap-2 py-2">
 				{points.map((p) => (
@@ -258,10 +255,7 @@ function UseCaseStep({
 				{t("onboarding.wizard.title", "What do you want to do?")}
 			</DialogTitle>
 			<DialogDescription>
-				{t(
-					"onboarding.wizard.description",
-					"Select all that apply. You can change this anytime in Settings → Workspace.",
-				)}
+				{t("onboarding.wizard.description", "")}
 			</DialogDescription>
 
 			<div className="grid grid-cols-1 gap-2 py-2 sm:grid-cols-2">
@@ -404,10 +398,7 @@ function GenerateStep({
 				{t("onboarding.generate.title", "Generate and listen")}
 			</DialogTitle>
 			<DialogDescription>
-				{t(
-					"onboarding.generate.description",
-					"Everything happens on the Generate tab.",
-				)}
+				{t("onboarding.generate.description", "")}
 			</DialogDescription>
 			<ul className="flex flex-col gap-2 py-2">
 				<li className="flex items-start gap-3">

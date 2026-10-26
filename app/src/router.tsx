@@ -7,11 +7,12 @@ import {
 	useLocation,
 } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useRef } from "react";
+import { GlobalDictationPill } from "@/features/capture/GlobalDictationPill";
+import { TabIntroMount } from "@/features/onboarding/TabIntro";
+import { AutoUpdateFlow } from "@/features/settings/AutoUpdateFlow";
 import { AppFrame } from "@/layouts/AppFrame/AppFrame";
 import { TopBanners } from "@/layouts/Banner/TopBanners";
 import { ErrorBoundary } from "@/layouts/ErrorBoundary/ErrorBoundary";
-import { TabIntroMount } from "@/features/onboarding/TabIntro";
-import { AutoUpdateFlow } from "@/features/settings/AutoUpdateFlow";
 import { AppLoadingScreen } from "@/ui/AppLoadingScreen";
 import { Toaster } from "@/ui/toaster";
 
@@ -116,11 +117,6 @@ const SettingsLayout = lazy(() =>
 		default: m.SettingsLayout,
 	})),
 );
-const StoriesTab = lazy(() =>
-	import("@/features/stories/StoriesTab").then((m) => ({
-		default: m.StoriesTab,
-	})),
-);
 const SongwriterTab = lazy(() =>
 	import("@/features/songwriter/SongwriterTab").then((m) => ({
 		default: m.SongwriterTab,
@@ -141,9 +137,9 @@ const AudiobooksTab = lazy(() =>
 		default: m.AudiobooksTab,
 	})),
 );
-const VoicesTab = lazy(() =>
-	import("@/features/voices/VoicesTab").then((m) => ({
-		default: m.VoicesTab,
+const ClonePage = lazy(() =>
+	import("@/features/voices/ClonePage").then((m) => ({
+		default: m.ClonePage,
 	})),
 );
 const WorkspaceLayout = lazy(() =>
@@ -352,9 +348,14 @@ const YouTubeDownloadView = lazy(() =>
 	})),
 );
 
-const DubbingTab = lazy(() =>
-	import("@/features/dubbing/DubbingTab").then((m) => ({
-		default: m.DubbingTab,
+const DubPage = lazy(() =>
+	import("@/features/dubbing/DubPage").then((m) => ({
+		default: m.DubPage,
+	})),
+);
+const StoryEditor = lazy(() =>
+	import("@/features/stories/StoryEditor").then((m) => ({
+		default: m.StoryEditor,
 	})),
 );
 const WhatsNewPage = lazy(() =>
@@ -559,6 +560,7 @@ function RootLayout() {
 				<AutoUpdateFlow />
 			</ErrorBoundary>
 			<Toaster />
+			<GlobalDictationPill />
 		</AppFrame>
 	);
 }
@@ -599,7 +601,7 @@ const indexRoute = createRoute({
 const storiesRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/stories",
-	component: StoriesTab,
+	component: StoryEditor,
 });
 
 // Songwriter route (song DNA + lyrics craft, ported from Resonant)
@@ -634,7 +636,7 @@ const audiobooksRoute = createRoute({
 const voicesRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/voices",
-	component: VoicesTab,
+	component: ClonePage,
 });
 
 // Captures route (prototype — will replace AudioTab once the new flow is ready)
@@ -780,7 +782,7 @@ const settingsSystemRoute = createRoute({
 const dubbingRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/dubbing",
-	component: DubbingTab,
+	component: DubPage,
 });
 
 // Workspace layout route (parent for workspace sub-views)

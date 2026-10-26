@@ -8,6 +8,8 @@ export interface DubSegment {
 	translated_text: string;
 	speaker: string;
 	has_audio: boolean;
+	original_duration?: number;
+	speed?: number;
 }
 
 export interface DubJobResponse {
@@ -91,6 +93,22 @@ export class DubbingMethods extends ContentMethods {
 
 	async getDubbingLanguages(): Promise<{ languages: string[] }> {
 		return this.request("/dubbing/languages", { method: "GET" });
+	}
+
+	async moveResizeDubSegment(
+		segmentId: number,
+		patch: { start?: number; end?: number },
+	): Promise<DubSegment> {
+		return this.request<DubSegment>(`/dubbing/segment/${segmentId}`, {
+			method: "PATCH",
+			body: JSON.stringify(patch),
+		});
+	}
+
+	async deleteDubSegment(segmentId: number): Promise<void> {
+		await this.request<void>(`/dubbing/segment/${segmentId}`, {
+			method: "DELETE",
+		});
 	}
 }
 

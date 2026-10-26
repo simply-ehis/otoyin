@@ -35,14 +35,13 @@ export const BACKEND_CHAIN_TYPES = new Set([
 	"age_shift",
 	"helium",
 	"vocoder",
-	"telephone",
-	"megaphone",
+
 	"underwater",
 	"whisper_transform",
 	"auto_tune",
 	"spectral_duck",
 	"multi_band_pitch",
-	"resonant_filter_sweep",
+
 	"spectral_repair",
 	"multi_mic_phase",
 	"smart_crossfade",
@@ -92,13 +91,6 @@ function translateParams(
 				damping: num(params.damping, 0.5),
 				wet: num(params.wet_level, params.mix ?? 0.3),
 			};
-		}
-		case "resonant_filter_sweep": {
-			// Panel slider is numeric (0/1/2); the engine reads strings.
-			const ftype = params.filter_type;
-			const filter_type =
-				ftype === 1 ? "highpass" : ftype === 2 ? "bandpass" : "lowpass";
-			return { ...params, filter_type };
 		}
 		case "compressor": {
 			// Panel milliseconds vs engine seconds; accept both key styles.

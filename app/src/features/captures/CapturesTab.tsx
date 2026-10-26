@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { isTauri } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -58,7 +58,7 @@ function CapturesTabInner() {
 
 	const { settings: captureSettings, update: updateCaptureSettings } =
 		useCaptureSettings();
-	const sttModel = captureSettings?.stt_model ?? "tiny.en";
+	const sttModel = captureSettings?.stt_model;
 	const llmModel = captureSettings?.llm_model ?? "4B-Q4_K_M";
 	const hotkeyEnabled = captureSettings?.hotkey_enabled ?? false;
 	const pushKeys = captureSettings?.chord_push_to_talk_keys ?? [];

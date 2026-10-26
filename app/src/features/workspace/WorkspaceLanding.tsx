@@ -15,6 +15,7 @@ const TOP_TOOL_IDS = [
 	"timeline",
 	"mixer",
 	"effects",
+	"captures",
 	"studio",
 	"voice-changer",
 ];

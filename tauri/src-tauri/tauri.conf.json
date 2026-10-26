@@ -11,7 +11,9 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
+    "targets": [
+      "nsis"
+    ],
     "createUpdaterArtifacts": true,
     "resources": {
       "binaries/otoyin-server/": "otoyin-server/",
@@ -22,12 +24,19 @@
     ],
     "windows": {
       "nsis": {
-        "displayLanguageSelector": true,
-        "languages": ["English", "German", "Spanish", "French", "PortugueseBR", "Korean"],
+        "displayLanguageSelector": false,
+        "languages": [
+          "English",
+          "German",
+          "Spanish",
+          "French",
+          "PortugueseBR",
+          "Korean"
+        ],
         "installerIcon": "icons/icon.ico",
-        "headerImage": "icons/installer-header.bmp",
-        "sidebarImage": "icons/installer-sidebar.bmp",
-        "installMode": "both",
+        
+        
+        "installMode": "currentUser",
         "compression": "lzma"
       },
       "wix": {
@@ -51,7 +60,9 @@
     "macOSPrivateApi": true,
     "security": {
       "csp": "default-src 'self' blob: data: media:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob: data: media:; connect-src 'self' ipc: http://ipc.localhost http://localhost:* http://127.0.0.1:* http://[::1]:* https://api.frankfurter.dev https://api.marketplace.otoyin.app; font-src 'self' data:",
-      "capabilities": ["default"]
+      "capabilities": [
+        "default"
+      ]
     },
     "windows": [
       {
@@ -75,7 +86,10 @@
     "shell": {
       "open": "^(https?|tauri):.*"
     },
-"updater": {
+    "global-shortcut": {
+      "all": true
+    },
+    "updater": {
       "endpoints": [
         "https://github.com/simply-ehis/otoyin/releases/latest/download/latest.json"
       ],

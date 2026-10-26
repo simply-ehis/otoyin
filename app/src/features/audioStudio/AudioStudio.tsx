@@ -61,6 +61,9 @@ export function AudioStudio() {
 	const setPlaybackSpeed = useAudioStudioStore((s) => s.setPlaybackSpeed);
 	const setZoomLevel = useAudioStudioStore((s) => s.setZoomLevel);
 	const setShowAutomation = useAudioStudioStore((s) => s.setShowAutomation);
+	const registerStopPlayback = useAudioStudioStore(
+		(s) => s.registerStopPlayback,
+	);
 	const addMarker = useAudioStudioStore((s) => s.addMarker);
 	const removeMarker = useAudioStudioStore((s) => s.removeMarker);
 	const addTrack = useAudioStudioStore((s) => s.addTrack);
@@ -131,6 +134,12 @@ export function AudioStudio() {
 		sourceNodesRef,
 		trackAnalysers,
 	} = playback;
+
+	// Register the real stopPlayback with the store so import/reset/template
+	// actually tear down Web Audio nodes instead of only flipping isPlaying.
+	useEffect(() => {
+		registerStopPlayback(stopPlayback);
+	}, [registerStopPlayback, stopPlayback]);
 
 	// Ref mutation never re-renders, so mirror the live analyser into state
 	// when playback starts/stops — otherwise the visualizer gets null forever.

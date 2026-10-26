@@ -1,7 +1,7 @@
 ﻿import { useCallback, useEffect, useRef, useState } from "react";
+import { debug } from "@/lib/utils/debug";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useToast } from "@/ui/use-toast";
-import { debug } from "@/lib/utils/debug";
 import type { StudioTrack } from "./AudioStudioStore";
 import { useAudioStudioStore } from "./AudioStudioStore";
 import { buildEffectChain } from "./buildEffectChain";

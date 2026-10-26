@@ -184,6 +184,7 @@ ENDPOINT_MAP = {
     # Phase 6 instruments + studio tools
     "play_gm_instrument": "/instruments/gm",
     "play_drum_machine": "/instruments/drum-machine",
+    "play_gm_pattern": "/instruments/gm-pattern",
     "play_piano_note": "/instruments/piano",
     "play_synth_note": "/instruments/synth",
     "play_drum_pad": "/instruments/drum",

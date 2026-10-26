@@ -20,10 +20,15 @@ used, never the build.
 """
 
 import json
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import onnxruntime as ort
 import os
 
-import onnxruntime as ort
 
 logger = logging.getLogger(__name__)
 
@@ -132,6 +137,7 @@ def resolve_providers(preferred: str = "auto") -> list[str]:
     Set ``preferred="cpu"`` to force CPU-only (avoids GPU memory overhead).
     """
     global _PROVIDER_CHAIN_LOGGED
+    import onnxruntime as ort
     available = set(ort.get_available_providers())
 
     if preferred == "cpu":

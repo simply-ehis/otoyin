@@ -403,7 +403,12 @@ export function InstrumentPreview() {
 				});
 			} else {
 				apiClient
-					.playDrumPad({ drum_type: drumType, duration: 0.5, velocity })
+					// Backend voices are lowercase without hyphens ("Hi-Hat" -> "hihat").
+					.playDrumPad({
+						drum_type: drumType.toLowerCase().replace(/-/g, ""),
+						duration: 0.5,
+						velocity,
+					})
 					.then((blob) => {
 						const url = URL.createObjectURL(blob);
 						const audio = new Audio(url);
@@ -693,7 +698,7 @@ export function InstrumentPreview() {
 					<DrumPadComponent
 						key={pad}
 						label={pad}
-						onTrigger={() => playDrum(pad.toLowerCase())}
+						onTrigger={() => playDrum(pad)}
 					/>
 				))}
 			</div>

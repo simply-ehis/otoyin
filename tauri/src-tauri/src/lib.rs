@@ -13,12 +13,15 @@ mod audio;
 mod audio_mac;
 #[cfg(windows)]
 mod audio_win;
+#[cfg(feature = "rust-backend")]
+mod backend;
 mod mic_webview;
 mod server;
 mod window_state;
 
 use std::sync::atomic::Ordering;
-use tauri::{Manager, WindowEvent};
+use tauri::{Emitter, Manager, WindowEvent};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
 /// Shared application state handed to commands via `tauri::State`.
 #[derive(Default)]
@@ -87,7 +90,11 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(
+            tauri_plugin_global_shortcut::Builder::new().build(),
+        )
         .invoke_handler(tauri::generate_handler![
+            backend::start_rust_backend,
             server::start_server,
             server::stop_server,
             server::restart_server,
@@ -112,6 +119,19 @@ pub fn run() {
                 // Log platform-specific mic permission guidance
                 mic_webview::init_mic_permission_handler();
 
+                // Global dictation chord: Control + Alt + D toggles the capture pill.
+                // Fires a tauri event the frontend listens for to show/hide the
+                // pill and start/stop recording — no frontend polling required.
+                let handle = app.handle().clone();
+                app.global_shortcut()
+                    .on_shortcut("Control+Alt+D", move |_app, _shortcut, event| {
+                        if event.state == ShortcutState::Pressed {
+                            if let Some(window) = handle.get_webview_window("main") {
+                                let _ = window.emit("dictation:toggle", ());
+                            }
+                        }
+                    })?;
+
                 // Start the bundled backend before the UI begins polling
                 // /health. Non-fatal: in dev the backend is usually already
                 // running (adopted), and without a bundled binary we stay
@@ -119,6 +139,13 @@ pub fn run() {
                 let handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
                     let _ = server::ensure_started(&handle, None).await;
+                });
+
+                // Rust backend (Phase 1): start health-check server on a
+                // separate port for gradual migration. Non-fatal.
+                #[cfg(feature = "rust-backend")]
+                tauri::async_runtime::spawn(async move {
+                    let _ = backend::start_rust_backend(Some(17494));
                 });
             }
             Ok(())

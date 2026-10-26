@@ -863,7 +863,7 @@ function AudioPlayerInner() {
 
 	return (
 		<div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
-			<div className="pointer-events-auto flex h-14 w-full max-w-3xl items-center gap-2.5 rounded-2xl border border-border bg-card/95 px-2.5 py-2 shadow-xl backdrop-blur">
+			<div className="pointer-events-auto glass-panel flex h-14 w-full max-w-3xl items-center gap-2.5 rounded-2xl px-2.5 py-2">
 				{/* Play/Pause Button */}
 				<button
 					type="button"
