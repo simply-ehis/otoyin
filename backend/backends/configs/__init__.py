@@ -12,6 +12,7 @@ from .llm import _get_cloud_llm_configs, _get_gguf_llm_configs, get_llm_model_co
 from .music import (
     _get_audio_processing_configs,
     _get_cloud_vc_configs,
+    _get_demucs_configs,
     _get_music_configs,
     _get_soundfont_configs,
     _get_steam_audio_configs,
@@ -110,6 +111,7 @@ def get_all_model_configs() -> list[ModelConfig]:
         + _get_neutts_2e_configs()
         + _get_orpheus_configs()
         + _get_music_configs()
+        + _get_demucs_configs()
         + _get_steam_audio_configs()
         + _get_audio_processing_configs()
         + _get_soundfont_configs()

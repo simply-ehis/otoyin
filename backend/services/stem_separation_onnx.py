@@ -71,10 +71,12 @@ def separate_audio_onnx(
 
     session = _get_session(model_name)
 
-    from scipy.signal import resample
-
     if sample_rate != INTERNAL_SR:
-        audio = resample(audio, int(len(audio) * INTERNAL_SR / sample_rate))
+        # simple linear resampling via numpy (no scipy needed)
+        ratio = INTERNAL_SR / sample_rate
+        n = int(len(audio) * ratio)
+        idx = (np.arange(n) / ratio).astype(int).clip(0, len(audio) - 1)
+        audio = audio[idx]
 
     waveform = np.asarray(audio, dtype=np.float32)
     if waveform.ndim == 1:

@@ -200,3 +200,21 @@ def _get_cloud_vc_configs() -> list[ModelConfig]:
             category="vc",
         )
     ]
+def _get_demucs_configs() -> list[ModelConfig]:
+    """Demucs stem-separation (ONNX, no torch)."""
+    return [
+        ModelConfig(
+            model_name="demucs-int8",
+            display_name="Demucs (Stem Separation, int8 ONNX)",
+            engine="demucs_onnx",
+            hf_repo_id="MrCitron/demucs-v4-onnx",
+            model_size="int8",
+            size_mb=98,
+            min_ram_mb=2000,
+            min_vram_mb=0,
+            quant="int8",
+            languages=["en"],
+            category="music",
+            commercial_use=True,
+        )
+    ]

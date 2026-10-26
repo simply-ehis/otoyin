@@ -1,13 +1,18 @@
-"""Stem separation via ONNX demucs (preferred) or demucs subprocess (fallback)."""
+"""Stem separation via ONNX demucs (no torch).
+
+Uses services.stem_separation_onnx (MrCitron/demucs-v4-onnx).
+Downloads on first use via the standard model download flow.
+"""
 
 from __future__ import annotations
 
 import logging
-import subprocess
-import sys
+import os
 import tempfile
 import uuid
 from pathlib import Path
+
+import soundfile as sf
 
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
@@ -25,17 +30,16 @@ STEM_NAMES = ["vocals", "drums", "bass", "other"]
 def _onnx_available() -> bool:
     try:
         import onnxruntime  # noqa: F401
-        from backends.onnx_demucs_backend import _load_model
-        return _load_model() is not None
-    except Exception:
+        return True
+    except ImportError:
         return False
 
 
-def _demucs_available() -> bool:
+def _is_cached() -> bool:
     try:
-        import demucs  # noqa: F401
-        return True
-    except ImportError:
+        from services.stem_separation_onnx import _is_model_cached
+        return _is_model_cached()
+    except Exception:
         return False
 
 
@@ -43,53 +47,47 @@ def _demucs_available() -> bool:
 def status() -> dict:
     return {
         "onnx_available": _onnx_available(),
-        "demucs_available": _demucs_available(),
+        "model_cached": _is_cached(),
         "stems": STEM_NAMES,
     }
 
 
 @router.post("/separate")
 async def separate(file: UploadFile = File(...)) -> dict:
+    if not _onnx_available():
+        raise HTTPException(status_code=503, detail="onnxruntime is not installed")
+    if not _is_cached():
+        raise HTTPException(status_code=503, detail="Demucs ONNX model not downloaded. Download it from Models first.")
+
     job_id = uuid.uuid4().hex[:12]
     work = STEMS_DIR / job_id
     work.mkdir(parents=True, exist_ok=True)
     src = work / (file.filename or "input.wav")
     with open(src, "wb") as f:
         f.write(await file.read())
-    out_dir = work / "out"
-    out_dir.mkdir(parents=True, exist_ok=True)
 
-    if _onnx_available():
-        try:
-            from backends.onnx_demucs_backend import separate as onnx_sep
-            stems = onnx_sep(str(src), str(out_dir))
-            if stems:
-                return {"job_id": job_id, "stems": {k: Path(v).name for k, v in stems.items()}, "engine": "onnx"}
-        except Exception:
-            logger.exception("onnx separation failed, falling back to demucs")
+    audio, sr = sf.read(str(src), dtype="float32", always_2d=True)
+    if audio.shape[1] == 1:
+        audio = __import__("numpy").repeat(audio, 2, axis=1)
+    elif audio.shape[1] > 2:
+        audio = audio[:, :2]
 
-    if not _demucs_available():
-        raise HTTPException(status_code=503, detail="No separation engine available")
-    try:
-        subprocess.run(
-            [sys.executable, "-m", "demucs", "-o", str(out_dir), str(src)],
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=600,
-        )
-    except subprocess.CalledProcessError as e:
-        logger.exception("demucs failed")
-        raise HTTPException(status_code=500, detail=e.stderr or "separation failed")
-    result_dir = None
-    for p in out_dir.rglob("*.wav"):
-        result_dir = p.parent
-        break
+    from services.stem_separation_onnx import separate_audio_onnx
+
     stems = {}
-    if result_dir:
-        for wav in result_dir.glob("*.wav"):
-            stems[wav.stem] = wav.name
-    return {"job_id": job_id, "stems": stems, "names": list(stems.keys()), "engine": "demucs"}
+    for name in STEM_NAMES:
+        try:
+            arr = separate_audio_onnx(audio.T, sr, stem=name)
+            out_path = work / f"{name}.wav"
+            import soundfile as sfw
+            sfw.write(str(out_path), arr, sr)
+            stems[name] = out_path.name
+        except Exception as e:
+            logger.exception("stem separation failed for %s", name)
+
+    if not stems:
+        raise HTTPException(status_code=500, detail="separation failed")
+    return {"job_id": job_id, "stems": stems, "names": list(stems.keys()), "engine": "onnx"}
 
 
 @router.get("/{job_id}/{name}")
