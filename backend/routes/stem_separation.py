@@ -1,17 +1,13 @@
-"""Stem separation via ONNX demucs (no torch).
-
-Uses services.stem_separation_onnx (MrCitron/demucs-v4-onnx).
-Downloads on first use via the standard model download flow.
-"""
+"""Stem separation via ONNX demucs (no torch)."""
 
 from __future__ import annotations
 
 import logging
-import os
 import tempfile
 import uuid
 from pathlib import Path
 
+import numpy as np
 import soundfile as sf
 
 from fastapi import APIRouter, HTTPException, UploadFile, File
@@ -68,7 +64,7 @@ async def separate(file: UploadFile = File(...)) -> dict:
 
     audio, sr = sf.read(str(src), dtype="float32", always_2d=True)
     if audio.shape[1] == 1:
-        audio = __import__("numpy").repeat(audio, 2, axis=1)
+        audio = np.repeat(audio, 2, axis=1)
     elif audio.shape[1] > 2:
         audio = audio[:, :2]
 
@@ -79,8 +75,7 @@ async def separate(file: UploadFile = File(...)) -> dict:
         try:
             arr = separate_audio_onnx(audio.T, sr, stem=name)
             out_path = work / f"{name}.wav"
-            import soundfile as sfw
-            sfw.write(str(out_path), arr, sr)
+            sf.write(str(out_path), arr, sr)
             stems[name] = out_path.name
         except Exception as e:
             logger.exception("stem separation failed for %s", name)
@@ -88,6 +83,33 @@ async def separate(file: UploadFile = File(...)) -> dict:
     if not stems:
         raise HTTPException(status_code=500, detail="separation failed")
     return {"job_id": job_id, "stems": stems, "names": list(stems.keys()), "engine": "onnx"}
+
+
+@router.post("/{job_id}/vocal-split")
+def vocal_split(job_id: str) -> dict:
+    work = STEMS_DIR / job_id
+    if not work.exists():
+        raise HTTPException(status_code=404, detail="job not found")
+    vocals_path = None
+    for wav in work.rglob("vocals.wav"):
+        vocals_path = wav
+        break
+    if vocals_path is None:
+        raise HTTPException(status_code=404, detail="vocals stem not found")
+    audio, sr = sf.read(str(vocals_path), dtype="float32", always_2d=True)
+    n = audio.shape[0]
+    fft = np.fft.rfft(audio, axis=0)
+    freqs = np.fft.rfftfreq(n, 1.0 / sr)
+    cutoff = 1000.0
+    mask_high = (freqs >= cutoff).astype(float)
+    mask_low = (freqs < cutoff).astype(float)
+    lead = np.fft.irfft(fft * mask_high[:, None], n=n, axis=0).astype("float32")
+    back = np.fft.irfft(fft * mask_low[:, None], n=n, axis=0).astype("float32")
+    lead_path = work / "lead_vocals.wav"
+    back_path = work / "backing_vocals.wav"
+    sf.write(str(lead_path), lead, sr)
+    sf.write(str(back_path), back, sr)
+    return {"job_id": job_id, "stems": {"lead_vocals": lead_path.name, "backing_vocals": back_path.name}}
 
 
 @router.get("/{job_id}/{name}")

@@ -19,6 +19,7 @@ export function StemSeparationPage() {
 	const [error, setError] = useState<string | null>(null);
 	const [status, setStatus] = useState<{ demucs_available: boolean; model_cached?: boolean } | null>(null);
 	const [vocalSplit, setVocalSplit] = useState(false);
+	const [splitting, setSplitting] = useState(false);
 
 	const baseUrl = apiClient.getBaseUrl();
 
@@ -89,6 +90,27 @@ export function StemSeparationPage() {
 		}
 	};
 
+	const splitVocals = async () => {
+		if (!result) return;
+		setSplitting(true);
+		try {
+			const r = await fetch(`${baseUrl}/stems/${result.job_id}/vocal-split`, { method: "POST" });
+			if (!r.ok) throw new Error("vocal split failed");
+			const j = await r.json();
+			const newStems: StemInfo[] = [];
+			for (const [name, fname] of Object.entries(j.stems as Record<string, string>)) {
+				const url = `${baseUrl}/stems/${result.job_id}/${fname}`;
+				const peaks = await computePeaks(url);
+				newStems.push({ name, fname, peaks, gain: 1, muted: false });
+			}
+			setStems((prev) => [...prev, ...newStems]);
+		} catch (e) {
+			setError((e as Error).message);
+		} finally {
+			setSplitting(false);
+		}
+	};
+
 	const toggleMute = (name: string) => {
 		setStems((prev) =>
 			prev.map((s) => (s.name === name ? { ...s, muted: !s.muted } : s)),
@@ -149,6 +171,11 @@ export function StemSeparationPage() {
 						/>
 						Split vocals (lead/backing)
 					</label>
+					{result && stems.some((s) => s.name === "vocals") && !stems.some((s) => s.name === "lead_vocals") && (
+						<Button size="sm" variant="outline" disabled={splitting} onClick={splitVocals}>
+							{splitting ? "Splitting…" : "Split vocals"}
+						</Button>
+					)}
 				</div>
 			</div>
 
