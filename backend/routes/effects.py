@@ -6,12 +6,12 @@ import logging
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel
 
 from ..backends.effects import (
     PEDALBOARD_AVAILABLE,
     get_available_effects,
-    get_available_presets,
     process_audio,
 )
 
@@ -22,10 +22,6 @@ router = APIRouter(prefix="/effects", tags=["effects"])
 
 class AvailableEffectsResponse(BaseModel):
     effects: list[dict[str, Any]]
-
-
-class AvailablePresetsResponse(BaseModel):
-    presets: list[dict[str, Any]]
 
 
 class ProcessEffectsRequest(BaseModel):
@@ -43,12 +39,6 @@ async def available_effects() -> AvailableEffectsResponse:
     if not PEDALBOARD_AVAILABLE:
         return AvailableEffectsResponse(effects=[])
     return AvailableEffectsResponse(effects=get_available_effects())
-
-
-@router.get("/presets")
-async def available_presets() -> AvailablePresetsResponse:
-    """Return list of available effect presets."""
-    return AvailablePresetsResponse(presets=get_available_presets())
 
 
 @router.post("/process")
@@ -75,7 +65,5 @@ async def process_effects(request: ProcessEffectsRequest):
         )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
-
-    from fastapi.responses import Response
 
     return Response(content=result, media_type="audio/wav")

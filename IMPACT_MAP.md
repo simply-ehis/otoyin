@@ -358,7 +358,7 @@ outes/models/download.py bark branch (gguf + per-voice pack_voice_npz), services
 - **Bug fixed:** `ClonePage.tsx` — removed unused `showStudioErrorToast` import
 - **Type error fixed:** `StreamingTtsPreviewButton.tsx` — `size?: "sm" | "md" | "lg"` → `size?: "sm" | "lg"` (md not a valid Button size)
 - **Dead code documented:** `StreamingTtsPreviewButton.tsx` — component defined but never imported anywhere
-- **Route conflict identified:** `GET /effects/presets` exists in both `routes/effects.py` (Pedalboard) and `routes/audio_pipeline/presets.py` (DB presets). audio_pipeline is registered first so Pedalboard version is shadowed.
+- **Route conflict fixed:** `GET /effects/presets` existed in both `routes/effects.py` (Pedalboard, returns hardcoded 3 presets) and `routes/audio_pipeline/presets.py` (DB-backed, returns `EffectPresetResponse[]` with full CRUD). The frontend calls `GET /effects/presets` expecting `EffectPresetResponse[]` (audio_pipeline version). Removed the conflicting `GET /effects/presets` + `AvailablePresetsResponse` + `get_available_presets` import from `routes/effects.py`. Kept `GET /effects/available` (Pedalboard effect definitions) and `POST /effects/process` (Pedalboard audio processing).
 - **Mojibake:** None found.
 - **Icons:** No Lucide icons found (heroicons only, per project rules).
 - **Verification:** Biome lint/format clean, TypeScript clean on all changed files.

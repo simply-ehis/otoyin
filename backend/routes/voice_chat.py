@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 
 # ── WebSocket message schemas ───────────────────────────────────────────
 class WSStartMessage(BaseModel):
-    type: str = Field(literal="start")
+    type: str = Field(json_schema_extra={"literal": "start"})
     language: str = "en"
     system_prompt: str | None = None
     stt_model: str = "base"
@@ -57,20 +57,20 @@ class WSStartMessage(BaseModel):
 
 
 class WSAudioMessage(BaseModel):
-    type: str = Field(literal="audio")
+    type: str = Field(json_schema_extra={"literal": "audio"})
     audio: str | list[float]  # base64-encoded PCM or JSON array of float32 samples
 
 
 class WSEndMessage(BaseModel):
-    type: str = Field(literal="end")
+    type: str = Field(json_schema_extra={"literal": "end"})
 
 
 class WSCancelMessage(BaseModel):
-    type: str = Field(literal="cancel")
+    type: str = Field(json_schema_extra={"literal": "cancel"})
 
 
 class WSToolConfirmMessage(BaseModel):
-    type: str = Field(literal="tool_confirm")
+    type: str = Field(json_schema_extra={"literal": "tool_confirm"})
     call_id: str
     confirmed: bool
 
