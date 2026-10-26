@@ -23,7 +23,7 @@ MODEL_PATH = os.getenv(
 def _resolve_model_path() -> str:
     if MODEL_PATH and os.path.exists(MODEL_PATH):
         return MODEL_PATH
-    base = Path(__file__).resolve().parents[1] / "models"
+    base = Path(__file__).resolve().parents[1] / "model_files"
     # Prefer quantized (int8) if available, then fp16, then fp32
     for name in ("htdemucs-dft-int8-fp16-final.onnx", "htdemucs_fp16weights.onnx", "htdemucs.onnx"):
         p = base / name
@@ -36,12 +36,24 @@ CHUNK_SIZE = 343980
 OVERLAP = 0.25
 
 
+def _get_providers() -> list[str]:
+    """Prefer CUDA if available, else CPU."""
+    try:
+        import onnxruntime as ort
+        avail = ort.get_available_providers()
+        if "CUDAExecutionProvider" in avail:
+            return ["CUDAExecutionProvider", "CPUExecutionProvider"]
+    except Exception:
+        pass
+    return ["CPUExecutionProvider"]
+
+
 def _load_model() -> ort.InferenceSession | None:
     path = _resolve_model_path()
     if not os.path.exists(path):
         return None
     try:
-        return ort.InferenceSession(path, providers=["CPUExecutionProvider"])
+        return ort.InferenceSession(path, providers=_get_providers())
     except Exception:
         logger.exception("failed to load onnx demucs")
         return None
