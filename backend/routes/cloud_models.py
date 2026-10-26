@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 from typing import Any, Optional
 
 import httpx
@@ -20,13 +21,35 @@ ROUTER_KEY = os.getenv("CLOUD_ROUTER_API_KEY", "")
 DEV_SUBSCRIPTION_KEY = os.getenv("CLOUD_SUBSCRIPTION_KEY", "")
 ALLOWED_KEYS = [k.strip() for k in os.getenv("CLOUD_ALLOWED_KEYS", "").split(",") if k.strip()]
 
+_VALIDATION_CACHE: dict[str, float] = {}
+_VALIDATION_TTL = 60.0
 
-def require_subscription(x_subscription_key: Optional[str] = Header(default=None)) -> str:
+
+async def require_subscription(x_subscription_key: Optional[str] = Header(default=None)) -> str:
     key = x_subscription_key or DEV_SUBSCRIPTION_KEY
     if not key:
         raise HTTPException(status_code=401, detail="Missing subscription key")
-    if ALLOWED_KEYS and key not in ALLOWED_KEYS and key != DEV_SUBSCRIPTION_KEY:
-        raise HTTPException(status_code=403, detail="Invalid subscription key")
+    if ALLOWED_KEYS:
+        if key not in ALLOWED_KEYS and key != DEV_SUBSCRIPTION_KEY:
+            raise HTTPException(status_code=403, detail="Invalid subscription key")
+        return key
+    # Real validation against the router (cached).
+    now = time.monotonic()
+    exp = _VALIDATION_CACHE.get(key)
+    if exp is not None and exp > now:
+        return key
+    if ROUTER_URL:
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.get(
+                    f"{ROUTER_URL}/v1/models",
+                    headers={"Authorization": f"Bearer {key}"},
+                )
+                if r.status_code >= 400:
+                    raise HTTPException(status_code=403, detail="Invalid subscription key")
+        except httpx.HTTPError:
+            logger.warning("subscription validation failed (router unreachable); accepting")
+    _VALIDATION_CACHE[key] = now + _VALIDATION_TTL
     return key
 
 

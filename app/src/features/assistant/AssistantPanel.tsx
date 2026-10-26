@@ -233,11 +233,16 @@ export function AssistantPanel({
 						<Button
 							variant={useCloudModel ? "default" : "ghost"}
 							size="sm"
-							className="h-7 px-2 text-xs"
+							className={
+								"h-7 gap-1 px-2 text-xs " +
+								(useCloudModel
+									? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-400 hover:to-purple-400"
+									: "")
+							}
 							onClick={toggleCloudModel}
-							title="Use cloud model"
+							title={useCloudModel ? "Using cloud model — click for local" : "Using local model — click for cloud"}
 						>
-							{useCloudModel ? "Cloud" : "Local"}
+							{useCloudModel ? "☁ Cloud" : "💻 Local"}
 						</Button>
 						<Button
 							variant="ghost"
