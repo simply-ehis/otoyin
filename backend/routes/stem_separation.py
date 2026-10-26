@@ -112,6 +112,35 @@ def vocal_split(job_id: str) -> dict:
     return {"job_id": job_id, "stems": {"lead_vocals": lead_path.name, "backing_vocals": back_path.name}}
 
 
+@router.post("/{job_id}/mixdown")
+def mixdown(job_id: str) -> dict:
+    """Combine all stems into a single mix WAV (equal gain)."""
+    work = STEMS_DIR / job_id
+    if not work.exists():
+        raise HTTPException(status_code=404, detail="job not found")
+    stem_arrays = []
+    sr = None
+    for wav in sorted(work.rglob("*.wav")):
+        if wav.name in ("mixdown.wav",) or wav.name.startswith(("lead_", "backing_")):
+            continue
+        a, s = sf.read(str(wav), dtype="float32", always_2d=True)
+        if sr is None:
+            sr = s
+        stem_arrays.append(a)
+    if not stem_arrays:
+        raise HTTPException(status_code=404, detail="no stems found")
+    maxlen = max(a.shape[0] for a in stem_arrays)
+    mixed = np.zeros((maxlen, stem_arrays[0].shape[1]), dtype="float32")
+    for a in stem_arrays:
+        mixed[:a.shape[0]] += a
+    mx = np.abs(mixed).max()
+    if mx > 1.0:
+        mixed = mixed / mx
+    out_path = work / "mixdown.wav"
+    sf.write(str(out_path), mixed, sr)
+    return {"job_id": job_id, "file": out_path.name}
+
+
 @router.get("/{job_id}/{name}")
 def download_stem(job_id: str, name: str):
     work = STEMS_DIR / job_id

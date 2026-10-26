@@ -19,6 +19,8 @@ export function StemSeparationPage() {
 	const [error, setError] = useState<string | null>(null);
 	const [status, setStatus] = useState<{ demucs_available: boolean; model_cached?: boolean } | null>(null);
 	const [vocalSplit, setVocalSplit] = useState(false);
+	const [mixing, setMixing] = useState(false);
+	const [mixFile, setMixFile] = useState<string | null>(null);
 	const [splitting, setSplitting] = useState(false);
 
 	const baseUrl = apiClient.getBaseUrl();
@@ -111,6 +113,21 @@ export function StemSeparationPage() {
 		}
 	};
 
+	const mixdown = async () => {
+		if (!result) return;
+		setMixing(true);
+		try {
+			const r = await fetch(`${baseUrl}/stems/${result.job_id}/mixdown`, { method: "POST" });
+			if (!r.ok) throw new Error("mixdown failed");
+			const j = await r.json();
+			setMixFile(j.file);
+		} catch (e) {
+			setError((e as Error).message);
+		} finally {
+			setMixing(false);
+		}
+	};
+
 	const toggleMute = (name: string) => {
 		setStems((prev) =>
 			prev.map((s) => (s.name === name ? { ...s, muted: !s.muted } : s)),
@@ -176,6 +193,11 @@ export function StemSeparationPage() {
 							{splitting ? "Splitting…" : "Split vocals"}
 						</Button>
 					)}
+					{result && (
+						<Button size="sm" variant="outline" disabled={mixing} onClick={mixdown}>
+							{mixing ? "Mixing…" : "Mixdown"}
+						</Button>
+					)}
 				</div>
 			</div>
 
@@ -233,6 +255,15 @@ export function StemSeparationPage() {
 							</a>
 						</div>
 					))}
+					{mixFile && result && (
+						<div className="flex items-center gap-2">
+							<span className="text-sm font-medium text-foreground">Mixdown:</span>
+							<audio controls src={`${baseUrl}/stems/${result.job_id}/${mixFile}`} className="h-8" />
+							<a href={`${baseUrl}/stems/${result.job_id}/${mixFile}`} download={mixFile} className="text-xs text-primary underline">
+								Download mix
+							</a>
+						</div>
+					)}
 				</div>
 			)}
 		</div>
