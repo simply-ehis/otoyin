@@ -383,6 +383,11 @@ const SupportPage = lazy(() =>
 		default: m.SupportPage,
 	})),
 );
+const StemSeparationPage = lazy(() =>
+	import("@/features/stems/StemSeparationPage").then((m) => ({
+		default: m.StemSeparationPage,
+	})),
+);
 const CloudModelsPage = lazy(() =>
 	import("@/features/settings/CloudModelsPage").then((m) => ({
 		default: m.CloudModelsPage,
@@ -1037,6 +1042,13 @@ const settingsSupportRoute = createRoute({
 	component: SupportPage,
 });
 
+// Stem separation sub-route
+const stemSeparationRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/stem-separation",
+	component: StemSeparationPage,
+});
+
 // Settings → Cloud models sub-route
 const settingsCloudModelsRoute = createRoute({
 	getParentRoute: () => settingsRoute,
@@ -1122,6 +1134,7 @@ const routeTree = rootRoute.addChildren([
 		settingsApiKeysRoute,
 		settingsWorkspaceRoute,
 		settingsSupportRoute,
+	stemSeparationRoute,
 	settingsCloudModelsRoute,
 	]),
 	projectsRoute,
