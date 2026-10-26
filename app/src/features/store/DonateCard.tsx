@@ -1,162 +1,84 @@
-import { HeartIcon } from "@heroicons/react/24/outline";
+import { HeartIcon } from "@heroicons/react/24/solid";
 import { useState } from "react";
-import { showStudioErrorToast } from "@/lib/errors";
-import {
-	getLicenseDeviceId,
-	marketplaceClient,
-	openExternalUrl,
-} from "@/lib/marketplace";
 import { Button } from "@/ui/button";
-import { Field, Input } from "@/ui/input";
-import { useToast } from "@/ui/use-toast";
 
 const PRESETS = [5, 10, 25, 50];
 
-/**
- * Donate card: voluntary custom-amount contributions via Dodo.
- * Not a catalog product (fixed prices can't express "pay what you want")
- * and mints no license — the thank-you is the product. Reuses the same
- * browser → poll loop as checkout, including Check-again recovery.
- */
+const DONATE_URL = "https://github.com/sponsors/simply-ehis";
+
 export function DonateCard() {
-	const { toast } = useToast();
-	const [amount, setAmount] = useState("10");
-	const [email, setEmail] = useState("");
-	const [busy, setBusy] = useState(false);
-	const [pendingOrderRef, setPendingOrderRef] = useState<string | null>(null);
-	const [thankedAmount, setThankedAmount] = useState<number | null>(null);
+	const [amount, setAmount] = useState(10);
 
-	const parsedAmount = Number(amount);
-	const validAmount =
-		Number.isFinite(parsedAmount) && parsedAmount >= 1 && parsedAmount <= 10000;
-
-	const pollDonation = async (orderRef: string) => {
-		const result = await marketplaceClient.pollForLicense(
-			orderRef,
-			await getLicenseDeviceId(),
-		);
-		if (result.donated) {
-			setThankedAmount(Number(result.amount_usd) || parsedAmount);
-			setPendingOrderRef(null);
-		} else {
-			// A license payload here would mean backend misrouting — surface it.
-			throw new Error("Unexpected response for a donation order.");
-		}
+	const openDonate = () => {
+		const url = `${DONATE_URL}?amount=${amount}`;
+		window.open(url, "_blank", "noopener,noreferrer");
 	};
-
-	const donate = async (orderRef?: string) => {
-		setBusy(true);
-		try {
-			if (orderRef) {
-				await pollDonation(orderRef);
-				return;
-			}
-			if (!validAmount) {
-				toast({
-					title: "Enter an amount between $1 and $10,000",
-					variant: "destructive",
-				});
-				return;
-			}
-			const checkout = await marketplaceClient.createDonation(
-				parsedAmount,
-				await getLicenseDeviceId(),
-				email.trim(),
-			);
-			await openExternalUrl(checkout.checkout_url);
-			setPendingOrderRef(checkout.order_ref);
-			await pollDonation(checkout.order_ref);
-		} catch (err: unknown) {
-			showStudioErrorToast(err);
-		} finally {
-			setBusy(false);
-		}
-	};
-
-	if (thankedAmount !== null) {
-		return (
-			<output className="rounded-lg border border-success/40 bg-success-soft px-4 py-3">
-				<p className="flex items-center gap-2 text-sm font-medium text-success-text">
-					<HeartIcon className="size-4" aria-hidden="true" />
-					Thank you for the ${thankedAmount.toFixed(2)} donation — it keeps
-					Otoyin independent.
-				</p>
-			</output>
-		);
-	}
 
 	return (
-		<section
-			aria-label="Support Otoyin with a donation"
-			className="rounded-lg border border-border bg-card px-4 py-3"
-		>
-			<div className="flex flex-wrap items-center gap-2">
-				<h2 className="flex min-w-0 flex-1 items-center gap-2 text-sm text-muted-foreground">
-					<HeartIcon
-						className="size-4 shrink-0 text-accent"
-						aria-hidden="true"
-					/>
-					<span>
-						<span className="font-medium text-foreground">Support Otoyin.</span>{" "}
-						Pay what you want, one time — no account, no subscription.
-					</span>
-				</h2>
-				<fieldset className="flex items-center gap-1">
-					<legend className="sr-only">Donation amount</legend>
-					{PRESETS.map((preset) => (
-						<Button
-							key={preset}
-							size="sm"
-							variant={parsedAmount === preset ? "default" : "ghost"}
-							onClick={() => setAmount(String(preset))}
+		<div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-pink-500/20 via-purple-500/20 to-blue-500/20 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md">
+			<div
+				aria-hidden
+				className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-pink-500/30 blur-3xl"
+			/>
+			<div
+				aria-hidden
+				className="pointer-events-none absolute -bottom-12 -left-8 size-44 rounded-full bg-blue-500/30 blur-3xl"
+			/>
+
+			<div className="relative flex items-center gap-3">
+				<div className="flex size-12 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
+					<HeartIcon className="size-6 text-pink-300" />
+				</div>
+				<div>
+					<h3 className="text-lg font-bold tracking-tight text-foreground">
+						Support otoyin
+					</h3>
+					<p className="text-xs text-muted-foreground">
+						Keep it free, private, and offline-first.
+					</p>
+				</div>
+			</div>
+
+			<p className="relative mt-4 text-sm leading-relaxed text-muted-foreground">
+				otoyin is built and maintained by one person. If it saves you time or
+				money, a small donation keeps the project alive and the models free
+				for everyone.
+			</p>
+
+			<div className="relative mt-5">
+				<div className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+					Choose an amount
+				</div>
+				<div className="flex flex-wrap gap-2">
+					{PRESETS.map((p) => (
+						<button
+							key={p}
+							type="button"
+							onClick={() => setAmount(p)}
+							className={
+								"rounded-full border px-3 py-1 text-sm font-medium transition-colors " +
+								(amount === p
+									? "border-pink-400/60 bg-pink-500/30 text-foreground"
+									: "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10")
+							}
 						>
-							${preset}
-						</Button>
+							${p}
+						</button>
 					))}
-				</fieldset>
+				</div>
 			</div>
-			<div className="mt-2 flex flex-wrap items-end gap-2">
-				<Field label="Custom amount (USD)" htmlFor="donate-amount">
-					<Input
-						id="donate-amount"
-						inputMode="decimal"
-						placeholder="10"
-						value={amount}
-						onChange={(e) => setAmount(e.target.value)}
-						className="w-28"
-					/>
-				</Field>
-				<Field label="Email (optional, for receipts)" htmlFor="donate-email">
-					<Input
-						id="donate-email"
-						type="email"
-						placeholder="you@example.com"
-						value={email}
-						onChange={(e) => setEmail(e.target.value)}
-						className="w-52"
-					/>
-				</Field>
-				<Button
-					size="sm"
-					disabled={busy}
-					onClick={() => void donate()}
-					className="mb-[1px]"
-				>
-					{busy
-						? "Processing…"
-						: `Donate${validAmount ? ` $${parsedAmount}` : ""}`}
-				</Button>
-				{pendingOrderRef ? (
-					<Button
-						size="sm"
-						variant="outline"
-						disabled={busy}
-						onClick={() => void donate(pendingOrderRef)}
-					>
-						{busy ? "Checking…" : "Check again — I already paid"}
-					</Button>
-				) : null}
-			</div>
-		</section>
+
+			<Button
+				size="sm"
+				onClick={openDonate}
+				className="relative mt-5 w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:from-pink-400 hover:to-purple-400"
+			>
+				<HeartIcon className="size-3.5" /> Donate ${amount}
+			</Button>
+
+			<p className="relative mt-3 text-center text-[11px] text-muted-foreground">
+				Opens in your browser
+			</p>
+		</div>
 	);
 }

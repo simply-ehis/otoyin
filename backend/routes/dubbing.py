@@ -95,6 +95,9 @@ async def get_dubbing_job(job_id: str):
         for s in job.segments
     ]
 
+    # Duration in seconds: max segment end time, or 0 if no segments
+    duration_sec = max((s.end for s in job.segments), default=0.0)
+
     return {
         "job_id": job.job_id,
         "status": job.status,
@@ -106,7 +109,71 @@ async def get_dubbing_job(job_id: str):
         "segments": segments,
         "output_path": job.output_path,
         "error": job.error,
+        "duration": duration_sec * 1000,  # ms — matches frontend expectation
     }
+
+
+@router.get("/dubbing/analyze/{job_id}")
+async def analyze_dubbing_job(job_id: str):
+    """Return onsets, peaks envelope, and duration for a dub job's timeline.
+
+    Onsets come from segment start/end boundaries.  Peaks are a 256-point
+    RMS envelope sampled across the job duration.  Falls back gracefully when
+    segment audio files are unavailable.
+    """
+    job = dubbing.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=ERR_JOB_NOT_FOUND)
+
+    if not job.segments:
+        return {"onsets": [], "peaks": [], "duration": 0.0}
+
+    # --- Onsets: sorted unique segment boundaries ---
+    boundary_set: set[float] = set()
+    for s in job.segments:
+        boundary_set.add(s.start)
+        boundary_set.add(s.end)
+    onsets = sorted(boundary_set)
+
+    # --- Duration: max segment end ---
+    duration_sec = max(s.end for s in job.segments)
+
+    # --- Peaks: 256-point RMS envelope from segment audio files ---
+    resolution = 256
+    import soundfile as sf
+
+    peaks = [0.0] * resolution
+    scale = resolution / duration_sec if duration_sec > 0 else 1.0
+
+    for s in job.segments:
+        if not s.audio_path:
+            continue
+        path = Path(s.audio_path)
+        if not path.is_file():
+            continue
+        try:
+            data, sr = sf.read(str(path), always_2d=False)
+            if data.ndim > 1:
+                data = data.mean(axis=1)
+            block_samples = max(1, len(data) // resolution)
+            for i in range(resolution):
+                start_i = i * block_samples
+                end_i = min((i + 1) * block_samples, len(data))
+                if end_i <= start_i:
+                    break
+                block = data[start_i:end_i]
+                rms = float((block ** 2).mean() ** 0.5) if len(block) else 0.0
+                peaks[i] = max(peaks[i], rms)
+        except Exception as exc:
+            logger.warning("Failed to compute peaks for segment %d: %s", s.id, exc)
+            continue
+
+    # Normalise peaks to [0, 1]
+    max_peak = max(peaks) if peaks else 0.0
+    if max_peak > 0:
+        peaks = [p / max_peak for p in peaks]
+
+    return {"onsets": onsets, "peaks": peaks, "duration": duration_sec}
 
 
 @router.post("/dubbing/cancel/{job_id}")
@@ -115,6 +182,26 @@ async def cancel_dubbing(job_id: str):
     if dubbing.cancel_job(job_id):
         return {"cancelled": True}
     raise HTTPException(status_code=404, detail=ERR_JOB_NOT_FOUND)
+
+
+@router.get("/dubbing/job/{job_id}/segment/{segment_id}/audio")
+async def get_dubbing_segment_audio(job_id: str, segment_id: int):
+    """Serve the synthesized audio for a single dub segment."""
+    job = dubbing.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=ERR_JOB_NOT_FOUND)
+
+    segment = next((s for s in job.segments if s.id == segment_id), None)
+    if not segment:
+        raise HTTPException(status_code=404, detail="Segment not found")
+    if not segment.audio_path:
+        raise HTTPException(status_code=404, detail="Segment audio not available")
+
+    path = Path(segment.audio_path)
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Segment audio file missing")
+
+    return FileResponse(path, media_type="audio/wav", filename=f"segment_{segment_id}.wav")
 
 
 @router.get("/dubbing/download/{job_id}")
