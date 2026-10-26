@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import { Button } from "@/ui/button";
+import { InteractiveWaveform } from "./InteractiveWaveform";
 import { Spinner } from "@/ui/primitives";
 
 interface StemInfo {
@@ -19,6 +20,7 @@ export function StemSeparationPage() {
 	const [error, setError] = useState<string | null>(null);
 	const [status, setStatus] = useState<{ demucs_available: boolean; model_cached?: boolean } | null>(null);
 	const [vocalSplit, setVocalSplit] = useState(false);
+	const [zoom, setZoom] = useState(1);
 	const [beats, setBeats] = useState<number[]>([]);
 	const [bpm, setBpm] = useState(0);
 	const [mixing, setMixing] = useState(false);
@@ -219,31 +221,14 @@ export function StemSeparationPage() {
 			{result && stems.length > 0 && (
 				<div className="space-y-4">
 					<p className="text-sm font-medium text-foreground">
-						Stems ready (job {result.job_id})
+						Stems ready (job {result.job_id}) · zoom {zoom}x (scroll to zoom)
 					</p>
 					{stems.map((s) => (
 						<div key={s.name} className="flex items-center gap-3 rounded-lg border border-border bg-secondary/40 p-2">
 							<span className="w-20 text-sm font-medium text-foreground capitalize">
 								{s.name}
 							</span>
-							<canvas
-								width={240}
-								height={40}
-								ref={(el) => {
-									if (!el || !s.peaks?.length) return;
-									const ctx = el.getContext("2d");
-									if (!ctx) return;
-									ctx.clearRect(0, 0, 240, 40);
-									const max = Math.max(...s.peaks, 0.01);
-									const barW = 240 / s.peaks.length;
-									ctx.fillStyle = s.muted ? "#666" : "#a78bfa";
-									s.peaks.forEach((p, i) => {
-										const h = (p / max) * 36;
-										ctx.fillRect(i * barW, 20 - h / 2, barW - 1, h);
-									});
-								}}
-								className="rounded"
-							/>
+							<InteractiveWaveform peaks={s.peaks || []} color={s.muted ? "#666" : "#a78bfa"} muted={s.muted} zoom={zoom} onZoomChange={setZoom} />
 							<input
 								type="range"
 								min={0}
