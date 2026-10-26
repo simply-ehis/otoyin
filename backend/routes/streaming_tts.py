@@ -36,7 +36,7 @@ class StreamTTSRequest(BaseModel):
     seed: int | None = None
 
 
-@router.post("")
+@router.post("/")
 async def stream_tts(request: StreamTTSRequest):
     """Stream TTS audio chunks as SSE events.
 

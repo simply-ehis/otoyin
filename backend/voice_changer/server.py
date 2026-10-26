@@ -148,7 +148,7 @@ async def _process_committed(ws: WebSocket, session: _Session) -> None:
         # Write latency to shared file for the main backend to read
         try:
             latency_path = os.path.join(tempfile.gettempdir(), "otoyin_vc_latency.json")
-            with open(latency_path, "w") as f:
+            with open(latency_path, "w", encoding="utf-8") as f:
                 json.dump({"latency_ms": round(state.last_frame_latency_ms, 1)}, f)
         except OSError:
             pass

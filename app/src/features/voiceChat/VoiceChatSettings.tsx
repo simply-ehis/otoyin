@@ -1,12 +1,12 @@
 import { Cog6ToothIcon as Settings } from "@heroicons/react/24/outline";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Button } from "@/ui/button";
 import { apiClient } from "@/lib/api/client";
 import type { ModelStatusListResponse } from "@/lib/api/types";
 import { TTS_ENGINES } from "@/lib/constants/engines";
 import { useFirstDownloadedTtsEngine } from "@/lib/hooks/useFirstDownloadedTtsEngine";
 import { cn } from "@/lib/utils/cn";
+import { Button } from "@/ui/button";
 
 interface VoiceChatSettingsData {
 	stt_model: string;
