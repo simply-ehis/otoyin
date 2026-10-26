@@ -38,6 +38,11 @@ RECOMMENDED_MODELS: list[dict] = [
         "role": "llm",
         "reason": "On-device assistant brain for the in-app agent",
     },
+    {
+        "model_name": "demucs-htdemucs",
+        "role": "music",
+        "reason": "Music source separation — split vocals, drums, bass, other",
+    },
 ]
 
 
