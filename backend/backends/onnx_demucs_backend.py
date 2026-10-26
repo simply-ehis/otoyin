@@ -25,11 +25,16 @@ def _resolve_model_path() -> str:
         return MODEL_PATH
     base = Path(__file__).resolve().parents[1] / "model_files"
     # Prefer quantized (int8) if available, then fp16, then fp32
-    for name in ("htdemucs-dft-int8-fp16-final.onnx", "htdemucs_fp16weights.onnx", "htdemucs.onnx"):
+    for name in ("htdemucs-int8.onnx",):
         p = base / name
         if p.exists():
             return str(p)
-    return str(base / "htdemucs.onnx")
+    # fallback
+    for name in ("htdemucs.onnx",):
+        p = base / name
+        if p.exists():
+            return str(p)
+    return str(base / "htdemucs-int8.onnx")
 
 STEM_NAMES = ["vocals", "drums", "bass", "other"]
 CHUNK_SIZE = 343980
