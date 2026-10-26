@@ -141,6 +141,47 @@ def mixdown(job_id: str) -> dict:
     return {"job_id": job_id, "file": out_path.name}
 
 
+
+@router.get("/{job_id}/beats")
+def beats(job_id: str) -> dict:
+    """Simple energy-based onset/beat detection."""
+    work = STEMS_DIR / job_id
+    if not work.exists():
+        raise HTTPException(status_code=404, detail="job not found")
+    src = None
+    for wav in work.rglob("*.wav"):
+        if wav.name not in ("mixdown.wav",) and not wav.name.startswith(("lead_", "backing_")):
+            src = wav
+            break
+    if src is None:
+        raise HTTPException(status_code=404, detail="no audio found")
+    audio, sr = sf.read(str(src), dtype="float32", always_2d=True)
+    mono = audio.mean(axis=1)
+    hop = 512
+    frame = 1024
+    n_frames = (len(mono) - frame) // hop + 1
+    if n_frames < 2:
+        return {"job_id": job_id, "beats": [], "bpm_estimate": 0.0}
+    energy = np.array([float(np.sum(mono[i * hop : i * hop + frame] ** 2)) for i in range(n_frames)])
+    if energy.max() > 0:
+        energy = energy / energy.max()
+    peaks = []
+    for i in range(1, len(energy) - 1):
+        if energy[i] > 0.3 and energy[i] > energy[i - 1] and energy[i] > energy[i + 1]:
+            peaks.append(i * hop / sr)
+    filtered = []
+    for p in peaks:
+        if not filtered or p - filtered[-1] > 0.3:
+            filtered.append(p)
+    bpm = 0.0
+    if len(filtered) >= 2:
+        intervals = np.diff(filtered)
+        med = float(np.median(intervals))
+        if med > 0:
+            bpm = round(60.0 / med, 1)
+    return {"job_id": job_id, "beats": filtered, "bpm_estimate": bpm}
+
+
 @router.get("/{job_id}/{name}")
 def download_stem(job_id: str, name: str):
     work = STEMS_DIR / job_id

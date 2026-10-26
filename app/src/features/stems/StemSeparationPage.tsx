@@ -19,6 +19,8 @@ export function StemSeparationPage() {
 	const [error, setError] = useState<string | null>(null);
 	const [status, setStatus] = useState<{ demucs_available: boolean; model_cached?: boolean } | null>(null);
 	const [vocalSplit, setVocalSplit] = useState(false);
+	const [beats, setBeats] = useState<number[]>([]);
+	const [bpm, setBpm] = useState(0);
 	const [mixing, setMixing] = useState(false);
 	const [mixFile, setMixFile] = useState<string | null>(null);
 	const [splitting, setSplitting] = useState(false);
@@ -78,6 +80,15 @@ export function StemSeparationPage() {
 			}
 			const res = await r.json();
 			setResult(res);
+			// fetch beats
+			try {
+				const br = await fetch(`${baseUrl}/stems/${res.job_id}/beats`);
+				if (br.ok) {
+					const bj = await br.json();
+					setBeats(bj.beats || []);
+					setBpm(bj.bpm_estimate || 0);
+				}
+			} catch { /* ignore */ }
 			const stemList: StemInfo[] = [];
 			for (const [name, fname] of Object.entries(res.stems as Record<string, string>)) {
 				const url = `${baseUrl}/stems/${res.job_id}/${fname}`;
@@ -262,6 +273,22 @@ export function StemSeparationPage() {
 							<a href={`${baseUrl}/stems/${result.job_id}/${mixFile}`} download={mixFile} className="text-xs text-primary underline">
 								Download mix
 							</a>
+						</div>
+					)}
+					{beats.length > 0 && (
+						<div className="space-y-1">
+							<p className="text-xs text-muted-foreground">
+								Beats: {beats.length} detected · ~{bpm} BPM
+							</p>
+							<div className="relative h-6 rounded bg-secondary/40">
+								{beats.map((b, i) => (
+									<div
+										key={i}
+										className="absolute top-0 h-full w-px bg-primary"
+										style={{ left: `${(b / Math.max(...beats, 1)) * 100}%` }}
+									/>
+								))}
+							</div>
 						</div>
 					)}
 				</div>
