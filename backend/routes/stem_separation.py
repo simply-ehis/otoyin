@@ -101,8 +101,10 @@ def vocal_split(job_id: str) -> dict:
     fft = np.fft.rfft(audio, axis=0)
     freqs = np.fft.rfftfreq(n, 1.0 / sr)
     cutoff = 1000.0
-    mask_high = (freqs >= cutoff).astype(float)
-    mask_low = (freqs < cutoff).astype(float)
+    # Smooth cosine taper around the cutoff (crude but better than hard mask)
+    width = 200.0
+    mask_high = np.clip((freqs - (cutoff - width)) / (2 * width), 0.0, 1.0)
+    mask_low = 1.0 - mask_high
     lead = np.fft.irfft(fft * mask_high[:, None], n=n, axis=0).astype("float32")
     back = np.fft.irfft(fft * mask_low[:, None], n=n, axis=0).astype("float32")
     lead_path = work / "lead_vocals.wav"
