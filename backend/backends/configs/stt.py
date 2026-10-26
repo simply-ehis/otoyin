@@ -100,7 +100,7 @@ def _get_moonshine_configs() -> list[ModelConfig]:
             category="stt",
             languages=["en"],
             quant="Q8_0",
-            preload_priority=2,
+            preload_priority=0,
             cold_start_ms=2000,
             warm_start_ms=300,
             streaming=True,

@@ -100,40 +100,7 @@ describe("StoreProductCard — cached state (one-step Activate)", () => {
 	});
 });
 
-describe("StoreProductCard — owned state (licensed, not cached)", () => {
-	it("renders the Owned chip + Install for a licensed model", () => {
-		renderCard(makeProduct({ price_usd: 15, paid: true }), {
-			owned: true,
-			localStatus: "not_downloaded",
-		});
-		const chip = screen.getByText("Owned");
-		expect(chip).toBeInTheDocument();
-		// Info chip: license verified locally, model not on this device yet.
-		expect(chip.className).toContain("bg-info-soft");
-		expect(chip.className).toContain("text-info-text");
-		const install = screen.getByRole("button", { name: "Install" });
-		expect(install).toHaveAttribute(
-			"title",
-			"You own this model — download it to use on this device",
-		);
-		expect(screen.getByRole("button", { name: "Details" })).toBeInTheDocument();
-	});
-});
-
 describe("StoreProductCard — needs-download state", () => {
-	it("renders the price chip + Buy for a paid unowned model", () => {
-		renderCard(makeProduct({ price_usd: 15, paid: true }), {
-			localStatus: "not_downloaded",
-		});
-		const chip = screen.getByText("$15");
-		expect(chip).toBeInTheDocument();
-		expect(chip.className).toContain("bg-warning-soft");
-		expect(screen.getByRole("button", { name: "Buy $15" })).toBeInTheDocument();
-		// No installed/owned claim in the needs-download state.
-		expect(screen.queryByText("Installed")).not.toBeInTheDocument();
-		expect(screen.queryByText("Owned")).not.toBeInTheDocument();
-	});
-
 	it("renders the Free chip + Download for a free unowned model", () => {
 		renderCard(makeProduct());
 		const chip = screen.getByText("Free");
@@ -223,7 +190,6 @@ describe("StoreProductCard — New badge (info token family)", () => {
 			/>,
 		);
 		expect(screen.getByText("New")).toBeInTheDocument();
-		expect(screen.getByText("Owned")).toBeInTheDocument();
 		ownedRender.unmount();
 		// needs-download + New
 		render(

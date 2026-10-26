@@ -12,7 +12,6 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { apiClient } from "@/lib/api/client";
 import type { Catalog, MarketplaceProduct } from "@/lib/api/types";
-import { marketplaceClient } from "@/lib/marketplace";
 import { StoreDetailModal } from "./StoreDetailModal";
 
 function makeProduct(
@@ -48,27 +47,12 @@ vi.mock("@/lib/api/client", () => ({
 	},
 }));
 
-vi.mock("@/lib/marketplace", () => ({
-	marketplaceClient: {
-		fetchReviews: vi.fn(),
-		postReview: vi.fn(),
-		createCheckout: vi.fn(),
-		pollForLicense: vi.fn(),
-		installLicense: vi.fn(),
-		previewTax: vi.fn(),
-	},
-	getDeviceId: () => "test-device",
-	getLicenseDeviceId: async () => "test-device",
-	openExternalUrl: vi.fn(),
-}));
-
 vi.mock("@/lib/errors", () => ({
 	showStudioErrorToast: vi.fn(),
 }));
 
 beforeEach(() => {
 	vi.mocked(apiClient.getCatalog).mockResolvedValue(catalog);
-	vi.mocked(marketplaceClient.fetchReviews).mockResolvedValue([]);
 });
 
 type ModalProps = React.ComponentProps<typeof StoreDetailModal>;

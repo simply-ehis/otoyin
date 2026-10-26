@@ -39,6 +39,25 @@ export function AssistantPanel({
 	const [showSettings, setShowSettings] = useState(false);
 	const [view, setView] = useState<TabId>("chat");
 
+	const [useCloudModel, setUseCloudModel] = useState<boolean>(() => {
+		try {
+			return localStorage.getItem("otoyin.assistant.useCloudModel") === "1";
+		} catch {
+			return false;
+		}
+	});
+	const toggleCloudModel = () => {
+		setUseCloudModel((v) => {
+			const next = !v;
+			try {
+				localStorage.setItem("otoyin.assistant.useCloudModel", next ? "1" : "0");
+			} catch {
+				/* ignore */
+			}
+			return next;
+		});
+	};
+
 	// Panel width lives in uiStore (persisted). A stored width from a bigger
 	// screen can overfill a smaller one, so it is re-clamped on open.
 	const assistantWidth = useUIStore((s) => s.assistantWidth);
@@ -106,6 +125,7 @@ export function AssistantPanel({
 		selectedProvider,
 		apiKey,
 		apiBaseUrl,
+		useCloudModel,
 	});
 
 	const projects = useAssistantProjects({
@@ -210,6 +230,15 @@ export function AssistantPanel({
 						</span>
 					</div>
 					<div className="flex items-center gap-1">
+						<Button
+							variant={useCloudModel ? "default" : "ghost"}
+							size="sm"
+							className="h-7 px-2 text-xs"
+							onClick={toggleCloudModel}
+							title="Use cloud model"
+						>
+							{useCloudModel ? "Cloud" : "Local"}
+						</Button>
 						<Button
 							variant="ghost"
 							size="icon"

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "@/lib/api/client";
+import { getCloudSubscriptionKey } from "@/features/settings/CloudModelsPage";
 import { showStudioErrorToast } from "@/lib/errors";
 import { debug } from "@/lib/utils/debug";
 import type { FileAttachment, Msg } from "./AssistantPanel.types";
@@ -15,6 +16,7 @@ interface UseAssistantChatOptions {
 	selectedProvider: string;
 	apiKey: string;
 	apiBaseUrl: string;
+	useCloudModel?: boolean;
 }
 
 export function useAssistantChat({
@@ -23,6 +25,7 @@ export function useAssistantChat({
 	selectedProvider,
 	apiKey,
 	apiBaseUrl,
+	useCloudModel = false,
 }: UseAssistantChatOptions) {
 	const [messages, setMessages] = useState<Msg[]>([]);
 	const [input, setInput] = useState("");
@@ -293,6 +296,45 @@ export function useAssistantChat({
 				{ id: "", role: "user" as const, content: finalContent },
 			].map((m) => ({ role: m.role, content: m.content }));
 
+			// Cloud model path: non-streaming, routed through /cloud/llm.
+			if (useCloudModel) {
+				try {
+					const cloudRes = await apiClient.cloudLlm(
+						history as { role: string; content: string }[],
+						{ temperature: 0.7 },
+						getCloudSubscriptionKey() || undefined,
+					);
+					const content =
+						cloudRes?.choices?.[0]?.message?.content ?? "(no response)";
+					const assistantId = makeId();
+					setMessages((prev) => [
+						...prev,
+						{ id: assistantId, role: "assistant", content },
+					]);
+					if (convId) {
+						void apiClient
+							.addMessage(convId, "assistant", content)
+							.then((saved) => {
+								if (saved?.id) {
+									setMessages((prev) =>
+										prev.map((m) =>
+											m.id === assistantId ? { ...m, serverId: saved.id } : m,
+										),
+									);
+								}
+							})
+							.catch(() => {});
+					}
+				} catch (e) {
+					showStudioErrorToast(e);
+				} finally {
+					streamingRef.current = false;
+					setIsStreaming(false);
+					abortRef.current = null;
+				}
+				return;
+			}
+
 			try {
 				const stream = apiClient.assistantChat(
 					history,
@@ -397,6 +439,7 @@ export function useAssistantChat({
 			attachments,
 			uploadAttachments,
 			flushStreamingBuffer,
+		useCloudModel,
 		],
 	);
 
