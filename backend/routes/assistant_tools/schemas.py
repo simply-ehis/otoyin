@@ -15,6 +15,7 @@ from .tools_library import LIBRARY_TOOLS
 from .tools_mcp_wired import MCP_WIRED_TOOLS
 from .tools_projects import PROJECT_TOOLS
 from .tools_session_models import SESSION_MODELS_TOOLS
+from .tools_stems import STEMS_TOOLS
 from .tools_studio import STUDIO_TOOLS
 
 TOOLS = (
@@ -27,6 +28,7 @@ TOOLS = (
     + INSTRUMENTS_TOOLS
     + PROJECT_TOOLS
     + STUDIO_TOOLS
+    + STEMS_TOOLS
     + MCP_WIRED_TOOLS
 )
 

@@ -36,6 +36,7 @@ from fastmcp import FastMCP
 from .generation import register_generation_tools
 from .skills import register_skill_tools
 from .speech import register_speech_tools
+from .stems import register_stem_tools
 from .workflow import register_workflow_tools
 
 logger = logging.getLogger(__name__)
@@ -70,6 +71,7 @@ def register_tools(mcp: FastMCP) -> None:
     # Layer 2: Register custom tools that call services directly
     # (these override any TR-registered tools with the same name)
     register_speech_tools(mcp)
+    register_stem_tools(mcp)
     register_generation_tools(mcp)
     register_workflow_tools(mcp)
     register_skill_tools(mcp)

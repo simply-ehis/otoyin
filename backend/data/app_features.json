@@ -1,1081 +1,1103 @@
 {
- "version": 2,
- "description": "Machine-readable feature catalog for 21labs — mirrors docs/FEATURES.md. Consumed by /help/* routes, the in-app Help Center, and the assistant app_help tool.",
- "features": [
-  {
-   "id": "tts-engines",
-   "name": "TTS engines",
-   "category": "Voice generation",
-   "summary": "17 offline text-to-speech engines: Kokoro, Qwen3-TTS, Fish Speech, Chatterbox, XTTS v2, ChatTTS and more.",
-   "where": "Models tab",
-   "tools": [
-    "list_models",
-    "speak"
-   ],
-   "keywords": [
-    "tts",
-    "text to speech",
-    "voice engine",
-    "kokoro",
-    "chattts",
-    "qwen",
-    "speak",
-    "generate speech"
-   ]
-  },
-  {
-   "id": "voice-cloning",
-   "name": "Voice cloning",
-   "category": "Voice generation",
-   "summary": "Zero-shot voice cloning from a short reference clip (XTTS v2, Qwen3, Fish Speech, Chatterbox, F5-TTS).",
-   "where": "Voice Profiles → Clone",
-   "tools": [
-    "create_profile"
-   ],
-   "keywords": [
-    "clone",
-    "cloning",
-    "reference audio",
-    "copy voice",
-    "sample"
-   ]
-  },
-  {
-   "id": "voice-profiles",
-   "name": "Voice profiles",
-   "category": "Voice generation",
-   "summary": "Preset, cloned, or designed voices with per-engine settings.",
-   "where": "Voice Profiles tab",
-   "tools": [
-    "list_profiles",
-    "create_profile"
-   ],
-   "keywords": [
-    "profile",
-    "voice",
-    "preset",
-    "designed voice",
-    "cast"
-   ]
-  },
-  {
-   "id": "reference-voices",
-   "name": "Reference voice library",
-   "category": "Voice generation",
-   "summary": "Bundled celebrity/public-figure reference clips for cloning, incl. Twenty One Pilots (Tyler Joseph, Josh Dun).",
-   "where": "Voice Profiles → Library",
-   "tools": [
-    "list_reference_voices"
-   ],
-   "keywords": [
-    "reference",
-    "celebrity",
-    "library",
-    "tyler joseph",
-    "josh dun",
-    "twenty one pilots"
-   ]
-  },
-  {
-   "id": "emotion-presets",
-   "name": "Emotion presets",
-   "category": "Voice generation",
-   "summary": "Training-free DSP emotion coloring (happy/sad/angry/…) applied to any generation.",
-   "where": "Generate panel → Emotion",
-   "tools": [
-    "speak"
-   ],
-   "keywords": [
-    "emotion",
-    "mood",
-    "happy",
-    "sad",
-    "angry",
-    "dsp"
-   ]
-  },
-  {
-   "id": "audio-tags",
-   "name": "Audio tags",
-   "category": "Voice generation",
-   "summary": "Bracketed tags in text ([laughs], [pause]) rendered as real human samples.",
-   "where": "Generate panel",
-   "tools": [
-    "speak"
-   ],
-   "keywords": [
-    "tags",
-    "laughs",
-    "pause",
-    "brackets",
-    "paralinguistic"
-   ]
-  },
-  {
-   "id": "rvc-conversion",
-   "name": "RVC voice conversion",
-   "category": "Voice generation",
-   "summary": "Convert an existing recording to a downloaded RVC voice pack.",
-   "where": "Voice Profiles → Convert",
-   "tools": [
-    "voice_convert"
-   ],
-   "keywords": [
-    "rvc",
-    "convert",
-    "voice pack",
-    "speech to speech conversion"
-   ]
-  },
-  {
-   "id": "byok-providers",
-   "name": "BYOK cloud providers",
-   "category": "Voice generation",
-   "summary": "Optional bring-your-own API key/endpoint per domain (tts/music/sfx/vc/llm), encrypted at rest.",
-   "where": "Settings → API Keys",
-   "tools": [],
-   "keywords": [
-    "byok",
-    "api key",
-    "cloud",
-    "provider",
-    "openai"
-   ]
-  },
-  {
-   "id": "waveform-editor",
-   "name": "Waveform editor",
-   "category": "Audio Studio",
-   "summary": "Non-destructive clip editing: trim, split, fade, gain, reverse, normalize.",
-   "where": "Audio Studio",
-   "tools": [],
-   "keywords": [
-    "edit",
-    "trim",
-    "split",
-    "fade",
-    "gain",
-    "reverse",
-    "normalize",
-    "clip",
-    "waveform"
-   ]
-  },
-  {
-   "id": "pitch-map",
-   "name": "Pitch map",
-   "category": "Audio Studio",
-   "summary": "Piano-roll style pitch editing (C3–C5).",
-   "where": "Audio Studio → Pitch Map",
-   "tools": [],
-   "keywords": [
-    "pitch",
-    "piano roll",
-    "tune",
-    "notes"
-   ]
-  },
-  {
-   "id": "effects-chain",
-   "name": "Effects chain",
-   "category": "Audio Studio",
-   "summary": "30+ backend effects (EQ, compressor, reverb, delay, chorus, distortion, telephone, de-esser, auto-tune, vocoder, …) with live preview or backend render, drag-sortable with presets.",
-   "where": "Effects tab / per-clip",
-   "tools": [
-    "apply_effect"
-   ],
-   "keywords": [
-    "effects",
-    "fx",
-    "eq",
-    "compressor",
-    "reverb",
-    "delay",
-    "deesser",
-    "chorus",
-    "presets",
-    "telephone",
-    "distortion",
-    "stitch",
-    "render",
-    "autotune"
-   ]
-  },
-  {
-   "id": "spectrogram",
-   "name": "Spectrogram",
-   "category": "Audio Studio",
-   "summary": "Frequency-domain visualization of audio; isolated stems get their own color scheme.",
-   "where": "Audio Studio → Spectrogram",
-   "tools": [],
-   "keywords": [
-    "spectrogram",
-    "frequency",
-    "spectrum",
-    "visualize"
-   ]
-  },
-  {
-   "id": "timecode",
-   "name": "SMPTE timecode",
-   "category": "Audio Studio",
-   "summary": "Frame-accurate position display with multiple frame rates.",
-   "where": "Studio toolbar",
-   "tools": [],
-   "keywords": [
-    "timecode",
-    "smpte",
-    "frames",
-    "position"
-   ]
-  },
-  {
-   "id": "ab-comparison",
-   "name": "A/B comparison",
-   "category": "Audio Studio",
-   "summary": "Instant processed-vs-raw toggle.",
-   "where": "Audio Studio",
-   "tools": [],
-   "keywords": [
-    "ab",
-    "compare",
-    "bypass",
-    "before after"
-   ]
-  },
-  {
-   "id": "tape-scrubber",
-   "name": "Tape scrubber",
-   "category": "Audio Studio",
-   "summary": "Variable-speed scrubbing through audio.",
-   "where": "Audio Studio",
-   "tools": [],
-   "keywords": [
-    "scrub",
-    "tape",
-    "speed",
-    "shuttle"
-   ]
-  },
-  {
-   "id": "transcription-subtitles",
-   "name": "Transcription + subtitles",
-   "category": "Audio Studio",
-   "summary": "Word-level Whisper transcription with SRT/VTT subtitle export.",
-   "where": "Transcribe action",
-   "tools": [
-    "transcribe",
-    "export_subtitles"
-   ],
-   "keywords": [
-    "transcribe",
-    "transcript",
-    "whisper",
-    "subtitles",
-    "srt",
-    "vtt",
-    "captions",
-    "stt"
-   ]
-  },
-  {
-   "id": "transcript-edit",
-   "name": "Transcript editing",
-   "category": "Audio Studio",
-   "summary": "Edit audio by editing its words — click-to-playhead and filler removal.",
-   "where": "Transcript panel",
-   "tools": [
-    "transcript_edit"
-   ],
-   "keywords": [
-    "transcript edit",
-    "filler",
-    "um",
-    "word edit",
-    "cut words"
-   ]
-  },
-  {
-   "id": "noise-reduction",
-   "name": "Noise reduction",
-   "category": "Audio Studio",
-   "summary": "DeepFilterNet neural denoise plus spectral gate cleanup.",
-   "where": "Enhance/Cleanup",
-   "tools": [
-    "clean_audio"
-   ],
-   "keywords": [
-    "denoise",
-    "noise reduction",
-    "cleanup",
-    "deepfilter",
-    "hiss",
-    "background noise"
-   ]
-  },
-  {
-   "id": "audio-enhance",
-   "name": "Audio enhance",
-   "category": "Audio Studio",
-   "summary": "LavaSR neural upscale to 48 kHz + denoise (auto mode).",
-   "where": "Enhance panel",
-   "tools": [
-    "enhance_audio"
-   ],
-   "keywords": [
-    "enhance",
-    "upscale",
-    "lavasr",
-    "48k",
-    "super resolution",
-    "quality"
-   ]
-  },
-  {
-   "id": "loudness-metering",
-   "name": "Loudness metering",
-   "category": "Audio Studio",
-   "summary": "Integrated/short-term LUFS + true peak measurement.",
-   "where": "Meter panel",
-   "tools": [
-    "analyze_loudness"
-   ],
-   "keywords": [
-    "loudness",
-    "lufs",
-    "true peak",
-    "meter",
-    "levels"
-   ]
-  },
-  {
-   "id": "import",
-   "name": "Import",
-   "category": "Audio Studio",
-   "summary": "Import audio files and extract audio from video.",
-   "where": "Import modal",
-   "tools": [
-    "import_audio"
-   ],
-   "keywords": [
-    "import",
-    "video",
-    "extract",
-    "upload",
-    "file"
-   ]
-  },
-  {
-   "id": "mixer",
-   "name": "Multi-track mixer",
-   "category": "Mixer & delivery",
-   "summary": "VU meters, mute/solo, pan, per-track FX, bus routing.",
-   "where": "Audio Studio → Mixer",
-   "tools": [
-    "mixer_get_state",
-    "mixer_set_track"
-   ],
-   "keywords": [
-    "mixer",
-    "mix",
-    "tracks",
-    "vu",
-    "mute",
-    "solo",
-    "pan",
-    "bus"
-   ]
-  },
-  {
-   "id": "auto-duck",
-   "name": "Auto-duck",
-   "category": "Mixer & delivery",
-   "summary": "Speech automatically ducks music beds.",
-   "where": "Conversation/recipe",
-   "tools": [
-    "run_recipe"
-   ],
-   "keywords": [
-    "duck",
-    "ducking",
-    "music bed",
-    "sidechain"
-   ]
-  },
-  {
-   "id": "mastering",
-   "name": "Mastering",
-   "category": "Mixer & delivery",
-   "summary": "Glue compression + limiting + LUFS normalization to broadcast targets.",
-   "where": "Master action",
-   "tools": [
-    "master"
-   ],
-   "keywords": [
-    "master",
-    "mastering",
-    "loudness target",
-    "limiter",
-    "glue",
-    "broadcast"
-   ]
-  },
-  {
-   "id": "platform-export",
-   "name": "Platform export",
-   "category": "Mixer & delivery",
-   "summary": "One-tap delivery presets: Spotify, YouTube, Audible, podcast, film, social.",
-   "where": "Export panel",
-   "tools": [
-    "platform_export"
-   ],
-   "keywords": [
-    "export",
-    "spotify",
-    "youtube",
-    "audible",
-    "podcast",
-    "delivery",
-    "mp3",
-    "platform"
-   ]
-  },
-  {
-   "id": "reaper-export",
-   "name": "Reaper export",
-   "category": "Mixer & delivery",
-   "summary": "Render the project to a .rpp Reaper file for handoff.",
-   "where": "Export panel",
-   "tools": [
-    "run_recipe"
-   ],
-   "keywords": [
-    "reaper",
-    "rpp",
-    "daw",
-    "handoff"
-   ]
-  },
-  {
-   "id": "lottie-export",
-   "name": "Lottie export",
-   "category": "Mixer & delivery",
-   "summary": "Audio-reactive Lottie animation export.",
-   "where": "Export panel",
-   "tools": [],
-   "keywords": [
-    "lottie",
-    "animation",
-    "visual",
-    "reactive"
-   ]
-  },
-  {
-   "id": "stories",
-   "name": "Stories",
-   "category": "Dialogue & long-form",
-   "summary": "Audiobook/chapter sequencing: per-item fade/gain/trim/reorder, one mixed WAV out.",
-   "where": "Stories tab",
-   "tools": [
-    "story_add_item",
-    "story_export"
-   ],
-   "keywords": [
-    "stories",
-    "audiobook",
-    "chapters",
-    "sequence",
-    "narrative"
-   ]
-  },
-  {
-   "id": "conversation-mode",
-   "name": "Conversation mode",
-   "category": "Dialogue & long-form",
-   "summary": "Stage multi-speaker lines, auto-duck overlaps, auto-level to LUFS.",
-   "where": "Conversation tab",
-   "tools": [
-    "conversation_stage_line",
-    "conversation_render"
-   ],
-   "keywords": [
-    "conversation",
-    "podcast",
-    "dialogue",
-    "multi speaker",
-    "interview",
-    "debate"
-   ]
-  },
-  {
-   "id": "adr-mode",
-   "name": "ADR mode",
-   "category": "Dialogue & long-form",
-   "summary": "Acted Dialogue Replacement over picture: guide track, takes, scoring, lock.",
-   "where": "ADR tab",
-   "tools": [
-    "adr_create_session",
-    "adr_record_take"
-   ],
-   "keywords": [
-    "adr",
-    "dubbing",
-    "guide track",
-    "takes",
-    "film",
-    "replacement"
-   ]
-  },
-  {
-   "id": "comping",
-   "name": "Multi-take comping",
-   "category": "Dialogue & long-form",
-   "summary": "Stack takes, pick best regions, assemble a composite clip.",
-   "where": "Comping lanes",
-   "tools": [],
-   "keywords": [
-    "comping",
-    "takes",
-    "composite",
-    "lanes",
-    "best of"
-   ]
-  },
-  {
-   "id": "audio-plan",
-   "name": "AI Audio Plan",
-   "category": "Dialogue & long-form",
-   "summary": "Script → scene-based track/voice/music assignment blueprint.",
-   "where": "Audio Plan tab",
-   "tools": [
-    "audio_plan"
-   ],
-   "keywords": [
-    "plan",
-    "blueprint",
-    "script",
-    "scene",
-    "assignment"
-   ]
-  },
-  {
-   "id": "batch-queue",
-   "name": "Batch queue",
-   "category": "Dialogue & long-form",
-   "summary": "Run many generations with status, cancel, and retry.",
-   "where": "Batch panel",
-   "tools": [],
-   "keywords": [
-    "batch",
-    "queue",
-    "bulk",
-    "jobs",
-    "parallel"
-   ]
-  },
-  {
-   "id": "content-recipes",
-   "name": "Content recipes",
-   "category": "Dialogue & long-form",
-   "summary": "Proven pipelines per content type (podcast, audiobook, ad, short…).",
-   "where": "Assistant skills",
-   "tools": [
-    "run_recipe"
-   ],
-   "keywords": [
-    "recipe",
-    "pipeline",
-    "podcast",
-    "audiobook",
-    "ad",
-    "workflow"
-   ]
-  },
-  {
-   "id": "voice-changer",
-   "name": "Voice changer",
-   "category": "Real-time voice",
-   "summary": "Live mic pipeline: VAD → DeepFilter denoise → Whisper → TTS → LavaSR.",
-   "where": "Voice Changer panel",
-   "tools": [],
-   "keywords": [
-    "voice changer",
-    "live",
-    "realtime",
-    "mic",
-    "pipeline"
-   ]
-  },
-  {
-   "id": "voice-chat",
-   "name": "Voice chat (STS)",
-   "category": "Real-time voice",
-   "summary": "Speech-to-speech voice agent: talk to the assistant, it answers in voice with barge-in.",
-   "where": "Voice Chat panel",
-   "tools": [],
-   "keywords": [
-    "voice chat",
-    "sts",
-    "speech to speech",
-    "talk",
-    "barge-in",
-    "conversation agent"
-   ]
-  },
-  {
-   "id": "dictate",
-   "name": "Dictate window",
-   "category": "Real-time voice",
-   "summary": "Floating always-on capture window with a global hotkey chord.",
-   "where": "Dictate",
-   "tools": [],
-   "keywords": [
-    "dictate",
-    "dictation",
-    "capture",
-    "hotkey",
-    "floating"
-   ]
-  },
-  {
-   "id": "streaming-stt",
-   "name": "Streaming STT",
-   "category": "Real-time voice",
-   "summary": "Live partial transcription while you speak.",
-   "where": "Dictate/Captures",
-   "tools": [
-    "streaming_stt"
-   ],
-   "keywords": [
-    "streaming",
-    "live transcript",
-    "partial",
-    "stt"
-   ]
-  },
-  {
-   "id": "music-generation",
-   "name": "Music generation",
-   "category": "Music, SFX & instruments",
-   "summary": "Full songs from a text prompt via ACE-Step.",
-   "where": "Sound Studio",
-   "tools": [
-    "generate_music"
-   ],
-   "keywords": [
-    "music",
-    "song",
-    "acestep",
-    "beat",
-    "track",
-    "generate music"
-   ]
-  },
-  {
-   "id": "sfx-generation",
-   "name": "SFX generation",
-   "category": "Music, SFX & instruments",
-   "summary": "One-shot sound effects from text via Stable Audio Open.",
-   "where": "Sound Studio",
-   "tools": [
-    "generate_sfx"
-   ],
-   "keywords": [
-    "sfx",
-    "sound effect",
-    "foley",
-    "impact",
-    "stable audio"
-   ]
-  },
-  {
-   "id": "bark-nonverbals",
-   "name": "Bark non-verbals",
-   "category": "Music, SFX & instruments",
-   "summary": "Laughs, sighs, gasps, coughs — human reaction sounds.",
-   "where": "Sound Studio",
-   "tools": [
-    "generate_bark"
-   ],
-   "keywords": [
-    "bark",
-    "laugh",
-    "sigh",
-    "gasp",
-    "cough",
-    "nonverbal"
-   ]
-  },
-  {
-   "id": "gm-instruments",
-   "name": "GM instruments",
-   "category": "Music, SFX & instruments",
-   "summary": "Piano/bass/strings/brass/bells via an offline SoundFont.",
-   "where": "Instruments",
-   "tools": [
-    "play_piano_note",
-    "play_synth_note"
-   ],
-   "keywords": [
-    "instruments",
-    "piano",
-    "strings",
-    "soundfont",
-    "general midi",
-    "gm"
-   ]
-  },
-  {
-   "id": "drum-machine",
-   "name": "Drum machine",
-   "category": "Music, SFX & instruments",
-   "summary": "16-step patterns from synthesized drum hits.",
-   "where": "Instruments",
-   "tools": [
-    "drum_pattern"
-   ],
-   "keywords": [
-    "drums",
-    "drum machine",
-    "beat",
-    "pattern",
-    "percussion",
-    "hi-hat"
-   ]
-  },
-  {
-   "id": "dsp-synth",
-   "name": "DSP synth",
-   "category": "Music, SFX & instruments",
-   "summary": "Pure offline synthesis (no AI): waveforms and classical effects.",
-   "where": "Synth tab",
-   "tools": [],
-   "keywords": [
-    "synth",
-    "synthesizer",
-    "oscillator",
-    "waveform",
-    "dsp"
-   ]
-  },
-  {
-   "id": "freesound-browser",
-   "name": "Freesound browser",
-   "category": "Music, SFX & instruments",
-   "summary": "Search Freesound SFX with your own API key.",
-   "where": "Sounds panel",
-   "tools": [],
-   "keywords": [
-    "freesound",
-    "library",
-    "search",
-    "samples"
-   ]
-  },
-  {
-   "id": "binaural",
-   "name": "Binaural positioning",
-   "category": "Spatial audio",
-   "summary": "HRTF 3D placement via Steam Audio SDK with bundled SOFA.",
-   "where": "Spatial panel",
-   "tools": [
-    "spatial_binaural"
-   ],
-   "keywords": [
-    "binaural",
-    "3d",
-    "hrtf",
-    "spatial",
-    "position",
-    "steam audio"
-   ]
-  },
-  {
-   "id": "doppler",
-   "name": "Doppler",
-   "category": "Spatial audio",
-   "summary": "Moving-source pitch/pan automation.",
-   "where": "Spatial panel",
-   "tools": [
-    "spatial_doppler"
-   ],
-   "keywords": [
-    "doppler",
-    "movement",
-    "pass-by",
-    "motion"
-   ]
-  },
-  {
-   "id": "convolution-reverb",
-   "name": "Convolution reverb",
-   "category": "Spatial audio",
-   "summary": "Impulse-response based spaces.",
-   "where": "Spatial panel",
-   "tools": [
-    "spatial_convolution"
-   ],
-   "keywords": [
-    "convolution",
-    "impulse response",
-    "ir",
-    "reverb",
-    "space"
-   ]
-  },
-  {
-   "id": "assistant",
-   "name": "In-app AI assistant",
-   "category": "Agents & automation",
-   "summary": "Local LFM2.5 LLM (llama.cpp) or your BYOK endpoint; calls 120+ studio tools.",
-   "where": "Assistant panel",
-   "tools": [],
-   "keywords": [
-    "assistant",
-    "ai",
-    "chat",
-    "llm",
-    "lfm",
-    "agent"
-   ]
-  },
-  {
-   "id": "mcp-server",
-   "name": "MCP server",
-   "category": "Agents & automation",
-   "summary": "110+ tools exposed at /mcp for Claude Code, Cursor, and other MCP clients.",
-   "where": "Settings → MCP page",
-   "tools": [],
-   "keywords": [
-    "mcp",
-    "claude",
-    "cursor",
-    "external agent",
-    "tools"
-   ]
-  },
-  {
-   "id": "scripting",
-   "name": "Scripting",
-   "category": "Agents & automation",
-   "summary": "Scriptable server functions.",
-   "where": "Settings → Scripting",
-   "tools": [
-    "scripting_execute"
-   ],
-   "keywords": [
-    "script",
-    "scripting",
-    "functions",
-    "automation code"
-   ]
-  },
-  {
-   "id": "automation-lanes",
-   "name": "Automation lanes",
-   "category": "Agents & automation",
-   "summary": "Volume/pan/pitch/FX over time plus a live cue matrix.",
-   "where": "Automation view",
-   "tools": [
-    "automation_set_points"
-   ],
-   "keywords": [
-    "automation",
-    "lanes",
-    "envelope",
-    "cues",
-    "parameter"
-   ]
-  },
-  {
-   "id": "agent-skills",
-   "name": "Agent skills",
-   "category": "Agents & automation",
-   "summary": "Recipes and methodology in .agents/skills/ for AI agents producing pro output.",
-   "where": "Repository",
-   "tools": [],
-   "keywords": [
-    "skills",
-    "recipes",
-    "agents",
-    "methodology"
-   ]
-  },
-  {
-   "id": "model-manager",
-   "name": "Model manager",
-   "category": "System",
-   "summary": "Download/load/unload/delete models with CUDA/ONNX device strategy.",
-   "where": "Models tab",
-   "tools": [
-    "list_models"
-   ],
-   "keywords": [
-    "models",
-    "download",
-    "manager",
-    "cuda",
-    "onnx",
-    "device"
-   ]
-  },
-  {
-   "id": "shortcuts",
-   "name": "Shortcuts",
-   "category": "System",
-   "summary": "Keymaps for 21labs / Premiere / DaVinci / Pro Tools styles.",
-   "where": "Settings → Shortcuts",
-   "tools": [],
-   "keywords": [
-    "shortcuts",
-    "keymap",
-    "hotkeys",
-    "keyboard",
-    "bindings"
-   ]
-  },
-  {
-   "id": "projects",
-   "name": "Standalone projects",
-   "category": "System",
-   "summary": "Template-based project create/save/load.",
-   "where": "Projects",
-   "tools": [],
-   "keywords": [
-    "projects",
-    "template",
-    "save",
-    "load",
-    "session"
-   ]
-  },
-  {
-   "id": "cross-tab-bus",
-   "name": "Cross-tab audio bus",
-   "category": "System",
-   "summary": "Route live audio between tabs with a video preview monitor.",
-   "where": "Workspace",
-   "tools": [],
-   "keywords": [
-    "cross-tab",
-    "bus",
-    "routing",
-    "video preview",
-    "monitor"
-   ]
-  },
-  {
-   "id": "community-presets",
-   "name": "Community presets",
-   "category": "System",
-   "summary": "Search, browse, and import shared effect presets.",
-   "where": "Presets",
-   "tools": [],
-   "keywords": [
-    "community",
-    "presets",
-    "shared",
-    "import"
-   ]
-  },
-  {
-   "id": "telemetry",
-   "name": "Telemetry",
-   "category": "System",
-   "summary": "Opt-in, privacy-respecting usage toggle.",
-   "where": "Settings",
-   "tools": [],
-   "keywords": [
-    "telemetry",
-    "privacy",
-    "opt-in"
-   ]
-  },
-  {
-   "id": "non-destructive",
-   "name": "Non-destructive edits",
-   "category": "System",
-   "summary": "Undo/redo and versions on every operation.",
-   "where": "Everywhere",
-   "tools": [],
-   "keywords": [
-    "undo",
-    "redo",
-    "versions",
-    "non-destructive",
-    "history"
-   ]
-  },
-  {
-   "id": "stitch-tracks",
-   "name": "Stitch tracks",
-   "category": "Audio Studio",
-   "summary": "Join the selected track end-to-end with another: adjustable crossfade, gap of silence, and fade curve. Lands on a new track.",
-   "where": "Audio Studio > Tools > Stitch Tracks",
-   "tools": [
-    "21labs.blend"
-   ],
-   "keywords": [
-    "stitch",
-    "join",
-    "concatenate",
-    "crossfade",
-    "blend",
-    "gap",
-    "merge tracks"
-   ]
-  },
-  {
-   "id": "duplicate-track",
-   "name": "Duplicate track",
-   "category": "Audio Studio",
-   "summary": "Clone a track with its audio, effect chain, and automation for variation takes.",
-   "where": "Audio Studio track row (copy icon)",
-   "tools": [],
-   "keywords": [
-    "duplicate",
-    "clone",
-    "copy track",
-    "variation"
-   ]
-  },
-  {
-   "id": "render-fx",
-   "name": "Render FX",
-   "category": "Audio Studio",
-   "summary": "Render a track's full effect chain through the backend onto a new track — covers render-only effects the live preview cannot play.",
-   "where": "Audio Studio > Tools > Render FX",
-   "tools": [
-    "21labs.apply_effects"
-   ],
-   "keywords": [
-    "render",
-    "bounce",
-    "freeze",
-    "apply effects",
-    "backend render"
-   ]
-  },
-  {
-   "id": "stem-isolation",
-   "name": "Stem isolation",
-   "category": "Audio Studio",
-   "summary": "Split vocals, drums, bass, or other stems out of a mix (or remove one) into a color-coded new track.",
-   "where": "Audio Studio > Tools > Stem Isolation",
-   "tools": [
-    "21labs.separate_audio"
-   ],
-   "keywords": [
-    "stems",
-    "isolation",
-    "vocals",
-    "drums",
-    "bass",
-    "demucs",
-    "separate",
-    "acapella",
-    "instrumental"
-   ]
-  }
- ]
+  "version": 2,
+  "description": "Machine-readable feature catalog for 21labs \u00e2\u20ac\u201d mirrors docs/FEATURES.md. Consumed by /help/* routes, the in-app Help Center, and the assistant app_help tool.",
+  "features": [
+    {
+      "id": "tts-engines",
+      "name": "TTS engines",
+      "category": "Voice generation",
+      "summary": "17 offline text-to-speech engines: Kokoro, Qwen3-TTS, Fish Speech, Chatterbox, XTTS v2, ChatTTS and more.",
+      "where": "Models tab",
+      "tools": [
+        "list_models",
+        "speak"
+      ],
+      "keywords": [
+        "tts",
+        "text to speech",
+        "voice engine",
+        "kokoro",
+        "chattts",
+        "qwen",
+        "speak",
+        "generate speech"
+      ]
+    },
+    {
+      "id": "voice-cloning",
+      "name": "Voice cloning",
+      "category": "Voice generation",
+      "summary": "Zero-shot voice cloning from a short reference clip (XTTS v2, Qwen3, Fish Speech, Chatterbox, F5-TTS).",
+      "where": "Voice Profiles \u00e2\u2020\u2019 Clone",
+      "tools": [
+        "create_profile"
+      ],
+      "keywords": [
+        "clone",
+        "cloning",
+        "reference audio",
+        "copy voice",
+        "sample"
+      ]
+    },
+    {
+      "id": "voice-profiles",
+      "name": "Voice profiles",
+      "category": "Voice generation",
+      "summary": "Preset, cloned, or designed voices with per-engine settings.",
+      "where": "Voice Profiles tab",
+      "tools": [
+        "list_profiles",
+        "create_profile"
+      ],
+      "keywords": [
+        "profile",
+        "voice",
+        "preset",
+        "designed voice",
+        "cast"
+      ]
+    },
+    {
+      "id": "reference-voices",
+      "name": "Reference voice library",
+      "category": "Voice generation",
+      "summary": "Bundled celebrity/public-figure reference clips for cloning, incl. Twenty One Pilots (Tyler Joseph, Josh Dun).",
+      "where": "Voice Profiles \u00e2\u2020\u2019 Library",
+      "tools": [
+        "list_reference_voices"
+      ],
+      "keywords": [
+        "reference",
+        "celebrity",
+        "library",
+        "tyler joseph",
+        "josh dun",
+        "twenty one pilots"
+      ]
+    },
+    {
+      "id": "emotion-presets",
+      "name": "Emotion presets",
+      "category": "Voice generation",
+      "summary": "Training-free DSP emotion coloring (happy/sad/angry/\u00e2\u20ac\u00a6) applied to any generation.",
+      "where": "Generate panel \u00e2\u2020\u2019 Emotion",
+      "tools": [
+        "speak"
+      ],
+      "keywords": [
+        "emotion",
+        "mood",
+        "happy",
+        "sad",
+        "angry",
+        "dsp"
+      ]
+    },
+    {
+      "id": "audio-tags",
+      "name": "Audio tags",
+      "category": "Voice generation",
+      "summary": "Bracketed tags in text ([laughs], [pause]) rendered as real human samples.",
+      "where": "Generate panel",
+      "tools": [
+        "speak"
+      ],
+      "keywords": [
+        "tags",
+        "laughs",
+        "pause",
+        "brackets",
+        "paralinguistic"
+      ]
+    },
+    {
+      "id": "rvc-conversion",
+      "name": "RVC voice conversion",
+      "category": "Voice generation",
+      "summary": "Convert an existing recording to a downloaded RVC voice pack.",
+      "where": "Voice Profiles \u00e2\u2020\u2019 Convert",
+      "tools": [
+        "voice_convert"
+      ],
+      "keywords": [
+        "rvc",
+        "convert",
+        "voice pack",
+        "speech to speech conversion"
+      ]
+    },
+    {
+      "id": "byok-providers",
+      "name": "BYOK cloud providers",
+      "category": "Voice generation",
+      "summary": "Optional bring-your-own API key/endpoint per domain (tts/music/sfx/vc/llm), encrypted at rest.",
+      "where": "Settings \u00e2\u2020\u2019 API Keys",
+      "tools": [],
+      "keywords": [
+        "byok",
+        "api key",
+        "cloud",
+        "provider",
+        "openai"
+      ]
+    },
+    {
+      "id": "waveform-editor",
+      "name": "Waveform editor",
+      "category": "Audio Studio",
+      "summary": "Non-destructive clip editing: trim, split, fade, gain, reverse, normalize.",
+      "where": "Audio Studio",
+      "tools": [],
+      "keywords": [
+        "edit",
+        "trim",
+        "split",
+        "fade",
+        "gain",
+        "reverse",
+        "normalize",
+        "clip",
+        "waveform"
+      ]
+    },
+    {
+      "id": "pitch-map",
+      "name": "Pitch map",
+      "category": "Audio Studio",
+      "summary": "Piano-roll style pitch editing (C3\u00e2\u20ac\u201cC5).",
+      "where": "Audio Studio \u00e2\u2020\u2019 Pitch Map",
+      "tools": [],
+      "keywords": [
+        "pitch",
+        "piano roll",
+        "tune",
+        "notes"
+      ]
+    },
+    {
+      "id": "effects-chain",
+      "name": "Effects chain",
+      "category": "Audio Studio",
+      "summary": "30+ backend effects (EQ, compressor, reverb, delay, chorus, distortion, telephone, de-esser, auto-tune, vocoder, \u00e2\u20ac\u00a6) with live preview or backend render, drag-sortable with presets.",
+      "where": "Effects tab / per-clip",
+      "tools": [
+        "apply_effect"
+      ],
+      "keywords": [
+        "effects",
+        "fx",
+        "eq",
+        "compressor",
+        "reverb",
+        "delay",
+        "deesser",
+        "chorus",
+        "presets",
+        "telephone",
+        "distortion",
+        "stitch",
+        "render",
+        "autotune"
+      ]
+    },
+    {
+      "id": "spectrogram",
+      "name": "Spectrogram",
+      "category": "Audio Studio",
+      "summary": "Frequency-domain visualization of audio; isolated stems get their own color scheme.",
+      "where": "Audio Studio \u00e2\u2020\u2019 Spectrogram",
+      "tools": [],
+      "keywords": [
+        "spectrogram",
+        "frequency",
+        "spectrum",
+        "visualize"
+      ]
+    },
+    {
+      "id": "timecode",
+      "name": "SMPTE timecode",
+      "category": "Audio Studio",
+      "summary": "Frame-accurate position display with multiple frame rates.",
+      "where": "Studio toolbar",
+      "tools": [],
+      "keywords": [
+        "timecode",
+        "smpte",
+        "frames",
+        "position"
+      ]
+    },
+    {
+      "id": "ab-comparison",
+      "name": "A/B comparison",
+      "category": "Audio Studio",
+      "summary": "Instant processed-vs-raw toggle.",
+      "where": "Audio Studio",
+      "tools": [],
+      "keywords": [
+        "ab",
+        "compare",
+        "bypass",
+        "before after"
+      ]
+    },
+    {
+      "id": "tape-scrubber",
+      "name": "Tape scrubber",
+      "category": "Audio Studio",
+      "summary": "Variable-speed scrubbing through audio.",
+      "where": "Audio Studio",
+      "tools": [],
+      "keywords": [
+        "scrub",
+        "tape",
+        "speed",
+        "shuttle"
+      ]
+    },
+    {
+      "id": "transcription-subtitles",
+      "name": "Transcription + subtitles",
+      "category": "Audio Studio",
+      "summary": "Word-level Whisper transcription with SRT/VTT subtitle export.",
+      "where": "Transcribe action",
+      "tools": [
+        "transcribe",
+        "export_subtitles"
+      ],
+      "keywords": [
+        "transcribe",
+        "transcript",
+        "whisper",
+        "subtitles",
+        "srt",
+        "vtt",
+        "captions",
+        "stt"
+      ]
+    },
+    {
+      "id": "transcript-edit",
+      "name": "Transcript editing",
+      "category": "Audio Studio",
+      "summary": "Edit audio by editing its words \u00e2\u20ac\u201d click-to-playhead and filler removal.",
+      "where": "Transcript panel",
+      "tools": [
+        "transcript_edit"
+      ],
+      "keywords": [
+        "transcript edit",
+        "filler",
+        "um",
+        "word edit",
+        "cut words"
+      ]
+    },
+    {
+      "id": "noise-reduction",
+      "name": "Noise reduction",
+      "category": "Audio Studio",
+      "summary": "DeepFilterNet neural denoise plus spectral gate cleanup.",
+      "where": "Enhance/Cleanup",
+      "tools": [
+        "clean_audio"
+      ],
+      "keywords": [
+        "denoise",
+        "noise reduction",
+        "cleanup",
+        "deepfilter",
+        "hiss",
+        "background noise"
+      ]
+    },
+    {
+      "id": "audio-enhance",
+      "name": "Audio enhance",
+      "category": "Audio Studio",
+      "summary": "LavaSR neural upscale to 48 kHz + denoise (auto mode).",
+      "where": "Enhance panel",
+      "tools": [
+        "enhance_audio"
+      ],
+      "keywords": [
+        "enhance",
+        "upscale",
+        "lavasr",
+        "48k",
+        "super resolution",
+        "quality"
+      ]
+    },
+    {
+      "id": "loudness-metering",
+      "name": "Loudness metering",
+      "category": "Audio Studio",
+      "summary": "Integrated/short-term LUFS + true peak measurement.",
+      "where": "Meter panel",
+      "tools": [
+        "analyze_loudness"
+      ],
+      "keywords": [
+        "loudness",
+        "lufs",
+        "true peak",
+        "meter",
+        "levels"
+      ]
+    },
+    {
+      "id": "import",
+      "name": "Import",
+      "category": "Audio Studio",
+      "summary": "Import audio files and extract audio from video.",
+      "where": "Import modal",
+      "tools": [
+        "import_audio"
+      ],
+      "keywords": [
+        "import",
+        "video",
+        "extract",
+        "upload",
+        "file"
+      ]
+    },
+    {
+      "id": "mixer",
+      "name": "Multi-track mixer",
+      "category": "Mixer & delivery",
+      "summary": "VU meters, mute/solo, pan, per-track FX, bus routing.",
+      "where": "Audio Studio \u00e2\u2020\u2019 Mixer",
+      "tools": [
+        "mixer_get_state",
+        "mixer_set_track"
+      ],
+      "keywords": [
+        "mixer",
+        "mix",
+        "tracks",
+        "vu",
+        "mute",
+        "solo",
+        "pan",
+        "bus"
+      ]
+    },
+    {
+      "id": "auto-duck",
+      "name": "Auto-duck",
+      "category": "Mixer & delivery",
+      "summary": "Speech automatically ducks music beds.",
+      "where": "Conversation/recipe",
+      "tools": [
+        "run_recipe"
+      ],
+      "keywords": [
+        "duck",
+        "ducking",
+        "music bed",
+        "sidechain"
+      ]
+    },
+    {
+      "id": "mastering",
+      "name": "Mastering",
+      "category": "Mixer & delivery",
+      "summary": "Glue compression + limiting + LUFS normalization to broadcast targets.",
+      "where": "Master action",
+      "tools": [
+        "master"
+      ],
+      "keywords": [
+        "master",
+        "mastering",
+        "loudness target",
+        "limiter",
+        "glue",
+        "broadcast"
+      ]
+    },
+    {
+      "id": "platform-export",
+      "name": "Platform export",
+      "category": "Mixer & delivery",
+      "summary": "One-tap delivery presets: Spotify, YouTube, Audible, podcast, film, social.",
+      "where": "Export panel",
+      "tools": [
+        "platform_export"
+      ],
+      "keywords": [
+        "export",
+        "spotify",
+        "youtube",
+        "audible",
+        "podcast",
+        "delivery",
+        "mp3",
+        "platform"
+      ]
+    },
+    {
+      "id": "reaper-export",
+      "name": "Reaper export",
+      "category": "Mixer & delivery",
+      "summary": "Render the project to a .rpp Reaper file for handoff.",
+      "where": "Export panel",
+      "tools": [
+        "run_recipe"
+      ],
+      "keywords": [
+        "reaper",
+        "rpp",
+        "daw",
+        "handoff"
+      ]
+    },
+    {
+      "id": "lottie-export",
+      "name": "Lottie export",
+      "category": "Mixer & delivery",
+      "summary": "Audio-reactive Lottie animation export.",
+      "where": "Export panel",
+      "tools": [],
+      "keywords": [
+        "lottie",
+        "animation",
+        "visual",
+        "reactive"
+      ]
+    },
+    {
+      "id": "stories",
+      "name": "Stories",
+      "category": "Dialogue & long-form",
+      "summary": "Audiobook/chapter sequencing: per-item fade/gain/trim/reorder, one mixed WAV out.",
+      "where": "Stories tab",
+      "tools": [
+        "story_add_item",
+        "story_export"
+      ],
+      "keywords": [
+        "stories",
+        "audiobook",
+        "chapters",
+        "sequence",
+        "narrative"
+      ]
+    },
+    {
+      "id": "conversation-mode",
+      "name": "Conversation mode",
+      "category": "Dialogue & long-form",
+      "summary": "Stage multi-speaker lines, auto-duck overlaps, auto-level to LUFS.",
+      "where": "Conversation tab",
+      "tools": [
+        "conversation_stage_line",
+        "conversation_render"
+      ],
+      "keywords": [
+        "conversation",
+        "podcast",
+        "dialogue",
+        "multi speaker",
+        "interview",
+        "debate"
+      ]
+    },
+    {
+      "id": "adr-mode",
+      "name": "ADR mode",
+      "category": "Dialogue & long-form",
+      "summary": "Acted Dialogue Replacement over picture: guide track, takes, scoring, lock.",
+      "where": "ADR tab",
+      "tools": [
+        "adr_create_session",
+        "adr_record_take"
+      ],
+      "keywords": [
+        "adr",
+        "dubbing",
+        "guide track",
+        "takes",
+        "film",
+        "replacement"
+      ]
+    },
+    {
+      "id": "comping",
+      "name": "Multi-take comping",
+      "category": "Dialogue & long-form",
+      "summary": "Stack takes, pick best regions, assemble a composite clip.",
+      "where": "Comping lanes",
+      "tools": [],
+      "keywords": [
+        "comping",
+        "takes",
+        "composite",
+        "lanes",
+        "best of"
+      ]
+    },
+    {
+      "id": "audio-plan",
+      "name": "AI Audio Plan",
+      "category": "Dialogue & long-form",
+      "summary": "Script \u00e2\u2020\u2019 scene-based track/voice/music assignment blueprint.",
+      "where": "Audio Plan tab",
+      "tools": [
+        "audio_plan"
+      ],
+      "keywords": [
+        "plan",
+        "blueprint",
+        "script",
+        "scene",
+        "assignment"
+      ]
+    },
+    {
+      "id": "batch-queue",
+      "name": "Batch queue",
+      "category": "Dialogue & long-form",
+      "summary": "Run many generations with status, cancel, and retry.",
+      "where": "Batch panel",
+      "tools": [],
+      "keywords": [
+        "batch",
+        "queue",
+        "bulk",
+        "jobs",
+        "parallel"
+      ]
+    },
+    {
+      "id": "content-recipes",
+      "name": "Content recipes",
+      "category": "Dialogue & long-form",
+      "summary": "Proven pipelines per content type (podcast, audiobook, ad, short\u00e2\u20ac\u00a6).",
+      "where": "Assistant skills",
+      "tools": [
+        "run_recipe"
+      ],
+      "keywords": [
+        "recipe",
+        "pipeline",
+        "podcast",
+        "audiobook",
+        "ad",
+        "workflow"
+      ]
+    },
+    {
+      "id": "voice-changer",
+      "name": "Voice changer",
+      "category": "Real-time voice",
+      "summary": "Live mic pipeline: VAD \u00e2\u2020\u2019 DeepFilter denoise \u00e2\u2020\u2019 Whisper \u00e2\u2020\u2019 TTS \u00e2\u2020\u2019 LavaSR.",
+      "where": "Voice Changer panel",
+      "tools": [],
+      "keywords": [
+        "voice changer",
+        "live",
+        "realtime",
+        "mic",
+        "pipeline"
+      ]
+    },
+    {
+      "id": "voice-chat",
+      "name": "Voice chat (STS)",
+      "category": "Real-time voice",
+      "summary": "Speech-to-speech voice agent: talk to the assistant, it answers in voice with barge-in.",
+      "where": "Voice Chat panel",
+      "tools": [],
+      "keywords": [
+        "voice chat",
+        "sts",
+        "speech to speech",
+        "talk",
+        "barge-in",
+        "conversation agent"
+      ]
+    },
+    {
+      "id": "dictate",
+      "name": "Dictate window",
+      "category": "Real-time voice",
+      "summary": "Floating always-on capture window with a global hotkey chord.",
+      "where": "Dictate",
+      "tools": [],
+      "keywords": [
+        "dictate",
+        "dictation",
+        "capture",
+        "hotkey",
+        "floating"
+      ]
+    },
+    {
+      "id": "streaming-stt",
+      "name": "Streaming STT",
+      "category": "Real-time voice",
+      "summary": "Live partial transcription while you speak.",
+      "where": "Dictate/Captures",
+      "tools": [
+        "streaming_stt"
+      ],
+      "keywords": [
+        "streaming",
+        "live transcript",
+        "partial",
+        "stt"
+      ]
+    },
+    {
+      "id": "music-generation",
+      "name": "Music generation",
+      "category": "Music, SFX & instruments",
+      "summary": "Full songs from a text prompt via ACE-Step.",
+      "where": "Sound Studio",
+      "tools": [
+        "generate_music"
+      ],
+      "keywords": [
+        "music",
+        "song",
+        "acestep",
+        "beat",
+        "track",
+        "generate music"
+      ]
+    },
+    {
+      "id": "sfx-generation",
+      "name": "SFX generation",
+      "category": "Music, SFX & instruments",
+      "summary": "One-shot sound effects from text via Stable Audio Open.",
+      "where": "Sound Studio",
+      "tools": [
+        "generate_sfx"
+      ],
+      "keywords": [
+        "sfx",
+        "sound effect",
+        "foley",
+        "impact",
+        "stable audio"
+      ]
+    },
+    {
+      "id": "bark-nonverbals",
+      "name": "Bark non-verbals",
+      "category": "Music, SFX & instruments",
+      "summary": "Laughs, sighs, gasps, coughs \u00e2\u20ac\u201d human reaction sounds.",
+      "where": "Sound Studio",
+      "tools": [
+        "generate_bark"
+      ],
+      "keywords": [
+        "bark",
+        "laugh",
+        "sigh",
+        "gasp",
+        "cough",
+        "nonverbal"
+      ]
+    },
+    {
+      "id": "gm-instruments",
+      "name": "GM instruments",
+      "category": "Music, SFX & instruments",
+      "summary": "Piano/bass/strings/brass/bells via an offline SoundFont.",
+      "where": "Instruments",
+      "tools": [
+        "play_piano_note",
+        "play_synth_note"
+      ],
+      "keywords": [
+        "instruments",
+        "piano",
+        "strings",
+        "soundfont",
+        "general midi",
+        "gm"
+      ]
+    },
+    {
+      "id": "drum-machine",
+      "name": "Drum machine",
+      "category": "Music, SFX & instruments",
+      "summary": "16-step patterns from synthesized drum hits.",
+      "where": "Instruments",
+      "tools": [
+        "drum_pattern"
+      ],
+      "keywords": [
+        "drums",
+        "drum machine",
+        "beat",
+        "pattern",
+        "percussion",
+        "hi-hat"
+      ]
+    },
+    {
+      "id": "dsp-synth",
+      "name": "DSP synth",
+      "category": "Music, SFX & instruments",
+      "summary": "Pure offline synthesis (no AI): waveforms and classical effects.",
+      "where": "Synth tab",
+      "tools": [],
+      "keywords": [
+        "synth",
+        "synthesizer",
+        "oscillator",
+        "waveform",
+        "dsp"
+      ]
+    },
+    {
+      "id": "freesound-browser",
+      "name": "Freesound browser",
+      "category": "Music, SFX & instruments",
+      "summary": "Search Freesound SFX with your own API key.",
+      "where": "Sounds panel",
+      "tools": [],
+      "keywords": [
+        "freesound",
+        "library",
+        "search",
+        "samples"
+      ]
+    },
+    {
+      "id": "binaural",
+      "name": "Binaural positioning",
+      "category": "Spatial audio",
+      "summary": "HRTF 3D placement via Steam Audio SDK with bundled SOFA.",
+      "where": "Spatial panel",
+      "tools": [
+        "spatial_binaural"
+      ],
+      "keywords": [
+        "binaural",
+        "3d",
+        "hrtf",
+        "spatial",
+        "position",
+        "steam audio"
+      ]
+    },
+    {
+      "id": "doppler",
+      "name": "Doppler",
+      "category": "Spatial audio",
+      "summary": "Moving-source pitch/pan automation.",
+      "where": "Spatial panel",
+      "tools": [
+        "spatial_doppler"
+      ],
+      "keywords": [
+        "doppler",
+        "movement",
+        "pass-by",
+        "motion"
+      ]
+    },
+    {
+      "id": "convolution-reverb",
+      "name": "Convolution reverb",
+      "category": "Spatial audio",
+      "summary": "Impulse-response based spaces.",
+      "where": "Spatial panel",
+      "tools": [
+        "spatial_convolution"
+      ],
+      "keywords": [
+        "convolution",
+        "impulse response",
+        "ir",
+        "reverb",
+        "space"
+      ]
+    },
+    {
+      "id": "assistant",
+      "name": "In-app AI assistant",
+      "category": "Agents & automation",
+      "summary": "Local LFM2.5 LLM (llama.cpp) or your BYOK endpoint; calls 120+ studio tools.",
+      "where": "Assistant panel",
+      "tools": [],
+      "keywords": [
+        "assistant",
+        "ai",
+        "chat",
+        "llm",
+        "lfm",
+        "agent"
+      ]
+    },
+    {
+      "id": "mcp-server",
+      "name": "MCP server",
+      "category": "Agents & automation",
+      "summary": "110+ tools exposed at /mcp for Claude Code, Cursor, and other MCP clients.",
+      "where": "Settings \u00e2\u2020\u2019 MCP page",
+      "tools": [],
+      "keywords": [
+        "mcp",
+        "claude",
+        "cursor",
+        "external agent",
+        "tools"
+      ]
+    },
+    {
+      "id": "scripting",
+      "name": "Scripting",
+      "category": "Agents & automation",
+      "summary": "Scriptable server functions.",
+      "where": "Settings \u00e2\u2020\u2019 Scripting",
+      "tools": [
+        "scripting_execute"
+      ],
+      "keywords": [
+        "script",
+        "scripting",
+        "functions",
+        "automation code"
+      ]
+    },
+    {
+      "id": "automation-lanes",
+      "name": "Automation lanes",
+      "category": "Agents & automation",
+      "summary": "Volume/pan/pitch/FX over time plus a live cue matrix.",
+      "where": "Automation view",
+      "tools": [
+        "automation_set_points"
+      ],
+      "keywords": [
+        "automation",
+        "lanes",
+        "envelope",
+        "cues",
+        "parameter"
+      ]
+    },
+    {
+      "id": "agent-skills",
+      "name": "Agent skills",
+      "category": "Agents & automation",
+      "summary": "Recipes and methodology in .agents/skills/ for AI agents producing pro output.",
+      "where": "Repository",
+      "tools": [],
+      "keywords": [
+        "skills",
+        "recipes",
+        "agents",
+        "methodology"
+      ]
+    },
+    {
+      "id": "model-manager",
+      "name": "Model manager",
+      "category": "System",
+      "summary": "Download/load/unload/delete models with CUDA/ONNX device strategy.",
+      "where": "Models tab",
+      "tools": [
+        "list_models"
+      ],
+      "keywords": [
+        "models",
+        "download",
+        "manager",
+        "cuda",
+        "onnx",
+        "device"
+      ]
+    },
+    {
+      "id": "shortcuts",
+      "name": "Shortcuts",
+      "category": "System",
+      "summary": "Keymaps for 21labs / Premiere / DaVinci / Pro Tools styles.",
+      "where": "Settings \u00e2\u2020\u2019 Shortcuts",
+      "tools": [],
+      "keywords": [
+        "shortcuts",
+        "keymap",
+        "hotkeys",
+        "keyboard",
+        "bindings"
+      ]
+    },
+    {
+      "id": "projects",
+      "name": "Standalone projects",
+      "category": "System",
+      "summary": "Template-based project create/save/load.",
+      "where": "Projects",
+      "tools": [],
+      "keywords": [
+        "projects",
+        "template",
+        "save",
+        "load",
+        "session"
+      ]
+    },
+    {
+      "id": "cross-tab-bus",
+      "name": "Cross-tab audio bus",
+      "category": "System",
+      "summary": "Route live audio between tabs with a video preview monitor.",
+      "where": "Workspace",
+      "tools": [],
+      "keywords": [
+        "cross-tab",
+        "bus",
+        "routing",
+        "video preview",
+        "monitor"
+      ]
+    },
+    {
+      "id": "community-presets",
+      "name": "Community presets",
+      "category": "System",
+      "summary": "Search, browse, and import shared effect presets.",
+      "where": "Presets",
+      "tools": [],
+      "keywords": [
+        "community",
+        "presets",
+        "shared",
+        "import"
+      ]
+    },
+    {
+      "id": "telemetry",
+      "name": "Telemetry",
+      "category": "System",
+      "summary": "Opt-in, privacy-respecting usage toggle.",
+      "where": "Settings",
+      "tools": [],
+      "keywords": [
+        "telemetry",
+        "privacy",
+        "opt-in"
+      ]
+    },
+    {
+      "id": "non-destructive",
+      "name": "Non-destructive edits",
+      "category": "System",
+      "summary": "Undo/redo and versions on every operation.",
+      "where": "Everywhere",
+      "tools": [],
+      "keywords": [
+        "undo",
+        "redo",
+        "versions",
+        "non-destructive",
+        "history"
+      ]
+    },
+    {
+      "id": "stitch-tracks",
+      "name": "Stitch tracks",
+      "category": "Audio Studio",
+      "summary": "Join the selected track end-to-end with another: adjustable crossfade, gap of silence, and fade curve. Lands on a new track.",
+      "where": "Audio Studio > Tools > Stitch Tracks",
+      "tools": [
+        "21labs.blend"
+      ],
+      "keywords": [
+        "stitch",
+        "join",
+        "concatenate",
+        "crossfade",
+        "blend",
+        "gap",
+        "merge tracks"
+      ]
+    },
+    {
+      "id": "duplicate-track",
+      "name": "Duplicate track",
+      "category": "Audio Studio",
+      "summary": "Clone a track with its audio, effect chain, and automation for variation takes.",
+      "where": "Audio Studio track row (copy icon)",
+      "tools": [],
+      "keywords": [
+        "duplicate",
+        "clone",
+        "copy track",
+        "variation"
+      ]
+    },
+    {
+      "id": "render-fx",
+      "name": "Render FX",
+      "category": "Audio Studio",
+      "summary": "Render a track's full effect chain through the backend onto a new track \u00e2\u20ac\u201d covers render-only effects the live preview cannot play.",
+      "where": "Audio Studio > Tools > Render FX",
+      "tools": [
+        "21labs.apply_effects"
+      ],
+      "keywords": [
+        "render",
+        "bounce",
+        "freeze",
+        "apply effects",
+        "backend render"
+      ]
+    },
+    {
+      "id": "stem-isolation",
+      "name": "Stem isolation",
+      "category": "Audio Studio",
+      "summary": "Split vocals, drums, bass, or other stems out of a mix (or remove one) into a color-coded new track.",
+      "where": "Audio Studio > Tools > Stem Isolation",
+      "tools": [
+        "21labs.separate_audio"
+      ],
+      "keywords": [
+        "stems",
+        "isolation",
+        "vocals",
+        "drums",
+        "bass",
+        "demucs",
+        "separate",
+        "acapella",
+        "instrumental"
+      ]
+    },
+    {
+      "id": "stem-separation",
+      "name": "Stem Separation",
+      "category": "Audio processing",
+      "summary": "Split a song into vocals, drums, bass, and other stems using Demucs ONNX (no torch). Includes vocal split, mixdown, and beat detection.",
+      "where": "Workspace > Stem Separation",
+      "tools": [
+        "separate_stems"
+      ],
+      "keywords": [
+        "stem",
+        "separation",
+        "demucs",
+        "vocals",
+        "drums",
+        "bass",
+        "acapella",
+        "karaoke",
+        "split",
+        "isolate"
+      ]
+    }
+  ]
 }
