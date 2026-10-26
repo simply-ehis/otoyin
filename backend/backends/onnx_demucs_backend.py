@@ -17,8 +17,19 @@ logger = logging.getLogger(__name__)
 
 MODEL_PATH = os.getenv(
     "DEMUCS_ONNX_PATH",
-    str(Path(__file__).resolve().parents[1] / "models" / "htdemucs.onnx"),
+    None,
 )
+
+def _resolve_model_path() -> str:
+    if MODEL_PATH and os.path.exists(MODEL_PATH):
+        return MODEL_PATH
+    base = Path(__file__).resolve().parents[1] / "models"
+    # Prefer quantized (int8) if available, then fp16, then fp32
+    for name in ("htdemucs-dft-int8-fp16-final.onnx", "htdemucs_fp16weights.onnx", "htdemucs.onnx"):
+        p = base / name
+        if p.exists():
+            return str(p)
+    return str(base / "htdemucs.onnx")
 
 STEM_NAMES = ["vocals", "drums", "bass", "other"]
 CHUNK_SIZE = 343980
@@ -26,10 +37,11 @@ OVERLAP = 0.25
 
 
 def _load_model() -> ort.InferenceSession | None:
-    if not os.path.exists(MODEL_PATH):
+    path = _resolve_model_path()
+    if not os.path.exists(path):
         return None
     try:
-        return ort.InferenceSession(MODEL_PATH, providers=["CPUExecutionProvider"])
+        return ort.InferenceSession(path, providers=["CPUExecutionProvider"])
     except Exception:
         logger.exception("failed to load onnx demucs")
         return None
