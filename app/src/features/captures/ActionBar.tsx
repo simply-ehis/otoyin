@@ -25,7 +25,7 @@ export function CapturesActionBar({
 	onUpload,
 	audioClip,
 }: {
-	sttModel: string;
+	sttModel?: string;
 	llmModel: string;
 	session: UseCaptureRecordingSessionResult;
 	readiness: DictationReadiness;
@@ -38,7 +38,9 @@ export function CapturesActionBar({
 			<p className="flex items-center gap-2 text-xs text-muted-foreground">
 				<span aria-hidden="true" className="size-1.5 rounded-full bg-accent" />
 				{t("captures.header.modelSummary", {
-					stt: sttModel.charAt(0).toUpperCase() + sttModel.slice(1),
+					stt: sttModel
+						? sttModel.charAt(0).toUpperCase() + sttModel.slice(1)
+						: "—",
 					llm: llmModel,
 				})}
 			</p>

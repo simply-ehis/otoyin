@@ -1,5 +1,5 @@
 import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/ui/button";
 import { Textarea } from "@/ui/input";
@@ -29,6 +29,37 @@ const SAMPLE_LINES: StoryLine[] = [
 	{ id: "2", voice: "hero", text: "Who goes there?", tone: "question-en" },
 	{ id: "3", voice: "narrator", text: "No one answered.", tone: "sigh" },
 ];
+
+/**
+ * insertStoryToken — insert `token` at `caret` in `text`, normalising
+ * surrounding whitespace so tokens never glue to adjacent words.
+ */
+function insertStoryToken(text: string, caret: number, token: string) {
+	const before = text.slice(0, caret);
+	const after = text.slice(caret);
+	const left = before && !/\s$/.test(before) ? `${before} ` : before;
+	const right = after && !/^\s/.test(after) ? ` ${after}` : after;
+	return left + token + right;
+}
+
+/**
+ * applyInlineVoice — wrap `text[start:end]` with `[voice:profileId]` ...
+ * `[voice:default]`, or just insert the open token if nothing is selected.
+ */
+function applyInlineVoice(
+	text: string,
+	start: number,
+	end: number,
+	profileId: string,
+) {
+	const before = text.slice(0, start);
+	const selected = text.slice(start, end);
+	const after = text.slice(end);
+	const token = `[voice:${profileId}]`;
+	return selected
+		? `${before}${token}${selected}[voice:default]${after}`
+		: `${before}${token}${after}`;
+}
 
 export function StoryEditor() {
 	const [lines, setLines] = useState<StoryLine[]>(SAMPLE_LINES);
@@ -71,6 +102,43 @@ export function StoryEditor() {
 		setCast((prev) => ({ ...prev, [name]: "" }));
 	};
 
+	const insertToken = useCallback((lineId: string, token: string) => {
+		setLines((prev) =>
+			prev.map((l) => {
+				if (l.id !== lineId) {
+					return l;
+				}
+				const el = document.getElementById(
+					`story-textarea-${lineId}`,
+				) as HTMLTextAreaElement | null;
+				const caret = el?.selectionStart ?? l.text.length;
+				return {
+					...l,
+					text: insertStoryToken(l.text, caret, token),
+				};
+			}),
+		);
+	}, []);
+
+	const wrapVoice = useCallback((lineId: string, profileId: string) => {
+		setLines((prev) =>
+			prev.map((l) => {
+				if (l.id !== lineId) {
+					return l;
+				}
+				const el = document.getElementById(
+					`story-textarea-${lineId}`,
+				) as HTMLTextAreaElement | null;
+				const start = el?.selectionStart ?? 0;
+				const end = el?.selectionEnd ?? l.text.length;
+				return {
+					...l,
+					text: applyInlineVoice(l.text, start, end, profileId),
+				};
+			}),
+		);
+	}, []);
+
 	return (
 		<div className="flex h-full min-h-0 flex-col overflow-hidden">
 			<div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3">
@@ -100,7 +168,10 @@ export function StoryEditor() {
 									placeholder="profile id"
 									value={profile}
 									onChange={(e) =>
-										setCast((prev) => ({ ...prev, [name]: e.target.value }))
+										setCast((prev) => ({
+											...prev,
+											[name]: e.target.value,
+										}))
 									}
 								/>
 							</li>
@@ -131,7 +202,9 @@ export function StoryEditor() {
 										className="rounded border border-border bg-background px-2 py-1 text-xs"
 										value={line.voice}
 										onChange={(e) =>
-											updateLine(line.id, { voice: e.target.value })
+											updateLine(line.id, {
+												voice: e.target.value,
+											})
 										}
 									>
 										{Object.keys(cast).map((c) => (
@@ -144,7 +217,9 @@ export function StoryEditor() {
 										className="rounded border border-border bg-background px-2 py-1 text-xs"
 										value={line.tone ?? ""}
 										onChange={(e) =>
-											updateLine(line.id, { tone: e.target.value || undefined })
+											updateLine(line.id, {
+												tone: e.target.value || undefined,
+											})
 										}
 									>
 										<option value="">no tone</option>
@@ -164,13 +239,42 @@ export function StoryEditor() {
 									</button>
 								</div>
 								<Textarea
+									id={`story-textarea-${line.id}`}
 									value={line.text}
 									onChange={(e) =>
-										updateLine(line.id, { text: e.target.value })
+										updateLine(line.id, {
+											text: e.target.value,
+										})
 									}
 									placeholder="Line text…"
 									className="min-h-[60px]"
 								/>
+								<div className="mt-1 flex flex-wrap gap-1">
+									{TONE_TAGS.map((t) => (
+										<button
+											key={t}
+											type="button"
+											aria-label={`Tone: ${t}`}
+											title={`[${t}]`}
+											onClick={() => insertToken(line.id, `[${t}]`)}
+											className="rounded border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-foreground hover:bg-muted"
+										>
+											[{t}]
+										</button>
+									))}
+									{Object.keys(cast).map((c) => (
+										<button
+											key={c}
+											type="button"
+											aria-label={`Voice: ${c}`}
+											title={`[voice:${c}]`}
+											onClick={() => wrapVoice(line.id, c)}
+											className="rounded border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-foreground hover:bg-muted"
+										>
+											[voice:{c}]
+										</button>
+									))}
+								</div>
 								<p className="mt-1 text-[10px] text-muted-foreground">
 									Inline token: [voice:{line.voice}]
 									{line.tone ? ` [${line.tone}]` : ""}

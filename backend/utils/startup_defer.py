@@ -334,53 +334,86 @@ async def ensure_engines_registered() -> None:
         if _engines_event.is_set():
             return
         try:
-            from ..backends import get_llm_backend_for_engine, get_stt_backend, get_tts_backend, get_vc_backend
+            from ..backends import (
+                get_llm_backend_for_engine,
+                get_stt_backend,
+                get_tts_backend,
+                get_vc_backend,
+            )
+            from ..backends.configs import engine_needed
             from ..utils.model_lifecycle import lifecycle_manager
 
+            # TTS: only register if at least one TTS model is downloaded.
+            # engine_needed() checks the download manifest without importing
+            # any backend modules — cheaper than is_engine_cached() which
+            # instantiates the backend to probe _is_model_cached().
             try:
-                tts = get_tts_backend()
-                if not check_memory("TTS engine registration", required_mb=200):
-                    logger.warning("TTS registration skipped — low memory (%dMB free)", available_mb())
+                if any(engine_needed(e) for e in ("kokoro", "pocket_tts", "moss_tts_nano", "kitten_tts", "qwen3_tts", "bark_small", "zonos_gguf", "parler_tts_gguf", "voxcpm2", "fish_speech_s2")):
+                    tts = get_tts_backend()
+                    if not check_memory("TTS engine registration", required_mb=200):
+                        logger.warning("TTS registration skipped — low memory (%dMB free)", available_mb())
+                    else:
+                        lifecycle_manager.register("tts", tts.is_loaded, lambda: tts.unload_model())
                 else:
-                    lifecycle_manager.register("tts", tts.is_loaded, lambda: tts.unload_model())
+                    logger.debug("TTS backend not registered — no TTS models downloaded")
             except Exception:
                 logger.debug("TTS backend not registered (no model available)", exc_info=True)
 
+            # STT: only register whisper if a whisper-model config is downloaded.
             try:
-                stt = get_stt_backend()
-                lifecycle_manager.register("whisper", stt.is_loaded, lambda: stt.unload_model())
+                if engine_needed("whisper"):
+                    stt = get_stt_backend()
+                    lifecycle_manager.register("whisper", stt.is_loaded, lambda: stt.unload_model())
+                else:
+                    logger.debug("STT backend not registered — no STT models downloaded")
             except Exception:
                 logger.debug("STT backend not registered (no model available)", exc_info=True)
 
+            # LLM: only register gguf_llm if a GGUF model is downloaded.
             try:
-                llm = get_llm_backend_for_engine("gguf_llm")
-                lifecycle_manager.register("gguf_llm", llm.is_loaded, lambda: llm.unload_model())
+                if engine_needed("gguf_llm"):
+                    llm = get_llm_backend_for_engine("gguf_llm")
+                    lifecycle_manager.register("gguf_llm", llm.is_loaded, lambda: llm.unload_model())
+                else:
+                    logger.debug("LLM backend not registered — no LLM models downloaded")
             except Exception:
                 logger.debug("LLM backend not registered (no model available)", exc_info=True)
 
+            # VC engines: only register if a model for that engine is downloaded.
             try:
-                rvc_backend = get_vc_backend("rvc_onnx")
-                lifecycle_manager.register("rvc_onnx", rvc_backend.is_loaded, lambda: rvc_backend.unload_model())
+                if engine_needed("rvc_onnx"):
+                    rvc_backend = get_vc_backend("rvc_onnx")
+                    lifecycle_manager.register("rvc_onnx", rvc_backend.is_loaded, lambda: rvc_backend.unload_model())
+                else:
+                    logger.debug("RVC ONNX backend not registered — no RVC models downloaded")
             except Exception:
                 logger.debug("RVC ONNX backend not registered (no model available)", exc_info=True)
 
             try:
-                seed_vc_backend = get_vc_backend("seed_vc")
-                lifecycle_manager.register("seed_vc", seed_vc_backend.is_loaded, lambda: seed_vc_backend.unload_model())
+                if engine_needed("seed_vc"):
+                    seed_vc_backend = get_vc_backend("seed_vc")
+                    lifecycle_manager.register("seed_vc", seed_vc_backend.is_loaded, lambda: seed_vc_backend.unload_model())
+                else:
+                    logger.debug("Seed-VC backend not registered — no Seed-VC models downloaded")
             except Exception:
                 logger.debug("Seed-VC backend not registered (no model available)", exc_info=True)
 
+            # Music: only register stable_audio if a model is downloaded.
             try:
-                from ..backends.stable_audio_backend import stable_audio_backend
+                if engine_needed("stable_audio"):
+                    from ..backends.stable_audio_backend import stable_audio_backend
 
-                lifecycle_manager.register(
-                    "stable_audio",
-                    stable_audio_backend.is_loaded,
-                    lambda: stable_audio_backend.unload_model(),
-                )
+                    lifecycle_manager.register(
+                        "stable_audio",
+                        stable_audio_backend.is_loaded,
+                        lambda: stable_audio_backend.unload_model(),
+                    )
+                else:
+                    logger.debug("Stable Audio backend not registered — no music models downloaded")
             except Exception:
                 logger.debug("Stable Audio backend not registered (no model available)", exc_info=True)
 
+            # DeepFilter: service-level, not engine-config based — keep existing behavior.
             try:
                 from ..services.deepfilter_onnx import _is_session_loaded, unload_deepfilter
 

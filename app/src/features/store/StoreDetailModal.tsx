@@ -149,7 +149,7 @@ export const StoreDetailModal = memo(function StoreDetailModal({
 								License
 							</div>
 							<div className="mt-0.5 font-medium text-foreground">
-								{product.paid ? "Paid · one-time" : "Free · Open"}
+								Free · Open
 							</div>
 						</div>
 						<div className="rounded-lg border bg-secondary px-3 py-2">
@@ -242,7 +242,7 @@ export const StoreDetailModal = memo(function StoreDetailModal({
 					</div>
 
 					{/* why buy callout */}
-					{product.paid && !owned && !cached && (
+					{false && product.paid && !owned && !cached && (
 						<div className="rounded-lg border border-border bg-card p-3">
 							<div className="text-xs font-semibold text-foreground">
 								Why makers buy this

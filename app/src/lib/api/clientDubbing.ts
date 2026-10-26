@@ -110,6 +110,20 @@ export class DubbingMethods extends ContentMethods {
 			method: "DELETE",
 		});
 	}
+
+	/** Fetch real onsets + peaks for a dub job (backend /dubbing/analyze). */
+	async analyzeDubJob(job_id: string): Promise<{
+		onsets: number[];
+		peaks: number[];
+		duration: number;
+	}> {
+		return this.request(`/dubbing/analyze/${job_id}`, { method: "GET" });
+	}
+
+	/** Build a per-segment preview audio URL for a dub job. */
+	getDubSegmentAudioUrl(job_id: string, segmentId: number): string {
+		return `${this.getBaseUrl()}/dubbing/job/${job_id}/segment/${segmentId}/audio`;
+	}
 }
 
 export const dubbingClient = new DubbingMethods();

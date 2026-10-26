@@ -340,7 +340,8 @@ outes/models/download.py bark branch (gguf + per-voice pack_voice_npz), services
 - **Backend done (Week 1 equivalent):** `backend/routes/streaming_tts.py` (`POST /tts/stream` SSE, Kokoro `generate_stream` + batch fallback), `backend/routes/streaming_stt.py` (`POST /stt/stream/start|chunk|stop`, VAD-based segmentation).
 - **Backend done (Week 2 equivalent):** `ModelConfig` already has `preload_priority`, `cold_start_ms`, `warm_start_ms`, `streaming`, `execution_provider`; Kokoro ONNX + Moonshine streaming-small set `preload_priority=2` + timing; `backend/utils/startup_defer.py` preloads Kokoro + planner on startup.
 - **Backend done (this session):** general `ensure_models_preloaded()` added to `backend/utils/startup_defer.py` — iterates all model configs with `preload_priority > 0`, groups by engine (TTS/STT), loads in priority order (3→2→1), only loads cached models (never downloads); wired into `_run_startup` as Tier 3 (+6 s background task) in `backend/app.py`. Moonshine added as an available STT option (not forced default): `WhisperModelSize` type expanded with `moonshine-tiny`/`moonshine-base`/`moonshine-streaming-small` in `app/src/lib/api/types.ts`, exposed in `LiveTranscriptView.tsx` and `CapturesPage.tsx` model selectors. Default STT stays `whisper`/`tiny.en` so users can use any downloaded STT engine.
-- **Open:** frontend streaming playback (consume `/tts/stream` SSE), speed badges in UI (Fast/Medium/Slow from `warm_start_ms`), general `preload_priority`-based preloading beyond Kokoro+planner, effects trimming verification.
+- **Open:** speed badges in UI (Fast/Medium/Slow from `warm_start_ms`), general `preload_priority`-based preloading beyond Kokoro+planner, effects trimming verification.
+- **Frontend done (this session):** `app/src/lib/hooks/useStreamingTTS.ts` — wraps existing `streamTts` SSE client (`/tts/stream`) and `useStreamingAudioPlayer` Web Audio chunk player; exposes `start(text)`, `stop()`, `isPlaying`, `isLoading`, `error`, `audioPath`, `generationId`. Biome + typecheck clean.
 - **Tests:** 33 STT + tool_registry tests pass, ruff clean.
 
 ## Critical Flows
@@ -799,4 +800,14 @@ clean; `pytest` 303 passed across the model/download/audit suites;
 encoding + report-header gates clean; delete/scoped-quantize/integrity/
 partial-cleanup each verified with a targeted functional test. Docs:
 `docs/knowledge/91-app-folder-models-and-staged-startup.md`.
+
+### Phase 17 — VoiceStudio Port: Dub Timeline + Story Editor (2026-10-26, done)
+- **Goal:** Port VoiceStudio UX patterns into otoyin's Tauri app (heroicons-only, dark-first).
+- **DubTimeline.tsx** (`app/src/features/dubbing/DubTimeline.tsx`, new): drag-resize waveform timeline ported from VoiceStudio's dub-timeline.tsx. Canvas-based onsets + peaks rendering, pointer drag (move/resize-start/resize-end) with onset snapping, keyboard nav (Arrow focus, Delete, Enter edit mode, S snap-to-onset), overlap detection with visual warning, zoom 1x–16x, glass-panel surface. Interface: `segments: DubSegment[]`, `mediaDuration: number | undefined`, `selectedId: number | null`, `onSelect: (id: number | null) => void`, `onSegmentsChange`, `onSegmentUpdated`, `onPreviewSegment`.
+- **timeline.ts** (`app/src/lib/utils/timeline.ts`, new): ported pure math — `clampSegmentEdit`, `commitMoveResize`, `detectOverlaps`, `snapTime`, `snapCandidates`, `nearestOnset`, `visibleSegmentRange`, `formatTime`. DOM-free, unit-testable.
+- **clientDubbing.ts** (`app/src/lib/api/clientDubbing.ts`, edited): added `moveResizeDubSegment` (PATCH `/dubbing/segment/{id}`) + `deleteDubSegment` (DELETE `/dubbing/segment/{id}`).
+- **DubPage.tsx** (`app/src/features/dubbing/DubPage.tsx`, edited): replaced `useLocation({ from: "/dubbing" })` + `location.search.get("job")` with `new URL(window.location.href).searchParams.get("job")` to fix type error; removed unused `useLocation` import; wired `onSegmentUpdated` handler.
+- **StoryEditor.tsx** (`app/src/features/stories/StoryEditor.tsx`, edited): ported VoiceStudio's `insertStoryToken` (caret-aware tone/voice token insertion) + `applyInlineVoice` (selection-based `[voice:profileId]` wrapping); added icon-free tone tag + voice token buttons that insert at caret.
+- **Invariants honored:** heroicons only (no lucide), glass allowed on overlays/timeline surface only, `useLocation` search type fixed via native URLSearchParams.
+- **Verification:** `tsc --noEmit` clean for all touched files (remaining errors are pre-existing in unrelated files); `biome check` clean on all touched files.
 

@@ -27,7 +27,9 @@ export function snapTime(
 	let best: number | null = null;
 	let bestDist = Infinity;
 	for (const c of candidates) {
-		if (!Number.isFinite(c)) continue;
+		if (!Number.isFinite(c)) {
+			continue;
+		}
 		const d = Math.abs(c - t);
 		if (
 			d <= thresholdS &&
@@ -37,7 +39,9 @@ export function snapTime(
 			bestDist = d;
 		}
 	}
-	return best === null ? { time: t, candidate: null } : { time: best, candidate: best };
+	return best === null
+		? { time: t, candidate: null }
+		: { time: best, candidate: best };
 }
 
 /**
@@ -55,10 +59,18 @@ export function snapCandidates(params: {
 }): number[] {
 	const { onsets = [], prevEnd, nextStart, playhead, pxPerSec, t } = params;
 	const out: number[] = [];
-	for (const o of onsets) out.push(o);
-	if (prevEnd !== undefined) out.push(prevEnd);
-	if (nextStart !== undefined) out.push(nextStart);
-	if (playhead !== undefined) out.push(playhead);
+	for (const o of onsets) {
+		out.push(o);
+	}
+	if (prevEnd !== undefined) {
+		out.push(prevEnd);
+	}
+	if (nextStart !== undefined) {
+		out.push(nextStart);
+	}
+	if (playhead !== undefined) {
+		out.push(playhead);
+	}
 	if (
 		pxPerSec !== undefined &&
 		pxPerSec > 0 &&
@@ -102,7 +114,9 @@ export function clampSegmentEdit(
 		start = Math.max(minStart, Math.min(proposed.start, maxEnd - dur));
 		// Degenerate squeeze (neighbours closer than the segment is long):
 		// pin to the lower bound rather than producing start > end games.
-		if (start < minStart) start = minStart;
+		if (start < minStart) {
+			start = minStart;
+		}
 		end = start + dur;
 	} else if (mode === "start") {
 		start = Math.min(Math.max(proposed.start, minStart), seg.end - MIN_SEG_DUR);
@@ -161,13 +175,19 @@ export function detectOverlaps(
 	epsilon = 1e-6,
 ): Set<string> {
 	const flagged = new Set<string>();
-	if (segments.length < 2) return flagged;
-	const sorted = [...segments].sort((x, y) => x.start - y.start || x.end - y.end);
+	if (segments.length < 2) {
+		return flagged;
+	}
+	const sorted = [...segments].sort(
+		(x, y) => x.start - y.start || x.end - y.end,
+	);
 	const active: DubSegmentLike[] = [];
 	for (const cur of sorted) {
 		const filtered: DubSegmentLike[] = [];
 		for (const previous of active) {
-			if (previous.end > cur.start + epsilon) filtered.push(previous);
+			if (previous.end > cur.start + epsilon) {
+				filtered.push(previous);
+			}
 		}
 		for (const previous of filtered) {
 			flagged.add(String(previous.id));
@@ -208,7 +228,9 @@ export function visibleSegmentRange(
 	bufferS = 2,
 ): [number, number] {
 	const n = segments.length;
-	if (!n) return [0, 0];
+	if (!n) {
+		return [0, 0];
+	}
 	const t0 = viewStart - bufferS;
 	const t1 = viewEnd + bufferS;
 
@@ -217,19 +239,27 @@ export function visibleSegmentRange(
 		b = n;
 	while (a < b) {
 		const mid = (a + b) >> 1;
-		if (segments[mid].start < t0) a = mid + 1;
-		else b = mid;
+		if (segments[mid].start < t0) {
+			a = mid + 1;
+		} else {
+			b = mid;
+		}
 	}
 	let lo = a;
-	while (lo > 0 && segments[lo - 1].end > t0) lo -= 1;
+	while (lo > 0 && segments[lo - 1].end > t0) {
+		lo -= 1;
+	}
 
 	// hi: first segment that starts after t1
 	a = lo;
 	b = n;
 	while (a < b) {
 		const mid = (a + b) >> 1;
-		if (segments[mid].start <= t1) a = mid + 1;
-		else b = mid;
+		if (segments[mid].start <= t1) {
+			a = mid + 1;
+		} else {
+			b = mid;
+		}
 	}
 	return [lo, a];
 }
