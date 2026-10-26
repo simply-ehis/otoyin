@@ -194,3 +194,6 @@ tauri/src-tauri/Cargo.gen.toml
 # Pre-test backups (DBs + generations — restorable, never commit)
 backup-pre-test-*/
 .neon
+
+backend/models/*.onnx
+
