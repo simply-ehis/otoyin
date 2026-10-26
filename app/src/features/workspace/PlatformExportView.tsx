@@ -4,6 +4,7 @@ import {
 	FilmIcon,
 	MicrophoneIcon,
 	MusicalNoteIcon,
+	PhotoIcon,
 	SignalIcon,
 	WrenchIcon,
 } from "@heroicons/react/24/outline";
@@ -13,6 +14,7 @@ import { apiClient } from "@/lib/api/client";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/ui/button";
 import { Switch } from "@/ui/controls";
+import { Input } from "@/ui/input";
 import { Badge, Label, Separator, Spinner } from "@/ui/primitives";
 import { EmptyState, LoadingState, ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
@@ -55,6 +57,15 @@ function downloadBlob(blob: Blob, filename: string) {
 	URL.revokeObjectURL(url);
 }
 
+function stemFromPath(path: string): string {
+	return (
+		path
+			.split(/[\\/]/)
+			.pop()
+			?.replace(/\.[^/.]+$/, "") || "export"
+	);
+}
+
 export function PlatformExportView() {
 	const { toast } = useToast();
 	const [selectedPreset, setSelectedPreset] = useState("podcast");
@@ -62,6 +73,16 @@ export function PlatformExportView() {
 	const [fileName, setFileName] = useState("");
 	const [uploading, setUploading] = useState(false);
 	const [cleanup, setCleanup] = useState(false);
+	const [coverPath, setCoverPath] = useState<string | null>(null);
+	const [metadata, setMetadata] = useState({
+		title: "",
+		artist: "",
+		album: "",
+		genre: "",
+		year: "",
+		comment: "",
+		track_number: "",
+	});
 
 	const presetsQuery = useQuery({
 		queryKey: ["export-presets"],
@@ -71,19 +92,42 @@ export function PlatformExportView() {
 
 	const exportMut = useMutation({
 		mutationFn: () =>
-			apiClient.applyExportPreset(selectedPreset, audioPath, cleanup),
+			apiClient.applyExportPreset(selectedPreset, audioPath, cleanup, {
+				title: metadata.title || undefined,
+				artist: metadata.artist || undefined,
+				album: metadata.album || undefined,
+				genre: metadata.genre || undefined,
+				year: metadata.year || undefined,
+				comment: metadata.comment || undefined,
+				track_number: metadata.track_number || undefined,
+				cover_path: coverPath || undefined,
+			}),
 		onSuccess: (blob) => {
 			const preset = presetsQuery.data?.[selectedPreset];
 			const ext = preset?.format.toLowerCase() ?? "wav";
-			downloadBlob(
-				blob,
-				`${selectedPreset.toLowerCase().replace(/\s+/g, "_")}_export.${ext}`,
-			);
+			const baseName = stemFromPath(fileName) || selectedPreset;
+			downloadBlob(blob, `${baseName}_export.${ext}`);
 			toast({ title: `${preset?.name ?? selectedPreset} export complete` });
+			// Clear cover temp file reference after successful export
+			setCoverPath(null);
 		},
 		onError: (e: unknown) =>
 			toast({
 				title: "Export failed",
+				description: e instanceof Error ? e.message : String(e),
+				variant: "destructive",
+			}),
+	});
+
+	const coverMut = useMutation({
+		mutationFn: (file: File) => apiClient.uploadExportCover(file),
+		onSuccess: (result) => {
+			setCoverPath(result.cover_path);
+			toast({ title: "Cover image ready" });
+		},
+		onError: (e: unknown) =>
+			toast({
+				title: "Cover upload failed",
 				description: e instanceof Error ? e.message : String(e),
 				variant: "destructive",
 			}),
@@ -95,6 +139,11 @@ export function PlatformExportView() {
 			const { audio_path } = await apiClient.dspUpload(file, file.name);
 			setAudioPath(audio_path);
 			setFileName(file.name);
+			// Auto-fill title from filename
+			setMetadata((prev) => ({
+				...prev,
+				title: prev.title || stemFromPath(file.name),
+			}));
 			toast({ title: `Uploaded: ${file.name}` });
 		} catch (err) {
 			toast({
@@ -107,9 +156,15 @@ export function PlatformExportView() {
 		}
 	}
 
+	async function handleCoverFile(file: File) {
+		await coverMut.mutateAsync(file);
+	}
+
 	const presetEntries = presetsQuery.data
 		? Object.entries(presetsQuery.data).map(([key, p]) => ({ key, ...p }))
 		: [];
+
+	const hasMetadata = Object.values(metadata).some((v) => v !== "");
 
 	return (
 		<div className="flex h-full max-w-2xl flex-col gap-4 overflow-y-auto p-4">
@@ -213,20 +268,174 @@ export function PlatformExportView() {
 				/>
 			</div>
 
+			{coverPath ? (
+				<div className="flex items-center gap-2 p-2 rounded-md border border-border bg-secondary">
+					<PhotoIcon
+						className="size-4 text-muted-foreground"
+						aria-hidden="true"
+					/>
+					<span className="text-xs text-muted-foreground truncate max-w-[200px]">
+						Cover: {coverPath.split(/[\\/]/).pop()}
+					</span>
+					<Button
+						variant="destructive"
+						size="sm"
+						onClick={() => {
+							setCoverPath(null);
+						}}
+						title="Remove cover"
+					>
+						Remove
+					</Button>
+				</div>
+			) : null}
+
+			<div className="space-y-1">
+				<Label>Cover image (optional)</Label>
+				<Input
+					type="file"
+					accept="image/png,image/jpeg,image/webp"
+					onChange={(e) => {
+						const f = e.target.files?.[0];
+						if (f) {
+							void handleCoverFile(f);
+							e.target.value = "";
+						}
+					}}
+					className="h-9"
+				/>
+			</div>
+
+			<div className="space-y-1">
+				<Label>Metadata (optional)</Label>
+				<p className="text-xs text-muted-foreground">
+					Embedded in MP3, M4A/M4B, FLAC, OGG, OPUS exports. Ignored for
+					WAV/AIFF.
+				</p>
+				<div className="grid grid-cols-2 gap-2">
+					<div>
+						<Label className="text-xs text-muted-foreground block mb-1">
+							Title
+						</Label>
+						<Input
+							value={metadata.title}
+							onChange={(e) =>
+								setMetadata((prev) => ({ ...prev, title: e.target.value }))
+							}
+							placeholder="Track title"
+							className="h-7"
+						/>
+					</div>
+					<div>
+						<Label className="text-xs text-muted-foreground block mb-1">
+							Artist
+						</Label>
+						<Input
+							value={metadata.artist}
+							onChange={(e) =>
+								setMetadata((prev) => ({ ...prev, artist: e.target.value }))
+							}
+							placeholder="Artist name"
+							className="h-7"
+						/>
+					</div>
+					<div>
+						<Label className="text-xs text-muted-foreground block mb-1">
+							Album
+						</Label>
+						<Input
+							value={metadata.album}
+							onChange={(e) =>
+								setMetadata((prev) => ({ ...prev, album: e.target.value }))
+							}
+							placeholder="Album name"
+							className="h-7"
+						/>
+					</div>
+					<div>
+						<Label className="text-xs text-muted-foreground block mb-1">
+							Genre
+						</Label>
+						<Input
+							value={metadata.genre}
+							onChange={(e) =>
+								setMetadata((prev) => ({ ...prev, genre: e.target.value }))
+							}
+							placeholder="Genre"
+							className="h-7"
+						/>
+					</div>
+					<div>
+						<Label className="text-xs text-muted-foreground block mb-1">
+							Year
+						</Label>
+						<Input
+							type="number"
+							value={metadata.year}
+							onChange={(e) =>
+								setMetadata((prev) => ({ ...prev, year: e.target.value }))
+							}
+							placeholder="2024"
+							className="h-7"
+						/>
+					</div>
+					<div>
+						<Label className="text-xs text-muted-foreground block mb-1">
+							Track #
+						</Label>
+						<Input
+							type="number"
+							value={metadata.track_number}
+							onChange={(e) =>
+								setMetadata((prev) => ({
+									...prev,
+									track_number: e.target.value,
+								}))
+							}
+							placeholder="1"
+							className="h-7"
+						/>
+					</div>
+				</div>
+				<div>
+					<Label className="text-xs text-muted-foreground block mb-1">
+						Comment
+					</Label>
+					<Input
+						value={metadata.comment}
+						onChange={(e) =>
+							setMetadata((prev) => ({ ...prev, comment: e.target.value }))
+						}
+						placeholder="Optional comment"
+						className="h-7"
+					/>
+				</div>
+				{hasMetadata ? (
+					<p className="text-[10px] text-muted-foreground mt-1">
+						{Object.entries(metadata)
+							.filter(([, v]) => v !== "")
+							.map(([k, v]) => `${k}: ${v}`)
+							.join(" · ")}
+					</p>
+				) : null}
+			</div>
+
 			<div className="flex items-center justify-between gap-2">
 				<div className="space-y-0.5">
-					<span className="text-xs font-medium text-foreground">
-						Neural cleanup
-					</span>
-					<p className="text-xs text-muted-foreground">
-						DeepFilterNet denoising before export.
-					</p>
+					<div className="flex items-center gap-1">
+						<span className="text-xs font-medium text-foreground">
+							Neural cleanup
+						</span>
+						<p className="text-xs text-muted-foreground">
+							DeepFilterNet denoising before export.
+						</p>
+					</div>
+					<Switch
+						checked={cleanup}
+						onCheckedChange={setCleanup}
+						label="Enable neural cleanup"
+					/>
 				</div>
-				<Switch
-					checked={cleanup}
-					onCheckedChange={setCleanup}
-					label="Enable neural cleanup"
-				/>
 			</div>
 
 			<div>

@@ -119,11 +119,6 @@ def get_torch_device(
         allow_mps: Allow MPS (Apple Silicon). If False, MPS falls back to CPU.
         force_cpu_on_mac: Force CPU on macOS regardless of GPU availability.
     """
-    if force_cpu_on_mac and platform.system() == "Darwin":
-        return "cpu"
-
-    import torch
-
     if torch.cuda.is_available():
         return "cuda"
 

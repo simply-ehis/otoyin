@@ -49,13 +49,6 @@ def _read_free_mb() -> int:
                     return int(line.split("=", 1)[1]) // 1024  # KB → MB
         except Exception:
             logger.debug("suppressed exception in memory.py:50", exc_info=True)
-    try:
-        with open("/proc/meminfo") as f:
-            for line in f:
-                if line.startswith("MemAvailable:"):
-                    return int(line.split()[1]) // 1024  # kB → MB
-    except FileNotFoundError:
-        pass
     return -1  # unknown
 
 

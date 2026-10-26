@@ -198,12 +198,27 @@ export class StoriesBMethods extends StoriesAMethods {
 		presetName: string,
 		audioPath: string,
 		cleanup = false,
+		metadata?: {
+			title?: string;
+			artist?: string;
+			album?: string;
+			genre?: string;
+			year?: string;
+			comment?: string;
+			track_number?: string;
+			cover_path?: string;
+		},
 	): Promise<Blob> {
 		const url = `${this.getBaseUrl()}/export/apply-preset`;
 		const response = await fetch(url, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ preset_name: presetName, audio_path: audioPath, cleanup }),
+			body: JSON.stringify({
+				preset_name: presetName,
+				audio_path: audioPath,
+				cleanup,
+				...metadata,
+			}),
 		});
 		if (!response.ok) {
 			const error = await response
@@ -217,6 +232,25 @@ export class StoriesBMethods extends StoriesAMethods {
 			);
 		}
 		return response.blob();
+	}
+
+	async uploadExportCover(file: File): Promise<{ cover_path: string; mime: string }> {
+		const form = new FormData();
+		form.append("file", file);
+		const res = await fetch(`${this.getBaseUrl()}/export/cover`, {
+			method: "POST",
+			body: form,
+		});
+		if (!res.ok) {
+			const error = await res.json().catch(() => ({ detail: res.statusText }));
+			throw new Error(
+				formatErrorDetail(
+					error.detail,
+					`HTTP error! status: ${res.status}`,
+				),
+			);
+		}
+		return res.json();
 	}
 
 	async runRecipe(

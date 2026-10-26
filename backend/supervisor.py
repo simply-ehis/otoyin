@@ -101,45 +101,35 @@ def _check_health(host: str, port: int) -> bool:
 def _get_process_memory_mb() -> float | None:
     """Get current process RSS in MB (cross-platform)."""
     try:
-        if sys.platform == "win32":
-            import ctypes
+        import ctypes
 
-            kernel32 = ctypes.windll.kernel32
-            process_query_limited = 0x1000
-            handle = kernel32.OpenProcess(process_query_limited, False, os.getpid())
-            if not handle:
-                return None
-            try:
-                # GetProcessMemoryInfo requires psapi
-                class ProcessMemoryCounters(ctypes.Structure):
-                    _fields_ = [
-                        ("cb", ctypes.c_ulong),
-                        ("PageFaultCount", ctypes.c_ulong),
-                        ("PeakWorkingSetSize", ctypes.c_size_t),
-                        ("WorkingSetSize", ctypes.c_size_t),
-                        ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
-                        ("QuotaPagedPoolUsage", ctypes.c_size_t),
-                        ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
-                        ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
-                        ("PagefileUsage", ctypes.c_size_t),
-                        ("PeakPagefileUsage", ctypes.c_size_t),
-                    ]
+        kernel32 = ctypes.windll.kernel32
+        process_query_limited = 0x1000
+        handle = kernel32.OpenProcess(process_query_limited, False, os.getpid())
+        if not handle:
+            return None
+        try:
+            class ProcessMemoryCounters(ctypes.Structure):
+                _fields_ = [
+                    ("cb", ctypes.c_ulong),
+                    ("PageFaultCount", ctypes.c_ulong),
+                    ("PeakWorkingSetSize", ctypes.c_size_t),
+                    ("WorkingSetSize", ctypes.c_size_t),
+                    ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+                    ("QuotaPagedPoolUsage", ctypes.c_size_t),
+                    ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+                    ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+                    ("PagefileUsage", ctypes.c_size_t),
+                    ("PeakPagefileUsage", ctypes.c_size_t),
+                ]
 
-                counters = ProcessMemoryCounters()
-                counters.cb = ctypes.sizeof(counters)
-                psapi = ctypes.windll.psapi
-                if psapi.GetProcessMemoryInfo(handle, ctypes.byref(counters), counters.cb):
-                    return counters.WorkingSetSize / (1024 * 1024)
-            finally:
-                kernel32.CloseHandle(handle)
-        else:
-            import resource
-
-            usage = resource.getrusage(resource.RUSAGE_SELF)
-            # ru_maxrss is in KB on Linux, bytes on macOS
-            if sys.platform == "darwin":
-                return usage.ru_maxrss / (1024 * 1024)
-            return usage.ru_maxrss / 1024
+            counters = ProcessMemoryCounters()
+            counters.cb = ctypes.sizeof(counters)
+            psapi = ctypes.windll.psapi
+            if psapi.GetProcessMemoryInfo(handle, ctypes.byref(counters), counters.cb):
+                return counters.WorkingSetSize / (1024 * 1024)
+        finally:
+            kernel32.CloseHandle(handle)
     except Exception:
         logger.debug("Memory measurement failed", exc_info=True)
     return None

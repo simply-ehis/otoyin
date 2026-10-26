@@ -16,10 +16,8 @@ logger = logging.getLogger(__name__)
 BackendType = Literal["onnx", "pytorch"]
 
 
-def get_windows_version() -> tuple[int, int, int] | None:
-    """Return (major, minor, build) for Windows, or None if not Windows."""
-    if platform.system() != "Windows":
-        return None
+def get_windows_version() -> tuple[int, int, int]:
+    """Return (major, minor, build) for Windows."""
     ver = sys.getwindowsversion()
     return (ver.major, ver.minor, ver.build)
 
@@ -61,46 +59,30 @@ def has_cuda_onnx() -> bool:
 
 
 def has_coreml_onnx() -> bool:
-    """Check if CoreML execution provider is available in ONNX Runtime."""
-    return "CoreMLExecutionProvider" in _detect_onnx_providers()
+    """CoreML is macOS-only; not available on Windows."""
+    return False
 
 
 def _detect_gpu_name() -> str | None:
-    """Best-effort GPU detection via WMI/dxdiag (Windows) or system_profiler (macOS)."""
+    """Best-effort GPU detection via PowerShell (Windows)."""
     try:
-        if is_macos():
-            import subprocess
+        import subprocess
 
-            result = run_hidden(
-                ["system_profiler", "SPDisplaysDataType"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
-            for line in result.stdout.splitlines():
-                if "Chipset Model" in line or "GPU" in line:
-                    name = line.split(":")[-1].strip()
-                    if name and name != "Name":
-                        return name
-        else:
-            import subprocess
-
-            # PowerShell Get-CimInstance — wmic is deprecated on Windows 11 24H2+
-            result = run_hidden(
-                [
-                    "powershell",
-                    "-NoProfile",
-                    "-Command",
-                    "Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name",
-                ],
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
-            for line in result.stdout.strip().splitlines():
-                name = line.strip()
-                if name:
-                    return name
+        result = run_hidden(
+            [
+                "powershell",
+                "-NoProfile",
+                "-Command",
+                "Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        for line in result.stdout.strip().splitlines():
+            name = line.strip()
+            if name:
+                return name
     except Exception:
         logger.debug("GPU detection failed", exc_info=True)
     return None
@@ -148,8 +130,6 @@ def log_platform_info() -> None:
             os_label = f"Windows {'11' if ver[2] >= 22000 else '10'} (build {ver[2]})"
         else:
             os_label = f"Windows {release}"
-    elif system == "Darwin":
-        os_label = f"macOS {release} ({machine})"
     else:
         os_label = f"{system} {release}"
 

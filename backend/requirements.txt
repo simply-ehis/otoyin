@@ -89,3 +89,6 @@ psutil>=5.9.0
 
 # At-rest secret encryption (Fernet + Ed25519)
 cryptography>=41.0.0
+
+# Audio metadata (ID3, MP4, Vorbis comments) for export tagging
+mutagen>=1.47.0

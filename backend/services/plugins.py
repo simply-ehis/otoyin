@@ -108,31 +108,14 @@ class PluginInfo:
 
 
 def _scan_vst3_paths() -> list[str]:
-    system = platform.system()
-    if system == "Windows":
-        return [
-            os.environ.get("VST3_USER_PATH", str(Path.home() / "Documents" / "VST3")),
-            os.environ.get("VST3_SYSTEM_PATH", "C:\\Program Files\\Common Files\\VST3"),
-            "C:\\Program Files\\Steinberg\\VST3",
-        ]
-    if system == "Darwin":
-        return [
-            os.path.expanduser("~/Library/Audio/Plug-Ins/VST3"),
-            "/Library/Audio/Plug-Ins/VST3",
-        ]
     return [
-        os.path.expanduser("~/.vst3"),
-        "/usr/lib/vst3",
-        "/usr/local/lib/vst3",
+        os.environ.get("VST3_USER_PATH", str(Path.home() / "Documents" / "VST3")),
+        os.environ.get("VST3_SYSTEM_PATH", "C:\\Program Files\\Common Files\\VST3"),
+        "C:\\Program Files\\Steinberg\\VST3",
     ]
 
 
 def _scan_au_paths() -> list[str]:
-    if platform.system() == "Darwin":
-        return [
-            os.path.expanduser("~/Library/Audio/Plug-Ins/Components"),
-            "/Library/Audio/Plug-Ins/Components",
-        ]
     return []
 
 

@@ -363,6 +363,12 @@ outes/models/download.py bark branch (gguf + per-voice pack_voice_npz), services
 - **Icons:** No Lucide icons found (heroicons only, per project rules).
 - **Verification:** Biome lint/format clean, TypeScript clean on all changed files.
 
+## Export Metadata Improvements (this session)
+- **Backend:** `backend/services/audio_metadata.py` — new service for reading/writing audio metadata (ID3 for MP3, MP4 atoms for M4A/M4B, Vorbis comments for FLAC/OGG/OPUS). Supports title, artist, album, genre, year, comment, track number, and cover art (APIC/covr/picture).
+- **Backend:** `backend/routes/platform_export.py` — `ApplyPresetRequest` extended with `title`, `artist`, `album`, `genre`, `year`, `comment`, `track_number` fields; new `POST /export/cover` endpoint for cover image upload; `apply_export_preset` now writes metadata after conversion and uses source filename (`{stem}_export.{ext}`) instead of generic preset name; `mutagen>=1.47.0` added to `backend/requirements.txt`.
+- **Frontend:** `app/src/features/workspace/PlatformExportView.tsx` — metadata editing form (title, artist, album, genre, year, track #, comment), cover image upload/remove, source-based export filename, preset-dependent metadata hint (ignored for WAV/AIFF).
+- **Frontend:** `app/src/lib/api/clientStoriesB.ts` — `applyExportPreset` accepts optional metadata fields; new `uploadExportCover(file)` method.
+
 ## Critical Flows
 
 ### TTS Generation Flow
