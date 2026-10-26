@@ -1,14 +1,24 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import { Button } from "@/ui/button";
 import { Spinner } from "@/ui/primitives";
+
+interface StemInfo {
+	name: string;
+	fname: string;
+	peaks?: number[];
+	gain: number;
+	muted: boolean;
+}
 
 export function StemSeparationPage() {
 	const [file, setFile] = useState<File | null>(null);
 	const [busy, setBusy] = useState(false);
 	const [result, setResult] = useState<{ job_id: string; stems: Record<string, string> } | null>(null);
+	const [stems, setStems] = useState<StemInfo[]>([]);
 	const [error, setError] = useState<string | null>(null);
-	const [status, setStatus] = useState<{ demucs_available: boolean } | null>(null);
+	const [status, setStatus] = useState<{ demucs_available: boolean; model_cached?: boolean } | null>(null);
+	const [vocalSplit, setVocalSplit] = useState(false);
 
 	const baseUrl = apiClient.getBaseUrl();
 
@@ -21,11 +31,37 @@ export function StemSeparationPage() {
 		}
 	};
 
+	const computePeaks = async (url: string): Promise<number[]> => {
+		try {
+			const res = await fetch(url);
+			const buf = await res.arrayBuffer();
+			const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+			const audio = await ctx.decodeAudioData(buf);
+			const data = audio.getChannelData(0);
+			const numBars = 120;
+			const step = Math.floor(data.length / numBars);
+			const peaks: number[] = [];
+			for (let i = 0; i < numBars; i++) {
+				let max = 0;
+				for (let j = 0; j < step; j++) {
+					const v = Math.abs(data[i * step + j] || 0);
+					if (v > max) max = v;
+				}
+				peaks.push(max);
+			}
+			await ctx.close();
+			return peaks;
+		} catch {
+			return [];
+		}
+	};
+
 	const separate = async () => {
 		if (!file) return;
 		setBusy(true);
 		setError(null);
 		setResult(null);
+		setStems([]);
 		try {
 			const fd = new FormData();
 			fd.append("file", file);
@@ -37,12 +73,32 @@ export function StemSeparationPage() {
 				const j = await r.json().catch(() => ({}));
 				throw new Error(j.detail || "separation failed");
 			}
-			setResult(await r.json());
+			const res = await r.json();
+			setResult(res);
+			const stemList: StemInfo[] = [];
+			for (const [name, fname] of Object.entries(res.stems as Record<string, string>)) {
+				const url = `${baseUrl}/stems/${res.job_id}/${fname}`;
+				const peaks = await computePeaks(url);
+				stemList.push({ name, fname, peaks, gain: 1, muted: false });
+			}
+			setStems(stemList);
 		} catch (e) {
 			setError((e as Error).message);
 		} finally {
 			setBusy(false);
 		}
+	};
+
+	const toggleMute = (name: string) => {
+		setStems((prev) =>
+			prev.map((s) => (s.name === name ? { ...s, muted: !s.muted } : s)),
+		);
+	};
+
+	const setGain = (name: string, gain: number) => {
+		setStems((prev) =>
+			prev.map((s) => (s.name === name ? { ...s, gain } : s)),
+		);
 	};
 
 	return (
@@ -63,7 +119,8 @@ export function StemSeparationPage() {
 			)}
 			{status && (
 				<p className="text-xs text-muted-foreground">
-					demucs: {status.demucs_available ? "available" : "not installed"}
+					demucs: {status.demucs_available ? "available" : "not installed"}{" "}
+					{status.model_cached !== undefined && `· model ${status.model_cached ? "cached" : "not downloaded"}`}
 				</p>
 			)}
 
@@ -74,47 +131,81 @@ export function StemSeparationPage() {
 					onChange={(e) => setFile(e.target.files?.[0] ?? null)}
 					className="block w-full text-sm text-muted-foreground"
 				/>
-				<Button size="sm" disabled={!file || busy} onClick={separate}>
-					{busy ? (
-						<>
-							<Spinner size="xs" /> Separating…
-						</>
-					) : (
-						"Separate stems"
-					)}
-				</Button>
+				<div className="flex gap-2">
+					<Button size="sm" disabled={!file || busy} onClick={separate}>
+						{busy ? (
+							<>
+								<Spinner size="xs" /> Separating…
+							</>
+						) : (
+							"Separate stems"
+						)}
+					</Button>
+					<label className="flex items-center gap-1 text-xs text-muted-foreground">
+						<input
+							type="checkbox"
+							checked={vocalSplit}
+							onChange={(e) => setVocalSplit(e.target.checked)}
+						/>
+						Split vocals (lead/backing)
+					</label>
+				</div>
 			</div>
 
 			{error && (
 				<p className="text-sm text-destructive">{error}</p>
 			)}
 
-			{result && (
-				<div className="space-y-3">
+			{result && stems.length > 0 && (
+				<div className="space-y-4">
 					<p className="text-sm font-medium text-foreground">
 						Stems ready (job {result.job_id})
 					</p>
-					<ul className="space-y-2">
-						{Object.entries(result.stems).map(([name, fname]) => (
-							<li key={name} className="flex items-center gap-3">
-								<span className="w-20 text-sm font-medium text-foreground">
-									{name}
-								</span>
-								<audio
-									controls
-									src={`${baseUrl}/stems/${result.job_id}/${fname}`}
-									className="h-8"
-								/>
-								<a
-									href={`${baseUrl}/stems/${result.job_id}/${fname}`}
-									download={fname}
-									className="text-xs text-primary underline"
-								>
-									Download
-								</a>
-							</li>
-						))}
-					</ul>
+					{stems.map((s) => (
+						<div key={s.name} className="flex items-center gap-3 rounded-lg border border-border bg-secondary/40 p-2">
+							<span className="w-20 text-sm font-medium text-foreground capitalize">
+								{s.name}
+							</span>
+							<canvas
+								width={240}
+								height={40}
+								ref={(el) => {
+									if (!el || !s.peaks?.length) return;
+									const ctx = el.getContext("2d");
+									if (!ctx) return;
+									ctx.clearRect(0, 0, 240, 40);
+									const max = Math.max(...s.peaks, 0.01);
+									const barW = 240 / s.peaks.length;
+									ctx.fillStyle = s.muted ? "#666" : "#a78bfa";
+									s.peaks.forEach((p, i) => {
+										const h = (p / max) * 36;
+										ctx.fillRect(i * barW, 20 - h / 2, barW - 1, h);
+									});
+								}}
+								className="rounded"
+							/>
+							<input
+								type="range"
+								min={0}
+								max={2}
+								step={0.01}
+								value={s.gain}
+								onChange={(e) => setGain(s.name, parseFloat(e.target.value))}
+								className="w-24"
+								disabled={s.muted}
+							/>
+							<Button size="sm" variant="ghost" onClick={() => toggleMute(s.name)}>
+								{s.muted ? "Unmute" : "Mute"}
+							</Button>
+							<a
+								href={`${baseUrl}/stems/${result.job_id}/${s.fname}`}
+								download={s.fname}
+								className="text-xs text-primary underline"
+							>
+								Download
+							</a>
+						</div>
+					))}
 				</div>
 			)}
 		</div>
