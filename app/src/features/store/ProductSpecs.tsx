@@ -8,6 +8,7 @@ import type { MarketplaceProduct, ModelStatus } from "@/lib/api/types";
 import { useRegionCurrency } from "@/lib/regionCurrency";
 import { Button } from "@/ui/button";
 import { DialogDescription, DialogHeader, DialogTitle } from "@/ui/dialog";
+import { Badge } from "@/ui/primitives";
 import { CATEGORY_LABELS, formatPrice, formatSize } from "./storeUtils";
 
 interface Props {
@@ -91,6 +92,38 @@ export function ProductSpecs({
 					<span className="text-xs text-muted-foreground">
 						{formatSize(model.size_mb)} on disk
 					</span>
+				)}
+				{model?.warm_start_ms && model.warm_start_ms > 0 && (
+					<Badge
+						tone={
+							model.warm_start_ms < 500
+								? "success"
+								: model.warm_start_ms < 2000
+									? "warning"
+									: "neutral"
+						}
+						title={`Estimated warm load time: ${model.warm_start_ms}ms`}
+					>
+						Warm:{" "}
+						{model.warm_start_ms < 500
+							? "Fast"
+							: model.warm_start_ms < 2000
+								? "Medium"
+								: "Slow"}
+					</Badge>
+				)}
+				{model?.cold_start_ms && model.cold_start_ms > 0 && (
+					<Badge
+						tone="neutral"
+						title={`Estimated cold load time: ${model.cold_start_ms}ms`}
+					>
+						Cold:{" "}
+						{model.cold_start_ms < 2000
+							? "Fast"
+							: model.cold_start_ms < 10000
+								? "Medium"
+								: "Slow"}
+					</Badge>
 				)}
 				{cached ? (
 					<span className="inline-flex items-center gap-1 rounded-full border border-success/40 bg-success-soft px-2.5 py-1 text-xs font-semibold text-success-text">

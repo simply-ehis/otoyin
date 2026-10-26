@@ -4,7 +4,6 @@ import {
 	CheckBadgeIcon,
 	ExclamationTriangleIcon,
 	HeartIcon,
-	KeyIcon,
 	SparklesIcon,
 	TrashIcon,
 	XMarkIcon,
@@ -21,7 +20,7 @@ import { useRegionCurrency } from "@/lib/regionCurrency";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/ui/button";
 import { Card } from "@/ui/card";
-import { Spinner } from "@/ui/primitives";
+import { Badge, Spinner } from "@/ui/primitives";
 import { Progress } from "@/ui/progress";
 import {
 	CATEGORY_ACCENT,
@@ -100,6 +99,14 @@ export function StoreProductCard({
 				: model.warm_start_ms < 2000
 					? "Medium"
 					: "Slow"
+			: null;
+	const coldStartLabel =
+		model?.cold_start_ms && model.cold_start_ms > 0
+			? model.cold_start_ms < 2000
+				? "Fast cold start"
+				: model.cold_start_ms < 10000
+					? "Medium cold start"
+					: "Slow cold start"
 			: null;
 	const accent = CATEGORY_ACCENT[product.category] ?? CATEGORY_ACCENT.extras;
 
@@ -214,19 +221,26 @@ export function StoreProductCard({
 						<span className="text-xs text-muted-foreground">{sizeLabel}</span>
 					)}
 					{speedLabel && (
-						<span
-							className={cn(
-								"inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium",
+						<Badge
+							tone={
 								speedLabel === "Fast"
-									? "bg-success-soft text-success-text"
+									? "success"
 									: speedLabel === "Medium"
-										? "bg-warning-soft text-warning-text"
-										: "bg-muted text-muted-foreground",
-							)}
-							title={`Estimated load time: ${model?.warm_start_ms}ms`}
+										? "warning"
+										: "neutral"
+							}
+							title={`Estimated warm load time: ${model?.warm_start_ms}ms`}
 						>
 							{speedLabel}
-						</span>
+						</Badge>
+					)}
+					{coldStartLabel && (
+						<Badge
+							tone="neutral"
+							title={`Estimated cold load time: ${model?.cold_start_ms}ms`}
+						>
+							{coldStartLabel}
+						</Badge>
 					)}
 					{compatibility && !compatibility.compatible && !cached && (
 						<span

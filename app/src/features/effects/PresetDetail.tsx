@@ -138,6 +138,12 @@ export function PresetDetail() {
 	const setSelectedId = useEffectsStore((s) => s.setSelectedPresetId);
 	const setAudio = usePlayerStore((s) => s.setAudioWithAutoPlay);
 
+	// Effects that have a trim region set — shows visual feedback when trimming is active.
+	const trimmedEffects = chain.filter(
+		(e) => (e.trim_start_ms ?? 0) > 0 || (e.trim_end_ms ?? 0) > 0,
+	);
+	const hasTrim = trimmedEffects.length > 0;
+
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 	const [saving, setSaving] = useState(false);
@@ -391,6 +397,21 @@ export function PresetDetail() {
 				)}
 
 				<ChainEditor value={chain} onChange={setChain} showPresets={false} />
+
+				{hasTrim && (
+					<div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-warning/20 bg-warning-soft">
+						<span className="text-xs font-medium text-warning-text">
+							{trimmedEffects.length} effect
+							{trimmedEffects.length > 1 ? "s" : ""} trimmed
+						</span>
+						{trimmedEffects
+							.map(
+								(e) =>
+									`${e.type} (${e.trim_start_ms ?? 0}–${e.trim_end_ms ?? 0} ms)`,
+							)
+							.join(" • ")}
+					</div>
+				)}
 
 				<Separator />
 

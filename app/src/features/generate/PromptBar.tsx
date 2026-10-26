@@ -3,7 +3,9 @@ import {
 	ChevronDownIcon,
 	ChevronUpIcon,
 	FingerPrintIcon,
+	PlayIcon,
 	SparklesIcon,
+	StopIcon,
 } from "@heroicons/react/24/outline";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -20,6 +22,7 @@ import { engineLabel } from "@/lib/constants/engines";
 import { getLanguageOptionsForEngine } from "@/lib/constants/languages";
 import { useGenerationForm } from "@/lib/hooks/useGenerationForm";
 import { useProfile, useProfiles } from "@/lib/hooks/useProfiles";
+import { useStreamingTtsPreview } from "@/lib/hooks/useStreamingTtsPreview";
 import { cn } from "@/lib/utils/cn";
 import { useGenerationStore } from "@/stores/generationStore";
 import { usePlayerStore } from "@/stores/playerStore";
@@ -38,7 +41,6 @@ import {
 import { Slider } from "@/ui/slider";
 import { useToast } from "@/ui/use-toast";
 import { buildEffectsChain } from "./buildEffectsChain";
-import { usePresetAudition } from "./usePresetAudition";
 import {
 	applyEngineSelection,
 	preferredProfile,
@@ -48,6 +50,7 @@ import {
 	useEngineCapabilities,
 	VOICE_TYPE_LABELS,
 } from "./engines";
+import { usePresetAudition } from "./usePresetAudition";
 
 /**
  * Compact prompt bar for the Generate page. Replaces the old
@@ -76,6 +79,8 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 	const addPendingStoryAdd = useGenerationStore((s) => s.addPendingStoryAdd);
 	const { data: profiles } = useProfiles();
 	const { data: selectedProfile } = useProfile(selectedProfileId ?? "");
+
+	const preview = useStreamingTtsPreview();
 
 	const [presetId, setPresetId] = useState<string | null>(null);
 	const [instructOpen, setInstructOpen] = useState(false);
@@ -829,6 +834,47 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 							>
 								<SparklesIcon className="mr-1 size-3.5" aria-hidden="true" />
 								Generate
+							</Button>
+						)}
+						{preview.state.isPlaying ? (
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								disabled={!selectedProfileId || !text.trim()}
+								onClick={() => preview.stop()}
+								title="Stop streaming preview"
+								aria-label="Stop streaming preview"
+								className="shrink-0 text-destructive hover:bg-destructive/10"
+							>
+								<StopIcon className="size-3.5" aria-hidden="true" />
+								Stop
+							</Button>
+						) : (
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								disabled={
+									!selectedProfileId || !text.trim() || preview.state.isLoading
+								}
+								onClick={() => {
+									const voicePrompt = selectedProfile?.preset_voice_id
+										? { kokoro_voice: selectedProfile.preset_voice_id }
+										: {};
+									preview.play(
+										text,
+										voicePrompt,
+										selectedProfile?.language ?? "en",
+									);
+								}}
+								title="Stream preview of your text via TTS"
+								aria-label="Stream preview of your text"
+								className="shrink-0"
+								loading={preview.state.isLoading}
+							>
+								<PlayIcon className="mr-1 size-3.5" aria-hidden="true" />
+								Preview
 							</Button>
 						)}
 					</div>

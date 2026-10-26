@@ -10,11 +10,13 @@ export function StemSeparationPage() {
 	const [error, setError] = useState<string | null>(null);
 	const [status, setStatus] = useState<{ demucs_available: boolean } | null>(null);
 
+	const baseUrl = apiClient.getBaseUrl();
+
 	const checkStatus = async () => {
 		try {
-			const r = await fetch(`${apiClient.getBaseUrl()}/stems/status`);
+			const r = await fetch(`${baseUrl}/stems/status`);
 			setStatus(await r.json());
-		} catch (e) {
+		} catch {
 			setStatus({ demucs_available: false });
 		}
 	};
@@ -27,7 +29,7 @@ export function StemSeparationPage() {
 		try {
 			const fd = new FormData();
 			fd.append("file", file);
-			const r = await fetch(`${apiClient.getBaseUrl()}/stems/separate`, {
+			const r = await fetch(`${baseUrl}/stems/separate`, {
 				method: "POST",
 				body: fd,
 			});
@@ -88,14 +90,28 @@ export function StemSeparationPage() {
 			)}
 
 			{result && (
-				<div className="space-y-2">
+				<div className="space-y-3">
 					<p className="text-sm font-medium text-foreground">
 						Stems ready (job {result.job_id})
 					</p>
-					<ul className="space-y-1">
-						{Object.entries(result.stems).map(([name, path]) => (
-							<li key={name} className="text-xs text-muted-foreground">
-								{name}: {path}
+					<ul className="space-y-2">
+						{Object.entries(result.stems).map(([name, fname]) => (
+							<li key={name} className="flex items-center gap-3">
+								<span className="w-20 text-sm font-medium text-foreground">
+									{name}
+								</span>
+								<audio
+									controls
+									src={`${baseUrl}/stems/${result.job_id}/${fname}`}
+									className="h-8"
+								/>
+								<a
+									href={`${baseUrl}/stems/${result.job_id}/${fname}`}
+									download={fname}
+									className="text-xs text-primary underline"
+								>
+									Download
+								</a>
 							</li>
 						))}
 					</ul>

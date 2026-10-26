@@ -1,14 +1,8 @@
-"""Stem separation via demucs (optional).
-
-Runs demucs as a subprocess if installed. Gracefully returns 503 if
-demucs is not available. Modeled after stemdeck's stem pipeline.
-"""
+"""Stem separation via demucs (optional)."""
 
 from __future__ import annotations
 
 import logging
-import os
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -16,7 +10,7 @@ import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, UploadFile, File
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse
 
 logger = logging.getLogger(__name__)
 
@@ -64,14 +58,22 @@ async def separate(file: UploadFile = File(...)) -> dict:
     except subprocess.CalledProcessError as e:
         logger.exception("demucs failed")
         raise HTTPException(status_code=500, detail=e.stderr or "separation failed")
-    # demucs outputs to out_dir/htdemucs/<name>/*.wav
     result_dir = None
     for p in out_dir.rglob("*.wav"):
-        if p.parent.name not in ("",):
-            result_dir = p.parent
-            break
+        result_dir = p.parent
+        break
     stems = {}
     if result_dir:
         for wav in result_dir.glob("*.wav"):
-            stems[wav.stem] = str(wav)
+            stems[wav.stem] = wav.name
     return {"job_id": job_id, "stems": stems, "names": list(stems.keys())}
+
+
+@router.get("/{job_id}/{name}")
+def download_stem(job_id: str, name: str):
+    work = STEMS_DIR / job_id
+    if not work.exists():
+        raise HTTPException(status_code=404, detail="job not found")
+    for wav in work.rglob(name):
+        return FileResponse(wav, media_type="audio/wav", filename=name)
+    raise HTTPException(status_code=404, detail="stem not found")
