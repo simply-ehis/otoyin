@@ -57,6 +57,7 @@ export function VoiceConverterView() {
 	const [diffusionSteps, setDiffusionSteps] = useState(10);
 	const [uploading, setUploading] = useState<string | null>(null);
 	const [hasResult, setHasResult] = useState(false);
+	const [convertedBlob, setConvertedBlob] = useState<Blob | null>(null);
 	const [consentGiven, setConsentGiven] = useState(false);
 
 	function switchEngine(next: Engine) {
@@ -93,10 +94,27 @@ export function VoiceConverterView() {
 			}),
 		onSuccess: (blob) => {
 			playPreviewBlob(blob);
+			setConvertedBlob(blob);
 			setHasResult(true);
 			toast({ title: "Voice conversion complete" });
 		},
 		onError: (error: unknown) => showStudioErrorToast(error),
+	});
+
+	const saveMut = useMutation({
+		mutationFn: async () => {
+			if (!convertedBlob) throw new Error("No converted audio");
+			return apiClient.saveGeneratedAudio(
+				convertedBlob,
+				`Voice conversion 17:48:03`,
+					"capture",
+					"file",
+				);
+		},
+		onSuccess: () => {
+			toast({ title: "Saved to Library", description: "Converted audio is now in the Library tab." });
+		},
+		onError: (e: unknown) => showStudioErrorToast(e),
 	});
 
 	async function uploadFile(file: File, slot: "source" | "reference") {
@@ -387,6 +405,19 @@ export function VoiceConverterView() {
 					{convertMut.isPending ? <Spinner size="xs" className="mr-1" /> : null}
 					Convert
 				</Button>
+				{convertedBlob ? (
+					<Button
+						type="button"
+						size="sm"
+						variant="outline"
+						className="h-8 text-xs"
+						disabled={saveMut.isPending}
+						onClick={() => saveMut.mutate()}
+					>
+						{saveMut.isPending ? <Spinner size="xs" className="mr-1" /> : null}
+						Save to Library
+					</Button>
+				) : null}
 				{hasResult ? (
 					<Badge tone="success">Last conversion played</Badge>
 				) : null}

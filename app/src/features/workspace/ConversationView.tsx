@@ -2,6 +2,7 @@ import { PlusIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { apiClient } from "@/lib/api/client";
+import { useProfiles } from "@/lib/hooks/useProfiles";
 import { Button } from "@/ui/button";
 import { Input, Textarea } from "@/ui/input";
 import { Badge, Label, Separator, Spinner } from "@/ui/primitives";
@@ -19,6 +20,7 @@ import { useToast } from "@/ui/use-toast";
 interface Speaker {
 	id: string;
 	name: string;
+	voiceProfileId?: string | null;
 }
 
 interface ConversationLine {
@@ -47,8 +49,8 @@ export function ConversationView() {
 	const { toast } = useToast();
 	const [preset, setPreset] = useState<string>("podcast_interview");
 	const [speakers, setSpeakers] = useState<Speaker[]>([
-		{ id: "spk-1", name: "Speaker A" },
-		{ id: "spk-2", name: "Speaker B" },
+		{ id: "spk-1", name: "Speaker A", voiceProfileId: null },
+		{ id: "spk-2", name: "Speaker B", voiceProfileId: null },
 	]);
 	const [generatedBlob, setGeneratedBlob] = useState<Blob | null>(null);
 	const [lines, setLines] = useState<ConversationLine[]>([
@@ -73,6 +75,9 @@ export function ConversationView() {
 			: [...FALLBACK_PRESETS];
 	const presetName = (id: string) =>
 		presetsQuery.data?.[id]?.name ?? presetLabel(id);
+
+	const profilesQuery = useProfiles();
+	const profiles = profilesQuery.data ?? [];
 
 	function linePayload() {
 		return lines.map((l) => ({
@@ -218,6 +223,35 @@ export function ConversationView() {
 								className="h-6 w-28 border-transparent bg-transparent px-1 text-xs"
 								aria-label="Speaker name"
 							/>
+							<Select
+								value={s.voiceProfileId ?? ""}
+								onValueChange={(v) => {
+									setSpeakers((p) =>
+										p.map((x) =>
+											x.id === s.id ? { ...x, voiceProfileId: v } : x,
+										),
+									);
+									// propagate to lines
+									setLines((p) =>
+										p.map((l) =>
+											l.speakerId === s.id
+												? { ...l, profileId: v || null }
+												: l,
+										),
+									);
+								}}
+							>
+								<SelectTrigger className="h-6 w-32 border-transparent bg-transparent px-1 text-xs" aria-label="Speaker voice">
+									<SelectValue placeholder="Voice…" />
+								</SelectTrigger>
+								<SelectContent>
+									{profiles.map((p) => (
+										<SelectItem key={p.id} value={p.id}>
+											{p.name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 							{speakers.length > 1 && (
 								<button
 									type="button"
