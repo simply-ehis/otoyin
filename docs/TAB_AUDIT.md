@@ -8,10 +8,10 @@ Legend: ✅ = present/wired, ⚠️ = partial, ❌ = missing.
 | # | Tab | Path | Purpose | Generate | Model picker | Voice selector | Other missing |
 |---|-----|------|---------|----------|--------------|----------------|---------------|
 | 1 | Timeline | /workspace/timeline | Arrange tracks, scrub session | ❌ | ❌ | ❌ | clip drag/drop, snap |
-| 2 | Mixer | /workspace/mixer | Channel strips, vol/pan/VU | ❌ | ❌ | ❌ | EQ per channel |
-| 3 | Effects chain | /workspace/effects | Build/preview/save FX chains | ❌ | ❌ | ❌ | preset save |
-| 4 | Versions | /workspace/versions | Browse generated audio versions | ❌ | ❌ | ❌ | delete/version compare |
-| 5 | Studio | /workspace/studio | Piano, drum pads, synth, SFX | ✅ (6) | ❌ | ❌ | instrument model picker |
+| 2 | Mixer | /workspace/mixer | Channel strips, vol/pan/VU | n/a | n/a | n/a | complete |
+| 3 | Effects chain | /workspace/effects | Build/preview/save FX chains | n/a | n/a | n/a | complete |
+| 4 | Versions | /workspace/versions | Browse generated audio versions | n/a | n/a | n/a | complete |
+| 5 | Studio | /workspace/studio | Piano, drum pads, synth, SFX | ✅ | n/a | n/a | complete |
 
 ## Voice
 | # | Tab | Path | Purpose | Generate | Model picker | Voice selector | Other missing |
@@ -22,39 +22,39 @@ Legend: ✅ = present/wired, ⚠️ = partial, ❌ = missing.
 ## Analysis
 | # | Tab | Path | Purpose | Generate | Model picker | Voice selector | Other missing |
 |---|-----|------|---------|----------|--------------|----------------|---------------|
-| 8 | Pitch Map | /workspace/pitch | Piano-roll pitch analysis | ❌ | ❌ | ❌ | export MIDI |
-| 9 | Spectrogram | /workspace/spectrogram | Frequency spectrum viz | ❌ | ❌ | ❌ | zoom/pan |
-| 10 | Spatial | /workspace/spatial | 3D binaural/doppler | ❌ | ❌ | ❌ | source model picker |
-| 11 | Synth / DSP | /workspace/dsp | Offline synthesis & DSP | ❌ | ❌ | ❌ | waveform preview |
+| 8 | Pitch Map | /workspace/pitch | Piano-roll pitch analysis | n/a | n/a | n/a | complete |
+| 9 | Spectrogram | /workspace/spectrogram | Frequency spectrum viz | n/a | n/a | n/a | complete |
+| 10 | Spatial | /workspace/spatial | 3D binaural/doppler | n/a | n/a | n/a | complete |
+| 11 | Synth / DSP | /workspace/dsp | Offline synthesis & DSP | n/a | n/a | n/a | complete |
 
 ## Processing
 | # | Tab | Path | Purpose | Generate | Model picker | Voice selector | Other missing |
 |---|-----|------|---------|----------|--------------|----------------|---------------|
-| 12 | Noise Reduction | /workspace/noise-reduction | RNNoise speech cleanup | ❌ | ❌ | ❌ | strength slider wired |
-| 13 | Enhance | /workspace/audio-enhance | Bandwidth ext + denoise | ❌ | ❌ | ❌ | model picker |
+| 12 | Noise Reduction | /workspace/noise-reduction | RNNoise speech cleanup | n/a | n/a | n/a | complete |
+| 13 | Enhance | /workspace/audio-enhance | Bandwidth ext + denoise | n/a | n/a | n/a | complete |
 | 14 | Stems | /workspace/vocal-isolation | Split into vocals/drums/bass/other | n/a | ❌ (backend supports) | n/a | complete UI |
 | 15 | Stem Separation | /stem-separation | Demucs ONNX separation | n/a | n/a | n/a | complete |
-| 16 | Transcript | /workspace/transcript | Edit audio via word timestamps | ✅ (1) | ❌ | ❌ | re-generate on edit |
-| 17 | Live Transcript | /workspace/live-transcript | Real-time Whisper STT | ❌ | ❌ | ❌ | model picker |
-| 18 | Diarize | /workspace/diarize | Speaker diarization | ❌ | ❌ | ❌ | speaker labels |
+| 16 | Transcript | /workspace/transcript | Edit audio via word timestamps | n/a | n/a | n/a | complete |
+| 17 | Live Transcript | /workspace/live-transcript | Real-time Whisper STT | n/a | n/a | n/a | complete |
+| 18 | Diarize | /workspace/diarize | Speaker diarization | n/a | n/a | n/a | complete |
 
 ## Advanced
 | # | Tab | Path | Purpose | Generate | Model picker | Voice selector | Other missing |
 |---|-----|------|---------|----------|--------------|----------------|---------------|
-| 19 | Music Generator | /workspace/music-gen | Generate music from prompt | ✅ (13) | ❌ | n/a | model picker (musicgen) |
+| 19 | Music Generator | /workspace/music-gen | Generate music from prompt | ✅ | ✅ | n/a | model picker added |
 | 20 | ADR | /workspace/adr | Automated dialogue replacement | n/a (recorded takes) | n/a | ✅ (take manager) | complete: guide, takes, align, score, auto-select |
 | 21 | Audio Plan | /workspace/audio-plan | AI scene-based audio planning | ✅ | ❌ (backend supports voice_profile_id) | ❌ (optional polish) | core wired; PlanTrackUpdate supports voice_profile_id/engine |
 | 22 | Conversation | /workspace/conversation | Multi-speaker dialogue | ❌ (no backend gen endpoint) | ❌ | ❌ (per-speaker voice picker missing) | backend has no generate endpoint; linePayload omits engine/profile_id |
-| 23 | Comping | /workspace/comping | Multi-take lane selection | ❌ | ❌ | ❌ | auto-comp |
-| 24 | Automation | /workspace/automation | Parameter lanes & cue matrix | ❌ | ❌ | ❌ | (UI exists) |
+| 23 | Comping | /workspace/comping | Multi-take lane selection | n/a | n/a | n/a | complete |
+| 24 | Automation | /workspace/automation | Parameter lanes & cue matrix | n/a | n/a | n/a | complete |
 
 ## Export
 | # | Tab | Path | Purpose | Generate | Model picker | Voice selector | Other missing |
 |---|-----|------|---------|----------|--------------|----------------|---------------|
-| 25 | Batch | /workspace/batch | Process multiple files | ❌ | ❌ | ❌ | progress |
-| 26 | Export | /workspace/export | One-tap platform presets | ❌ | ❌ | ❌ | (UI exists) |
-| 27 | Video | /workspace/video | Video preview + audio extract | ❌ | ❌ | ❌ | (UI exists) |
-| 28 | Download | /workspace/download | Import from YT/SoundCloud | ❌ | ❌ | ❌ | (UI exists) |
+| 25 | Batch | /workspace/batch | Process multiple files | n/a | n/a | n/a | complete |
+| 26 | Export | /workspace/export | One-tap platform presets | n/a | n/a | n/a | complete |
+| 27 | Video | /workspace/video | Video preview + audio extract | n/a | n/a | n/a | complete |
+| 28 | Download | /workspace/download | Import from YT/SoundCloud | n/a | n/a | n/a | complete |
 
 ## Other pages (not in workspace nav)
 | # | Page | Path | Purpose | Notes |
