@@ -44,7 +44,7 @@ Legend: ✅ = present/wired, ⚠️ = partial, ❌ = missing.
 | 19 | Music Generator | /workspace/music-gen | Generate music from prompt | ✅ (13) | ❌ | n/a | model picker (musicgen) |
 | 20 | ADR | /workspace/adr | Automated dialogue replacement | ❌ | ❌ | ✅ (voice picker via take mgr) | model picker |
 | 21 | Audio Plan | /workspace/audio-plan | AI scene-based audio planning | ✅ (4) | ❌ | ❌ | voice picker per scene |
-| 22 | Conversation | /workspace/conversation | Multi-speaker dialogue | ❌ | ❌ | ❌ | per-speaker voice |
+| 22 | Conversation | /workspace/conversation | Multi-speaker dialogue | ❌ (no backend gen endpoint) | ❌ | ❌ (per-speaker voice picker missing) | backend has no generate endpoint; linePayload omits engine/profile_id |
 | 23 | Comping | /workspace/comping | Multi-take lane selection | ❌ | ❌ | ❌ | auto-comp |
 | 24 | Automation | /workspace/automation | Parameter lanes & cue matrix | ❌ | ❌ | ❌ | (UI exists) |
 

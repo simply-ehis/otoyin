@@ -28,6 +28,8 @@ interface ConversationLine {
 	startMode: "relative_to_previous" | "absolute";
 	offsetMs: number;
 	overlapMs: number;
+	engine: string;
+	profileId: string | null;
 }
 
 const FALLBACK_PRESETS = [
