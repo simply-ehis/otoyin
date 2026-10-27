@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAudioStudioStore } from "@/features/audioStudio/AudioStudioStore";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import type { SessionResponse } from "@/lib/api/types";
@@ -32,9 +33,12 @@ import { playPreviewBlob } from "./playBlob";
 
 export function MultiTakeCompingView() {
 	const { toast } = useToast();
+	const addTrack = useAudioStudioStore((s) => s.addTrack);
+	const setTrackAudio = useAudioStudioStore((s) => s.setTrackAudio);
 	const queryClient = useQueryClient();
 	const [lanes, setLanes] = useState<TakeLane[]>([]);
 	const [compLoading, setCompLoading] = useState(false);
+	const [compedBlob, setCompedBlob] = useState<Blob | null>(null);
 	const [recordingLaneId, setRecordingLaneId] = useState<string | null>(null);
 	const recordingLaneRef = useRef<string | null>(null);
 	const [sessionId, setSessionId] = useState<string | null>(null);
@@ -171,6 +175,7 @@ export function MultiTakeCompingView() {
 		},
 		onSuccess: (blob) => {
 			setCompLoading(false);
+			setCompedBlob(blob);
 			playPreviewBlob(blob);
 		},
 		onError: (err: unknown) => {
@@ -178,6 +183,23 @@ export function MultiTakeCompingView() {
 			showStudioErrorToast(err);
 		},
 	});
+
+	const saveCompMut = useMutation({
+		mutationFn: async () => {
+			if (!compedBlob) throw new Error("No comped audio");
+			return apiClient.saveGeneratedAudio(compedBlob, `Comp ${new Date().toLocaleTimeString()}`, "capture", "file");
+		},
+		onSuccess: () => toast({ title: "Saved to Library" }),
+		onError: (e: unknown) => showStudioErrorToast(e),
+	});
+
+	async function sendCompToStudio() {
+		if (!compedBlob) return;
+		const url = URL.createObjectURL(compedBlob);
+		const trackId = addTrack("Comped take");
+		setTrackAudio(trackId, url, compedBlob, 0);
+		toast({ title: "Sent to Audio Studio" });
+	}
 
 	const addLane = useCallback(() => {
 		setLanes((prev) => [
@@ -496,6 +518,10 @@ export function MultiTakeCompingView() {
 				isPending={assembleMut.isPending}
 				compLoading={compLoading}
 				onAssemble={() => assembleMut.mutate()}
+				compedBlob={compedBlob}
+				onSave={() => saveCompMut.mutate()}
+				savePending={saveCompMut.isPending}
+				onSendToStudio={sendCompToStudio}
 			/>
 		</div>
 	);

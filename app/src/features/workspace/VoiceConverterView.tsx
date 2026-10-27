@@ -14,6 +14,7 @@ import {
 	SelectValue,
 } from "@/ui/select";
 import { Slider } from "@/ui/slider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
 import { EmptyState, LoadingState, ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
 import { playPreviewBlob } from "./playBlob";

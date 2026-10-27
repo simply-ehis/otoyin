@@ -51,6 +51,8 @@ computer unless you configure a BYOK cloud provider yourself.
 | Noise reduction | DeepFilterNet neural denoise (+ spectral gate) | Enhance/Cleanup | `clean_audio` |
 | Audio enhance | LavaSR neural upscale to 48 kHz + denoise (`auto` mode) | Enhance panel | `enhance_audio` |
 | Loudness metering | Integrated/short-term LUFS + true peak | Meter panel | `analyze_loudness` |
+| Enhance A/B + save | Compare original vs enhanced and save enhanced to library | Enhance panel | `enhance_audio` |
+| Timeline waveform | Waveform peaks, zoom control, playhead-ready bars | Timeline | — |
 | Import | Audio files + extract audio from video | Import modal | `import_audio` |
 
 ## 3. Mixer & delivery
@@ -63,6 +65,7 @@ computer unless you configure a BYOK cloud provider yourself.
 | Platform export | One-tap presets: Spotify, YouTube, Audible, podcast, film, social | Export panel | `platform_export` |
 | Reaper export | Project renders to `.rpp` for handoff | Export panel | `run_recipe` |
 | Lottie export | Audio-reactive Lottie animation | Export panel | REST `/lottie` |
+| Video floating player + mux | Floating video player with mux audio+video endpoint/UI | Video tab | REST `/mux` |
 
 ## 4. Dialogue & long-form production
 
@@ -71,6 +74,8 @@ computer unless you configure a BYOK cloud provider yourself.
 | Stories | Audiobook/chapter sequencing: per-item fade/gain/trim/reorder, one mixed WAV out | Stories tab | `story_*` |
 | Conversation mode | Stage multi-speaker lines, auto-duck overlaps, auto-level to LUFS | Conversation tab | `conversation_*` |
 | ADR mode | Acted Dialogue Replacement over picture: guide track, takes, scoring, lock | ADR tab | `adr_*` |
+| ADR auto-label speakers | Auto-label speakers from guide audio via diarization | ADR tab | `adr_*` |
+| Dubbing download | Download dubbed video | Dubbing tab | `dub_*` |
 | Multi-take comping | Stack takes, pick best regions, assemble composite | Comping lanes | `POST /comping/assemble` |
 | AI Audio Plan | Script → scene-based track/voice/music assignment blueprint | Audio Plan tab | `audio_plan` |
 | Batch queue | Run many generations with status/cancel/retry | Batch panel | `POST /batch/jobs` |
@@ -90,6 +95,9 @@ computer unless you configure a BYOK cloud provider yourself.
 | Feature | What it does | Where | Agent tool |
 |---|---|---|
 | SFX generation | One-shot sound effects from text (Stable Audio Open) | Sound Studio | `generate_sfx` |
+| Music generation | Generate music from prompt (ACE-Step, HeartMuLa, MiniMax, Stable Audio) | Music Generator | `generate_music` |
+| Music composer | Compose lyrics + beats as markdown, export | Music tab | — |
+| Songwriter tab | Import beats, playback, send to studio/timeline | Songwriter tab | — |
 | GM instruments | Piano/bass/strings/brass/bells via offline SoundFont | Instruments | `play_*` instrument tools |
 | Drum machine | 16-step patterns from synthesized hits | Instruments | `drum_pattern` |
 | DSP synth | Pure offline synthesis (no AI): waveforms, classical effects | Synth tab | `dsp_*` |
@@ -128,7 +136,7 @@ computer unless you configure a BYOK cloud provider yourself.
 ---
 
 <!-- FEATURE-CATALOG:BEGIN (generated — keep in sync with backend/data/app_features.json; enforced by backend/tests/test_help_catalog.py) -->
-<!-- TTS engines, Voice cloning, Voice profiles, Reference voice library, Emotion presets, Audio tags, RVC voice conversion, BYOK cloud providers, Waveform editor, Pitch map, Effects chain, Spectrogram, SMPTE timecode, A/B comparison, Tape scrubber, Transcription + subtitles, Transcript editing, Noise reduction, Audio enhance, Loudness metering, Import, Multi-track mixer, Auto-duck, Mastering, Platform export, Reaper export, Lottie export, Stories, Conversation mode, ADR mode, Multi-take comping, AI Audio Plan, Batch queue, Content recipes, Voice changer, Voice chat (STS), Dictate window, Streaming STT, Music generation, SFX generation, Bark non-verbals, GM instruments, Drum machine, DSP synth, Freesound browser, Binaural positioning, Doppler, Convolution reverb, In-app AI assistant, MCP server, Scripting, Automation lanes, Agent skills, Model manager, Shortcuts, Standalone projects, Cross-tab audio bus, Community presets, Telemetry, Non-destructive edits -->
+<!-- TTS engines, Voice cloning, Voice profiles, Reference voice library, Emotion presets, Audio tags, RVC voice conversion, BYOK cloud providers, Waveform editor, Pitch map, Effects chain, Spectrogram, SMPTE timecode, A/B comparison, Tape scrubber, Transcription + subtitles, Transcript editing, Noise reduction, Audio enhance, Loudness metering, Import, Multi-track mixer, Auto-duck, Mastering, Platform export, Reaper export, Lottie export, Stories, Conversation mode, ADR mode, ADR auto-label speakers, Dubbing download, Multi-take comping, AI Audio Plan, Batch queue, Content recipes, Voice changer, Voice chat (STS), Dictate window, Streaming STT, Music generation, Music composer, Songwriter tab, SFX generation, Bark non-verbals, GM instruments, Drum machine, DSP synth, Freesound browser, Binaural positioning, Doppler, Convolution reverb, Timeline waveform, Video floating player + mux, Enhance A/B + save, In-app AI assistant, MCP server, Scripting, Automation lanes, Agent skills, Model manager, Shortcuts, Standalone projects, Cross-tab audio bus, Community presets, Telemetry, Non-destructive edits -->
 <!-- FEATURE-CATALOG:END -->
 
 ## Getting help

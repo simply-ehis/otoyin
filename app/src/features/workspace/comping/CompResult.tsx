@@ -11,6 +11,10 @@ interface CompResultProps {
 	isPending: boolean;
 	compLoading: boolean;
 	onAssemble: () => void;
+	compedBlob?: Blob | null;
+	onSave?: () => void;
+	savePending?: boolean;
+	onSendToStudio?: () => void;
 }
 
 export function CompResult({
@@ -72,6 +76,34 @@ export function CompResult({
 				)}
 				{isPending || compLoading ? "Assembling…" : "Play Comp"}
 			</Button>
+			{compedBlob ? (
+				<div className="flex flex-wrap gap-2">
+					{onSave ? (
+						<Button
+							type="button"
+							size="sm"
+							variant="outline"
+							className="h-7 text-xs"
+							disabled={savePending}
+							onClick={onSave}
+						>
+							{savePending ? <Spinner size="xs" className="mr-1" /> : null}
+							Save to Library
+						</Button>
+					) : null}
+					{onSendToStudio ? (
+						<Button
+							type="button"
+							size="sm"
+							variant="outline"
+							className="h-8 text-xs"
+							onClick={onSendToStudio}
+						>
+							Send to Audio Studio
+						</Button>
+					) : null}
+				</div>
+			) : null}
 		</section>
 	);
 }
