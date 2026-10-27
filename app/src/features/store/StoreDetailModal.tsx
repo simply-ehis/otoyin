@@ -11,7 +11,6 @@ import { Dialog, DialogContent } from "@/ui/dialog";
 import { Badge, Spinner } from "@/ui/primitives";
 import { Progress } from "@/ui/progress";
 import { ProductActions } from "./ProductActions";
-import { ProductReviews } from "./ProductReviews";
 import { ProductSpecs } from "./ProductSpecs";
 import { SimilarProducts } from "./SimilarProducts";
 import {
@@ -265,7 +264,7 @@ export const StoreDetailModal = memo(function StoreDetailModal({
 						</div>
 					)}
 
-					<ProductReviews product={product} open={open} />
+					{/* ProductReviews removed — marketplace stripped */}
 
 					<SimilarProducts
 						category={product.category}

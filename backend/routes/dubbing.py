@@ -268,21 +268,47 @@ async def list_dubbing_languages():
     return {"languages": SUPPORTED_LANGUAGES}
 
 
+class DubSegmentPatch(BaseModel):
+    start: float | None = None
+    end: float | None = None
+    translated_text: str | None = None
+
+
 @router.patch("/dubbing/segment/{segment_id}")
-def patch_dub_segment(segment_id: int):
-    """Stub: move/resize a dub segment."""
-    return {
-        "id": segment_id,
-        "start": 0,
-        "end": 0,
-        "original_text": "",
-        "translated_text": "",
-        "speaker": "",
-        "has_audio": False,
-    }
+def patch_dub_segment(segment_id: int, patch: DubSegmentPatch):
+    """Move/resize a dub segment."""
+    from ..services import dubbing as dub_svc
+
+    for job in dub_svc._jobs.values():
+        for seg in job.segments:
+            if seg.id == segment_id:
+                if patch.start is not None:
+                    seg.start = patch.start
+                if patch.end is not None:
+                    seg.end = patch.end
+                if patch.translated_text is not None:
+                    seg.translated_text = patch.translated_text
+                return {
+                    "id": seg.id,
+                    "start": seg.start,
+                    "end": seg.end,
+                    "original_text": seg.original_text,
+                    "translated_text": seg.translated_text,
+                    "speaker": seg.speaker,
+                    "has_audio": seg.audio_path is not None,
+                }
+    raise HTTPException(status_code=404, detail="segment not found")
 
 
 @router.delete("/dubbing/segment/{segment_id}")
 def delete_dub_segment(segment_id: int):
-    """Stub: delete a dub segment."""
-    return None
+    """Delete a dub segment."""
+    from ..services import dubbing as dub_svc
+
+    for job in dub_svc._jobs.values():
+        for i, seg in enumerate(job.segments):
+            if seg.id == segment_id:
+                job.segments.pop(i)
+                job.total_segments = len(job.segments)
+                return {"deleted": segment_id}
+    raise HTTPException(status_code=404, detail="segment not found")
