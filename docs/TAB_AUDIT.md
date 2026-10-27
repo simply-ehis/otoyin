@@ -42,7 +42,7 @@ Legend: ✅ = present/wired, ⚠️ = partial, ❌ = missing.
 | # | Tab | Path | Purpose | Generate | Model picker | Voice selector | Other missing |
 |---|-----|------|---------|----------|--------------|----------------|---------------|
 | 19 | Music Generator | /workspace/music-gen | Generate music from prompt | ✅ (13) | ❌ | n/a | model picker (musicgen) |
-| 20 | ADR | /workspace/adr | Automated dialogue replacement | ❌ | ❌ | ✅ (voice picker via take mgr) | model picker |
+| 20 | ADR | /workspace/adr | Automated dialogue replacement | n/a (recorded takes) | n/a | ✅ (take manager) | complete: guide, takes, align, score, auto-select |
 | 21 | Audio Plan | /workspace/audio-plan | AI scene-based audio planning | ✅ | ❌ (backend supports voice_profile_id) | ❌ (optional polish) | core wired; PlanTrackUpdate supports voice_profile_id/engine |
 | 22 | Conversation | /workspace/conversation | Multi-speaker dialogue | ❌ (no backend gen endpoint) | ❌ | ❌ (per-speaker voice picker missing) | backend has no generate endpoint; linePayload omits engine/profile_id |
 | 23 | Comping | /workspace/comping | Multi-take lane selection | ❌ | ❌ | ❌ | auto-comp |
