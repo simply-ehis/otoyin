@@ -168,6 +168,42 @@ DIALOGUE_STUDIO_TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "plan_audio",
+            "description": "Generate an automatic audio plan (dialogue/music/sfx/ambient tracks with timing) from a list of scenes. Returns a plan JSON for the Audio Plan tab.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "scenes": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "string"},
+                                "name": {"type": "string"},
+                                "duration": {"type": "number"},
+                                "dialogue": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "character": {"type": "string"},
+                                            "text": {"type": "string"},
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "characters": {"type": "array", "items": {"type": "object"}, "default": []},
+                    "fps": {"type": "number", "default": 24.0},
+                },
+                "required": ["scenes"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "import_preset",
             "description": "Import a shared effect preset from JSON.",
             "parameters": {

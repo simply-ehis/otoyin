@@ -102,6 +102,8 @@ ENDPOINT_MAP = {
     "list_conversation_presets": "/conversation/presets",
     "conversation_auto_duck": "/conversation/auto-duck",
     "conversation_auto_level": "/conversation/auto-level",
+    # Audio plan
+    "plan_audio": "/audio-plan/auto",
     # Batch queue
     "list_batch_jobs": "/batch/jobs",
     "get_batch_job": "/batch/jobs/{job_id}",
