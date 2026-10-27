@@ -159,13 +159,6 @@ export const WORKSPACE_GROUPS: WorkspaceGroup[] = [
 		label: "Advanced",
 		tools: [
 			{
-				id: "music-gen",
-				path: "/workspace/music-gen",
-				icon: MusicalNoteIcon,
-				label: "Music Generator",
-				description: "Generate music from a text prompt",
-			},
-			{
 				id: "adr",
 				path: "/workspace/adr",
 				icon: RadioIcon,
@@ -205,13 +198,6 @@ export const WORKSPACE_GROUPS: WorkspaceGroup[] = [
 	{
 		label: "Export",
 		tools: [
-			{
-				id: "batch",
-				path: "/workspace/batch",
-				icon: ListBulletIcon,
-				label: "Batch",
-				description: "Process multiple files at once",
-			},
 			{
 				id: "export",
 				path: "/workspace/export",
