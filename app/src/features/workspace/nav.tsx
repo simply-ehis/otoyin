@@ -140,13 +140,6 @@ export const WORKSPACE_GROUPS: WorkspaceGroup[] = [
 		label: "Processing",
 		tools: [
 			{
-				id: "noise-reduction",
-				path: "/workspace/noise-reduction",
-				icon: NoSymbolIcon,
-				label: "Noise Reduction",
-				description: "RNNoise-based speech cleanup",
-			},
-			{
 				id: "audio-enhance",
 				path: "/workspace/audio-enhance",
 				icon: ArrowUpCircleIcon,
