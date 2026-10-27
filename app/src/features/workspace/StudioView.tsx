@@ -1,4 +1,4 @@
-import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
+import { ArrowUpTrayIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { RecordTakeButton } from "@/features/capture/RecordTakeButton";
@@ -194,21 +194,39 @@ export function StudioView() {
 				</TabsList>
 				<TabsContent value="instruments">
 					<InstrumentPreview />
-					<Section title="Instruments">
-						<InstrumentBrowser />
-					</Section>
-					<Section title="Drum machine">
-						<DrumMachinePanel />
-					</Section>
-					<Section title="Beat map">
-						<BeatMapPanel />
-					</Section>
-					<Section title="Record a take">
-						<p className="text-xs text-muted-foreground">
-							Play along with anything above, or record a line to keep.
-						</p>
-						<RecordTakeButton filenameBase="studio-take" />
-					</Section>
+					<div className="space-y-2">
+						{[
+							{ id: "instruments", label: "Instruments", node: <InstrumentBrowser /> },
+							{ id: "drums", label: "Drum machine", node: <DrumMachinePanel /> },
+							{ id: "beatmap", label: "Beat map", node: <BeatMapPanel /> },
+						].map((sec) => {
+							const open = openSection === sec.id;
+							return (
+								<div key={sec.id} className="rounded-md border border-border bg-card">
+									<button
+										type="button"
+										className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-muted-foreground"
+										aria-expanded={open}
+										onClick={() =>
+											setOpenSection(open ? "" : sec.id)
+										}
+									>
+										{sec.label}
+										<ChevronDownIcon
+											className={cn(
+												"size-3.5 transition-transform",
+												open && "rotate-180",
+											)}
+											aria-hidden="true"
+										/>
+									</button>
+									{open ? (
+										<div className="border-t border-border p-3">{sec.node}</div>
+									) : null}
+								</div>
+							);
+						})}
+					</div>
 				</TabsContent>
 				<TabsContent value="sfx">
 					<SfxPanel />
@@ -220,6 +238,12 @@ export function StudioView() {
 					<FreeSoundsPanel />
 				</TabsContent>
 			</Tabs>
+			{/* Floating record-take action */}
+			<div className="fixed bottom-6 right-6 z-40">
+				<div className="rounded-full border border-border bg-card p-2 shadow-lg">
+					<RecordTakeButton filenameBase="studio-take" />
+				</div>
+			</div>
 		</div>
 	);
 }
