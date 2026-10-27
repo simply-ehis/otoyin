@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import { ERR_TITLE_VALIDATION } from "@/lib/errorMessages";
@@ -79,6 +79,17 @@ export function VoiceConverterView() {
 		queryKey: ["profiles"],
 		queryFn: () => apiClient.listProfiles(),
 		enabled: engine === "seed_vc" || engine === "openvoice_onnx",
+	});
+
+	const queryClient = useQueryClient();
+	const downloadPackMut = useMutation({
+		mutationFn: (name: string) =>
+			apiClient.downloadVoicePack(name),
+		onSuccess: (_data, name) => {
+			toast({ title: "Pack downloaded", description: `${name} is ready.` });
+			void queryClient.invalidateQueries({ queryKey: ["voice-packs"] });
+		},
+		onError: (e: unknown) => showStudioErrorToast(e),
 	});
 
 	const convertMut = useMutation({
@@ -261,8 +272,9 @@ export function VoiceConverterView() {
 					) : (
 						<div className="flex flex-wrap gap-2">
 							{packs.map((p) => (
-								<Button
-									key={p.name}
+								<>
+									<Button
+										key={p.name}
 									type="button"
 									variant={selectedPack === p.name ? "default" : "outline"}
 									size="sm"
@@ -280,6 +292,20 @@ export function VoiceConverterView() {
 										<span className="ml-1.5 text-xs">(download)</span>
 									)}
 								</Button>
+								{!p.installed && (
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										className="h-8 text-xs"
+										disabled={downloadPackMut.isPending}
+										onClick={() => downloadPackMut.mutate(p.name)}
+									>
+										{downloadPackMut.isPending ? <Spinner size="xs" className="mr-1" /> : null}
+										Download
+									</Button>
+								)}
+								</>
 							))}
 						</div>
 					)}

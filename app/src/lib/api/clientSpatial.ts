@@ -409,6 +409,12 @@ export class SpatialMethods extends ADRMethods {
 	}> {
 		return this.request("/voice-packs");
 	}
+	async downloadVoicePack(name: string): Promise<{ status: string; pack: string }> {
+		return this.request(`/voice-pack/download?pack_name=${encodeURIComponent(name)}`, {
+			method: "POST",
+		});
+	}
+
 
 	async searchFreesound(
 		query: string,

@@ -1,3 +1,4 @@
+import asyncio
 """Voice-conversion endpoints (RVC + Seed-VC)."""
 
 import hashlib
@@ -100,6 +101,45 @@ async def list_voice_packs():
             }
         )
     return {"voice_packs": packs}
+
+
+@router.post("/voice-pack/download")
+async def download_voice_pack(pack_name: str):
+    """Download an RVC voice pack's files from HuggingFace into the models dir."""
+    desc = RVC_VOICE_PACKS.get(pack_name)
+    if desc is None:
+        raise HTTPException(status_code=404, detail=f"Unknown voice pack: {pack_name}")
+
+    from huggingface_hub import hf_hub_download
+
+    models_dir = Path(config.get_models_dir()) / "rvc" / pack_name
+    models_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        repo = desc["repo"]
+        files = []
+        if "pth" in desc:
+            files.append(desc["pth"])
+        if "index" in desc:
+            files.append(desc["index"])
+        if "zip" in desc:
+            files.append(desc["zip"])
+
+        for fname in files:
+            await asyncio.to_thread(
+                hf_hub_download, repo_id=repo, filename=fname, local_dir=str(models_dir)
+            )
+
+        if "zip" in desc:
+            import zipfile
+            zip_path = models_dir / desc["zip"]
+            if zip_path.exists():
+                with zipfile.ZipFile(zip_path) as z:
+                    z.extractall(models_dir)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Download failed: {e}") from e
+
+    return {"status": "ok", "pack": pack_name}
 
 
 @router.post("/voice-convert")
