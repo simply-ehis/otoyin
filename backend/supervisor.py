@@ -109,6 +109,7 @@ def _get_process_memory_mb() -> float | None:
         if not handle:
             return None
         try:
+
             class ProcessMemoryCounters(ctypes.Structure):
                 _fields_ = [
                     ("cb", ctypes.c_ulong),

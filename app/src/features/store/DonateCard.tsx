@@ -16,7 +16,7 @@ export function DonateCard() {
 	};
 
 	return (
-		<div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-pink-500/20 via-purple-500/20 to-blue-500/20 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md">
+		<div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-pink-500/20 via-purple-500/20 to-blue-500/20 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-sm">
 			<div
 				aria-hidden
 				className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-pink-500/30 blur-3xl"

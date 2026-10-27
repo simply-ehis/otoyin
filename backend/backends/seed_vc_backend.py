@@ -113,7 +113,7 @@ class SeedVCBackend(BackendBase):
 
             with tempfile.NamedTemporaryFile(suffix=".wav") as tmp_in:
                 import numpy as np
-    sf.write(tmp_in, np.asarray(audio, dtype=np.float32), int(sample_rate))
+                sf.write(tmp_in, np.asarray(audio, dtype=np.float32), int(sample_rate))
                 result = self.model.convert_voice(
                     source=tmp_in.name,
                     target=reference_audio_path,
@@ -132,7 +132,7 @@ class SeedVCBackend(BackendBase):
                     wav = result
                     sr = int(sample_rate)
                 import numpy as np
-    wav = np.asarray(wav, dtype=np.float32)
+                wav = np.asarray(wav, dtype=np.float32)
                 if wav.ndim > 1:
                     wav = wav.mean(axis=1)
                 return wav, int(sr)

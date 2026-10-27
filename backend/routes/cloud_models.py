@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import time
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -25,7 +25,7 @@ _VALIDATION_CACHE: dict[str, float] = {}
 _VALIDATION_TTL = 60.0
 
 
-async def require_subscription(x_subscription_key: Optional[str] = Header(default=None)) -> str:
+async def require_subscription(x_subscription_key: str | None = Header(default=None)) -> str:
     key = x_subscription_key or DEV_SUBSCRIPTION_KEY
     if not key:
         raise HTTPException(status_code=401, detail="Missing subscription key")
@@ -62,7 +62,7 @@ def _headers() -> dict[str, str]:
 
 class LlmRequest(BaseModel):
     messages: list[dict[str, Any]]
-    model: Optional[str] = None
+    model: str | None = None
     temperature: float = 0.7
     max_tokens: int = 1024
     stream: bool = False
@@ -70,9 +70,8 @@ class LlmRequest(BaseModel):
 
 class TtsRequest(BaseModel):
     text: str
-    voice: Optional[str] = None
+    voice: str | None = None
     format: str = "wav"
-
 
 
 @router.get("/status")
@@ -107,7 +106,7 @@ async def cloud_llm(
             return r.json()
     except httpx.HTTPError as e:
         logger.exception("cloud llm failed")
-        raise HTTPException(status_code=502, detail=str(e))
+        raise HTTPException(status_code=502, detail=str(e)) from e
 
 
 @router.post("/llm/stream")
@@ -144,7 +143,7 @@ async def cloud_llm_stream(
         return StreamingResponse(_stream(), media_type="text/event-stream")
     except httpx.HTTPError as e:
         logger.exception("cloud llm stream failed")
-        raise HTTPException(status_code=502, detail=str(e))
+        raise HTTPException(status_code=502, detail=str(e)) from e
 
 
 @router.post("/tts")
@@ -175,4 +174,4 @@ async def cloud_tts(
         return StreamingResponse(_stream(), media_type=content_type)
     except httpx.HTTPError as e:
         logger.exception("cloud tts failed")
-        raise HTTPException(status_code=502, detail=str(e))
+        raise HTTPException(status_code=502, detail=str(e)) from e

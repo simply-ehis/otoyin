@@ -348,7 +348,21 @@ async def ensure_engines_registered() -> None:
             # any backend modules — cheaper than is_engine_cached() which
             # instantiates the backend to probe _is_model_cached().
             try:
-                if any(engine_needed(e) for e in ("kokoro", "pocket_tts", "moss_tts_nano", "kitten_tts", "qwen3_tts", "bark_small", "zonos_gguf", "parler_tts_gguf", "voxcpm2", "fish_speech_s2")):
+                if any(
+                    engine_needed(e)
+                    for e in (
+                        "kokoro",
+                        "pocket_tts",
+                        "moss_tts_nano",
+                        "kitten_tts",
+                        "qwen3_tts",
+                        "bark_small",
+                        "zonos_gguf",
+                        "parler_tts_gguf",
+                        "voxcpm2",
+                        "fish_speech_s2",
+                    )
+                ):
                     tts = get_tts_backend()
                     if not check_memory("TTS engine registration", required_mb=200):
                         logger.warning("TTS registration skipped — low memory (%dMB free)", available_mb())
@@ -392,7 +406,9 @@ async def ensure_engines_registered() -> None:
             try:
                 if engine_needed("seed_vc"):
                     seed_vc_backend = get_vc_backend("seed_vc")
-                    lifecycle_manager.register("seed_vc", seed_vc_backend.is_loaded, lambda: seed_vc_backend.unload_model())
+                    lifecycle_manager.register(
+                        "seed_vc", seed_vc_backend.is_loaded, lambda: seed_vc_backend.unload_model()
+                    )
                 else:
                     logger.debug("Seed-VC backend not registered — no Seed-VC models downloaded")
             except Exception:

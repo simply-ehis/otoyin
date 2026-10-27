@@ -138,8 +138,6 @@ def separate(input_path: str, output_dir: str) -> dict[str, str] | None:
     if mx > 0:
         stems_acc = stems_acc * mx
 
-    import os as _os
-
     os.makedirs(output_dir, exist_ok=True)
     result = {}
     for idx, name in enumerate(STEM_NAMES):

@@ -200,6 +200,8 @@ def _get_cloud_vc_configs() -> list[ModelConfig]:
             category="vc",
         )
     ]
+
+
 def _get_demucs_configs() -> list[ModelConfig]:
     """Demucs stem-separation (ONNX, no torch)."""
     return [

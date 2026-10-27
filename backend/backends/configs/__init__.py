@@ -43,15 +43,8 @@ def engine_needed(engine: str) -> bool:
     try:
         from ...services.model_registry import is_downloaded
 
-        all_configs = (
-            get_tts_model_configs()
-            + get_stt_model_configs()
-            + get_llm_model_configs()
-        )
-        for cfg in all_configs:
-            if cfg.engine == engine and is_downloaded(cfg.model_name):
-                return True
-        return False
+        all_configs = get_tts_model_configs() + get_stt_model_configs() + get_llm_model_configs()
+        return any(cfg.engine == engine and is_downloaded(cfg.model_name) for cfg in all_configs)
     except Exception:
         # If we can't determine, assume engine is needed (safe default)
         return True

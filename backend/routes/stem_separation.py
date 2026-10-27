@@ -9,8 +9,7 @@ from pathlib import Path
 
 import numpy as np
 import soundfile as sf
-
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 logger = logging.getLogger(__name__)
@@ -26,6 +25,7 @@ STEM_NAMES = ["vocals", "drums", "bass", "other"]
 def _onnx_available() -> bool:
     try:
         import onnxruntime  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -34,6 +34,7 @@ def _onnx_available() -> bool:
 def _is_cached() -> bool:
     try:
         from services.stem_separation_onnx import _is_model_cached
+
         return _is_model_cached()
     except Exception:
         return False
@@ -77,7 +78,7 @@ async def separate(file: UploadFile = File(...)) -> dict:
             out_path = work / f"{name}.wav"
             sf.write(str(out_path), arr, sr)
             stems[name] = out_path.name
-        except Exception as e:
+        except Exception:
             logger.exception("stem separation failed for %s", name)
 
     if not stems:
@@ -134,14 +135,13 @@ def mixdown(job_id: str) -> dict:
     maxlen = max(a.shape[0] for a in stem_arrays)
     mixed = np.zeros((maxlen, stem_arrays[0].shape[1]), dtype="float32")
     for a in stem_arrays:
-        mixed[:a.shape[0]] += a
+        mixed[: a.shape[0]] += a
     mx = np.abs(mixed).max()
     if mx > 1.0:
         mixed = mixed / mx
     out_path = work / "mixdown.wav"
     sf.write(str(out_path), mixed, sr)
     return {"job_id": job_id, "file": out_path.name}
-
 
 
 @router.get("/{job_id}/beats")

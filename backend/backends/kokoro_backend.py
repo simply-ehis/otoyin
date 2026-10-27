@@ -315,6 +315,7 @@ class KokoroTTSBackend(BackendBase):
             audio, sr = await self._generate_chunk(text, voice_name, language, seed, KOKORO_SINGLE_TIMEOUT)
             if audio is not None and len(audio):
                 import numpy as np
+
                 yield audio.astype(np.float32), sr, True
             return
 
@@ -326,7 +327,8 @@ class KokoroTTSBackend(BackendBase):
                 raise RuntimeError(f"Kokoro chunk {i + 1}/{len(chunks)} failed: {exc}") from exc
             if audio is not None and len(audio):
                 import numpy as np
-                is_final = (i == len(chunks) - 1)
+
+                is_final = i == len(chunks) - 1
                 yield audio.astype(np.float32), KOKORO_SAMPLE_RATE, is_final
 
     async def _generate_chunk(

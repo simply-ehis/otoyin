@@ -19,16 +19,15 @@ from HuggingFace and cached, so this only affects *which cached file* is
 used, never the build.
 """
 
-import json
 from __future__ import annotations
 
+import json
 import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import onnxruntime as ort
 import os
-
 
 logger = logging.getLogger(__name__)
 
@@ -138,6 +137,7 @@ def resolve_providers(preferred: str = "auto") -> list[str]:
     """
     global _PROVIDER_CHAIN_LOGGED
     import onnxruntime as ort
+
     available = set(ort.get_available_providers())
 
     if preferred == "cpu":

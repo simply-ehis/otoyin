@@ -143,7 +143,6 @@ async def analyze_dubbing_job(job_id: str):
     import soundfile as sf
 
     peaks = [0.0] * resolution
-    scale = resolution / duration_sec if duration_sec > 0 else 1.0
 
     for s in job.segments:
         if not s.audio_path:
@@ -152,7 +151,7 @@ async def analyze_dubbing_job(job_id: str):
         if not path.is_file():
             continue
         try:
-            data, sr = sf.read(str(path), always_2d=False)
+            data, _sr = sf.read(str(path), always_2d=False)
             if data.ndim > 1:
                 data = data.mean(axis=1)
             block_samples = max(1, len(data) // resolution)
@@ -162,7 +161,7 @@ async def analyze_dubbing_job(job_id: str):
                 if end_i <= start_i:
                     break
                 block = data[start_i:end_i]
-                rms = float((block ** 2).mean() ** 0.5) if len(block) else 0.0
+                rms = float((block**2).mean() ** 0.5) if len(block) else 0.0
                 peaks[i] = max(peaks[i], rms)
         except Exception as exc:
             logger.warning("Failed to compute peaks for segment %d: %s", s.id, exc)

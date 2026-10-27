@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     import onnxruntime as ort
@@ -315,6 +315,7 @@ class MossTTSNanoOnnx:
 
     def _session(self, path_value: Path) -> ort.InferenceSession:
         import onnxruntime as ort
+
         options = ort.SessionOptions()
         options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
         options.intra_op_num_threads = self.thread_count

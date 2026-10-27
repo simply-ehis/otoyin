@@ -27,8 +27,8 @@ if TYPE_CHECKING:
     # Type-checkers still see the full API surface.
     from .configs import (
         engine_has_model_sizes,
-        engine_needs_trim,
         engine_needed,
+        engine_needs_trim,
         get_all_model_configs,
         get_llm_model_configs,
         get_model_config,

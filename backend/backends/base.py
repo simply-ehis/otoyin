@@ -12,6 +12,7 @@ import platform
 from contextlib import contextmanager
 from pathlib import Path
 
+import numpy as np
 
 from ..utils.audio import load_audio, normalize_audio
 from ..utils.hf_progress import HFProgressTracker, create_hf_progress_callback
@@ -119,6 +120,8 @@ def get_torch_device(
         allow_mps: Allow MPS (Apple Silicon). If False, MPS falls back to CPU.
         force_cpu_on_mac: Force CPU on macOS regardless of GPU availability.
     """
+    import torch
+
     if torch.cuda.is_available():
         return "cuda"
 

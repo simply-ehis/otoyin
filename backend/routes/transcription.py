@@ -96,7 +96,6 @@ async def transcribe_audio(
         model_size = resolved_size
         text = await whisper_model.transcribe(tmp_path, language, model_size)
 
-
         return models.TranscriptionResponse(
             text=text,
             duration=duration,
