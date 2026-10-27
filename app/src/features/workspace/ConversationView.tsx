@@ -50,6 +50,7 @@ export function ConversationView() {
 		{ id: "spk-1", name: "Speaker A" },
 		{ id: "spk-2", name: "Speaker B" },
 	]);
+	const [generatedBlob, setGeneratedBlob] = useState<Blob | null>(null);
 	const [lines, setLines] = useState<ConversationLine[]>([
 		{
 			id: "line-1",
@@ -101,6 +102,24 @@ export function ConversationView() {
 		onError: (e: unknown) =>
 			toast({
 				title: "Level match failed",
+				description: e instanceof Error ? e.message : String(e),
+				variant: "destructive",
+			}),
+	});
+
+	const generateMut = useMutation({
+		mutationFn: () => apiClient.generateConversation(linePayload()),
+		onSuccess: (blob) => {
+			setGeneratedBlob(blob);
+			const url = URL.createObjectURL(blob);
+			const audio = new Audio(url);
+			audio.addEventListener("ended", () => URL.revokeObjectURL(url));
+			audio.play();
+			toast({ title: "Conversation generated", description: "Playing now." });
+		},
+		onError: (e: unknown) =>
+			toast({
+				title: "Generate failed",
 				description: e instanceof Error ? e.message : String(e),
 				variant: "destructive",
 			}),
@@ -340,6 +359,16 @@ export function ConversationView() {
 			</div>
 
 			<div className="flex flex-wrap items-center gap-2">
+				<Button
+					type="button"
+					size="sm"
+					className="h-8 text-xs"
+					disabled={generateMut.isPending || lines.length === 0}
+					onClick={() => generateMut.mutate()}
+				>
+					{generateMut.isPending ? <Spinner size="xs" className="mr-1" /> : null}
+					Generate
+				</Button>
 				<Button
 					type="button"
 					size="sm"

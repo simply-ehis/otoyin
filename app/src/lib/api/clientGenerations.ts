@@ -85,6 +85,14 @@ export class GenerationsMethods extends ProfilesMethods {
 		});
 		return resp.blob();
 	}
+	async generateConversation(data: unknown): Promise<Blob> {
+		const resp = await this.fetchWithAuth("/conversation/generate", {
+			method: "POST",
+			body: JSON.stringify(data),
+		});
+		return resp.blob();
+	}
+
 
 	async toggleFavorite(
 		generationId: string,
