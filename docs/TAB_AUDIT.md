@@ -16,8 +16,8 @@ Legend: ✅ = present/wired, ⚠️ = partial, ❌ = missing.
 ## Voice
 | # | Tab | Path | Purpose | Generate | Model picker | Voice selector | Other missing |
 |---|-----|------|---------|----------|--------------|----------------|---------------|
-| 6 | Voice Changer | /voice-changer | Real-time pitch/formant | ❌ | ❌ | ❌ | preset slots |
-| 7 | Voice Converter | /voice-converter | AI voice-to-voice | ❌ | ❌ | ❌ | target voice picker |
+| 6 | Voice Changer | /voice-changer | Real-time pitch/formant | n/a | n/a | n/a | complete |
+| 7 | Voice Converter | /voice-converter | AI voice-to-voice | n/a | n/a | n/a | complete |
 
 ## Analysis
 | # | Tab | Path | Purpose | Generate | Model picker | Voice selector | Other missing |
