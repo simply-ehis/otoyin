@@ -61,6 +61,7 @@ export function MusicGenView() {
 		{ id: "cloud", label: "Cloud (BYOK)" },
 	];
 	const [prompt, setPrompt] = useState("");
+	const [composerText, setComposerText] = useState("");
 	const [genre, setGenre] = useState("pop");
 	const [mood, setMood] = useState("neutral");
 	const [duration, setDuration] = useState(30);
@@ -296,6 +297,53 @@ export function MusicGenView() {
 				>
 					{generateMutation.isPending ? "Generating..." : "Generate Music"}
 				</Button>
+			</div>
+
+			{/* Composer (lyrics + beats, markdown-style) */}
+			<div className="max-w-2xl space-y-2 rounded-md border border-border bg-card p-3">
+				<Label htmlFor="music-composer">Composer (lyrics + beats)</Label>
+				<p className="text-xs text-muted-foreground">
+					Write sections like ## Verse / ## Chorus, chord symbols in
+					brackets [Cmaj7], and lyrics. Used as the generation prompt.
+				</p>
+				<Textarea
+					id="music-composer"
+					value={composerText}
+					onChange={(e) => setComposerText(e.target.value)}
+					placeholder={"## Verse\n[Cmaj7] [Am7] [Fmaj7] [G7]\nLyrics go here...\n\n## Chorus\n[C] [G] [Am] [F]\n..."}
+					rows={8}
+					className="font-mono text-xs"
+				/>
+				<div className="flex flex-wrap gap-2">
+					<Button
+						type="button"
+						size="sm"
+						variant="outline"
+						className="h-8 text-xs"
+						disabled={!composerText.trim()}
+						onClick={() => setPrompt(composerText.trim())}
+					>
+						Use as prompt
+					</Button>
+					<Button
+						type="button"
+						size="sm"
+						variant="outline"
+						className="h-8 text-xs"
+						disabled={!composerText.trim()}
+						onClick={() => {
+							const blob = new Blob([composerText], { type: "text/plain" });
+							const url = URL.createObjectURL(blob);
+							const a = document.createElement("a");
+							a.href = url;
+							a.download = "composer.md";
+							a.click();
+							URL.revokeObjectURL(url);
+						}}
+					>
+						Export .md
+					</Button>
+				</div>
 			</div>
 
 			{/* Imported beat */}
