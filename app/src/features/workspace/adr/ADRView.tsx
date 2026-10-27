@@ -37,6 +37,7 @@ export function ADRView() {
 	const [newSessionName, setNewSessionName] = useState("");
 	const [recordingLineId, setRecordingLineId] = useState<string | null>(null);
 	const [confirmDeleteSession, setConfirmDeleteSession] = useState(false);
+	const [detectedSpeakers, setDetectedSpeakers] = useState<string[] | null>(null);
 
 	const adrSearch = useSearch({ from: "/workspace/adr" });
 	useEffect(() => {
@@ -117,6 +118,21 @@ export function ADRView() {
 				queryKey: ["adr-guide-waveform", sessionId],
 			});
 			toast({ title: "Guide track uploaded" });
+		},
+		onError: (e: unknown) => showStudioErrorToast(e),
+	});
+
+	const autoDiarizeMut = useMutation({
+		mutationFn: () => {
+			if (!session?.guide_audio_path) throw new Error("No guide audio");
+			return apiClient.diarizePath(session.guide_audio_path);
+		},
+		onSuccess: (data) => {
+			setDetectedSpeakers(data.speakers ?? []);
+			toast({
+				title: "Speakers detected",
+				description: `${(data.speakers ?? []).length} speaker(s) found in guide.`,
+			});
 		},
 		onError: (e: unknown) => showStudioErrorToast(e),
 	});
@@ -353,6 +369,20 @@ export function ADRView() {
 						)}
 						{session?.guide_audio_path ? "Replace Guide" : "Import Guide"}
 					</label>
+					{session?.guide_audio_path ? (
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							className="h-7 px-2 text-xs"
+							disabled={autoDiarizeMut.isPending}
+							title="Auto-detect speakers from guide audio"
+							onClick={() => autoDiarizeMut.mutate()}
+						>
+							{autoDiarizeMut.isPending ? <Spinner size="xs" className="mr-1" /> : null}
+							Auto-label speakers
+						</Button>
+					) : null}
 					<Button
 						type="button"
 						variant="ghost"

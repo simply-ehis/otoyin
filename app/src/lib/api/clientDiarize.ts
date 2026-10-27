@@ -42,4 +42,30 @@ export class DiarizeMethods extends DubbingMethods {
 		}
 		return response.json();
 	}
+
+	async diarizePath(
+		audioPath: string,
+		opts?: { language?: LanguageCode; model?: string; numSpeakers?: number },
+	): Promise<DiarizationResponse> {
+		const url = `${this.getBaseUrl()}/diarize/path`;
+		const response = await fetch(url, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				audio_path: audioPath,
+				language: opts?.language,
+				model: opts?.model,
+				num_speakers: opts?.numSpeakers,
+			}),
+		});
+		if (!response.ok) {
+			const error = await response.json().catch(() => ({
+				detail: response.statusText,
+			}));
+			throw new Error(
+				formatErrorDetail(error.detail, `HTTP error! status: ${response.status}`),
+			);
+		}
+		return response.json();
+	}
 }
