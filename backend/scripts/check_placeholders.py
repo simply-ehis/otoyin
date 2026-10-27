@@ -53,7 +53,7 @@ SKIP_DIRS = {
     "out",
     ".next",
 }
-BANNED_MARKERS = ("TODO", "FIXME", "HACK")
+BANNED_MARKERS = ("TODO", "FIXME", "PLACEHOLDER", "HACK")
 ALLOWED_XXX_SUBSTR = "custom_token"  # orpheus_backend.py: <custom_token_XXX>
 
 

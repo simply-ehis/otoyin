@@ -1,8 +1,4 @@
-"""Minimal marketplace stub — marketplace infra stripped.
-
-Provides empty responses so the frontend store page doesn't crash.
-Model downloads go through /models/* instead.
-"""
+"""Marketplace stub — returns real models from the model registry."""
 
 from __future__ import annotations
 
@@ -11,14 +7,35 @@ from fastapi import APIRouter
 router = APIRouter(prefix="/marketplace", tags=["marketplace-stub"])
 
 
+def _products():
+    try:
+        from ..backends import get_all_model_configs
+
+        products = []
+        for cfg in get_all_model_configs():
+            products.append({
+                "id": cfg.model_name,
+                "name": getattr(cfg, "display_name", cfg.model_name),
+                "category": getattr(cfg, "category", "other"),
+                "description": "",
+                "price_usd": 0,
+                "paid": getattr(cfg, "paid", False),
+                "size_mb": getattr(cfg, "size_mb", 0),
+                "languages": getattr(cfg, "languages", []),
+            })
+        return products
+    except Exception:
+        return []
+
+
 @router.get("/catalog")
 def catalog():
-    return {"schema_version": 1, "signed_at": "", "currency": "USD", "products": [], "offline_fallback": True}
+    return {"schema_version": 1, "signed_at": "", "currency": "USD", "products": _products(), "offline_fallback": True}
 
 
 @router.get("/catalog/local")
 def catalog_local():
-    return {"schema_version": 1, "signed_at": "", "currency": "USD", "products": [], "offline_fallback": True}
+    return {"schema_version": 1, "signed_at": "", "currency": "USD", "products": _products(), "offline_fallback": True}
 
 
 @router.get("/entitlements")
@@ -53,4 +70,7 @@ def wishlist():
 
 @router.get("/product/{product_id}")
 def product(product_id: str):
+    for p in _products():
+        if p["id"] == product_id:
+            return p
     return {"id": product_id, "name": product_id, "category": "other", "price_usd": 0, "paid": False}
