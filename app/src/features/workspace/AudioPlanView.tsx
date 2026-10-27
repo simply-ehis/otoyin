@@ -2,6 +2,7 @@ import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { apiClient } from "@/lib/api/client";
+import { useProfiles } from "@/lib/hooks/useProfiles";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { Badge, Label, Separator, Spinner } from "@/ui/primitives";
@@ -18,6 +19,8 @@ import { useToast } from "@/ui/use-toast";
 interface DialogueInput {
 	character: string;
 	text: string;
+	voiceProfileId?: string | null;
+	engine?: string;
 }
 
 interface SceneInput {
@@ -143,6 +146,23 @@ function SceneCard({
 							className="h-7 flex-1 text-xs"
 							aria-label={`Scene ${index + 1} line ${i + 1} text`}
 						/>
+						<Select
+							value={d.voiceProfileId ?? ""}
+							onValueChange={(v) =>
+								updateDialogue(i, { voiceProfileId: v || null })
+							}
+						>
+							<SelectTrigger className="h-7 w-32 text-xs" aria-label="Voice">
+								<SelectValue placeholder="Voice…" />
+							</SelectTrigger>
+							<SelectContent>
+								{profiles.map((p) => (
+									<SelectItem key={p.id} value={p.id}>
+										{p.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 						<button
 							type="button"
 							className="rounded-sm p-1 text-xs text-muted-foreground transition-colors hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
