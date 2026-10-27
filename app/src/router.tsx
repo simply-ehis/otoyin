@@ -968,7 +968,9 @@ const youtubeDownloadRoute = createRoute({
 const voiceChangerRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/voice-changer",
-	component: VoiceChangerView,
+	beforeLoad: () => {
+		throw redirect({ to: "/voice-converter" });
+	},
 });
 
 // RVC voice converter route

@@ -216,9 +216,14 @@ export function VoiceConverterView() {
 
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader title="Voice Converter" />
+			<ScreenHeader title="Voice Transform" />
 
-			<Separator />
+			<Tabs defaultValue="converter" className="flex flex-1 flex-col">
+				<TabsList aria-label="Voice transform modes">
+					<TabsTrigger value="converter">File conversion</TabsTrigger>
+					<TabsTrigger value="changer">Real-time changer</TabsTrigger>
+				</TabsList>
+				<TabsContent value="converter" className="mt-3 space-y-4">
 
 			<fieldset
 				className="m-0 inline-flex min-w-0 flex-wrap gap-1 self-start rounded-md border border-border bg-card p-1"
@@ -448,6 +453,11 @@ export function VoiceConverterView() {
 					<Badge tone="success">Last conversion played</Badge>
 				) : null}
 			</div>
+				</TabsContent>
+				<TabsContent value="changer" className="mt-3">
+					<VoiceChangerPanel />
+				</TabsContent>
+			</Tabs>
 		</div>
 	);
 }

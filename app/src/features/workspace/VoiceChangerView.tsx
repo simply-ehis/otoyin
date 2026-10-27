@@ -7,7 +7,7 @@ import { Badge, Label, Separator, Spinner } from "@/ui/primitives";
 import { Slider } from "@/ui/slider";
 import { EmptyState, ScreenHeader } from "@/ui/states";
 
-export function VoiceChangerView() {
+export function VoiceChangerPanel() {
 	const isActive = useVoiceChangerStore((s) => s.enabled);
 	const setIsActive = useVoiceChangerStore((s) => s.setEnabled);
 	const pitchShift = useVoiceChangerStore((s) => s.pitchShift);
@@ -41,9 +41,7 @@ export function VoiceChangerView() {
 					: "text-red-500";
 
 	return (
-		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader title="Voice Changer" />
-
+		<div className="space-y-4">
 			<div className="flex flex-wrap items-center gap-4">
 				<Button
 					type="button"
@@ -173,3 +171,13 @@ export function VoiceChangerView() {
 		</div>
 	);
 }
+
+export function VoiceChangerView() {
+	return (
+		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
+			<ScreenHeader title="Voice Changer" />
+			<VoiceChangerPanel />
+		</div>
+	);
+}
+

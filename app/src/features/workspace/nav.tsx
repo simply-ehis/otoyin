@@ -88,13 +88,6 @@ export const WORKSPACE_GROUPS: WorkspaceGroup[] = [
 		label: "Voice",
 		tools: [
 			{
-				id: "voice-changer",
-				path: "/voice-changer",
-				icon: UserCircleIcon,
-				label: "Voice Changer",
-				description: "Real-time pitch and formant shifting",
-			},
-			{
 				id: "voice-converter",
 				path: "/voice-converter",
 				icon: ArrowsRightLeftIcon,
