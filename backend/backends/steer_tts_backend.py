@@ -1,8 +1,8 @@
 """SteerTTS backend — subprocess-based (uses steertts CLI).
 
 SteerTTS is a controllable TTS with 2,825 voices, 12 acoustic controls,
-style tags, and zero-shot voice cloning. Runs via ``python -m steertts``.
-No torch in the main process (steertts manages its own torch internally).
+style tags, free-text direction, inline markup, and zero-shot voice cloning.
+Runs via ``python -m steertts``. No torch in the main process.
 """
 
 from __future__ import annotations
@@ -26,14 +26,12 @@ STEER_MODEL_DIR = os.environ.get("STEER_TTS_MODEL_DIR", "").strip() or None
 def _resolve_model_dir() -> str | None:
     if STEER_MODEL_DIR:
         return STEER_MODEL_DIR
-    # Try steertts's own resolver (downloads/caches the model)
     try:
         from steertts import resolve_model_dir
 
         return str(resolve_model_dir())
     except Exception:
         logger.debug("steertts resolve_model_dir failed", exc_info=True)
-    # Fallback to the local download dir used during dev
     dev_dir = "C:/tmp/steer-full"
     if os.path.isdir(dev_dir):
         return dev_dir
@@ -48,11 +46,11 @@ class SteerTTSBackend:
         self._voice = "voice_1688"
 
     async def load_model(self, model_size: str = "default") -> None:
-        # SteerTTS loads lazily on first generate; just mark loaded.
         self._loaded = True
 
     async def create_voice_prompt(self, audio_path, reference_text, use_cache=True):
-        return ({}, False)
+        # SteerTTS cloning uses --ref-wav directly; store the path.
+        return ({"ref_wav": str(audio_path)}, False)
 
     async def combine_voice_prompts(self, audio_paths, reference_texts):
         return (np.zeros(0, dtype="float32"), "")
@@ -67,9 +65,14 @@ class SteerTTSBackend:
         temperature: float | None = None,
     ) -> tuple:
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, self._generate_sync, text, seed)
+        return await loop.run_in_executor(
+            None, self._generate_sync, text, voice_prompt, seed, instruct
+        )
 
-    def _generate_sync(self, text: str, seed: int | None = None) -> tuple:
+    def _generate_sync(
+        self, text: str, voice_prompt: dict, seed: int | None = None, instruct: str | None = None
+    ) -> tuple:
+        vp = voice_prompt or {}
         out_path = Path(tempfile.gettempdir()) / f"steer_{os.getpid()}.wav"
         cmd = [sys.executable, "-m", "steertts"]
         model_dir = _resolve_model_dir()
@@ -80,6 +83,17 @@ class SteerTTSBackend:
             cmd += ["--voice", self._voice]
         if seed is not None:
             cmd += ["--seed", str(seed)]
+        if instruct:
+            cmd += ["--prompt", instruct]
+        ref_wav = vp.get("ref_wav") or vp.get("audio_path")
+        if ref_wav:
+            cmd += ["--ref-wav", str(ref_wav)]
+        if vp.get("markup"):
+            cmd += ["--markup"]
+        if vp.get("tag"):
+            cmd += ["--tag", str(vp["tag"])]
+        if vp.get("ctrl"):
+            cmd += ["--ctrl", str(vp["ctrl"])]
         try:
             subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=300)
         except subprocess.CalledProcessError as e:
