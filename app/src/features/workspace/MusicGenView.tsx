@@ -44,7 +44,7 @@ const MOODS = [
 	"dreamy",
 ];
 
-export function MusicGenView() {
+export function MusicGenPanel() {
 	const { toast } = useToast();
 	const [engine, setEngine] = useState<string>("acestep_gguf");
 	const MUSIC_ENGINES = [
@@ -140,9 +140,7 @@ export function MusicGenView() {
 	};
 
 	return (
-		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader title="Music Generator" />
-
+		<div className="space-y-4">
 			<div className="max-w-lg space-y-1">
 				<Label htmlFor="mg-engine">Model</Label>
 				<select
@@ -289,3 +287,13 @@ export function MusicGenView() {
 		</div>
 	);
 }
+
+export function MusicGenView() {
+	return (
+		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
+			<ScreenHeader title="Music Generator" />
+			<MusicGenPanel />
+		</div>
+	);
+}
+
