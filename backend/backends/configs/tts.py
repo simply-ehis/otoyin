@@ -337,10 +337,10 @@ def _get_tts_configs() -> list[ModelConfig]:
         # --- SteerTTS (WhissleAI) � expressive TTS with style control (C++ native text processing) ---
         ModelConfig(
             model_name="steer-tts",
-            display_name="SteerTTS (WhissleAI)",
+            display_name="SteerTTS (WhissleAI, 23M, controllable)",
             engine="steer_tts",
             hf_repo_id="WhissleAI/steer-tts",
-            size_mb=500,
+            size_mb=100,
             min_ram_mb=2000,
             languages=["en"],
             category="tts",

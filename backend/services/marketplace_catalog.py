@@ -636,7 +636,7 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "tts",
         "price_usd": 0,
         "paid": False,
-        "note": "Expressive TTS with style control. C++ native text processing. 500MB.",
+        "note": "23M params. 2,825 voices, 12 acoustic controls, style tags, voice cloning. CC BY-NC 4.0. No torch needed.",
     },
     {
         "id": "planner-lfm2-24b-a2b",
