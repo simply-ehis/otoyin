@@ -22,6 +22,19 @@ All notable changes to otoyin will be documented in this file.
 - Real-time generation status via pub/sub (replaces polling)
 - Path traversal protection on audio processing endpoints
 - Docker container now runs as non-root user
+- **Tab consolidation** — merged duplicate tabs: Stems+StemSeparation, Noise Reduction+Enhance, Pitch Map+Spectrogram, Transcript+Live Transcript, Voice Changer+Voice Converter, Music Generator→Studio (AI Generate tab); 36 → 21 sidebar tabs
+- **Voice Converter fixed** — engine IDs aligned with backend (rvc_onnx/openvoice_onnx), OpenVoice branch implemented, save-to-library + RVC voice-pack download
+- **Conversation** — `POST /conversation/generate` stitches multi-speaker audio; per-speaker voice picker; Generate button
+- **Audio Plan** — per-track voice picker; exposed as assistant tool `plan_audio`
+- **Comping** — save comp to Library + send to Audio Studio
+- **Timeline** — waveform peaks per track, zoom control
+- **Enhance** — A/B compare original vs enhanced + save to Library
+- **Music** — songwriter composer (lyrics + beats markdown, export .md), import beats, playback, send to Audio Studio/Timeline
+- **Video** — floating global video player (visible across tabs), `POST /video/mux` (audio+video → MP4 via ffmpeg)
+- **ADR** — auto-label speakers from guide audio via diarization
+- **Dubbing** — "Export to story" stub replaced with working "Download dubbed video"
+- **Assistant tools** — added `plan_audio`, `audio_enhance`, `mux_video_audio`, `download_voice_pack`, `conversation_generate` (222 tools)
+- **README** — updated feature highlights and tab count
 
 ### Fixed
 - API transport mismatch: 11 client methods (separate, blend, copy/cut/paste, time-stretch, shout-to-whisper, compress, normalize, master, loudness) POSTed JSON bodies to query-param routes and 422'd — now send query params via `postQuery` (`clientCore.ts`)
