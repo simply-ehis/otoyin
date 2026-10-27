@@ -64,7 +64,7 @@
 		"spessasynth_core": "^4.3.22",
 		"tailwind-merge": "^2.5.4",
 		"wavesurfer.js": "^7.0.0",
-		"zod": "^3.23.8",
+		"zod": "^4.6.7",
 		"zustand": "^4.5.0"
 	},
 	"devDependencies": {

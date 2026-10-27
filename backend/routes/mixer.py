@@ -91,10 +91,10 @@ async def mixer_preview(
     max_duration_samples = 0
     for audio, sr, track_cfg, start_sample in loaded:
         if sr != sample_rate:
-            from scipy.signal import resample as _resample
-
-            audio = _resample(audio, round(len(audio) * sample_rate / sr)).astype(np.float32)
-            start_sample = round(start_sample * sample_rate / sr)
+            ratio = sample_rate / sr
+            idx = (np.arange(round(len(audio) * ratio)) / ratio).astype(int).clip(0, len(audio) - 1)
+            audio = audio[idx].astype(np.float32)
+            start_sample = round(start_sample * ratio)
         track_data.append((audio, track_cfg))
         max_duration_samples = max(max_duration_samples, start_sample + len(audio))
 

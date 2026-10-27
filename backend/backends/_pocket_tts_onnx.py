@@ -34,13 +34,6 @@ try:
 except ImportError:
     HAS_SOUNDFILE = False
 
-try:
-    import scipy.signal
-
-    HAS_SCIPY = True
-except ImportError:
-    HAS_SCIPY = False
-
 
 class PocketTTSOnnx:
     """Pure ONNX inference engine for Pocket TTS (vendored upstream)."""
@@ -237,12 +230,11 @@ class PocketTTSOnnx:
             audio = audio.astype(np.float32)
 
         if sr != self.sample_rate:
-            if not HAS_SCIPY:
-                raise ImportError("scipy required for resampling.")
-            gcd = np.gcd(int(sr), int(self.sample_rate))
-            up = int(self.sample_rate // gcd)
-            down = int(sr // gcd)
-            audio = scipy.signal.resample_poly(audio, up, down, axis=-1).astype(np.float32)
+            # numpy-based linear resampling (no scipy needed)
+            ratio = self.sample_rate / sr
+            n = int(len(audio) * ratio)
+            idx = (np.arange(n) / ratio).astype(int).clip(0, len(audio) - 1)
+            audio = audio[idx].astype(np.float32)
 
         return audio.reshape(1, 1, -1)
 

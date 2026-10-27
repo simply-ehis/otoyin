@@ -35,7 +35,7 @@ import { SettingRow, SettingSection } from "./rows";
 import { ThemeSelect } from "./ThemeSelect";
 
 function connectionSchema(invalidUrl: string) {
-	return z.object({ serverUrl: z.string().url(invalidUrl) });
+	return z.object({ serverUrl: z.url(invalidUrl) });
 }
 
 /**

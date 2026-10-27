@@ -194,10 +194,10 @@ def _bounce_launcher_session(
             audio = audio[:, :2]
 
         if sr != sample_rate:
-            from scipy.signal import resample
-
-            target_len = int(audio.shape[0] * sample_rate / sr)
-            audio = resample(audio, target_len).astype(np.float32)
+            ratio = sample_rate / sr
+            target_len = int(audio.shape[0] * ratio)
+            idx = (np.arange(target_len) / ratio).astype(int).clip(0, audio.shape[0] - 1)
+            audio = audio[idx].astype(np.float32)
 
         processed.append((audio, track.volume, track.pan))
 
