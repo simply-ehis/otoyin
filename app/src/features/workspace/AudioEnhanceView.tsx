@@ -31,6 +31,9 @@ export function AudioEnhanceView() {
 	const [uploading, setUploading] = useState(false);
 	const [mode, setMode] = useState<EnhanceMode>("auto");
 	const [enhancedUrl, setEnhancedUrl] = useState<string | null>(null);
+	const [originalUrl, setOriginalUrl] = useState<string | null>(null);
+	const [enhancedBlob, setEnhancedBlob] = useState<Blob | null>(null);
+	const [showOriginal, setShowOriginal] = useState(false);
 
 	useEffect(() => {
 		return () => {
@@ -47,6 +50,8 @@ export function AudioEnhanceView() {
 				URL.revokeObjectURL(enhancedUrl);
 			}
 			setEnhancedUrl(URL.createObjectURL(blob));
+			setEnhancedBlob(blob);
+			setShowOriginal(false);
 			toast({ title: "Audio enhancement complete" });
 		},
 		onError: (err: unknown) => showStudioErrorToast(err),
@@ -59,6 +64,9 @@ export function AudioEnhanceView() {
 			setAudioPath(audio_path);
 			setFileName(file.name);
 			setEnhancedUrl(null);
+			if (originalUrl) URL.revokeObjectURL(originalUrl);
+			setOriginalUrl(URL.createObjectURL(file));
+			setEnhancedBlob(null);
 			toast({ title: `Uploaded: ${file.name}` });
 		} catch (err) {
 			toast({
@@ -70,6 +78,21 @@ export function AudioEnhanceView() {
 			setUploading(false);
 		}
 	}
+
+	const saveMut = useMutation({
+		mutationFn: async () => {
+			if (!enhancedBlob) throw new Error("No enhanced audio");
+			return apiClient.saveGeneratedAudio(
+				enhancedBlob,
+				`Enhanced ${fileName || "audio"}`,
+				"capture",
+				"file",
+			);
+		},
+		onSuccess: () =>
+			toast({ title: "Saved to Library", description: "Enhanced audio is now in the Library tab." }),
+		onError: (e: unknown) => showStudioErrorToast(e),
+	});
 
 	function handleProcess() {
 		if (!audioPath) {
@@ -128,15 +151,41 @@ export function AudioEnhanceView() {
 
 			{enhancedUrl ? (
 				<section className="space-y-2 rounded-md border border-border bg-card p-3">
-					<h2 className="text-xs font-medium text-foreground">
-						Enhanced audio
-					</h2>
+					<div className="flex items-center justify-between">
+						<h2 className="text-xs font-medium text-foreground">
+							{showOriginal ? "Original audio" : "Enhanced audio"}
+						</h2>
+						<div className="flex items-center gap-2">
+							{originalUrl ? (
+								<Button
+									type="button"
+									size="sm"
+									variant="outline"
+									className="h-7 px-2 text-xs"
+									onClick={() => setShowOriginal((v) => !v)}
+								>
+									{showOriginal ? "Show enhanced" : "Compare original"}
+								</Button>
+							) : null}
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								className="h-7 px-2 text-xs"
+								disabled={saveMut.isPending || !enhancedBlob}
+								onClick={() => saveMut.mutate()}
+							>
+								{saveMut.isPending ? <Spinner size="xs" className="mr-1" /> : null}
+								Save to Library
+							</Button>
+						</div>
+					</div>
 					{/* biome-ignore lint/a11y/useMediaCaption: processed speech preview, no dialogue to caption */}
 					<audio
-						src={enhancedUrl}
+						src={showOriginal && originalUrl ? originalUrl : enhancedUrl}
 						controls
 						className="h-8 w-full"
-						aria-label="Enhanced audio playback"
+						aria-label="Audio playback"
 					/>
 				</section>
 			) : null}
