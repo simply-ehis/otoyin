@@ -23,6 +23,7 @@ import { ScreenHeader } from "@/ui/states";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
 import { useToast } from "@/ui/use-toast";
 import { playPreviewBlob } from "./playBlob";
+import { FreeSoundsPanel } from "./SoundEffectsView";
 
 const NOISE_TYPES = ["white", "pink", "brown", "blue", "violet"];
 
@@ -189,6 +190,7 @@ export function StudioView() {
 					<TabsTrigger value="instruments">Instruments</TabsTrigger>
 					<TabsTrigger value="sfx">SFX</TabsTrigger>
 					<TabsTrigger value="noise">Noise</TabsTrigger>
+					<TabsTrigger value="free-sounds">Free Sounds</TabsTrigger>
 				</TabsList>
 				<TabsContent value="instruments">
 					<InstrumentPreview />
@@ -213,6 +215,9 @@ export function StudioView() {
 				</TabsContent>
 				<TabsContent value="noise">
 					<NoisePanel />
+				</TabsContent>
+				<TabsContent value="free-sounds">
+					<FreeSoundsPanel />
 				</TabsContent>
 			</Tabs>
 		</div>

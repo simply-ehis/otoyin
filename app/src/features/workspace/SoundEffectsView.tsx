@@ -21,7 +21,7 @@ interface FreesoundResult {
 	tags: string[];
 }
 
-export function SoundEffectsView() {
+export function FreeSoundsPanel() {
 	const { toast } = useToast();
 	const queryClient = useQueryClient();
 	const [query, setQuery] = useState("");
@@ -56,11 +56,7 @@ export function SoundEffectsView() {
 	const count = searchQuery.data?.count ?? 0;
 
 	return (
-		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader title="Sound Effects" />
-
-			<Separator />
-
+		<div className="space-y-3">
 			<div className="flex max-w-xl items-center gap-2">
 				<div className="relative flex-1">
 					<MagnifyingGlassIcon
@@ -192,6 +188,15 @@ export function SoundEffectsView() {
 			<Badge tone="neutral" className="self-start">
 				Previews stream from Freesound · downloads land in the library
 			</Badge>
+		</div>
+	);
+}
+
+export function SoundEffectsView() {
+	return (
+		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
+			<ScreenHeader title="Sound Effects" />
+			<FreeSoundsPanel />
 		</div>
 	);
 }
