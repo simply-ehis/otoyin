@@ -251,8 +251,24 @@ def _get_cloud_llm_configs() -> list[ModelConfig]:
             supported_tags=["thinking", "tool_call", "json_mode"],
             languages=["*"],
         ),
+        ModelConfig(
+            model_name="planner-lfm2-24b-a2b",
+            display_name="LFM2.5-24B-A2B ($80, MoE)",
+            engine="gguf_llm",
+            hf_repo_id="LiquidAI/LFM2.5-24B-A2B-GGUF",
+            model_size="LFM2.5-24B-A2B-Q4_K_M",
+            size_mb=14000,
+            min_ram_mb=8000,
+            min_vram_mb=4096,
+            quant="Q4_K_M",
+            languages=planner_languages,
+            category="llm",
+            supports_instruct=True,
+            supported_tags=["thinking", "tool_call", "json_mode"],
+            is_moe=True,
+            paid=True,
+        ),
     ]
-
 
 def get_llm_model_configs() -> list[ModelConfig]:
     """Return all LLM model configs (GGUF + cloud)."""

@@ -629,8 +629,24 @@ PRODUCTS: list[dict[str, Any]] = [
         "paid": False,
         "note": "10MB. Binaural rendering, HRTF, occlusion. Free download — requires phonon.dll on disk.",
     },
-]
 
+    {
+        "id": "steer-tts",
+        "name": "SteerTTS (WhissleAI)",
+        "category": "tts",
+        "price_usd": 0,
+        "paid": False,
+        "note": "Expressive TTS with style control. C++ native text processing. 500MB.",
+    },
+    {
+        "id": "planner-lfm2-24b-a2b",
+        "name": "LFM2.5-24B-A2B (MoE)",
+        "category": "llm",
+        "price_usd": 80,
+        "paid": True,
+        "note": "24B params, 2B active MoE. Q4_K_M. 14GB. Requires 8GB RAM + 4GB VRAM.",
+    },
+]
 _PRODUCT_INDEX = {p["id"]: p for p in PRODUCTS}
 
 
