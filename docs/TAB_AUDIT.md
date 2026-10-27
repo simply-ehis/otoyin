@@ -32,8 +32,8 @@ Legend: ✅ = present/wired, ⚠️ = partial, ❌ = missing.
 |---|-----|------|---------|----------|--------------|----------------|---------------|
 | 12 | Noise Reduction | /workspace/noise-reduction | RNNoise speech cleanup | ❌ | ❌ | ❌ | strength slider wired |
 | 13 | Enhance | /workspace/audio-enhance | Bandwidth ext + denoise | ❌ | ❌ | ❌ | model picker |
-| 14 | Stems | /workspace/vocal-isolation | Split into vocals/drums/bass/other | ❌ | ❌ | ❌ | model picker (demucs) |
-| 15 | Stem Separation | /stem-separation | Demucs ONNX separation | ❌ | ❌ | ❌ | (full UI exists) |
+| 14 | Stems | /workspace/vocal-isolation | Split into vocals/drums/bass/other | n/a | ❌ (backend supports) | n/a | complete UI |
+| 15 | Stem Separation | /stem-separation | Demucs ONNX separation | n/a | n/a | n/a | complete |
 | 16 | Transcript | /workspace/transcript | Edit audio via word timestamps | ✅ (1) | ❌ | ❌ | re-generate on edit |
 | 17 | Live Transcript | /workspace/live-transcript | Real-time Whisper STT | ❌ | ❌ | ❌ | model picker |
 | 18 | Diarize | /workspace/diarize | Speaker diarization | ❌ | ❌ | ❌ | speaker labels |
