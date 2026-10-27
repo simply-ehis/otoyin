@@ -197,8 +197,6 @@ const BatchQueueView = lazy(() =>
 		default: m.BatchQueueView,
 	})),
 );
-	return null;
-}
 
 // Root route with layout
 const rootRoute = createRootRoute({

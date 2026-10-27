@@ -28,7 +28,7 @@ function laneLabel(id: string) {
 	return id.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-export function AutomationView() {
+export function AutomationPanel() {
 	const { toast } = useToast();
 	const [lanes, setLanes] = useState<Record<string, AutomationPoint[]>>({});
 	const [activeLane, setActiveLane] = useState<string>("volume");
@@ -101,11 +101,7 @@ export function AutomationView() {
 	}
 
 	return (
-		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader title="Automation & Cues" />
-
-			<Separator />
-
+		<div className="space-y-4">
 			<div className="space-y-1.5">
 				<Label id="automation-lane-label">Active lane</Label>
 				<fieldset
@@ -328,3 +324,13 @@ export function AutomationView() {
 		</div>
 	);
 }
+
+export function AutomationView() {
+	return (
+		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
+			<ScreenHeader title="Automation & Cues" />
+			<AutomationPanel />
+		</div>
+	);
+}
+
