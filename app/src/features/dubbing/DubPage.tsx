@@ -221,8 +221,29 @@ export function DubPage() {
 						Term → translation overrides.
 					</p>
 					<div className="mt-auto">
-						<Button size="sm" variant="outline" disabled>
-							Export to story
+						<Button
+							size="sm"
+							variant="outline"
+							disabled={!hasJob || !jobId}
+							title="Download the dubbed video"
+							onClick={async () => {
+								if (!jobId) return;
+								try {
+									const blob = await dubbingClient.downloadDubbedVideo(jobId);
+									const url = URL.createObjectURL(blob);
+									const a = document.createElement("a");
+									a.href = url;
+									a.download = `dubbed_${jobId}.mp4`;
+									document.body.appendChild(a);
+									a.click();
+									a.remove();
+									URL.revokeObjectURL(url);
+								} catch (e) {
+									console.error(e);
+								}
+							}}
+						>
+							Download dubbed video
 						</Button>
 					</div>
 				</aside>
