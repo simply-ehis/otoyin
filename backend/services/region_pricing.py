@@ -41,7 +41,7 @@ def _load_cache():
     _ensure_data_dir()
     if _pricing_file.exists():
         try:
-            with open(_pricing_file) as f:
+            with open(_pricing_file, encoding="utf-8") as f:
                 _cache = json.load(f)
         except (OSError, json.JSONDecodeError) as e:
             logger.warning("Failed to load region pricing: %s", e)
@@ -56,7 +56,7 @@ def _save_cache():
     """Save pricing data to file."""
     _ensure_data_dir()
     try:
-        with open(_pricing_file, "w") as f:
+        with open(_pricing_file, "w", encoding="utf-8") as f:
             json.dump(_cache, f, indent=2)
     except OSError as e:
         logger.error("Failed to save region pricing: %s", e)

@@ -43,7 +43,7 @@ export function useStreamingAudioPlayer() {
 			}
 
 			const buffer = ctx.createBuffer(1, audio.length, sampleRate);
-			buffer.copyToChannel(audio, 0);
+			buffer.copyToChannel(audio as unknown as Float32Array<ArrayBuffer>, 0);
 
 			const source = ctx.createBufferSource();
 			source.buffer = buffer;

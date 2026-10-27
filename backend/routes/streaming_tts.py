@@ -9,6 +9,7 @@ replayed, downloaded, or added to generation history later.
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 import logging
@@ -76,7 +77,7 @@ async def stream_tts(request: StreamTTSRequest):
                     full_audio = np.concatenate(accumulated) if len(accumulated) > 1 else accumulated[0]
                     audio_id = uuid.uuid4().hex[:12]
                     audio_path = str(config.get_generations_dir() / f"stream_{audio_id}.wav")
-                    save_audio(full_audio, audio_path, sample_rate)
+                    await asyncio.to_thread(save_audio, full_audio, audio_path, sample_rate)
                     final_event = {
                         "audio": "",
                         "sample_rate": sample_rate,
@@ -105,7 +106,7 @@ async def stream_tts(request: StreamTTSRequest):
                 # Save audio to disk
                 audio_id = uuid.uuid4().hex[:12]
                 audio_path = str(config.get_generations_dir() / f"stream_{audio_id}.wav")
-                save_audio(audio, audio_path, sr)
+                await asyncio.to_thread(save_audio, audio, audio_path, sr)
                 final_event = {
                     "audio": "",
                     "sample_rate": sr,

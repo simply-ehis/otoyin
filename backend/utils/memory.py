@@ -22,18 +22,17 @@ _CRIT_MB = 256  # refuse to load when free memory is below this
 # Cached values (refreshed every N calls to avoid syscall spam)
 _free_mb: int | None = None
 _call_count = 0
-_REFRESH_EVERY = 20  # re-read /proc/meminfo every N calls
+_REFRESH_EVERY = 20  # re-read memory stats every N calls
 
 
 def _read_free_mb() -> int:
-    """Read free physical memory on Windows via psutil or WMI fallback."""
+    """Read free physical memory via psutil, then platform-specific fallbacks."""
     try:
         import psutil
 
         return int(psutil.virtual_memory().available / (1024 * 1024))
     except ImportError:
         pass
-    # Fallback: parse wmic on Windows, /proc/meminfo on Linux
     if sys.platform == "win32":
         try:
             import subprocess
@@ -48,7 +47,35 @@ def _read_free_mb() -> int:
                 if line.startswith("FreePhysicalMemory="):
                     return int(line.split("=", 1)[1]) // 1024  # KB → MB
         except Exception:
-            logger.debug("suppressed exception in memory.py:50", exc_info=True)
+            logger.debug("suppressed exception in memory.py wmic fallback", exc_info=True)
+    elif sys.platform == "darwin":
+        try:
+            import subprocess
+
+            out = subprocess.check_output(
+                ["vm_stat"],
+                text=True,
+                timeout=3,
+                stderr=subprocess.DEVNULL,
+            )
+            free_pages = 0
+            for line in out.splitlines():
+                if "Pages free:" in line:
+                    free_pages = int(line.split(":")[1].strip().strip("."))
+                    break
+            return free_pages * 4096 // (1024 * 1024)  # page size 4096, bytes → MB
+        except Exception:
+            logger.debug("suppressed exception in memory.py macOS fallback", exc_info=True)
+    else:
+        # Linux: read /proc/meminfo with explicit UTF-8 encoding
+        try:
+            with open("/proc/meminfo", encoding="utf-8") as f:
+                for line in f:
+                    if line.startswith("MemAvailable:"):
+                        kb = int(line.split()[1])
+                        return kb // 1024  # KB → MB
+        except (FileNotFoundError, PermissionError, ValueError):
+            logger.debug("suppressed exception in memory.py /proc/meminfo", exc_info=True)
     return -1  # unknown
 
 
@@ -124,5 +151,28 @@ def get_system_total_mb() -> int:
                 if line.startswith("TotalPhysicalMemory="):
                     return int(line.split("=", 1)[1]) // (1024 * 1024)
         except Exception:
-            logger.debug("suppressed exception in memory.py:133", exc_info=True)
+            logger.debug("suppressed exception in memory.py wmic total", exc_info=True)
+    elif sys.platform == "darwin":
+        try:
+            import subprocess
+
+            out = subprocess.check_output(
+                ["sysctl", "-n", "hw.memsize"],
+                text=True,
+                timeout=3,
+                stderr=subprocess.DEVNULL,
+            )
+            return int(out.strip()) // (1024 * 1024)
+        except Exception:
+            logger.debug("suppressed exception in memory.py macOS total", exc_info=True)
+    else:
+        # Linux: read /proc/meminfo with explicit UTF-8 encoding
+        try:
+            with open("/proc/meminfo", encoding="utf-8") as f:
+                for line in f:
+                    if line.startswith("MemTotal:"):
+                        kb = int(line.split()[1])
+                        return kb // 1024  # KB → MB
+        except (FileNotFoundError, PermissionError, ValueError):
+            logger.debug("suppressed exception in memory.py /proc/meminfo total", exc_info=True)
     return -1

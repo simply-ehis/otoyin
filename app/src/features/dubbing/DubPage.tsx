@@ -53,7 +53,7 @@ export function DubPage() {
 	useEffect(() => {
 		let cancelled = false;
 		backendAnalysis
-			.then((data) => {
+			?.then((data) => {
 				if (!cancelled) {
 					setAnalyzed(data);
 				}

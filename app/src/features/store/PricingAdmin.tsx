@@ -14,6 +14,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { showStudioErrorToast } from "@/lib/errors";
+import type { MarketplaceProduct } from "@/lib/api/types";
 import { marketplaceClient } from "@/lib/marketplace";
 import { Button } from "@/ui/button";
 import { Spinner } from "@/ui/primitives";
@@ -138,8 +139,8 @@ export function PricingAdmin() {
 		},
 	});
 
-	const products = catalogQuery.data?.products ?? [];
-	const prices = pricesQuery.data?.prices ?? [];
+	const products = (catalogQuery.data ?? []) as MarketplaceProduct[];
+	const prices: RegionPrice[] = pricesQuery.data?.prices ?? [];
 	const summary = summaryQuery.data;
 
 	const handleSave = async (price: RegionPrice) => {

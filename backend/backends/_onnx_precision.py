@@ -116,7 +116,7 @@ def _get_recorded_provider() -> str | None:
 
     config_path = config.get_data_dir() / "runtime" / "onnx_provider.json"
     try:
-        with open(config_path) as f:
+        with open(config_path, encoding="utf-8") as f:
             data = json.load(f)
         return data.get("provider")
     except (FileNotFoundError, json.JSONDecodeError):

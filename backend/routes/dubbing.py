@@ -151,7 +151,7 @@ async def analyze_dubbing_job(job_id: str):
         if not path.is_file():
             continue
         try:
-            data, _sr = sf.read(str(path), always_2d=False)
+            data, _sr = await asyncio.to_thread(sf.read, str(path), always_2d=False)
             if data.ndim > 1:
                 data = data.mean(axis=1)
             block_samples = max(1, len(data) // resolution)

@@ -117,7 +117,7 @@ beforeEach(() => {
 	mockedApi.getModelsCacheDir.mockResolvedValue({ path: "C:/models" });
 	mockedApi.getLicenses.mockResolvedValue({ licenses: [] });
 	mockedApi.getMarketplaceOffers.mockResolvedValue([]);
-	mockedWishlist.mockResolvedValue({ product_ids: [] });
+	mockedWishlist.mockResolvedValue([]);
 });
 
 describe("StorePage end-to-end wiring", () => {

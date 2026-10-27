@@ -120,17 +120,17 @@ export function StorePage() {
 		queryKey: ["marketplace", "wishlist"],
 		queryFn: async () => {
 			try {
-				const deviceId = getDeviceId();
+				const deviceId = await getDeviceId();
 				return await marketplaceClient.fetchWishlist(deviceId);
 			} catch {
-				return { product_ids: [] as string[] };
+				return [] as string[];
 			}
 		},
 		staleTime: 60_000,
 	});
 	useEffect(() => {
-		if (wishlistQ.data?.product_ids) {
-			setWishlist(new Set(wishlistQ.data.product_ids));
+		if (wishlistQ.data) {
+			setWishlist(new Set(wishlistQ.data));
 		}
 	}, [wishlistQ.data]);
 	useEffect(() => {
@@ -484,7 +484,7 @@ export function StorePage() {
 		onSettled: () => setActivatingId(null),
 	});
 
-	const handleToggleWishlist = (id: string) => {
+	const handleToggleWishlist = async (id: string) => {
 		setWishlist((prev) => {
 			const next = new Set(prev);
 			if (next.has(id)) {
@@ -495,7 +495,7 @@ export function StorePage() {
 			return next;
 		});
 		try {
-			const deviceId = getDeviceId();
+			const deviceId = await getDeviceId();
 			if (wishlist.has(id)) {
 				void marketplaceClient.removeWishlist(id, deviceId).catch((e) => {
 					debug.warn("wishlist remove failed", e);

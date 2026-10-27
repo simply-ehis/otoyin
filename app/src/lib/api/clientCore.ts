@@ -114,7 +114,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 export class ApiClientCore {
-	protected getBaseUrl(): string {
+	public getBaseUrl(): string {
 		const serverUrl = useServerStore.getState().serverUrl;
 		return serverUrl;
 	}

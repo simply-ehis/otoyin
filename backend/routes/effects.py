@@ -1,9 +1,8 @@
-"""Audio effects endpoints backed by Spotify Pedalboard."""
+"""Audio effects processing via Spotify Pedalboard."""
 
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
@@ -11,7 +10,6 @@ from pydantic import BaseModel
 
 from ..backends.effects import (
     PEDALBOARD_AVAILABLE,
-    get_available_effects,
     process_audio,
 )
 
@@ -20,25 +18,13 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/effects", tags=["effects"])
 
 
-class AvailableEffectsResponse(BaseModel):
-    effects: list[dict[str, Any]]
-
-
 class ProcessEffectsRequest(BaseModel):
     audio_path: str
     sample_rate: int = 44100
-    chain: list[dict[str, Any]] = []
+    chain: list[dict] = []
     preset: str | None = None
     start_ms: float | None = None
     end_ms: float | None = None
-
-
-@router.get("/available")
-async def available_effects() -> AvailableEffectsResponse:
-    """Return list of available Pedalboard effects."""
-    if not PEDALBOARD_AVAILABLE:
-        return AvailableEffectsResponse(effects=[])
-    return AvailableEffectsResponse(effects=get_available_effects())
 
 
 @router.post("/process")

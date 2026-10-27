@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import tempfile
 import uuid
@@ -63,7 +64,7 @@ async def separate(file: UploadFile = File(...)) -> dict:
     with open(src, "wb") as f:
         f.write(await file.read())
 
-    audio, sr = sf.read(str(src), dtype="float32", always_2d=True)
+    audio, sr = await asyncio.to_thread(sf.read, str(src), dtype="float32", always_2d=True)
     if audio.shape[1] == 1:
         audio = np.repeat(audio, 2, axis=1)
     elif audio.shape[1] > 2:
@@ -76,7 +77,7 @@ async def separate(file: UploadFile = File(...)) -> dict:
         try:
             arr = separate_audio_onnx(audio.T, sr, stem=name)
             out_path = work / f"{name}.wav"
-            sf.write(str(out_path), arr, sr)
+            await asyncio.to_thread(sf.write, str(out_path), arr, sr)
             stems[name] = out_path.name
         except Exception:
             logger.exception("stem separation failed for %s", name)

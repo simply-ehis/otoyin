@@ -250,7 +250,7 @@ export const StoreDetailModal = memo(function StoreDetailModal({
 					</div>
 
 					{/* why buy callout */}
-					{false && product.paid && !owned && !cached && (
+					{false && product?.paid && !owned && !cached && (
 						<div className="rounded-lg border border-border bg-card p-3">
 							<div className="text-xs font-semibold text-foreground">
 								Why makers buy this

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import { Button } from "@/ui/button";
 import { InteractiveWaveform } from "./InteractiveWaveform";
@@ -203,12 +203,12 @@ export function StemSeparationPage() {
 					</label>
 					{result && stems.some((s) => s.name === "vocals") && !stems.some((s) => s.name === "lead_vocals") && (
 						<Button size="sm" variant="outline" disabled={splitting} onClick={splitVocals}>
-							{splitting ? "Splitting…" : "Split vocals"}
+							{splitting ? "Splittingâ€¦" : "Split vocals"}
 						</Button>
 					)}
 					{result && (
 						<Button size="sm" variant="outline" disabled={mixing} onClick={mixdown}>
-							{mixing ? "Mixing…" : "Mixdown"}
+							{mixing ? "Mixingâ€¦" : "Mixdown"}
 						</Button>
 					)}
 				</div>
@@ -221,7 +221,7 @@ export function StemSeparationPage() {
 			{result && stems.length > 0 && (
 				<div className="space-y-4">
 					<p className="text-sm font-medium text-foreground">
-						Stems ready (job {result.job_id}) · zoom {zoom}x (scroll to zoom)
+						Stems ready (job {result.job_id}) â€” zoom {zoom}x (scroll to zoom)
 					</p>
 					{stems.map((s) => (
 						<div key={s.name} className="flex items-center gap-3 rounded-lg border border-border bg-secondary/40 p-2">
@@ -263,7 +263,7 @@ export function StemSeparationPage() {
 					{beats.length > 0 && (
 						<div className="space-y-1">
 							<p className="text-xs text-muted-foreground">
-								Beats: {beats.length} detected · ~{bpm} BPM
+								Beats: {beats.length} detected â€” ~{bpm} BPM
 							</p>
 							<div className="relative h-6 rounded bg-secondary/40">
 								{beats.map((b, i) => (

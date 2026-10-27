@@ -345,6 +345,14 @@ outes/models/download.py bark branch (gguf + per-voice pack_voice_npz), services
 - **Frontend done (streaming TTS):** `app/src/lib/hooks/useStreamingTTS.ts` — wraps existing `streamTts` SSE client (`/tts/stream`) and `useStreamingAudioPlayer` Web Audio chunk player; exposes `start(text)`, `stop()`, `isPlaying`, `isLoading`, `error`, `audioPath`, `generationId`. Biome + typecheck clean.
 - **Tests:** 33 STT + tool_registry tests pass, ruff clean.
 
+### Phase 26b — Backend audit fixes (this session)
+- **`/proc/meminfo` Windows/macOS crash** (`backend/utils/memory.py`): Added Linux `/proc/meminfo` (with `encoding="utf-8"`) and macOS `vm_stat`/`sysctl` fallbacks to `_read_free_mb()` and `get_system_total_mb()`. Previously returned -1 (unknown) on non-Windows without psutil — now actually reads memory on Linux/macOS. Stale `/proc/meminfo` comments removed; debug-log line numbers corrected.
+- **Text-file encoding** (3 files): Added `encoding="utf-8"` to `open()` calls writing/reading text: `voice_changer/server.py:151` (latency JSON write), `backends/_onnx_precision.py:120` (onnx_provider.json read), `services/region_pricing.py:44,59` (pricing cache read/write). Binary-mode `open()` calls (soundfont_packs, cloud_provider, youtube, models/common) left as-is — binary mode doesn't need encoding.
+- **Duplicate `GET /effects/available` removed** (`backend/routes/effects.py`): The Pedalboard-based `GET /effects/available` was a duplicate of the one in `backend/routes/audio_pipeline/presets.py` (DB-backed, full CRUD). Frontend calls `GET /effects/available` expecting the audio_pipeline version. Removed the duplicate route, the `AvailableEffectsResponse` model, and the `get_available_effects` import from `routes/effects.py`. Kept `POST /effects/process` (Pedalboard, different backend, no frontend caller but retained for compatibility).
+- **`/speak` vs `/generate` evaluated — NOT a duplicate**: `POST /speak` (`routes/speak.py`) is a purposeful MCP-compatible REST wrapper for non-frontend callers (shell scripts, ACP, A2A agents). It adds X-21labs-Client-Id binding, profile resolution via `resolve_profile()`, default personality/engine from client bindings, and "speak-start" MCP event publishing. Delegates to the same `generate_speech()` in `routes/generations.py`. Frontend uses `/generate` (TTS), `/generate/sfx`, `/generate/music` — not `/speak`. No action taken.
+- **`streaming_tts.py` route path**: Already `@router.post("/")` (was `@router.post("")` in an older version) — no change needed.
+- **Verification:** `ruff check` clean on all edited files (`routes/effects.py`, `utils/memory.py`, `backends/_onnx_precision.py`, `services/region_pricing.py`, `voice_changer/server.py`).
+
 ## Frontend Audit (this session)
 - **Hardcoded STT defaults removed (3 fixes):**
   - `voiceChatStore.ts:214` — `stt_model: config?.sttModel ?? "base"` → `config?.sttModel` (no default)

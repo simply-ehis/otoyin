@@ -179,6 +179,8 @@ ENDPOINT_MAP = {
     # Professional finishing
     "master_audio": "/audio/master",
     "separate_audio": "/audio/separate",
+    "separate_stems": "/stems/separate",
+    "stem_separation_status": "/stems/status",
     "run_recipe": "/recipe/run",
     "export_reaper_project": "/audio-studio/sessions/{session_id}/export-reaper",
     # Phase 6 instruments + studio tools
@@ -402,6 +404,7 @@ TOOL_METHODS = {
     "app_help": "GET",
     "list_skills": "GET",
     "plan_templates": "GET",
+    "stem_separation_status": "GET",
 }
 
 # Tools that drive the browser UI instead of calling a backend endpoint.
