@@ -204,6 +204,77 @@ DIALOGUE_STUDIO_TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "audio_enhance",
+            "description": "Enhance audio quality (bandwidth extension + denoise). Returns enhanced audio.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "audio_path": {"type": "string"},
+                    "mode": {"type": "string", "enum": ["auto", "lavasr", "denoise"], "default": "auto"},
+                },
+                "required": ["audio_path"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "mux_video_audio",
+            "description": "Combine a video file with an audio file into an MP4 using ffmpeg.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "video_path": {"type": "string"},
+                    "audio_path": {"type": "string"},
+                },
+                "required": ["video_path", "audio_path"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "download_voice_pack",
+            "description": "Download an RVC voice pack from HuggingFace into the models dir.",
+            "parameters": {
+                "type": "object",
+                "properties": {"pack_name": {"type": "string"}},
+                "required": ["pack_name"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "conversation_generate",
+            "description": "Generate a stitched multi-speaker conversation audio from lines.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "lines": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "string"},
+                                "text": {"type": "string"},
+                                "speaker": {"type": "string"},
+                                "engine": {"type": "string"},
+                                "profile_id": {"type": "string"},
+                                "start_mode": {"type": "string", "default": "relative_to_previous"},
+                                "start_offset_ms": {"type": "integer", "default": 0},
+                                "overlap_ms": {"type": "integer", "default": 0},
+                            },
+                        },
+                    }
+                },
+                "required": ["lines"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "import_preset",
             "description": "Import a shared effect preset from JSON.",
             "parameters": {

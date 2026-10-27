@@ -102,8 +102,12 @@ ENDPOINT_MAP = {
     "list_conversation_presets": "/conversation/presets",
     "conversation_auto_duck": "/conversation/auto-duck",
     "conversation_auto_level": "/conversation/auto-level",
+    "conversation_generate": "/conversation/generate",
     # Audio plan
     "plan_audio": "/audio-plan/auto",
+    "audio_enhance": "/audio/enhance",
+    "mux_video_audio": "/video/mux",
+    "download_voice_pack": "/voice-pack/download?pack_name={pack_name}",
     # Batch queue
     "list_batch_jobs": "/batch/jobs",
     "get_batch_job": "/batch/jobs/{job_id}",

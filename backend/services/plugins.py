@@ -308,13 +308,19 @@ def process_plugin_chain(
 
     audio, sample_rate = load_audio(str(resolved))
 
+    # Built-in effects go through the pure-Python chain.
     effect_configs = []
+    external_items = []
     for item in chain:
         plugin_id = item.get("plugin_id", "")
         params = item.get("params", {})
         enabled = item.get("enabled", True)
+        if not enabled:
+            continue
         plugin = registry.get(plugin_id)
-        if plugin and plugin.is_builtin and enabled:
+        if plugin is None:
+            continue
+        if plugin.is_builtin:
             effect_type = plugin_id.removeprefix("builtin-")
             effect_configs.append(
                 EffectConfig(
@@ -323,11 +329,33 @@ def process_plugin_chain(
                     params=params,
                 )
             )
+        else:
+            external_items.append((plugin, params))
 
     if effect_configs:
         processed = apply_effects_chain(audio, sample_rate, effect_configs)
     else:
         processed = audio
+
+    # External (VST3/AU) plugins run through pedalboard when available.
+    if external_items:
+        try:
+            import pedalboard
+
+            board = pedalboard.Pedalboard()
+            for plugin, params in external_items:
+                try:
+                    pb_plugin = pedalboard.load_plugin(plugin.path)
+                    for k, v in (params or {}).items():
+                        if hasattr(pb_plugin, k):
+                            setattr(pb_plugin, k, v)
+                    board.append(pb_plugin)
+                except Exception as exc:
+                    logger.warning("Failed to load plugin %s: %s", plugin.id, exc)
+            if len(board) > 0:
+                processed = board(processed, sample_rate)
+        except ImportError:
+            logger.warning("pedalboard not installed; skipping external plugins")
 
     save_audio(processed, output_path, sample_rate)
     return output_path
@@ -349,12 +377,17 @@ def preview_plugin_chain(
     audio, sample_rate = load_audio(str(resolved))
 
     effect_configs = []
+    external_items = []
     for item in chain:
         plugin_id = item.get("plugin_id", "")
         params = item.get("params", {})
         enabled = item.get("enabled", True)
+        if not enabled:
+            continue
         plugin = registry.get(plugin_id)
-        if plugin and plugin.is_builtin and enabled:
+        if plugin is None:
+            continue
+        if plugin.is_builtin:
             effect_type = plugin_id.removeprefix("builtin-")
             effect_configs.append(
                 EffectConfig(
@@ -363,11 +396,32 @@ def preview_plugin_chain(
                     params=params,
                 )
             )
+        else:
+            external_items.append((plugin, params))
 
     if effect_configs:
         processed = apply_effects_chain(audio, sample_rate, effect_configs)
     else:
         processed = audio
+
+    if external_items:
+        try:
+            import pedalboard
+
+            board = pedalboard.Pedalboard()
+            for plugin, params in external_items:
+                try:
+                    pb_plugin = pedalboard.load_plugin(plugin.path)
+                    for k, v in (params or {}).items():
+                        if hasattr(pb_plugin, k):
+                            setattr(pb_plugin, k, v)
+                    board.append(pb_plugin)
+                except Exception as exc:
+                    logger.warning("Failed to load plugin %s: %s", plugin.id, exc)
+            if len(board) > 0:
+                processed = board(processed, sample_rate)
+        except ImportError:
+            logger.warning("pedalboard not installed; skipping external plugins")
 
     import soundfile as sf
 
