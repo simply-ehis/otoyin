@@ -266,3 +266,23 @@ async def list_dubbing_languages():
     from ..services.translation import SUPPORTED_LANGUAGES
 
     return {"languages": SUPPORTED_LANGUAGES}
+
+
+@router.patch("/dubbing/segment/{segment_id}")
+def patch_dub_segment(segment_id: int):
+    """Stub: move/resize a dub segment."""
+    return {
+        "id": segment_id,
+        "start": 0,
+        "end": 0,
+        "original_text": "",
+        "translated_text": "",
+        "speaker": "",
+        "has_audio": False,
+    }
+
+
+@router.delete("/dubbing/segment/{segment_id}")
+def delete_dub_segment(segment_id: int):
+    """Stub: delete a dub segment."""
+    return None
