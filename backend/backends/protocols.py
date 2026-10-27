@@ -414,6 +414,7 @@ TTS_ENGINES = {
     "qwen3_tts": "Qwen3-TTS 12Hz 1.7B Base",
     "bark_small": "Bark Small (GGUF)",
     "voxcpm2": "VoxCPM2 (GGUF)",
+    "steer_tts": "SteerTTS (WhissleAI)",
 }
 
 LLM_ENGINES = {

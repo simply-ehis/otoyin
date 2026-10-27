@@ -86,6 +86,8 @@ ENGINE_REGISTRY: list[_TTSBackendEntry] = [
     _TTSBackendEntry(engine="parler_tts_gguf", singleton_module=".parler_tts_gguf_backend", singleton_attr="parler_tts_gguf_backend"),
     # --- Subprocess one-shot (CrispASR voxcpm2-tts GGUF, no torch) ---
     _TTSBackendEntry(engine="voxcpm2", singleton_module=".voxcpm2_backend", singleton_attr="voxcpm2_backend"),
+    # --- Subprocess one-shot (steertts CLI, no resident model) ---
+    _TTSBackendEntry(engine="steer_tts", singleton_module=".steer_tts_backend", singleton_attr="steer_tts_backend"),
 ]
 # fmt: on
 
