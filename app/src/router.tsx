@@ -889,7 +889,9 @@ const _vocalIsolationRoute = createRoute({
 const workspaceSpectrogramRoute = createRoute({
 	getParentRoute: () => workspaceRoute,
 	path: "/spectrogram",
-	component: SpectrogramView,
+	beforeLoad: () => {
+		throw redirect({ to: "/workspace/pitch" });
+	},
 });
 
 const conversationRoute = createRoute({
