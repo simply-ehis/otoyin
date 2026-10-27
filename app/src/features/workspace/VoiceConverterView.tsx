@@ -19,11 +19,11 @@ import { useToast } from "@/ui/use-toast";
 import { playPreviewBlob } from "./playBlob";
 import { UploadField } from "./UploadField";
 
-type Engine = "rvc" | "seed_vc" | "openvoice" | "cloud";
+type Engine = "rvc_onnx" | "seed_vc" | "openvoice_onnx" | "cloud";
 
 const ENGINES: { id: Engine; label: string; hint: string }[] = [
 	{
-		id: "rvc",
+		id: "rvc_onnx",
 		label: "RVC Pack",
 		hint: "Pre-trained voice pack",
 	},
@@ -33,7 +33,7 @@ const ENGINES: { id: Engine; label: string; hint: string }[] = [
 		hint: "Clone from reference audio, no training",
 	},
 	{
-		id: "openvoice",
+		id: "openvoice_onnx",
 		label: "OpenVoice Clone",
 		hint: "Zero-shot tone match from reference audio",
 	},
@@ -46,7 +46,7 @@ const ENGINES: { id: Engine; label: string; hint: string }[] = [
 
 export function VoiceConverterView() {
 	const { toast } = useToast();
-	const [engine, setEngine] = useState<Engine>("rvc");
+	const [engine, setEngine] = useState<Engine>("rvc_onnx");
 	const [audioPath, setAudioPath] = useState("");
 	const [sourceName, setSourceName] = useState("");
 	const [selectedPack, setSelectedPack] = useState("");
@@ -71,13 +71,13 @@ export function VoiceConverterView() {
 	const packsQuery = useQuery({
 		queryKey: ["voice-packs"],
 		queryFn: () => apiClient.getVoicePacks(),
-		enabled: engine === "rvc",
+		enabled: engine === "rvc_onnx",
 	});
 
 	const profilesQuery = useQuery({
 		queryKey: ["profiles"],
 		queryFn: () => apiClient.listProfiles(),
-		enabled: engine === "seed_vc" || engine === "openvoice",
+		enabled: engine === "seed_vc" || engine === "openvoice_onnx",
 	});
 
 	const convertMut = useMutation({
@@ -164,7 +164,7 @@ export function VoiceConverterView() {
 			});
 			return;
 		}
-		if (engine === "rvc" && !selectedPack) {
+		if (engine === "rvc_onnx" && !selectedPack) {
 			toast({
 				title: ERR_TITLE_VALIDATION,
 				description: "Pick a target voice pack before converting",
@@ -172,7 +172,7 @@ export function VoiceConverterView() {
 			});
 			return;
 		}
-		if ((engine === "seed_vc" || engine === "openvoice") && !referencePath) {
+		if ((engine === "seed_vc" || engine === "openvoice_onnx") && !referencePath) {
 			toast({
 				title: "Upload a reference voice clip",
 				variant: "destructive",
@@ -225,7 +225,7 @@ export function VoiceConverterView() {
 				/>
 			</div>
 
-			{engine === "rvc" ? (
+			{engine === "rvc_onnx" ? (
 				<div className="max-w-xl space-y-1">
 					<Label>Target voice pack</Label>
 					{packsQuery.isLoading ? (
@@ -268,7 +268,7 @@ export function VoiceConverterView() {
 				</div>
 			) : null}
 
-			{engine === "seed_vc" || engine === "openvoice" ? (
+			{engine === "seed_vc" || engine === "openvoice_onnx" ? (
 				<div className="max-w-xl space-y-2">
 					<Label>Reference voice clip (1–30s)</Label>
 					<div className="flex flex-wrap items-center gap-2">
@@ -374,7 +374,7 @@ export function VoiceConverterView() {
 					disabled={
 						convertMut.isPending ||
 						!consentGiven ||
-						(engine === "rvc" && !installedPacks.length)
+						(engine === "rvc_onnx" && !installedPacks.length)
 					}
 					title={
 						consentGiven

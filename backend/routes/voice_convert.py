@@ -169,6 +169,16 @@ async def convert_voice(req: VoiceConvertRequest):
                 f0_condition=req.f0_condition,
                 pitch_shift=req.transpose,
             )
+        elif req.engine == "openvoice_onnx":
+            ref = config.resolve_storage_path(req.reference_audio_path)
+            if ref is None or not ref.exists():
+                raise HTTPException(
+                    status_code=400,
+                    detail=ERR_SEED_VC_NEEDS_REF,
+                )
+            ref_path = ref
+            reference_hash = _file_sha256(ref)
+            wav, out_sr = backend.convert(str(resolved), str(ref))
         else:
             if req.voice_pack not in RVC_VOICE_PACKS:
                 raise HTTPException(
