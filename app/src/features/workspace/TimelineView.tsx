@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { getClip } from "@/lib/clip";
 import { useHistory } from "@/lib/hooks/useHistory";
 import { formatAudioDuration } from "@/lib/utils/audio";
+import { getPeakWaveform } from "@/features/audioStudio/getPeakWaveform";
 import { cn } from "@/lib/utils/cn";
 import { usePlayerStore } from "@/stores/playerStore";
 import { Button } from "@/ui/button";
@@ -29,6 +30,7 @@ interface Track {
 	volume: number;
 	audioUrl?: string;
 	duration?: number;
+	peaks?: number[];
 }
 
 function clock(totalSeconds: number): string {
@@ -46,6 +48,8 @@ export function TimelineView() {
 	const navigate = useNavigate();
 	const { toast } = useToast();
 	const [tracks, setTracks] = useState<Track[]>([]);
+	const [zoom, setZoom] = useState(1);
+	const [zoom, setZoom] = useState(1);
 	const [importOpen, setImportOpen] = useState(false);
 
 	const isPlaying = usePlayerStore((s) => s.isPlaying);
@@ -60,17 +64,32 @@ export function TimelineView() {
 
 	useEffect(() => {
 		if (history?.items) {
-			setTracks(
-				history.items.map((gen) => ({
-					id: gen.id,
-					name: gen.text.slice(0, 40) || "Untitled",
-					muted: false,
-					solo: false,
-					volume: 0.75,
-					audioUrl: gen.audio_path,
-					duration: gen.duration,
-				})),
-			);
+			const base = history.items.map((gen) => ({
+				id: gen.id,
+				name: gen.text.slice(0, 40) || "Untitled",
+				muted: false,
+				solo: false,
+				volume: 0.75,
+				audioUrl: gen.audio_path,
+				duration: gen.duration,
+			}));
+			setTracks(base);
+			// Load waveform peaks asynchronously for each track.
+			const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+			base.forEach(async (t) => {
+				if (!t.audioUrl) return;
+				try {
+					const res = await fetch(t.audioUrl);
+					const buf = await res.arrayBuffer();
+					const audio = await ctx.decodeAudioData(buf);
+					const peaks = getPeakWaveform(audio, 60);
+					setTracks((prev) =>
+						prev.map((x) => (x.id === t.id ? { ...x, peaks: Array.from(peaks) } : x)),
+					);
+				} catch {
+					// ignore decode errors
+				}
+			});
 		}
 	}, [history?.items]);
 
@@ -248,6 +267,18 @@ export function TimelineView() {
 						step={0.05}
 						onValueChange={([v]) => setVolume(v ?? volume)}
 						aria-label="Monitor volume"
+						className="w-20"
+					/>
+				</span>
+				<span className="flex items-center gap-2">
+					<span className="text-xs text-muted-foreground">Zoom</span>
+					<Slider
+						value={[zoom]}
+						min={0.5}
+						max={3}
+						step={0.25}
+						onValueChange={([v]) => setZoom(v ?? 1)}
+						aria-label="Timeline zoom"
 						className="w-20"
 					/>
 				</span>
