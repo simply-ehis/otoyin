@@ -515,4 +515,11 @@ export class SpatialMethods extends ADRMethods {
 	}
 
 	// --- ADR ---
+
+	async muxVideoAudio(videoPath: string, audioPath: string): Promise<{ output_path: string; absolute_path: string }> {
+		return this.request<{ output_path: string; absolute_path: string }>("/video/mux", {
+			method: "POST",
+			body: JSON.stringify({ video_path: videoPath, audio_path: audioPath }),
+		});
+	}
 }

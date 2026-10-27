@@ -8,6 +8,7 @@ import { useAudioBus } from "@/lib/audio/audioBus";
 import { registerVideoSource } from "@/lib/audio/sources";
 import { showStudioErrorToast } from "@/lib/errors";
 import { useServerStore } from "@/stores/serverStore";
+import { useFloatingVideoStore } from "@/stores/floatingVideoStore";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { Label, Spinner } from "@/ui/primitives";
@@ -21,12 +22,15 @@ function videoPreviewUrl(serverUrl: string, path: string): string {
 export function VideoPreviewView() {
 	const { toast } = useToast();
 	const serverUrl = useServerStore((s) => s.serverUrl);
+	const setFloatingUrl = useFloatingVideoStore((s) => s.setUrl);
 	const addTrack = useAudioStudioStore((s) => s.addTrack);
 	const setTrackAudio = useAudioStudioStore((s) => s.setTrackAudio);
 	const setMonitorSource = useAudioBus((s) => s.setMonitorSource);
 
 	const [videoPath, setVideoPath] = useState("");
 	const [extracting, setExtracting] = useState(false);
+	const [muxAudioPath, setMuxAudioPath] = useState("");
+	const [muxing, setMuxing] = useState(false);
 	const videoRef = useRef<HTMLVideoElement | null>(null);
 	const inputRef = useRef<HTMLInputElement | null>(null);
 	const [objectUrl, setObjectUrl] = useState("");
@@ -92,6 +96,19 @@ export function VideoPreviewView() {
 		}
 	}
 
+	async function handleMux() {
+		if (!videoPath || !muxAudioPath) return;
+		setMuxing(true);
+		try {
+			const result = await apiClient.muxVideoAudio(videoPath, muxAudioPath);
+			toast({ title: "Muxed", description: `Output: ${result.output_path}` });
+		} catch (error) {
+			showStudioErrorToast(error);
+		} finally {
+			setMuxing(false);
+		}
+	}
+
 	function handleBrowse() {
 		inputRef.current?.focus();
 		inputRef.current?.select();
@@ -146,6 +163,32 @@ export function VideoPreviewView() {
 					onCancel={() => videoRef.current?.pause()}
 				/>
 			) : null}
+
+			<div className="space-y-2 rounded-md border border-border bg-card p-3">
+				<Label htmlFor="mux-audio">Mux audio into video (audio path on server)</Label>
+				<div className="flex gap-2">
+					<Input
+						id="mux-audio"
+						value={muxAudioPath}
+						onChange={(e) => setMuxAudioPath(e.target.value)}
+						placeholder="C:\\Audio\\voice.wav"
+						className="h-8 flex-1 text-xs"
+					/>
+					<Button
+						type="button"
+						size="sm"
+						className="h-8 px-2"
+						disabled={!videoPath || !muxAudioPath || muxing}
+						onClick={() => void handleMux()}
+					>
+						{muxing ? <Spinner size="xs" className="mr-2" /> : null}
+						{muxing ? "Muxing…" : "Mux audio + video"}
+					</Button>
+				</div>
+				<p className="text-xs text-muted-foreground">
+					Combines the video with the given audio into an MP4 (via ffmpeg).
+				</p>
+			</div>
 
 			<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 				<MonitorPicker title="Monitor this video" allowedKinds={["video"]} />

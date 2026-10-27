@@ -147,3 +147,42 @@ async def get_audio_info_endpoint(file_path: str):
     from ..services.extended_import import get_audio_info
 
     return get_audio_info(file_path)
+
+
+class MuxRequest(BaseModel):
+    video_path: str
+    audio_path: str
+    output_name: str = "muxed.mp4"
+
+
+@router.post("/video/mux")
+async def mux_audio_video(data: MuxRequest):
+    """Combine a video file with an audio file into an MP4 using ffmpeg."""
+    from ..config import resolve_storage_path
+    from ..services.audio_conversion import ffmpeg_path
+
+    vpath = resolve_storage_path(data.video_path)
+    apath = resolve_storage_path(data.audio_path)
+    if vpath is None or not vpath.exists():
+        raise HTTPException(status_code=404, detail="Video file not found")
+    if apath is None or not apath.exists():
+        raise HTTPException(status_code=404, detail="Audio file not found")
+
+    ff = ffmpeg_path()
+    if not ff:
+        raise HTTPException(status_code=503, detail="ffmpeg not available")
+
+    import subprocess
+    out_dir = vpath.parent
+    out_path = out_dir / data.output_name
+    cmd = [
+        ff, "-y", "-i", str(vpath), "-i", str(apath),
+        "-c:v", "copy", "-c:a", "aac", "-shortest", str(out_path),
+    ]
+    try:
+        await asyncio.to_thread(subprocess.run, cmd, check=True, capture_output=True)
+    except subprocess.CalledProcessError as e:
+        raise HTTPException(status_code=500, detail=f"Mux failed: {e.stderr.decode(errors='ignore')[:300]}") from e
+
+    from ..config import to_storage_path
+    return {"output_path": to_storage_path(out_path), "absolute_path": str(out_path)}
