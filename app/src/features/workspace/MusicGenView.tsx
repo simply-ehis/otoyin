@@ -46,6 +46,15 @@ const MOODS = [
 
 export function MusicGenView() {
 	const { toast } = useToast();
+	const [engine, setEngine] = useState<string>("acestep_gguf");
+	const MUSIC_ENGINES = [
+		{ id: "acestep_gguf", label: "ACE-Step 1.5 GGUF" },
+		{ id: "heartmula", label: "HeartMuLa 3B" },
+		{ id: "stable_audio", label: "Stable Audio Open (SFX)" },
+		{ id: "sa3_sfx", label: "Stable Audio 3 Small SFX" },
+		{ id: "minimax_music3", label: "MiniMax Music 3" },
+		{ id: "cloud", label: "Cloud (BYOK)" },
+	];
 	const [prompt, setPrompt] = useState("");
 	const [genre, setGenre] = useState("pop");
 	const [mood, setMood] = useState("neutral");
@@ -108,6 +117,7 @@ export function MusicGenView() {
 			return;
 		}
 		const req: MusicGenerateRequest = {
+			engine,
 			prompt: prompt.trim(),
 			genre,
 			mood,
@@ -132,6 +142,22 @@ export function MusicGenView() {
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader title="Music Generator" />
+
+			<div className="max-w-lg space-y-1">
+				<Label htmlFor="mg-engine">Model</Label>
+				<select
+					id="mg-engine"
+					value={engine}
+					onChange={(e) => setEngine(e.target.value)}
+					className="w-full rounded-md border border-border bg-card px-2 py-1.5 text-sm"
+				>
+					{MUSIC_ENGINES.map((m) => (
+						<option key={m.id} value={m.id}>
+							{m.label}
+						</option>
+					))}
+				</select>
+			</div>
 
 			<div className="grid grid-cols-3 gap-3 max-w-lg">
 				<div className="space-y-1">
