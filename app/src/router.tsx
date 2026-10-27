@@ -921,9 +921,7 @@ const spatialRoute = createRoute({
 const musicGenRoute = createRoute({
 	getParentRoute: () => workspaceRoute,
 	path: "/music-gen",
-	beforeLoad: () => {
-		throw redirect({ to: "/workspace/studio" });
-	},
+	component: MusicGenView,
 });
 
 const automationRoute = createRoute({
