@@ -1,18 +1,16 @@
 import { PauseIcon, PlayIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useEffect, useRef, useState } from "react";
 import { useFloatingVideoStore } from "@/stores/floatingVideoStore";
-import { cn } from "@/lib/utils/cn";
 import { Button } from "@/ui/button";
 
 export function FloatingVideoPlayer() {
 	const url = useFloatingVideoStore((s) => s.url);
 	const visible = useFloatingVideoStore((s) => s.visible);
-	const hide = useFloatingVideoStore((s) => s.hide);
 	const clear = useFloatingVideoStore((s) => s.clear);
 
 	const videoRef = useRef<HTMLVideoElement | null>(null);
 	const [playing, setPlaying] = useState(false);
-	const [pos, setPos] = useState({ x: 24, y: 24 });
+	const [pos] = useState({ x: 24, y: 24 });
 
 	useEffect(() => {
 		const el = videoRef.current;

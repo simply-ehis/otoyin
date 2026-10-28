@@ -173,11 +173,22 @@ async def mux_audio_video(data: MuxRequest):
         raise HTTPException(status_code=503, detail="ffmpeg not available")
 
     import subprocess
+
     out_dir = vpath.parent
     out_path = out_dir / data.output_name
     cmd = [
-        ff, "-y", "-i", str(vpath), "-i", str(apath),
-        "-c:v", "copy", "-c:a", "aac", "-shortest", str(out_path),
+        ff,
+        "-y",
+        "-i",
+        str(vpath),
+        "-i",
+        str(apath),
+        "-c:v",
+        "copy",
+        "-c:a",
+        "aac",
+        "-shortest",
+        str(out_path),
     ]
     try:
         await asyncio.to_thread(subprocess.run, cmd, check=True, capture_output=True)
@@ -185,4 +196,5 @@ async def mux_audio_video(data: MuxRequest):
         raise HTTPException(status_code=500, detail=f"Mux failed: {e.stderr.decode(errors='ignore')[:300]}") from e
 
     from ..config import to_storage_path
+
     return {"output_path": to_storage_path(out_path), "absolute_path": str(out_path)}

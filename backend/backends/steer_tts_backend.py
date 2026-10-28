@@ -8,12 +8,14 @@ Runs via ``python -m steertts``. No torch in the main process.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import os
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from typing import ClassVar
 
 import numpy as np
 import soundfile as sf
@@ -39,7 +41,7 @@ def _resolve_model_dir() -> str | None:
 
 
 class SteerTTSBackend:
-    MODEL_CONFIGS = []
+    MODEL_CONFIGS: ClassVar[list] = []
 
     def __init__(self) -> None:
         self._loaded = False
@@ -65,9 +67,7 @@ class SteerTTSBackend:
         temperature: float | None = None,
     ) -> tuple:
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(
-            None, self._generate_sync, text, voice_prompt, seed, instruct
-        )
+        return await loop.run_in_executor(None, self._generate_sync, text, voice_prompt, seed, instruct)
 
     def _generate_sync(
         self, text: str, voice_prompt: dict, seed: int | None = None, instruct: str | None = None
@@ -98,15 +98,13 @@ class SteerTTSBackend:
             subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=300)
         except subprocess.CalledProcessError as e:
             logger.error("steertts failed: %s", e.stderr)
-            raise RuntimeError(f"steertts failed: {e.stderr}")
+            raise RuntimeError(f"steertts failed: {e.stderr}") from e
         if not out_path.exists():
             raise RuntimeError("steertts produced no output")
         audio, sr = sf.read(str(out_path), dtype="float32", always_2d=True)
         audio = audio[:, 0] if audio.shape[1] == 1 else audio.mean(axis=1)
-        try:
+        with contextlib.suppress(Exception):
             out_path.unlink(missing_ok=True)
-        except Exception:
-            pass
         return audio.astype("float32"), sr
 
     def unload_model(self) -> None:

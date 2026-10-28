@@ -1,6 +1,6 @@
-import asyncio
 """Voice-conversion endpoints (RVC + Seed-VC)."""
 
+import asyncio
 import hashlib
 import io
 import json
@@ -126,12 +126,11 @@ async def download_voice_pack(pack_name: str):
             files.append(desc["zip"])
 
         for fname in files:
-            await asyncio.to_thread(
-                hf_hub_download, repo_id=repo, filename=fname, local_dir=str(models_dir)
-            )
+            await asyncio.to_thread(hf_hub_download, repo_id=repo, filename=fname, local_dir=str(models_dir))
 
         if "zip" in desc:
             import zipfile
+
             zip_path = models_dir / desc["zip"]
             if zip_path.exists():
                 with zipfile.ZipFile(zip_path) as z:

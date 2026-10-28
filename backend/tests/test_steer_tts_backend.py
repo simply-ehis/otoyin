@@ -1,7 +1,5 @@
 """Tests for SteerTTS backend (subprocess)."""
 
-import asyncio
-
 import pytest
 
 from backends.steer_tts_backend import SteerTTSBackend
@@ -21,7 +19,7 @@ async def test_steer_tts_generates_audio():
 async def test_steer_tts_instruct():
     backend = SteerTTSBackend()
     await backend.load_model("default")
-    audio, sr = await backend.generate("Hello world", {}, instruct="soft and sad")
+    audio, _sr = await backend.generate("Hello world", {}, instruct="soft and sad")
     assert audio is not None
     assert len(audio) > 0
 
@@ -30,7 +28,7 @@ async def test_steer_tts_instruct():
 async def test_steer_tts_markup():
     backend = SteerTTSBackend()
     await backend.load_model("default")
-    audio, sr = await backend.generate("Hello [whisper] world", {"markup": True})
+    audio, _sr = await backend.generate("Hello [whisper] world", {"markup": True})
     assert audio is not None
     assert len(audio) > 0
 

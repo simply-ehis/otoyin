@@ -37,7 +37,6 @@ export function ADRView() {
 	const [newSessionName, setNewSessionName] = useState("");
 	const [recordingLineId, setRecordingLineId] = useState<string | null>(null);
 	const [confirmDeleteSession, setConfirmDeleteSession] = useState(false);
-	const [detectedSpeakers, setDetectedSpeakers] = useState<string[] | null>(null);
 
 	const adrSearch = useSearch({ from: "/workspace/adr" });
 	useEffect(() => {
@@ -128,7 +127,6 @@ export function ADRView() {
 			return apiClient.diarizePath(session.guide_audio_path);
 		},
 		onSuccess: (data) => {
-			setDetectedSpeakers(data.speakers ?? []);
 			toast({
 				title: "Speakers detected",
 				description: `${(data.speakers ?? []).length} speaker(s) found in guide.`,

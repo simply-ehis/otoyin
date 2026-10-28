@@ -23,6 +23,10 @@ export function CompResult({
 	isPending,
 	compLoading,
 	onAssemble,
+	compedBlob,
+	onSave,
+	savePending,
+	onSendToStudio,
 }: CompResultProps) {
 	return (
 		<section className="space-y-2 rounded-md border border-border bg-card p-3">

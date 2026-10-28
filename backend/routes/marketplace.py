@@ -13,16 +13,18 @@ def _products():
 
         products = []
         for cfg in get_all_model_configs():
-            products.append({
-                "id": cfg.model_name,
-                "name": getattr(cfg, "display_name", cfg.model_name),
-                "category": getattr(cfg, "category", "other"),
-                "description": "",
-                "price_usd": 0,
-                "paid": getattr(cfg, "paid", False),
-                "size_mb": getattr(cfg, "size_mb", 0),
-                "languages": getattr(cfg, "languages", []),
-            })
+            products.append(
+                {
+                    "id": cfg.model_name,
+                    "name": getattr(cfg, "display_name", cfg.model_name),
+                    "category": getattr(cfg, "category", "other"),
+                    "description": "",
+                    "price_usd": 0,
+                    "paid": getattr(cfg, "paid", False),
+                    "size_mb": getattr(cfg, "size_mb", 0),
+                    "languages": getattr(cfg, "languages", []),
+                }
+            )
         return products
     except Exception:
         return []

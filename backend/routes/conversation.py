@@ -1,7 +1,19 @@
 """Conversation / Podcast / Debate mode endpoints."""
 
-from fastapi import APIRouter
+import asyncio
+import io
+
+import numpy as np
+import soundfile as sf
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
+
+from .. import models
+from ..config import resolve_storage_path
+from ..database import get_db
+from .generations import generate_speech
 
 router = APIRouter()
 
@@ -117,28 +129,18 @@ async def auto_level_match(lines: list[ConversationLine]):
 
     return {"target_lufs": levels}
 
-import io
-import asyncio
-import soundfile as sf
-import numpy as np
-from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
-from fastapi import Depends, HTTPException
-from .. import models
-from ..database import get_db
-from ..config import resolve_storage_path
-from .generations import generate_speech
 
 @router.post("/conversation/generate")
 async def generate_conversation(lines: list[ConversationLine], db: Session = Depends(get_db)):
     """Generate a stitched multi-speaker conversation audio."""
     # Filter lines with text
-    work = [l for l in lines if (l.text or "").strip()]
+    work = [line for line in lines if (line.text or "").strip()]
     if not work:
         raise HTTPException(status_code=400, detail="No lines with text")
 
     # Resolve a default profile if missing
     from ..database import DBVoiceProfile
+
     default_profile = db.query(DBVoiceProfile).first()
     if default_profile is None:
         raise HTTPException(status_code=400, detail="No voice profile available")
@@ -161,13 +163,14 @@ async def generate_conversation(lines: list[ConversationLine], db: Session = Dep
         row = None
         while asyncio.get_event_loop().time() < deadline:
             from ..database import Generation as DBGeneration
+
             row = db.query(DBGeneration).filter_by(id=gen_id).first()
             if row is not None and row.status in ("completed", "failed", "error"):
                 break
             await asyncio.sleep(1)
             db.expire_all()
         if row is None or row.status != "completed":
-            raise HTTPException(status_code=500, detail=f"Generation failed for line: {getattr(row,'error',None)}")
+            raise HTTPException(status_code=500, detail=f"Generation failed for line: {getattr(row, 'error', None)}")
         audio_path = resolve_storage_path(row.audio_path)
         if audio_path is None or not audio_path.exists():
             raise HTTPException(status_code=500, detail="Audio file missing")
@@ -184,7 +187,7 @@ async def generate_conversation(lines: list[ConversationLine], db: Session = Dep
     # We'll compute start sample for each line.
     starts = []
     cursor = 0
-    for audio, sr_i, line in line_audio:
+    for audio, _sr_i, line in line_audio:
         if line.start_mode == "absolute":
             start = int(line.start_offset_ms / 1000.0 * sr)
         else:
@@ -197,7 +200,7 @@ async def generate_conversation(lines: list[ConversationLine], db: Session = Dep
 
     total_len = max(starts[i] + len(line_audio[i][0]) for i in range(len(line_audio)))
     combined = np.zeros(total_len, dtype=np.float32)
-    for i, (audio, sr_i, line) in enumerate(line_audio):
+    for i, (audio, _sr_i, _line) in enumerate(line_audio):
         a = audio.astype(np.float32)
         s = starts[i]
         end = s + len(a)
@@ -212,4 +215,6 @@ async def generate_conversation(lines: list[ConversationLine], db: Session = Dep
     buf = io.BytesIO()
     sf.write(buf, combined, sr, format="WAV")
     buf.seek(0)
-    return StreamingResponse(buf, media_type="audio/wav", headers={"Content-Disposition": 'inline; filename="conversation.wav"'})
+    return StreamingResponse(
+        buf, media_type="audio/wav", headers={"Content-Disposition": 'inline; filename="conversation.wav"'}
+    )

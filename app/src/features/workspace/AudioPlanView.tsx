@@ -1,6 +1,7 @@
 import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
+import type { VoiceProfileResponse } from "@/lib/api/types";
 import { apiClient } from "@/lib/api/client";
 import { useProfiles } from "@/lib/hooks/useProfiles";
 import { Button } from "@/ui/button";
@@ -82,11 +83,13 @@ function SceneCard({
 	index,
 	onUpdate,
 	onRemove,
+	profiles,
 }: {
 	scene: SceneInput;
 	index: number;
 	onUpdate: (patch: Partial<SceneInput>) => void;
 	onRemove: () => void;
+	profiles: VoiceProfileResponse[];
 }) {
 	function updateDialogue(i: number, patch: Partial<DialogueInput>) {
 		onUpdate({
@@ -156,7 +159,7 @@ function SceneCard({
 								<SelectValue placeholder="Voice…" />
 							</SelectTrigger>
 							<SelectContent>
-								{profiles.map((p) => (
+								{profiles.map((p: VoiceProfileResponse) => (
 									<SelectItem key={p.id} value={p.id}>
 										{p.name}
 									</SelectItem>
@@ -194,6 +197,7 @@ function SceneCard({
 
 export function AudioPlanView() {
 	const { toast } = useToast();
+	const { data: profiles } = useProfiles();
 	const [mode, setMode] = useState<"auto" | "guided">("auto");
 	const [scenes, setScenes] = useState<SceneInput[]>([]);
 	const [guidedTracks, setGuidedTracks] = useState<GuidedTrack[]>([]);
@@ -308,6 +312,7 @@ export function AudioPlanView() {
 									key={scene.id}
 									scene={scene}
 									index={i}
+									profiles={profiles ?? []}
 									onUpdate={(patch) =>
 										setScenes((p) =>
 											p.map((s) =>

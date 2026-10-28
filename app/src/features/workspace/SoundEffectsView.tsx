@@ -7,7 +7,7 @@ import { useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import { Button } from "@/ui/button";
 import { SearchInput } from "@/ui/input";
-import { Badge, Label, Separator, Spinner } from "@/ui/primitives";
+import { Badge, Label, Spinner } from "@/ui/primitives";
 import { EmptyState, LoadingState, ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
 

@@ -27,20 +27,7 @@ import { FreeSoundsPanel } from "./SoundEffectsView";
 
 const NOISE_TYPES = ["white", "pink", "brown", "blue", "violet"];
 
-function Section({
-	title,
-	children,
-}: {
-	title: string;
-	children: React.ReactNode;
-}) {
-	return (
-		<section className="space-y-3 rounded-md border border-border bg-card p-3">
-			<h2 className="text-xs font-medium text-muted-foreground">{title}</h2>
-			{children}
-		</section>
-	);
-}
+const [openSection, setOpenSection] = useState<string | null>(null);
 
 function SfxPanel() {
 	const { toast } = useToast();

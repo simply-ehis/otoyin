@@ -52,7 +52,6 @@ export function ConversationView() {
 		{ id: "spk-1", name: "Speaker A", voiceProfileId: null },
 		{ id: "spk-2", name: "Speaker B", voiceProfileId: null },
 	]);
-	const [generatedBlob, setGeneratedBlob] = useState<Blob | null>(null);
 	const [lines, setLines] = useState<ConversationLine[]>([
 		{
 			id: "line-1",
@@ -61,6 +60,8 @@ export function ConversationView() {
 			startMode: "relative_to_previous",
 			offsetMs: 0,
 			overlapMs: 0,
+			engine: "cloud",
+			profileId: null,
 		},
 	]);
 
@@ -114,9 +115,8 @@ export function ConversationView() {
 
 	const generateMut = useMutation({
 		mutationFn: () => apiClient.generateConversation(linePayload()),
-		onSuccess: (blob) => {
-			setGeneratedBlob(blob);
-			const url = URL.createObjectURL(blob);
+		onSuccess: (_blob) => {
+			const url = URL.createObjectURL(_blob);
 			const audio = new Audio(url);
 			audio.addEventListener("ended", () => URL.revokeObjectURL(url));
 			audio.play();
@@ -152,6 +152,8 @@ export function ConversationView() {
 				startMode: "relative_to_previous",
 				offsetMs: 0,
 				overlapMs: 0,
+				engine: "cloud",
+				profileId: null,
 			},
 		]);
 	}, [speakers]);

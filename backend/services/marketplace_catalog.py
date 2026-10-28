@@ -629,7 +629,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "paid": False,
         "note": "10MB. Binaural rendering, HRTF, occlusion. Free download — requires phonon.dll on disk.",
     },
-
     {
         "id": "steer-tts",
         "name": "SteerTTS (WhissleAI)",

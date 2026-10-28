@@ -49,7 +49,6 @@ export function TimelineView() {
 	const { toast } = useToast();
 	const [tracks, setTracks] = useState<Track[]>([]);
 	const [zoom, setZoom] = useState(1);
-	const [zoom, setZoom] = useState(1);
 	const [importOpen, setImportOpen] = useState(false);
 
 	const isPlaying = usePlayerStore((s) => s.isPlaying);

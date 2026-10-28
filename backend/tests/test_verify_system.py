@@ -32,7 +32,7 @@ from backend.routes.assistant_tools.tool_call_middleware import (
 
 
 def test_tool_count():
-    assert len(TOOLS) == 217, f"Expected 217 tools, got {len(TOOLS)}"
+    assert len(TOOLS) == 222, f"Expected 222 tools, got {len(TOOLS)}"
 
 
 def test_all_tools_have_function_wrapper():

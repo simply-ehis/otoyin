@@ -8,7 +8,6 @@ import { useAudioBus } from "@/lib/audio/audioBus";
 import { registerVideoSource } from "@/lib/audio/sources";
 import { showStudioErrorToast } from "@/lib/errors";
 import { useServerStore } from "@/stores/serverStore";
-import { useFloatingVideoStore } from "@/stores/floatingVideoStore";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { Label, Spinner } from "@/ui/primitives";
@@ -22,7 +21,6 @@ function videoPreviewUrl(serverUrl: string, path: string): string {
 export function VideoPreviewView() {
 	const { toast } = useToast();
 	const serverUrl = useServerStore((s) => s.serverUrl);
-	const setFloatingUrl = useFloatingVideoStore((s) => s.setUrl);
 	const addTrack = useAudioStudioStore((s) => s.addTrack);
 	const setTrackAudio = useAudioStudioStore((s) => s.setTrackAudio);
 	const setMonitorSource = useAudioBus((s) => s.setMonitorSource);

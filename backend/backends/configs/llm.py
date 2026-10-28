@@ -205,6 +205,18 @@ def _get_cloud_llm_configs() -> list[ModelConfig]:
     Planned tiers ($10/$20/$50) with increasing capability. Users pick a tier,
     not a specific model. Access will be gated by active subscription license.
     """
+    planner_languages = [
+        "en",
+        "zh",
+        "ja",
+        "ko",
+        "de",
+        "fr",
+        "es",
+        "it",
+        "pt",
+        "ru",
+    ]
     return [
         ModelConfig(
             model_name="llm-cloud-starter",
@@ -269,6 +281,7 @@ def _get_cloud_llm_configs() -> list[ModelConfig]:
             paid=True,
         ),
     ]
+
 
 def get_llm_model_configs() -> list[ModelConfig]:
     """Return all LLM model configs (GGUF + cloud)."""
