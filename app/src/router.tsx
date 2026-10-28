@@ -5,44 +5,43 @@ import {
 	redirect,
 } from "@tanstack/react-router";
 import { lazy } from "react";
-import { RootLayout } from "@/layouts/RootLayout/RootLayout";
-
+import { CommunityPresetsPage } from "@/features/content/CommunityPresetsPage";
+import { OffersPage } from "@/features/content/OffersPage";
+import { StandaloneProjectPage } from "@/features/content/StandaloneProjectPage";
+import { WhatsNewPage } from "@/features/content/WhatsNewPage";
+import { DubPage } from "@/features/dubbing/DubPage";
+import { HelpPage } from "@/features/help/HelpPage";
+import { LibraryTab } from "@/features/library/LibraryTab";
+import { ApiKeysPage } from "@/features/settings/ApiKeysPage";
+import { CloudModelsPage } from "@/features/settings/CloudModelsPage";
+import { LottieExportPage } from "@/features/settings/LottieExportPage";
+import { ModelHealthPage } from "@/features/settings/ModelHealthPage";
+import { PluginsPage } from "@/features/settings/PluginsPage";
+import { PrivacyPage } from "@/features/settings/PrivacyPage";
+import { ScriptingPage } from "@/features/settings/ScriptingPage";
+import { ShortcutsPage } from "@/features/settings/ShortcutsPage";
+import { SupportPage } from "@/features/settings/SupportPage";
+import { TelemetryPage } from "@/features/settings/TelemetryPage";
+import { TimecodeDisplay } from "@/features/settings/TimecodeDisplay";
 // Direct imports for page components referenced by createRoute (not lazy-loaded)
 import { StorePage } from "@/features/store/StorePage";
-import { LibraryTab } from "@/features/library/LibraryTab";
 import { StoryEditor } from "@/features/stories/StoryEditor";
-import { HelpPage } from "@/features/help/HelpPage";
-import { DubPage } from "@/features/dubbing/DubPage";
-import { SupportPage } from "@/features/settings/SupportPage";
-import { CloudModelsPage } from "@/features/settings/CloudModelsPage";
-import { ShortcutsPage } from "@/features/settings/ShortcutsPage";
-import { ScriptingPage } from "@/features/settings/ScriptingPage";
-import { PluginsPage } from "@/features/settings/PluginsPage";
-import { LottieExportPage } from "@/features/settings/LottieExportPage";
-import { TelemetryPage } from "@/features/settings/TelemetryPage";
-import { PrivacyPage } from "@/features/settings/PrivacyPage";
-import { ApiKeysPage } from "@/features/settings/ApiKeysPage";
-import { ModelHealthPage } from "@/features/settings/ModelHealthPage";
-import { TimecodeDisplay } from "@/features/settings/TimecodeDisplay";
-import { AudioEnhanceView } from "@/features/workspace/AudioEnhanceView";
-import { VocalIsolationView } from "@/features/workspace/VocalIsolationView";
-import { ConversationView } from "@/features/workspace/ConversationView";
-import { PlatformExportView } from "@/features/workspace/PlatformExportView";
-import { TranscriptEditView } from "@/features/workspace/TranscriptEditView";
-import { SpatialView } from "@/features/workspace/SpatialView";
-import { MusicGenView } from "@/features/workspace/MusicGenView";
-import { AutomationView } from "@/features/workspace/AutomationView";
-import { MultiTakeCompingView } from "@/features/workspace/MultiTakeCompingView";
-import { DiarizationView } from "@/features/workspace/DiarizationView";
-import { VideoPreviewView } from "@/features/workspace/VideoPreviewView";
-import { YouTubeDownloadView } from "@/features/workspace/YouTubeDownloadView";
-import { VoiceConverterView } from "@/features/workspace/VoiceConverterView";
-import { SoundEffectsView } from "@/features/workspace/SoundEffectsView";
 import { TranslateView } from "@/features/translate/TranslateView";
-import { StandaloneProjectPage } from "@/features/content/StandaloneProjectPage";
-import { CommunityPresetsPage } from "@/features/content/CommunityPresetsPage";
-import { WhatsNewPage } from "@/features/content/WhatsNewPage";
-import { OffersPage } from "@/features/content/OffersPage";
+import { AudioEnhanceView } from "@/features/workspace/AudioEnhanceView";
+import { AutomationView } from "@/features/workspace/AutomationView";
+import { ConversationView } from "@/features/workspace/ConversationView";
+import { DiarizationView } from "@/features/workspace/DiarizationView";
+import { MultiTakeCompingView } from "@/features/workspace/MultiTakeCompingView";
+import { MusicGenView } from "@/features/workspace/MusicGenView";
+import { PlatformExportView } from "@/features/workspace/PlatformExportView";
+import { SoundEffectsView } from "@/features/workspace/SoundEffectsView";
+import { SpatialView } from "@/features/workspace/SpatialView";
+import { TranscriptEditView } from "@/features/workspace/TranscriptEditView";
+import { VideoPreviewView } from "@/features/workspace/VideoPreviewView";
+import { VocalIsolationView } from "@/features/workspace/VocalIsolationView";
+import { VoiceConverterView } from "@/features/workspace/VoiceConverterView";
+import { YouTubeDownloadView } from "@/features/workspace/YouTubeDownloadView";
+import { RootLayout } from "@/layouts/RootLayout/RootLayout";
 
 // Lazy-loaded page components for code splitting
 const CapturesTab = lazy(() =>
@@ -173,6 +172,11 @@ const StudioView = lazy(() =>
 const DspView = lazy(() =>
 	import("@/features/workspace/DspView").then((m) => ({
 		default: m.DspView,
+	})),
+);
+const VoiceChangerView = lazy(() =>
+	import("@/features/workspace/VoiceChangerView").then((m) => ({
+		default: m.VoiceChangerView,
 	})),
 );
 const ADRView = lazy(() =>
@@ -441,6 +445,12 @@ const dspRoute = createRoute({
 	component: DspView,
 });
 
+const voiceChangerRouteWs = createRoute({
+	getParentRoute: () => workspaceRoute,
+	path: "/voice-changer",
+	component: VoiceChangerView,
+});
+
 const adrRoute = createRoute({
 	getParentRoute: () => workspaceRoute,
 	path: "/adr",
@@ -696,6 +706,7 @@ const routeTree = rootRoute.addChildren([
 		effectsRouteWs,
 		studioRoute,
 		dspRoute,
+		voiceChangerRouteWs,
 		adrRoute,
 		audioPlanRoute,
 		batchRoute,
@@ -740,8 +751,8 @@ const routeTree = rootRoute.addChildren([
 		settingsApiKeysRoute,
 		settingsWorkspaceRoute,
 		settingsSupportRoute,
-	stemSeparationRoute,
-	settingsCloudModelsRoute,
+		stemSeparationRoute,
+		settingsCloudModelsRoute,
 	]),
 	projectsRoute,
 	communityPresetsRoute,

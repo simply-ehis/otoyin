@@ -14,11 +14,12 @@ import {
 	SelectValue,
 } from "@/ui/select";
 import { Slider } from "@/ui/slider";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
 import { EmptyState, LoadingState, ScreenHeader } from "@/ui/states";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
 import { useToast } from "@/ui/use-toast";
 import { playPreviewBlob } from "./playBlob";
 import { UploadField } from "./UploadField";
+import { VoiceChangerPanel } from "./VoiceChangerView";
 
 type Engine = "rvc" | "seed_vc" | "openvoice" | "cloud";
 
@@ -84,8 +85,7 @@ export function VoiceConverterView() {
 
 	const queryClient = useQueryClient();
 	const downloadPackMut = useMutation({
-		mutationFn: (name: string) =>
-			apiClient.downloadVoicePack(name),
+		mutationFn: (name: string) => apiClient.downloadVoicePack(name),
 		onSuccess: (_data, name) => {
 			toast({ title: "Pack downloaded", description: `${name} is ready.` });
 			void queryClient.invalidateQueries({ queryKey: ["voice-packs"] });
@@ -115,16 +115,21 @@ export function VoiceConverterView() {
 
 	const saveMut = useMutation({
 		mutationFn: async () => {
-			if (!convertedBlob) throw new Error("No converted audio");
+			if (!convertedBlob) {
+				throw new Error("No converted audio");
+			}
 			return apiClient.saveGeneratedAudio(
 				convertedBlob,
 				`Voice conversion 17:48:03`,
-					"capture",
-					"file",
-				);
+				"capture",
+				"file",
+			);
 		},
 		onSuccess: () => {
-			toast({ title: "Saved to Library", description: "Converted audio is now in the Library tab." });
+			toast({
+				title: "Saved to Library",
+				description: "Converted audio is now in the Library tab.",
+			});
 		},
 		onError: (e: unknown) => showStudioErrorToast(e),
 	});
@@ -225,240 +230,249 @@ export function VoiceConverterView() {
 					<TabsTrigger value="changer">Real-time changer</TabsTrigger>
 				</TabsList>
 				<TabsContent value="converter" className="mt-3 space-y-4">
-
-			<fieldset
-				className="m-0 inline-flex min-w-0 flex-wrap gap-1 self-start rounded-md border border-border bg-card p-1"
-				aria-label="Voice conversion engine"
-			>
-				{ENGINES.map((e) => (
-					<button
-						key={e.id}
-						type="button"
-						aria-pressed={engine === e.id}
-						className={cn(
-							"h-8 rounded-sm px-3 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-							engine === e.id
-								? "bg-primary text-primary-foreground"
-								: "text-muted-foreground hover:text-foreground",
-						)}
-						title={`${e.label}: ${e.hint}`}
-						onClick={() => switchEngine(e.id)}
+					<fieldset
+						className="m-0 inline-flex min-w-0 flex-wrap gap-1 self-start rounded-md border border-border bg-card p-1"
+						aria-label="Voice conversion engine"
 					>
-						{e.label}
-					</button>
-				))}
-			</fieldset>
-
-			<div className="max-w-xl space-y-1">
-				<Label>Source audio</Label>
-				<UploadField
-					id="vc-source"
-					label="Select Audio"
-					fileName={sourceName}
-					uploading={uploading === "source"}
-					onFile={(f) => void uploadFile(f, "source")}
-				/>
-			</div>
-
-			{engine === "rvc" ? (
-				<div className="max-w-xl space-y-1">
-					<Label>Target voice pack</Label>
-					{packsQuery.isLoading ? (
-						<LoadingState label="Loading voice packs" />
-					) : packsQuery.isError ? (
-						<EmptyState
-							title="Voice packs couldn't load"
-							body="Check the backend connection."
-						/>
-					) : packs.length === 0 ? (
-						<EmptyState
-							title="No voice packs found"
-							body="Install an RVC pack from the Store first."
-						/>
-					) : (
-						<div className="flex flex-wrap gap-2">
-							{packs.map((p) => (
-								<>
-									<Button
-										key={p.name}
-									type="button"
-									variant={selectedPack === p.name ? "default" : "outline"}
-									size="sm"
-									className="h-8 capitalize"
-									disabled={!p.installed}
-									title={
-										p.installed ? "Ready" : `Download required (${p.repo})`
-									}
-									aria-label={`Select voice ${p.name}`}
-									aria-pressed={selectedPack === p.name}
-									onClick={() => setSelectedPack(p.name)}
-								>
-									{p.name.replace(/-/g, " ")}
-									{!p.installed && (
-										<span className="ml-1.5 text-xs">(download)</span>
-									)}
-								</Button>
-								{!p.installed && (
-									<Button
-										type="button"
-										variant="ghost"
-										size="sm"
-										className="h-8 text-xs"
-										disabled={downloadPackMut.isPending}
-										onClick={() => downloadPackMut.mutate(p.name)}
-									>
-										{downloadPackMut.isPending ? <Spinner size="xs" className="mr-1" /> : null}
-										Download
-									</Button>
+						{ENGINES.map((e) => (
+							<button
+								key={e.id}
+								type="button"
+								aria-pressed={engine === e.id}
+								className={cn(
+									"h-8 rounded-sm px-3 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+									engine === e.id
+										? "bg-primary text-primary-foreground"
+										: "text-muted-foreground hover:text-foreground",
 								)}
-								</>
-							))}
-						</div>
-					)}
-				</div>
-			) : null}
-
-			{engine === "seed_vc" || engine === "openvoice" ? (
-				<div className="max-w-xl space-y-2">
-					<Label>Reference voice clip (1–30s)</Label>
-					<div className="flex flex-wrap items-center gap-2">
-						<UploadField
-							id="vc-reference"
-							label="Upload Clip"
-							fileName={referenceName}
-							uploading={uploading === "reference"}
-							onFile={(f) => void uploadFile(f, "reference")}
-						/>
-						<span className="text-xs text-muted-foreground">or</span>
-						<Select
-							value={referenceProfileId}
-							onValueChange={(v) => void loadProfileAsReference(v)}
-						>
-							<SelectTrigger
-								className="h-8 w-56 text-xs"
-								aria-label="Use a saved voice profile"
+								title={`${e.label}: ${e.hint}`}
+								onClick={() => switchEngine(e.id)}
 							>
-								<SelectValue placeholder="Use a saved voice profile…" />
-							</SelectTrigger>
-							<SelectContent>
-								{(profilesQuery.data ?? []).map((p) => (
-									<SelectItem key={p.id} value={p.id}>
-										{p.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
-					<p className="text-xs text-muted-foreground">
-						{engine === "seed_vc"
-							? "Seed-VC clones the reference voice with no training. Reference is clipped to 25s automatically."
-							: "OpenVoice matches the reference clip's tone with no training."}
-					</p>
-				</div>
-			) : null}
+								{e.label}
+							</button>
+						))}
+					</fieldset>
 
-			{engine === "rvc" ? (
-				<div className="max-w-xl space-y-1">
-					<div className="flex items-center justify-between gap-2">
-						<Label htmlFor="vc-transpose">Transpose (semitones)</Label>
-						<span className="font-mono text-xs tabular-nums text-muted-foreground">
-							{transpose > 0 ? "+" : ""}
-							{transpose}
-						</span>
+					<div className="max-w-xl space-y-1">
+						<Label>Source audio</Label>
+						<UploadField
+							id="vc-source"
+							label="Select Audio"
+							fileName={sourceName}
+							uploading={uploading === "source"}
+							onFile={(f) => void uploadFile(f, "source")}
+						/>
 					</div>
-					<Slider
-						id="vc-transpose"
-						min={-12}
-						max={12}
-						step={1}
-						value={[transpose]}
-						onValueChange={([v]) => setTranspose(v ?? 0)}
-						aria-label="Transpose semitones"
-					/>
-				</div>
-			) : null}
-			{engine === "seed_vc" ? (
-				<div className="max-w-xl space-y-1">
-					<div className="flex items-center justify-between gap-2">
-						<Label htmlFor="vc-steps">Diffusion steps (quality vs speed)</Label>
-						<span className="font-mono text-xs tabular-nums text-muted-foreground">
-							{diffusionSteps}
-						</span>
+
+					{engine === "rvc" ? (
+						<div className="max-w-xl space-y-1">
+							<Label>Target voice pack</Label>
+							{packsQuery.isLoading ? (
+								<LoadingState label="Loading voice packs" />
+							) : packsQuery.isError ? (
+								<EmptyState
+									title="Voice packs couldn't load"
+									body="Check the backend connection."
+								/>
+							) : packs.length === 0 ? (
+								<EmptyState
+									title="No voice packs found"
+									body="Install an RVC pack from the Store first."
+								/>
+							) : (
+								<div className="flex flex-wrap gap-2">
+									{packs.map((p) => (
+										<>
+											<Button
+												key={p.name}
+												type="button"
+												variant={
+													selectedPack === p.name ? "default" : "outline"
+												}
+												size="sm"
+												className="h-8 capitalize"
+												disabled={!p.installed}
+												title={
+													p.installed
+														? "Ready"
+														: `Download required (${p.repo})`
+												}
+												aria-label={`Select voice ${p.name}`}
+												aria-pressed={selectedPack === p.name}
+												onClick={() => setSelectedPack(p.name)}
+											>
+												{p.name.replace(/-/g, " ")}
+												{!p.installed && (
+													<span className="ml-1.5 text-xs">(download)</span>
+												)}
+											</Button>
+											{!p.installed && (
+												<Button
+													type="button"
+													variant="ghost"
+													size="sm"
+													className="h-8 text-xs"
+													disabled={downloadPackMut.isPending}
+													onClick={() => downloadPackMut.mutate(p.name)}
+												>
+													{downloadPackMut.isPending ? (
+														<Spinner size="xs" className="mr-1" />
+													) : null}
+													Download
+												</Button>
+											)}
+										</>
+									))}
+								</div>
+							)}
+						</div>
+					) : null}
+
+					{engine === "seed_vc" || engine === "openvoice" ? (
+						<div className="max-w-xl space-y-2">
+							<Label>Reference voice clip (1–30s)</Label>
+							<div className="flex flex-wrap items-center gap-2">
+								<UploadField
+									id="vc-reference"
+									label="Upload Clip"
+									fileName={referenceName}
+									uploading={uploading === "reference"}
+									onFile={(f) => void uploadFile(f, "reference")}
+								/>
+								<span className="text-xs text-muted-foreground">or</span>
+								<Select
+									value={referenceProfileId}
+									onValueChange={(v) => void loadProfileAsReference(v)}
+								>
+									<SelectTrigger
+										className="h-8 w-56 text-xs"
+										aria-label="Use a saved voice profile"
+									>
+										<SelectValue placeholder="Use a saved voice profile…" />
+									</SelectTrigger>
+									<SelectContent>
+										{(profilesQuery.data ?? []).map((p) => (
+											<SelectItem key={p.id} value={p.id}>
+												{p.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+							<p className="text-xs text-muted-foreground">
+								{engine === "seed_vc"
+									? "Seed-VC clones the reference voice with no training. Reference is clipped to 25s automatically."
+									: "OpenVoice matches the reference clip's tone with no training."}
+							</p>
+						</div>
+					) : null}
+
+					{engine === "rvc" ? (
+						<div className="max-w-xl space-y-1">
+							<div className="flex items-center justify-between gap-2">
+								<Label htmlFor="vc-transpose">Transpose (semitones)</Label>
+								<span className="font-mono text-xs tabular-nums text-muted-foreground">
+									{transpose > 0 ? "+" : ""}
+									{transpose}
+								</span>
+							</div>
+							<Slider
+								id="vc-transpose"
+								min={-12}
+								max={12}
+								step={1}
+								value={[transpose]}
+								onValueChange={([v]) => setTranspose(v ?? 0)}
+								aria-label="Transpose semitones"
+							/>
+						</div>
+					) : null}
+					{engine === "seed_vc" ? (
+						<div className="max-w-xl space-y-1">
+							<div className="flex items-center justify-between gap-2">
+								<Label htmlFor="vc-steps">
+									Diffusion steps (quality vs speed)
+								</Label>
+								<span className="font-mono text-xs tabular-nums text-muted-foreground">
+									{diffusionSteps}
+								</span>
+							</div>
+							<Slider
+								id="vc-steps"
+								min={4}
+								max={100}
+								step={1}
+								value={[diffusionSteps]}
+								onValueChange={([v]) => setDiffusionSteps(v ?? 10)}
+								aria-label="Diffusion steps"
+							/>
+							<p className="text-xs text-muted-foreground">
+								10 = fast, 50–100 = best quality
+							</p>
+						</div>
+					) : null}
+
+					<div className="max-w-xl rounded-md border border-border bg-card p-3">
+						<label className="flex items-start gap-2 text-xs text-muted-foreground">
+							<input
+								type="checkbox"
+								className="mt-0.5 size-3.5 rounded border-border"
+								checked={consentGiven}
+								onChange={(e) => setConsentGiven(e.target.checked)}
+								aria-label="I confirm I have rights to use this audio"
+							/>
+							<span>
+								I confirm I have the necessary rights or consent to use the
+								source audio and any reference voice. Otoyin logs file hashes
+								locally for audit purposes.
+							</span>
+						</label>
 					</div>
-					<Slider
-						id="vc-steps"
-						min={4}
-						max={100}
-						step={1}
-						value={[diffusionSteps]}
-						onValueChange={([v]) => setDiffusionSteps(v ?? 10)}
-						aria-label="Diffusion steps"
-					/>
-					<p className="text-xs text-muted-foreground">
-						10 = fast, 50–100 = best quality
-					</p>
-				</div>
-			) : null}
 
-			<div className="max-w-xl rounded-md border border-border bg-card p-3">
-				<label className="flex items-start gap-2 text-xs text-muted-foreground">
-					<input
-						type="checkbox"
-						className="mt-0.5 size-3.5 rounded border-border"
-						checked={consentGiven}
-						onChange={(e) => setConsentGiven(e.target.checked)}
-						aria-label="I confirm I have rights to use this audio"
-					/>
-					<span>
-						I confirm I have the necessary rights or consent to use the source
-						audio and any reference voice. Otoyin logs file hashes locally for
-						audit purposes.
-					</span>
-				</label>
-			</div>
-
-			<div className="flex items-center gap-2">
-				<Button
-					type="button"
-					size="sm"
-					disabled={
-						convertMut.isPending ||
-						!consentGiven ||
-						(engine === "rvc" && !installedPacks.length)
-					}
-					title={
-						consentGiven
-							? "Convert voice"
-							: "Accept consent to enable conversion"
-					}
-					aria-label="Convert voice"
-					onClick={handleConvert}
-				>
-					{convertMut.isPending ? <Spinner size="xs" className="mr-1" /> : null}
-					Convert
-				</Button>
-				{convertedBlob ? (
-					<Button
-						type="button"
-						size="sm"
-						variant="outline"
-						className="h-8 text-xs"
-						disabled={saveMut.isPending}
-						onClick={() => saveMut.mutate()}
-					>
-						{saveMut.isPending ? <Spinner size="xs" className="mr-1" /> : null}
-						Save to Library
-					</Button>
-				) : null}
-				{hasResult ? (
-					<Badge tone="success">Last conversion played</Badge>
-				) : null}
-			</div>
+					<div className="flex items-center gap-2">
+						<Button
+							type="button"
+							size="sm"
+							disabled={
+								convertMut.isPending ||
+								!consentGiven ||
+								(engine === "rvc" && !installedPacks.length)
+							}
+							title={
+								consentGiven
+									? "Convert voice"
+									: "Accept consent to enable conversion"
+							}
+							aria-label="Convert voice"
+							onClick={handleConvert}
+						>
+							{convertMut.isPending ? (
+								<Spinner size="xs" className="mr-1" />
+							) : null}
+							Convert
+						</Button>
+						{convertedBlob ? (
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								className="h-8 text-xs"
+								disabled={saveMut.isPending}
+								onClick={() => saveMut.mutate()}
+							>
+								{saveMut.isPending ? (
+									<Spinner size="xs" className="mr-1" />
+								) : null}
+								Save to Library
+							</Button>
+						) : null}
+						{hasResult ? (
+							<Badge tone="success">Last conversion played</Badge>
+						) : null}
+					</div>
 				</TabsContent>
 				<TabsContent value="changer" className="mt-3">
-					<div className="text-muted-foreground text-sm">
-						Voice Changer panel coming soon.
-					</div>
+					<VoiceChangerPanel />
 				</TabsContent>
 			</Tabs>
 		</div>
