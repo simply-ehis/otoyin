@@ -2,54 +2,47 @@ import {
 	createRootRoute,
 	createRoute,
 	createRouter,
-	Outlet,
 	redirect,
-	useLocation,
 } from "@tanstack/react-router";
-import { lazy, Suspense, useEffect, useRef } from "react";
-import { GlobalDictationPill } from "@/features/capture/GlobalDictationPill";
-import { TabIntroMount } from "@/features/onboarding/TabIntro";
-import { AutoUpdateFlow } from "@/features/settings/AutoUpdateFlow";
-import { AppFrame } from "@/layouts/AppFrame/AppFrame";
-import { TopBanners } from "@/layouts/Banner/TopBanners";
-import { ErrorBoundary } from "@/layouts/ErrorBoundary/ErrorBoundary";
-import { AppLoadingScreen } from "@/ui/AppLoadingScreen";
-import { Toaster } from "@/ui/toaster";
+import { lazy } from "react";
+import { RootLayout } from "@/layouts/RootLayout/RootLayout";
 
-const MiniGame = lazy(() =>
-	import("@/features/game/GameModal").then((m) => ({
-		default: m.GameModal,
-	})),
-);
-const GenerationGameNudge = lazy(() =>
-	import("@/features/game/GameNudge").then((m) => ({
-		default: m.GameNudge,
-	})),
-);
-
-import { isTauri } from "@tauri-apps/api/core";
-import { useAssistantCommands } from "@/lib/assistantCommands";
-import { useBackendRestart } from "@/lib/hooks/useBackendRestart";
-import { useBootReadiness } from "@/lib/hooks/useBootReadiness";
-import { useGenerationProgress } from "@/lib/hooks/useGenerationProgress";
-import { useModelDownloadToast } from "@/lib/hooks/useModelDownloadToast";
-import {
-	MODEL_DISPLAY_NAMES,
-	useRestoreActiveTasks,
-} from "@/lib/hooks/useRestoreActiveTasks";
-import { usePlatform } from "@/platform/PlatformContext";
-import { useGenerationStore } from "@/stores/generationStore";
-import { usePlayerStore } from "@/stores/playerStore";
-import { useServerStore } from "@/stores/serverStore";
-import { useUIStore } from "@/stores/uiStore";
-import { Button } from "@/ui/button";
-
-// Lazy-load Sidebar — large component with heroicons, only visible on desktop
-const Sidebar = lazy(() =>
-	import("@/layouts/Sidebar").then((m) => ({
-		default: m.Sidebar,
-	})),
-);
+// Direct imports for page components referenced by createRoute (not lazy-loaded)
+import { StorePage } from "@/features/store/StorePage";
+import { LibraryTab } from "@/features/library/LibraryTab";
+import { StoryEditor } from "@/features/stories/StoryEditor";
+import { HelpPage } from "@/features/help/HelpPage";
+import { DubPage } from "@/features/dubbing/DubPage";
+import { SupportPage } from "@/features/settings/SupportPage";
+import { CloudModelsPage } from "@/features/settings/CloudModelsPage";
+import { ShortcutsPage } from "@/features/settings/ShortcutsPage";
+import { ScriptingPage } from "@/features/settings/ScriptingPage";
+import { PluginsPage } from "@/features/settings/PluginsPage";
+import { LottieExportPage } from "@/features/settings/LottieExportPage";
+import { TelemetryPage } from "@/features/settings/TelemetryPage";
+import { PrivacyPage } from "@/features/settings/PrivacyPage";
+import { ApiKeysPage } from "@/features/settings/ApiKeysPage";
+import { ModelHealthPage } from "@/features/settings/ModelHealthPage";
+import { TimecodeDisplay } from "@/features/settings/TimecodeDisplay";
+import { AudioEnhanceView } from "@/features/workspace/AudioEnhanceView";
+import { VocalIsolationView } from "@/features/workspace/VocalIsolationView";
+import { ConversationView } from "@/features/workspace/ConversationView";
+import { PlatformExportView } from "@/features/workspace/PlatformExportView";
+import { TranscriptEditView } from "@/features/workspace/TranscriptEditView";
+import { SpatialView } from "@/features/workspace/SpatialView";
+import { MusicGenView } from "@/features/workspace/MusicGenView";
+import { AutomationView } from "@/features/workspace/AutomationView";
+import { MultiTakeCompingView } from "@/features/workspace/MultiTakeCompingView";
+import { DiarizationView } from "@/features/workspace/DiarizationView";
+import { VideoPreviewView } from "@/features/workspace/VideoPreviewView";
+import { YouTubeDownloadView } from "@/features/workspace/YouTubeDownloadView";
+import { VoiceConverterView } from "@/features/workspace/VoiceConverterView";
+import { SoundEffectsView } from "@/features/workspace/SoundEffectsView";
+import { TranslateView } from "@/features/translate/TranslateView";
+import { StandaloneProjectPage } from "@/features/content/StandaloneProjectPage";
+import { CommunityPresetsPage } from "@/features/content/CommunityPresetsPage";
+import { WhatsNewPage } from "@/features/content/WhatsNewPage";
+import { OffersPage } from "@/features/content/OffersPage";
 
 // Lazy-loaded page components for code splitting
 const CapturesTab = lazy(() =>
