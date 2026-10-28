@@ -150,6 +150,13 @@ export const WORKSPACE_GROUPS: WorkspaceGroup[] = [
 				description: "Split audio into vocals, drums, bass, other",
 			},
 			{
+				id: "stem-separation",
+				path: "/stem-separation",
+				icon: ScissorsIcon,
+				label: "Stem Separation",
+				description: "Demucs ONNX stem separation",
+			},
+			{
 				id: "transcript",
 				path: "/workspace/transcript",
 				icon: DocumentTextIcon,

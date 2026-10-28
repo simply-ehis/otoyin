@@ -656,9 +656,7 @@ const settingsSupportRoute = createRoute({
 const stemSeparationRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/stem-separation",
-	beforeLoad: () => {
-		throw redirect({ to: "/workspace/vocal-isolation" });
-	},
+	component: StemSeparationPage,
 });
 
 // Settings → Cloud models sub-route
