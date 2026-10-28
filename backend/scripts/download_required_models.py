@@ -30,15 +30,9 @@ BUNDLED_WEIGHTS = [
 ]
 
 # Weights deliberately NOT bundled: at 303 MB, Demucs would grow every
-# installer by more than the rest of the bundle. Pre-fetching it here still
-# helps dev machines; installs resolve it from the HuggingFace cache.
-RUNTIME_WEIGHTS = [
-    {
-        "label": "Demucs v4 ONNX",
-        "repo_id": "MrCitron/demucs-v4-onnx",
-        "filename": "htdemucs.onnx",
-    },
-]
+# installer by more than the rest of the bundle. It is NOT pre-fetched
+# here either — it downloads on first use via the Models tab / Store.
+RUNTIME_WEIGHTS = []
 
 
 def download_required() -> int:
