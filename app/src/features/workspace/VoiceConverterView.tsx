@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
 import { useToast } from "@/ui/use-toast";
 import { playPreviewBlob } from "./playBlob";
 import { UploadField } from "./UploadField";
-import { VoiceChangerPanel } from "./VoiceChangerView";
+import { VoiceChangerPanel } from "./VoiceChangerPanel";
 
 type Engine = "rvc" | "seed_vc" | "openvoice" | "cloud";
 
