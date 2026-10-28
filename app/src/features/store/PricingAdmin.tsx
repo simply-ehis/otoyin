@@ -139,7 +139,7 @@ export function PricingAdmin() {
 		},
 	});
 
-	const products = (catalogQuery.data ?? []) as MarketplaceProduct[];
+	const products = (catalogQuery.data ?? []) as unknown as MarketplaceProduct[];
 	const prices: RegionPrice[] = pricesQuery.data?.prices ?? [];
 	const summary = summaryQuery.data;
 
