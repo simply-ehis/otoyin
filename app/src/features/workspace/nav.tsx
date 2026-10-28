@@ -103,6 +103,13 @@ export const WORKSPACE_GROUPS: WorkspaceGroup[] = [
 				description: "Piano-roll pitch analysis of audio",
 			},
 			{
+				id: "spectrogram",
+				path: "/workspace/spectrogram",
+				icon: ChartBarIcon,
+				label: "Spectrogram",
+				description: "Frequency spectrum visualization",
+			},
+			{
 				id: "spatial",
 				path: "/workspace/spatial",
 				icon: GlobeAltIcon,
