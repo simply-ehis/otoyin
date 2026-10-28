@@ -12,7 +12,7 @@ interface StemInfo {
 	muted: boolean;
 }
 
-export function StemSeparationPage() {
+export function StemSeparationPanel() {
 	const [file, setFile] = useState<File | null>(null);
 	const [busy, setBusy] = useState(false);
 	const [result, setResult] = useState<{ job_id: string; stems: Record<string, string> } | null>(null);
@@ -278,6 +278,14 @@ export function StemSeparationPage() {
 					)}
 				</div>
 			)}
+		</div>
+	);
+}
+
+export function StemSeparationPage() {
+	return (
+		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
+			<StemSeparationPanel />
 		</div>
 	);
 }

@@ -31,11 +31,14 @@ import { AudioEnhanceView } from "@/features/workspace/AudioEnhanceView";
 import { AutomationView } from "@/features/workspace/AutomationView";
 import { ConversationView } from "@/features/workspace/ConversationView";
 import { DiarizationView } from "@/features/workspace/DiarizationView";
+import { LiveTranscriptView } from "@/features/workspace/LiveTranscriptView";
 import { MultiTakeCompingView } from "@/features/workspace/MultiTakeCompingView";
 import { MusicGenView } from "@/features/workspace/MusicGenView";
+import { NoiseReductionView } from "@/features/workspace/NoiseReductionView";
 import { PlatformExportView } from "@/features/workspace/PlatformExportView";
 import { SoundEffectsView } from "@/features/workspace/SoundEffectsView";
 import { SpatialView } from "@/features/workspace/SpatialView";
+import { SpectrogramView } from "@/features/workspace/SpectrogramView";
 import { TranscriptEditView } from "@/features/workspace/TranscriptEditView";
 import { VideoPreviewView } from "@/features/workspace/VideoPreviewView";
 import { VocalIsolationView } from "@/features/workspace/VocalIsolationView";
@@ -654,7 +657,9 @@ const settingsSupportRoute = createRoute({
 const stemSeparationRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/stem-separation",
-	component: StemSeparationPage,
+	beforeLoad: () => {
+		throw redirect({ to: "/workspace/vocal-isolation" });
+	},
 });
 
 // Settings → Cloud models sub-route

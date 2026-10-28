@@ -13,6 +13,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getPeakWaveform } from "@/features/audioStudio/getPeakWaveform";
+import { StemSeparationPanel } from "@/features/stems/StemSeparationPage";
 import { apiClient } from "@/lib/api/client";
 import { DEMUCS_MODEL_NAME } from "@/lib/audio/ensureModel";
 import { showStudioErrorToast } from "@/lib/errors";
@@ -568,6 +569,13 @@ export function VocalIsolationView() {
 					</div>
 				</section>
 			) : null}
+			<section className="space-y-2 rounded-md border border-border bg-card p-3">
+				<h2 className="text-xs font-medium text-foreground">Advanced stem editor (peaks & gain)</h2>
+				<p className="text-xs text-muted-foreground">
+					Fine-tune stem gain, mute, and inspect peaks.
+				</p>
+				<StemSeparationPanel />
+			</section>
 		</div>
 	);
 }
