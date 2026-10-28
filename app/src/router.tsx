@@ -475,9 +475,7 @@ const batchRoute = createRoute({
 const noiseReductionRoute = createRoute({
 	getParentRoute: () => workspaceRoute,
 	path: "/noise-reduction",
-	beforeLoad: () => {
-		throw redirect({ to: "/workspace/audio-enhance" });
-	},
+	component: NoiseReductionView,
 });
 
 const audioEnhanceRoute = createRoute({
