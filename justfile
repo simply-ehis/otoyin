@@ -280,14 +280,14 @@ build-server: _ensure-venv
     mkdir -p {{ tauri_dir }}/src-tauri/binaries
     # Clear first: cp -r merges into an existing dir (nesting
     # otoyin-server/ inside itself) instead of replacing it.
-rm -rf {{ tauri_dir }}/src-tauri/binaries/otoyin-server
-cp -r backend/dist/otoyin-server {{ tauri_dir }}/src-tauri/binaries/otoyin-server
-# No triple-suffixed copy here — the server ships via bundle.resources and is
-# loaded from {resource_dir}/otoyin-server/. Listing it in externalBin too only
-# produced a second, never-executed ~92 MB copy at the bundle root.
-@echo "Copied server bundle: otoyin-server/ (shipped as a resource, single copy)"
-
-# Build MCP shim binary (tiny stdio↔HTTP proxy, no ML deps)
+    rm -rf {{ tauri_dir }}/src-tauri/binaries/otoyin-server
+    cp -r backend/dist/otoyin-server {{ tauri_dir }}/src-tauri/binaries/otoyin-server
+    # No triple-suffixed copy here — the server ships via bundle.resources and is
+    # loaded from {resource_dir}/otoyin-server/. Listing it in externalBin too only
+    # produced a second, never-executed ~92 MB copy at the bundle root.
+    @echo "Copied server bundle: otoyin-server/ (shipped as a resource, single copy)"
+    
+    # Build MCP shim binary (tiny stdio↔HTTP proxy, no ML deps)
 [unix]
 build-mcp-shim: _ensure-venv
     PATH="{{ venv_bin }}:$PATH" python backend/build_binary.py --shim
