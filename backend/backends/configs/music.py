@@ -147,8 +147,6 @@ def _get_audio_processing_configs() -> list[ModelConfig]:
             model_size="htdemucs",
             size_mb=316,
             category="sfx",
-            pip_packages=["demucs>=4.0.0"],
-            venv_name="demucs",
         ),
     ]
 
