@@ -209,7 +209,7 @@ def _get_demucs_configs() -> list[ModelConfig]:
             engine="demucs_onnx",
             hf_repo_id="MrCitron/demucs-v4-onnx",
             model_size="int8",
-            size_mb=98,
+            size_mb=94,
             min_ram_mb=2000,
             min_vram_mb=0,
             quant="int8",

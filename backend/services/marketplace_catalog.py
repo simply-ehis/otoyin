@@ -77,7 +77,7 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "music",
         "price_usd": 0,
         "paid": False,
-        "note": "98MB int8 ONNX. Splits audio into vocals, drums, bass, other. No torch needed.",
+        "note": "94MB int8 ONNX. Splits audio into vocals, drums, bass, other. No torch needed.",
     },
     {
         "id": "whisper-tiny-en",
