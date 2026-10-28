@@ -334,7 +334,7 @@ def _get_tts_configs() -> list[ModelConfig]:
             structured_preset_voices=_BARK_STRUCTURED_VOICES,
             languages=["en", "de", "es", "fr", "hi", "it", "ja", "ko", "pl", "pt", "ru", "tr", "zh"],
         ),
-        # --- SteerTTS (WhissleAI) � expressive TTS with style control (C++ native text processing) ---
+        # --- SteerTTS (WhissleAI) — expressive TTS with style control (C++ native text processing) ---
         ModelConfig(
             model_name="steer-tts",
             display_name="SteerTTS (WhissleAI, 23M, controllable)",
