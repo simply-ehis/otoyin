@@ -26,6 +26,8 @@ export const NATIVE_PREVIEW_IDS = new Set([
 	"builtin-gain",
 	"builtin-chorus",
 	"builtin-distortion",
+	"builtin-telephone",
+	"builtin-megaphone",
 ]);
 
 /** Offline-first fallback: the panel works with these when the backend is unreachable. */
@@ -335,9 +337,13 @@ export function mergeParamMeta(
 	// Ensure every fallback catalog entry has meta even when offline.
 	for (const entry of FALLBACK_CATALOG) {
 		const type = entry.id.replace(/^builtin-/, "");
-		if (!meta[type]) {
-			meta[type] = FALLBACK_PARAM_META[type] ?? {};
+		const params: Record<string, ParamMeta> = {};
+		for (const key of Object.keys(entry.defaults)) {
+			if (!meta[type]?.[key]) {
+				params[key] = { label: prettyParamLabel(key), min: 0, max: 1, step: 0.01, unit: "" };
+			}
 		}
+		meta[type] = { ...(FALLBACK_PARAM_META[type] ?? {}), ...(meta[type] ?? {}), ...params };
 	}
 	return meta;
 }

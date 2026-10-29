@@ -35,6 +35,9 @@ export const BACKEND_CHAIN_TYPES = new Set([
 	"age_shift",
 	"helium",
 	"vocoder",
+	"telephone",
+	"megaphone",
+	"resonant_filter_sweep",
 
 	"underwater",
 	"whisper_transform",
@@ -102,6 +105,18 @@ function translateParams(
 				attack: attackMs / 1000,
 				release: releaseMs / 1000,
 			};
+		}
+		case "resonant_filter_sweep": {
+			const ft = params.filter_type;
+			const mapped =
+				typeof ft === "string"
+					? ft
+					: ft === 0
+						? "lowpass"
+						: ft === 2
+							? "bandpass"
+							: "highpass";
+			return { ...params, filter_type: mapped };
 		}
 		default:
 			return { ...params };
