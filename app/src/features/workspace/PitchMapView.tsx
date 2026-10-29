@@ -21,6 +21,7 @@ import {
 	SelectValue,
 } from "@/ui/select";
 import { EmptyState, ScreenHeader } from "@/ui/states";
+import { SpectrogramView } from "./SpectrogramView";
 import { useToast } from "@/ui/use-toast";
 import { hueLine } from "./hueIdentity";
 
@@ -318,6 +319,10 @@ export function PitchMapView() {
 				onAnalyze={handleAnalyze}
 				compact
 			/>
+			<section className="space-y-2 rounded-md border border-border bg-card p-3">
+				<h2 className="text-xs font-medium text-foreground">Spectrogram</h2>
+				<SpectrogramView />
+			</section>
 		</div>
 	);
 }
