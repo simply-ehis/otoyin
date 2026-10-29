@@ -9,13 +9,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
-import { Slider } from "@/ui/slider";
 import { apiClient } from "@/lib/api/client";
 import { useThrottledTimeUpdate } from "@/lib/hooks/useThrottledTimeUpdate";
 import { formatAudioDuration } from "@/lib/utils/audio";
 import { debug } from "@/lib/utils/debug";
 import { usePlatform } from "@/platform/PlatformContext";
 import { usePlayerStore } from "@/stores/playerStore";
+import { Slider } from "@/ui/slider";
 
 function AudioPlayerInner() {
 	const platform = usePlatform();

@@ -2,8 +2,8 @@ import { ArrowPathIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { useTranslation } from "react-i18next";
 import {
 	ALL_TAB_PATHS,
-	USE_CASE_PROFILES,
 	type TabPath,
+	USE_CASE_PROFILES,
 	type UseCaseKey,
 	useWorkspaceStore,
 } from "@/stores/workspaceStore";

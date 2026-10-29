@@ -55,7 +55,6 @@ vi.mock("@/lib/marketplace", () => ({
 	},
 }));
 
-
 const mockedApi = {
 	getCatalog: vi.mocked(apiClient.getCatalog),
 	refreshCatalog: vi.mocked(apiClient.refreshCatalog),

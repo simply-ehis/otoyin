@@ -11,6 +11,11 @@ import {
 	StopIcon as Square,
 	TrashIcon as Trash2,
 } from "@heroicons/react/24/outline";
+import type {
+	GenerationVersionResponse,
+	StoryItemDetail,
+} from "@/lib/api/types";
+import { cn } from "@/lib/utils/cn";
 import { Button } from "@/ui/button";
 import {
 	DropdownMenu,
@@ -18,11 +23,6 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/ui/dropdown-menu";
-import type {
-	GenerationVersionResponse,
-	StoryItemDetail,
-} from "@/lib/api/types";
-import { cn } from "@/lib/utils/cn";
 import { ClipPanPopover } from "./ClipPanPopover";
 import { ClipVolumePopover } from "./ClipVolumePopover";
 import type { EditorToolbarProps, Mutator } from "./EditorToolbar.types";

@@ -32,11 +32,15 @@ const listeners = new Set<(next: BootState) => void>();
 
 function publish(next: BootState) {
 	state = next;
-	for (const listener of listeners) listener(state);
+	for (const listener of listeners) {
+		listener(state);
+	}
 }
 
 async function poll() {
-	if (inFlight || subscribers === 0) return;
+	if (inFlight || subscribers === 0) {
+		return;
+	}
 	inFlight = true;
 	const ctrl = new AbortController();
 	controller = ctrl;
@@ -44,7 +48,9 @@ async function poll() {
 	try {
 		const base = serverUrl.replace(/\/$/, "");
 		const res = await fetch(`${base}/health/ready`, { signal: ctrl.signal });
-		if (!res.ok) throw new Error(`health/ready ${res.status}`);
+		if (!res.ok) {
+			throw new Error(`health/ready ${res.status}`);
+		}
 		const data = (await res.json()) as {
 			ready?: boolean;
 			status?: string;
@@ -65,13 +71,17 @@ async function poll() {
 		});
 	} finally {
 		window.clearTimeout(timeoutId);
-		if (controller === ctrl) controller = null;
+		if (controller === ctrl) {
+			controller = null;
+		}
 		inFlight = false;
 	}
 }
 
 function stop() {
-	if (timer !== null) window.clearInterval(timer);
+	if (timer !== null) {
+		window.clearInterval(timer);
+	}
 	timer = null;
 	controller?.abort();
 	controller = null;
@@ -107,7 +117,9 @@ export function subscribeBootReadiness(
 	return () => {
 		listeners.delete(onChange);
 		subscribers -= 1;
-		if (subscribers === 0) stop();
+		if (subscribers === 0) {
+			stop();
+		}
 	};
 }
 

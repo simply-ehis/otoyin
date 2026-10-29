@@ -570,7 +570,9 @@ export function VocalIsolationView() {
 				</section>
 			) : null}
 			<section className="space-y-2 rounded-md border border-border bg-card p-3">
-				<h2 className="text-xs font-medium text-foreground">Advanced stem editor (peaks & gain)</h2>
+				<h2 className="text-xs font-medium text-foreground">
+					Advanced stem editor (peaks & gain)
+				</h2>
 				<p className="text-xs text-muted-foreground">
 					Fine-tune stem gain, mute, and inspect peaks.
 				</p>

@@ -1,5 +1,5 @@
-import { Suspense, lazy } from "react";
 import type * as React from "react";
+import { lazy, Suspense } from "react";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "./button";
 

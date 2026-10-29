@@ -1,7 +1,7 @@
 import { PauseIcon, PlayIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
-import { usePresetAudition } from "@/features/generate/usePresetAudition";
 import type { AuditionVoice } from "@/features/generate/usePresetAudition";
+import { usePresetAudition } from "@/features/generate/usePresetAudition";
 
 export type PreviewButtonState = "idle" | "loading" | "playing";
 

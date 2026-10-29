@@ -1,13 +1,12 @@
 import { useRouterState } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useState } from "react";
+import { useThemeSync } from "@/hooks/useThemeSync";
 import { AppBackground } from "@/layouts/AppFrame/AppBackground";
 import { AppHeader } from "@/layouts/AppFrame/AppHeader";
 import { BackendStatusBanner } from "@/layouts/AppFrame/BackendStatusBanner";
 import { AudioKeepAlive } from "@/layouts/AudioPlayer/AudioKeepAlive";
 import { ErrorBoundary } from "@/layouts/ErrorBoundary/ErrorBoundary";
 import { TitleBarDragRegion } from "@/layouts/TitleBarDragRegion";
-import { TooltipProvider } from "@/ui/tooltip";
-import { useThemeSync } from "@/hooks/useThemeSync";
 import { TOP_SAFE_AREA_PADDING } from "@/lib/constants/ui";
 import { applyThemeAccent } from "@/lib/design-system";
 import { useServerErrorToast } from "@/lib/hooks/useServerErrorToast";
@@ -18,6 +17,7 @@ import { usePlayerStore } from "@/stores/playerStore";
 import { useStoryStore } from "@/stores/storyStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
+import { TooltipProvider } from "@/ui/tooltip";
 
 // Heavy overlays are fetched on first open, never during startup.
 //
@@ -104,7 +104,9 @@ function WhenReady({
 	ready: boolean;
 	children: React.ReactNode;
 }) {
-	if (!ready) return null;
+	if (!ready) {
+		return null;
+	}
 	return <Suspense fallback={null}>{children}</Suspense>;
 }
 

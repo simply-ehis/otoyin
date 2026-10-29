@@ -64,7 +64,9 @@ export function AudioEnhanceView() {
 			setAudioPath(audio_path);
 			setFileName(file.name);
 			setEnhancedUrl(null);
-			if (originalUrl) URL.revokeObjectURL(originalUrl);
+			if (originalUrl) {
+				URL.revokeObjectURL(originalUrl);
+			}
 			setOriginalUrl(URL.createObjectURL(file));
 			setEnhancedBlob(null);
 			toast({ title: `Uploaded: ${file.name}` });
@@ -81,7 +83,9 @@ export function AudioEnhanceView() {
 
 	const saveMut = useMutation({
 		mutationFn: async () => {
-			if (!enhancedBlob) throw new Error("No enhanced audio");
+			if (!enhancedBlob) {
+				throw new Error("No enhanced audio");
+			}
 			return apiClient.saveGeneratedAudio(
 				enhancedBlob,
 				`Enhanced ${fileName || "audio"}`,
@@ -90,7 +94,10 @@ export function AudioEnhanceView() {
 			);
 		},
 		onSuccess: () =>
-			toast({ title: "Saved to Library", description: "Enhanced audio is now in the Library tab." }),
+			toast({
+				title: "Saved to Library",
+				description: "Enhanced audio is now in the Library tab.",
+			}),
 		onError: (e: unknown) => showStudioErrorToast(e),
 	});
 
@@ -175,7 +182,9 @@ export function AudioEnhanceView() {
 								disabled={saveMut.isPending || !enhancedBlob}
 								onClick={() => saveMut.mutate()}
 							>
-								{saveMut.isPending ? <Spinner size="xs" className="mr-1" /> : null}
+								{saveMut.isPending ? (
+									<Spinner size="xs" className="mr-1" />
+								) : null}
 								Save to Library
 							</Button>
 						</div>

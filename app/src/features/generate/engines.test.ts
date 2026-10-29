@@ -11,9 +11,9 @@
 import { describe, expect, it } from "vitest";
 import type { VoiceProfileResponse } from "@/lib/api/types";
 import {
+	type EngineOption,
 	preferredProfile,
 	selectableEngines,
-	type EngineOption,
 } from "./engines";
 
 function profile(id: string, engine: string): Partial<VoiceProfileResponse> {

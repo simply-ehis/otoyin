@@ -26,7 +26,7 @@ import {
 } from "@/ui/select";
 import { ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
-import { liveEngine, type InstrumentResolver } from "./engine";
+import { type InstrumentResolver, liveEngine } from "./engine";
 import { StepSequencer } from "./StepSequencer";
 import type { Clip, LauncherSession, MidiClip, Track } from "./types";
 import {

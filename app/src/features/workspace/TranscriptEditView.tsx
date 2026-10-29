@@ -3,12 +3,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import { showStudioErrorToast } from "@/lib/errors";
 import { cn } from "@/lib/utils/cn";
+import { usePlatform } from "@/platform/PlatformContext";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { Badge, Separator, Spinner } from "@/ui/primitives";
 import { EmptyState, LoadingState, ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
-import { usePlatform } from "@/platform/PlatformContext";
+import { LiveTranscriptView } from "./LiveTranscriptView";
 
 interface Word {
 	index: number;

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAudioStudioStore } from "@/features/audioStudio/AudioStudioStore";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useAudioStudioStore } from "@/features/audioStudio/AudioStudioStore";
 import { apiClient } from "@/lib/api/client";
 import type { SessionResponse } from "@/lib/api/types";
 import { getClip } from "@/lib/clip";
@@ -186,15 +186,24 @@ export function MultiTakeCompingView() {
 
 	const saveCompMut = useMutation({
 		mutationFn: async () => {
-			if (!compedBlob) throw new Error("No comped audio");
-			return apiClient.saveGeneratedAudio(compedBlob, `Comp ${new Date().toLocaleTimeString()}`, "capture", "file");
+			if (!compedBlob) {
+				throw new Error("No comped audio");
+			}
+			return apiClient.saveGeneratedAudio(
+				compedBlob,
+				`Comp ${new Date().toLocaleTimeString()}`,
+				"capture",
+				"file",
+			);
 		},
 		onSuccess: () => toast({ title: "Saved to Library" }),
 		onError: (e: unknown) => showStudioErrorToast(e),
 	});
 
 	async function sendCompToStudio() {
-		if (!compedBlob) return;
+		if (!compedBlob) {
+			return;
+		}
 		const url = URL.createObjectURL(compedBlob);
 		const trackId = addTrack("Comped take");
 		setTrackAudio(trackId, url, compedBlob, 0);

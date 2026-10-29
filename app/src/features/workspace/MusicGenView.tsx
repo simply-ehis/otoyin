@@ -1,16 +1,16 @@
 import { useMutation } from "@tanstack/react-query";
-import { useAudioStudioStore } from "@/features/audioStudio/AudioStudioStore";
-import { copyClip } from "@/lib/clip";
-import { UploadField } from "./UploadField";
 import { useMemo, useState } from "react";
+import { useAudioStudioStore } from "@/features/audioStudio/AudioStudioStore";
 import { apiClient } from "@/lib/api/client";
 import type { MusicGenerateRequest } from "@/lib/api/types";
+import { copyClip } from "@/lib/clip";
 import { showStudioErrorToast } from "@/lib/errors";
 import { Button } from "@/ui/button";
 import { Input, Textarea } from "@/ui/input";
 import { Label } from "@/ui/primitives";
 import { ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
+import { UploadField } from "./UploadField";
 
 const GENRES = [
 	"pop",
@@ -124,12 +124,18 @@ export function MusicGenView() {
 		try {
 			const { audio_path } = await apiClient.dspUpload(file, file.name);
 			setAudioPath(audio_path);
-			if (importedUrl) URL.revokeObjectURL(importedUrl);
+			if (importedUrl) {
+				URL.revokeObjectURL(importedUrl);
+			}
 			setImportedBlob(file);
 			setImportedUrl(URL.createObjectURL(file));
 			toast({ title: `Imported beat: ${file.name}` });
 		} catch (err) {
-			toast({ title: "Import failed", description: err instanceof Error ? err.message : String(err), variant: "destructive" });
+			toast({
+				title: "Import failed",
+				description: err instanceof Error ? err.message : String(err),
+				variant: "destructive",
+			});
 		} finally {
 			setImporting(false);
 		}
@@ -137,15 +143,26 @@ export function MusicGenView() {
 
 	async function sendToAudioStudio(blob: Blob, name: string) {
 		const url = URL.createObjectURL(blob);
-		const meta = await apiClient.getAudioInfo(audioPath || "").catch(() => ({ duration: 0 }));
+		const meta = await apiClient
+			.getAudioInfo(audioPath || "")
+			.catch(() => ({ duration: 0 }));
 		const trackId = addTrack(name);
 		setTrackAudio(trackId, url, blob, meta.duration ?? 0);
 		toast({ title: "Sent to Audio Studio", description: "Track added." });
 	}
 
 	async function sendToTimeline(blob: Blob, name: string, duration: number) {
-		await copyClip({ kind: "sample", id: `music-${Date.now()}`, audioUrl: URL.createObjectURL(blob), name, durationMs: Math.round(duration * 1000) });
-		toast({ title: "Copied to clipboard", description: "Paste into the Timeline tab." });
+		await copyClip({
+			kind: "sample",
+			id: `music-${Date.now()}`,
+			audioUrl: URL.createObjectURL(blob),
+			name,
+			durationMs: Math.round(duration * 1000),
+		});
+		toast({
+			title: "Copied to clipboard",
+			description: "Paste into the Timeline tab.",
+		});
 	}
 
 	const canGenerate = useMemo(() => prompt.trim().length > 0, [prompt]);
@@ -303,14 +320,16 @@ export function MusicGenView() {
 			<div className="max-w-2xl space-y-2 rounded-md border border-border bg-card p-3">
 				<Label htmlFor="music-composer">Composer (lyrics + beats)</Label>
 				<p className="text-xs text-muted-foreground">
-					Write sections like ## Verse / ## Chorus, chord symbols in
-					brackets [Cmaj7], and lyrics. Used as the generation prompt.
+					Write sections like ## Verse / ## Chorus, chord symbols in brackets
+					[Cmaj7], and lyrics. Used as the generation prompt.
 				</p>
 				<Textarea
 					id="music-composer"
 					value={composerText}
 					onChange={(e) => setComposerText(e.target.value)}
-					placeholder={"## Verse\n[Cmaj7] [Am7] [Fmaj7] [G7]\nLyrics go here...\n\n## Chorus\n[C] [G] [Am] [F]\n..."}
+					placeholder={
+						"## Verse\n[Cmaj7] [Am7] [Fmaj7] [G7]\nLyrics go here...\n\n## Chorus\n[C] [G] [Am] [F]\n..."
+					}
 					rows={8}
 					className="font-mono text-xs"
 				/>
@@ -352,12 +371,19 @@ export function MusicGenView() {
 				<UploadField
 					id="music-import"
 					label="Select audio file"
-					fileName={audioPath ? audioPath.split("/").pop() ?? "" : ""}
+					fileName={audioPath ? (audioPath.split("/").pop() ?? "") : ""}
 					uploading={importing}
 					onFile={(f) => void handleImportBeat(f)}
 				/>
 				{importedUrl ? (
-					<audio src={importedUrl} controls className="h-8 w-full" aria-label="Imported beat playback" />
+					<audio
+						src={importedUrl}
+						controls
+						className="h-8 w-full"
+						aria-label="Imported beat playback"
+					>
+						<track kind="captions" label="Captions" src="" />
+					</audio>
 				) : null}
 			</div>
 
@@ -366,11 +392,17 @@ export function MusicGenView() {
 				<section className="max-w-lg space-y-2 rounded-md border border-border bg-card p-3">
 					<h2 className="text-xs font-medium text-foreground">Playback</h2>
 					<audio
-						src={generatedBlob ? URL.createObjectURL(generatedBlob) : importedUrl ?? undefined}
+						src={
+							generatedBlob
+								? URL.createObjectURL(generatedBlob)
+								: (importedUrl ?? undefined)
+						}
 						controls
 						className="h-8 w-full"
 						aria-label="Audio playback"
-					/>
+					>
+						<track kind="captions" label="Captions" src="" />
+					</audio>
 					<div className="flex flex-wrap gap-2">
 						{generatedBlob ? (
 							<>
@@ -379,7 +411,12 @@ export function MusicGenView() {
 									size="sm"
 									variant="outline"
 									className="h-8 text-xs"
-									onClick={() => void sendToAudioStudio(generatedBlob, `Music ${new Date().toLocaleTimeString()}`)}
+									onClick={() =>
+										void sendToAudioStudio(
+											generatedBlob,
+											`Music ${new Date().toLocaleTimeString()}`,
+										)
+									}
 								>
 									Send to Audio Studio
 								</Button>
@@ -388,7 +425,13 @@ export function MusicGenView() {
 									size="sm"
 									variant="outline"
 									className="h-8 text-xs"
-									onClick={() => void sendToTimeline(generatedBlob, `Music ${new Date().toLocaleTimeString()}`, duration)}
+									onClick={() =>
+										void sendToTimeline(
+											generatedBlob,
+											`Music ${new Date().toLocaleTimeString()}`,
+											duration,
+										)
+									}
 								>
 									Send to Timeline
 								</Button>

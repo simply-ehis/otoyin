@@ -103,7 +103,6 @@ describe("StoreDetailModal — cached model", () => {
 		const btn = screen.getByRole("button", { name: /activating/i });
 		expect(btn).toBeDisabled();
 	});
-
 });
 describe("StoreDetailModal — needs download", () => {
 	it("renders the Download button for a not-cached model", () => {

@@ -42,8 +42,8 @@ export function DonateCard() {
 
 			<p className="relative mt-4 text-sm leading-relaxed text-muted-foreground">
 				otoyin is built and maintained by one person. If it saves you time or
-				money, a small donation keeps the project alive and the models free
-				for everyone.
+				money, a small donation keeps the project alive and the models free for
+				everyone.
 			</p>
 
 			<div className="relative mt-5">

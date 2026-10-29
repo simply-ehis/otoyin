@@ -118,7 +118,9 @@ export function FeatureTour({
 	//  - focus, so Escape and the arrow-key handler below ever fire
 	//  - a labelled control, so assistive tech and tests can find it
 	useEffect(() => {
-		if (!open || step >= TOUR_STEPS.length) return;
+		if (!open || step >= TOUR_STEPS.length) {
+			return;
+		}
 		const node = document.querySelector<HTMLElement>(
 			'[data-testid="feature-tour"]',
 		);

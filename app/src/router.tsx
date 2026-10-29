@@ -31,7 +31,6 @@ import { AudioEnhanceView } from "@/features/workspace/AudioEnhanceView";
 import { AutomationView } from "@/features/workspace/AutomationView";
 import { ConversationView } from "@/features/workspace/ConversationView";
 import { DiarizationView } from "@/features/workspace/DiarizationView";
-import { LiveTranscriptView } from "@/features/workspace/LiveTranscriptView";
 import { MultiTakeCompingView } from "@/features/workspace/MultiTakeCompingView";
 import { MusicGenView } from "@/features/workspace/MusicGenView";
 import { NoiseReductionView } from "@/features/workspace/NoiseReductionView";

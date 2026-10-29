@@ -15,8 +15,11 @@ export function getCloudSubscriptionKey(): string {
 
 export function setCloudSubscriptionKey(key: string): void {
 	try {
-		if (key) localStorage.setItem(STORAGE_KEY, key);
-		else localStorage.removeItem(STORAGE_KEY);
+		if (key) {
+			localStorage.setItem(STORAGE_KEY, key);
+		} else {
+			localStorage.removeItem(STORAGE_KEY);
+		}
 	} catch {
 		/* ignore */
 	}
@@ -78,9 +81,7 @@ export function CloudModelsPage() {
 						{busy ? "Checking…" : "Test connection"}
 					</Button>
 				</div>
-				{status && (
-					<p className="text-xs text-muted-foreground">{status}</p>
-				)}
+				{status && <p className="text-xs text-muted-foreground">{status}</p>}
 			</div>
 
 			<div className="rounded-lg border border-border bg-secondary/40 p-4 text-xs text-muted-foreground">

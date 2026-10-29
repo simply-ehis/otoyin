@@ -1,22 +1,22 @@
 import {
 	BookOpenIcon as BookOpen,
+	SignalIcon as Captures,
 	ChevronDoubleLeftIcon,
 	ChevronLeftIcon,
-	CogIcon as Settings,
+	SparklesIcon as Effects,
 	HomeIcon as Home,
 	MicrophoneIcon as Mic,
 	MusicalNoteIcon as Music,
 	PuzzlePieceIcon as PuzzlePiece,
+	CogIcon as Settings,
 	ShoppingBagIcon as Store,
-	SignalIcon as Captures,
-	SparklesIcon as Effects,
 } from "@heroicons/react/24/outline";
 import { Link, useRouter } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ClipboardIndicator } from "@/features/clipboard/ClipboardIndicator";
 import { cn } from "@/lib/utils/cn";
 import { useUIStore } from "@/stores/uiStore";
-import { ClipboardIndicator } from "@/features/clipboard/ClipboardIndicator";
 
 interface NavItem {
 	label: string;
@@ -114,10 +114,7 @@ export function Sidebar() {
 										aria-current={active ? "page" : undefined}
 										data-active={active ? "true" : undefined}
 									>
-										<item.icon
-											className="size-4 shrink-0"
-											aria-hidden="true"
-										/>
+										<item.icon className="size-4 shrink-0" aria-hidden="true" />
 										<span
 											className={cn(
 												"truncate transition-opacity duration-150",

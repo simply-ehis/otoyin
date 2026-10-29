@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { clearDeletedProfileState } from "@/lib/cleanup/deleteCleanup";
 import { apiClient } from "@/lib/api/client";
 import type { VoiceProfileCreate } from "@/lib/api/types";
+import { clearDeletedProfileState } from "@/lib/cleanup/deleteCleanup";
 import { usePlatform } from "@/platform/PlatformContext";
 
 export function useProfiles() {

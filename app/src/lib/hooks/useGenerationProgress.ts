@@ -2,8 +2,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import { useGenerationSettings } from "@/lib/hooks/useSettings";
-import { useGenerationStore } from "@/stores/generationStore";
 import { useGenerationProgressStore } from "@/stores/generationProgressStore";
+import { useGenerationStore } from "@/stores/generationStore";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useToast } from "@/ui/use-toast";
 

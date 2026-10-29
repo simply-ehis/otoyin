@@ -3,9 +3,9 @@ import {
 	TrashIcon as Trash,
 } from "@heroicons/react/24/outline";
 import { useCallback, useEffect, useState } from "react";
-import { Button } from "@/ui/button";
 import { apiClient } from "@/lib/api/client";
 import type { Conversation as ConversationType } from "@/lib/api/clientMemory";
+import { Button } from "@/ui/button";
 
 interface Props {
 	onClose: () => void;

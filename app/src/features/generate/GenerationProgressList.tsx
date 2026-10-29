@@ -3,11 +3,11 @@ import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import { showStudioErrorToast } from "@/lib/errors";
 import { formatAudioDuration } from "@/lib/utils/audio";
-import { useGenerationStore } from "@/stores/generationStore";
 import {
-	useGenerationProgressStore,
 	type GenerationStage,
+	useGenerationProgressStore,
 } from "@/stores/generationProgressStore";
+import { useGenerationStore } from "@/stores/generationStore";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useToast } from "@/ui/use-toast";
 

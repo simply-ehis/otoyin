@@ -14,7 +14,9 @@ export function FloatingVideoPlayer() {
 
 	useEffect(() => {
 		const el = videoRef.current;
-		if (!el || !url) return;
+		if (!el || !url) {
+			return;
+		}
 		el.src = url;
 		void el.play().catch(() => setPlaying(false));
 		const onPlay = () => setPlaying(true);
@@ -27,7 +29,9 @@ export function FloatingVideoPlayer() {
 		};
 	}, [url]);
 
-	if (!visible || !url) return null;
+	if (!visible || !url) {
+		return null;
+	}
 
 	return (
 		<div
@@ -45,9 +49,14 @@ export function FloatingVideoPlayer() {
 						aria-label={playing ? "Pause" : "Play"}
 						onClick={() => {
 							const el = videoRef.current;
-							if (!el) return;
-							if (el.paused) void el.play();
-							else el.pause();
+							if (!el) {
+								return;
+							}
+							if (el.paused) {
+								void el.play();
+							} else {
+								el.pause();
+							}
 						}}
 					>
 						{playing ? (

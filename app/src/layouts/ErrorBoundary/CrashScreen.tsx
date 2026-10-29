@@ -1,8 +1,8 @@
 import { ArrowPathIcon as RefreshCw } from "@heroicons/react/24/outline";
+import type { StudioError } from "@/lib/errors";
 import { Button } from "@/ui/button";
 import { Card, CardBody, CardFooter, CardHeader } from "@/ui/card";
 import { CodeConsole } from "@/ui/code-console";
-import type { StudioError } from "@/lib/errors";
 
 interface CrashScreenProps {
 	error: StudioError;

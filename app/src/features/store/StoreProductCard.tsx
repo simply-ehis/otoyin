@@ -403,7 +403,7 @@ export function StoreProductCard({
 							Details
 						</Button>
 					</>
-				) : false ? (
+				) : (
 					<>
 						<Button
 							size="sm"
@@ -412,37 +412,6 @@ export function StoreProductCard({
 							className="flex-1"
 						>
 							Buy {priceLabel}
-						</Button>
-						<Button
-							type="button"
-							variant="ghost"
-							size="sm"
-							onClick={() => onDetail(product)}
-						>
-							Details
-						</Button>
-					</>
-				) : (
-					<>
-						<Button
-							size="sm"
-							disabled={busy}
-							onClick={(e) => {
-								e.stopPropagation();
-								if (onQuickDownload) {
-									onQuickDownload(product.id);
-								} else {
-									onDetail(product);
-								}
-							}}
-							className="flex-1"
-						>
-							{busy ? (
-								<Spinner size="xs" />
-							) : (
-								<ArrowDownTrayIcon className="size-3.5" />
-							)}
-							{busy ? "Starting…" : "Download"}
 						</Button>
 						<Button
 							type="button"

@@ -146,7 +146,7 @@ export function SupportPage() {
 						placeholder="Tell us what is going on…"
 					/>
 				</Field>
-<div className="flex flex-wrap items-center gap-3">
+				<div className="flex flex-wrap items-center gap-3">
 					<Button
 						type="submit"
 						disabled={support.isPending}

@@ -156,7 +156,8 @@ export const StoreDetailModal = memo(function StoreDetailModal({
 								Quality
 							</div>
 							<div className="mt-0.5 font-medium text-foreground">
-								{(product.quality_rating ?? product.avg_rating ?? 0).toFixed(1)} ★
+								{(product.quality_rating ?? product.avg_rating ?? 0).toFixed(1)}{" "}
+								★
 							</div>
 						</div>
 						<div className="rounded-lg border bg-secondary px-3 py-2">

@@ -1212,7 +1212,8 @@
 		box-shadow: var(--glass-shadow);
 	}
 
-	@supports (backdrop-filter: blur(14px)) or (-webkit-backdrop-filter: blur(14px)) {
+	@supports (backdrop-filter: blur(14px)) or
+		(-webkit-backdrop-filter: blur(14px)) {
 		.glass-panel {
 			background: var(--glass-surface);
 			backdrop-filter: blur(14px) saturate(160%);

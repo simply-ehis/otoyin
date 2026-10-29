@@ -236,14 +236,15 @@ export function ConversationView() {
 									// propagate to lines
 									setLines((p) =>
 										p.map((l) =>
-											l.speakerId === s.id
-												? { ...l, profileId: v || null }
-												: l,
+											l.speakerId === s.id ? { ...l, profileId: v || null } : l,
 										),
 									);
 								}}
 							>
-								<SelectTrigger className="h-6 w-32 border-transparent bg-transparent px-1 text-xs" aria-label="Speaker voice">
+								<SelectTrigger
+									className="h-6 w-32 border-transparent bg-transparent px-1 text-xs"
+									aria-label="Speaker voice"
+								>
 									<SelectValue placeholder="Voice…" />
 								</SelectTrigger>
 								<SelectContent>
@@ -402,7 +403,9 @@ export function ConversationView() {
 					disabled={generateMut.isPending || lines.length === 0}
 					onClick={() => generateMut.mutate()}
 				>
-					{generateMut.isPending ? <Spinner size="xs" className="mr-1" /> : null}
+					{generateMut.isPending ? (
+						<Spinner size="xs" className="mr-1" />
+					) : null}
 					Generate
 				</Button>
 				<Button

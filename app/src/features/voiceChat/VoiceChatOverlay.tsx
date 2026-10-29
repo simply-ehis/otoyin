@@ -8,7 +8,6 @@ import {
 	XMarkIcon as X,
 } from "@heroicons/react/24/outline";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@/ui/button";
 import { cn } from "@/lib/utils/cn";
 import {
 	cancelResponse,
@@ -21,6 +20,7 @@ import {
 	stopMicCapture,
 	useVoiceChatStore,
 } from "@/stores/voiceChatStore";
+import { Button } from "@/ui/button";
 import { ConversationHistoryBrowser } from "./ConversationHistoryBrowser";
 import { VoiceChatSettings } from "./VoiceChatSettings";
 

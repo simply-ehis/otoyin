@@ -13,8 +13,8 @@ import {
 	DialogTitle,
 } from "@/ui/dialog";
 import { useToast } from "@/ui/use-toast";
-import { GettingStarted } from "./GettingStarted";
 import { GenerationProgressList } from "./GenerationProgressList";
+import { GettingStarted } from "./GettingStarted";
 import { HistoryList } from "./HistoryList";
 import { PromptBar } from "./PromptBar";
 

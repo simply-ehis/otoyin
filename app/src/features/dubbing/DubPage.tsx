@@ -227,7 +227,9 @@ export function DubPage() {
 							disabled={!hasJob || !jobId}
 							title="Download the dubbed video"
 							onClick={async () => {
-								if (!jobId) return;
+								if (!jobId) {
+									return;
+								}
 								try {
 									const blob = await dubbingClient.downloadDubbedVideo(jobId);
 									const url = URL.createObjectURL(blob);

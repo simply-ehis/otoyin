@@ -4,7 +4,7 @@
  * Verifies uploadAudio returns { audio_path: string; size: number }
  * matching the backend /dsp/upload response shape.
  */
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fetch globally
 const fetchMock = vi.fn();

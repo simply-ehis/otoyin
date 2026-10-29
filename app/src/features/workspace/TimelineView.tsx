@@ -10,10 +10,10 @@ import {
 } from "@heroicons/react/24/outline";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { getPeakWaveform } from "@/features/audioStudio/getPeakWaveform";
 import { getClip } from "@/lib/clip";
 import { useHistory } from "@/lib/hooks/useHistory";
 import { formatAudioDuration } from "@/lib/utils/audio";
-import { getPeakWaveform } from "@/features/audioStudio/getPeakWaveform";
 import { cn } from "@/lib/utils/cn";
 import { usePlayerStore } from "@/stores/playerStore";
 import { Button } from "@/ui/button";
@@ -74,16 +74,24 @@ export function TimelineView() {
 			}));
 			setTracks(base);
 			// Load waveform peaks asynchronously for each track.
-			const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+			const win = window as unknown as {
+				webkitAudioContext?: typeof AudioContext;
+			};
+			const AudioCtx = window.AudioContext ?? win.webkitAudioContext;
+			const ctx = new AudioCtx();
 			base.forEach(async (t) => {
-				if (!t.audioUrl) return;
+				if (!t.audioUrl) {
+					return;
+				}
 				try {
 					const res = await fetch(t.audioUrl);
 					const buf = await res.arrayBuffer();
 					const audio = await ctx.decodeAudioData(buf);
 					const peaks = getPeakWaveform(audio, 60);
 					setTracks((prev) =>
-						prev.map((x) => (x.id === t.id ? { ...x, peaks: Array.from(peaks) } : x)),
+						prev.map((x) =>
+							x.id === t.id ? { ...x, peaks: Array.from(peaks) } : x,
+						),
 					);
 				} catch {
 					// ignore decode errors

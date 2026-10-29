@@ -50,7 +50,10 @@ export function AssistantPanel({
 		setUseCloudModel((v) => {
 			const next = !v;
 			try {
-				localStorage.setItem("otoyin.assistant.useCloudModel", next ? "1" : "0");
+				localStorage.setItem(
+					"otoyin.assistant.useCloudModel",
+					next ? "1" : "0",
+				);
 			} catch {
 				/* ignore */
 			}
@@ -240,7 +243,11 @@ export function AssistantPanel({
 									: "")
 							}
 							onClick={toggleCloudModel}
-							title={useCloudModel ? "Using cloud model — click for local" : "Using local model — click for cloud"}
+							title={
+								useCloudModel
+									? "Using cloud model — click for local"
+									: "Using local model — click for cloud"
+							}
 						>
 							{useCloudModel ? "☁ Cloud" : "💻 Local"}
 						</Button>

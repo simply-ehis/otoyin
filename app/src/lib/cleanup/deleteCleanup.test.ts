@@ -1,12 +1,12 @@
 import { QueryClient } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it } from "vitest";
+import { usePlayerStore } from "@/stores/playerStore";
+import { useUIStore } from "@/stores/uiStore";
 import {
 	clearAllAppDataState,
 	clearDeletedGenerationState,
 	clearDeletedProfileState,
 } from "./deleteCleanup";
-import { usePlayerStore } from "@/stores/playerStore";
-import { useUIStore } from "@/stores/uiStore";
 
 describe("deleteCleanup", () => {
 	let qc: QueryClient;

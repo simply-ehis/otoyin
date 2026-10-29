@@ -21,9 +21,9 @@ import {
 	SelectValue,
 } from "@/ui/select";
 import { EmptyState, ScreenHeader } from "@/ui/states";
-import { SpectrogramView } from "./SpectrogramView";
 import { useToast } from "@/ui/use-toast";
 import { hueLine } from "./hueIdentity";
+import { SpectrogramView } from "./SpectrogramView";
 
 const NOTE_NAMES = [
 	"C",

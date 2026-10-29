@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Props {
 	peaks: number[];
@@ -8,7 +8,13 @@ interface Props {
 	onZoomChange?: (z: number) => void;
 }
 
-export function InteractiveWaveform({ peaks, color = "#a78bfa", muted = false, zoom = 1, onZoomChange }: Props) {
+export function InteractiveWaveform({
+	peaks,
+	color = "#a78bfa",
+	muted = false,
+	zoom = 1,
+	onZoomChange,
+}: Props) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const [offset, setOffset] = useState(0);
 	const [dragging, setDragging] = useState(false);
@@ -20,27 +26,40 @@ export function InteractiveWaveform({ peaks, color = "#a78bfa", muted = false, z
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
-		if (!canvas) return;
+		if (!canvas) {
+			return;
+		}
 		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
+		if (!ctx) {
+			return;
+		}
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		if (!peaks.length) return;
+		if (!peaks.length) {
+			return;
+		}
 		const max = Math.max(...peaks, 0.01);
 		const barW = canvas.width / visibleBars;
 		ctx.fillStyle = muted ? "#666" : color;
 		for (let i = 0; i < visibleBars; i++) {
 			const idx = offset + i;
-			if (idx >= peaks.length) break;
+			if (idx >= peaks.length) {
+				break;
+			}
 			const p = peaks[idx];
 			const h = (p / max) * (canvas.height - 4);
 			ctx.fillRect(i * barW, (canvas.height - h) / 2, Math.max(1, barW - 1), h);
 		}
-	}, [peaks, color, muted, zoom, offset, visibleBars]);
+	}, [peaks, color, muted, offset, visibleBars]);
 
 	const handleWheel = (e: React.WheelEvent) => {
 		e.preventDefault();
-		const newZoom = Math.max(1, Math.min(8, zoom + (e.deltaY < 0 ? 0.5 : -0.5)));
-		if (onZoomChange) onZoomChange(newZoom);
+		const newZoom = Math.max(
+			1,
+			Math.min(8, zoom + (e.deltaY < 0 ? 0.5 : -0.5)),
+		);
+		if (onZoomChange) {
+			onZoomChange(newZoom);
+		}
 	};
 
 	const handleMouseDown = (e: React.MouseEvent) => {
@@ -49,10 +68,15 @@ export function InteractiveWaveform({ peaks, color = "#a78bfa", muted = false, z
 	};
 
 	const handleMouseMove = (e: React.MouseEvent) => {
-		if (!dragging) return;
+		if (!dragging) {
+			return;
+		}
 		const dx = e.clientX - lastX;
 		setLastX(e.clientX);
-		const newOffset = Math.max(0, Math.min(maxOffset, offset - Math.round(dx / 4)));
+		const newOffset = Math.max(
+			0,
+			Math.min(maxOffset, offset - Math.round(dx / 4)),
+		);
 		setOffset(newOffset);
 	};
 

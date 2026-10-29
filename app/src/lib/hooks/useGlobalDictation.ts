@@ -1,5 +1,5 @@
-import { listen } from "@tauri-apps/api/event";
 import { isTauri } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { useEffect } from "react";
 import { useCaptureRecordingSession } from "./useCaptureRecordingSession";
 

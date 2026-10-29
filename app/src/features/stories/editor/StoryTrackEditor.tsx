@@ -1,6 +1,5 @@
 import { Bars3Icon as GripHorizontal } from "@heroicons/react/24/outline";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useToast } from "@/ui/use-toast";
 import type { StoryItemDetail } from "@/lib/api/types";
 import {
 	useCrossfadeStoryItems,
@@ -18,6 +17,7 @@ import {
 	useUpdateStoryItemVolume,
 } from "@/lib/hooks/useStories";
 import { useStoryStore } from "@/stores/storyStore";
+import { useToast } from "@/ui/use-toast";
 import { AutomationControls } from "./AutomationControls";
 import { AutomationOverlay } from "./AutomationOverlay";
 import { CrossfadeHandles } from "./CrossfadeHandles";

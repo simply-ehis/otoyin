@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { apiClient } from "@/lib/api/client";
 import { getCloudSubscriptionKey } from "@/features/settings/CloudModelsPage";
+import { apiClient } from "@/lib/api/client";
 import { showStudioErrorToast } from "@/lib/errors";
 import { debug } from "@/lib/utils/debug";
 import type { FileAttachment, Msg } from "./AssistantPanel.types";
@@ -315,14 +315,20 @@ export function useAssistantChat({
 					let full = "";
 					while (true) {
 						const { done, value } = await reader.read();
-						if (done) { break; }
+						if (done) {
+							break;
+						}
 						buffer += decoder.decode(value, { stream: true });
 						const lines = buffer.split("\n");
 						buffer = lines.pop() || "";
 						for (const line of lines) {
-							if (!line.startsWith("data: ")) continue;
+							if (!line.startsWith("data: ")) {
+								continue;
+							}
 							const payload = line.slice(6).trim();
-							if (payload === "[DONE]") continue;
+							if (payload === "[DONE]") {
+								continue;
+							}
 							try {
 								const json = JSON.parse(payload);
 								const delta = json?.choices?.[0]?.delta?.content;
@@ -458,7 +464,7 @@ export function useAssistantChat({
 			attachments,
 			uploadAttachments,
 			flushStreamingBuffer,
-		useCloudModel,
+			useCloudModel,
 		],
 	);
 

@@ -6,12 +6,6 @@ import {
 	TrashIcon,
 } from "@heroicons/react/24/outline";
 import { useCallback, useEffect, useState } from "react";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Label } from "@/ui/label";
-import { Spinner } from "@/ui/Spinner";
-import { Textarea } from "@/ui/textarea";
-import { useToast } from "@/ui/use-toast";
 import {
 	type CustomSkillData,
 	createCustomSkill,
@@ -19,6 +13,12 @@ import {
 	listCustomSkills,
 	updateCustomSkill,
 } from "@/lib/api/clientSkills";
+import { Button } from "@/ui/button";
+import { Input } from "@/ui/input";
+import { Label } from "@/ui/label";
+import { Spinner } from "@/ui/Spinner";
+import { Textarea } from "@/ui/textarea";
+import { useToast } from "@/ui/use-toast";
 
 type View = "list" | "create" | "edit";
 

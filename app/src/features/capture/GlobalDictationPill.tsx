@@ -1,6 +1,6 @@
-import { cn } from "@/lib/utils/cn";
 import { CapturePill } from "@/features/capture/CapturePill";
 import { useGlobalDictation } from "@/lib/hooks/useGlobalDictation";
+import { cn } from "@/lib/utils/cn";
 
 /**
  * Floating global-dictation pill. Appears when the user presses the

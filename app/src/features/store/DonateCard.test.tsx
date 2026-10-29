@@ -5,7 +5,9 @@ import { DonateCard } from "./DonateCard";
 
 vi.mock("@/lib/api/client", () => ({
 	apiClient: {
-		cloudDonate: vi.fn().mockResolvedValue({ checkout_url: "https://pay.example/d1" }),
+		cloudDonate: vi
+			.fn()
+			.mockResolvedValue({ checkout_url: "https://pay.example/d1" }),
 	},
 }));
 

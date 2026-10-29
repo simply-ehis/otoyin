@@ -50,7 +50,9 @@ export function AudioKeepAlive() {
 		/Mac/i.test(navigator.platform || navigator.userAgent);
 
 	useEffect(() => {
-		if (!needed) return;
+		if (!needed) {
+			return;
+		}
 
 		const url = buildSilentWavUrl(1, 8000);
 		const el = new Audio(url);
@@ -102,7 +104,7 @@ export function AudioKeepAlive() {
 			URL.revokeObjectURL(url);
 			audioRef.current = null;
 		};
-	}, []);
+	}, [needed]);
 
 	return null;
 }

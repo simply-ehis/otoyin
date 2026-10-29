@@ -94,11 +94,7 @@ export function ProductActions({
 				<Button size="sm" variant="outline" disabled className="flex-1">
 					<Spinner size="xs" /> Downloading…
 				</Button>
-				<Button
-					size="sm"
-					variant="ghost"
-					onClick={() => onCancel(product.id)}
-				>
+				<Button size="sm" variant="ghost" onClick={() => onCancel(product.id)}>
 					Cancel
 				</Button>
 			</div>

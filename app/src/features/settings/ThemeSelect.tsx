@@ -1,6 +1,5 @@
 import { CheckIcon } from "@heroicons/react/24/outline";
 import { cn } from "@/lib/utils/cn";
-import { Slider } from "@/ui/slider";
 import {
 	PLAIN_THEMES,
 	SPECIAL_THEMES,
@@ -8,6 +7,7 @@ import {
 	type Theme,
 	useUIStore,
 } from "@/stores/uiStore";
+import { Slider } from "@/ui/slider";
 
 /** Solid thumbnail washes (pure CSS, no image assets). */
 const THUMB_WASH: Record<string, string> = {

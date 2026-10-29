@@ -19,7 +19,11 @@ export const marketplaceClient = {
 	pollForLicense: async () => ({ donated: false }),
 	installLicense: async () => {},
 	previewTax: async () => null,
-	fetchPricePreview: async (_country: string, _productIds: string[]) => ({ prices: [] } as { prices: Array<{ product_id: string; formatted_total: string }> }),
-	fetchCatalog: async () => [] as Array<{ id: string; name: string; price: number }>,
+	fetchPricePreview: async (_country: string, _productIds: string[]) =>
+		({ prices: [] }) as {
+			prices: Array<{ product_id: string; formatted_total: string }>;
+		},
+	fetchCatalog: async () =>
+		[] as Array<{ id: string; name: string; price: number }>,
 	createDonation: async () => ({ order_ref: "", checkout_url: "" }),
 };

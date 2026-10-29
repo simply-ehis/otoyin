@@ -13,14 +13,6 @@ import {
 	BoltIcon as Waves,
 	BoltIcon as Zap,
 } from "@heroicons/react/24/outline";
-import { Button } from "@/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/ui/dropdown-menu";
-import { useToast } from "@/ui/use-toast";
 import { apiClient } from "@/lib/api/client";
 import type { StoryItemDetail } from "@/lib/api/types";
 import {
@@ -31,6 +23,14 @@ import {
 import { useAddStoryItem } from "@/lib/hooks/useStories";
 import { useClipboardStore } from "@/stores/clipboardStore";
 import { usePlayerStore } from "@/stores/playerStore";
+import { Button } from "@/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/ui/dropdown-menu";
+import { useToast } from "@/ui/use-toast";
 import type { Mutator } from "./EditorToolbar.types";
 
 function ToolItem({

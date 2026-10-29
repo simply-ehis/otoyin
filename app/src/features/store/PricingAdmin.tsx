@@ -13,8 +13,8 @@ import {
 } from "@heroicons/react/24/outline";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { showStudioErrorToast } from "@/lib/errors";
 import type { MarketplaceProduct } from "@/lib/api/types";
+import { showStudioErrorToast } from "@/lib/errors";
 import { marketplaceClient } from "@/lib/marketplace";
 import { Button } from "@/ui/button";
 import { Spinner } from "@/ui/primitives";

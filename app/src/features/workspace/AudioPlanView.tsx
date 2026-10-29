@@ -1,8 +1,8 @@
 import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import type { VoiceProfileResponse } from "@/lib/api/types";
 import { apiClient } from "@/lib/api/client";
+import type { VoiceProfileResponse } from "@/lib/api/types";
 import { useProfiles } from "@/lib/hooks/useProfiles";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";

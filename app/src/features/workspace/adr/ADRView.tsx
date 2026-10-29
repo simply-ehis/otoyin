@@ -123,7 +123,9 @@ export function ADRView() {
 
 	const autoDiarizeMut = useMutation({
 		mutationFn: () => {
-			if (!session?.guide_audio_path) throw new Error("No guide audio");
+			if (!session?.guide_audio_path) {
+				throw new Error("No guide audio");
+			}
 			return apiClient.diarizePath(session.guide_audio_path);
 		},
 		onSuccess: (data) => {
@@ -377,7 +379,9 @@ export function ADRView() {
 							title="Auto-detect speakers from guide audio"
 							onClick={() => autoDiarizeMut.mutate()}
 						>
-							{autoDiarizeMut.isPending ? <Spinner size="xs" className="mr-1" /> : null}
+							{autoDiarizeMut.isPending ? (
+								<Spinner size="xs" className="mr-1" />
+							) : null}
 							Auto-label speakers
 						</Button>
 					) : null}

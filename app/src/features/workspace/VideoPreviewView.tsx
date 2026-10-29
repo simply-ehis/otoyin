@@ -95,7 +95,9 @@ export function VideoPreviewView() {
 	}
 
 	async function handleMux() {
-		if (!videoPath || !muxAudioPath) return;
+		if (!videoPath || !muxAudioPath) {
+			return;
+		}
 		setMuxing(true);
 		try {
 			const result = await apiClient.muxVideoAudio(videoPath, muxAudioPath);
@@ -163,7 +165,9 @@ export function VideoPreviewView() {
 			) : null}
 
 			<div className="space-y-2 rounded-md border border-border bg-card p-3">
-				<Label htmlFor="mux-audio">Mux audio into video (audio path on server)</Label>
+				<Label htmlFor="mux-audio">
+					Mux audio into video (audio path on server)
+				</Label>
 				<div className="flex gap-2">
 					<Input
 						id="mux-audio"

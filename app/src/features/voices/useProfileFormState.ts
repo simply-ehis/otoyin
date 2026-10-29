@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useToast } from "@/ui/use-toast";
 import { apiClient } from "@/lib/api/client";
 import type {
 	EffectConfig,
@@ -27,6 +26,7 @@ import { useSystemAudioCapture } from "@/lib/hooks/useSystemAudioCapture";
 import { useTranscription } from "@/lib/hooks/useTranscription";
 import { useServerStore } from "@/stores/serverStore";
 import { type ProfileFormDraft, useUIStore } from "@/stores/uiStore";
+import { useToast } from "@/ui/use-toast";
 import {
 	DEFAULT_ENGINE_OPTIONS,
 	MAX_AUDIO_DURATION_SECONDS,

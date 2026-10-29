@@ -1,6 +1,7 @@
+import { MusicalNoteIcon } from "@heroicons/react/24/outline";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MusicalNoteIcon } from "@heroicons/react/24/outline";
+import { useInstrumentPacks } from "@/features/instruments/useInstrumentPacks";
 import { apiClient } from "@/lib/api/client";
 import type { MarketplaceProduct } from "@/lib/api/types";
 import { showStudioErrorToast } from "@/lib/errors";
@@ -13,7 +14,6 @@ import { useUIStore } from "@/stores/uiStore";
 import { Button } from "@/ui/button";
 import { PageTabs } from "@/ui/tabs";
 import { useToast } from "@/ui/use-toast";
-import { useInstrumentPacks } from "@/features/instruments/useInstrumentPacks";
 import { BrowseStates } from "./BrowseStates";
 import { DonateCard } from "./DonateCard";
 import { useDeviceCapabilitiesStore } from "./deviceCapabilitiesStore";

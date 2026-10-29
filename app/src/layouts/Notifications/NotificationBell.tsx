@@ -5,7 +5,6 @@ import {
 } from "@heroicons/react/24/outline";
 import { Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Spinner } from "@/ui/Spinner";
 import { apiClient } from "@/lib/api/client";
 import type {
 	ActiveDownloadTask,
@@ -15,6 +14,7 @@ import type {
 } from "@/lib/api/types";
 import { MODEL_DISPLAY_NAMES } from "@/lib/hooks/useRestoreActiveTasks";
 import { useContentStore } from "@/stores/contentStore";
+import { Spinner } from "@/ui/Spinner";
 
 const ROLE_LABELS: Record<string, string> = {
 	tts: "Voice engine",

@@ -18,9 +18,15 @@ export function TimecodeDisplay() {
 
 	return (
 		<div className="flex flex-col gap-4 p-6">
-			<ScreenHeader title="Timecode" description="Set or view the current playhead timecode" />
+			<ScreenHeader
+				title="Timecode"
+				description="Set or view the current playhead timecode"
+			/>
 			<div className="flex flex-col gap-2">
-				<label htmlFor="tc-input" className="text-sm font-medium text-muted-foreground">
+				<label
+					htmlFor="tc-input"
+					className="text-sm font-medium text-muted-foreground"
+				>
 					Timecode (HH:MM:SS:FF)
 				</label>
 				<Input
@@ -32,13 +38,18 @@ export function TimecodeDisplay() {
 				/>
 			</div>
 			<div className="flex items-center gap-2">
-				<Button variant="outline" size="sm" onClick={() => setTimecode("00:00:00:00")}>
+				<Button
+					variant="outline"
+					size="sm"
+					onClick={() => setTimecode("00:00:00:00")}
+				>
 					Reset
 				</Button>
 				<Button>Apply</Button>
 			</div>
 			<p className="text-xs text-muted-foreground">
-				Current timecode: <span className="font-mono text-foreground">{timecode}</span>
+				Current timecode:{" "}
+				<span className="font-mono text-foreground">{timecode}</span>
 			</p>
 		</div>
 	);

@@ -27,8 +27,6 @@ import { FreeSoundsPanel } from "./SoundEffectsView";
 
 const NOISE_TYPES = ["white", "pink", "brown", "blue", "violet"];
 
-const [openSection, setOpenSection] = useState<string | null>(null);
-
 function SfxPanel() {
 	const { toast } = useToast();
 	const [prompt, setPrompt] = useState("");
@@ -169,6 +167,7 @@ function NoisePanel() {
 }
 
 export function StudioView() {
+	const [openSection, setOpenSection] = useState<string | null>(null);
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader title="Studio" />
@@ -183,20 +182,29 @@ export function StudioView() {
 					<InstrumentPreview />
 					<div className="space-y-2">
 						{[
-							{ id: "instruments", label: "Instruments", node: <InstrumentBrowser /> },
-							{ id: "drums", label: "Drum machine", node: <DrumMachinePanel /> },
+							{
+								id: "instruments",
+								label: "Instruments",
+								node: <InstrumentBrowser />,
+							},
+							{
+								id: "drums",
+								label: "Drum machine",
+								node: <DrumMachinePanel />,
+							},
 							{ id: "beatmap", label: "Beat map", node: <BeatMapPanel /> },
 						].map((sec) => {
 							const open = openSection === sec.id;
 							return (
-								<div key={sec.id} className="rounded-md border border-border bg-card">
+								<div
+									key={sec.id}
+									className="rounded-md border border-border bg-card"
+								>
 									<button
 										type="button"
 										className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-muted-foreground"
 										aria-expanded={open}
-										onClick={() =>
-											setOpenSection(open ? "" : sec.id)
-										}
+										onClick={() => setOpenSection(open ? "" : sec.id)}
 									>
 										{sec.label}
 										<ChevronDownIcon
