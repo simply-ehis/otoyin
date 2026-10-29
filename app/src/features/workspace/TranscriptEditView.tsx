@@ -377,6 +377,10 @@ export function TranscriptEditView() {
 
 			{/* biome-ignore lint/a11y/useMediaCaption: word-level playback element */}
 			<audio ref={audioRef} className="hidden" />
+			<section className="space-y-2 rounded-md border border-border bg-card p-3">
+				<h2 className="text-xs font-medium text-foreground">Live Transcript</h2>
+				<LiveTranscriptView />
+			</section>
 		</div>
 	);
 }

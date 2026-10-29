@@ -143,13 +143,6 @@ export const WORKSPACE_GROUPS: WorkspaceGroup[] = [
 				description: "Edit audio by manipulating word timestamps",
 			},
 			{
-				id: "live-transcript",
-				path: "/workspace/live-transcript",
-				icon: MicrophoneIcon,
-				label: "Live Transcript",
-				description: "Real-time Whisper speech-to-text",
-			},
-			{
 				id: "diarize",
 				path: "/workspace/diarize",
 				icon: UsersIcon,

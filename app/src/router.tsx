@@ -544,7 +544,9 @@ const multiTakeCompingRoute = createRoute({
 const liveTranscriptRoute = createRoute({
 	getParentRoute: () => workspaceRoute,
 	path: "/live-transcript",
-	component: LiveTranscriptView,
+	beforeLoad: () => {
+		throw redirect({ to: "/workspace/transcript" });
+	},
 });
 
 const diarizationRoute = createRoute({
