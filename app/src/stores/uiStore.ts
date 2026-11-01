@@ -53,6 +53,10 @@ interface UIStore {
 	sidebarWidth: number;
 	setSidebarWidth: (width: number) => void;
 
+	// Mobile drawer — open on small screens, overlaying content
+	mobileDrawerOpen: boolean;
+	setMobileDrawerOpen: (open: boolean) => void;
+
 	// Assistant panel (right side) — resizable, content reflows beside it
 	assistantWidth: number;
 	setAssistantWidth: (width: number) => void;
@@ -108,6 +112,9 @@ export const useUIStore = create<UIStore>()(
 			setSidebarOpen: (open) => set({ sidebarOpen: open }),
 			sidebarWidth: 220,
 			setSidebarWidth: (width) => set({ sidebarWidth: width }),
+
+			mobileDrawerOpen: false,
+			setMobileDrawerOpen: (open) => set({ mobileDrawerOpen: open }),
 
 			assistantWidth: 480,
 			setAssistantWidth: (width) => set({ assistantWidth: width }),

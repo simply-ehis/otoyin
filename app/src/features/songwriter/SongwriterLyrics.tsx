@@ -60,7 +60,7 @@ export function SongwriterLyrics({
 	const { t } = useTranslation();
 	return (
 		<div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-			<div className="max-w-3xl space-y-3">
+			<div className="max-w-4xl space-y-3">
 				<div className="flex flex-wrap items-center gap-1.5">
 					<span className="text-xs text-muted-foreground">
 						{t("songwriter.insertSection", { defaultValue: "Insert section:" })}

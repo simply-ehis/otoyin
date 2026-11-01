@@ -353,6 +353,18 @@ outes/models/download.py bark branch (gguf + per-voice pack_voice_npz), services
 - **`streaming_tts.py` route path**: Already `@router.post("/")` (was `@router.post("")` in an older version) — no change needed.
 - **Verification:** `ruff check` clean on all edited files (`routes/effects.py`, `utils/memory.py`, `backends/_onnx_precision.py`, `services/region_pricing.py`, `voice_changer/server.py`).
 
+### Phase 26c — Marketplace + dubbing wiring fixes (this session)
+- **Missing marketplace backend routes added** (`backend/routes/marketplace.py`): The frontend `clientContent.ts` calls POST `/marketplace/catalog/refresh`, POST `/marketplace/license`, and full plugin CRUD (GET/POST/DELETE/PATCH `/marketplace/plugins/*`) plus review endpoints (GET/POST `/marketplace/product/{id}/reviews`), but the marketplace stub only had GET catalog/entitlements/licenses/device-id/offers/region/wishlist/product. Added all missing routes as offline-first stubs:
+  - POST `/catalog/refresh` — returns `{"refreshed": bool, "reason": str|null}`, delegates to `refresh_remote_catalog_if_stale(force=)`; no URL configured → `{"refreshed": false, "reason": "no_url"}`
+  - POST `/license` — accepts signed license, returns `{"ok": true}`
+  - GET/POST `/product/{product_id}/reviews` — SQLite-backed via `marketplace_catalog.add_product_review`/`get_product_reviews`; validates rating 1-5 and comment <=2000 chars
+  - GET/POST/DELETE `/plugins/{plugin_id}` plus enable/disable/approve-external/launch-external/stop/status stubs
+  - `_annotate_local_status(products)` — annotates each product with `local_status` ("cached"|"not_downloaded") via model registry manifest check; both `/catalog` and `/catalog/local` now call it
+  - Catalog products now include `avg_rating`/`review_count` from `get_all_rating_summaries()`
+- **Comment length validation** (`backend/services/marketplace_catalog.py:808`): `add_product_review` now raises `ValueError("Comment must be at most 2000 characters")` for over-long comments instead of silently truncating (test `test_invalid_rating_rejected` requires 400).
+- **Dubbing segment routes verified present** (`backend/routes/dubbing.py:271-314`): PATCH `/dubbing/segment/{segment_id}` and DELETE `/dubbing/segment/{segment_id}` already exist with `DubSegmentPatch` model — frontend `clientDubbing.ts` `moveResizeDubSegment`/`deleteDubSegment` are fully wired. No change needed.
+- **Verification:** All 40 marketplace tests pass (test_remote_catalog 18, test_marketplace_reviews 4, test_local_status 18). `ruff check` clean on `routes/marketplace.py`.
+
 ## Frontend Audit (this session)
 - **Hardcoded STT defaults removed (3 fixes):**
   - `voiceChatStore.ts:214` — `stt_model: config?.sttModel ?? "base"` → `config?.sttModel` (no default)

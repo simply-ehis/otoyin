@@ -1,4 +1,3 @@
-import { formatErrorDetail } from "./clientCore";
 import { CrashesMethods } from "./clientCrashes";
 import type {
 	EffectConfig,
@@ -145,29 +144,22 @@ export class ProfilesMethods extends CrashesMethods {
 		file: File,
 		referenceText: string,
 	): Promise<ProfileSampleResponse> {
-		const url = `${this.getBaseUrl()}/profiles/${profileId}/samples`;
 		const formData = new FormData();
 		formData.append("file", file);
 		formData.append("reference_text", referenceText);
 
-		const response = await fetch(url, {
-			method: "POST",
-			body: formData,
-		});
-
-		if (!response.ok) {
-			const error = await response.json().catch(() => ({
-				detail: response.statusText,
-			}));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
+		const resp = await this.fetchWithAuth(
+			`/profiles/${profileId}/samples`,
+			{
+				method: "POST",
+				body: formData,
+			},
+		);
+		if (!resp.ok) {
+			const detail = await resp.json().catch(() => ({}));
+			throw new Error(detail.detail || `Add sample failed (${resp.status})`);
 		}
-
-		return response.json();
+		return resp.json();
 	}
 
 	async listProfileSamples(
@@ -198,75 +190,48 @@ export class ProfilesMethods extends CrashesMethods {
 	}
 
 	async exportProfile(profileId: string): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/profiles/${profileId}/export`;
-		const response = await fetch(url);
-
-		if (!response.ok) {
-			const error = await response.json().catch(() => ({
-				detail: response.statusText,
-			}));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
+		const resp = await this.fetchWithAuth(`/profiles/${profileId}/export`);
+		if (!resp.ok) {
+			const detail = await resp.json().catch(() => ({}));
+			throw new Error(detail.detail || `Export failed (${resp.status})`);
 		}
-
-		return response.blob();
+		return resp.blob();
 	}
 
 	async importProfile(file: File): Promise<VoiceProfileResponse> {
-		const url = `${this.getBaseUrl()}/profiles/import`;
 		const formData = new FormData();
 		formData.append("file", file);
 
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/profiles/import", {
 			method: "POST",
 			body: formData,
 		});
-
-		if (!response.ok) {
-			const error = await response.json().catch(() => ({
-				detail: response.statusText,
-			}));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
+		if (!resp.ok) {
+			const detail = await resp.json().catch(() => ({}));
+			throw new Error(detail.detail || `Import failed (${resp.status})`);
 		}
-
-		return response.json();
+		return resp.json();
 	}
 
 	async uploadAvatar(
 		profileId: string,
 		file: File,
 	): Promise<VoiceProfileResponse> {
-		const url = `${this.getBaseUrl()}/profiles/${profileId}/avatar`;
 		const formData = new FormData();
 		formData.append("file", file);
 
-		const response = await fetch(url, {
-			method: "POST",
-			body: formData,
-		});
-
-		if (!response.ok) {
-			const error = await response.json().catch(() => ({
-				detail: response.statusText,
-			}));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
+		const resp = await this.fetchWithAuth(
+			`/profiles/${profileId}/avatar`,
+			{
+				method: "POST",
+				body: formData,
+			},
+		);
+		if (!resp.ok) {
+			const detail = await resp.json().catch(() => ({}));
+			throw new Error(detail.detail || `Upload avatar failed (${resp.status})`);
 		}
-
-		return response.json();
+		return resp.json();
 	}
 
 	async deleteAvatar(profileId: string): Promise<void> {

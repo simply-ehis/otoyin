@@ -1,4 +1,4 @@
-import { ApiClientCore, formatErrorDetail } from "./clientCore";
+import { ApiClientCore } from "./clientCore";
 
 export interface DeleteConfirmResponse {
 	confirmation_token: string;
@@ -10,22 +10,14 @@ export interface DeleteConfirmResponse {
  */
 export class ClientPrivacyMethods extends ApiClientCore {
 	async exportData(): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/v1/privacy/export`;
-		const response = await fetch(url, { method: "POST" });
-
-		if (!response.ok) {
-			const error = await response.json().catch(() => ({
-				detail: response.statusText,
-			}));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`Export failed: ${response.status}`,
-				),
-			);
+		const resp = await this.fetchWithAuth("/v1/privacy/export", {
+			method: "POST",
+		});
+		if (!resp.ok) {
+			const detail = await resp.json().catch(() => ({}));
+			throw new Error(detail.detail || `Export failed: ${resp.status}`);
 		}
-
-		return response.blob();
+		return resp.blob();
 	}
 
 	async requestDeleteConfirm(): Promise<DeleteConfirmResponse> {

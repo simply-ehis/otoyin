@@ -1,42 +1,160 @@
 import {
+	BoltIcon as Bolt,
 	BookOpenIcon as BookOpen,
 	SignalIcon as Captures,
+	ChartBarIcon as Chart,
 	ChevronDoubleLeftIcon,
 	ChevronLeftIcon,
+	ClockIcon as Clock,
+	ArrowDownTrayIcon as Download,
 	SparklesIcon as Effects,
+	FilmIcon as Film,
+	GlobeAltIcon as Globe,
+	QuestionMarkCircleIcon as Help,
 	HomeIcon as Home,
+	ArchiveBoxIcon as Library,
 	MicrophoneIcon as Mic,
+	AdjustmentsHorizontalIcon as Mixer,
 	MusicalNoteIcon as Music,
 	PuzzlePieceIcon as PuzzlePiece,
+	ScissorsIcon as Scissors,
 	CogIcon as Settings,
+	Square2StackIcon as Stack,
 	ShoppingBagIcon as Store,
+	UsersIcon as Users,
+	XMarkIcon as XMark,
 } from "@heroicons/react/24/outline";
 import { Link, useRouter } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ClipboardIndicator } from "@/features/clipboard/ClipboardIndicator";
 import { cn } from "@/lib/utils/cn";
 import { useUIStore } from "@/stores/uiStore";
 
+type Icon = typeof Home;
+
 interface NavItem {
 	label: string;
-	icon: typeof Home;
+	icon: Icon;
 	path: string;
 }
 
-/** 8 primary destinations. The long tail (audiobooks, songwriter, launcher,
- *  instruments, dubbing, sounds, translate, workspace sub-views …) lives
- *  inside each workspace's internal navigation — not as top-level peers.
- *  One icon per destination keeps the rail scannable at a glance. */
-const NAV_ITEMS: NavItem[] = [
-	{ path: "/", label: "sidebar.generate", icon: Home },
-	{ path: "/stories", label: "sidebar.stories", icon: BookOpen },
-	{ path: "/audio-studio", label: "sidebar.audioStudio", icon: Music },
-	{ path: "/voices", label: "sidebar.voices", icon: Mic },
-	{ path: "/captures", label: "sidebar.captures", icon: Captures },
-	{ path: "/effects", label: "sidebar.effects", icon: Effects },
-	{ path: "/store", label: "sidebar.store", icon: Store },
-	{ path: "/settings", label: "sidebar.settings", icon: Settings },
+interface NavGroup {
+	label: string;
+	description: string;
+	items: NavItem[];
+}
+
+/**
+ * Unified navigation: every discoverable route lives under a category group.
+ * Duplicate /workspace/* paths are retired in favor of their top-level
+ * canonical equivalents; retired paths redirect in router.tsx.
+ *
+ * Mobile: below the breakpoint the rail collapses to a hamburger that opens
+ * an overlay drawer. Desktop: inline collapsible rail beside content.
+ */
+const NAV_GROUPS: NavGroup[] = [
+	{
+		label: "Create",
+		description: "Generate speech, clone voices, and write songs",
+		items: [
+			{ path: "/", label: "sidebar.generate", icon: Home },
+			{ path: "/voices", label: "sidebar.voices", icon: Mic },
+			{ path: "/voice-converter", label: "sidebar.voiceConverter", icon: Mic },
+			{ path: "/songwriter", label: "sidebar.songwriter", icon: BookOpen },
+		],
+	},
+	{
+		label: "Studio",
+		description: "Record, arrange, and produce audio",
+		items: [
+			{ path: "/audio-studio", label: "sidebar.audioStudio", icon: Music },
+			{ path: "/stories", label: "sidebar.stories", icon: BookOpen },
+			{ path: "/launcher", label: "sidebar.launcher", icon: Music },
+			{ path: "/instruments", label: "sidebar.instruments", icon: Music },
+			{ path: "/audiobooks", label: "sidebar.audiobooks", icon: BookOpen },
+			{ path: "/mixer", label: "sidebar.mixer", icon: Mixer },
+			{ path: "/studio", label: "sidebar.studio", icon: Music },
+			{ path: "/comping", label: "sidebar.comping", icon: Stack },
+			{ path: "/spatial", label: "sidebar.spatial", icon: Globe },
+			{ path: "/dsp", label: "sidebar.dsp", icon: Music },
+			{ path: "/automation", label: "sidebar.automation", icon: Bolt },
+		],
+	},
+	{
+		label: "Voice & Transcription",
+		description: "Capture, translate, and analyze spoken audio",
+		items: [
+			{ path: "/captures", label: "sidebar.captures", icon: Captures },
+			{ path: "/translate", label: "sidebar.translate", icon: Globe },
+			{ path: "/pitch", label: "sidebar.pitchMap", icon: Clock },
+			{ path: "/spectrogram", label: "sidebar.spectrogram", icon: Chart },
+			{ path: "/diarize", label: "sidebar.diarize", icon: Users },
+		],
+	},
+	{
+		label: "Processing",
+		description: "Clean, enhance, and isolate audio",
+		items: [
+			{ path: "/effects", label: "sidebar.effects", icon: Effects },
+			{
+				path: "/noise-reduction",
+				label: "sidebar.noiseReduction",
+				icon: Scissors,
+			},
+			{ path: "/audio-enhance", label: "sidebar.audioEnhance", icon: Effects },
+			{
+				path: "/vocal-isolation",
+				label: "sidebar.vocalIsolation",
+				icon: Scissors,
+			},
+		],
+	},
+	{
+		label: "Video",
+		description: "Dub, preview, and import video",
+		items: [
+			{ path: "/dubbing", label: "sidebar.dubbing", icon: Film },
+			{ path: "/video", label: "sidebar.video", icon: Film },
+			{ path: "/download", label: "sidebar.download", icon: Download },
+		],
+	},
+	{
+		label: "Music",
+		description: "Generate and arrange music",
+		items: [{ path: "/music-gen", label: "sidebar.musicGen", icon: Music }],
+	},
+	{
+		label: "Library",
+		description: "Your audio library and captured clips",
+		items: [{ path: "/library", label: "sidebar.library", icon: Library }],
+	},
+	{
+		label: "Store",
+		description: "Marketplace for models and voice packs",
+		items: [{ path: "/store", label: "sidebar.store", icon: Store }],
+	},
+	{
+		label: "Settings",
+		description: "App configuration and account",
+		items: [{ path: "/settings", label: "sidebar.settings", icon: Settings }],
+	},
+	{
+		label: "Help",
+		description: "Support, docs, and what's new",
+		items: [
+			{ path: "/help", label: "sidebar.help", icon: Help },
+			{ path: "/whats-new", label: "sidebar.whatsNew", icon: Help },
+			{ path: "/offers", label: "sidebar.offers", icon: Help },
+			{ path: "/projects", label: "sidebar.projects", icon: Help },
+			{
+				path: "/community-presets",
+				label: "sidebar.communityPresets",
+				icon: Help,
+			},
+			{ path: "/sounds", label: "sidebar.sounds", icon: Help },
+		],
+	},
 ];
 
 export function Sidebar() {
@@ -47,83 +165,236 @@ export function Sidebar() {
 	const setSidebarOpen = useUIStore((s) => s.setSidebarOpen);
 	const storeSidebarWidth = useUIStore((s) => s.sidebarWidth);
 	const [sidebarWidth, setSidebarWidth] = useState(() => storeSidebarWidth);
-	const isResizing = useRef(false);
+	const mobileDrawerOpen = useUIStore((s) => s.mobileDrawerOpen);
+	const setMobileDrawerOpen = useUIStore((s) => s.setMobileDrawerOpen);
+	const [openGroups, setOpenGroups] = useState<Set<string>>(
+		() => new Set(NAV_GROUPS.map((g) => g.label)),
+	);
+	const [isMobile, setIsMobile] = useState(false);
+
+	useEffect(() => {
+		const check = () => setIsMobile(window.innerWidth < 768);
+		check();
+		window.addEventListener("resize", check);
+		return () => window.removeEventListener("resize", check);
+	}, []);
 
 	const isActive = (path: string) =>
 		location.pathname === path || location.pathname.startsWith(`${path}/`);
 
+	const isGroupActive = (group: NavGroup) =>
+		group.items.some((item) => isActive(item.path));
+
+	const toggleGroup = (label: string) => {
+		setOpenGroups((prev) => {
+			const next = new Set(prev);
+			if (next.has(label)) {
+				next.delete(label);
+			} else {
+				next.add(label);
+			}
+			return next;
+		});
+	};
+
+	const handleItemClick = () => {
+		if (isMobile) {
+			setMobileDrawerOpen(false);
+		}
+	};
+
 	return (
-		<aside
-			className={cn(
-				"shrink-0 flex flex-col h-full bg-background border-r border-border sticky top-0 z-30 transition-[width] duration-200 relative",
+		<>
+			{/* Mobile hamburger — only visible on small screens */}
+			{isMobile && (
+				<button
+					type="button"
+					onClick={() => setMobileDrawerOpen(true)}
+					className="fixed top-4 left-4 z-[60] flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background text-foreground hover:bg-muted transition-colors"
+					aria-label={t("sidebar.expand")}
+					aria-expanded={mobileDrawerOpen}
+				>
+					<svg
+						className="size-5 shrink-0"
+						aria-hidden="true"
+						xmlns="http://www.w3.org/2000/svg"
+						width="24"
+						height="24"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					>
+						<line x1="3" y1="12" x2="21" y2="12" />
+						<line x1="3" y1="6" x2="21" y2="6" />
+						<line x1="3" y1="18" x2="21" y2="18" />
+					</svg>
+					<span className="sr-only">{t("sidebar.expand")}</span>
+				</button>
 			)}
-			style={{ width: sidebarOpen ? sidebarWidth : 56 }}
-			aria-label={t("sidebar.ariaLabel")}
-		>
-			{sidebarOpen && (
-				<hr
-					aria-orientation="vertical"
-					aria-label="Resize sidebar"
-					tabIndex={0}
-					className="absolute top-0 right-0 h-full w-1 cursor-col-resize hover:w-1.5 hover:bg-border bg-transparent transition-colors touch-none border-none"
-					onMouseDown={(e) => {
-						isResizing.current = true;
-						const startX = e.clientX;
-						const startWidth = sidebarWidth;
-						const onMove = (ev: MouseEvent) => {
-							if (!isResizing.current) {
-								return;
-							}
-							const next = Math.min(
-								400,
-								Math.max(200, startWidth + ev.clientX - startX),
-							);
-							setSidebarWidth(next);
-						};
-						const onUp = () => {
-							isResizing.current = false;
-							window.removeEventListener("mousemove", onMove);
-							window.removeEventListener("mouseup", onUp);
-						};
-						window.addEventListener("mousemove", onMove);
-						window.addEventListener("mouseup", onUp);
-					}}
+
+			{/* Backdrop — closes drawer on mobile */}
+			{isMobile && mobileDrawerOpen && (
+				<div
+					className="fixed inset-0 z-[55] bg-black/40 backdrop-blur-sm transition-opacity"
+					onClick={() => setMobileDrawerOpen(false)}
+					aria-hidden="true"
 				/>
 			)}
-			<div className="flex h-full flex-col">
-				{/* Navigation — 8 destinations, icon + label when open */}
+
+			<aside
+				className={cn(
+					"shrink-0 flex flex-col h-full bg-background border-r border-border transition-[width] duration-200 relative",
+					isMobile
+						? "fixed inset-0 z-[60] w-[280px] border-r-0 transform transition-transform duration-300"
+						: "sticky top-0 z-30",
+					!sidebarOpen && !isMobile ? "w-[56px]" : "",
+					!mobileDrawerOpen && isMobile ? "-translate-x-full" : "",
+				)}
+				style={{ width: isMobile ? 280 : sidebarOpen ? sidebarWidth : 56 }}
+				aria-label={t("sidebar.ariaLabel")}
+			>
+				{/* Header — brand + close on mobile */}
+				{isMobile && mobileDrawerOpen && (
+					<div className="flex items-center justify-between px-4 py-3 border-b border-border bg-background">
+						<span className="text-sm font-semibold tracking-tight text-foreground">
+							Otoyin
+						</span>
+						<button
+							type="button"
+							onClick={() => setMobileDrawerOpen(false)}
+							className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+							aria-label={t("sidebar.collapse")}
+						>
+							<XMark className="size-5" aria-hidden="true" />
+						</button>
+					</div>
+				)}
+
+				{/* Resize handle — desktop only */}
+				{sidebarOpen && !isMobile && (
+					<hr
+						aria-orientation="vertical"
+						aria-label="Resize sidebar"
+						tabIndex={0}
+						className="absolute top-0 right-0 h-full w-1 cursor-col-resize hover:w-1.5 hover:bg-border bg-transparent transition-colors touch-none border-none"
+						onMouseDown={(e) => {
+							const startX = e.clientX;
+							const startWidth = sidebarWidth;
+							const onMove = (ev: MouseEvent) => {
+								const next = Math.min(
+									400,
+									Math.max(200, startWidth + ev.clientX - startX),
+								);
+								setSidebarWidth(next);
+							};
+							const onUp = () => {
+								window.removeEventListener("mousemove", onMove);
+								window.removeEventListener("mouseup", onUp);
+							};
+							window.addEventListener("mousemove", onMove);
+							window.addEventListener("mouseup", onUp);
+						}}
+					/>
+				)}
+
+				{/* Navigation — category groups */}
 				<nav
 					className="flex-1 overflow-y-auto py-2 px-1.5 scrollbar-thin"
 					aria-label={t("sidebar.navigation")}
 				>
-					<ul className="space-y-0.5">
-						{NAV_ITEMS.map((item) => {
-							const active = isActive(item.path);
+					<ul className="space-y-1">
+						{NAV_GROUPS.map((group) => {
+							const open = openGroups.has(group.label);
+							const groupActive = isGroupActive(group);
 							return (
-								<li key={item.path}>
-									<Link
-										to={item.path}
-										title={t(item.label)}
-										aria-label={t(item.label)}
-										className={cn(
-											"flex items-center gap-2.5 min-w-0 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors border-l-2 relative",
-											active
-												? "bg-accent-muted text-accent-ink border-accent"
-												: "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent",
-										)}
-										aria-current={active ? "page" : undefined}
-										data-active={active ? "true" : undefined}
+								<li key={group.label} className="mb-1">
+									<button
+										type="button"
+										aria-expanded={open}
+										aria-label={group.label}
+										onClick={() => toggleGroup(group.label)}
+										className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground"
 									>
-										<item.icon className="size-4 shrink-0" aria-hidden="true" />
-										<span
+										<svg
 											className={cn(
-												"truncate transition-opacity duration-150",
-												sidebarOpen ? "opacity-100" : "sr-only",
+												"size-3.5 shrink-0 transition-transform duration-200",
+												open && "rotate-90",
 											)}
+											xmlns="http://www.w3.org/2000/svg"
+											width="16"
+											height="16"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											strokeWidth="2"
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											aria-hidden="true"
 										>
-											{t(item.label)}
-										</span>
-									</Link>
+											<polyline points="6 9 12 15 18 9" />
+										</svg>
+										<span className="truncate">{group.label}</span>
+										{sidebarOpen && !isMobile && (
+											<span className="ml-auto text-xs text-muted-foreground/60">
+												{groupActive
+													? t("sidebar.showMoreTabs_one", {
+															count: 0,
+														})
+													: ""}
+											</span>
+										)}
+									</button>
+									{sidebarOpen && open ? (
+										<ul className="mt-1 space-y-0.5 pl-4 border-l border-border/50">
+											{group.items.map((item) => {
+												const active = isActive(item.path);
+												return (
+													<li key={item.path}>
+														<Link
+															to={item.path}
+															title={t(item.label)}
+															aria-label={t(item.label)}
+															className={cn(
+																"flex items-center gap-2.5 min-w-0 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors border-l-2 relative",
+																active
+																	? "bg-accent-muted text-accent-ink border-accent"
+																	: "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent",
+															)}
+															aria-current={active ? "page" : undefined}
+															data-active={active ? "true" : undefined}
+															onClick={handleItemClick}
+														>
+															<item.icon
+																className="size-4 shrink-0"
+																aria-hidden="true"
+															/>
+															<span
+																className={cn(
+																	"truncate transition-opacity duration-150",
+																	sidebarOpen ? "opacity-100" : "sr-only",
+																)}
+															>
+																{t(item.label)}
+															</span>
+														</Link>
+													</li>
+												);
+											})}
+											{sidebarOpen && group.description && !isMobile && (
+												<li>
+													<p
+														className="px-2.5 py-1 text-[10px] text-muted-foreground/60 truncate"
+														title={group.description}
+													>
+														{group.description}
+													</p>
+												</li>
+											)}
+										</ul>
+									) : null}
 								</li>
 							);
 						})}
@@ -131,69 +402,75 @@ export function Sidebar() {
 				</nav>
 
 				{/* Clipboard indicator — shows clip status + opens panel */}
-				{sidebarOpen && (
+				{sidebarOpen && !isMobile && (
 					<div className="px-1.5 pb-0.5">
 						<ClipboardIndicator />
 					</div>
 				)}
 
 				{/* Mini-game — tiny access, smaller than a normal tab */}
-				<div className="border-t border-border/50 mx-1.5 pt-1.5 pb-0.5">
+				{!isMobile && (
+					<div className="border-t border-border/50 mx-1.5 pt-1.5 pb-0.5">
+						<button
+							type="button"
+							onClick={() => useUIStore.getState().setMiniGameOpen(true)}
+							className={cn(
+								"flex items-center rounded-md border border-dashed border-border bg-secondary hover:bg-secondary-hover hover:border-border transition-colors",
+								sidebarOpen
+									? "w-full gap-2 px-2.5 py-1"
+									: "mx-auto size-7 justify-center",
+							)}
+							title="Brick Survivors — play while you generate"
+							aria-label="Open Brick Survivors"
+						>
+							<PuzzlePiece
+								className="size-3.5 shrink-0 text-muted-foreground"
+								aria-hidden="true"
+							/>
+							{sidebarOpen ? (
+								<span className="text-[11px] font-medium tracking-wide text-muted-foreground truncate">
+									Brick Survivors
+								</span>
+							) : null}
+						</button>
+					</div>
+				)}
+
+				{/* Collapse/Expand toggle — desktop only */}
+				{!isMobile && (
 					<button
 						type="button"
-						onClick={() => useUIStore.getState().setMiniGameOpen(true)}
+						onClick={() => setSidebarOpen(!sidebarOpen)}
 						className={cn(
-							"flex items-center rounded-md border border-dashed border-border bg-secondary hover:bg-secondary-hover hover:border-border transition-colors",
-							sidebarOpen
-								? "w-full gap-2 px-2.5 py-1"
-								: "mx-auto size-7 justify-center",
+							"flex h-9 items-center justify-center border-t border-border mx-1.5 mb-1 rounded-md hover:bg-muted/50 transition-colors",
+							sidebarOpen ? "justify-start pl-2.5" : "justify-center",
 						)}
-						title="Brick Survivors — play while you generate"
-						aria-label="Open Brick Survivors"
+						aria-label={
+							sidebarOpen ? t("sidebar.collapse") : t("sidebar.expand")
+						}
+						aria-expanded={sidebarOpen}
+						title={sidebarOpen ? t("sidebar.collapse") : t("sidebar.expand")}
 					>
-						<PuzzlePiece
-							className="size-3.5 shrink-0 text-muted-foreground"
-							aria-hidden="true"
-						/>
 						{sidebarOpen ? (
-							<span className="text-[11px] font-medium tracking-wide text-muted-foreground truncate">
-								Brick Survivors
+							<ChevronLeftIcon
+								className="size-4 text-muted-foreground"
+								aria-hidden="true"
+							/>
+						) : (
+							<ChevronDoubleLeftIcon
+								className="size-4 text-muted-foreground rotate-180"
+								aria-hidden="true"
+							/>
+						)}
+						{sidebarOpen && (
+							<span className="ml-2 text-xs font-medium text-muted-foreground">
+								{t("sidebar.collapse")}
 							</span>
-						) : null}
+						)}
 					</button>
-				</div>
-
-				{/* Collapse/Expand toggle */}
-				<button
-					type="button"
-					onClick={() => setSidebarOpen(!sidebarOpen)}
-					className={cn(
-						"flex h-9 items-center justify-center border-t border-border mx-1.5 mb-1 rounded-md hover:bg-muted/50 transition-colors",
-						sidebarOpen ? "justify-start pl-2.5" : "justify-center",
-					)}
-					aria-label={sidebarOpen ? t("sidebar.collapse") : t("sidebar.expand")}
-					aria-expanded={sidebarOpen}
-					title={sidebarOpen ? t("sidebar.collapse") : t("sidebar.expand")}
-				>
-					{sidebarOpen ? (
-						<ChevronLeftIcon
-							className="size-4 text-muted-foreground"
-							aria-hidden="true"
-						/>
-					) : (
-						<ChevronDoubleLeftIcon
-							className="size-4 text-muted-foreground rotate-180"
-							aria-hidden="true"
-						/>
-					)}
-					{sidebarOpen && (
-						<span className="ml-2 text-xs font-medium text-muted-foreground">
-							{t("sidebar.collapse")}
-						</span>
-					)}
-				</button>
-			</div>
-		</aside>
+				)}
+			</aside>
+		</>
 	);
 }
 

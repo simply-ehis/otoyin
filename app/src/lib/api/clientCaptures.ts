@@ -1,5 +1,4 @@
 import type { LanguageCode } from "@/lib/constants/languages";
-import { formatErrorDetail } from "./clientCore";
 import { GenerationsMethods } from "./clientGenerations";
 import type {
 	AutomationParameters,
@@ -49,20 +48,11 @@ export class CapturesMethods extends GenerationsMethods {
 			formData.append("stt_model", options.sttModel);
 		}
 
-		const url = `${this.getBaseUrl()}/captures`;
-		const response = await fetch(url, { method: "POST", body: formData });
-		if (!response.ok) {
-			const error = await response.json().catch(() => ({
-				detail: response.statusText,
-			}));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-		return response.json();
+		const resp = await this.fetchWithAuth("/captures", {
+			method: "POST",
+			body: formData,
+		});
+		return resp.json();
 	}
 
 	async deleteCapture(captureId: string): Promise<{ message: string }> {
@@ -106,44 +96,26 @@ export class CapturesMethods extends GenerationsMethods {
 	async fetchCaptureChapters(
 		captureId: string,
 	): Promise<CaptureChaptersResponse | null> {
-		const response = await fetch(
-			`${this.getBaseUrl()}/captures/${captureId}/chapters`,
-		);
-		if (response.status === 404) {
+		try {
+			const resp = await this.fetchWithAuth(
+				`/captures/${captureId}/chapters`,
+			);
+			return resp.json();
+		} catch {
 			return null;
 		}
-		if (!response.ok) {
-			const error = await response.json().catch(() => ({
-				detail: response.statusText,
-			}));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-		return response.json();
 	}
 
 	/** Fetch the Scribe-shaped words sidecar; null when never generated (404). */
 	async fetchCaptureWordsJson(captureId: string): Promise<CaptureWordsDoc | null> {
-		const response = await fetch(this.getCaptureWordsUrl(captureId));
-		if (response.status === 404) {
+		try {
+			const resp = await this.fetchWithAuth(
+				this.getCaptureWordsUrl(captureId),
+			);
+			return resp.json();
+		} catch {
 			return null;
 		}
-		if (!response.ok) {
-			const error = await response.json().catch(() => ({
-				detail: response.statusText,
-			}));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-		return response.json();
 	}
 
 	// Settings

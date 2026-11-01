@@ -298,7 +298,7 @@ export function StandaloneProjectPage() {
 
 	if (project) {
 		return (
-			<div className="mx-auto flex h-full w-full max-w-3xl flex-col gap-4 overflow-y-auto p-4">
+			<div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 overflow-y-auto p-4">
 				<div className="flex flex-wrap items-center justify-between gap-2">
 					<h1 className="truncate text-xl font-semibold text-foreground">
 						{project.name}
@@ -556,7 +556,7 @@ export function StandaloneProjectPage() {
 	}
 
 	return (
-		<div className="mx-auto flex h-full w-full max-w-3xl flex-col gap-4 overflow-y-auto p-4">
+		<div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader title="Create New Project" />
 
 			<Card>

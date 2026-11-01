@@ -1,5 +1,3 @@
-import { formatErrorDetail } from "./clientCore";
-
 import { StoriesBMethods } from "./clientStoriesB";
 
 export class ADRMethods extends StoriesBMethods {
@@ -39,41 +37,26 @@ export class ADRMethods extends StoriesBMethods {
 	}
 
 	async uploadADRSessionGuide(sessionId: string, file: File) {
-		const url = `${this.getBaseUrl()}/adr/sessions/${sessionId}/guide`;
 		const formData = new FormData();
 		formData.append("file", file);
-		const response = await fetch(url, { method: "POST", body: formData });
-		if (!response.ok) {
-			const error = await response
-				.json()
-				.catch(() => ({ detail: response.statusText }));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-		return response.json();
+		const resp = await this.fetchWithAuth(`/adr/sessions/${sessionId}/guide`, {
+			method: "POST",
+			body: formData,
+		});
+		return resp.json();
 	}
 
 	async uploadADRTake(sessionId: string, lineId: string, file: File) {
-		const url = `${this.getBaseUrl()}/adr/sessions/${sessionId}/lines/${lineId}/takes`;
 		const formData = new FormData();
 		formData.append("file", file);
-		const response = await fetch(url, { method: "POST", body: formData });
-		if (!response.ok) {
-			const error = await response
-				.json()
-				.catch(() => ({ detail: response.statusText }));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-		return response.json();
+		const resp = await this.fetchWithAuth(
+			`/adr/sessions/${sessionId}/lines/${lineId}/takes`,
+			{
+				method: "POST",
+				body: formData,
+			},
+		);
+		return resp.json();
 	}
 
 	async selectADRTake(sessionId: string, lineId: string, takeId: string) {

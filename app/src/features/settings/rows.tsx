@@ -17,7 +17,7 @@ export function SettingSection({
 	className?: string;
 }) {
 	return (
-		<section className={cn("max-w-3xl", className)}>
+		<section className={cn("max-w-4xl", className)}>
 			{title ? (
 				<h3 className="text-base font-semibold tracking-tight text-foreground">
 					{title}

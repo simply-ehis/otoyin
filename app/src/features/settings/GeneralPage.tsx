@@ -142,7 +142,7 @@ export function GeneralPage() {
 	}, [form]);
 
 	return (
-		<div className="flex max-w-3xl flex-col gap-8">
+		<div className="flex max-w-4xl flex-col gap-8">
 			<div className="grid grid-cols-2 gap-3">
 				<a
 					href="https://docs.otoyin.app"
@@ -564,7 +564,7 @@ function ApiReferenceCard({ serverUrl }: { serverUrl: string }) {
 		},
 	];
 	return (
-		<div className="flex max-w-3xl flex-col gap-3 rounded-md border border-border bg-card p-4">
+		<div className="flex max-w-4xl flex-col gap-3 rounded-md border border-border bg-card p-4">
 			<div>
 				<h3 className="text-sm font-medium text-foreground">
 					{t("settings.general.api.title")}

@@ -74,7 +74,7 @@ export function CommunityPresetsPage() {
 	}, [loadPresets]);
 
 	return (
-		<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-4 overflow-y-auto p-4">
+		<div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title="Community Presets"
 				actions={
@@ -161,7 +161,7 @@ export function CommunityPresetsPage() {
 									className="w-full"
 									onClick={() => {
 										setSelectedPresetId(preset.id);
-										void navigate({ to: "/workspace/effects" });
+										void navigate({ to: "/effects" });
 									}}
 								>
 									Apply Preset

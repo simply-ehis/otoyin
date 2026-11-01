@@ -1,5 +1,4 @@
 import { ADRMethods } from "./clientADR";
-import { formatErrorDetail } from "./clientCore";
 import type { ConvolutionPresets, SpatialPresets } from "./types";
 
 export class SpatialMethods extends ADRMethods {
@@ -23,48 +22,24 @@ export class SpatialMethods extends ADRMethods {
 		x: number,
 		y: number,
 	): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/spatial/apply-binaural`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/spatial/apply-binaural", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ audio_path: audioPath, position: { x, y } }),
 		});
-		if (!response.ok) {
-			const error = await response
-				.json()
-				.catch(() => ({ detail: response.statusText }));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-		return response.blob();
+		return resp.blob();
 	}
 
 	async applyDopplerEffect(
 		audioPath: string,
 		speed: number = 1.0,
 	): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/spatial/apply-doppler`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/spatial/apply-doppler", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ audio_path: audioPath, speed }),
 		});
-		if (!response.ok) {
-			const error = await response
-				.json()
-				.catch(() => ({ detail: response.statusText }));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-		return response.blob();
+		return resp.blob();
 	}
 
 	async applyConvolution(
@@ -72,8 +47,7 @@ export class SpatialMethods extends ADRMethods {
 		environment: string,
 		wetDryMix: number = 0.3,
 	): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/spatial/apply-convolution`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/spatial/apply-convolution", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
@@ -82,18 +56,7 @@ export class SpatialMethods extends ADRMethods {
 				wet_dry_mix: wetDryMix,
 			}),
 		});
-		if (!response.ok) {
-			const error = await response
-				.json()
-				.catch(() => ({ detail: response.statusText }));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-		return response.blob();
+		return resp.blob();
 	}
 
 	async renderSpatial(
@@ -109,8 +72,7 @@ export class SpatialMethods extends ADRMethods {
 		wetDryMix: number = 0.3,
 		dopplerSpeed: number = 0.0,
 	): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/spatial/render`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/spatial/render", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
@@ -121,18 +83,7 @@ export class SpatialMethods extends ADRMethods {
 				speed: dopplerSpeed,
 			}),
 		});
-		if (!response.ok) {
-			const error = await response
-				.json()
-				.catch(() => ({ detail: response.statusText }));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-		return response.blob();
+		return resp.blob();
 	}
 
 	// --- Automation & Cues ---
@@ -158,8 +109,7 @@ export class SpatialMethods extends ADRMethods {
 		normalize: boolean = true,
 		targetLufs: number = -16.0,
 	): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/bridge/export`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/bridge/export", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
@@ -169,18 +119,7 @@ export class SpatialMethods extends ADRMethods {
 				target_lufs: targetLufs,
 			}),
 		});
-		if (!response.ok) {
-			const error = await response
-				.json()
-				.catch(() => ({ detail: response.statusText }));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-		return response.blob();
+		return resp.blob();
 	}
 
 	async batchConvertAudio(
@@ -194,8 +133,7 @@ export class SpatialMethods extends ADRMethods {
 			zip_output?: boolean;
 		},
 	): Promise<Blob | { results: any[] }> {
-		const url = `${this.getBaseUrl()}/bridge/batch-convert`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/bridge/batch-convert", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
@@ -204,22 +142,11 @@ export class SpatialMethods extends ADRMethods {
 				...options,
 			}),
 		});
-		if (!response.ok) {
-			const error = await response
-				.json()
-				.catch(() => ({ detail: response.statusText }));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-		const contentType = response.headers.get("Content-Type") || "";
+		const contentType = resp.headers.get("Content-Type") || "";
 		if (contentType.includes("application/zip")) {
-			return response.blob();
+			return resp.blob();
 		}
-		return response.json();
+		return resp.json();
 	}
 
 	// --- Voice Changer ---
@@ -258,24 +185,12 @@ export class SpatialMethods extends ADRMethods {
 		inference_cfg_rate?: number;
 		f0_condition?: boolean;
 	}): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/voice-convert`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/voice-convert", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(opts),
 		});
-		if (!response.ok) {
-			const error = await response
-				.json()
-				.catch(() => ({ detail: response.statusText }));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-		return response.blob();
+		return resp.blob();
 	}
 
 	// --- Freesound SFX ---
@@ -310,7 +225,7 @@ export class SpatialMethods extends ADRMethods {
 					const error = await res
 						.json()
 						.catch(() => ({ detail: res.statusText }));
-					const msg = formatErrorDetail(error.detail, `HTTP ${res.status}`);
+					const msg = `${error.detail ?? res.statusText} (HTTP ${res.status})`;
 					controller.enqueue(
 						new TextEncoder().encode(
 							`data: ${JSON.stringify({ type: "error", content: msg })}\n\n`,

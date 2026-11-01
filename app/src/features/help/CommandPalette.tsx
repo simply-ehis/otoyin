@@ -71,7 +71,7 @@ export function CommandPalette({
 			label: "Mixer",
 			category: "Audio Studio",
 			icon: <MusicalNoteIcon className="size-4" />,
-			action: () => navigate({ to: "/workspace/mixer" }),
+			action: () => navigate({ to: "/mixer" }),
 		},
 		{
 			id: "stories",
@@ -85,7 +85,7 @@ export function CommandPalette({
 			label: "Conversation mode",
 			category: "Long-form",
 			icon: <MicrophoneIcon className="size-4" />,
-			action: () => navigate({ to: "/workspace/conversation" }),
+			action: () => navigate({ to: "/conversation" }),
 		},
 		{
 			id: "settings",

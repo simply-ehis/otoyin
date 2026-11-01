@@ -317,7 +317,7 @@ export function MusicGenView() {
 			</div>
 
 			{/* Composer (lyrics + beats, markdown-style) */}
-			<div className="max-w-2xl space-y-2 rounded-md border border-border bg-card p-3">
+			<div className="max-w-4xl space-y-2 rounded-md border border-border bg-card p-3">
 				<Label htmlFor="music-composer">Composer (lyrics + beats)</Label>
 				<p className="text-xs text-muted-foreground">
 					Write sections like ## Verse / ## Chorus, chord symbols in brackets

@@ -62,7 +62,7 @@ export function SupportPage() {
 	};
 
 	return (
-		<div className="mx-auto max-w-3xl">
+		<div className="mx-auto max-w-4xl">
 			<ScreenHeader title="Contact & support" />
 			<div className="mb-6 mt-4 flex flex-wrap gap-2 text-sm">
 				{[

@@ -83,7 +83,7 @@ export function TranslateView() {
 		"h-8 rounded-md border border-input bg-background px-2 text-xs";
 
 	return (
-		<div className="mx-auto flex h-full w-full max-w-3xl flex-col gap-4 overflow-y-auto p-4">
+		<div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
 				title={t("translate.title")}
 				description={t("translate.description")}

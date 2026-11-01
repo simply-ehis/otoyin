@@ -116,19 +116,19 @@ export class ChannelsMethods extends ModelsMethods {
 		audioPath: string,
 		chain: PluginChainEntry[],
 	): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/plugins/preview?audio_path=${encodeURIComponent(audioPath)}`;
-		const response = await fetch(url, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ chain }),
-		});
-		if (!response.ok) {
-			const error = await response
-				.json()
-				.catch(() => ({ detail: response.statusText }));
-			throw new Error(error.detail || `HTTP ${response.status}`);
+		const resp = await this.fetchWithAuth(
+			`/plugins/preview?audio_path=${encodeURIComponent(audioPath)}`,
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ chain }),
+			},
+		);
+		if (!resp.ok) {
+			const detail = await resp.json().catch(() => ({}));
+			throw new Error(detail.detail || `HTTP ${resp.status}`);
 		}
-		return response.blob();
+		return resp.blob();
 	}
 
 	// --- Phase 2: Scripting ---

@@ -1,5 +1,4 @@
 import type { AudioStudioSnapshot } from "@/features/audioStudio/AudioStudioStore";
-import { formatErrorDetail } from "./clientCore";
 import { StoriesAMethods } from "./clientStoriesA";
 import type {
 	ApplyEffectsRequest,
@@ -170,24 +169,12 @@ export class StoriesBMethods extends StoriesAMethods {
 		sample_rate?: number;
 		master_volume?: number;
 	}): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/audio/bounce`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/audio/bounce", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(data),
 		});
-		if (!response.ok) {
-			const error = await response
-				.json()
-				.catch(() => ({ detail: response.statusText }));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-		return response.blob();
+		return resp.blob();
 	}
 
 	async getExportPresets(): Promise<ExportPresets> {
@@ -209,8 +196,7 @@ export class StoriesBMethods extends StoriesAMethods {
 			cover_path?: string;
 		},
 	): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/export/apply-preset`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/export/apply-preset", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
@@ -220,35 +206,19 @@ export class StoriesBMethods extends StoriesAMethods {
 				...metadata,
 			}),
 		});
-		if (!response.ok) {
-			const error = await response
-				.json()
-				.catch(() => ({ detail: response.statusText }));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-		return response.blob();
+		return resp.blob();
 	}
 
 	async uploadExportCover(file: File): Promise<{ cover_path: string; mime: string }> {
 		const form = new FormData();
 		form.append("file", file);
-		const res = await fetch(`${this.getBaseUrl()}/export/cover`, {
+		const res = await this.fetchWithAuth("/export/cover", {
 			method: "POST",
 			body: form,
 		});
 		if (!res.ok) {
-			const error = await res.json().catch(() => ({ detail: res.statusText }));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${res.status}`,
-				),
-			);
+			const detail = await res.json().catch(() => ({}));
+			throw new Error(detail.detail || `Cover upload failed (${res.status})`);
 		}
 		return res.json();
 	}
@@ -272,8 +242,7 @@ export class StoriesBMethods extends StoriesAMethods {
 		sample_rate: number;
 		duration_seconds: number;
 	}> {
-		const url = `${this.getBaseUrl()}/recipe/run`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/recipe/run", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
@@ -285,18 +254,7 @@ export class StoriesBMethods extends StoriesAMethods {
 				gap_ms: gapMs,
 			}),
 		});
-		if (!response.ok) {
-			const error = await response
-				.json()
-				.catch(() => ({ detail: response.statusText }));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-		return response.json();
+		return resp.json();
 	}
 
 	async analyzeLoudness(audioPath: string): Promise<{
@@ -307,22 +265,10 @@ export class StoriesBMethods extends StoriesAMethods {
 		lra_lufs: number;
 	}> {
 		const q = new URLSearchParams({ audio_path: audioPath });
-		const url = `${this.getBaseUrl()}/audio/analyze-loudness?${q.toString()}`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth(`/audio/analyze-loudness?${q.toString()}`, {
 			method: "POST",
 		});
-		if (!response.ok) {
-			const error = await response
-				.json()
-				.catch(() => ({ detail: response.statusText }));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-		return response.json();
+		return resp.json();
 	}
 
 	// --- Transcript-Driven Editing ---
@@ -467,8 +413,7 @@ export class StoriesBMethods extends StoriesAMethods {
 		audioPath: string,
 		vadThreshold: number = 0.5,
 	): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/audio/noise-reduce`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/audio/noise-reduce", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
@@ -476,26 +421,14 @@ export class StoriesBMethods extends StoriesAMethods {
 				vad_threshold: vadThreshold,
 			}),
 		});
-		if (!response.ok) {
-			const error = await response
-				.json()
-				.catch(() => ({ detail: response.statusText }));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-		return response.blob();
+		return resp.blob();
 	}
 
 	async audioEnhance(
 		audioPath: string,
 		mode: "auto" | "lavasr" | "denoise" = "auto",
 	): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/audio/enhance`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/audio/enhance", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
@@ -503,18 +436,7 @@ export class StoriesBMethods extends StoriesAMethods {
 				mode,
 			}),
 		});
-		if (!response.ok) {
-			const error = await response
-				.json()
-				.catch(() => ({ detail: response.statusText }));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-		return response.blob();
+		return resp.blob();
 	}
 
 	async separateAudio(
@@ -529,22 +451,10 @@ export class StoriesBMethods extends StoriesAMethods {
 			model_name: modelName,
 			invert: String(invert),
 		});
-		const url = `${this.getBaseUrl()}/audio/separate?${q.toString()}`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth(`/audio/separate?${q.toString()}`, {
 			method: "POST",
 		});
-		if (!response.ok) {
-			const error = await response
-				.json()
-				.catch(() => ({ detail: response.statusText }));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-		return response.blob();
+		return resp.blob();
 	}
 
 	// --- Voice Clean A/B Comparison ---
@@ -627,8 +537,7 @@ export class StoriesBMethods extends StoriesAMethods {
 		}>,
 		opts?: { sample_rate?: number; crossfade_ms?: number },
 	): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/comping/assemble`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/comping/assemble", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
@@ -637,18 +546,7 @@ export class StoriesBMethods extends StoriesAMethods {
 				crossfade_ms: opts?.crossfade_ms ?? 0,
 			}),
 		});
-		if (!response.ok) {
-			const error = await response
-				.json()
-				.catch(() => ({ detail: response.statusText }));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
-		}
-		return response.blob();
+		return resp.blob();
 	}
 
 	// --- Comping / Mixer session persistence (autosave + explicit Save) ---
@@ -944,12 +842,8 @@ export class StoriesBMethods extends StoriesAMethods {
 	}
 
 	async getYoutubeFile(taskId: string): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/youtube/file/${taskId}`;
-		const response = await fetch(url);
-		if (!response.ok) {
-			throw new Error(`Failed to fetch YouTube file: ${response.status}`);
-		}
-		return response.blob();
+		const resp = await this.fetchWithAuth(`/youtube/file/${taskId}`);
+		return resp.blob();
 	}
 
 	// --- Translation ---

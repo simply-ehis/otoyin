@@ -46,7 +46,7 @@ export function SongwriterBrief({
 }) {
 	const { t } = useTranslation();
 	return (
-		<div className="grid max-w-3xl gap-3">
+		<div className="grid max-w-4xl gap-3">
 			<div className="grid gap-3 sm:grid-cols-2">
 				<BriefField
 					label={t("songwriter.title", {

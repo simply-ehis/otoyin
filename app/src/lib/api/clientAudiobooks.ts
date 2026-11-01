@@ -62,7 +62,7 @@ export class AudiobooksMethods extends ApiClientLibrary {
 	async previewBook(file: File): Promise<{ title: string; has_cover: boolean; chapters: Array<{ index: number; title: string; word_count: number; preview: string }> }> {
 		const form = new FormData();
 		form.append("file", file);
-		const res = await fetch(`${this.getBaseUrl()}/audiobooks/preview`, { method: "POST", body: form });
+		const res = await this.fetchWithAuth("/audiobooks/preview", { method: "POST", body: form });
 		if (!res.ok) throw new Error(await res.text());
 		return res.json();
 	}
@@ -71,14 +71,14 @@ export class AudiobooksMethods extends ApiClientLibrary {
 		form.append("file", file);
 		if (title) form.append("title", title);
 		if (author) form.append("author", author);
-		const res = await fetch(`${this.getBaseUrl()}/audiobooks/import`, { method: "POST", body: form });
+		const res = await this.fetchWithAuth("/audiobooks/import", { method: "POST", body: form });
 		if (!res.ok) throw new Error(await res.text());
 		return res.json();
 	}
 	async uploadCover(bookId: string, file: File): Promise<{ cover_path: string }> {
 		const form = new FormData();
 		form.append("file", file);
-		const res = await fetch(`${this.getBaseUrl()}/audiobooks/${bookId}/cover`, { method: "POST", body: form });
+		const res = await this.fetchWithAuth(`/audiobooks/${bookId}/cover`, { method: "POST", body: form });
 		if (!res.ok) throw new Error(await res.text());
 		return res.json();
 	}
@@ -95,12 +95,12 @@ export class AudiobooksMethods extends ApiClientLibrary {
 		return this.request(`/audiobooks/${bookId}/render`, { method: "POST", body: JSON.stringify(opts ?? {}) });
 	}
 	async exportWav(bookId: string): Promise<Blob> {
-		const res = await fetch(`${this.getBaseUrl()}/audiobooks/${bookId}/export`);
+		const res = await this.fetchWithAuth(`/audiobooks/${bookId}/export`);
 		if (!res.ok) throw new Error(await res.text());
 		return res.blob();
 	}
 	async exportM4b(bookId: string, bitrate = "64k"): Promise<Blob> {
-		const res = await fetch(`${this.getBaseUrl()}/audiobooks/${bookId}/export-m4b?bitrate=${bitrate}`);
+		const res = await this.fetchWithAuth(`/audiobooks/${bookId}/export-m4b?bitrate=${bitrate}`);
 		if (!res.ok) throw new Error(await res.text());
 		return res.blob();
 	}

@@ -86,7 +86,7 @@ export function ShortcutsPage() {
 	}
 
 	return (
-		<div className="flex max-w-3xl flex-col gap-6">
+		<div className="flex max-w-4xl flex-col gap-6">
 			<ScreenHeader
 				title="Keyboard shortcuts"
 				actions={

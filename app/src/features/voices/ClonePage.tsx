@@ -9,10 +9,13 @@ import { useTranslation } from "react-i18next";
 import { apiClient } from "@/lib/api/client";
 import { inferStudioError } from "@/lib/errors";
 import { useStreamingTtsPreview } from "@/lib/hooks/useStreamingTtsPreview";
+import { useUIStore } from "@/stores/uiStore";
 import { Button } from "@/ui/button";
 import { Textarea } from "@/ui/input";
 import { Spinner } from "@/ui/Spinner";
+import { ScreenHeader } from "@/ui/states";
 import { CloneSidebar } from "./CloneSidebar";
+import { VoiceFormDialog } from "./VoiceFormDialog";
 
 export function ClonePage() {
 	const { t } = useTranslation();
@@ -29,6 +32,13 @@ export function ClonePage() {
 	const [generating, setGenerating] = useState(false);
 	const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const preview = useStreamingTtsPreview();
+	const setProfileDialogOpen = useUIStore((s) => s.setProfileDialogOpen);
+	const setEditingProfileId = useUIStore((s) => s.setEditingProfileId);
+
+	const handleCreateVoice = () => {
+		setEditingProfileId(null);
+		setProfileDialogOpen(true);
+	};
 
 	useEffect(() => {
 		if (!preview.state.isPlaying && generating) {
@@ -94,19 +104,17 @@ export function ClonePage() {
 	};
 
 	return (
-		<div className="flex h-full min-h-0 overflow-hidden">
-			<CloneSidebar
-				voices={voiceList}
-				onVoiceSelected={setSelectedVoiceId}
-				onCreateVoice={() => {}}
-				selectedVoiceId={selectedVoiceId}
-			/>
-			<div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-				<header className="workspace-titlebar flex shrink-0 items-center justify-between gap-3 px-5 py-4">
-					<div className="flex min-w-0 items-center gap-2">
-						<h1 className="truncate text-sm font-medium">Clone Voice</h1>
-					</div>
-					<div className="flex shrink-0 items-center gap-1">
+		<>
+			<div className="flex h-full min-h-0 overflow-hidden">
+				<CloneSidebar
+					voices={voiceList}
+					onVoiceSelected={setSelectedVoiceId}
+					onCreateVoice={handleCreateVoice}
+					selectedVoiceId={selectedVoiceId}
+				/>
+				<div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+					<ScreenHeader title="Clone Voice" />
+					<div className="flex shrink-0 items-center gap-1 px-5 py-4">
 						<Button
 							size="sm"
 							variant="outline"
@@ -131,49 +139,52 @@ export function ClonePage() {
 							</Button>
 						)}
 					</div>
-				</header>
-				<div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col gap-5 overflow-y-auto px-6 pt-6 pb-4">
-					{selectedVoiceId ? (
-						<div className="space-y-4">
-							<Textarea
-								value={script}
-								onChange={(e) => setScript(e.target.value)}
-								placeholder="Paste text to clone…"
-								aria-label="Clone script"
-								className="min-h-[140px]"
-								data-clone-script
-							/>
-						</div>
-					) : (
-						<div className="flex h-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border p-12 text-center">
-							<MicrophoneIcon
-								className="size-12 text-muted-foreground/50"
-								aria-hidden="true"
-							/>
-							<p className="text-sm text-muted-foreground">
-								Select a voice to begin cloning
-							</p>
-						</div>
-					)}
-				</div>
-				{selectedVoiceId && (
-					<footer className="composer-surface rounded-xl border border-border/60 bg-muted/30 p-2.5 shadow-[0_2px_12px_rgb(0_0_0/4%)]">
-						{generating && (
-							<div className="mb-2 h-[2px] w-full overflow-hidden rounded-full bg-muted">
-								<div
-									className="h-full bg-primary transition-all duration-150"
-									style={{ width: `${preview.state.progress}%` }}
+					<div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col gap-5 overflow-y-auto px-6 pt-6 pb-4">
+						{selectedVoiceId ? (
+							<div className="space-y-4">
+								<Textarea
+									value={script}
+									onChange={(e) => setScript(e.target.value)}
+									placeholder="Paste text to clone…"
+									aria-label="Clone script"
+									className="min-h-[140px]"
+									data-clone-script
 								/>
 							</div>
+						) : (
+							<div className="flex h-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border p-12 text-center">
+								<MicrophoneIcon
+									className="size-12 text-muted-foreground/50"
+									aria-hidden="true"
+								/>
+								<p className="text-sm text-muted-foreground">
+									Select a voice to begin cloning
+								</p>
+							</div>
 						)}
-						<div className="flex items-center justify-between gap-3">
-							<span className="text-xs text-muted-foreground">
-								{generating ? `Streaming… ${preview.state.progress}%` : "Ready"}
-							</span>
-						</div>
-					</footer>
-				)}
+					</div>
+					{selectedVoiceId && (
+						<footer className="composer-surface rounded-xl border border-border/60 bg-muted/30 p-2.5 shadow-[0_2px_12px_rgb(0_0_0/4%)]">
+							{generating && (
+								<div className="mb-2 h-[2px] w-full overflow-hidden rounded-full bg-muted">
+									<div
+										className="h-full bg-primary transition-all duration-150"
+										style={{ width: `${preview.state.progress}%` }}
+									/>
+								</div>
+							)}
+							<div className="flex items-center justify-between gap-3">
+								<span className="text-xs text-muted-foreground">
+									{generating
+										? `Streaming… ${preview.state.progress}%`
+										: "Ready"}
+								</span>
+							</div>
+						</footer>
+					)}
+				</div>
 			</div>
-		</div>
+			<VoiceFormDialog />
+		</>
 	);
 }

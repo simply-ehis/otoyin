@@ -463,13 +463,10 @@ export class StoriesAMethods extends ChannelsMethods {
 
 	async fetchExportFile(filename: string): Promise<Blob> {
 		const safe = filename.split("/").pop() ?? filename;
-		const response = await fetch(
-			`${this.getBaseUrl()}/exports/${encodeURIComponent(safe)}`,
+		const resp = await this.fetchWithAuth(
+			`/exports/${encodeURIComponent(safe)}`,
 		);
-		if (!response.ok) {
-			throw new Error(`Export download failed: ${response.status}`);
-		}
-		return response.blob();
+		return resp.blob();
 	}
 
 	async applyEmotionTone(
@@ -832,24 +829,23 @@ export class StoriesAMethods extends ChannelsMethods {
 		duration_seconds?: number;
 		seed?: number;
 	}): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/generate/sfx`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/generate/sfx", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(data),
 		});
-		if (!response.ok) {
-			const error = await response
+		if (!resp.ok) {
+			const error = await resp
 				.json()
-				.catch(() => ({ detail: response.statusText }));
+				.catch(() => ({ detail: resp.statusText }));
 			throw new Error(
 				formatErrorDetail(
 					error.detail,
-					`HTTP error! status: ${response.status}`,
+					`HTTP error! status: ${resp.status}`,
 				),
 			);
 		}
-		return response.blob();
+		return resp.blob();
 	}
 
 	async playPianoNote(data: {
@@ -1018,16 +1014,15 @@ export class StoriesAMethods extends ChannelsMethods {
 			master_volume?: number;
 		};
 	}): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/mixer/preview`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/mixer/preview", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(data),
 		});
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`);
+		if (!resp.ok) {
+			throw new Error(`HTTP error! status: ${resp.status}`);
 		}
-		return response.blob();
+		return resp.blob();
 	}
 
 	async generateAutoPlan(data: {
@@ -1163,24 +1158,23 @@ export class StoriesAMethods extends ChannelsMethods {
 		algorithm?: number;
 		feedback?: number;
 	}): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/dsp/synth`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/dsp/synth", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(data),
 		});
-		if (!response.ok) {
-			const error = await response
+		if (!resp.ok) {
+			const error = await resp
 				.json()
-				.catch(() => ({ detail: response.statusText }));
+				.catch(() => ({ detail: resp.statusText }));
 			throw new Error(
 				formatErrorDetail(
 					error.detail,
-					`HTTP error! status: ${response.status}`,
+					`HTTP error! status: ${resp.status}`,
 				),
 			);
 		}
-		return response.blob();
+		return resp.blob();
 	}
 
 	async dspUpload(
@@ -1189,22 +1183,15 @@ export class StoriesAMethods extends ChannelsMethods {
 	): Promise<{ audio_path: string; size: number }> {
 		const form = new FormData();
 		form.append("file", file, filename);
-		const response = await fetch(`${this.getBaseUrl()}/dsp/upload`, {
+		const resp = await this.fetchWithAuth("/dsp/upload", {
 			method: "POST",
 			body: form,
 		});
-		if (!response.ok) {
-			const error = await response
-				.json()
-				.catch(() => ({ detail: response.statusText }));
-			throw new Error(
-				formatErrorDetail(
-					error.detail,
-					`HTTP error! status: ${response.status}`,
-				),
-			);
+		if (!resp.ok) {
+			const detail = await resp.json().catch(() => ({}));
+			throw new Error(detail.detail || `DSP upload failed (${resp.status})`);
 		}
-		return response.json();
+		return resp.json();
 	}
 
 	async dspEffect(data: {
@@ -1224,24 +1211,23 @@ export class StoriesAMethods extends ChannelsMethods {
 		wet?: number;
 		mod_freq?: number;
 	}): Promise<Blob> {
-		const url = `${this.getBaseUrl()}/dsp/effect`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/dsp/effect", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(data),
 		});
-		if (!response.ok) {
-			const error = await response
+		if (!resp.ok) {
+			const error = await resp
 				.json()
-				.catch(() => ({ detail: response.statusText }));
+				.catch(() => ({ detail: resp.statusText }));
 			throw new Error(
 				formatErrorDetail(
 					error.detail,
-					`HTTP error! status: ${response.status}`,
+					`HTTP error! status: ${resp.status}`,
 				),
 			);
 		}
-		return response.blob();
+		return resp.blob();
 	}
 
 	// Effects & Versions

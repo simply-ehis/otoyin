@@ -523,7 +523,7 @@ export function StorePage() {
 
 	return (
 		<div className="flex h-full min-h-0 flex-col overflow-y-auto">
-			<div className="mx-auto w-full max-w-6xl space-y-5 px-4 py-6">
+			<div className="mx-auto w-full max-w-4xl space-y-5 px-4 py-6">
 				<StoreHero
 					productCount={products.length}
 					freeCount={freeCount}

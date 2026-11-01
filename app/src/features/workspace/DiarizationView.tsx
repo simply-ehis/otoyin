@@ -79,7 +79,7 @@ export function DiarizationView() {
 		onSuccess: (data: { id: string }) => {
 			toast({ title: "ADR session created from diarization" });
 			void navigate({
-				to: "/workspace/adr",
+				to: "/adr",
 				search: { session: data.id },
 			});
 		},

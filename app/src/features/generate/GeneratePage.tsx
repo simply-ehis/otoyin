@@ -63,14 +63,7 @@ export function GeneratePage() {
 
 	return (
 		<div className="flex h-full min-h-0 flex-col overflow-hidden">
-			<div className="flex items-center justify-between gap-2 pb-3">
-				<h1 className="flex min-w-0 items-center">
-					<img
-						src="/otoyin-logo.svg"
-						alt="Otoyin"
-						className="h-8 w-8 shrink-0"
-					/>
-				</h1>
+			<div className="flex shrink-0 items-center gap-2 pb-3">
 				<div className="flex shrink-0 items-center gap-2">
 					<Suspense fallback={null}>
 						<TabHelp tabPath="/" />

@@ -27,22 +27,6 @@ import { TimecodeDisplay } from "@/features/settings/TimecodeDisplay";
 import { StorePage } from "@/features/store/StorePage";
 import { StoryEditor } from "@/features/stories/StoryEditor";
 import { TranslateView } from "@/features/translate/TranslateView";
-import { AudioEnhanceView } from "@/features/workspace/AudioEnhanceView";
-import { AutomationView } from "@/features/workspace/AutomationView";
-import { ConversationView } from "@/features/workspace/ConversationView";
-import { DiarizationView } from "@/features/workspace/DiarizationView";
-import { MultiTakeCompingView } from "@/features/workspace/MultiTakeCompingView";
-import { MusicGenView } from "@/features/workspace/MusicGenView";
-import { NoiseReductionView } from "@/features/workspace/NoiseReductionView";
-import { PlatformExportView } from "@/features/workspace/PlatformExportView";
-import { SoundEffectsView } from "@/features/workspace/SoundEffectsView";
-import { SpatialView } from "@/features/workspace/SpatialView";
-import { SpectrogramView } from "@/features/workspace/SpectrogramView";
-import { TranscriptEditView } from "@/features/workspace/TranscriptEditView";
-import { VideoPreviewView } from "@/features/workspace/VideoPreviewView";
-import { VocalIsolationView } from "@/features/workspace/VocalIsolationView";
-import { VoiceConverterView } from "@/features/workspace/VoiceConverterView";
-import { YouTubeDownloadView } from "@/features/workspace/YouTubeDownloadView";
 import { RootLayout } from "@/layouts/RootLayout/RootLayout";
 
 // Lazy-loaded page components for code splitting
@@ -54,6 +38,86 @@ const CapturesTab = lazy(() =>
 const EffectsTab = lazy(() =>
 	import("@/features/effects/EffectsTab").then((m) => ({
 		default: m.EffectsTab,
+	})),
+);
+const AudioEnhanceView = lazy(() =>
+	import("@/features/workspace/AudioEnhanceView").then((m) => ({
+		default: m.AudioEnhanceView,
+	})),
+);
+const AutomationView = lazy(() =>
+	import("@/features/workspace/AutomationView").then((m) => ({
+		default: m.AutomationView,
+	})),
+);
+const ConversationView = lazy(() =>
+	import("@/features/workspace/ConversationView").then((m) => ({
+		default: m.ConversationView,
+	})),
+);
+const DiarizationView = lazy(() =>
+	import("@/features/workspace/DiarizationView").then((m) => ({
+		default: m.DiarizationView,
+	})),
+);
+const MultiTakeCompingView = lazy(() =>
+	import("@/features/workspace/MultiTakeCompingView").then((m) => ({
+		default: m.MultiTakeCompingView,
+	})),
+);
+const MusicGenView = lazy(() =>
+	import("@/features/workspace/MusicGenView").then((m) => ({
+		default: m.MusicGenView,
+	})),
+);
+const NoiseReductionView = lazy(() =>
+	import("@/features/workspace/NoiseReductionView").then((m) => ({
+		default: m.NoiseReductionView,
+	})),
+);
+const PlatformExportView = lazy(() =>
+	import("@/features/workspace/PlatformExportView").then((m) => ({
+		default: m.PlatformExportView,
+	})),
+);
+const SoundEffectsView = lazy(() =>
+	import("@/features/workspace/SoundEffectsView").then((m) => ({
+		default: m.SoundEffectsView,
+	})),
+);
+const SpatialView = lazy(() =>
+	import("@/features/workspace/SpatialView").then((m) => ({
+		default: m.SpatialView,
+	})),
+);
+const SpectrogramView = lazy(() =>
+	import("@/features/workspace/SpectrogramView").then((m) => ({
+		default: m.SpectrogramView,
+	})),
+);
+const TranscriptEditView = lazy(() =>
+	import("@/features/workspace/TranscriptEditView").then((m) => ({
+		default: m.TranscriptEditView,
+	})),
+);
+const VideoPreviewView = lazy(() =>
+	import("@/features/workspace/VideoPreviewView").then((m) => ({
+		default: m.VideoPreviewView,
+	})),
+);
+const VocalIsolationView = lazy(() =>
+	import("@/features/workspace/VocalIsolationView").then((m) => ({
+		default: m.VocalIsolationView,
+	})),
+);
+const VoiceConverterView = lazy(() =>
+	import("@/features/workspace/VoiceConverterView").then((m) => ({
+		default: m.VoiceConverterView,
+	})),
+);
+const YouTubeDownloadView = lazy(() =>
+	import("@/features/workspace/YouTubeDownloadView").then((m) => ({
+		default: m.YouTubeDownloadView,
 	})),
 );
 const MainEditor = lazy(() =>
@@ -136,19 +200,9 @@ const ClonePage = lazy(() =>
 		default: m.ClonePage,
 	})),
 );
-const WorkspaceLayout = lazy(() =>
-	import("@/features/workspace/WorkspaceLayout").then((m) => ({
-		default: m.WorkspaceLayout,
-	})),
-);
 const TimelineView = lazy(() =>
 	import("@/features/workspace/TimelineView").then((m) => ({
 		default: m.TimelineView,
-	})),
-);
-const WorkspaceLanding = lazy(() =>
-	import("@/features/workspace/WorkspaceLanding").then((m) => ({
-		default: m.WorkspaceLanding,
 	})),
 );
 const PitchMapView = lazy(() =>
@@ -161,29 +215,19 @@ const MixerView = lazy(() =>
 		default: m.MixerView,
 	})),
 );
-const EffectsView = lazy(() =>
-	import("@/features/effects/EffectsTab").then((m) => ({
-		default: m.EffectsTab,
-	})),
-);
-const StudioView = lazy(() =>
-	import("@/features/workspace/StudioView").then((m) => ({
-		default: m.StudioView,
-	})),
-);
 const DspView = lazy(() =>
 	import("@/features/workspace/DspView").then((m) => ({
 		default: m.DspView,
 	})),
 );
-const VoiceChangerView = lazy(() =>
-	import("@/features/workspace/VoiceChangerView").then((m) => ({
-		default: m.VoiceChangerView,
-	})),
-);
 const ADRView = lazy(() =>
 	import("@/features/workspace/adr/ADRView").then((m) => ({
 		default: m.ADRView,
+	})),
+);
+const StudioView = lazy(() =>
+	import("@/features/workspace/StudioView").then((m) => ({
+		default: m.StudioView,
 	})),
 );
 const AudioPlanView = lazy(() =>
@@ -397,178 +441,15 @@ const dubbingRoute = createRoute({
 	component: DubPage,
 });
 
-// Workspace layout route (parent for workspace sub-views)
-const workspaceRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/workspace",
-	component: WorkspaceLayout,
-});
-
-// Workspace sub-routes
-const workspaceIndexRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/",
-	component: WorkspaceLanding,
-});
-
-const timelineRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/timeline",
-	component: TimelineView,
-});
-
-const pitchMapRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/pitch",
-	component: PitchMapView,
-});
-
-const mixerRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/mixer",
-	component: MixerView,
-});
-
-const effectsRouteWs = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/effects",
-	component: EffectsView,
-});
-
-const studioRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/studio",
-	component: StudioView,
-});
-
-const dspRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/dsp",
-	component: DspView,
-});
-
-const voiceChangerRouteWs = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/voice-changer",
-	component: VoiceChangerView,
-});
-
-const adrRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/adr",
-	validateSearch: (search: Record<string, unknown>): { session?: string } => ({
-		session: typeof search.session === "string" ? search.session : undefined,
-	}),
-	component: ADRView,
-});
-
-const audioPlanRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/audio-plan",
-	component: AudioPlanView,
-});
-
-const batchRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/batch",
-	component: BatchQueueView,
-});
-
-const noiseReductionRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/noise-reduction",
-	component: NoiseReductionView,
-});
-
-const audioEnhanceRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/audio-enhance",
-	component: AudioEnhanceView,
-});
-
-const _vocalIsolationRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/vocal-isolation",
-	component: VocalIsolationView,
-});
-
-const workspaceSpectrogramRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/spectrogram",
-	component: SpectrogramView,
-});
-
-const conversationRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/conversation",
-	component: ConversationView,
-});
-
-const platformExportRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/export",
-	component: PlatformExportView,
-});
-
-const transcriptEditRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/transcript",
-	component: TranscriptEditView,
-});
-
-const spatialRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/spatial",
-	component: SpatialView,
-});
-
-const musicGenRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/music-gen",
-	component: MusicGenView,
-});
-
-const automationRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/automation",
-	component: AutomationView,
-});
-
-const multiTakeCompingRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/comping",
-	component: MultiTakeCompingView,
-});
-
+// Voice changer route (standalone, outside workspace tabs)
 const liveTranscriptRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
+	getParentRoute: () => rootRoute,
 	path: "/live-transcript",
 	beforeLoad: () => {
-		throw redirect({ to: "/workspace/transcript" });
+		throw redirect({ to: "/transcript" });
 	},
 });
 
-const diarizationRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/diarize",
-	component: DiarizationView,
-});
-
-// Video preview route (plays video audio on the shared bus + extract to studio)
-const videoPreviewRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/video",
-	component: VideoPreviewView,
-});
-
-// YouTube / URL download route
-const youtubeDownloadRoute = createRoute({
-	getParentRoute: () => workspaceRoute,
-	path: "/download",
-	component: YouTubeDownloadView,
-});
-
-// Voice changer route (standalone, outside workspace tabs)
 const voiceChangerRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/voice-changer",
@@ -647,6 +528,142 @@ const libraryRoute = createRoute({
 	component: LibraryTab,
 });
 
+// Promoted workspace-only routes (top-level canonical paths)
+const timelineRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/timeline",
+	component: TimelineView,
+});
+
+const pitchRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/pitch",
+	component: PitchMapView,
+});
+
+const mixerRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/mixer",
+	component: MixerView,
+});
+
+const studioRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/studio",
+	component: StudioView,
+});
+
+const dspRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/dsp",
+	component: DspView,
+});
+
+const adrRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/adr",
+	validateSearch: (search: Record<string, unknown>): { session?: string } => ({
+		session: typeof search.session === "string" ? search.session : undefined,
+	}),
+	component: ADRView,
+});
+
+const audioPlanRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/audio-plan",
+	component: AudioPlanView,
+});
+
+const conversationRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/conversation",
+	component: ConversationView,
+});
+
+const compingRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/comping",
+	component: MultiTakeCompingView,
+});
+
+const automationRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/automation",
+	component: AutomationView,
+});
+
+const noiseReductionRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/noise-reduction",
+	component: NoiseReductionView,
+});
+
+const audioEnhanceRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/audio-enhance",
+	component: AudioEnhanceView,
+});
+
+const vocalIsolationRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/vocal-isolation",
+	component: VocalIsolationView,
+});
+
+const spectrogramRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/spectrogram",
+	component: SpectrogramView,
+});
+
+const exportRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/export",
+	component: PlatformExportView,
+});
+
+const transcriptRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/transcript",
+	component: TranscriptEditView,
+});
+
+const spatialRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/spatial",
+	component: SpatialView,
+});
+
+const musicGenRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/music-gen",
+	component: MusicGenView,
+});
+
+const diarizeRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/diarize",
+	component: DiarizationView,
+});
+
+const videoRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/video",
+	component: VideoPreviewView,
+});
+
+const downloadRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/download",
+	component: YouTubeDownloadView,
+});
+
+const batchRouteTop = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/batch",
+	component: BatchQueueView,
+});
+
 // Settings → Support sub-route
 const settingsSupportRoute = createRoute({
 	getParentRoute: () => settingsRoute,
@@ -659,7 +676,7 @@ const stemSeparationRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/stem-separation",
 	beforeLoad: () => {
-		throw redirect({ to: "/workspace/vocal-isolation" });
+		throw redirect({ to: "/vocal-isolation" });
 	},
 });
 
@@ -679,8 +696,202 @@ const serverRedirectRoute = createRoute({
 	},
 });
 
+// Retired /workspace/* redirects → top-level canonical paths
+const workspaceRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace",
+	beforeLoad: () => {
+		throw redirect({ to: "/" });
+	},
+});
+
+const workspaceTimelineRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/timeline",
+	beforeLoad: () => {
+		throw redirect({ to: "/timeline" });
+	},
+});
+
+const workspacePitchRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/pitch",
+	beforeLoad: () => {
+		throw redirect({ to: "/pitch" });
+	},
+});
+
+const workspaceMixerRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/mixer",
+	beforeLoad: () => {
+		throw redirect({ to: "/mixer" });
+	},
+});
+
+const workspaceEffectsRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/effects",
+	beforeLoad: () => {
+		throw redirect({ to: "/effects" });
+	},
+});
+
+const workspaceStudioRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/studio",
+	beforeLoad: () => {
+		throw redirect({ to: "/studio" });
+	},
+});
+
+const workspaceDspRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/dsp",
+	beforeLoad: () => {
+		throw redirect({ to: "/dsp" });
+	},
+});
+
+const workspaceVoiceChangerRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/voice-changer",
+	beforeLoad: () => {
+		throw redirect({ to: "/voice-converter" });
+	},
+});
+
+const workspaceAdrRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/adr",
+	beforeLoad: () => {
+		throw redirect({ to: "/adr" });
+	},
+});
+
+const workspaceAudioPlanRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/audio-plan",
+	beforeLoad: () => {
+		throw redirect({ to: "/audio-plan" });
+	},
+});
+
+const workspaceConversationRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/conversation",
+	beforeLoad: () => {
+		throw redirect({ to: "/conversation" });
+	},
+});
+
+const workspaceCompingRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/comping",
+	beforeLoad: () => {
+		throw redirect({ to: "/comping" });
+	},
+});
+
+const workspaceAutomationRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/automation",
+	beforeLoad: () => {
+		throw redirect({ to: "/automation" });
+	},
+});
+
+const workspaceNoiseReductionRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/noise-reduction",
+	beforeLoad: () => {
+		throw redirect({ to: "/noise-reduction" });
+	},
+});
+
+const workspaceAudioEnhanceRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/audio-enhance",
+	beforeLoad: () => {
+		throw redirect({ to: "/audio-enhance" });
+	},
+});
+
+const workspaceVocalIsolationRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/vocal-isolation",
+	beforeLoad: () => {
+		throw redirect({ to: "/vocal-isolation" });
+	},
+});
+
+const workspaceSpectrogramRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/spectrogram",
+	beforeLoad: () => {
+		throw redirect({ to: "/spectrogram" });
+	},
+});
+
+const workspaceExportRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/export",
+	beforeLoad: () => {
+		throw redirect({ to: "/export" });
+	},
+});
+
+const workspaceTranscriptRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/transcript",
+	beforeLoad: () => {
+		throw redirect({ to: "/transcript" });
+	},
+});
+
+const workspaceSpatialRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/spatial",
+	beforeLoad: () => {
+		throw redirect({ to: "/spatial" });
+	},
+});
+
+const workspaceMusicGenRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/music-gen",
+	beforeLoad: () => {
+		throw redirect({ to: "/music-gen" });
+	},
+});
+
+const workspaceDiarizeRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/diarize",
+	beforeLoad: () => {
+		throw redirect({ to: "/diarize" });
+	},
+});
+
+const workspaceVideoRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/video",
+	beforeLoad: () => {
+		throw redirect({ to: "/video" });
+	},
+});
+
+const workspaceDownloadRedirectRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/workspace/download",
+	beforeLoad: () => {
+		throw redirect({ to: "/download" });
+	},
+});
+
 // Route tree
 const routeTree = rootRoute.addChildren([
+	// Core top-level routes
 	indexRoute,
 	storiesRoute,
 	songwriterRoute,
@@ -696,40 +907,69 @@ const routeTree = rootRoute.addChildren([
 	offersRoute,
 	libraryRoute,
 	storeRoute,
-	workspaceRoute.addChildren([
-		workspaceIndexRoute,
-		timelineRoute,
-		pitchMapRoute,
-		mixerRoute,
-		effectsRouteWs,
-		studioRoute,
-		dspRoute,
-		voiceChangerRouteWs,
-		adrRoute,
-		audioPlanRoute,
-		batchRoute,
-		noiseReductionRoute,
-		audioEnhanceRoute,
-		_vocalIsolationRoute,
-		workspaceSpectrogramRoute,
-		conversationRoute,
-		platformExportRoute,
-		transcriptEditRoute,
-		spatialRoute,
-		musicGenRoute,
-		automationRoute,
-		multiTakeCompingRoute,
-		liveTranscriptRoute,
-		diarizationRoute,
-		videoPreviewRoute,
-		youtubeDownloadRoute,
-	]),
+
+	// Promoted workspace-only routes (top-level canonical paths)
+	timelineRouteTop,
+	pitchRouteTop,
+	mixerRouteTop,
+	studioRouteTop,
+	dspRouteTop,
+	adrRouteTop,
+	audioPlanRouteTop,
+	conversationRouteTop,
+	compingRouteTop,
+	automationRouteTop,
+	noiseReductionRouteTop,
+	audioEnhanceRouteTop,
+	vocalIsolationRouteTop,
+	spectrogramRouteTop,
+	exportRouteTop,
+	transcriptRouteTop,
+	spatialRouteTop,
+	musicGenRouteTop,
+	diarizeRouteTop,
+	videoRouteTop,
+	downloadRouteTop,
+	batchRouteTop,
+
+	// Retired /workspace/* redirects → top-level canonical paths
+	workspaceRedirectRoute,
+	workspaceTimelineRedirectRoute,
+	workspacePitchRedirectRoute,
+	workspaceMixerRedirectRoute,
+	workspaceEffectsRedirectRoute,
+	workspaceStudioRedirectRoute,
+	workspaceDspRedirectRoute,
+	workspaceVoiceChangerRedirectRoute,
+	workspaceAdrRedirectRoute,
+	workspaceAudioPlanRedirectRoute,
+	workspaceConversationRedirectRoute,
+	workspaceCompingRedirectRoute,
+	workspaceAutomationRedirectRoute,
+	workspaceNoiseReductionRedirectRoute,
+	workspaceAudioEnhanceRedirectRoute,
+	workspaceVocalIsolationRedirectRoute,
+	workspaceSpectrogramRedirectRoute,
+	workspaceExportRedirectRoute,
+	workspaceTranscriptRedirectRoute,
+	workspaceSpatialRedirectRoute,
+	workspaceMusicGenRedirectRoute,
+	workspaceDiarizeRedirectRoute,
+	workspaceVideoRedirectRoute,
+	workspaceDownloadRedirectRoute,
+
+	// Voice converter (top-level canonical)
 	voiceChangerRoute,
 	voiceConverterRoute,
+
+	// Other top-level routes
 	soundEffectsRoute,
 	translateRoute,
 	audioStudioRoute,
 	helpRoute,
+	liveTranscriptRoute,
+
+	// Settings
 	settingsRoute.addChildren([
 		settingsGeneralRoute,
 		settingsGenerationRoute,
@@ -752,6 +992,7 @@ const routeTree = rootRoute.addChildren([
 		stemSeparationRoute,
 		settingsCloudModelsRoute,
 	]),
+
 	projectsRoute,
 	communityPresetsRoute,
 	serverRedirectRoute,

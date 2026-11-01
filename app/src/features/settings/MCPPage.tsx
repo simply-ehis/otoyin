@@ -77,8 +77,8 @@ export function MCPPage() {
 	};
 
 	return (
-		<div className="flex max-w-5xl items-start gap-8">
-			<div className="min-w-0 max-w-3xl flex-1">
+		<div className="flex max-w-4xl items-start gap-8">
+			<div className="min-w-0 max-w-4xl flex-1">
 				<SettingSection
 					title={t("settings.mcp.install.title")}
 					description={t("settings.mcp.install.description")}

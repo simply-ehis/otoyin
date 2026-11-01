@@ -275,7 +275,7 @@ export function VocalIsolationView() {
 	return (
 		// biome-ignore lint/a11y/useSemanticElements: must be a div for drag-drop events
 		<div
-			className="flex h-full max-w-2xl flex-col gap-4 overflow-y-auto p-4"
+			className="flex h-full max-w-4xl flex-col gap-4 overflow-y-auto p-4"
 			role="region"
 			aria-label="Stem Separation"
 			onDrop={handleDrop}

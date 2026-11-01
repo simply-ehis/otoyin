@@ -397,7 +397,7 @@ export function DubbingTab() {
 				{(step === "configure" || step === "preview") && (
 					<section
 						aria-label="Dubbing settings"
-						className="flex max-w-2xl flex-col gap-4"
+						className="flex max-w-4xl flex-col gap-4"
 					>
 						<h3 className="text-sm font-medium text-foreground">
 							Dubbing settings
@@ -481,7 +481,7 @@ export function DubbingTab() {
 				{step === "dubbing" && job ? (
 					<section
 						aria-label="Dubbing progress"
-						className="flex max-w-2xl flex-col gap-2"
+						className="flex max-w-4xl flex-col gap-2"
 					>
 						<h3 className="text-sm font-medium text-foreground">
 							Dubbing progress
@@ -511,7 +511,7 @@ export function DubbingTab() {
 				{step === "done" && job ? (
 					<section
 						aria-label="Dubbing complete"
-						className="flex max-w-2xl flex-col gap-3"
+						className="flex max-w-4xl flex-col gap-3"
 					>
 						<h3 className="text-sm font-medium text-foreground">
 							Dubbing complete

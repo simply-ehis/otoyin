@@ -189,7 +189,7 @@ export function GpuPage() {
 		!health.gpu_type.includes("CUDA");
 
 	return (
-		<div className="flex max-w-3xl flex-col gap-6">
+		<div className="flex max-w-4xl flex-col gap-6">
 			<ScreenHeader title="GPU" />
 			<GpuInfoCard health={health} />
 

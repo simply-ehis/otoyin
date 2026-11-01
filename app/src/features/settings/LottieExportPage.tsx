@@ -75,7 +75,7 @@ export function LottieExportPage() {
 	}, [audioPath, exportName, serverUrl, toast]);
 
 	return (
-		<div className="flex max-w-2xl flex-col gap-6">
+		<div className="flex max-w-4xl flex-col gap-6">
 			<ScreenHeader title="Lottie export" />
 			<Card>
 				<CardTitle className="text-sm">Export settings</CardTitle>

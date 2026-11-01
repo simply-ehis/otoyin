@@ -807,6 +807,8 @@ def add_product_review(product_id: str, rating: int, comment: str, device_id: st
 
     if not 1 <= int(rating) <= 5:
         raise ValueError("Rating must be 1-5")
+    if comment is not None and len(comment) > 2000:
+        raise ValueError("Comment must be at most 2000 characters")
     db = _reviews_db()
     try:
         row = (

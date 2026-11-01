@@ -109,7 +109,7 @@ export function ApiKeysPage() {
 	}));
 
 	return (
-		<div className="flex max-w-2xl flex-col gap-6">
+		<div className="flex max-w-4xl flex-col gap-6">
 			<ScreenHeader title="API keys" />
 			{loading ? (
 				<LoadingState label="Loading providers" lines={4} />

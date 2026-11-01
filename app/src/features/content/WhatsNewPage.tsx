@@ -22,7 +22,7 @@ export function WhatsNewPage() {
 	}, [data, seen, markSeen]);
 
 	return (
-		<div className="mx-auto flex h-full w-full max-w-2xl flex-col gap-4 overflow-y-auto p-4">
+		<div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader title="What's New" />
 
 			{isLoading ? (

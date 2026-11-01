@@ -709,7 +709,7 @@ export function DspView() {
 					onRetry={() => void capsQuery.refetch()}
 				/>
 			) : null}
-			<Tabs defaultValue="synth" className="w-full max-w-2xl">
+			<Tabs defaultValue="synth" className="w-full max-w-4xl">
 				<TabsList aria-label="DSP sections">
 					<TabsTrigger value="synth">Synth</TabsTrigger>
 					<TabsTrigger value="effects">Effects</TabsTrigger>

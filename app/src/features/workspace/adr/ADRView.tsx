@@ -38,7 +38,7 @@ export function ADRView() {
 	const [recordingLineId, setRecordingLineId] = useState<string | null>(null);
 	const [confirmDeleteSession, setConfirmDeleteSession] = useState(false);
 
-	const adrSearch = useSearch({ from: "/workspace/adr" });
+	const adrSearch = useSearch({ from: "/adr" });
 	useEffect(() => {
 		if (adrSearch.session && adrSearch.session !== sessionId) {
 			setSessionId(adrSearch.session);

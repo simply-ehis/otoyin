@@ -6,6 +6,7 @@ import { AppHeader } from "@/layouts/AppFrame/AppHeader";
 import { BackendStatusBanner } from "@/layouts/AppFrame/BackendStatusBanner";
 import { AudioKeepAlive } from "@/layouts/AudioPlayer/AudioKeepAlive";
 import { ErrorBoundary } from "@/layouts/ErrorBoundary/ErrorBoundary";
+import { Sidebar } from "@/layouts/Sidebar/Sidebar";
 import { TitleBarDragRegion } from "@/layouts/TitleBarDragRegion";
 import { TOP_SAFE_AREA_PADDING } from "@/lib/constants/ui";
 import { applyThemeAccent } from "@/lib/design-system";
@@ -261,7 +262,8 @@ export function AppFrame({ children }: AppFrameProps) {
 
 				{/* Main layout: sidebar + content + assistant panel */}
 				<div className="flex flex-1 min-h-0 overflow-hidden">
-					{children}
+					<Sidebar />
+					<div className="flex-1 min-h-0 overflow-hidden">{children}</div>
 
 					{/* Assistant slide-in panel */}
 					<WhenReady ready={assistantOpen}>

@@ -213,7 +213,7 @@ export function HelpCenter({
 												},
 												{
 													label: "Mix audio",
-													path: "/workspace/mixer",
+													path: "/mixer",
 													query: "how to mix audio",
 												},
 												{

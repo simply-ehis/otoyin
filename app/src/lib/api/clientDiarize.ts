@@ -1,5 +1,4 @@
 import type { LanguageCode } from "@/lib/constants/languages";
-import { formatErrorDetail } from "./clientCore";
 import { DubbingMethods } from "./clientDubbing";
 
 export interface DiarizationSegment {
@@ -30,25 +29,22 @@ export class DiarizeMethods extends DubbingMethods {
 		if (opts?.model) formData.append("model", opts.model);
 		if (opts?.numSpeakers) formData.append("num_speakers", String(opts.numSpeakers));
 
-		const url = `${this.getBaseUrl()}/diarize`;
-		const response = await fetch(url, { method: "POST", body: formData });
-		if (!response.ok) {
-			const error = await response.json().catch(() => ({
-				detail: response.statusText,
-			}));
-			throw new Error(
-				formatErrorDetail(error.detail, `HTTP error! status: ${response.status}`),
-			);
+		const resp = await this.fetchWithAuth("/diarize", {
+			method: "POST",
+			body: formData,
+		});
+		if (!resp.ok) {
+			const detail = await resp.json().catch(() => ({}));
+			throw new Error(detail.detail || `Diarize failed (${resp.status})`);
 		}
-		return response.json();
+		return resp.json();
 	}
 
 	async diarizePath(
 		audioPath: string,
 		opts?: { language?: LanguageCode; model?: string; numSpeakers?: number },
 	): Promise<DiarizationResponse> {
-		const url = `${this.getBaseUrl()}/diarize/path`;
-		const response = await fetch(url, {
+		const resp = await this.fetchWithAuth("/diarize/path", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
@@ -58,14 +54,10 @@ export class DiarizeMethods extends DubbingMethods {
 				num_speakers: opts?.numSpeakers,
 			}),
 		});
-		if (!response.ok) {
-			const error = await response.json().catch(() => ({
-				detail: response.statusText,
-			}));
-			throw new Error(
-				formatErrorDetail(error.detail, `HTTP error! status: ${response.status}`),
-			);
+		if (!resp.ok) {
+			const detail = await resp.json().catch(() => ({}));
+			throw new Error(detail.detail || `Diarize path failed (${resp.status})`);
 		}
-		return response.json();
+		return resp.json();
 	}
 }

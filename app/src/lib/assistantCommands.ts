@@ -15,8 +15,8 @@ const ROUTES = {
 	home: "/",
 	voices: "/voices",
 	workspace: "/workspace",
-	adr: "/workspace/adr",
-	studio: "/workspace/studio",
+	adr: "/adr",
+	studio: "/studio",
 	audioStudio: "/audio-studio",
 	effects: "/effects",
 	models: "/models",
@@ -47,7 +47,7 @@ export function useAssistantCommands(): void {
 					const view = String(args.view ?? "");
 					const session = args.session ? String(args.session) : undefined;
 					if (view === "adr" && session) {
-						navigate({ to: "/workspace/adr", search: { session } });
+						navigate({ to: "/adr", search: { session } });
 					} else if (view in ROUTES) {
 						navigate({ to: ROUTES[view as ViewKey] });
 					}

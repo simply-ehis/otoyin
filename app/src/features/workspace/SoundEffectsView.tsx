@@ -57,7 +57,7 @@ export function FreeSoundsPanel() {
 
 	return (
 		<div className="space-y-3">
-			<div className="flex max-w-xl items-center gap-2">
+			<div className="flex max-w-4xl items-center gap-2">
 				<div className="relative flex-1">
 					<MagnifyingGlassIcon
 						aria-hidden="true"

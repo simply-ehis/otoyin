@@ -176,7 +176,7 @@ export function TelemetryPage() {
 
 	if (enabled === null) {
 		return (
-			<div className="flex max-w-3xl items-center gap-3">
+			<div className="flex max-w-4xl items-center gap-3">
 				<span
 					aria-hidden="true"
 					className="size-3 animate-pulse rounded-full bg-strong"

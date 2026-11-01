@@ -91,7 +91,7 @@ export class ApiClientLibrary extends DiarizeMethods {
 		form.append("title", title);
 		form.append("kind", kind);
 		form.append("source", source);
-		const res = await fetch(`${this.getBaseUrl()}/library/save-generated-audio`, {
+		const res = await this.fetchWithAuth("/library/save-generated-audio", {
 			method: "POST",
 			body: form,
 		});
