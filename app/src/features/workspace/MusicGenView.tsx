@@ -55,8 +55,6 @@ export function MusicGenView() {
 	const MUSIC_ENGINES = [
 		{ id: "acestep_gguf", label: "ACE-Step 1.5 GGUF" },
 		{ id: "heartmula", label: "HeartMuLa 3B" },
-		{ id: "stable_audio", label: "Stable Audio Open (SFX)" },
-		{ id: "sa3_sfx", label: "Stable Audio 3 Small SFX" },
 		{ id: "minimax_music3", label: "MiniMax Music 3" },
 		{ id: "cloud", label: "Cloud (BYOK)" },
 	];

@@ -1,5 +1,5 @@
 import {
-	CpuChipIcon as BotIcon,
+	ChatBubbleLeftRightIcon as AiIcon,
 	QuestionMarkCircleIcon,
 	SparklesIcon,
 } from "@heroicons/react/24/outline";
@@ -92,7 +92,7 @@ export function AppHeader({
 					aria-label="Toggle AI Assistant"
 					aria-pressed={assistantOpen}
 				>
-					<BotIcon className="size-4" aria-hidden="true" />
+					<AiIcon className="size-4" aria-hidden="true" />
 				</button>
 			</div>
 		</header>

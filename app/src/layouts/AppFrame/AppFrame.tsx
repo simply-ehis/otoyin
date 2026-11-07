@@ -263,7 +263,9 @@ export function AppFrame({ children }: AppFrameProps) {
 				{/* Main layout: sidebar + content + assistant panel */}
 				<div className="flex flex-1 min-h-0 overflow-hidden">
 					<Sidebar />
-					<div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+					<Suspense fallback={<div className="flex h-full items-center justify-center text-muted-foreground">Loading...</div>}>
+						{children}
+					</Suspense>
 
 					{/* Assistant slide-in panel */}
 					<WhenReady ready={assistantOpen}>

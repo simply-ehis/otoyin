@@ -1,13 +1,11 @@
 import {
 	BoltIcon as Bolt,
 	BookOpenIcon as BookOpen,
-	SignalIcon as Captures,
 	ChartBarIcon as Chart,
 	ChevronDoubleLeftIcon,
 	ChevronLeftIcon,
 	ClockIcon as Clock,
 	ArrowDownTrayIcon as Download,
-	SparklesIcon as Effects,
 	FilmIcon as Film,
 	GlobeAltIcon as Globe,
 	QuestionMarkCircleIcon as Help,
@@ -19,13 +17,15 @@ import {
 	PuzzlePieceIcon as PuzzlePiece,
 	ScissorsIcon as Scissors,
 	CogIcon as Settings,
+	SparklesIcon as Sparkles,
 	Square2StackIcon as Stack,
 	ShoppingBagIcon as Store,
+	WrenchScrewdriverIcon as Tools,
 	UsersIcon as Users,
 	XMarkIcon as XMark,
 } from "@heroicons/react/24/outline";
 import { Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ClipboardIndicator } from "@/features/clipboard/ClipboardIndicator";
 import { cn } from "@/lib/utils/cn";
@@ -42,6 +42,7 @@ interface NavItem {
 interface NavGroup {
 	label: string;
 	description: string;
+	icon: Icon;
 	items: NavItem[];
 }
 
@@ -50,13 +51,14 @@ interface NavGroup {
  * Duplicate /workspace/* paths are retired in favor of their top-level
  * canonical equivalents; retired paths redirect in router.tsx.
  *
- * Mobile: below the breakpoint the rail collapses to a hamburger that opens
- * an overlay drawer. Desktop: inline collapsible rail beside content.
+ * Collapsed mode: shows group icons; hover reveals a flyout with child items.
+ * Accordion: opening one group closes all others.
  */
 const NAV_GROUPS: NavGroup[] = [
 	{
 		label: "Create",
 		description: "Generate speech, clone voices, and write songs",
+		icon: Sparkles,
 		items: [
 			{ path: "/", label: "sidebar.generate", icon: Home },
 			{ path: "/voices", label: "sidebar.voices", icon: Mic },
@@ -67,6 +69,7 @@ const NAV_GROUPS: NavGroup[] = [
 	{
 		label: "Studio",
 		description: "Record, arrange, and produce audio",
+		icon: Music,
 		items: [
 			{ path: "/audio-studio", label: "sidebar.audioStudio", icon: Music },
 			{ path: "/stories", label: "sidebar.stories", icon: BookOpen },
@@ -84,8 +87,9 @@ const NAV_GROUPS: NavGroup[] = [
 	{
 		label: "Voice & Transcription",
 		description: "Capture, translate, and analyze spoken audio",
+		icon: Mic,
 		items: [
-			{ path: "/captures", label: "sidebar.captures", icon: Captures },
+			{ path: "/captures", label: "sidebar.captures", icon: Mic },
 			{ path: "/translate", label: "sidebar.translate", icon: Globe },
 			{ path: "/pitch", label: "sidebar.pitchMap", icon: Clock },
 			{ path: "/spectrogram", label: "sidebar.spectrogram", icon: Chart },
@@ -95,14 +99,15 @@ const NAV_GROUPS: NavGroup[] = [
 	{
 		label: "Processing",
 		description: "Clean, enhance, and isolate audio",
+		icon: Tools,
 		items: [
-			{ path: "/effects", label: "sidebar.effects", icon: Effects },
+			{ path: "/effects", label: "sidebar.effects", icon: Sparkles },
 			{
 				path: "/noise-reduction",
 				label: "sidebar.noiseReduction",
 				icon: Scissors,
 			},
-			{ path: "/audio-enhance", label: "sidebar.audioEnhance", icon: Effects },
+			{ path: "/audio-enhance", label: "sidebar.audioEnhance", icon: Sparkles },
 			{
 				path: "/vocal-isolation",
 				label: "sidebar.vocalIsolation",
@@ -113,6 +118,7 @@ const NAV_GROUPS: NavGroup[] = [
 	{
 		label: "Video",
 		description: "Dub, preview, and import video",
+		icon: Film,
 		items: [
 			{ path: "/dubbing", label: "sidebar.dubbing", icon: Film },
 			{ path: "/video", label: "sidebar.video", icon: Film },
@@ -122,30 +128,34 @@ const NAV_GROUPS: NavGroup[] = [
 	{
 		label: "Music",
 		description: "Generate and arrange music",
+		icon: Music,
 		items: [{ path: "/music-gen", label: "sidebar.musicGen", icon: Music }],
 	},
 	{
 		label: "Library",
 		description: "Your audio library and captured clips",
+		icon: Library,
 		items: [{ path: "/library", label: "sidebar.library", icon: Library }],
 	},
 	{
 		label: "Store",
 		description: "Marketplace for models and voice packs",
+		icon: Store,
 		items: [{ path: "/store", label: "sidebar.store", icon: Store }],
 	},
 	{
 		label: "Settings",
 		description: "App configuration and account",
+		icon: Settings,
 		items: [{ path: "/settings", label: "sidebar.settings", icon: Settings }],
 	},
 	{
 		label: "Help",
 		description: "Support, docs, and what's new",
+		icon: Help,
 		items: [
 			{ path: "/help", label: "sidebar.help", icon: Help },
 			{ path: "/whats-new", label: "sidebar.whatsNew", icon: Help },
-			{ path: "/offers", label: "sidebar.offers", icon: Help },
 			{ path: "/projects", label: "sidebar.projects", icon: Help },
 			{
 				path: "/community-presets",
@@ -164,13 +174,13 @@ export function Sidebar() {
 	const sidebarOpen = useUIStore((s) => s.sidebarOpen);
 	const setSidebarOpen = useUIStore((s) => s.setSidebarOpen);
 	const storeSidebarWidth = useUIStore((s) => s.sidebarWidth);
-	const [sidebarWidth, setSidebarWidth] = useState(() => storeSidebarWidth);
+	const [sidebarWidth] = useState(() => storeSidebarWidth);
 	const mobileDrawerOpen = useUIStore((s) => s.mobileDrawerOpen);
 	const setMobileDrawerOpen = useUIStore((s) => s.setMobileDrawerOpen);
-	const [openGroups, setOpenGroups] = useState<Set<string>>(
-		() => new Set(NAV_GROUPS.map((g) => g.label)),
-	);
+	const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set());
+	const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
 	const [isMobile, setIsMobile] = useState(false);
+	const flyoutRef = useRef<HTMLDivElement | null>(null);
 
 	useEffect(() => {
 		const check = () => setIsMobile(window.innerWidth < 768);
@@ -182,15 +192,14 @@ export function Sidebar() {
 	const isActive = (path: string) =>
 		location.pathname === path || location.pathname.startsWith(`${path}/`);
 
-	const isGroupActive = (group: NavGroup) =>
-		group.items.some((item) => isActive(item.path));
-
 	const toggleGroup = (label: string) => {
 		setOpenGroups((prev) => {
 			const next = new Set(prev);
 			if (next.has(label)) {
 				next.delete(label);
 			} else {
+				// Accordion: close all others when opening one
+				next.clear();
 				next.add(label);
 			}
 			return next;
@@ -203,9 +212,23 @@ export function Sidebar() {
 		}
 	};
 
+	// Close flyout on click outside (collapsed mode)
+	useEffect(() => {
+		if (!hoveredGroup) {
+			return;
+		}
+		const handleClick = (e: MouseEvent) => {
+			if (flyoutRef.current && !flyoutRef.current.contains(e.target as Node)) {
+				setHoveredGroup(null);
+			}
+		};
+		document.addEventListener("mousedown", handleClick);
+		return () => document.removeEventListener("mousedown", handleClick);
+	}, [hoveredGroup]);
+
 	return (
 		<>
-			{/* Mobile hamburger — only visible on small screens */}
+			{/* Mobile hamburger */}
 			{isMobile && (
 				<button
 					type="button"
@@ -273,33 +296,6 @@ export function Sidebar() {
 					</div>
 				)}
 
-				{/* Resize handle — desktop only */}
-				{sidebarOpen && !isMobile && (
-					<hr
-						aria-orientation="vertical"
-						aria-label="Resize sidebar"
-						tabIndex={0}
-						className="absolute top-0 right-0 h-full w-1 cursor-col-resize hover:w-1.5 hover:bg-border bg-transparent transition-colors touch-none border-none"
-						onMouseDown={(e) => {
-							const startX = e.clientX;
-							const startWidth = sidebarWidth;
-							const onMove = (ev: MouseEvent) => {
-								const next = Math.min(
-									400,
-									Math.max(200, startWidth + ev.clientX - startX),
-								);
-								setSidebarWidth(next);
-							};
-							const onUp = () => {
-								window.removeEventListener("mousemove", onMove);
-								window.removeEventListener("mouseup", onUp);
-							};
-							window.addEventListener("mousemove", onMove);
-							window.addEventListener("mouseup", onUp);
-						}}
-					/>
-				)}
-
 				{/* Navigation — category groups */}
 				<nav
 					className="flex-1 overflow-y-auto py-2 px-1.5 scrollbar-thin"
@@ -308,46 +304,64 @@ export function Sidebar() {
 					<ul className="space-y-1">
 						{NAV_GROUPS.map((group) => {
 							const open = openGroups.has(group.label);
-							const groupActive = isGroupActive(group);
+							const hovered = hoveredGroup === group.label;
 							return (
-								<li key={group.label} className="mb-1">
+								<li
+									key={group.label}
+									className="relative mb-1"
+									onMouseEnter={() => {
+										if (!sidebarOpen && !isMobile) {
+											setHoveredGroup(group.label);
+										}
+									}}
+									onMouseLeave={() => {
+										if (!sidebarOpen && !isMobile) {
+											setHoveredGroup(null);
+										}
+									}}
+								>
+									{/* Group header button */}
 									<button
 										type="button"
 										aria-expanded={open}
 										aria-label={group.label}
 										onClick={() => toggleGroup(group.label)}
-										className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground"
+										className={cn(
+											"flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground",
+											!sidebarOpen && !isMobile && "justify-center px-1.5",
+										)}
 									>
-										<svg
-											className={cn(
-												"size-3.5 shrink-0 transition-transform duration-200",
-												open && "rotate-90",
-											)}
-											xmlns="http://www.w3.org/2000/svg"
-											width="16"
-											height="16"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											strokeWidth="2"
-											strokeLinecap="round"
-											strokeLinejoin="round"
+										<group.icon
+											className="size-4 shrink-0"
 											aria-hidden="true"
-										>
-											<polyline points="6 9 12 15 18 9" />
-										</svg>
-										<span className="truncate">{group.label}</span>
-										{sidebarOpen && !isMobile && (
-											<span className="ml-auto text-xs text-muted-foreground/60">
-												{groupActive
-													? t("sidebar.showMoreTabs_one", {
-															count: 0,
-														})
-													: ""}
-											</span>
+										/>
+										{sidebarOpen && (
+											<span className="truncate">{group.label}</span>
+										)}
+										{sidebarOpen && (
+											<svg
+												className={cn(
+													"size-3.5 shrink-0 transition-transform duration-200 ml-auto",
+													open && "rotate-90",
+												)}
+												xmlns="http://www.w3.org/2000/svg"
+												width="16"
+												height="16"
+												viewBox="0 0 24 24"
+												fill="none"
+												stroke="currentColor"
+												strokeWidth="2"
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												aria-hidden="true"
+											>
+												<polyline points="6 9 12 15 18 9" />
+											</svg>
 										)}
 									</button>
-									{sidebarOpen && open ? (
+
+									{/* Expanded mode: show child items */}
+									{sidebarOpen && open && (
 										<ul className="mt-1 space-y-0.5 pl-4 border-l border-border/50">
 											{group.items.map((item) => {
 												const active = isActive(item.path);
@@ -371,19 +385,14 @@ export function Sidebar() {
 																className="size-4 shrink-0"
 																aria-hidden="true"
 															/>
-															<span
-																className={cn(
-																	"truncate transition-opacity duration-150",
-																	sidebarOpen ? "opacity-100" : "sr-only",
-																)}
-															>
+															<span className="truncate transition-opacity duration-150 opacity-100">
 																{t(item.label)}
 															</span>
 														</Link>
 													</li>
 												);
 											})}
-											{sidebarOpen && group.description && !isMobile && (
+											{group.description && (
 												<li>
 													<p
 														className="px-2.5 py-1 text-[10px] text-muted-foreground/60 truncate"
@@ -394,21 +403,68 @@ export function Sidebar() {
 												</li>
 											)}
 										</ul>
-									) : null}
+									)}
+
+									{/* Collapsed mode: hover flyout */}
+									{!sidebarOpen && !isMobile && hovered && (
+										<div
+											ref={flyoutRef}
+											className="absolute left-full top-0 z-50 ml-2 w-56 rounded-lg border border-border bg-background shadow-lg py-2"
+										>
+											<div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 border-b border-border/50 mb-1">
+												{group.label}
+											</div>
+											<ul className="space-y-0.5 px-1">
+												{group.items.map((item) => {
+													const active = isActive(item.path);
+													return (
+														<li key={item.path}>
+															<Link
+																to={item.path}
+																title={t(item.label)}
+																aria-label={t(item.label)}
+																className={cn(
+																	"flex items-center gap-2.5 min-w-0 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors",
+																	active
+																		? "bg-accent-muted text-accent-ink"
+																		: "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+																)}
+																aria-current={active ? "page" : undefined}
+																onClick={() => setHoveredGroup(null)}
+															>
+																<item.icon
+																	className="size-4 shrink-0"
+																	aria-hidden="true"
+																/>
+																<span className="truncate">
+																	{t(item.label)}
+																</span>
+															</Link>
+														</li>
+													);
+												})}
+											</ul>
+											{group.description && (
+												<p className="px-3 py-1 mt-1 text-[10px] text-muted-foreground/60 border-t border-border/50">
+													{group.description}
+												</p>
+											)}
+										</div>
+									)}
 								</li>
 							);
 						})}
 					</ul>
 				</nav>
 
-				{/* Clipboard indicator — shows clip status + opens panel */}
+				{/* Clipboard indicator */}
 				{sidebarOpen && !isMobile && (
 					<div className="px-1.5 pb-0.5">
 						<ClipboardIndicator />
 					</div>
 				)}
 
-				{/* Mini-game — tiny access, smaller than a normal tab */}
+				{/* Mini-game */}
 				{!isMobile && (
 					<div className="border-t border-border/50 mx-1.5 pt-1.5 pb-0.5">
 						<button

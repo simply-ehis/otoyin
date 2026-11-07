@@ -125,7 +125,7 @@ def _get_faster_whisper_configs() -> list[ModelConfig]:
     """
     return [
         ModelConfig(
-            model_name="whisper-tiny-en",
+            model_name="faster-whisper-tiny-en",
             display_name="Whisper Tiny EN (faster-whisper)",
             engine="faster-whisper",
             hf_repo_id="Systran/faster-whisper-tiny.en",
@@ -135,7 +135,7 @@ def _get_faster_whisper_configs() -> list[ModelConfig]:
             pip_packages=["faster-whisper>=1.0.0"],
         ),
         ModelConfig(
-            model_name="whisper-base-en",
+            model_name="faster-whisper-base-en",
             display_name="Whisper Base EN (faster-whisper)",
             engine="faster-whisper",
             hf_repo_id="Systran/faster-whisper-base.en",
@@ -177,7 +177,7 @@ def _get_faster_whisper_configs() -> list[ModelConfig]:
             pip_packages=["faster-whisper>=1.0.0"],
         ),
         ModelConfig(
-            model_name="whisper-large-v3-turbo",
+            model_name="faster-whisper-large-v3-turbo",
             display_name="Whisper Large-v3-Turbo (faster-whisper)",
             engine="faster-whisper",
             hf_repo_id="Systran/faster-whisper-large-v3-turbo",
