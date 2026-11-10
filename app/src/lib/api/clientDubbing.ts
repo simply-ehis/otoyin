@@ -97,7 +97,7 @@ export class DubbingMethods extends ContentMethods {
 
 	async moveResizeDubSegment(
 		segmentId: number,
-		patch: { start?: number; end?: number },
+		patch: { start?: number; end?: number; speed?: number; original_duration?: number },
 	): Promise<DubSegment> {
 		return this.request<DubSegment>(`/dubbing/segment/${segmentId}`, {
 			method: "PATCH",

@@ -68,6 +68,6 @@ async def translate_batch(data: TranslateBatchRequest):
 @router.get("/translate/languages")
 async def list_languages():
     """List all supported translation languages."""
-    from ..services.translation import SUPPORTED_LANGUAGES
+    from ..services.translation import SUPPORTED_LANGUAGES, argos_packs_installed
 
-    return {"languages": SUPPORTED_LANGUAGES}
+    return {"languages": SUPPORTED_LANGUAGES, "argos_packs_available": argos_packs_installed()}

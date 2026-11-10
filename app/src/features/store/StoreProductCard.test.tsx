@@ -101,14 +101,31 @@ describe("StoreProductCard — cached state (one-step Activate)", () => {
 });
 
 describe("StoreProductCard — needs-download state", () => {
-	it("renders the Free chip + Download for a free unowned model", () => {
+	it("renders the Free chip + Buy Free CTA for a free unowned model", () => {
 		renderCard(makeProduct());
 		const chip = screen.getByText("Free");
 		expect(chip).toBeInTheDocument();
 		expect(chip.className).toContain("bg-success-soft");
 		expect(
-			screen.getByRole("button", { name: "Download" }),
+			screen.getByRole("button", { name: "Buy Free" }),
 		).toBeInTheDocument();
+	});
+
+	it("Buy Free routes into the detail/checkout modal (unowned installs go through checkout)", async () => {
+		const user = userEvent.setup();
+		const onDetail = vi.fn();
+		render(
+			<StoreProductCard
+				product={makeProduct()}
+				owned={false}
+				installed={false}
+				localStatus="not_downloaded"
+				isDownloading={false}
+				onDetail={onDetail}
+			/>,
+		);
+		await user.click(screen.getByRole("button", { name: "Buy Free" }));
+		expect(onDetail).toHaveBeenCalledWith(makeProduct());
 	});
 });
 

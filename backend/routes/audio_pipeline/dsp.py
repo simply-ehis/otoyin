@@ -13,7 +13,7 @@ from pathlib import Path
 
 import numpy as np
 from fastapi import APIRouter, File, HTTPException, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from ... import config
@@ -118,6 +118,31 @@ async def upload(file: UploadFile = File(...)) -> dict:
         path.unlink(missing_ok=True)
         raise HTTPException(status_code=500, detail=ERR_INTERNAL)
     return {"audio_path": str(storage), "size": total_size}
+
+
+@router.get("/dsp/stream")
+def stream_stored_audio(path: str) -> FileResponse:
+    """Stream a previously stored audio file (e.g. from /dsp/upload or dspUpload).
+
+    Resolves the DB-style storage path against the data dir (traversal-safe)
+    and streams it back with an audio content type. Used by tabs that receive
+    a `?path=` handoff link (e.g. Send to Stems / Send to Effects).
+    """
+    resolved = config.resolve_storage_path(path)
+    if resolved is None or not resolved.exists() or not resolved.is_file():
+        raise HTTPException(status_code=404, detail=ERR_AUDIO_NOT_FOUND)
+    ext = resolved.suffix.lower().lstrip(".")
+    media_type = {
+        "wav": "audio/wav",
+        "mp3": "audio/mpeg",
+        "m4a": "audio/mp4",
+        "ogg": "audio/ogg",
+        "flac": "audio/flac",
+        "aac": "audio/aac",
+        "webm": "audio/webm",
+        "opus": "audio/ogg",
+    }.get(ext, "application/octet-stream")
+    return FileResponse(resolved, media_type=media_type, filename=resolved.name)
 
 
 @router.get("/dsp/capabilities")

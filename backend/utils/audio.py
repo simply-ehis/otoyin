@@ -10,6 +10,28 @@ import soundfile as sf
 logger = logging.getLogger(__name__)
 
 
+def resample_audio(
+    audio: np.ndarray,
+    orig_sr: int,
+    target_sr: int,
+) -> np.ndarray:
+    """Resample a mono waveform from ``orig_sr`` to ``target_sr``.
+
+    No-op (returned unchanged) when the rates match. Uses librosa's
+    polyphase resampler to match the rest of the codebase.
+    """
+    if orig_sr == target_sr:
+        return np.asarray(audio, dtype=np.float32)
+    import librosa
+
+    resampled = librosa.resample(
+        np.asarray(audio, dtype=np.float32),
+        orig_sr=orig_sr,
+        target_sr=target_sr,
+    )
+    return resampled.astype(np.float32)
+
+
 def decode_wav_bytes(data: bytes) -> tuple[np.ndarray, int]:
     """Decode WAV (or other soundfile-readable) bytes to ``(audio, sample_rate)``.
 

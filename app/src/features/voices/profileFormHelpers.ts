@@ -8,6 +8,9 @@ import { LANGUAGE_CODES, type LanguageCode } from "@/lib/constants/languages";
 
 export const MAX_AUDIO_DURATION_SECONDS = 30;
 
+/** Minimum duration (seconds) for a voice-cloning sample. */
+export const MIN_CLONE_DURATION_SECONDS = 5;
+
 // Re-export for backward compatibility
 export { PRESET_ONLY_ENGINES, DEFAULT_ENGINE_OPTIONS };
 

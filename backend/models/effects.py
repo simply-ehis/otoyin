@@ -50,6 +50,13 @@ class EffectPresetResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PreviewEffectsPathRequest(BaseModel):
+    """Request to apply effects to a stored audio file (storage path)."""
+
+    audio_path: str
+    effects_chain: list[EffectConfig]
+
+
 class ApplyEffectsRequest(BaseModel):
     """Request to apply effects to an existing generation."""
 

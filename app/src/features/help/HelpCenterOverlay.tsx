@@ -20,16 +20,27 @@ const CATEGORIES = [
 export function HelpCenter({
 	open,
 	onClose,
+	initialQuery,
 }: {
 	open: boolean;
 	onClose: () => void;
+	/** Pre-filled search (e.g. opened from the Ctrl+K palette with a query). */
+	initialQuery?: string;
 }) {
 	const navigate = useNavigate();
-	const [query, setQuery] = useState("");
+	const [query, setQuery] = useState(initialQuery ?? "");
 	const [results, setResults] = useState<HelpSearchResult[]>([]);
 	const [features, setFeatures] = useState<Feature[]>([]);
 	const [showAll, setShowAll] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
+
+	// Reopening with a new initialQuery (e.g. from the Ctrl+K palette) must
+	// re-seed the search box, not keep the stale one.
+	useEffect(() => {
+		if (open) {
+			setQuery(initialQuery ?? "");
+		}
+	}, [open, initialQuery]);
 
 	useEffect(() => {
 		if (!open) {

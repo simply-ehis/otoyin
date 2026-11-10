@@ -70,6 +70,45 @@ async def preview_effects(
     )
 
 
+@router.post("/effects/preview-path")
+async def preview_effects_path(data: models.PreviewEffectsPathRequest):
+    """Apply effects to a stored audio file (storage path) and stream back without saving.
+
+    Used by Send-to handoffs (e.g. Stems → Effects) where the source is a
+    dspUpload capture rather than a generation. The path is resolved against
+    the data dir (traversal-safe).
+    """
+    resolved_source_path = config.resolve_storage_path(data.audio_path)
+    if resolved_source_path is None or not resolved_source_path.exists():
+        raise HTTPException(status_code=404, detail=ERR_AUDIO_NOT_FOUND)
+
+    from ...utils.audio import load_audio
+    from ...utils.effects import apply_effects, validate_effects_chain
+
+    chain_dicts = [e.model_dump() for e in data.effects_chain]
+    error = validate_effects_chain(chain_dicts)
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+
+    audio, sample_rate = await asyncio.to_thread(load_audio, str(resolved_source_path))
+    processed = await asyncio.to_thread(apply_effects, audio, sample_rate, chain_dicts)
+
+    import soundfile as sf
+
+    buf = io.BytesIO()
+    await asyncio.to_thread(lambda: sf.write(buf, processed, sample_rate, format="WAV"))
+    buf.seek(0)
+
+    return StreamingResponse(
+        buf,
+        media_type="audio/wav",
+        headers={
+            "Content-Disposition": "inline; filename=effect_preview.wav",
+            "Cache-Control": "no-cache, no-store",
+        },
+    )
+
+
 @router.get("/effects/available", response_model=models.AvailableEffectsResponse)
 async def get_available_effects():
     """List all available effect types with parameter definitions."""

@@ -1,10 +1,14 @@
 import {
+	AdjustmentsHorizontalIcon,
 	ArrowDownTrayIcon,
 	ArrowPathIcon,
 	ArrowUturnLeftIcon,
 	EllipsisHorizontalIcon,
 	PauseIcon,
+	PencilSquareIcon,
 	PlayIcon,
+	SparklesIcon,
+	SpeakerWaveIcon,
 	StarIcon,
 	TrashIcon,
 	XMarkIcon,
@@ -24,6 +28,7 @@ import {
 	useHistory,
 	useImportGeneration,
 } from "@/lib/hooks/useHistory";
+import { useSendTo } from "@/lib/hooks/useSendTo";
 import { cn } from "@/lib/utils/cn";
 import { formatDate, formatDuration } from "@/lib/utils/format";
 import { usePlayerStore } from "@/stores/playerStore";
@@ -377,6 +382,31 @@ function HistoryRow({
 		void queryClient.invalidateQueries({ queryKey: ["history"] });
 	const exportAudio = useExportGenerationAudio();
 	const exportZip = useExportGeneration();
+	const sendTo = useSendTo();
+	const [handoffPending, setHandoffPending] = useState(false);
+
+	const sendToPathRoute = async (
+		gen: HistoryResponse,
+		route: "/noise-reduction" | "/audio-enhance",
+	) => {
+		setHandoffPending(true);
+		try {
+			const resp = await fetch(apiClient.getAudioUrl(gen.id));
+			if (!resp.ok) {
+				throw new Error(`Could not load generation audio (${resp.status})`);
+			}
+			const blob = await resp.blob();
+			const { audio_path } = await apiClient.dspUpload(
+				blob,
+				`${(gen.text || "generation").slice(0, 30).replace(/[^\w-]/g, "_")}.wav`,
+			);
+			sendTo(route, { path: audio_path });
+		} catch (error) {
+			showStudioErrorToast(error);
+		} finally {
+			setHandoffPending(false);
+		}
+	};
 	const toggleFavorite = useMutation({
 		mutationFn: () => apiClient.toggleFavorite(gen.id),
 		onSuccess: invalidateHistory,
@@ -521,6 +551,45 @@ function HistoryRow({
 								<ArrowDownTrayIcon className="size-4" aria-hidden="true" />
 								Export package
 							</DropdownMenuItem>
+							{playable ? (
+								<DropdownMenuItem
+									onClick={() => sendTo("/effects", { generation: gen.id })}
+								>
+									<SparklesIcon className="size-4" aria-hidden="true" />
+									Send to Effects
+								</DropdownMenuItem>
+							) : null}
+							{playable ? (
+								<DropdownMenuItem
+									onClick={() => sendTo("/transcript", { generation: gen.id })}
+								>
+									<PencilSquareIcon className="size-4" aria-hidden="true" />
+									Send to Transcript Edit
+								</DropdownMenuItem>
+							) : null}
+							{playable ? (
+								<>
+									<DropdownMenuItem
+										disabled={handoffPending}
+										onClick={() =>
+											void sendToPathRoute(gen, "/noise-reduction")
+										}
+									>
+										<SpeakerWaveIcon className="size-4" aria-hidden="true" />
+										Send to Noise Reduction
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										disabled={handoffPending}
+										onClick={() => void sendToPathRoute(gen, "/audio-enhance")}
+									>
+										<AdjustmentsHorizontalIcon
+											className="size-4"
+											aria-hidden="true"
+										/>
+										Send to Audio Enhance
+									</DropdownMenuItem>
+								</>
+							) : null}
 							{failed ? (
 								<DropdownMenuItem onClick={() => retry.mutate()}>
 									<ArrowPathIcon className="size-4" aria-hidden="true" />

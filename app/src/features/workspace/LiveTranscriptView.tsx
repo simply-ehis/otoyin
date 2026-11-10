@@ -1,4 +1,7 @@
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { apiClient } from "@/lib/api/client";
 import type { WhisperModelSize } from "@/lib/api/types";
 import type { LanguageCode } from "@/lib/constants/languages";
 import { ALL_LANGUAGES } from "@/lib/constants/languages";
@@ -42,6 +45,24 @@ export function LiveTranscriptView() {
 	const [lang, setLang] = useState<LanguageCode>("en");
 	const [useLang, setUseLang] = useState(true);
 	const { toast } = useToast();
+
+	// STT model install state, shared with the Store. Cloud (BYOK) has no Store
+	// artifact, so it is always treated as available.
+	const sttModelsQuery = useQuery({
+		queryKey: ["modelStatus"],
+		queryFn: () => apiClient.getModelStatus(),
+		staleTime: 30_000,
+	});
+	const sttModels = sttModelsQuery.data?.models ?? [];
+	const sttInstalled = (id: string) => {
+		if (id === "cloud") return true;
+		return !!sttModels.find(
+			(m) => m.engine === "whisper" && m.model_size === id,
+		)?.downloaded;
+	};
+	const sttDownloading = (id: string) =>
+		!!sttModels.find((m) => m.engine === "whisper" && m.model_size === id)
+			?.downloading;
 
 	const stt = useStreamingSTT({
 		modelId: model,
@@ -96,6 +117,7 @@ export function LiveTranscriptView() {
 						<Select
 							value={model ?? ""}
 							onValueChange={(v) => setModel(v as WhisperModelSize)}
+							disabled={model && sttDownloading(model)}
 						>
 							<SelectTrigger
 								className="h-8 w-36 text-xs"
@@ -104,13 +126,35 @@ export function LiveTranscriptView() {
 								<SelectValue>{model ?? "Select a model"}</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
-								{MODEL_OPTIONS.map((m) => (
-									<SelectItem key={m.value} value={m.value}>
-										{m.label}
-									</SelectItem>
-								))}
+								{MODEL_OPTIONS.map((m) => {
+									const installed = sttInstalled(m.value);
+									const downloading = sttDownloading(m.value);
+									return (
+										<SelectItem
+											key={m.value}
+											value={m.value}
+											disabled={!installed && !downloading}
+										>
+											{m.label}
+											{!installed && !downloading ? " — not installed" : ""}
+										</SelectItem>
+									);
+								})}
 							</SelectContent>
 						</Select>
+						{model && !sttInstalled(model) && (
+							<div className="flex items-center gap-2 text-xs">
+								<span className="text-muted-foreground">
+									Model not installed
+								</span>
+								<Link
+									to="/store"
+									className="rounded-sm underline transition-colors hover:text-foreground hover:underline"
+								>
+									Get from Store
+								</Link>
+							</div>
+						)}
 						<Select
 							value={useLang ? lang : "_auto"}
 							onValueChange={(v) => {

@@ -1,6 +1,8 @@
 import { CheckIcon } from "@heroicons/react/24/outline";
 import { cn } from "@/lib/utils/cn";
 import {
+	BACKGROUND_PATTERN_META,
+	BACKGROUND_PATTERNS,
 	PLAIN_THEMES,
 	SPECIAL_THEMES,
 	THEME_META,
@@ -122,6 +124,73 @@ function AccentHueSlider() {
 	);
 }
 
+/** Background tile picker: Off / Line in motion / Waveform. */
+function BackgroundPicker() {
+	const backgroundPattern = useUIStore((s) => s.backgroundPattern);
+	const setBackgroundPattern = useUIStore((s) => s.setBackgroundPattern);
+	return (
+		<fieldset className="grid grid-cols-3 gap-2">
+			<legend className="sr-only">Background pattern</legend>
+			{BACKGROUND_PATTERNS.map((pattern) => {
+				const active = backgroundPattern === pattern;
+				const meta = BACKGROUND_PATTERN_META[pattern];
+				return (
+					<button
+						key={pattern}
+						type="button"
+						onClick={() => setBackgroundPattern(pattern)}
+						aria-pressed={active}
+						title={meta.hint}
+						className={cn(
+							"relative flex flex-col items-center gap-2 rounded-md border-2 p-2 transition-all duration-150",
+							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+							active
+								? "border-accent shadow-[0_0_12px_hsl(348_68%_58%/0.3)]"
+								: "border-border hover:border-strong",
+						)}
+					>
+						<span
+							aria-hidden="true"
+							className="grid h-14 w-full place-items-center overflow-hidden rounded-sm border border-border bg-card"
+							style={
+								pattern === "none"
+									? { background: "hsl(var(--theme-surface, 30 20% 96%))" }
+									: {
+											backgroundColor: "var(--pattern-color)",
+											WebkitMaskImage:
+												pattern === "waveform"
+													? "var(--pattern-tile-waveform)"
+													: "var(--pattern-tile)",
+											maskImage:
+												pattern === "waveform"
+													? "var(--pattern-tile-waveform)"
+													: "var(--pattern-tile)",
+											WebkitMaskSize:
+												pattern === "waveform" ? "96px 96px" : "120px 120px",
+											maskSize:
+												pattern === "waveform" ? "96px 96px" : "120px 120px",
+											WebkitMaskRepeat: "repeat",
+											maskRepeat: "repeat",
+											opacity: 0.6,
+										}
+							}
+						/>
+						<span className="text-xs font-medium leading-none text-muted-foreground">
+							{meta.label}
+						</span>
+						{active ? (
+							<span
+								aria-hidden="true"
+								className="absolute -right-1 -top-1 size-3 rounded-full border-2 border-background bg-accent"
+							/>
+						) : null}
+					</button>
+				);
+			})}
+		</fieldset>
+	);
+}
+
 /** Theme gallery: plain themes first, special looks below the fold line. */
 export function ThemeSelect() {
 	const theme = useUIStore((s) => s.theme);
@@ -169,6 +238,12 @@ export function ThemeSelect() {
 					/>
 				))}
 			</fieldset>
+			<div className="pt-1 border-t border-border">
+				<h3 className="mb-2 px-0.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+					Background
+				</h3>
+				<BackgroundPicker />
+			</div>
 			<div className="pt-1 border-t border-border">
 				<AccentHueSlider />
 			</div>

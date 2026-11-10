@@ -1,0 +1,35 @@
+Otoyin — License & Disclaimer
+=============================
+
+Otoyin is distributed under the GNU Affero General Public License v3.
+See LICENSE (repository root) for the full text.
+
+IMPORTANT — read before installing:
+
+Otoyin is provided "AS IS", WITHOUT WARRANTY OF ANY KIND, express or
+implied. You install and use it at your own risk.
+
+You are solely responsible for:
+
+  • What you do with Otoyin and with anything made using it, including
+    voice clones, synthetic media, transcripts, or other outputs —
+    and for complying with the laws of your jurisdiction and with any
+    consent, privacy, and impersonation requirements, wherever you use
+    it.
+  • The licenses of anything downloaded, imported, or added to the
+    app — whether by you or by the Store — including AI model weights,
+    voice packs, SoundFonts, plugins, and add-ons. Each has its own
+    license and terms. The author takes no responsibility for any
+    violation of those licenses or terms by you or by anyone you share
+    generated material with.
+  • The suitability, accuracy, legality, or safety of anything another
+    party adds to Otoyin — including third-party models, packs, and
+    plugins — and for compliance with their license terms, including
+    non-commercial or attribution requirements.
+  • Obtaining any rights, permissions, or clearances you need before
+    cloning or imitating any voice, or distributing anything you make.
+
+The author and contributors accept NO responsibility or liability for
+any use of Otoyin, for any violation of any third-party license, or for
+anything made with, or added to, the app. Installing this software
+means you accept these terms.

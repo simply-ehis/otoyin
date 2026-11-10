@@ -1,6 +1,7 @@
 /**
- * Shared voice-design option maps — single source of truth for both
- * VoiceDesignPanel copies (features/voices + components/VoiceProfiles).
+ * Shared voice-design option maps — single source of truth for the
+ * VoiceDesignPanel (features/voices). The components/VoiceProfiles copy was
+ * deleted with the orphan dir.
  * Accents are grouped by region/nationality; styles by use-case, so the
  * picker shows what each choice is for instead of a flat word list.
  */

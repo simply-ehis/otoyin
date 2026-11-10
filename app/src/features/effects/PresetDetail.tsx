@@ -4,6 +4,7 @@ import {
 	PlayIcon,
 	SparklesIcon,
 	TrashIcon,
+	XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -126,8 +127,18 @@ function GenerationPicker({
 /**
  * Preset detail: rename, chain edit, audition on a generation, save /
  * save-as / delete. Builtins are read-only except save-as-custom.
+ *
+ * `initialPreviewId` pre-selects a generation for audition (deep-link from
+ * "Send to Effects"). `previewPath` makes the audition run on a stored file
+ * instead of a generation (also a "Send to Effects" handoff).
  */
-export function PresetDetail() {
+export function PresetDetail({
+	initialPreviewId,
+	previewPath,
+}: {
+	initialPreviewId?: string;
+	previewPath?: string;
+} = {}) {
 	const { t } = useTranslation();
 	const queryClient = useQueryClient();
 	const selectedId = useEffectsStore((s) => s.selectedPresetId);
@@ -151,7 +162,12 @@ export function PresetDetail() {
 	const [saveAsOpen, setSaveAsOpen] = useState(false);
 	const [saveAsName, setSaveAsName] = useState("");
 	const [saveAsDescription, setSaveAsDescription] = useState("");
-	const [previewId, setPreviewId] = useState<string | null>(null);
+	const [previewId, setPreviewId] = useState<string | null>(
+		initialPreviewId ?? null,
+	);
+	const [activePreviewPath, setActivePreviewPath] = useState<string | null>(
+		previewPath ?? null,
+	);
 	const [previewing, setPreviewing] = useState(false);
 	const blobRef = useRef<string | null>(null);
 
@@ -204,12 +220,14 @@ export function PresetDetail() {
 		: "";
 
 	const preview = async () => {
-		if (!previewId || chain.length === 0) {
+		if ((!previewId && !activePreviewPath) || chain.length === 0) {
 			return;
 		}
 		setPreviewing(true);
 		try {
-			const blob = await apiClient.previewEffects(previewId, chain);
+			const blob = activePreviewPath
+				? await apiClient.previewEffectsPath(activePreviewPath, chain)
+				: await apiClient.previewEffects(previewId as string, chain);
 			if (blobRef.current) {
 				URL.revokeObjectURL(blobRef.current);
 			}
@@ -418,16 +436,49 @@ export function PresetDetail() {
 				<div className="flex flex-col gap-3">
 					<Label className="text-xs">{t("effects.preview.label")}</Label>
 					<div className="flex items-center gap-2">
-						<GenerationPicker
-							selectedId={previewId}
-							onSelect={(gen) => setPreviewId(gen.id)}
-							className="flex-1"
-						/>
+						{activePreviewPath ? (
+							<div
+								className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-secondary px-2 text-xs"
+								title={activePreviewPath}
+							>
+								<span className="min-w-0 flex-1 truncate">
+									<span className="text-muted-foreground">
+										{t("effects.preview.source", {
+											defaultValue: "Source:",
+										})}{" "}
+									</span>
+									{activePreviewPath.split(/[\\/]/).pop() ?? activePreviewPath}
+								</span>
+								<button
+									type="button"
+									aria-label={t("effects.preview.clearSource", {
+										defaultValue: "Clear source file",
+									})}
+									title={t("effects.preview.clearSource", {
+										defaultValue: "Clear source file",
+									})}
+									onClick={() => setActivePreviewPath(null)}
+									className="grid size-6 shrink-0 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-secondary-hover hover:text-foreground"
+								>
+									<XMarkIcon className="size-4" aria-hidden="true" />
+								</button>
+							</div>
+						) : (
+							<GenerationPicker
+								selectedId={previewId}
+								onSelect={(gen) => setPreviewId(gen.id)}
+								className="flex-1"
+							/>
+						)}
 						<Button
 							variant="outline"
 							size="sm"
 							className="h-8 shrink-0 gap-2"
-							disabled={!previewId || chain.length === 0 || previewing}
+							disabled={
+								(!previewId && !activePreviewPath) ||
+								chain.length === 0 ||
+								previewing
+							}
 							loading={previewing}
 							onClick={preview}
 						>
@@ -436,7 +487,12 @@ export function PresetDetail() {
 						</Button>
 					</div>
 					<p className="text-xs text-muted-foreground">
-						{t("effects.preview.hint")}
+						{activePreviewPath
+							? t("effects.preview.pathHint", {
+									defaultValue:
+										"Auditioning the file sent from another tab. Clear it to pick a generation.",
+								})
+							: t("effects.preview.hint")}
 					</p>
 				</div>
 			</div>

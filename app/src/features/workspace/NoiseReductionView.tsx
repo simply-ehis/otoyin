@@ -1,8 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
+import { useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import { ERR_TITLE_VALIDATION } from "@/lib/errorMessages";
 import { showStudioErrorToast } from "@/lib/errors";
+import { useSendTo } from "@/lib/hooks/useSendTo";
 import { Button } from "@/ui/button";
 import { Label, Separator, Spinner } from "@/ui/primitives";
 import { Slider } from "@/ui/slider";
@@ -12,11 +14,28 @@ import { UploadField } from "./UploadField";
 
 export function NoiseReductionView() {
 	const { toast } = useToast();
+	const sendTo = useSendTo();
+	const [sendingToEffects, setSendingToEffects] = useState(false);
+	const [sendingToTranscript, setSendingToTranscript] = useState(false);
 	const [audioPath, setAudioPath] = useState("");
 	const [fileName, setFileName] = useState("");
 	const [uploading, setUploading] = useState(false);
 	const [vadThreshold, setVadThreshold] = useState(0.5);
 	const [cleanedUrl, setCleanedUrl] = useState<string | null>(null);
+
+	// Deep-link: ?path=<storage_path> (e.g. from Generate) seeds the uploaded
+	// file without user interaction.
+	const handoff = useSearch({ from: "/noise-reduction" });
+	useEffect(() => {
+		const path = handoff.path;
+		if (!path) {
+			return;
+		}
+		setAudioPath(path);
+		setFileName(path.split(/[\\/]/).pop() ?? path);
+		setCleanedUrl(null);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [handoff.path]);
 
 	useEffect(() => {
 		return () => {
@@ -67,6 +86,63 @@ export function NoiseReductionView() {
 			return;
 		}
 		noiseMut.mutate();
+	}
+
+	const sendToEffects = async () => {
+		if (!cleanedUrl) {
+			toast({
+				title: "Nothing to send",
+				description: "Reduce noise on the audio before sending it to Effects.",
+				variant: "destructive",
+			});
+			return;
+		}
+		setSendingToEffects(true);
+		try {
+			const resp = await fetch(cleanedUrl);
+			if (!resp.ok) {
+				throw new Error(`Could not read cleaned audio (${resp.status})`);
+			}
+			const blob = await resp.blob();
+			const { audio_path } = await apiClient.dspUpload(
+				blob,
+				`${fileName || "cleaned"}-denoised.wav`,
+			);
+			sendTo("/effects", { path: audio_path });
+		} catch (error) {
+			showStudioErrorToast(error);
+		} finally {
+			setSendingToEffects(false);
+		}
+	};
+
+	async function sendToTranscript() {
+		if (!cleanedUrl) {
+			toast({
+				title: "Nothing to send",
+				description:
+					"Reduce noise on the audio before sending it to the Transcript editor.",
+				variant: "destructive",
+			});
+			return;
+		}
+		setSendingToTranscript(true);
+		try {
+			const resp = await fetch(cleanedUrl);
+			if (!resp.ok) {
+				throw new Error(`Could not read cleaned audio (${resp.status})`);
+			}
+			const blob = await resp.blob();
+			const file = new File([blob], `${fileName || "cleaned"}-denoised.wav`, {
+				type: blob.type || "audio/wav",
+			});
+			const imported = await apiClient.importGeneration(file);
+			sendTo("/transcript", { generation: imported.id });
+		} catch (error) {
+			showStudioErrorToast(error);
+		} finally {
+			setSendingToTranscript(false);
+		}
 	}
 
 	return (
@@ -120,7 +196,41 @@ export function NoiseReductionView() {
 
 			{cleanedUrl ? (
 				<section className="space-y-2 rounded-md border border-border bg-card p-3">
-					<h2 className="text-xs font-medium text-foreground">Cleaned audio</h2>
+					<div className="flex items-center justify-between gap-2">
+						<h2 className="text-xs font-medium text-foreground">
+							Cleaned audio
+						</h2>
+						<div className="flex items-center gap-1.5">
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								className="h-7 px-2 text-xs"
+								disabled={sendingToEffects}
+								title="Send the cleaned audio to Effects"
+								onClick={() => void sendToEffects()}
+							>
+								{sendingToEffects ? (
+									<Spinner size="xs" className="mr-1" />
+								) : null}
+								Send to Effects
+							</Button>
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								className="h-7 px-2 text-xs"
+								disabled={sendingToTranscript}
+								title="Send the cleaned audio to Transcript Edit"
+								onClick={() => void sendToTranscript()}
+							>
+								{sendingToTranscript ? (
+									<Spinner size="xs" className="mr-1" />
+								) : null}
+								Send to Transcript
+							</Button>
+						</div>
+					</div>
 					{/* biome-ignore lint/a11y/useMediaCaption: processed speech preview, no dialogue to caption */}
 					<audio
 						src={cleanedUrl}

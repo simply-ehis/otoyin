@@ -1,5 +1,6 @@
 import { PlusIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { useQuery } from "@tanstack/react-query";
+import { useSearch } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { RecordTakeButton } from "@/features/capture/RecordTakeButton";
 import { apiClient } from "@/lib/api/client";
@@ -89,6 +90,8 @@ export function EffectsTab() {
 	const setWorkingChain = useEffectsStore((s) => s.setWorkingChain);
 	const creating = useEffectsStore((s) => s.isCreatingNew);
 	const setCreating = useEffectsStore((s) => s.setIsCreatingNew);
+	// Handoff params from "Send to Effects" links (?generation=<id> | ?path=<storage_path>)
+	const handoff = useSearch({ from: "/effects" });
 
 	const {
 		data: presets,
@@ -219,7 +222,10 @@ export function EffectsTab() {
 					)}
 				</div>
 				<div className="min-w-0 flex-1 overflow-y-auto pr-1">
-					<PresetDetail />
+					<PresetDetail
+						initialPreviewId={handoff.generation}
+						previewPath={handoff.path}
+					/>
 				</div>
 			</div>
 		</div>

@@ -34,8 +34,8 @@
           "Korean"
         ],
         "installerIcon": "icons/icon.ico",
-        
-        
+        "license": "LICENSE-INSTALLER.txt",
+
         "installMode": "currentUser",
         "compression": "lzma"
       },

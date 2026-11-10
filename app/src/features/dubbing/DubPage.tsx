@@ -204,7 +204,15 @@ export function DubPage() {
 								selectedId={selectedId}
 								onSelect={setSelectedId}
 								onPreviewSegment={handlePreviewSegment}
-								onSegmentsChange={setSegments}
+								onSegmentsChange={(newSegments) => {
+									setSegments(newSegments);
+									if (
+										selectedId &&
+										!newSegments.some((s) => s.id === selectedId)
+									) {
+										setSelectedId(newSegments[0]?.id ?? null);
+									}
+								}}
 							/>
 						) : (
 							<DubbingTab />

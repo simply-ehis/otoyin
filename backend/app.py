@@ -47,6 +47,16 @@ class _JSONFormatter(logging.Formatter):
         return json.dumps(log_entry, default=str)
 
 
+# BUG-018 (Windows): a cp1252 stderr/stdout cannot encode non-ASCII paths
+# (e.g. a directory named 汉字.wav). Keep the console encoding but never raise
+# on unencodable chars — log them as \\uXXXX escapes instead.
+for _stream in (sys.stderr, sys.stdout):
+    try:
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(errors="backslashreplace")
+    except Exception:  # pragma: no cover - stream that cannot reconfigure
+        pass
+
 # Configure logging to match uvicorn's format with colors
 # Set OTOYIN_LOG_FORMAT=json for structured JSON output (legacy: TWENTYLABS_LOG_FORMAT).
 _log_format = os.environ.get("OTOYIN_LOG_FORMAT") or os.environ.get("TWENTYLABS_LOG_FORMAT", "text")

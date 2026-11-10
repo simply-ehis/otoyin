@@ -60,7 +60,6 @@ export function VoiceConverterView() {
 	const [uploading, setUploading] = useState<string | null>(null);
 	const [hasResult, setHasResult] = useState(false);
 	const [convertedBlob, setConvertedBlob] = useState<Blob | null>(null);
-	const [consentGiven, setConsentGiven] = useState(false);
 
 	function switchEngine(next: Engine) {
 		setEngine(next);
@@ -98,7 +97,11 @@ export function VoiceConverterView() {
 			apiClient.convertVoice({
 				audio_path: audioPath,
 				engine,
-				consent_given: consentGiven,
+				// Owner decision: no consent UI anywhere; responsibility is the
+				// user's (disclaimer lives in the installer). The backend
+				// attestation field is always satisfied — keeping the HTTP
+				// contract unchanged for other callers.
+				consent_given: true,
 				voice_pack: selectedPack,
 				transpose,
 				reference_audio_path: referencePath,
@@ -412,37 +415,15 @@ export function VoiceConverterView() {
 						</div>
 					) : null}
 
-					<div className="max-w-xl rounded-md border border-border bg-card p-3">
-						<label className="flex items-start gap-2 text-xs text-muted-foreground">
-							<input
-								type="checkbox"
-								className="mt-0.5 size-3.5 rounded border-border"
-								checked={consentGiven}
-								onChange={(e) => setConsentGiven(e.target.checked)}
-								aria-label="I confirm I have rights to use this audio"
-							/>
-							<span>
-								I confirm I have the necessary rights or consent to use the
-								source audio and any reference voice. Otoyin logs file hashes
-								locally for audit purposes.
-							</span>
-						</label>
-					</div>
-
 					<div className="flex items-center gap-2">
 						<Button
 							type="button"
 							size="sm"
 							disabled={
 								convertMut.isPending ||
-								!consentGiven ||
 								(engine === "rvc" && !installedPacks.length)
 							}
-							title={
-								consentGiven
-									? "Convert voice"
-									: "Accept consent to enable conversion"
-							}
+							title="Convert voice"
 							aria-label="Convert voice"
 							onClick={handleConvert}
 						>

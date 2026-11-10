@@ -6,6 +6,7 @@ based on script analysis. Supports Guided and Auto modes.
 
 import json
 from dataclasses import dataclass, field
+from pathlib import Path
 
 
 @dataclass
@@ -123,6 +124,52 @@ def generate_auto_plan(
     return plan
 
 
+def _safe_plan_id(plan_id: str) -> str:
+    """Plan ids become filenames; refuse anything but a simple token."""
+    import re
+
+    if not re.fullmatch(r"[A-Za-z0-9._-]+", plan_id or ""):
+        raise ValueError(f"Unsafe plan id: {plan_id!r}")
+    return plan_id
+
+
+def _plans_dir() -> Path:
+    """Data directory holding per-plan JSON files (created)."""
+    from .. import config
+
+    directory = Path(config.get_data_dir()) / "plans"
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
+
+
+def _plans_dir_read() -> Path:
+    from .. import config
+
+    return Path(config.get_data_dir()) / "plans"
+
+
+def save_plan_to_disk(plan: AudioPlan) -> None:
+    """Persist a plan to ``data/plans/<id>.json`` (atomic via tmp + replace)."""
+    plan_id = _safe_plan_id(plan.id)
+    directory = _plans_dir()
+    path = directory / f"{plan_id}.json"
+    tmp_path = directory / f"{plan_id}.json.tmp"
+    tmp_path.write_text(plan_to_json(plan), encoding="utf-8")
+    tmp_path.replace(path)
+
+
+def load_plan_from_disk(plan_id: str) -> AudioPlan | None:
+    """Load a persisted plan; returns None when it does not exist."""
+    try:
+        plan_id = _safe_plan_id(plan_id)
+    except ValueError:
+        return None
+    path = _plans_dir_read() / f"{plan_id}.json"
+    if not path.is_file():
+        return None
+    return plan_from_json(path.read_text(encoding="utf-8"))
+
+
 def plan_to_json(plan: AudioPlan) -> str:
     """Serialize an AudioPlan to JSON."""
     data = {
@@ -156,6 +203,8 @@ def plan_to_json(plan: AudioPlan) -> str:
                     "character": track.dialogue_line.character,
                     "text": track.dialogue_line.text,
                     "emotion": track.dialogue_line.emotion,
+                    "voice_profile_id": track.dialogue_line.voice_profile_id,
+                    "engine": track.dialogue_line.engine,
                 }
             scene_data["tracks"].append(track_data)
         data["scenes"].append(scene_data)
@@ -187,6 +236,8 @@ def plan_from_json(json_str: str) -> AudioPlan:
                     character=dl.get("character", ""),
                     text=dl.get("text", ""),
                     emotion=dl.get("emotion"),
+                    voice_profile_id=dl.get("voice_profile_id"),
+                    engine=dl.get("engine"),
                 )
             track = AudioPlanTrack(
                 id=track_data.get("id", ""),

@@ -9,8 +9,8 @@ selection: consult `C:\Users\ehis\.config\opencode\skill\SKILL_INDEX.md`. Comple
 they are stricter (e.g. file/function size caps).
 
 ## READ-WHEN
-- Touching TTS engines → `backend/backends/*.py`, `backend/backends/configs.py`
-- Touching voice profiles → `backend/services/profiles.py`, `app/src/features/voices/` (live UI; `components/VoiceProfiles/` holds dead legacy only)
+- Touching TTS engines → `backend/backends/*.py`, `backend/backends/configs/`
+- Touching voice profiles → `backend/services/profiles.py`, `app/src/features/voices/` (live UI; the legacy `components/VoiceProfiles/` dir was deleted — nothing remains)
 - Touching the story editor → `app/src/features/stories/editor/StoryTrackEditor.tsx` (1000+ lines)
 - Touching audio studio → `app/src/features/audioStudio/AudioStudio.tsx` + `usePlaybackEngine.ts`, `AudioStudioStore.ts` (moved from `components/AudioStudio/` 2026-08-19)
 - Touching API client → `app/src/lib/api/client*.ts` (one file per domain)
@@ -20,7 +20,7 @@ they are stricter (e.g. file/function size caps).
 ## KEY-FILES
 - `app/src/lib/api/client.ts` — API client entry point (all backend calls)
 - `app/src/lib/api/types.ts` — TypeScript types matching backend Pydantic models
-- `backend/backends/configs.py` — model config registry (large, ~941 lines; see PROJECT_STATUS known issues)
+- `backend/backends/configs/` — model config registry package (split into llm/stt/tts/vc/music modules)
 - `backend/routes/__init__.py` — route registration (all routers wired here)
 - `backend/app.py` — FastAPI app lifecycle (startup, shutdown, middleware)
 - `biome.json` — JS/TS lint config
@@ -43,7 +43,7 @@ they are stricter (e.g. file/function size caps).
 - Backend venv path: `backend/venv/Scripts/python.exe` (Windows) or `backend/venv/bin/python` (Unix)
 - `just dev` starts both backend + Tauri. `just dev-backend` starts only the backend.
 - Pre-commit hook lives at `.githooks/pre-commit` — install with `git config core.hooksPath .githooks`
-- `backend/backends/configs.py` is large (~941 lines) and growing — be careful when editing
+- `backend/backends/configs/` is split per domain (llm, stt, tts, vc, music) — add new model configs to the matching module, not a monolith
 
 ## Code Quality
 - Zero placeholders — no TODOs, no stubs, no `pass`, no `// TODO`, no `NotImplementedError`

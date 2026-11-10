@@ -7,16 +7,18 @@ import {
 	ArrowDownTrayIcon,
 	MusicalNoteIcon,
 	PlayIcon,
+	SparklesIcon,
 	StopIcon,
 } from "@heroicons/react/24/outline";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getPeakWaveform } from "@/features/audioStudio/getPeakWaveform";
 import { StemSeparationPanel } from "@/features/stems/StemSeparationPage";
 import { apiClient } from "@/lib/api/client";
 import { DEMUCS_MODEL_NAME } from "@/lib/audio/ensureModel";
 import { showStudioErrorToast } from "@/lib/errors";
+import { useSendTo } from "@/lib/hooks/useSendTo";
 import { Button } from "@/ui/button";
 import { Label, Separator, Spinner } from "@/ui/primitives";
 import { ScreenHeader } from "@/ui/states";
@@ -77,9 +79,12 @@ function WaveformBars({ peaks }: { peaks: Float32Array }) {
 
 export function VocalIsolationView() {
 	const { toast } = useToast();
+	const sendTo = useSendTo();
+	const handoff = useSearch({ from: "/vocal-isolation" });
 	const [audioPath, setAudioPath] = useState("");
 	const [fileName, setFileName] = useState("");
 	const [uploading, setUploading] = useState(false);
+	const [sendingStem, setSendingStem] = useState<IsolationStem | null>(null);
 	const [stem, setStem] = useState<IsolationStem>("vocals");
 	const [results, setResults] = useState<StemResult[]>([]);
 	const [multiProgress, setMultiProgress] = useState(0);
@@ -180,6 +185,89 @@ export function VocalIsolationView() {
 	}, []);
 
 	const handleDragLeave = useCallback(() => setDragOver(false), []);
+
+	// Seed the view from a "Send to Stems" handoff (?path=<storage_path>).
+	useEffect(() => {
+		const path = handoff.path;
+		if (!path || path === audioPath) {
+			return;
+		}
+		let cancelled = false;
+		const run = async () => {
+			setUploading(true);
+			setSourcePeaks(null);
+			setResults([]);
+			try {
+				const baseUrl = apiClient.getBaseUrl();
+				const res = await fetch(
+					`${baseUrl}/dsp/stream?path=${encodeURIComponent(path)}`,
+				);
+				if (!res.ok) {
+					throw new Error(`Could not load the sent file (${res.status})`);
+				}
+				const blob = await res.blob();
+				const name = path.split(/[\\/]/).pop() ?? "sent-audio.wav";
+				try {
+					const arrayBuf = await blob.arrayBuffer();
+					const ctx = new AudioContext();
+					const decoded = await ctx.decodeAudioData(arrayBuf);
+					setSourcePeaks(getPeakWaveform(decoded, 120));
+					await ctx.close();
+				} catch {
+					// Waveform is optional
+				}
+				if (cancelled) {
+					return;
+				}
+				setAudioPath(path);
+				setFileName(name);
+				const url = URL.createObjectURL(blob);
+				setSourceUrl((prev) => {
+					if (prev) {
+						URL.revokeObjectURL(prev);
+					}
+					return url;
+				});
+				toast({ title: "File received from another tab", description: name });
+			} catch (error) {
+				if (!cancelled) {
+					toast({
+						title: "Couldn't load the sent file",
+						description: error instanceof Error ? error.message : String(error),
+						variant: "destructive",
+					});
+				}
+			} finally {
+				if (!cancelled) {
+					setUploading(false);
+				}
+			}
+		};
+		void run();
+		return () => {
+			cancelled = true;
+		};
+	}, [handoff.path, audioPath, toast]);
+
+	// "Send to Effects" from a separated stem: re-upload the stem blob as a
+	// dsp capture, then deep-link into the Effects tab with ?path=<storage_path>.
+	const sendStemToEffects = useCallback(
+		async (result: StemResult) => {
+			setSendingStem(result.stem);
+			try {
+				const { audio_path } = await apiClient.dspUpload(
+					result.blob,
+					`${result.stem}.wav`,
+				);
+				sendTo("/effects", { path: audio_path });
+			} catch (error) {
+				showStudioErrorToast(error);
+			} finally {
+				setSendingStem(null);
+			}
+		},
+		[sendTo],
+	);
 
 	const singleMut = useMutation({
 		mutationFn: () => apiClient.separateAudio(audioPath, stem),
@@ -518,20 +606,38 @@ export function VocalIsolationView() {
 												{meta?.desc}
 											</span>
 										</div>
-										<Button
-											type="button"
-											variant="ghost"
-											size="sm"
-											className="h-7 gap-1 text-[10px]"
-											title={`Download ${r.stem} as WAV`}
-											onClick={() => downloadStem(r)}
-										>
-											<ArrowDownTrayIcon
-												className="size-3"
-												aria-hidden="true"
-											/>
-											Save
-										</Button>
+										<div className="flex items-center gap-1">
+											<Button
+												type="button"
+												variant="ghost"
+												size="sm"
+												className="h-7 gap-1 text-[10px]"
+												title={`Send ${r.stem} to Effects`}
+												disabled={sendingStem !== null}
+												onClick={() => void sendStemToEffects(r)}
+											>
+												{sendingStem === r.stem ? (
+													<Spinner className="size-3" aria-hidden="true" />
+												) : (
+													<SparklesIcon className="size-3" aria-hidden="true" />
+												)}
+												Effects
+											</Button>
+											<Button
+												type="button"
+												variant="ghost"
+												size="sm"
+												className="h-7 gap-1 text-[10px]"
+												title={`Download ${r.stem} as WAV`}
+												onClick={() => downloadStem(r)}
+											>
+												<ArrowDownTrayIcon
+													className="size-3"
+													aria-hidden="true"
+												/>
+												Save
+											</Button>
+										</div>
 									</div>
 									{/* biome-ignore lint/a11y/useMediaCaption: stem preview */}
 									<audio

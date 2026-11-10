@@ -37,6 +37,7 @@ from .effects import (
     EffectPresetResponse,
     EffectPresetUpdate,
     EffectsChain,
+    PreviewEffectsPathRequest,
     ProfileEffectsUpdate,
 )
 from .generation import (
@@ -207,6 +208,7 @@ __all__ = [
     "PerformanceSettingsUpdate",
     "PersonalityTextResponse",
     "PresetVoice",
+    "PreviewEffectsPathRequest",
     "ProfileChannelAssignment",
     "ProfileEffectsUpdate",
     "ProfileSampleCreate",

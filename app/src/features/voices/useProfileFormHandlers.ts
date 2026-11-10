@@ -2,7 +2,7 @@ import { apiClient } from "@/lib/api/client";
 import type { VoiceType } from "@/lib/api/types";
 import { formatAudioDuration, getAudioDuration } from "@/lib/utils/audio";
 import type { ProfileFormValues } from "./profileFormHelpers";
-import { fileToBase64 } from "./profileFormHelpers";
+import { MIN_CLONE_DURATION_SECONDS, fileToBase64 } from "./profileFormHelpers";
 import type { ProfileFormState } from "./useProfileFormState";
 
 async function submitUpdate(state: ProfileFormState, data: ProfileFormValues) {
@@ -336,6 +336,22 @@ async function submitClone(state: ProfileFormState, data: ProfileFormValues) {
 				duration: formatAudioDuration(duration),
 				max: formatAudioDuration(MAX_AUDIO_DURATION_SECONDS),
 			}),
+			variant: "destructive",
+		});
+		return;
+	}
+
+	if (duration < MIN_CLONE_DURATION_SECONDS) {
+		form.setError("sampleFile", {
+			type: "manual",
+			message: t("profileForm.validation.audioTooShort", {
+				duration: formatAudioDuration(duration),
+				min: formatAudioDuration(MIN_CLONE_DURATION_SECONDS),
+			}),
+		});
+		toast({
+			title: t("profileForm.toast.qualityWarning"),
+			description: t("profileForm.toast.qualityWarningDescription"),
 			variant: "destructive",
 		});
 		return;

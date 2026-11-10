@@ -4,6 +4,8 @@ import {
 	PlayCircleIcon as Loader,
 	ArrowsPointingOutIcon as Maximize,
 	PlayIcon as Play,
+	ArrowRightIcon as RedoIcon,
+	ArrowLeftIcon as UndoIcon,
 	ArrowSmallUpIcon as ZoomIn,
 	ArrowSmallDownIcon as ZoomOut,
 } from "@heroicons/react/24/outline";
@@ -100,6 +102,35 @@ export function DubTimeline({
 
 	const deletedIdRef = useRef<number | null>(null);
 
+	// Undo/redo
+	const [undoStack, setUndoStack] = useState<DubSegment[][]>([]);
+	const [redoStack, setRedoStack] = useState<DubSegment[][]>([]);
+
+	const pushUndo = useCallback(() => {
+		setUndoStack((prev) => [...prev, segments.map((s) => ({ ...s }))]);
+		setRedoStack([]);
+	}, [segments]);
+
+	const undo = useCallback(() => {
+		if (undoStack.length === 0) {
+			return;
+		}
+		setRedoStack((prev) => [...prev, segments.map((s) => ({ ...s }))]);
+		const prev = undoStack[undoStack.length - 1];
+		setUndoStack((prev) => prev.slice(0, -1));
+		onSegmentsChange?.(prev);
+	}, [undoStack, segments, onSegmentsChange]);
+
+	const redo = useCallback(() => {
+		if (redoStack.length === 0) {
+			return;
+		}
+		setUndoStack((prev) => [...prev, segments.map((s) => ({ ...s }))]);
+		const next = redoStack[redoStack.length - 1];
+		setRedoStack((prev) => prev.slice(0, -1));
+		onSegmentsChange?.(next);
+	}, [redoStack, segments, onSegmentsChange]);
+
 	const moveResizeMutation = useMutation({
 		mutationFn: ({
 			id,
@@ -122,6 +153,7 @@ export function DubTimeline({
 		mutationFn: (id: number) => dubbingClient.deleteDubSegment(id),
 		onMutate: (id) => {
 			deletedIdRef.current = id;
+			pushUndo();
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["dub-job"] });
@@ -237,6 +269,7 @@ export function DubTimeline({
 		) {
 			return;
 		}
+		pushUndo();
 		const segment = effective[index];
 		const mode =
 			(event.target as HTMLElement).dataset.edge === "start"
@@ -384,6 +417,18 @@ export function DubTimeline({
 			setEditMode(false);
 			return;
 		}
+		if (event.key.toLowerCase() === "z" && (event.ctrlKey || event.metaKey)) {
+			event.preventDefault();
+			event.stopPropagation();
+			undo();
+			return;
+		}
+		if (event.key.toLowerCase() === "y" && (event.ctrlKey || event.metaKey)) {
+			event.preventDefault();
+			event.stopPropagation();
+			redo();
+			return;
+		}
 		if (event.key.toLowerCase() === "s") {
 			event.preventDefault();
 			event.stopPropagation();
@@ -457,6 +502,24 @@ export function DubTimeline({
 			)}
 		>
 			<div className="mb-2 flex justify-end gap-1">
+				<Button
+					size="icon-sm"
+					variant="ghost"
+					aria-label="Undo"
+					disabled={undoStack.length === 0}
+					onClick={undo}
+				>
+					<UndoIcon className="size-4" aria-hidden="true" />
+				</Button>
+				<Button
+					size="icon-sm"
+					variant="ghost"
+					aria-label="Redo"
+					disabled={redoStack.length === 0}
+					onClick={redo}
+				>
+					<RedoIcon className="size-4" aria-hidden="true" />
+				</Button>
 				<Button
 					size="icon-sm"
 					variant="ghost"

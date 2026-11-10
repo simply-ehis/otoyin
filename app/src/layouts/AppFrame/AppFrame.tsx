@@ -40,6 +40,7 @@ function deferredComponent<P>(
 }
 
 type OverlayProps = { open: boolean; onClose: () => void };
+type HelpCenterProps = OverlayProps & { initialQuery?: string };
 
 const loadAssistantPanel = deferredComponent<OverlayProps>(() =>
 	import("@/features/assistant/AssistantPanel").then((m) => ({
@@ -70,9 +71,9 @@ const loadUseCaseWizard = deferredComponent<Record<string, never>>(() =>
 		>,
 	})),
 );
-const loadHelpCenter = deferredComponent<OverlayProps>(() =>
+const loadHelpCenter = deferredComponent<HelpCenterProps>(() =>
 	import("@/features/help/HelpCenterOverlay").then((m) => ({
-		default: m.HelpCenter as React.ComponentType<OverlayProps>,
+		default: m.HelpCenter as React.ComponentType<HelpCenterProps>,
 	})),
 );
 const loadStoryTrackEditor = deferredComponent<{
@@ -127,6 +128,7 @@ export function AppFrame({ children }: AppFrameProps) {
 
 	const [assistantOpen, setAssistantOpen] = useState(false);
 	const [helpOpen, setHelpOpen] = useState(false);
+	const [helpQuery, setHelpQuery] = useState("");
 	const [tourOpen, setTourOpen] = useState(false);
 	const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 	const routerState = useRouterState();
@@ -204,7 +206,12 @@ export function AppFrame({ children }: AppFrameProps) {
 		};
 		window.addEventListener("keydown", onKeyDown);
 		window.addEventListener("keyup", onKeyUp);
-		const onOpenHelp = () => setHelpOpen(true);
+		const onOpenHelp = (event: Event) => {
+			// Ctrl+K palette dispatches this with { query } to pre-fill Help search.
+			const detail = (event as CustomEvent<{ query?: string }>).detail;
+			setHelpQuery(typeof detail?.query === "string" ? detail.query : "");
+			setHelpOpen(true);
+		};
 		window.addEventListener("open-help-center", onOpenHelp);
 		return () => {
 			window.removeEventListener("keydown", onKeyDown);
@@ -263,7 +270,13 @@ export function AppFrame({ children }: AppFrameProps) {
 				{/* Main layout: sidebar + content + assistant panel */}
 				<div className="flex flex-1 min-h-0 overflow-hidden">
 					<Sidebar />
-					<Suspense fallback={<div className="flex h-full items-center justify-center text-muted-foreground">Loading...</div>}>
+					<Suspense
+						fallback={
+							<div className="flex h-full items-center justify-center text-muted-foreground">
+								Loading...
+							</div>
+						}
+					>
 						{children}
 					</Suspense>
 
@@ -284,6 +297,7 @@ export function AppFrame({ children }: AppFrameProps) {
 						<LazyHelpCenter
 							open={helpOpen}
 							onClose={() => setHelpOpen(false)}
+							initialQuery={helpQuery}
 						/>
 					</ErrorBoundary>
 				</WhenReady>

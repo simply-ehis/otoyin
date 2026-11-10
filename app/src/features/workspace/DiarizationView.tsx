@@ -1,6 +1,6 @@
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
-import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import type { DiarizationResponse } from "@/lib/api/clientDiarize";
@@ -45,12 +45,34 @@ export function DiarizationView() {
 	const navigate = useNavigate();
 	const [file, setFile] = useState<File | null>(null);
 	const [numSpeakers, setNumSpeakers] = useState(0);
+	const [model, setModel] = useState("tiny.en");
+
+	// Whisper model install state, shared with the Store.
+	const diarizeModelsQuery = useQuery({
+		queryKey: ["modelStatus"],
+		queryFn: () => apiClient.getModelStatus(),
+		staleTime: 30_000,
+	});
+	const diarizeModels = diarizeModelsQuery.data?.models ?? [];
+	const modelInstalled = (id: string) =>
+		!!diarizeModels.find((m) => m.engine === "whisper" && m.model_size === id)
+			?.downloaded;
+	const modelDownloading = (id: string) =>
+		!!diarizeModels.find((m) => m.engine === "whisper" && m.model_size === id)
+			?.downloading;
+
+	const WHISPER_MODELS = [
+		{ id: "tiny.en", label: "Whisper Tiny EN (fastest, ~75 MB)" },
+		{ id: "base.en", label: "Whisper Base EN (better, ~142 MB)" },
+	] as const;
+
 	const [result, setResult] = useState<DiarizationResponse | null>(null);
 
 	const diarizeMut = useMutation({
 		mutationFn: async (target: File) => {
 			return apiClient.diarizeAudio(target, {
 				numSpeakers: numSpeakers > 0 ? numSpeakers : undefined,
+				model,
 			});
 		},
 		onSuccess: (data: DiarizationResponse) => {
@@ -149,6 +171,46 @@ export function DiarizationView() {
 				<span className="text-xs text-muted-foreground">
 					Leave on auto-detect to let the model pick the count.
 				</span>
+			</div>
+
+			<div className="flex max-w-xl flex-wrap items-center gap-2">
+				<Label htmlFor="diar-model">Model</Label>
+				<Select
+					value={model}
+					onValueChange={(v) => setModel(v)}
+					disabled={modelDownloading(model)}
+				>
+					<SelectTrigger id="diar-model" className="h-8 w-36 text-xs">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{WHISPER_MODELS.map((m) => {
+							const installed = modelInstalled(m.id);
+							const downloading = modelDownloading(m.id);
+							return (
+								<SelectItem
+									key={m.id}
+									value={m.id}
+									disabled={!installed && !downloading}
+								>
+									{m.label}
+									{!installed && !downloading ? " — not installed" : ""}
+								</SelectItem>
+							);
+						})}
+					</SelectContent>
+				</Select>
+				{!modelInstalled(model) && (
+					<div className="flex items-center gap-2 text-xs">
+						<span className="text-muted-foreground">Model not installed</span>
+						<Link
+							to="/store"
+							className="rounded-sm underline transition-colors hover:text-foreground hover:underline"
+						>
+							Get from Store
+						</Link>
+					</div>
+				)}
 			</div>
 
 			<div>

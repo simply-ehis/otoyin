@@ -272,6 +272,8 @@ class DubSegmentPatch(BaseModel):
     start: float | None = None
     end: float | None = None
     translated_text: str | None = None
+    speed: float | None = None
+    original_duration: float | None = None
 
 
 @router.patch("/dubbing/segment/{segment_id}")
@@ -288,6 +290,10 @@ def patch_dub_segment(segment_id: int, patch: DubSegmentPatch):
                     seg.end = patch.end
                 if patch.translated_text is not None:
                     seg.translated_text = patch.translated_text
+                if patch.speed is not None:
+                    seg.speed = patch.speed
+                if patch.original_duration is not None:
+                    seg.original_duration = patch.original_duration
                 return {
                     "id": seg.id,
                     "start": seg.start,

@@ -72,6 +72,19 @@ export function InstrumentBrowser() {
 			{data?.note ? (
 				<p className="text-muted-foreground text-xs">{data.note}</p>
 			) : null}
+			{data?.soundfont_available === false ? (
+				<output className="block rounded-md border border-warning/20 bg-warning-soft px-3 py-2 text-xs">
+					<p className="font-medium text-warning-text">
+						No SoundFont installed
+					</p>
+					<p className="mt-1 text-muted-foreground">
+						GM notes won&apos;t render until you install a GM bank.{" "}
+						<Link className="underline hover:no-underline" to="/store">
+							Open the Store
+						</Link>
+					</p>
+				</output>
+			) : null}
 			{errorText ? (
 				<div
 					className="rounded-md border border-destructive/40 bg-danger-soft px-3 py-2 text-xs text-danger-text"

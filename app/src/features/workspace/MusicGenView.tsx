@@ -1,13 +1,22 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useAudioStudioStore } from "@/features/audioStudio/AudioStudioStore";
 import { apiClient } from "@/lib/api/client";
 import type { MusicGenerateRequest } from "@/lib/api/types";
 import { copyClip } from "@/lib/clip";
 import { showStudioErrorToast } from "@/lib/errors";
+import { useSendTo } from "@/lib/hooks/useSendTo";
 import { Button } from "@/ui/button";
 import { Input, Textarea } from "@/ui/input";
 import { Label } from "@/ui/primitives";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/ui/select";
 import { ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
 import { UploadField } from "./UploadField";
@@ -49,9 +58,27 @@ const MOODS = [
 
 export function MusicGenView() {
 	const { toast } = useToast();
+	const sendTo = useSendTo();
 	const addTrack = useAudioStudioStore((s) => s.addTrack);
 	const setTrackAudio = useAudioStudioStore((s) => s.setTrackAudio);
+	const [sendingToStems, setSendingToStems] = useState(false);
 	const [engine, setEngine] = useState<string>("acestep_gguf");
+
+	// Model install state, shared with the Store. Cloud (BYOK) has no Store
+	// artifact, so it is always treated as available.
+	const modelsQuery = useQuery({
+		queryKey: ["modelStatus"],
+		queryFn: () => apiClient.getModelStatus(),
+		staleTime: 30_000,
+	});
+	const models = modelsQuery.data?.models ?? [];
+	const musicInstalled = (id: string) => {
+		if (id === "cloud") return true;
+		return !!models.find((m) => m.engine === id)?.downloaded;
+	};
+	const musicDownloading = (id: string) =>
+		!!models.find((m) => m.engine === id)?.downloading;
+
 	const MUSIC_ENGINES = [
 		{ id: "acestep_gguf", label: "ACE-Step 1.5 GGUF" },
 		{ id: "heartmula", label: "HeartMuLa 3B" },
@@ -149,6 +176,27 @@ export function MusicGenView() {
 		toast({ title: "Sent to Audio Studio", description: "Track added." });
 	}
 
+	async function sendToStems(blob: Blob, name: string) {
+		setSendingToStems(true);
+		try {
+			// Imported beats were already uploaded at import time — reuse that path.
+			// Generated audio is uploaded on demand now.
+			const { audio_path } =
+				audioPath && blob === importedBlob
+					? { audio_path: audioPath }
+					: await apiClient.dspUpload(blob, `${name}.wav`);
+			sendTo("/vocal-isolation", { path: audio_path });
+			toast({
+				title: "Sent to Stems",
+				description: "Opening Vocal Isolation with your track loaded.",
+			});
+		} catch (err) {
+			showStudioErrorToast(err);
+		} finally {
+			setSendingToStems(false);
+		}
+	}
+
 	async function sendToTimeline(blob: Blob, name: string, duration: number) {
 		await copyClip({
 			kind: "sample",
@@ -199,18 +247,45 @@ export function MusicGenView() {
 
 			<div className="max-w-lg space-y-1">
 				<Label htmlFor="mg-engine">Model</Label>
-				<select
-					id="mg-engine"
+				<Select
 					value={engine}
-					onChange={(e) => setEngine(e.target.value)}
-					className="w-full rounded-md border border-border bg-card px-2 py-1.5 text-sm"
+					onValueChange={(v) => setEngine(v)}
+					disabled={musicDownloading(engine)}
 				>
-					{MUSIC_ENGINES.map((m) => (
-						<option key={m.id} value={m.id}>
-							{m.label}
-						</option>
-					))}
-				</select>
+					<SelectTrigger
+						id="mg-engine"
+						className="w-full rounded-md border border-border bg-card px-2 py-1.5 text-sm"
+					>
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{MUSIC_ENGINES.map((m) => {
+							const installed = musicInstalled(m.id);
+							const downloading = musicDownloading(m.id);
+							return (
+								<SelectItem
+									key={m.id}
+									value={m.id}
+									disabled={!installed && !downloading}
+								>
+									{m.label}
+									{!installed && !downloading ? " — not installed" : ""}
+								</SelectItem>
+							);
+						})}
+					</SelectContent>
+				</Select>
+				{engine !== "cloud" && !musicInstalled(engine) && (
+					<div className="flex items-center justify-between gap-2 text-xs mt-1">
+						<span className="text-muted-foreground">Model not installed</span>
+						<Link
+							to="/store"
+							className="rounded-sm underline transition-colors hover:text-foreground"
+						>
+							Get from Store
+						</Link>
+					</div>
+				)}
 			</div>
 
 			<div className="grid grid-cols-3 gap-3 max-w-lg">
@@ -434,6 +509,23 @@ export function MusicGenView() {
 									Send to Timeline
 								</Button>
 							</>
+						) : null}
+						{(generatedBlob ?? importedBlob) ? (
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								className="h-8 text-xs"
+								disabled={sendingToStems}
+								onClick={() =>
+									void sendToStems(
+										generatedBlob ?? (importedBlob as Blob),
+										generatedBlob ? "Music" : "Imported beat",
+									)
+								}
+							>
+								{sendingToStems ? "Sending…" : "Send to Stems"}
+							</Button>
 						) : null}
 					</div>
 				</section>

@@ -26,6 +26,7 @@ const THEME_IMAGE_IMPORTS: Record<string, () => Promise<{ default: string }>> =
  */
 function AppBackgroundInner() {
 	const theme = useUIStore((s) => s.theme);
+	const backgroundPattern = useUIStore((s) => s.backgroundPattern);
 	const isPlaying = usePlayerStore((state) => state.isPlaying);
 	const analyser = usePlayerStore((state) => state.masterAnalyser);
 	const [glowOpacity, setGlowOpacity] = useState(0);
@@ -165,9 +166,14 @@ function AppBackgroundInner() {
 			{/*
 			 * Global pattern — rendered last so it paints above the per-theme
 			 * washes instead of being buried under them. Accent-coloured via
-			 * mask, so it needs no per-theme wiring.
+			 * mask, so it needs no per-theme wiring. The tile is picked in
+			 * Settings → Appearance; "none" renders no pattern at all.
 			 */}
-			<div className="gs-theme-pattern" />
+			{backgroundPattern === "waveform" ? (
+				<div className="gs-theme-pattern gs-theme-pattern--waveform" />
+			) : backgroundPattern === "line-in-motion" ? (
+				<div className="gs-theme-pattern" />
+			) : null}
 		</div>
 	);
 }

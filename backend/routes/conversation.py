@@ -18,6 +18,34 @@ from .generations import generate_speech
 router = APIRouter()
 
 
+async def _resample_to_common_rate(
+    line_audio: list[tuple[np.ndarray, int, object]],
+) -> tuple[list[tuple[np.ndarray, int, object]], int]:
+    """Resample mixed-rate line audio to the largest rate present.
+
+    Mixed engines can produce different sample rates (e.g. kokoro 24 kHz,
+    bark 22.05 kHz). Computing offsets against a single assumed rate would
+    misalign every line not voiced at that rate, so everything is oversampled
+    to the largest rate in the batch instead of being downsampled.
+    """
+    target_sr = max(sr_i for _audio, sr_i, _line in line_audio)
+    if all(sr_i == target_sr for _audio, sr_i, _line in line_audio):
+        return line_audio, target_sr
+    import librosa
+
+    resampled = []
+    for audio_i, sr_i, line in line_audio:
+        if sr_i != target_sr:
+            audio_i = await asyncio.to_thread(
+                librosa.resample,
+                audio_i,
+                orig_sr=sr_i,
+                target_sr=target_sr,
+            )
+        resampled.append((audio_i.astype(np.float32), target_sr, line))
+    return resampled, target_sr
+
+
 class ConversationLine(BaseModel):
     id: str
     text: str
@@ -179,9 +207,10 @@ async def generate_conversation(lines: list[ConversationLine], db: Session = Dep
             audio = audio.mean(axis=1)
         line_audio.append((audio, sr, line))
 
-    # Determine sample rate (use first)
-    sr = line_audio[0][1]
-    # Resample not handled; assume same sr. Convert if needed by simple repeat? Skip; assume kokoro/same engine sr.
+    # Mixed engines can yield different sample rates (e.g. kokoro 24 kHz,
+    # bark 22.05 kHz). Oversample everything to the largest rate in the batch
+    # so timing math below is exact and no source is ever downsampled.
+    line_audio, sr = await _resample_to_common_rate(line_audio)
     # Compute offsets
     # offsets: relative_to_previous -> after previous line end + offset; absolute -> offset from start
     # We'll compute start sample for each line.

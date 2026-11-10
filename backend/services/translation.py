@@ -165,6 +165,20 @@ def get_argos_translator(source_lang: str, target_lang: str) -> object | None:
         return None
 
 
+def argos_packs_installed() -> bool:
+    """True when argostranslate is importable with ≥1 installed language pack.
+
+    Never raises — a missing import or a broken package index means 'no
+    offline packs', not a server error.
+    """
+    try:
+        import argostranslate.translate
+
+        return bool(argostranslate.translate.get_installed_languages())
+    except Exception:
+        return False
+
+
 def _validate_lang(code: str) -> str:
     c = code.strip()
     if c == "auto":

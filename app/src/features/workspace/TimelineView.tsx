@@ -1,15 +1,26 @@
+﻿import {
+	DndContext,
+	type DragEndEvent,
+	type DragStartEvent,
+	useDraggable,
+} from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 import {
 	ArrowUpTrayIcon,
 	BackwardIcon,
+	ArrowDownTrayIcon as Download,
+	EllipsisVerticalIcon as GripIcon,
 	PauseIcon,
 	PlayIcon,
 	PlusIcon,
+	ArrowRightIcon as RedoIcon,
 	SignalIcon,
 	SpeakerWaveIcon,
 	StopIcon,
+	ArrowLeftIcon as UndoIcon,
 } from "@heroicons/react/24/outline";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getPeakWaveform } from "@/features/audioStudio/getPeakWaveform";
 import { getClip } from "@/lib/clip";
 import { useHistory } from "@/lib/hooks/useHistory";
@@ -19,37 +30,44 @@ import { usePlayerStore } from "@/stores/playerStore";
 import { Button } from "@/ui/button";
 import { Slider } from "@/ui/slider";
 import { EmptyState, ScreenHeader } from "@/ui/states";
+import { Toggle } from "@/ui/toggle";
 import { useToast } from "@/ui/use-toast";
 import { ImportModal } from "./ImportModal";
+import {
+	pixelsPerSecond,
+	SNAP_GRID_SECONDS,
+	snapTime,
+	type Track,
+	useTimelineTracks,
+} from "./useTimelineTracks";
 
-interface Track {
-	id: string;
-	name: string;
-	muted: boolean;
-	solo: boolean;
-	volume: number;
-	audioUrl?: string;
-	duration?: number;
-	peaks?: number[];
-}
-
-function clock(totalSeconds: number): string {
-	const m = Math.floor(totalSeconds / 60);
-	const s = totalSeconds - m * 60;
-	return `${String(m).padStart(2, "0")}:${s.toFixed(3).padStart(6, "0")}`;
-}
+/** Track lane height. */
+const LANE_HEIGHT = 56;
 
 /**
  * Session timeline: transport bound to the shared player, history
- * generations as tracks, clip paste, media import. Track bars are
+ * generations as lanes, clip paste, media import, drag repositioning
+ * with grid snap, undo/redo, and per-clip export. Track bars are
  * proportional to real durations — never decorative random data.
  */
 export function TimelineView() {
 	const navigate = useNavigate();
 	const { toast } = useToast();
-	const [tracks, setTracks] = useState<Track[]>([]);
-	const [zoom, setZoom] = useState(1);
-	const [importOpen, setImportOpen] = useState(false);
+	const {
+		tracks,
+		setTracks,
+		snap,
+		setSnap,
+		zoom,
+		setZoom,
+		undoStack,
+		redoStack,
+		undo,
+		redo,
+		maxDuration,
+		sensors,
+		moveTrackTo,
+	} = useTimelineTracks();
 
 	const isPlaying = usePlayerStore((s) => s.isPlaying);
 	const setIsPlaying = usePlayerStore((s) => s.setIsPlaying);
@@ -59,11 +77,13 @@ export function TimelineView() {
 	const volume = usePlayerStore((s) => s.volume);
 	const setVolume = usePlayerStore((s) => s.setVolume);
 
+	const [importOpen, setImportOpen] = useState(false);
+
 	const { data: history } = useHistory({ limit: 20 });
 
 	useEffect(() => {
 		if (history?.items) {
-			const base = history.items.map((gen) => ({
+			const base: Track[] = history.items.map((gen) => ({
 				id: gen.id,
 				name: gen.text.slice(0, 40) || "Untitled",
 				muted: false,
@@ -71,9 +91,9 @@ export function TimelineView() {
 				volume: 0.75,
 				audioUrl: gen.audio_path,
 				duration: gen.duration,
+				startTime: 0,
 			}));
 			setTracks(base);
-			// Load waveform peaks asynchronously for each track.
 			const win = window as unknown as {
 				webkitAudioContext?: typeof AudioContext;
 			};
@@ -98,9 +118,8 @@ export function TimelineView() {
 				}
 			});
 		}
-	}, [history?.items]);
-
-	const playTrack = (track: Track) => {
+	}, [history?.items, setTracks]);
+	const playTrack = useCallback((track: Track) => {
 		if (!track.audioUrl) {
 			return;
 		}
@@ -108,18 +127,18 @@ export function TimelineView() {
 			usePlayerStore.getState();
 		setAudioWithAutoPlay(track.audioUrl, track.id, null, track.name);
 		setStorePlaying(true);
-	};
+	}, []);
 
-	const togglePlay = () => {
+	const togglePlay = useCallback(() => {
 		const first = tracks.find((t) => t.audioUrl);
 		if (!isPlaying && first?.audioUrl && !usePlayerStore.getState().audioUrl) {
 			playTrack(first);
 			return;
 		}
 		setIsPlaying(!isPlaying);
-	};
+	}, [tracks, isPlaying, playTrack, setIsPlaying]);
 
-	const pasteClip = async () => {
+	const pasteClip = useCallback(async () => {
 		let clip: { name: string; audioUrl: string; durationMs: number } | null =
 			null;
 		try {
@@ -141,228 +160,465 @@ export function TimelineView() {
 				volume: 0.75,
 				audioUrl: clip.audioUrl,
 				duration: clip.durationMs / 1000,
+				startTime: 0,
 			},
 		]);
 		toast({ title: `Pasted "${clip.name}" as new track` });
-	};
+	}, [setTracks, toast]);
 
-	const maxDuration = Math.max(1, ...tracks.map((t) => t.duration ?? 0));
+	const handleImportComplete = useCallback(
+		(audioPath: string) => {
+			setTracks((prev) => [
+				...prev,
+				{
+					id: `import-${Date.now()}`,
+					name: audioPath.split(/[\\/]/).pop() ?? "Import",
+					muted: false,
+					solo: false,
+					volume: 0.75,
+					audioUrl: audioPath,
+					duration: 0,
+					startTime: 0,
+				},
+			]);
+			toast({ title: "Imported to timeline" });
+		},
+		[setTracks, toast],
+	);
+
+	const handleExport = useCallback(async () => {
+		const placed = tracks.filter((t) => t.audioUrl);
+		if (placed.length === 0) {
+			toast({ title: "Nothing to export" });
+			return;
+		}
+		let exported = 0;
+		for (const t of placed) {
+			try {
+				const audioUrl = t.audioUrl;
+				if (!audioUrl) {
+					continue;
+				}
+				const res = await fetch(audioUrl);
+				const blob = await res.blob();
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement("a");
+				a.href = url;
+				a.download = `${t.name.replace(/[^a-z0-9]/gi, "-")}.wav`;
+				document.body.appendChild(a);
+				a.click();
+				document.body.removeChild(a);
+				URL.revokeObjectURL(url);
+				exported += 1;
+			} catch {
+				toast({
+					title: `Failed to export ${t.name}`,
+					variant: "destructive",
+				});
+			}
+		}
+		toast({ title: `Exported ${exported} clip(s)` });
+	}, [tracks, toast]);
+
+	const dragStartRef = useRef<{ id: string; startTime: number } | null>(null);
+	const dragCancelled = useRef(false);
+
+	const handleDragStart = useCallback(
+		(event: DragStartEvent) => {
+			const id = event.active.id as string;
+			const track = tracks.find((t) => t.id === id);
+			dragStartRef.current = { id, startTime: track?.startTime ?? 0 };
+			dragCancelled.current = false;
+		},
+		[tracks],
+	);
+
+	const handleDragEnd = useCallback(
+		(event: DragEndEvent) => {
+			const { active } = event;
+			const id = active.id as string;
+			const start = dragStartRef.current;
+			dragStartRef.current = null;
+			if (!start || start.id !== id) {
+				return;
+			}
+			if (dragCancelled.current) {
+				dragCancelled.current = false;
+				return;
+			}
+			const deltaX = event.delta.x;
+			const pps = pixelsPerSecond(zoom);
+			const deltaSeconds = deltaX / pps;
+			const clamped = Math.max(0, start.startTime + deltaSeconds);
+			const placed = snap ? snapTime(clamped) : clamped;
+			moveTrackTo(id, placed);
+		},
+		[zoom, snap, moveTrackTo],
+	);
+
+	const handleKeyDown = useCallback(
+		(e: KeyboardEvent) => {
+			if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+				e.preventDefault();
+				undo();
+			}
+			if (
+				((e.ctrlKey || e.metaKey) && e.key === "z" && e.shiftKey) ||
+				((e.ctrlKey || e.metaKey) && e.key === "y")
+			) {
+				e.preventDefault();
+				redo();
+			}
+			if (e.key === "Escape") {
+				dragCancelled.current = true;
+			}
+		},
+		[undo, redo],
+	);
+
+	useEffect(() => {
+		document.addEventListener("keydown", handleKeyDown);
+		return () => document.removeEventListener("keydown", handleKeyDown);
+	}, [handleKeyDown]);
+
+	const pps = pixelsPerSecond(zoom);
+	const totalWidth = maxDuration() * pps;
 
 	return (
-		<div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
-			<ScreenHeader title="Timeline" />
+		<DndContext
+			sensors={sensors}
+			onDragStart={handleDragStart}
+			onDragEnd={handleDragEnd}
+		>
+			<div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
+				<ScreenHeader title="Timeline" />
 
-			{tracks.length === 0 ? (
-				<EmptyState
-					icon={<SignalIcon aria-hidden="true" />}
-					title="No tracks yet"
-					body="Generate audio, import media, or paste a clip to start arranging."
-					action={
-						<span className="flex gap-2">
-							<Button size="sm" onClick={() => navigate({ to: "/" })}>
-								<PlusIcon className="mr-1 size-4" aria-hidden="true" />
-								Generate audio
+				{tracks.length === 0 ? (
+					<EmptyState
+						icon={<SignalIcon aria-hidden="true" />}
+						title="No tracks yet"
+						body="Generate audio, import media, or paste a clip to start arranging."
+						action={
+							<span className="flex gap-2">
+								<Button size="sm" onClick={() => navigate({ to: "/" })}>
+									<PlusIcon className="mr-1 size-4" aria-hidden="true" />
+									Generate audio
+								</Button>
+								<Button
+									size="sm"
+									variant="outline"
+									onClick={() => setImportOpen(true)}
+								>
+									<ArrowUpTrayIcon className="mr-1 size-4" aria-hidden="true" />
+									Import
+								</Button>
+								<Button size="sm" variant="outline" onClick={pasteClip}>
+									Paste
+								</Button>
+							</span>
+						}
+					/>
+				) : (
+					<>
+						<div className="flex items-center gap-2 px-2">
+							<Button
+								variant="ghost"
+								size="icon"
+								onClick={undo}
+								disabled={undoStack.length === 0}
+								title="Undo"
+								aria-label="Undo"
+							>
+								<UndoIcon className="size-4" aria-hidden="true" />
 							</Button>
 							<Button
-								size="sm"
-								variant="outline"
-								onClick={() => setImportOpen(true)}
+								variant="ghost"
+								size="icon"
+								onClick={redo}
+								disabled={redoStack.length === 0}
+								title="Redo"
+								aria-label="Redo"
 							>
-								<ArrowUpTrayIcon className="mr-1 size-4" aria-hidden="true" />
-								Import
+								<RedoIcon className="size-4" aria-hidden="true" />
 							</Button>
-							<Button size="sm" variant="outline" onClick={pasteClip}>
-								Paste
+							<Toggle
+								pressed={snap}
+								onPressedChange={setSnap}
+								title="Snap clips to 1s grid"
+								aria-label="Snap to grid"
+							>
+								Snap
+							</Toggle>
+							<Button
+								variant="ghost"
+								size="icon"
+								onClick={() => setCurrentTime(0)}
+								title="Skip to start"
+								aria-label="Skip to start"
+							>
+								<BackwardIcon className="size-4" aria-hidden="true" />
 							</Button>
-						</span>
-					}
-				/>
-			) : null}
-
-			<div
-				role="img"
-				aria-label={`${tracks.length} tracks, ${formatAudioDuration(maxDuration)} total`}
-				className="flex h-40 items-end gap-1 overflow-hidden rounded-md border border-border bg-card p-3"
-			>
-				{tracks.length === 0 ? (
-					<p className="m-auto text-xs text-muted-foreground/60">
-						Session overview appears here
-					</p>
-				) : (
-					tracks.map((t) => (
-						<div
-							key={t.id}
-							title={`${t.name} — ${t.duration ? formatAudioDuration(t.duration) : "unknown length"}`}
-							className={cn(
-								"min-w-[3px] flex-1 rounded-full",
-								t.muted ? "bg-strong" : "bg-accent",
-							)}
-							style={{
-								height: `${Math.max(6, ((t.duration ?? 0) / maxDuration) * 100)}%`,
-								opacity: t.muted
-									? 0.5
-									: 0.35 + 0.65 * ((t.duration ?? 0) / maxDuration),
-							}}
-						/>
-					))
-				)}
-			</div>
-
-			<div className="flex items-center gap-2">
-				<span className="text-xs tabular-nums text-muted-foreground">
-					Position
-				</span>
-				<Slider
-					value={[Math.min(currentTime, duration || 0)]}
-					max={Math.max(duration || 0, 1)}
-					step={0.1}
-					onValueChange={([v]) => setCurrentTime(v ?? 0)}
-					aria-label="Seek"
-					className="flex-1"
-				/>
-				<span className="min-w-[80px] text-right font-mono text-xs tabular-nums text-foreground">
-					{clock(currentTime)}
-				</span>
-			</div>
-
-			<div className="flex items-center gap-1 rounded-md border border-border bg-card px-2 py-2">
-				<Button
-					variant="ghost"
-					size="icon"
-					className="size-8"
-					title="Skip to start"
-					aria-label="Skip to start"
-					onClick={() => setCurrentTime(0)}
-				>
-					<BackwardIcon className="size-4" aria-hidden="true" />
-				</Button>
-				<Button
-					variant="ghost"
-					size="icon"
-					className="size-8"
-					title={isPlaying ? "Pause" : "Play"}
-					aria-label={isPlaying ? "Pause" : "Play"}
-					onClick={togglePlay}
-				>
-					{isPlaying ? (
-						<PauseIcon className="size-4" aria-hidden="true" />
-					) : (
-						<PlayIcon className="size-4" aria-hidden="true" />
-					)}
-				</Button>
-				<Button
-					variant="ghost"
-					size="icon"
-					className="size-8"
-					title="Stop"
-					aria-label="Stop"
-					onClick={() => {
-						setIsPlaying(false);
-						setCurrentTime(0);
-					}}
-				>
-					<StopIcon className="size-4" aria-hidden="true" />
-				</Button>
-				<span className="ml-auto flex items-center gap-2">
-					<SpeakerWaveIcon
-						className="size-4 text-muted-foreground"
-						aria-hidden="true"
-					/>
-					<Slider
-						value={[volume]}
-						max={1}
-						step={0.05}
-						onValueChange={([v]) => setVolume(v ?? volume)}
-						aria-label="Monitor volume"
-						className="w-20"
-					/>
-				</span>
-				<span className="flex items-center gap-2">
-					<span className="text-xs text-muted-foreground">Zoom</span>
-					<Slider
-						value={[zoom]}
-						min={0.5}
-						max={3}
-						step={0.25}
-						onValueChange={([v]) => setZoom(v ?? 1)}
-						aria-label="Timeline zoom"
-						className="w-20"
-					/>
-				</span>
-			</div>
-
-			<ImportModal open={importOpen} onOpenChange={setImportOpen} />
-
-			<ul className="divide-y divide-border overflow-y-auto rounded-md border border-border bg-card">
-				{tracks.map((track) => (
-					<li key={track.id}>
-						<div className="flex items-center gap-3 px-3 py-2">
-							<button
-								type="button"
-								onClick={() => playTrack(track)}
-								disabled={!track.audioUrl}
-								aria-label={`Play ${track.name}`}
-								className="min-w-0 flex-1 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default"
+							<Button
+								variant="ghost"
+								size="icon"
+								onClick={togglePlay}
+								title={isPlaying ? "Pause" : "Play"}
+								aria-label={isPlaying ? "Pause" : "Play"}
 							>
-								<span className="block truncate text-xs font-medium text-foreground">
-									{track.name}
-								</span>
-								{track.duration ? (
-									<span className="block font-mono text-xs tabular-nums text-muted-foreground">
-										{formatAudioDuration(track.duration)}
-									</span>
-								) : null}
-							</button>
-							<button
-								type="button"
-								title={track.muted ? "Unmute track" : "Mute track"}
-								aria-label={`${track.muted ? "Unmute" : "Mute"} ${track.name}`}
-								aria-pressed={track.muted}
-								onClick={() =>
-									setTracks((prev) =>
-										prev.map((x) =>
-											x.id === track.id ? { ...x, muted: !x.muted } : x,
-										),
-									)
-								}
-								className={cn(
-									"rounded-sm px-2 py-0.5 text-xs font-semibold transition-colors",
-									track.muted
-										? "bg-warning text-warning-foreground"
-										: "bg-secondary text-muted-foreground hover:text-foreground",
+								{isPlaying ? (
+									<PauseIcon className="size-4" aria-hidden="true" />
+								) : (
+									<PlayIcon className="size-4" aria-hidden="true" />
 								)}
+							</Button>
+							<Button
+								variant="ghost"
+								size="icon"
+								onClick={() => {
+									setIsPlaying(false);
+									setCurrentTime(0);
+								}}
+								title="Stop"
+								aria-label="Stop"
 							>
-								M
-							</button>
-							<button
-								type="button"
-								title={track.solo ? "Unsolo track" : "Solo track"}
-								aria-label={`${track.solo ? "Unsolo" : "Solo"} ${track.name}`}
-								aria-pressed={track.solo}
-								onClick={() =>
-									setTracks((prev) =>
-										prev.map((x) =>
-											x.id === track.id ? { ...x, solo: !x.solo } : x,
-										),
-									)
-								}
-								className={cn(
-									"rounded-sm px-2 py-0.5 text-xs font-semibold transition-colors",
-									track.solo
-										? "bg-info text-info-foreground"
-										: "bg-secondary text-muted-foreground hover:text-foreground",
-								)}
-							>
-								S
-							</button>
+								<StopIcon className="size-4" aria-hidden="true" />
+							</Button>
+							<span className="h-4 w-px bg-border/40 shrink-0" />
+							<span className="text-[10px] text-muted-foreground">
+								{formatAudioDuration(currentTime)} /
+								{formatAudioDuration(duration || 0)}
+							</span>
+							<span className="h-4 w-px bg-border/40 shrink-0" />
 							<SpeakerWaveIcon
-								className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+								className="size-4 text-muted-foreground shrink-0"
 								aria-hidden="true"
 							/>
+							<Slider
+								value={[volume]}
+								max={1}
+								step={0.05}
+								onValueChange={([v]) => setVolume(v ?? volume)}
+								aria-label="Monitor volume"
+								className="w-20 shrink-0"
+							/>
+							<span className="h-4 w-px bg-border/40 shrink-0" />
+							<span className="text-[10px] text-muted-foreground">Zoom</span>
+							<Slider
+								value={[zoom]}
+								min={0.5}
+								max={3}
+								step={0.25}
+								onValueChange={([v]) => setZoom(v ?? 1)}
+								aria-label="Timeline zoom"
+								className="w-24 shrink-0"
+							/>
+							<span className="h-4 w-px bg-border/40 shrink-0" />
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={handleExport}
+								title="Export placed clips as audio files"
+								aria-label="Export clips"
+							>
+								<Download className="mr-1 size-4" aria-hidden="true" />
+								Export
+							</Button>
 						</div>
-					</li>
-				))}
-			</ul>
+
+						<div
+							className="relative overflow-x-auto border border-border rounded-md bg-card min-h-[120px]"
+							style={{ width: Math.max(totalWidth, 400) }}
+						>
+							{/* Time ruler */}
+							<div
+								className="absolute top-0 left-0 right-0 h-[24px] border-b border-border flex items-center text-[10px] text-muted-foreground pointer-events-none"
+								style={{ paddingLeft: 90 }}
+							>
+								{Array.from(
+									{
+										length: Math.ceil(maxDuration() / SNAP_GRID_SECONDS) + 1,
+									},
+									(_, i) => i * SNAP_GRID_SECONDS,
+								).map((seconds) => (
+									<div
+										key={seconds}
+										className="shrink-0 whitespace-nowrap"
+										style={{ left: seconds * pps }}
+									>
+										{seconds}s
+									</div>
+								))}
+							</div>
+
+							{/* Playhead */}
+							<div
+								className="absolute top-0 bottom-0 w-px bg-accent-ink"
+								style={{
+									left: Math.min(currentTime, maxDuration()) * pps,
+									zIndex: 10,
+								}}
+								aria-hidden="true"
+							/>
+
+							{/* Lanes */}
+							<div className="relative h-full">
+								{tracks.map((t) => (
+									<TimelineClip key={t.id} track={t} pps={pps} snap={snap} />
+								))}
+							</div>
+						</div>
+					</>
+				)}
+				<ImportModal
+					open={importOpen}
+					onOpenChange={setImportOpen}
+					onImportComplete={handleImportComplete}
+				/>
+			</div>
+		</DndContext>
+	);
+}
+
+/**
+ * Single timeline clip lane: drag handle + clip bar + mute button.
+ *
+ * `useDraggable` is called at the top level of this component (never
+ * inside a `.map()` loop), so React hook rules are respected. The drag
+ * handle (grip) is separate from the mute button, so muting never
+ * starts a drag. While dragging, a dashed ghost shows where the clip
+ * will snap; pressing Escape cancels the move.
+ */
+function TimelineClip({
+	track,
+	pps,
+	snap,
+}: {
+	track: Track;
+	pps: number;
+	snap: boolean;
+}) {
+	const { setTracks } = useTimelineTracks();
+	const { attributes, listeners, setNodeRef, transform, isDragging } =
+		useDraggable({ id: track.id });
+
+	const clipLeft = track.startTime * pps;
+	const clipWidth = Math.max(40, (track.duration ?? 0) * pps);
+	const dragDeltaX = transform?.x ?? 0;
+	const currentLeft = clipLeft + dragDeltaX;
+
+	// Where the clip would land if dropped now (snap preview ghost).
+	let previewLeft: number | null = null;
+	if (isDragging) {
+		const draggedSeconds = track.startTime + dragDeltaX / pps;
+		const clamped = Math.max(0, draggedSeconds);
+		previewLeft =
+			(snap
+				? Math.round(clamped / SNAP_GRID_SECONDS) * SNAP_GRID_SECONDS
+				: clamped) * pps;
+	}
+
+	return (
+		<div
+			key={track.id}
+			className="flex items-center gap-2 px-2 py-1 border-b border-border/50 last:border-0"
+			style={{ height: LANE_HEIGHT }}
+		>
+			<span
+				className="shrink-0 w-[86px] truncate text-[11px] text-muted-foreground"
+				title={track.name}
+			>
+				{track.name}
+			</span>
+
+			{/* Draggable clip area: drag handle + bar. Mute button lives outside. */}
+			<div
+				ref={setNodeRef}
+				{...attributes}
+				{...listeners}
+				className="relative flex-1 h-10 shrink-0 cursor-grab active:cursor-grabbing"
+				style={{
+					position: "absolute",
+					left: currentLeft,
+					top: 0,
+					bottom: 0,
+					width: clipWidth,
+					transform: CSS.Transform.toString(transform),
+					transition: isDragging ? "0s" : "transform 0.15s",
+					opacity: isDragging ? 0.6 : 1,
+				}}
+			>
+				{/* Snap preview ghost — shows where the clip will land on drop. */}
+				{previewLeft !== null && previewLeft !== currentLeft && (
+					<div
+						className="absolute inset-0 border-2 border-dashed border-accent/50 bg-accent/10 pointer-events-none select-none"
+						style={{ left: previewLeft }}
+						aria-hidden="true"
+					/>
+				)}
+
+				{/* Clip bar */}
+				<div
+					className={cn(
+						"absolute inset-0 rounded-md overflow-hidden border border-white/20 flex items-center",
+						track.muted ? "bg-strong/60" : "bg-accent/70",
+					)}
+				>
+					<span
+						className="absolute left-1 top-[-2px] text-[9px] font-bold text-white drop-shadow"
+						aria-hidden="true"
+					>
+						{Math.round(track.startTime)}s
+					</span>
+					<span
+						className="absolute right-1 bottom-1 text-[9px] text-white/90 drop-shadow"
+						aria-hidden="true"
+					>
+						{(track.duration ?? 0).toFixed(1)}s
+					</span>
+					{track.muted && (
+						<span
+							className="absolute left-1 bottom-1 text-[9px] text-warning font-bold"
+							aria-hidden="true"
+						>
+							M
+						</span>
+					)}
+				</div>
+
+				{/* Drag handle grip */}
+				<div
+					className="absolute left-1 top-1/2 -translate-y-1/2 flex items-center"
+					title="Drag to reposition"
+				>
+					<GripIcon
+						className="size-4 text-muted-foreground/60"
+						aria-hidden="true"
+					/>
+				</div>
+			</div>
+
+			{/* Mute button — outside the draggable area so clicking it never starts a drag. */}
+			<button
+				type="button"
+				title={track.muted ? "Unmute track" : "Mute track"}
+				aria-label={`${track.muted ? "Unmute" : "Mute"} ${track.name}`}
+				aria-pressed={track.muted}
+				onClick={() => {
+					setTracks((prev) =>
+						prev.map((x) =>
+							x.id === track.id ? { ...x, muted: !x.muted } : x,
+						),
+					);
+				}}
+				className={cn(
+					"rounded-sm px-2 py-0.5 text-xs font-semibold transition-colors",
+					track.muted
+						? "bg-warning text-warning-foreground"
+						: "bg-secondary text-muted-foreground hover:text-foreground",
+				)}
+			>
+				M
+			</button>
 		</div>
 	);
 }

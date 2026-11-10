@@ -1,16 +1,22 @@
 import {
+	AdjustmentsHorizontalIcon,
 	ArrowUpTrayIcon,
 	Cog6ToothIcon,
 	MicrophoneIcon,
+	PencilSquareIcon,
 	StopIcon,
 } from "@heroicons/react/24/outline";
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CapturePill } from "@/features/capture/CapturePill";
 import { CopyClipButton } from "@/features/clipboard/CopyClipButton";
+import { apiClient } from "@/lib/api/client";
 import type { Clip } from "@/lib/clip";
+import { showStudioErrorToast } from "@/lib/errors";
 import type { UseCaptureRecordingSessionResult } from "@/lib/hooks/useCaptureRecordingSession";
 import type { DictationReadiness } from "@/lib/hooks/useDictationReadiness";
+import { useSendTo } from "@/lib/hooks/useSendTo";
 import { Button } from "@/ui/button";
 
 /**
@@ -33,6 +39,58 @@ export function CapturesActionBar({
 	audioClip: Clip | null;
 }) {
 	const { t } = useTranslation();
+	const sendTo = useSendTo();
+	const [handoffPending, setHandoffPending] = useState<
+		"effects" | "transcript" | null
+	>(null);
+
+	async function sendSelectedAudioToEffects() {
+		if (!audioClip) {
+			return;
+		}
+		setHandoffPending("effects");
+		try {
+			const resp = await fetch(audioClip.audioUrl);
+			if (!resp.ok) {
+				throw new Error(`Could not load capture audio (${resp.status})`);
+			}
+			const blob = await resp.blob();
+			const { audio_path } = await apiClient.dspUpload(
+				blob,
+				`${(audioClip.name || "capture").slice(0, 30).replace(/[^\w-]/g, "_")}.wav`,
+			);
+			sendTo("/effects", { path: audio_path });
+		} catch (error) {
+			showStudioErrorToast(error);
+		} finally {
+			setHandoffPending(null);
+		}
+	}
+
+	async function sendSelectedAudioToTranscript() {
+		if (!audioClip) {
+			return;
+		}
+		setHandoffPending("transcript");
+		try {
+			const resp = await fetch(audioClip.audioUrl);
+			if (!resp.ok) {
+				throw new Error(`Could not load capture audio (${resp.status})`);
+			}
+			const blob = await resp.blob();
+			const file = new File(
+				[blob],
+				`${(audioClip.name || "capture").slice(0, 30).replace(/[^\w-]/g, "_")}.wav`,
+				{ type: blob.type || "audio/wav" },
+			);
+			const imported = await apiClient.importGeneration(file);
+			sendTo("/transcript", { generation: imported.id });
+		} catch (error) {
+			showStudioErrorToast(error);
+		} finally {
+			setHandoffPending(null);
+		}
+	}
 	return (
 		<div className="flex items-center gap-3 px-8 py-4">
 			<p className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -65,6 +123,35 @@ export function CapturesActionBar({
 								"Copy the selected capture's audio — paste in any tab",
 						})}
 					/>
+					{audioClip ? (
+						<>
+							<Button
+								variant="outline"
+								disabled={handoffPending !== null}
+								title="Send the selected capture to Effects"
+								onClick={() => void sendSelectedAudioToEffects()}
+							>
+								<AdjustmentsHorizontalIcon
+									className="mr-2 size-4"
+									aria-hidden="true"
+								/>
+								{t("captures.actions.sendToEffects", {
+									defaultValue: "Effects",
+								})}
+							</Button>
+							<Button
+								variant="outline"
+								disabled={handoffPending !== null}
+								title="Send the selected capture to Transcript Edit"
+								onClick={() => void sendSelectedAudioToTranscript()}
+							>
+								<PencilSquareIcon className="mr-2 size-4" aria-hidden="true" />
+								{t("captures.actions.sendToTranscript", {
+									defaultValue: "Transcript",
+								})}
+							</Button>
+						</>
+					) : null}
 					<Button variant="outline" asChild>
 						<Link to="/settings/captures">
 							<Cog6ToothIcon className="mr-2 size-4" aria-hidden="true" />

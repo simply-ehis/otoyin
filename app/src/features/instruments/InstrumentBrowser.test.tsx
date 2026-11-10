@@ -116,6 +116,28 @@ describe("InstrumentBrowser", () => {
 		});
 	});
 
+	it("shows the no-SoundFont banner with a Store link when unavailable", async () => {
+		listGMTypes.mockResolvedValue({ ...GM_TYPES, soundfont_available: false });
+		await renderBrowser();
+		expect(
+			await screen.findByText("No SoundFont installed", {}, { timeout: 5000 }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: "Open the Store" }),
+		).toHaveAttribute("href", "/store");
+	});
+
+	it("shows no banner when a SoundFont is available", async () => {
+		listGMTypes.mockResolvedValue({ ...GM_TYPES, soundfont_available: true });
+		await renderBrowser();
+		expect(
+			await screen.findByRole("button", { name: /Acoustic Grand Piano/ }),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByText("No SoundFont installed"),
+		).not.toBeInTheDocument();
+	});
+
 	it("shows the Store hint when the audition fails (no SoundFont)", async () => {
 		playGMInstrument.mockRejectedValue(
 			new Error("No SoundFont found — install an instrument pack"),

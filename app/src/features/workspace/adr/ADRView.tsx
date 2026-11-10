@@ -1,6 +1,6 @@
 import { ArrowUpTrayIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearch } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import { ERR_TITLE_ADR } from "@/lib/errorMessages";
@@ -17,13 +17,25 @@ import {
 } from "@/ui/alert-dialog";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
-import { Badge, Separator, Spinner } from "@/ui/primitives";
+import { Badge, Label, Separator, Spinner } from "@/ui/primitives";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/ui/select";
 import { EmptyState, LoadingState, ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
 import { AlignmentPanel } from "./AlignmentPanel";
 import { RecordingControls } from "./RecordingControls";
 import { TakeManager } from "./TakeManager";
 import type { ADRSession, ADRSessionSummary } from "./types";
+
+const WHISPER_MODELS = [
+	{ id: "tiny.en", label: "Whisper Tiny EN (fastest, ~75 MB)" },
+	{ id: "base.en", label: "Whisper Base EN (better, ~142 MB)" },
+] as const;
 
 export function ADRView() {
 	const { toast } = useToast();
@@ -37,6 +49,22 @@ export function ADRView() {
 	const [newSessionName, setNewSessionName] = useState("");
 	const [recordingLineId, setRecordingLineId] = useState<string | null>(null);
 	const [confirmDeleteSession, setConfirmDeleteSession] = useState(false);
+	const [sttModel, setSttModel] = useState("tiny.en");
+
+	// Whisper model install state for the diarization/auto-label path,
+	// shared with the Store.
+	const sttModelsQuery = useQuery({
+		queryKey: ["modelStatus"],
+		queryFn: () => apiClient.getModelStatus(),
+		staleTime: 30_000,
+	});
+	const sttModels = sttModelsQuery.data?.models ?? [];
+	const modelInstalled = (id: string) =>
+		!!sttModels.find((m) => m.engine === "whisper" && m.model_size === id)
+			?.downloaded;
+	const modelDownloading = (id: string) =>
+		!!sttModels.find((m) => m.engine === "whisper" && m.model_size === id)
+			?.downloading;
 
 	const adrSearch = useSearch({ from: "/adr" });
 	useEffect(() => {
@@ -126,7 +154,9 @@ export function ADRView() {
 			if (!session?.guide_audio_path) {
 				throw new Error("No guide audio");
 			}
-			return apiClient.diarizePath(session.guide_audio_path);
+			return apiClient.diarizePath(session.guide_audio_path, {
+				model: sttModel,
+			});
 		},
 		onSuccess: (data) => {
 			toast({
@@ -370,20 +400,62 @@ export function ADRView() {
 						{session?.guide_audio_path ? "Replace Guide" : "Import Guide"}
 					</label>
 					{session?.guide_audio_path ? (
-						<Button
-							type="button"
-							variant="outline"
-							size="sm"
-							className="h-7 px-2 text-xs"
-							disabled={autoDiarizeMut.isPending}
-							title="Auto-detect speakers from guide audio"
-							onClick={() => autoDiarizeMut.mutate()}
-						>
-							{autoDiarizeMut.isPending ? (
-								<Spinner size="xs" className="mr-1" />
-							) : null}
-							Auto-label speakers
-						</Button>
+						<div className="flex flex-wrap items-center gap-2">
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								className="h-7 px-2 text-xs"
+								disabled={autoDiarizeMut.isPending || !modelInstalled(sttModel)}
+								title={
+									modelInstalled(sttModel)
+										? "Auto-detect speakers from guide audio"
+										: "Install the selected Whisper model first"
+								}
+								onClick={() => autoDiarizeMut.mutate()}
+							>
+								{autoDiarizeMut.isPending ? (
+									<Spinner size="xs" className="mr-1" />
+								) : null}
+								Auto-label speakers
+							</Button>
+							<Label htmlFor="adr-stt-model" className="text-xs">
+								Model
+							</Label>
+							<Select
+								value={sttModel}
+								onValueChange={(v) => setSttModel(v)}
+								disabled={modelDownloading(sttModel)}
+							>
+								<SelectTrigger id="adr-stt-model" className="h-7 w-36 text-xs">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{WHISPER_MODELS.map((m) => {
+										const installed = modelInstalled(m.id);
+										const downloading = modelDownloading(m.id);
+										return (
+											<SelectItem
+												key={m.id}
+												value={m.id}
+												disabled={!installed && !downloading}
+											>
+												{m.label}
+												{!installed && !downloading ? " — not installed" : ""}
+											</SelectItem>
+										);
+									})}
+								</SelectContent>
+							</Select>
+							{!modelInstalled(sttModel) && (
+								<Link
+									to="/store"
+									className="text-xs underline transition-colors hover:text-foreground hover:underline"
+								>
+									Get from Store
+								</Link>
+							)}
+						</div>
 					) : null}
 					<Button
 						type="button"

@@ -60,7 +60,7 @@ export function ConversationView() {
 			startMode: "relative_to_previous",
 			offsetMs: 0,
 			overlapMs: 0,
-			engine: "cloud",
+			engine: "kokoro",
 			profileId: null,
 		},
 	]);
@@ -85,6 +85,8 @@ export function ConversationView() {
 			id: l.id,
 			text: l.text,
 			speaker: speakers.find((s) => s.id === l.speakerId)?.name ?? "",
+			engine: l.engine ?? "kokoro",
+			profile_id: l.profileId ?? undefined,
 			start_mode: l.startMode,
 			start_offset_ms: l.offsetMs,
 			overlap_ms: l.overlapMs,
@@ -143,6 +145,7 @@ export function ConversationView() {
 	const addLine = useCallback(() => {
 		const id = `line-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
 		const fallbackSpeaker = speakers[0]?.id ?? "spk-1";
+		const speaker = speakers.find((s) => s.id === fallbackSpeaker);
 		setLines((p) => [
 			...p,
 			{
@@ -152,8 +155,8 @@ export function ConversationView() {
 				startMode: "relative_to_previous",
 				offsetMs: 0,
 				overlapMs: 0,
-				engine: "cloud",
-				profileId: null,
+				engine: "kokoro",
+				profileId: speaker?.voiceProfileId ?? null,
 			},
 		]);
 	}, [speakers]);

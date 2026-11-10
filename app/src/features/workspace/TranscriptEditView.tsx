@@ -1,7 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
+import { useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import { showStudioErrorToast } from "@/lib/errors";
+import { useSendTo } from "@/lib/hooks/useSendTo";
 import { cn } from "@/lib/utils/cn";
 import { usePlatform } from "@/platform/PlatformContext";
 import { Button } from "@/ui/button";
@@ -93,6 +95,9 @@ export function TranscriptEditView() {
 	const [playheadMs, setPlayheadMs] = useState<number | null>(null);
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 
+	// Active (loaded) generation — needed for "Send to…" handoffs.
+	const sendTo = useSendTo();
+
 	useEffect(() => {
 		return () => {
 			if (audioRef.current) {
@@ -129,6 +134,20 @@ export function TranscriptEditView() {
 		},
 		onError: (err: unknown) => showStudioErrorToast(err),
 	});
+
+	const search = useSearch({ from: "/transcript" });
+	const seededRef = useRef(false);
+	// Deep-link: ?generation=<id> (e.g. from "Send to Transcript Edit")
+	// seeds the input and loads the transcript once on mount.
+	useEffect(() => {
+		const seed = search.generation;
+		if (!seed || seededRef.current) {
+			return;
+		}
+		seededRef.current = true;
+		setGenerationId(seed);
+		loadMut.mutate(seed);
+	}, [search.generation, loadMut.mutate]);
 
 	function playFrom(ms: number) {
 		if (!activeId) {
@@ -269,6 +288,18 @@ export function TranscriptEditView() {
 								? ` · playhead ${(playheadMs / 1000).toFixed(1)}s`
 								: ""}
 						</Badge>
+						{activeId ? (
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								className="h-7 text-xs"
+								title="Open this generation in Effects"
+								onClick={() => sendTo("/effects", { generation: activeId })}
+							>
+								Send to Effects
+							</Button>
+						) : null}
 						<span className="flex-1" />
 						<Button
 							type="button"

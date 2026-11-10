@@ -1,8 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
+import { useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import { ERR_TITLE_VALIDATION } from "@/lib/errorMessages";
 import { showStudioErrorToast } from "@/lib/errors";
+import { useSendTo } from "@/lib/hooks/useSendTo";
 import { Button } from "@/ui/button";
 import { Label, Separator, Spinner } from "@/ui/primitives";
 import {
@@ -26,6 +28,9 @@ const MODE_HELP: Record<EnhanceMode, string> = {
 
 export function AudioEnhanceView() {
 	const { toast } = useToast();
+	const sendTo = useSendTo();
+	const [sendingToEffects, setSendingToEffects] = useState(false);
+	const [sendingToTranscript, setSendingToTranscript] = useState(false);
 	const [audioPath, setAudioPath] = useState("");
 	const [fileName, setFileName] = useState("");
 	const [uploading, setUploading] = useState(false);
@@ -34,6 +39,25 @@ export function AudioEnhanceView() {
 	const [originalUrl, setOriginalUrl] = useState<string | null>(null);
 	const [enhancedBlob, setEnhancedBlob] = useState<Blob | null>(null);
 	const [showOriginal, setShowOriginal] = useState(false);
+
+	// Deep-link: ?path=<storage_path> (e.g. from Generate) seeds the uploaded
+	// file; the original player streams it from the backend via /dsp/stream.
+	const handoff = useSearch({ from: "/audio-enhance" });
+	useEffect(() => {
+		const path = handoff.path;
+		if (!path) {
+			return;
+		}
+		setAudioPath(path);
+		setFileName(path.split(/[\\/]/).pop() ?? path);
+		setEnhancedUrl(null);
+		setEnhancedBlob(null);
+		setOriginalUrl(
+			`${apiClient.getBaseUrl()}/dsp/stream?path=${encodeURIComponent(path)}`,
+		);
+		// run once on mount when a handoff path is present
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [handoff.path]);
 
 	useEffect(() => {
 		return () => {
@@ -100,6 +124,54 @@ export function AudioEnhanceView() {
 			}),
 		onError: (e: unknown) => showStudioErrorToast(e),
 	});
+
+	const sendToEffects = async () => {
+		if (!enhancedBlob) {
+			toast({
+				title: "No enhanced audio",
+				description: "Enhance the audio before sending it to Effects.",
+				variant: "destructive",
+			});
+			return;
+		}
+		setSendingToEffects(true);
+		try {
+			const { audio_path } = await apiClient.dspUpload(
+				enhancedBlob,
+				`${fileName || "audio"}-enhanced.wav`,
+			);
+			sendTo("/effects", { path: audio_path });
+		} catch (error) {
+			showStudioErrorToast(error);
+		} finally {
+			setSendingToEffects(false);
+		}
+	};
+
+	const sendToTranscript = async () => {
+		if (!enhancedBlob) {
+			toast({
+				title: "No enhanced audio",
+				description: "Enhance the audio before sending it to Transcript Edit.",
+				variant: "destructive",
+			});
+			return;
+		}
+		setSendingToTranscript(true);
+		try {
+			const file = new File(
+				[enhancedBlob],
+				`${fileName || "audio"}-enhanced.wav`,
+				{ type: enhancedBlob.type || "audio/wav" },
+			);
+			const imported = await apiClient.importGeneration(file);
+			sendTo("/transcript", { generation: imported.id });
+		} catch (error) {
+			showStudioErrorToast(error);
+		} finally {
+			setSendingToTranscript(false);
+		}
+	};
 
 	function handleProcess() {
 		if (!audioPath) {
@@ -174,6 +246,34 @@ export function AudioEnhanceView() {
 									{showOriginal ? "Show enhanced" : "Compare original"}
 								</Button>
 							) : null}
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								className="h-7 px-2 text-xs"
+								disabled={sendingToEffects || !enhancedBlob}
+								title="Send the enhanced audio to Effects"
+								onClick={() => void sendToEffects()}
+							>
+								{sendingToEffects ? (
+									<Spinner size="xs" className="mr-1" />
+								) : null}
+								Send to Effects
+							</Button>
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								className="h-7 px-2 text-xs"
+								disabled={sendingToTranscript || !enhancedBlob}
+								title="Send the enhanced audio to Transcript Edit"
+								onClick={() => void sendToTranscript()}
+							>
+								{sendingToTranscript ? (
+									<Spinner size="xs" className="mr-1" />
+								) : null}
+								Send to Transcript
+							</Button>
 							<Button
 								type="button"
 								size="sm"

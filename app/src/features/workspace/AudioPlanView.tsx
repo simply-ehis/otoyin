@@ -39,6 +39,8 @@ interface PlanTrack {
 	start_time_ms: number;
 	end_time_ms: number;
 	notes?: string;
+	voice_profile_id?: string | null;
+	engine?: string | null;
 }
 
 interface PlanScene {
@@ -49,6 +51,20 @@ interface PlanScene {
 }
 
 type TrackType = "dialogue" | "music" | "sfx" | "ambient";
+
+/** TTS engines offered in the per-track engine picker. */
+const TTS_ENGINES: string[] = [
+	"kokoro",
+	"xtts",
+	"piper",
+	"luxtts",
+	"bark",
+	"orpheus",
+	"fish_speech",
+];
+
+/** Default TTS engine assigned to a new dialogue track. */
+const DEFAULT_ENGINE = "kokoro";
 
 interface GuidedTrack {
 	id: string;
@@ -195,6 +211,95 @@ function SceneCard({
 	);
 }
 
+/**
+ * Single plan track row: type badge, name, timing, plus voice + engine pickers
+ * for dialogue tracks. Changing a picker calls the backend
+ * /audio-plan/track endpoint and updates local state optimistically.
+ */
+export function PlanTrackRow({
+	track,
+	profiles = [],
+	onUpdate,
+	isPending,
+}: {
+	track: PlanTrack;
+	profiles?: VoiceProfileResponse[];
+	onUpdate: (
+		trackId: string,
+		field: "voice_profile_id" | "engine",
+		value: string | null,
+	) => void;
+	isPending: boolean;
+}) {
+	const isDialogue = track.track_type === "dialogue";
+	const currentEngine = track.engine || DEFAULT_ENGINE;
+	const currentVoice = track.voice_profile_id ?? null;
+
+	return (
+		<li className="flex flex-wrap items-center gap-x-2 text-xs">
+			<Badge tone="accent">{track.track_type}</Badge>
+			<span className="font-medium text-foreground">{track.name}</span>
+			{track.character ? (
+				<span className="text-muted-foreground">{track.character}</span>
+			) : null}
+			{isDialogue ? (
+				<>
+					<Select
+						value={currentVoice ?? ""}
+						onValueChange={(v) =>
+							onUpdate(track.id, "voice_profile_id", v || null)
+						}
+						disabled={isPending}
+					>
+						<SelectTrigger
+							className="h-7 w-32 text-xs"
+							aria-label={`Voice for ${track.name}`}
+						>
+							<SelectValue placeholder="Voice…" />
+						</SelectTrigger>
+						<SelectContent>
+							{profiles.map((p) => (
+								<SelectItem key={p.id} value={p.id}>
+									{p.name}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+					<Select
+						value={currentEngine}
+						onValueChange={(v) => onUpdate(track.id, "engine", v || null)}
+						disabled={isPending}
+					>
+						<SelectTrigger
+							className="h-7 w-24 text-xs"
+							aria-label={`Engine for ${track.name}`}
+						>
+							<SelectValue placeholder="Engine…" />
+						</SelectTrigger>
+						<SelectContent>
+							{TTS_ENGINES.map((e) => (
+								<SelectItem key={e} value={e}>
+									{e}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</>
+			) : null}
+			<span className="ml-auto tabular-nums text-muted-foreground">
+				{(track.start_time_ms / 1000).toFixed(1)}s →{" "}
+				{(track.end_time_ms / 1000).toFixed(1)}s
+			</span>
+			{track.notes ? (
+				<span className="w-full text-muted-foreground">{track.notes}</span>
+			) : null}
+			{isPending ? (
+				<Spinner size="xs" className="ml-1" aria-label="Updating…" />
+			) : null}
+		</li>
+	);
+}
+
 export function AudioPlanView() {
 	const { toast } = useToast();
 	const { data: profiles } = useProfiles();
@@ -212,7 +317,12 @@ export function AudioPlanView() {
 					duration: s.duration,
 					dialogue: s.dialogue
 						.filter((d) => d.text.trim())
-						.map((d) => ({ character: d.character, text: d.text })),
+						.map((d) => ({
+							character: d.character,
+							text: d.text,
+							voiceProfileId: d.voiceProfileId ?? undefined,
+							engine: d.engine ?? undefined,
+						})),
 				})),
 			}),
 		onSuccess: (res) => {
@@ -243,6 +353,45 @@ export function AudioPlanView() {
 				variant: "destructive",
 			}),
 	});
+
+	const updatePlanTrackMut = useMutation({
+		mutationFn: (data: {
+			track_id: string;
+			voice_profile_id?: string | null;
+			engine?: string | null;
+		}) => apiClient.updatePlanTrack(data),
+		onSuccess: (_res, variables) => {
+			// Apply the update to local plan state so it re-renders immediately.
+			setPlan((prev) =>
+				prev.map((scene) => ({
+					...scene,
+					tracks: scene.tracks.map((t) =>
+						t.id === variables.track_id
+							? {
+									...t,
+									voice_profile_id:
+										variables.voice_profile_id ?? t.voice_profile_id,
+									engine: variables.engine ?? t.engine,
+								}
+							: t,
+					),
+				})),
+			);
+		},
+		onError: () =>
+			toast({
+				title: "Failed to update track voice/engine",
+				variant: "destructive",
+			}),
+	});
+
+	function handleTrackUpdate(
+		trackId: string,
+		field: "voice_profile_id" | "engine",
+		value: string | null,
+	) {
+		updatePlanTrackMut.mutate({ track_id: trackId, [field]: value });
+	}
 
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
@@ -366,29 +515,16 @@ export function AudioPlanView() {
 										</div>
 										<ul className="space-y-1">
 											{scene.tracks.map((t) => (
-												<li
+												<PlanTrackRow
 													key={t.id}
-													className="flex flex-wrap items-baseline gap-x-2 text-xs"
-												>
-													<Badge tone="accent">{t.track_type}</Badge>
-													<span className="font-medium text-foreground">
-														{t.name}
-													</span>
-													{t.character ? (
-														<span className="text-muted-foreground">
-															{t.character}
-														</span>
-													) : null}
-													<span className="ml-auto tabular-nums text-muted-foreground">
-														{(t.start_time_ms / 1000).toFixed(1)}s →{" "}
-														{(t.end_time_ms / 1000).toFixed(1)}s
-													</span>
-													{t.notes ? (
-														<span className="w-full text-muted-foreground">
-															{t.notes}
-														</span>
-													) : null}
-												</li>
+													track={t}
+													profiles={profiles ?? []}
+													onUpdate={handleTrackUpdate}
+													isPending={
+														updatePlanTrackMut.isPending &&
+														updatePlanTrackMut.variables?.track_id === t.id
+													}
+												/>
 											))}
 										</ul>
 									</div>

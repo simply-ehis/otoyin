@@ -111,6 +111,24 @@ export class StoriesBMethods extends StoriesAMethods {
 		return res.blob();
 	}
 
+	async previewEffectsPath(
+		audioPath: string,
+		effectsChain: EffectConfig[],
+	): Promise<Blob> {
+		const res = await this.fetchWithAuth(
+			"/effects/preview-path",
+			{
+				method: "POST",
+				body: JSON.stringify({
+					audio_path: audioPath,
+					effects_chain: effectsChain,
+				}),
+			},
+			120_000,
+		);
+		return res.blob();
+	}
+
 	// --- Phase 2: Standalone Project ---
 
 	async listBatchJobs() {
@@ -885,9 +903,10 @@ export class StoriesBMethods extends StoriesAMethods {
 	}
 
 	async getTranslateLanguages() {
-		return this.request<{ languages: Record<string, string> }>(
-			"/translate/languages",
-		);
+		return this.request<{
+			languages: Record<string, string>;
+			argos_packs_available?: boolean;
+		}>("/translate/languages");
 	}
 
 	// --- Reference Voices ---

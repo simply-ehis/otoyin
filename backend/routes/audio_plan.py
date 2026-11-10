@@ -1,15 +1,47 @@
 """AI Audio Plan endpoints."""
 
+import logging
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from ..services.audio_plan import (
+    AudioPlan,
+    DialogueLine,
     generate_auto_plan,
+    load_plan_from_disk,
     plan_from_json,
     plan_to_json,
+    save_plan_to_disk,
 )
 
 router = APIRouter()
+
+logger = logging.getLogger(__name__)
+
+# In-memory cache for speed; plans are also persisted to data/plans/<id>.json
+# so restarts don't drop voice/engine edits. Memory is a cache, disk is truth.
+PLANS: dict[str, AudioPlan] = {}
+
+
+def _get_plan(plan_id: str) -> AudioPlan:
+    plan = PLANS.get(plan_id)
+    if plan is not None:
+        return plan
+    plan = load_plan_from_disk(plan_id)
+    if plan is None:
+        raise HTTPException(status_code=404, detail=f"Plan '{plan_id}' not found")
+    PLANS[plan_id] = plan
+    return plan
+
+
+def _set_plan(plan: AudioPlan) -> None:
+    PLANS[plan.id] = plan
+    try:
+        save_plan_to_disk(plan)
+    except OSError as exc:
+        # In-memory state is still valid for this session — but say so loudly.
+        logger.warning("audio_plan: failed to persist plan %s: %s", plan.id, exc)
 
 
 class DialogueLineModel(BaseModel):
@@ -49,7 +81,42 @@ async def create_auto_plan(data: AutoPlanRequest):
     """Generate an automatic audio plan from scene data."""
     scenes = [s.model_dump() for s in data.scenes]
     plan = generate_auto_plan(scenes, data.characters, data.fps)
+    _set_plan(plan)
     return {"plan_json": plan_to_json(plan)}
+
+
+@router.post("/audio-plan/track")
+async def update_plan_track(data: PlanTrackUpdate):
+    """Update a single plan track's voice_profile_id/engine (and timing/notes).
+
+    Returns the updated plan_json so the frontend can re-render with the new
+    voice/engine assignment.
+    """
+    if not data.track_id:
+        raise HTTPException(status_code=400, detail="track_id is required")
+    plan = _get_plan("auto-plan")
+    for scene in plan.scenes:
+        for track in scene.tracks:
+            if track.id != data.track_id:
+                continue
+            if track.dialogue_line is None:
+                track.dialogue_line = DialogueLine(
+                    character=track.character or "",
+                    text="",
+                )
+            if data.voice_profile_id is not None:
+                track.dialogue_line.voice_profile_id = data.voice_profile_id
+            if data.engine is not None:
+                track.dialogue_line.engine = data.engine
+            if data.start_time_ms is not None:
+                track.start_time_ms = data.start_time_ms
+            if data.end_time_ms is not None:
+                track.end_time_ms = data.end_time_ms
+            if data.notes is not None:
+                track.notes = data.notes
+            _set_plan(plan)
+            return {"plan_json": plan_to_json(plan), "track_id": track.id}
+    raise HTTPException(status_code=404, detail=f"Track '{data.track_id}' not found in plan")
 
 
 @router.post("/audio-plan/validate")

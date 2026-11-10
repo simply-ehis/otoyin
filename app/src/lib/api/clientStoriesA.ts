@@ -930,10 +930,12 @@ export class StoriesAMethods extends ChannelsMethods {
 	async listGMTypes(): Promise<{
 		note: string;
 		programs: Array<{ program: number; name: string; family: string }>;
+		soundfont_available?: boolean;
 	}> {
 		return this.request<{
 			note: string;
 			programs: Array<{ program: number; name: string; family: string }>;
+			soundfont_available?: boolean;
 		}>("/instruments/gm-types");
 	}
 
@@ -1051,6 +1053,23 @@ export class StoriesAMethods extends ChannelsMethods {
 			method: "POST",
 			body: JSON.stringify({ plan_json: planJson }),
 		});
+	}
+
+	async updatePlanTrack(data: {
+		track_id: string;
+		voice_profile_id?: string | null;
+		engine?: string | null;
+		start_time_ms?: number | null;
+		end_time_ms?: number | null;
+		notes?: string | null;
+	}): Promise<{ plan_json: string; track_id: string }> {
+		return this.request<{ plan_json: string; track_id: string }>(
+			"/audio-plan/track",
+			{
+				method: "POST",
+				body: JSON.stringify(data),
+			}
+		);
 	}
 
 	async setStoryItemVersion(

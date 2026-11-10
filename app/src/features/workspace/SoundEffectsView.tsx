@@ -11,6 +11,45 @@ import { Badge, Label, Spinner } from "@/ui/primitives";
 import { EmptyState, LoadingState, ScreenHeader } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
 
+/** Short human-readable license label for a Freesound license URL. */
+export function shortLicense(licenseUrl: string): string {
+	const u = (licenseUrl ?? "").toLowerCase();
+	if (!u) {
+		return "Unknown license";
+	}
+	if (u.includes("by-nc-nd")) {
+		return "CC BY-NC-ND";
+	}
+	if (u.includes("by-nc-sa")) {
+		return "CC BY-NC-SA";
+	}
+	if (u.includes("by-nc")) {
+		return "CC BY-NC";
+	}
+	if (u.includes("by-sa")) {
+		return "CC BY-SA";
+	}
+	if (u.includes("by-nd")) {
+		return "CC BY-ND";
+	}
+	if (u.includes("/licenses/by/4.0")) {
+		return "CC BY 4.0";
+	}
+	if (u.includes("/licenses/by/3.0")) {
+		return "CC BY 3.0";
+	}
+	if (u.includes("/licenses/by/")) {
+		return "CC BY";
+	}
+	if (u.includes("publicdomain")) {
+		return "Public Domain";
+	}
+	if (u.includes("cc0")) {
+		return "CC0";
+	}
+	return licenseUrl;
+}
+
 interface FreesoundResult {
 	id: number;
 	name: string;
@@ -126,8 +165,11 @@ export function FreeSoundsPanel() {
 									<p className="truncate text-xs tabular-nums text-muted-foreground">
 										{r.username} · {r.duration.toFixed(1)}s
 									</p>
-									<p className="truncate text-xs text-muted-foreground">
-										{r.license}
+									<p
+										className="truncate text-xs text-muted-foreground"
+										title={r.license}
+									>
+										{shortLicense(r.license)}
 									</p>
 								</div>
 								{/* biome-ignore lint/a11y/useMediaCaption: SFX preview, no dialogue to caption */}

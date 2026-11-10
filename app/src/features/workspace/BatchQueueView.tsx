@@ -344,13 +344,30 @@ export function BatchQueueView() {
 								</TableCell>
 								<TableCell>
 									<div className="flex items-center gap-2">
-										<Progress
-											value={job.progress * 100}
-											className="h-1.5 w-24"
-											label={`${job.name} progress`}
-										/>
-										<span className="w-8 text-right text-xs tabular-nums text-muted-foreground">
-											{Math.round(job.progress * 100)}%
+										{/* Batch has no mid-execution signal — show an honest
+										    indeterminate shimmer while running instead of a fake %. */}
+										{job.status === "running" ? (
+											<output
+												className="block h-1.5 w-24 overflow-hidden rounded-full bg-secondary"
+												aria-label="Running"
+											>
+												<div className="h-full w-1/3 animate-pulse rounded-full bg-accent" />
+											</output>
+										) : (
+											<Progress
+												value={
+													job.status === "pending" ? 0 : job.progress * 100
+												}
+												className="h-1.5 w-24"
+												label={`${job.name} progress`}
+											/>
+										)}
+										<span className="w-12 text-xs text-muted-foreground">
+											{job.status === "running"
+												? "Running"
+												: job.status === "pending"
+													? "Queued"
+													: "Done"}
 										</span>
 									</div>
 								</TableCell>

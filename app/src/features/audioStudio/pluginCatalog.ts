@@ -340,10 +340,20 @@ export function mergeParamMeta(
 		const params: Record<string, ParamMeta> = {};
 		for (const key of Object.keys(entry.defaults)) {
 			if (!meta[type]?.[key]) {
-				params[key] = { label: prettyParamLabel(key), min: 0, max: 1, step: 0.01, unit: "" };
+				params[key] = {
+					label: prettyParamLabel(key),
+					min: 0,
+					max: 1,
+					step: 0.01,
+					unit: "",
+				};
 			}
 		}
-		meta[type] = { ...(FALLBACK_PARAM_META[type] ?? {}), ...(meta[type] ?? {}), ...params };
+		meta[type] = {
+			...(FALLBACK_PARAM_META[type] ?? {}),
+			...(meta[type] ?? {}),
+			...params,
+		};
 	}
 	return meta;
 }

@@ -152,6 +152,24 @@ export function TranslateView() {
 					{input.length.toLocaleString()} / 20,000
 				</span>
 			</div>
+			{languages?.argos_packs_available === false && !error ? (
+				<output className="block rounded-md border border-warning/20 bg-warning-soft px-3 py-2 text-xs">
+					<p className="font-medium text-warning-text">
+						{t("translate.noArgosPackTitle", {
+							defaultValue: "No offline language pack installed",
+						})}
+					</p>
+					<p className="mt-1 text-muted-foreground">
+						{t("translate.noArgosPackBody", {
+							defaultValue:
+								"Translation will use the online service until a pack is installed.",
+						})}{" "}
+						<Link to="/store" className="underline hover:no-underline">
+							{t("translate.openStore")}
+						</Link>
+					</p>
+				</output>
+			) : null}
 			{error ? (
 				<div className="rounded-md border border-destructive/40 bg-danger-soft px-3 py-2 text-xs text-danger-text">
 					<p>{error}</p>
