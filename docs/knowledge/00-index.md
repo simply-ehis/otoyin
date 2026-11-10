@@ -18,6 +18,10 @@ UPDATED: 2026-09-11
 - [90-audit-fixes-2026-10.md](90-audit-fixes-2026-10.md) - 2026-10-14 production audit: fixed findings (undo, playback, SSE, server lifecycle) + deferral reasons.
 - [91-app-folder-models-and-staged-startup.md](91-app-folder-models-and-staged-startup.md) - 2026-10-14 model storage in data/models/ only (HF cache cleared, never read), tiered backend startup, default window geometry, title-bar controls.
 - [92-except-and-overflow-audit.md](92-except-and-overflow-audit.md) - 2026-10-14 broad-except audit (497 blocks classified, 60 true swallowers -> 15) + overflow-pattern scan findings.
+- [93-hidden-tabs.md](93-hidden-tabs.md) - Hide tabs without deleting them: tab registry + v2 hiddenTabs store, router beforeLoad guard, Settings → Workspace screen.
+- [94-onboarding.md](94-onboarding.md) - First-launch wizard: welcome → use-case cards (registry-driven tabs enabled + model space) → setup (get a voice) → generate + listen; Skip on every step; Re-run from Settings → Workspace.
+- [95-settings-schema.md](95-settings-schema.md) - Settings §5 slice S1: typed settings schema persisted to settings.json via Tauri settings_read/settings_write commands; theme migrated from uiStore localStorage onto the schema; atomic writes, defaults, clamping.
+- [96-agent-harness.md](96-agent-harness.md) - Agent harness in-app driver: typed command registry (commandRegistry.ts), registry-driven assistantCommands, RootLayout mounts the listener. Commands discoverable via getFunctionSchemas() for agent tool calling.
 
 ## Master Agent-Callable Reference
 
