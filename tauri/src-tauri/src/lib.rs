@@ -17,6 +17,7 @@ mod audio_win;
 mod backend;
 mod mic_webview;
 mod server;
+mod settings;
 mod window_state;
 
 use std::sync::atomic::Ordering;
@@ -98,6 +99,8 @@ pub fn run() {
             server::start_server,
             server::stop_server,
             server::restart_server,
+            settings::settings_read,
+            settings::settings_write,
             audio::is_system_audio_supported,
             audio::start_system_audio_capture,
             audio::stop_system_audio_capture,

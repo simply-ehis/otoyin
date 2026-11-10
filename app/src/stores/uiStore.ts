@@ -1,5 +1,27 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { useSettingsStore } from "@/stores/settingsStore";
+
+export type BackgroundPattern = "line-in-motion" | "waveform" | "none";
+export const BACKGROUND_PATTERNS: readonly BackgroundPattern[] = [
+	"line-in-motion",
+	"waveform",
+	"none",
+];
+export const BACKGROUND_PATTERN_META: Record<
+	BackgroundPattern,
+	{ label: string; hint: string }
+> = {
+	"line-in-motion": {
+		label: "Line in motion",
+		hint: "Diagonal line-in-motion tile, all themes",
+	},
+	waveform: {
+		label: "Waveform",
+		hint: "Two-row audio waveform bars, all themes",
+	},
+	none: { label: "None", hint: "No background pattern" },
+};
 
 export type Theme =
 	| "light"
@@ -96,6 +118,9 @@ interface UIStore {
 	setTheme: (theme: Theme) => void;
 	accentHue: number | null; // null = use theme default; 0-360 = custom hue
 	setAccentHue: (hue: number | null) => void;
+	// Background pattern tile (independent of theme)
+	backgroundPattern: BackgroundPattern;
+	setBackgroundPattern: (pattern: BackgroundPattern) => void;
 
 	// Mini-game overlay
 	miniGameOpen: boolean;
@@ -105,7 +130,7 @@ interface UIStore {
 	setOpenGameId: (id: string | null) => void;
 }
 
-export const useUIStore = create<UIStore>()(
+const uiStore = create<UIStore>()(
 	persist(
 		(set) => ({
 			sidebarOpen: true,
@@ -145,12 +170,16 @@ export const useUIStore = create<UIStore>()(
 			profileFormDraft: null,
 			setProfileFormDraft: (draft) => set({ profileFormDraft: draft }),
 
-			theme: "system",
+			theme:
+				(useSettingsStore.getState().getSetting("theme") as Theme) ?? "system",
 			setTheme: (theme) => {
 				set({ theme });
+				void useSettingsStore.getState().setSetting("theme", theme);
 			},
 			accentHue: null,
 			setAccentHue: (hue) => set({ accentHue: hue }),
+			backgroundPattern: "line-in-motion",
+			setBackgroundPattern: (pattern) => set({ backgroundPattern: pattern }),
 
 			miniGameOpen: false,
 			setMiniGameOpen: (open) => set({ miniGameOpen: open }),
@@ -161,8 +190,8 @@ export const useUIStore = create<UIStore>()(
 			name: "otoyin-ui",
 			partialize: (state) => ({
 				selectedProfileId: state.selectedProfileId,
-				theme: state.theme,
 				accentHue: state.accentHue,
+				backgroundPattern: state.backgroundPattern,
 				sidebarOpen: state.sidebarOpen,
 				sidebarWidth: state.sidebarWidth,
 				assistantWidth: state.assistantWidth,
@@ -171,3 +200,18 @@ export const useUIStore = create<UIStore>()(
 		},
 	),
 );
+
+// Sync theme when settingsStore finishes loading so the persisted value wins
+// over the "system" default used during uiStore initialization.
+useSettingsStore.subscribe((state, prevState) => {
+	if (!prevState.loaded && state.loaded) {
+		const theme = useSettingsStore.getState().getSetting("theme") as
+			| Theme
+			| undefined;
+		if (theme) {
+			uiStore.getState().setTheme(theme);
+		}
+	}
+});
+
+export const useUIStore = uiStore;
