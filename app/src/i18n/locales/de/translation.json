@@ -88,7 +88,7 @@
 			"refinedHint": "Refined with Qwen3 · {{model}}",
 			"rawHint": "Transcribed with Whisper {{model}}",
 			"packed": "Packed",
-			"packedEmpty": "No word-level transcript yet \u2014 retranscribe to generate one.",
+			"packedEmpty": "No word-level transcript yet — retranscribe to generate one.",
 			"copyPack": "Copy pack",
 			"downloadPack": "Pack (.md)",
 			"highlights": "Highlights",
@@ -118,7 +118,9 @@
 			"playAsStopFallback": "Stop · Voice",
 			"playAsDropdownLabel": "Play transcript as",
 			"copyAudio": "Copy audio",
-			"copyAudioTitle": "Copy the selected capture"
+			"copyAudioTitle": "Copy the selected capture",
+			"sendToEffects": "Effekte",
+			"sendToTranscript": "Transkript"
 		},
 		"empty": {
 			"noMatches": "No captures match \"{{query}}\"",
@@ -354,7 +356,9 @@
 			"audioTooLong": "Audio is too long ({{duration}}). Maximum duration is {{max}}.",
 			"audioFailed": "Failed to validate audio file. Please try a different file.",
 			"audioFormatUnsupported": "Unsupported audio format. Accepted formats: {{formats}}.",
-			"audioTooLarge": "Audio file exceeds the maximum size of {{max}}."
+			"audioTooLarge": "Audio file exceeds the maximum size of {{max}}.",
+			"audioTooShort": "Das Audio ist zu kurz ({{duration}}). Mindestlänge für Voice Cloning: {{min}} Sekunden.",
+			"audioTooQuiet": "Das Audio ist zu leise oder enthält fast nur Hintergrundgeräusch. Bitte verwende eine sauberere Aufnahme."
 		},
 		"toast": {
 			"recordingComplete": "Recording complete",
@@ -401,7 +405,9 @@
 			"sampleFailed": "Failed to add sample",
 			"sampleFailedDescription": "Failed to add sample.",
 			"sampleFailedRolledBack": "Failed to add sample. The profile was rolled back.",
-			"saveFailed": "Failed to save profile"
+			"saveFailed": "Failed to save profile",
+			"qualityWarning": "Warnung zur Qualität des Sprachbeispiels",
+			"qualityWarningDescription": "Die Aufnahme ist kurz oder verrauscht. Die Cloning-Qualität kann beeinträchtigt sein."
 		}
 	},
 	"audioSample": {
@@ -1361,7 +1367,16 @@
 			"profilesDescription": "Apply a preset combination of tabs for a specific use case.",
 			"replayTour": "Replay welcome tour",
 			"reset": "Show all tabs",
-			"title": "Sidebar tabs"
+			"title": "Sidebar tabs",
+			"searchHint": "Suche nach Name oder Schlüsselwort — {{visible}} von {{total}} Tabs sichtbar.",
+			"searchLabel": "Tabs filtern",
+			"searchPlaceholder": "Tabs filtern…",
+			"count": "{{visible}}/{{total}} sichtbar",
+			"noMatches": "Keine Tabs gefunden",
+			"noMatchesBody": "Versuche ein anderes Wort — „denoise“ oder „dub“ finden Tabs.",
+			"alwaysOn": "Immer sichtbar",
+			"highlightBody": "„{{name}}“ ist ausgeblendet. Aktiviere es, um es zu öffnen.",
+			"enable": "Aktivieren"
 		}
 	},
 	"models": {
@@ -1500,7 +1515,9 @@
 		"inputPlaceholder": "Type or paste text to translate…",
 		"offlineHint": "Translation needs a network connection or an offline language pack.",
 		"openStore": "Get offline packs in the Store",
-		"swap": "Swap languages"
+		"swap": "Swap languages",
+		"noArgosPackTitle": "Kein Offline-Sprachpaket installiert",
+		"noArgosPackBody": "Die Übersetzung nutzt den Online-Dienst, bis ein Paket installiert ist."
 	},
 	"referenceVoices": {
 		"title": "Reference Voices",

@@ -1,82 +1,128 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { ALWAYS_ON_PATHS, REGISTRY } from "@/lib/tabs/registry";
 
-/** All navigable tab paths in the app. */
-export const ALL_TAB_PATHS = [
-	"/",
-	"/audio-studio",
-	"/stories",
-	"/songwriter",
-	"/launcher",
-	"/instruments",
-	"/audiobooks",
-	"/voices",
-	"/captures",
-	"/dubbing",
-	"/effects",
-	"/workspace",
-	"/sounds",
-	"/translate",
-	"/library",
-	"/store",
-	"/settings",
-] as const;
+/**
+ * Workspace (tab visibility) store.
+ *
+ * Single source of truth for which tabs are visible in the sidebar. Hidden
+ * tabs keep their data, models, and settings — they're just filtered out of
+ * the nav and their routes redirect to Settings → Workspace.
+ *
+ * `hiddenTabs` is the canonical list. `visibleTabs` is kept in sync for
+ * legacy call-sites (existing tests + WorkspacePage): null = all visible.
+ */
+export const ALL_TAB_PATHS = REGISTRY.map((t) => t.path);
 
-export type TabPath = (typeof ALL_TAB_PATHS)[number];
+export type TabPath = string;
 
-/** Use-case profiles — each maps to a set of visible tabs. */
+/** Use-case profiles — each maps to the tabs that should stay visible. */
 export const USE_CASE_PROFILES = {
 	tts: {
 		label: "TTS / Voice generation",
 		description: "Generate speech from text with AI voices",
-		tabs: ["/", "/voices", "/effects", "/store"] as TabPath[],
+		tabs: [
+			"/",
+			"/voices",
+			"/voice-converter",
+			"/sounds",
+			"/songwriter",
+		] as TabPath[],
+		spaceEstimate: "~400 MB",
 	},
 	podcast: {
 		label: "Podcasting / Dialogue",
 		description: "Multi-speaker conversations and dialogue",
-		tabs: ["/", "/stories", "/captures", "/workspace"] as TabPath[],
+		tabs: [
+			"/",
+			"/stories",
+			"/captures",
+			"/diarize",
+			"/voices",
+			"/audio-enhance",
+			"/noise-reduction",
+		] as TabPath[],
+		spaceEstimate: "~700 MB",
 	},
 	audiobook: {
 		label: "Audiobooks",
 		description: "Full-length narrated audiobooks",
-		tabs: ["/audiobooks", "/", "/voices", "/library"] as TabPath[],
+		tabs: [
+			"/audiobooks",
+			"/",
+			"/voices",
+			"/library",
+			"/noise-reduction",
+			"/audio-enhance",
+		] as TabPath[],
+		spaceEstimate: "~300 MB",
 	},
 	music: {
 		label: "Music production",
 		description: "Instruments, beats, and songwriting",
 		tabs: [
-			"/audio-studio",
-			"/instruments",
-			"/launcher",
+			"/music-gen",
 			"/songwriter",
+			"/instruments",
+			"/audio-studio",
+			"/mixer",
+			"/launcher",
 		] as TabPath[],
+		spaceEstimate: "~1.2 GB",
 	},
 	voiceChanger: {
 		label: "Voice changer",
 		description: "Real-time voice conversion and capture",
-		tabs: ["/workspace", "/captures"] as TabPath[],
+		tabs: [
+			"/voice-converter",
+			"/captures",
+			"/vocal-isolation",
+			"/noise-reduction",
+			"/audio-enhance",
+		] as TabPath[],
+		spaceEstimate: "~600 MB",
 	},
 } as const;
 
 export type UseCaseKey = keyof typeof USE_CASE_PROFILES;
 
+function toVisible(hiddenTabs: string[]): string[] | null {
+	if (hiddenTabs.length === 0) {
+		return null;
+	}
+	return ALL_TAB_PATHS.filter((p) => !hiddenTabs.includes(p));
+}
+
+/** Refuse to hide always-on tabs (/library, /store, /settings). */
+function pruneAlwaysOn(paths: string[]): string[] {
+	return paths.filter((p) => !ALWAYS_ON_PATHS.includes(p));
+}
+
 interface WorkspaceState {
-	/** Tabs currently visible in the sidebar. null = show all (never onboarded). */
-	visibleTabs: TabPath[] | null;
+	/** Paths of hidden tabs (canonical). */
+	hiddenTabs: string[];
+	/** Derived for legacy call-sites: null = all visible. */
+	visibleTabs: string[] | null;
 	/** Selected use-case keys from onboarding. */
 	selectedUseCases: UseCaseKey[];
-	/** Whether onboarding wizard has been completed. */
+	/** Whether the onboarding wizard has been completed. */
 	onboarded: boolean;
 
-	/** Set visible tabs explicitly. */
-	setVisibleTabs: (tabs: TabPath[]) => void;
-	/** Toggle a single tab's visibility. */
-	toggleTab: (tab: TabPath) => void;
-	/** Apply use-case profiles: union of all selected profiles' tabs. */
+	/** Show a tab again. */
+	showTab: (path: string) => void;
+	/** Hide a tab (no-op for always-on tabs). */
+	hideTab: (path: string) => void;
+	/** Set a tab's hidden state directly. */
+	setTabHidden: (path: string, hidden: boolean) => void;
+	/** Toggle a tab's visibility (no-op for always-on tabs). */
+	toggleTab: (path: string) => void;
+	/** Show everything again. */
+	showAllTabs: () => void;
+	/** Apply use-case profiles: hidden = everything except the union + always-on. */
 	applyUseCases: (cases: UseCaseKey[]) => void;
-	/** Reset to all tabs visible. */
+	/** Reset to all tabs visible + clear the use-case selection. */
 	resetToAll: () => void;
-	/** Mark onboarding as complete. */
+	/** Mark the onboarding wizard as complete. */
 	markOnboarded: () => void;
 	/** Reopen the welcome tour (used by Settings → Workspace replay). */
 	reopenOnboarding: () => void;
@@ -85,50 +131,89 @@ interface WorkspaceState {
 export const useWorkspaceStore = create<WorkspaceState>()(
 	persist(
 		(set) => ({
+			hiddenTabs: [],
 			visibleTabs: null,
 			selectedUseCases: [],
 			onboarded: false,
 
-			setVisibleTabs: (tabs) => set({ visibleTabs: tabs }),
-
-			toggleTab: (tab) =>
+			showTab: (path) =>
 				set((state) => {
-					const current = state.visibleTabs ?? [...ALL_TAB_PATHS];
-					const next = current.includes(tab)
-						? current.filter((t) => t !== tab)
-						: [...current, tab];
-					// If all tabs are visible, store null (default)
-					const allVisible =
-						next.length === ALL_TAB_PATHS.length &&
-						ALL_TAB_PATHS.every((t) => next.includes(t));
-					return { visibleTabs: allVisible ? null : next };
+					const hiddenTabs = state.hiddenTabs.filter((p) => p !== path);
+					return { hiddenTabs, visibleTabs: toVisible(hiddenTabs) };
 				}),
 
+			hideTab: (path) =>
+				set((state) => {
+					if (
+						ALWAYS_ON_PATHS.includes(path) ||
+						state.hiddenTabs.includes(path)
+					) {
+						return state;
+					}
+					const hiddenTabs = [...state.hiddenTabs, path];
+					return { hiddenTabs, visibleTabs: toVisible(hiddenTabs) };
+				}),
+
+			setTabHidden: (path, hidden) => {
+				if (hidden) {
+					set((state) => {
+						if (
+							ALWAYS_ON_PATHS.includes(path) ||
+							state.hiddenTabs.includes(path)
+						) {
+							return state;
+						}
+						const hiddenTabs = [...state.hiddenTabs, path];
+						return { hiddenTabs, visibleTabs: toVisible(hiddenTabs) };
+					});
+				} else {
+					set((state) => {
+						const hiddenTabs = state.hiddenTabs.filter((p) => p !== path);
+						return { hiddenTabs, visibleTabs: toVisible(hiddenTabs) };
+					});
+				}
+			},
+
+			toggleTab: (path) =>
+				set((state) => {
+					if (ALWAYS_ON_PATHS.includes(path)) {
+						return state;
+					}
+					const hidden = state.hiddenTabs.includes(path);
+					const hiddenTabs = hidden
+						? state.hiddenTabs.filter((p) => p !== path)
+						: [...state.hiddenTabs, path];
+					return { hiddenTabs, visibleTabs: toVisible(hiddenTabs) };
+				}),
+
+			showAllTabs: () => set({ hiddenTabs: [], visibleTabs: null }),
+
 			applyUseCases: (cases) => {
-				const tabSet = new Set<TabPath>();
-				for (const c of cases) {
-					const profile = USE_CASE_PROFILES[c];
+				const keep = new Set<string>(ALWAYS_ON_PATHS);
+				for (const key of cases) {
+					const profile = USE_CASE_PROFILES[key];
 					if (profile) {
-						for (const t of profile.tabs) {
-							tabSet.add(t);
+						for (const tab of profile.tabs) {
+							keep.add(tab);
 						}
 					}
 				}
-				// Always include settings
-				tabSet.add("/settings");
-				const tabs = [...tabSet];
-				const allVisible =
-					tabs.length === ALL_TAB_PATHS.length &&
-					ALL_TAB_PATHS.every((t) => tabs.includes(t));
+				const hiddenTabs = ALL_TAB_PATHS.filter((p) => !keep.has(p));
 				set({
 					selectedUseCases: cases,
-					visibleTabs: allVisible ? null : tabs,
+					hiddenTabs,
+					visibleTabs: toVisible(hiddenTabs),
 					onboarded: true,
 				});
 			},
 
 			resetToAll: () =>
-				set({ visibleTabs: null, selectedUseCases: [], onboarded: true }),
+				set({
+					hiddenTabs: [],
+					visibleTabs: null,
+					selectedUseCases: [],
+					onboarded: true,
+				}),
 
 			markOnboarded: () => set({ onboarded: true }),
 
@@ -136,6 +221,47 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 		}),
 		{
 			name: "otoyin-workspace",
+			version: 2,
+			migrate: (state, version) => {
+				// v1 stored visibleTabs only, computed against its own 17-tab list.
+				// Tabs introduced later must never be auto-hidden by migration.
+				const V1_TAB_PATHS = [
+					"/",
+					"/audio-studio",
+					"/stories",
+					"/songwriter",
+					"/launcher",
+					"/instruments",
+					"/audiobooks",
+					"/voices",
+					"/captures",
+					"/dubbing",
+					"/effects",
+					"/sounds",
+					"/translate",
+					"/library",
+					"/store",
+					"/settings",
+				];
+				const persisted = state as Partial<WorkspaceState> & {
+					visibleTabs?: string[] | null;
+				};
+				if (version >= 2) {
+					return state as WorkspaceState;
+				}
+				const hiddenTabs = pruneAlwaysOn(
+					persisted?.visibleTabs === null ||
+						persisted?.visibleTabs === undefined
+						? []
+						: V1_TAB_PATHS.filter((p) => !persisted?.visibleTabs?.includes(p)),
+				);
+				return {
+					hiddenTabs,
+					visibleTabs: toVisible(hiddenTabs),
+					onboarded: persisted?.onboarded ?? true,
+					selectedUseCases: persisted?.selectedUseCases ?? [],
+				};
+			},
 		},
 	),
 );

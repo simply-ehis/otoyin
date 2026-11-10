@@ -52,7 +52,7 @@
 			"refinedHint": "由 Qwen3 · {{model}} 精修",
 			"rawHint": "由 Whisper {{model}} 轉錄",
 			"packed": "Packed",
-			"packedEmpty": "No word-level transcript yet \u2014 retranscribe to generate one.",
+			"packedEmpty": "No word-level transcript yet — retranscribe to generate one.",
 			"copyPack": "Copy pack",
 			"downloadPack": "Pack (.md)",
 			"highlights": "Highlights",
@@ -82,7 +82,9 @@
 			"playAsStopFallback": "停止 · 聲音",
 			"playAsDropdownLabel": "以聲音播放轉錄文字",
 			"copyAudio": "Copy audio",
-			"copyAudioTitle": "Copy the selected capture"
+			"copyAudioTitle": "Copy the selected capture",
+			"sendToEffects": "效果器",
+			"sendToTranscript": "轉錄"
 		},
 		"empty": {
 			"noMatches": "找不到符合 \"{{query}}\" 的擷取",
@@ -318,7 +320,9 @@
 			"audioTooLong": "音訊過長({{duration}})。最大時長為 {{max}}。",
 			"audioFailed": "音訊檔案驗證失敗。請嘗試其他檔案。",
 			"audioFormatUnsupported": "Unsupported audio format. Accepted formats: {{formats}}.",
-			"audioTooLarge": "Audio file exceeds the maximum size of {{max}}."
+			"audioTooLarge": "Audio file exceeds the maximum size of {{max}}.",
+			"audioTooShort": "音訊太短（{{duration}}）。語音克隆至少需要 {{min}} 秒。",
+			"audioTooQuiet": "音訊太安靜或幾乎全是背景噪音。請使用更乾淨的錄音。"
 		},
 		"toast": {
 			"recordingComplete": "錄製完成",
@@ -365,7 +369,9 @@
 			"saveFailed": "儲存檔案失敗",
 			"noVoiceDescription": "No voice description",
 			"noVoiceDescriptionDescription": "Please select at least one voice attribute or add notes.",
-			"profileCreatedDesign": "\"{{name}}\" has been created with a designed voice."
+			"profileCreatedDesign": "\"{{name}}\" has been created with a designed voice.",
+			"qualityWarning": "語音樣本品質警告",
+			"qualityWarningDescription": "樣本太短或有雜訊，合成品質可能降低。"
 		}
 	},
 	"audioSample": {
@@ -1325,7 +1331,16 @@
 			"profilesDescription": "Apply a preset combination of tabs for a specific use case.",
 			"replayTour": "Replay welcome tour",
 			"reset": "Show all tabs",
-			"title": "Sidebar tabs"
+			"title": "Sidebar tabs",
+			"searchHint": "依名稱或關鍵字搜尋 — 共 {{total}} 個，顯示 {{visible}} 個。",
+			"searchLabel": "過濾分頁",
+			"searchPlaceholder": "過濾分頁…",
+			"count": "{{visible}}/{{total}}",
+			"noMatches": "沒有符合的分頁",
+			"noMatchesBody": "換個詞試試 — 例如「denoise」或「dub」。",
+			"alwaysOn": "永遠顯示",
+			"highlightBody": "「{{name}}」已隱藏。啟用後即可開啟。",
+			"enable": "啟用"
 		}
 	},
 	"models": {
@@ -1576,7 +1591,9 @@
 		"inputPlaceholder": "Type or paste text to translate…",
 		"offlineHint": "Translation needs a network connection or an offline language pack.",
 		"openStore": "Get offline packs in the Store",
-		"swap": "Swap languages"
+		"swap": "Swap languages",
+		"noArgosPackTitle": "未安裝離線語言包",
+		"noArgosPackBody": "安裝語言包之前，翻譯將使用線上服務。"
 	},
 	"youtube": {
 		"audio": "Audio",

@@ -88,7 +88,7 @@
 			"refinedHint": "Refined with Qwen3 · {{model}}",
 			"rawHint": "Transcribed with Whisper {{model}}",
 			"packed": "Packed",
-			"packedEmpty": "No word-level transcript yet \u2014 retranscribe to generate one.",
+			"packedEmpty": "No word-level transcript yet — retranscribe to generate one.",
 			"copyPack": "Copy pack",
 			"downloadPack": "Pack (.md)",
 			"highlights": "Highlights",
@@ -118,7 +118,9 @@
 			"playAsStopFallback": "Stop · Voice",
 			"playAsDropdownLabel": "Play transcript as",
 			"copyAudio": "Copy audio",
-			"copyAudioTitle": "Copy the selected capture"
+			"copyAudioTitle": "Copy the selected capture",
+			"sendToEffects": "이펙트",
+			"sendToTranscript": "전사"
 		},
 		"empty": {
 			"noMatches": "No captures match \"{{query}}\"",
@@ -354,7 +356,9 @@
 			"audioTooLong": "Audio is too long ({{duration}}). Maximum duration is {{max}}.",
 			"audioFailed": "Failed to validate audio file. Please try a different file.",
 			"audioFormatUnsupported": "Unsupported audio format. Accepted formats: {{formats}}.",
-			"audioTooLarge": "Audio file exceeds the maximum size of {{max}}."
+			"audioTooLarge": "Audio file exceeds the maximum size of {{max}}.",
+			"audioTooShort": "오디오가 너무 짧습니다 ({{duration}}). 음성 클로닝을 위한 최소 시간은 {{min}}초입니다.",
+			"audioTooQuiet": "오디오가 너무 작거나 대부분이 배경 소음입니다. 더 깨끗한 녹음을 사용해 주세요."
 		},
 		"toast": {
 			"recordingComplete": "Recording complete",
@@ -401,7 +405,9 @@
 			"sampleFailed": "Failed to add sample",
 			"sampleFailedDescription": "Failed to add sample.",
 			"sampleFailedRolledBack": "Failed to add sample. The profile was rolled back.",
-			"saveFailed": "Failed to save profile"
+			"saveFailed": "Failed to save profile",
+			"qualityWarning": "음성 샘플 품질 경고",
+			"qualityWarningDescription": "샘플이 짧거나 노이즈가 있습니다. 클로닝 품질이 낮아질 수 있습니다."
 		}
 	},
 	"audioSample": {
@@ -1361,7 +1367,16 @@
 			"profilesDescription": "Apply a preset combination of tabs for a specific use case.",
 			"replayTour": "Replay welcome tour",
 			"reset": "Show all tabs",
-			"title": "Sidebar tabs"
+			"title": "Sidebar tabs",
+			"searchHint": "이름이나 키워드로 검색 — {{total}}개 중 {{visible}}개 탭 표시 중.",
+			"searchLabel": "탭 필터",
+			"searchPlaceholder": "탭 필터…",
+			"count": "{{visible}}/{{total}}개",
+			"noMatches": "일치하는 탭 없음",
+			"noMatchesBody": "다른 단어를 시도해 보세요 — “denoise”, “dub” 등.",
+			"alwaysOn": "항상 표시",
+			"highlightBody": "“{{name}}”이(가) 숨겨져 있습니다. 다시 켜서 사용하세요.",
+			"enable": "켜기"
 		}
 	},
 	"models": {
@@ -1500,7 +1515,9 @@
 		"inputPlaceholder": "Type or paste text to translate…",
 		"offlineHint": "Translation needs a network connection or an offline language pack.",
 		"openStore": "Get offline packs in the Store",
-		"swap": "Swap languages"
+		"swap": "Swap languages",
+		"noArgosPackTitle": "오프라인 언어 팩이 설치되지 않음",
+		"noArgosPackBody": "팩이 설치될 때까지 온라인 서비스로 번역합니다."
 	},
 	"referenceVoices": {
 		"title": "Reference Voices",

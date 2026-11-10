@@ -1,37 +1,20 @@
 import {
-	BoltIcon as Bolt,
-	BookOpenIcon as BookOpen,
-	ChartBarIcon as Chart,
 	ChevronDoubleLeftIcon,
 	ChevronLeftIcon,
-	ClockIcon as Clock,
-	ArrowDownTrayIcon as Download,
-	FilmIcon as Film,
-	GlobeAltIcon as Globe,
-	QuestionMarkCircleIcon as Help,
-	HomeIcon as Home,
-	ArchiveBoxIcon as Library,
-	MicrophoneIcon as Mic,
-	AdjustmentsHorizontalIcon as Mixer,
-	MusicalNoteIcon as Music,
 	PuzzlePieceIcon as PuzzlePiece,
-	ScissorsIcon as Scissors,
-	CogIcon as Settings,
-	SparklesIcon as Sparkles,
-	Square2StackIcon as Stack,
-	ShoppingBagIcon as Store,
-	WrenchScrewdriverIcon as Tools,
-	UsersIcon as Users,
+	type SparklesIcon as Sparkles,
 	XMarkIcon as XMark,
 } from "@heroicons/react/24/outline";
 import { Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ClipboardIndicator } from "@/features/clipboard/ClipboardIndicator";
+import { REGISTRY, TAB_GROUPS } from "@/lib/tabs/registry";
 import { cn } from "@/lib/utils/cn";
 import { useUIStore } from "@/stores/uiStore";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 
-type Icon = typeof Home;
+type Icon = typeof Sparkles;
 
 interface NavItem {
 	label: string;
@@ -47,125 +30,28 @@ interface NavGroup {
 }
 
 /**
- * Unified navigation: every discoverable route lives under a category group.
- * Duplicate /workspace/* paths are retired in favor of their top-level
- * canonical equivalents; retired paths redirect in router.tsx.
+ * Unified navigation: every discoverable route lives under a category group,
+ * consumed from the tab registry. Hidden tabs are filtered out — groups with
+ * no visible items disappear entirely. Filtered once per render; the store
+ * subscribes to hiddenTabs.
  *
  * Collapsed mode: shows group icons; hover reveals a flyout with child items.
  * Accordion: opening one group closes all others.
  */
-const NAV_GROUPS: NavGroup[] = [
-	{
-		label: "Create",
-		description: "Generate speech, clone voices, and write songs",
-		icon: Sparkles,
-		items: [
-			{ path: "/", label: "sidebar.generate", icon: Home },
-			{ path: "/voices", label: "sidebar.voices", icon: Mic },
-			{ path: "/voice-converter", label: "sidebar.voiceConverter", icon: Mic },
-			{ path: "/songwriter", label: "sidebar.songwriter", icon: BookOpen },
-		],
-	},
-	{
-		label: "Studio",
-		description: "Record, arrange, and produce audio",
-		icon: Music,
-		items: [
-			{ path: "/audio-studio", label: "sidebar.audioStudio", icon: Music },
-			{ path: "/stories", label: "sidebar.stories", icon: BookOpen },
-			{ path: "/launcher", label: "sidebar.launcher", icon: Music },
-			{ path: "/instruments", label: "sidebar.instruments", icon: Music },
-			{ path: "/audiobooks", label: "sidebar.audiobooks", icon: BookOpen },
-			{ path: "/mixer", label: "sidebar.mixer", icon: Mixer },
-			{ path: "/studio", label: "sidebar.studio", icon: Music },
-			{ path: "/comping", label: "sidebar.comping", icon: Stack },
-			{ path: "/spatial", label: "sidebar.spatial", icon: Globe },
-			{ path: "/dsp", label: "sidebar.dsp", icon: Music },
-			{ path: "/automation", label: "sidebar.automation", icon: Bolt },
-		],
-	},
-	{
-		label: "Voice & Transcription",
-		description: "Capture, translate, and analyze spoken audio",
-		icon: Mic,
-		items: [
-			{ path: "/captures", label: "sidebar.captures", icon: Mic },
-			{ path: "/translate", label: "sidebar.translate", icon: Globe },
-			{ path: "/pitch", label: "sidebar.pitchMap", icon: Clock },
-			{ path: "/spectrogram", label: "sidebar.spectrogram", icon: Chart },
-			{ path: "/diarize", label: "sidebar.diarize", icon: Users },
-		],
-	},
-	{
-		label: "Processing",
-		description: "Clean, enhance, and isolate audio",
-		icon: Tools,
-		items: [
-			{ path: "/effects", label: "sidebar.effects", icon: Sparkles },
-			{
-				path: "/noise-reduction",
-				label: "sidebar.noiseReduction",
-				icon: Scissors,
-			},
-			{ path: "/audio-enhance", label: "sidebar.audioEnhance", icon: Sparkles },
-			{
-				path: "/vocal-isolation",
-				label: "sidebar.vocalIsolation",
-				icon: Scissors,
-			},
-		],
-	},
-	{
-		label: "Video",
-		description: "Dub, preview, and import video",
-		icon: Film,
-		items: [
-			{ path: "/dubbing", label: "sidebar.dubbing", icon: Film },
-			{ path: "/video", label: "sidebar.video", icon: Film },
-			{ path: "/download", label: "sidebar.download", icon: Download },
-		],
-	},
-	{
-		label: "Music",
-		description: "Generate and arrange music",
-		icon: Music,
-		items: [{ path: "/music-gen", label: "sidebar.musicGen", icon: Music }],
-	},
-	{
-		label: "Library",
-		description: "Your audio library and captured clips",
-		icon: Library,
-		items: [{ path: "/library", label: "sidebar.library", icon: Library }],
-	},
-	{
-		label: "Store",
-		description: "Marketplace for models and voice packs",
-		icon: Store,
-		items: [{ path: "/store", label: "sidebar.store", icon: Store }],
-	},
-	{
-		label: "Settings",
-		description: "App configuration and account",
-		icon: Settings,
-		items: [{ path: "/settings", label: "sidebar.settings", icon: Settings }],
-	},
-	{
-		label: "Help",
-		description: "Support, docs, and what's new",
-		icon: Help,
-		items: [
-			{ path: "/help", label: "sidebar.help", icon: Help },
-			{ path: "/whats-new", label: "sidebar.whatsNew", icon: Help },
-			{ path: "/projects", label: "sidebar.projects", icon: Help },
-			{
-				path: "/community-presets",
-				label: "sidebar.communityPresets",
-				icon: Help,
-			},
-			{ path: "/sounds", label: "sidebar.sounds", icon: Help },
-		],
-	},
-];
+function buildNavGroups(hiddenTabs: string[]): NavGroup[] {
+	return TAB_GROUPS.map((group) => ({
+		label: group.label,
+		description: group.description,
+		icon: group.icon as Icon,
+		items: REGISTRY.filter(
+			(entry) => entry.group === group.id && !hiddenTabs.includes(entry.path),
+		).map((entry) => ({
+			label: entry.labelKey,
+			icon: entry.icon as Icon,
+			path: entry.path,
+		})),
+	})).filter((group) => group.items.length > 0);
+}
 
 export function Sidebar() {
 	const { t } = useTranslation();
@@ -173,6 +59,8 @@ export function Sidebar() {
 	const location = router.state.location;
 	const sidebarOpen = useUIStore((s) => s.sidebarOpen);
 	const setSidebarOpen = useUIStore((s) => s.setSidebarOpen);
+	const hiddenTabs = useWorkspaceStore((s) => s.hiddenTabs);
+	const navGroups = buildNavGroups(hiddenTabs);
 	const storeSidebarWidth = useUIStore((s) => s.sidebarWidth);
 	const [sidebarWidth] = useState(() => storeSidebarWidth);
 	const mobileDrawerOpen = useUIStore((s) => s.mobileDrawerOpen);
@@ -302,7 +190,7 @@ export function Sidebar() {
 					aria-label={t("sidebar.navigation")}
 				>
 					<ul className="space-y-1">
-						{NAV_GROUPS.map((group) => {
+						{navGroups.map((group) => {
 							const open = openGroups.has(group.label);
 							const hovered = hoveredGroup === group.label;
 							return (

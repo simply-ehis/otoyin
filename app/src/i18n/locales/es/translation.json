@@ -88,7 +88,7 @@
 			"refinedHint": "Refined with Qwen3 · {{model}}",
 			"rawHint": "Transcribed with Whisper {{model}}",
 			"packed": "Packed",
-			"packedEmpty": "No word-level transcript yet \u2014 retranscribe to generate one.",
+			"packedEmpty": "No word-level transcript yet — retranscribe to generate one.",
 			"copyPack": "Copy pack",
 			"downloadPack": "Pack (.md)",
 			"highlights": "Highlights",
@@ -118,7 +118,9 @@
 			"playAsStopFallback": "Stop · Voice",
 			"playAsDropdownLabel": "Play transcript as",
 			"copyAudio": "Copy audio",
-			"copyAudioTitle": "Copy the selected capture"
+			"copyAudioTitle": "Copy the selected capture",
+			"sendToEffects": "Efectos",
+			"sendToTranscript": "Transcribir"
 		},
 		"empty": {
 			"noMatches": "No captures match \"{{query}}\"",
@@ -354,7 +356,9 @@
 			"audioTooLong": "Audio is too long ({{duration}}). Maximum duration is {{max}}.",
 			"audioFailed": "Failed to validate audio file. Please try a different file.",
 			"audioFormatUnsupported": "Unsupported audio format. Accepted formats: {{formats}}.",
-			"audioTooLarge": "Audio file exceeds the maximum size of {{max}}."
+			"audioTooLarge": "Audio file exceeds the maximum size of {{max}}.",
+			"audioTooShort": "El audio es demasiado corto ({{duration}}). La duración mínima para el clonado de voz es de {{min}} segundos.",
+			"audioTooQuiet": "El audio es demasiado bajo o contiene casi solo ruido de fondo. Usa una grabación más limpia."
 		},
 		"toast": {
 			"recordingComplete": "Recording complete",
@@ -401,7 +405,9 @@
 			"sampleFailed": "Failed to add sample",
 			"sampleFailedDescription": "Failed to add sample.",
 			"sampleFailedRolledBack": "Failed to add sample. The profile was rolled back.",
-			"saveFailed": "Failed to save profile"
+			"saveFailed": "Failed to save profile",
+			"qualityWarning": "Advertencia de calidad de la muestra de voz",
+			"qualityWarningDescription": "La muestra es corta o ruidosa. La calidad de la clonación puede reducirse."
 		}
 	},
 	"audioSample": {
@@ -1361,7 +1367,16 @@
 			"profilesDescription": "Apply a preset combination of tabs for a specific use case.",
 			"replayTour": "Replay welcome tour",
 			"reset": "Show all tabs",
-			"title": "Sidebar tabs"
+			"title": "Sidebar tabs",
+			"searchHint": "Busca por nombre o palabra clave — {{visible}} de {{total}} pestañas visibles.",
+			"searchLabel": "Filtrar pestañas",
+			"searchPlaceholder": "Filtrar pestañas…",
+			"count": "{{visible}}/{{total}} visibles",
+			"noMatches": "Ninguna pestaña coincide",
+			"noMatchesBody": "Prueba otra palabra — «denoise» o «dub» encuentran pestañas.",
+			"alwaysOn": "Siempre visible",
+			"highlightBody": "«{{name}}» está oculta. Actívala para acceder.",
+			"enable": "Activar"
 		}
 	},
 	"models": {
@@ -1500,7 +1515,9 @@
 		"inputPlaceholder": "Type or paste text to translate…",
 		"offlineHint": "Translation needs a network connection or an offline language pack.",
 		"openStore": "Get offline packs in the Store",
-		"swap": "Swap languages"
+		"swap": "Swap languages",
+		"noArgosPackTitle": "Ningún paquete de idioma sin conexión instalado",
+		"noArgosPackBody": "La traducción usará el servicio en línea hasta que se instale un paquete."
 	},
 	"referenceVoices": {
 		"title": "Reference Voices",

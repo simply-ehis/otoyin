@@ -28,6 +28,8 @@ import { StorePage } from "@/features/store/StorePage";
 import { StoryEditor } from "@/features/stories/StoryEditor";
 import { TranslateView } from "@/features/translate/TranslateView";
 import { RootLayout } from "@/layouts/RootLayout/RootLayout";
+import { REGISTRY } from "@/lib/tabs/registry";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 // Lazy-loaded page components for code splitting
 const CapturesTab = lazy(() =>
@@ -244,6 +246,32 @@ const BatchQueueView = lazy(() =>
 // Root route with layout
 const rootRoute = createRootRoute({
 	component: RootLayout,
+	beforeLoad: ({ location }) => {
+		// Hidden tabs redirect before render — nothing behind them loads.
+		// Settings is the escape hatch: always allowed to render.
+		const path = location.pathname;
+		if (
+			path.startsWith("/settings") ||
+			path === "/help" ||
+			path === "/whats-new" ||
+			path === "/projects" ||
+			path === "/community-presets"
+		) {
+			return;
+		}
+		const match = REGISTRY.find(
+			(tab) => path === tab.path || path.startsWith(`${tab.path}/`),
+		);
+		if (!match) {
+			return;
+		}
+		if (useWorkspaceStore.getState().hiddenTabs.includes(match.path)) {
+			throw redirect({
+				to: "/settings/workspace",
+				search: { tab: match.path },
+			});
+		}
+	},
 });
 
 // Index route (main/generate)
@@ -306,6 +334,13 @@ const capturesRoute = createRoute({
 const effectsRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/effects",
+	validateSearch: (
+		search: Record<string, unknown>,
+	): { generation?: string; path?: string } => ({
+		generation:
+			typeof search.generation === "string" ? search.generation : undefined,
+		path: typeof search.path === "string" ? search.path : undefined,
+	}),
 	component: EffectsTab,
 });
 
@@ -425,6 +460,9 @@ const settingsApiKeysRoute = createRoute({
 const settingsWorkspaceRoute = createRoute({
 	getParentRoute: () => settingsRoute,
 	path: "/workspace",
+	validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
+		tab: typeof search.tab === "string" ? search.tab : undefined,
+	}),
 	component: WorkspaceSettingsPage,
 });
 
@@ -595,18 +633,27 @@ const automationRouteTop = createRoute({
 const noiseReductionRouteTop = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/noise-reduction",
+	validateSearch: (search: Record<string, unknown>): { path?: string } => ({
+		path: typeof search.path === "string" ? search.path : undefined,
+	}),
 	component: NoiseReductionView,
 });
 
 const audioEnhanceRouteTop = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/audio-enhance",
+	validateSearch: (search: Record<string, unknown>): { path?: string } => ({
+		path: typeof search.path === "string" ? search.path : undefined,
+	}),
 	component: AudioEnhanceView,
 });
 
 const vocalIsolationRouteTop = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/vocal-isolation",
+	validateSearch: (search: Record<string, unknown>): { path?: string } => ({
+		path: typeof search.path === "string" ? search.path : undefined,
+	}),
 	component: VocalIsolationView,
 });
 
@@ -625,6 +672,12 @@ const exportRouteTop = createRoute({
 const transcriptRouteTop = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/transcript",
+	validateSearch: (
+		search: Record<string, unknown>,
+	): { generation?: string } => ({
+		generation:
+			typeof search.generation === "string" ? search.generation : undefined,
+	}),
 	component: TranscriptEditView,
 });
 
