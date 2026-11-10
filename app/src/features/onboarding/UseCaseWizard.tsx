@@ -10,6 +10,7 @@ import {
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { tabByPath } from "@/lib/tabs/registry";
 import { cn } from "@/lib/utils/cn";
 import {
 	USE_CASE_PROFILES,
@@ -125,6 +126,7 @@ export function UseCaseWizard() {
 						t={t}
 						onBack={() => setStep(1)}
 						onNext={() => setStep(3)}
+						onSkip={handleSkip}
 						onOpenStore={() => goSomewhere("/store")}
 					/>
 				) : null}
@@ -133,6 +135,7 @@ export function UseCaseWizard() {
 						t={t}
 						onBack={() => setStep(2)}
 						onFinish={() => goSomewhere("/")}
+						onSkip={handleSkip}
 					/>
 				) : null}
 			</DialogContent>
@@ -263,6 +266,12 @@ function UseCaseStep({
 					const profile = USE_CASE_PROFILES[key];
 					const Icon = USE_CASE_ICONS[key];
 					const isSelected = selected.has(key);
+					const tabLabels = profile.tabs
+						.map((p) => {
+							const entry = tabByPath(p);
+							return entry ? t(entry.labelKey, entry.path) : p;
+						})
+						.join(", ");
 					return (
 						<button
 							key={key}
@@ -291,6 +300,13 @@ function UseCaseStep({
 								<div className="mt-0.5 text-xs text-muted-foreground">
 									{profile.description}
 								</div>
+								<div className="mt-1 text-[10px] text-muted-foreground">
+									{t("onboarding.wizard.enables", "Enables:")} {tabLabels}
+								</div>
+								<div className="mt-0.5 text-[10px] text-muted-foreground">
+									{t("onboarding.wizard.modelSpace", "Model space:")}{" "}
+									{profile.spaceEstimate}
+								</div>
 							</div>
 						</button>
 					);
@@ -318,11 +334,13 @@ function SetupStep({
 	t,
 	onBack,
 	onNext,
+	onSkip,
 	onOpenStore,
 }: {
 	t: T;
 	onBack: () => void;
 	onNext: () => void;
+	onSkip: () => void;
 	onOpenStore: () => void;
 }) {
 	return (
@@ -372,6 +390,9 @@ function SetupStep({
 				<Button variant="ghost" onClick={onBack}>
 					{t("common.back", "Back")}
 				</Button>
+				<Button variant="ghost" onClick={onSkip}>
+					{t("onboarding.wizard.skipTour", "Skip tour")}
+				</Button>
 				<span className="flex gap-2">
 					<Button variant="outline" onClick={onOpenStore}>
 						{t("onboarding.setup.openStore", "Open Store")}
@@ -387,10 +408,12 @@ function GenerateStep({
 	t,
 	onBack,
 	onFinish,
+	onSkip,
 }: {
 	t: T;
 	onBack: () => void;
 	onFinish: () => void;
+	onSkip: () => void;
 }) {
 	return (
 		<>
@@ -453,6 +476,9 @@ function GenerateStep({
 			<DialogFooter className="flex-row justify-between sm:justify-between">
 				<Button variant="ghost" onClick={onBack}>
 					{t("common.back", "Back")}
+				</Button>
+				<Button variant="ghost" onClick={onSkip}>
+					{t("onboarding.wizard.skipTour", "Skip tour")}
 				</Button>
 				<Button onClick={onFinish}>
 					{t("onboarding.generate.finish", "Start generating")}

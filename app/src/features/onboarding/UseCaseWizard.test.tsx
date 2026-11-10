@@ -120,4 +120,63 @@ describe("UseCaseWizard tour", () => {
 			await screen.findByRole("heading", { name: "Welcome to otoyin" }),
 		).toBeInTheDocument();
 	});
+
+	it("use-case card lists the tabs it enables and model space", async () => {
+		const user = userEvent.setup();
+		render(<UseCaseWizard />);
+		await user.click(
+			await screen.findByRole("button", { name: "Get started" }),
+		);
+		const tts = screen.getByRole("button", {
+			name: /TTS \/ Voice generation/,
+		});
+		expect(tts.textContent).toContain("/voices");
+		expect(tts.textContent).toContain("~400 MB");
+		const music = screen.getByRole("button", {
+			name: /Music production/,
+		});
+		expect(music.textContent).toContain("/songwriter");
+		expect(music.textContent).toContain("~1.2 GB");
+	});
+
+	it("Skip on the setup step onboards without navigating", async () => {
+		const user = userEvent.setup();
+		render(<UseCaseWizard />);
+		await user.click(
+			await screen.findByRole("button", { name: "Get started" }),
+		);
+		await user.click(
+			await screen.findByRole("button", { name: /TTS \/ Voice generation/ }),
+		);
+		await user.click(screen.getByRole("button", { name: "Continue" }));
+		expect(
+			await screen.findByRole("heading", { name: "Get a voice" }),
+		).toBeInTheDocument();
+		await user.click(screen.getByRole("button", { name: "Skip tour" }));
+		await waitFor(() =>
+			expect(useWorkspaceStore.getState().onboarded).toBe(true),
+		);
+		expect(navigateMock).toHaveBeenCalledTimes(0);
+	});
+
+	it("Skip on the generate step onboards without navigating", async () => {
+		const user = userEvent.setup();
+		render(<UseCaseWizard />);
+		await user.click(
+			await screen.findByRole("button", { name: "Get started" }),
+		);
+		await user.click(
+			await screen.findByRole("button", { name: /TTS \/ Voice generation/ }),
+		);
+		await user.click(screen.getByRole("button", { name: "Continue" }));
+		await user.click(screen.getByRole("button", { name: "Next" }));
+		expect(
+			await screen.findByRole("heading", { name: "Generate and listen" }),
+		).toBeInTheDocument();
+		await user.click(screen.getByRole("button", { name: "Skip tour" }));
+		await waitFor(() =>
+			expect(useWorkspaceStore.getState().onboarded).toBe(true),
+		);
+		expect(navigateMock).toHaveBeenCalledTimes(0);
+	});
 });
