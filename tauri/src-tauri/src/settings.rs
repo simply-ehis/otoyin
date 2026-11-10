@@ -7,7 +7,14 @@
 //! Commands:
 //!   settings_read  -> returns the persisted settings object
 //!   settings_write { key, value } -> merges one key and writes atomically
+//!   credential_set { service, username, password } -> stores a secret in the
+//!     OS credential store (Windows Credential Manager, macOS Keychain, Linux
+//!     Secret Service). Never written to settings.json.
+//!   credential_get { service, username } -> returns the stored secret, or
+//!     null if absent.
+//!   credential_delete { service, username } -> removes the stored secret.
 
+use keyring::{Entry, Error as KeyringError};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs;
@@ -17,6 +24,10 @@ use tauri::AppHandle;
 const SETTINGS_FILE: &str = "settings.json";
 const SETTINGS_TMP_FILE: &str = "settings.json.tmp";
 const SCHEMA_VERSION: u64 = 1;
+
+// Credential store service name — all otoyin credentials live under this
+// service so they can be enumerated / cleared together.
+const CREDENTIAL_SERVICE: &str = "otoyin";
 
 #[derive(Serialize, Deserialize)]
 struct SettingsFile {
@@ -82,7 +93,42 @@ pub async fn settings_write(
     Ok(())
 }
 
-#[cfg(test)]
+##[tauri::command]
+pub async fn credential_set(
+    service: String,
+    username: String,
+    password: String,
+) -> Result<(), String> {
+    let entry = Entry::new(&service, &username)
+        .map_err(|e| format!("failed to open credential entry: {e}"))?;
+    entry
+        .set_password(&password)
+        .map_err(|e| format!("failed to store credential: {e}"))?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn credential_get(service: String, username: String) -> Result<Option<String>, String> {
+    let entry = Entry::new(&service, &username)
+        .map_err(|e| format!("failed to open credential entry: {e}"))?;
+    match entry.get_password() {
+        Ok(password) => Ok(Some(password)),
+        Err(KeyringError::NoEntry) => Ok(None),
+        Err(e) => Err(format!("failed to read credential: {e}")),
+    }
+}
+
+#[tauri::command]
+pub async fn credential_delete(service: String, username: String) -> Result<(), String> {
+    let entry = Entry::new(&service, &username)
+        .map_err(|e| format!("failed to open credential entry: {e}"))?;
+    entry
+        .delete_password()
+        .map_err(|e| format!("failed to delete credential: {e}"))?;
+    Ok(())
+}
+
+[cfg(test)]
 mod tests {
     use super::*;
     use std::env;
@@ -135,3 +181,4 @@ mod tests {
         assert!(d.contains_key("schema_version"));
     }
 }
+

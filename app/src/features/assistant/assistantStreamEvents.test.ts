@@ -1,7 +1,19 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { executeAssistantCommand } from "@/lib/assistantCommands";
 import type { Msg } from "./AssistantPanel.types";
 import type { HarnessState, StreamEventSink } from "./assistantStreamEvents";
 import { applyStreamEvent } from "./assistantStreamEvents";
+
+vi.mock("@/lib/assistantCommands", async (importOriginal) => {
+	const actual =
+		await importOriginal<typeof import("@/lib/assistantCommands")>();
+	return {
+		...actual,
+		executeAssistantCommand: vi.fn(),
+	};
+});
+
+const mockedExecute = vi.mocked(executeAssistantCommand);
 
 function makeSink() {
 	let messages: Msg[] = [];
@@ -41,6 +53,10 @@ function makeSink() {
 }
 
 describe("applyStreamEvent", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
 	it("accumulates text and schedules a flush", () => {
 		const { sink } = makeSink();
 		vi.useFakeTimers();
@@ -57,7 +73,58 @@ describe("applyStreamEvent", () => {
 		}
 	});
 
-	it("appends tool_call and thinking messages", () => {
+	it("executes tool calls via the command registry and adds tool_result", async () => {
+		const result = makeSink();
+		mockedExecute.mockResolvedValue({ ok: true });
+
+		applyStreamEvent(
+			{
+				type: "tool_call",
+				tool_name: "ui_navigate",
+				tool_args: { view: "/voices" },
+			},
+			result.sink,
+		);
+
+		// tool_call message is added immediately
+		expect(result.messages[0].role).toBe("tool_call");
+		expect(result.messages[0].toolName).toBe("ui_navigate");
+		expect(mockedExecute).toHaveBeenCalledWith("ui_navigate", {
+			view: "/voices",
+		});
+
+		// Allow the async execution to complete
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		// tool_result message is added after execution
+		const resultMsg = result.messages.find((m) => m.role === "tool_result");
+		expect(resultMsg).toBeDefined();
+		expect(resultMsg?.toolName).toBe("ui_navigate");
+		expect(resultMsg?.content).toContain('"ok":true');
+	});
+
+	it("handles tool call execution errors gracefully", async () => {
+		const result = makeSink();
+		mockedExecute.mockRejectedValue(new Error("boom"));
+
+		applyStreamEvent(
+			{
+				type: "tool_call",
+				tool_name: "voice_changer_enable",
+				tool_args: { enabled: true },
+			},
+			result.sink,
+		);
+
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		const resultMsg = result.messages.find((m) => m.role === "tool_result");
+		expect(resultMsg).toBeDefined();
+		expect(resultMsg?.content).toContain("boom");
+		expect(resultMsg?.content).toContain('"ok":false');
+	});
+
+	it("appends tool_call and thinking messages (no registry match)", () => {
 		const t = makeSink();
 		applyStreamEvent(
 			{ type: "tool_call", content: "{}", tool_name: "speak" },

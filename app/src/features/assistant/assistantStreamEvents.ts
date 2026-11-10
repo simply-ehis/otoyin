@@ -1,5 +1,8 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
-import { dispatchAssistantCommand } from "@/lib/assistantCommands";
+import {
+	dispatchAssistantCommand,
+	executeAssistantCommand,
+} from "@/lib/assistantCommands";
 import type { Msg } from "./AssistantPanel.types";
 import { makeId } from "./AssistantPanel.types";
 
@@ -68,16 +71,49 @@ export function applyStreamEvent(
 			);
 		}
 	} else if (data.type === "tool_call") {
+		const toolName = data.tool_name ?? "";
+		const toolArgs = data.tool_args ?? {};
 		setMessages((prev) => [
 			...prev,
 			{
 				id: makeId(),
 				role: "tool_call",
 				content: data.content ?? "",
-				toolName: data.tool_name,
-				toolArgs: data.tool_args,
+				toolName,
+				toolArgs,
 			},
 		]);
+		// Execute client-side commands via the command registry.
+		// Results are added as tool_result messages so the LLM/user can see them.
+		void (async () => {
+			try {
+				const result = await executeAssistantCommand(toolName, toolArgs);
+				setMessages((prev) => [
+					...prev,
+					{
+						id: makeId(),
+						role: "tool_result",
+						content: JSON.stringify(result),
+						toolName,
+						toolArgs,
+						toolResult: JSON.stringify(result),
+					},
+				]);
+			} catch (err) {
+				const message = err instanceof Error ? err.message : String(err);
+				setMessages((prev) => [
+					...prev,
+					{
+						id: makeId(),
+						role: "tool_result",
+						content: JSON.stringify({ ok: false, error: message }),
+						toolName,
+						toolArgs,
+						toolResult: JSON.stringify({ ok: false, error: message }),
+					},
+				]);
+			}
+		})();
 	} else if (data.type === "tool_result") {
 		if (data.tool_name && AUDIO_PREVIEW_TOOLS.has(data.tool_name)) {
 			setMessages((prev) => [

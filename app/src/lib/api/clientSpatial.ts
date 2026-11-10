@@ -1,3 +1,4 @@
+import type { CommandFunctionSchema } from "@/lib/commandRegistry";
 import { ADRMethods } from "./clientADR";
 import type { ConvolutionPresets, SpatialPresets } from "./types";
 
@@ -208,7 +209,7 @@ export class SpatialMethods extends ADRMethods {
 		modelId: string,
 		apiKey?: string,
 		apiBaseUrl?: string,
-		tools = true,
+		tools: boolean | CommandFunctionSchema[] = true,
 		signal?: AbortSignal,
 	): ReadableStream<Uint8Array> {
 		const url = `${this.getBaseUrl()}/assistant/chat`;
@@ -221,7 +222,8 @@ export class SpatialMethods extends ADRMethods {
 				model_id: modelId,
 				api_key: apiKey || null,
 				api_base_url: apiBaseUrl || null,
-				tools,
+				tools:
+					typeof tools === "boolean" ? tools : { client_tools: tools },
 			}),
 		});
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getCloudSubscriptionKey } from "@/features/settings/CloudModelsPage";
 import { apiClient } from "@/lib/api/client";
+import { getAvailableCommands } from "@/lib/assistantCommands";
 import { showStudioErrorToast } from "@/lib/errors";
 import { debug } from "@/lib/utils/debug";
 import type { FileAttachment, Msg } from "./AssistantPanel.types";
@@ -366,7 +367,7 @@ export function useAssistantChat({
 					selectedModel,
 					useApiKey ? apiKey : undefined,
 					useApiKey ? apiBaseUrl : undefined,
-					true,
+					getAvailableCommands(),
 					abortRef.current?.signal,
 				);
 				const reader = stream.getReader();
