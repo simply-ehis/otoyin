@@ -195,6 +195,24 @@ class TestSpatialApply:
         assert resp.status_code == 200
         assert resp.headers["content-type"] == "audio/wav"
 
+    def test_render_mix_returns_wav(self, client):
+        self._seed_wav()
+        resp = client.post(
+            "/spatial/render-mix",
+            json={
+                "sources": [
+                    {"audio_path": "sp_test.wav", "x": -0.6, "y": 0.0, "z": 0.2, "gain_db": 0.0},
+                    {"audio_path": "sp_test.wav", "x": 0.6, "y": 0.0, "z": -0.2, "gain_db": -6.0},
+                ],
+                "environment": "church",
+                "wet_dry_mix": 0.4,
+            },
+        )
+        assert resp.status_code == 200
+        assert resp.headers["content-type"] == "audio/wav"
+        # A mix of two sources must be longer than silence and produce real audio.
+        assert len(resp.content) > 1000
+
     def test_service_exposes_apply_doppler(self):
         from backend.services.steam_audio import steam_audio
 

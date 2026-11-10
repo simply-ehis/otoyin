@@ -59,28 +59,36 @@ export class SpatialMethods extends ADRMethods {
 		return resp.blob();
 	}
 
-	async renderSpatial(
-		audioPath: string,
-		position: {
+	async renderSpatialMix(
+		sources: Array<{
+			audioPath: string;
 			x: number;
 			y: number;
 			z: number;
 			distance: number;
-			gain_db: number;
-		},
+			gainDb: number;
+		}>,
 		environment: string,
 		wetDryMix: number = 0.3,
 		dopplerSpeed: number = 0.0,
+		binaural: boolean = true,
 	): Promise<Blob> {
-		const resp = await this.fetchWithAuth("/spatial/render", {
+		const resp = await this.fetchWithAuth("/spatial/render-mix", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
-				audio_path: audioPath,
-				position,
+				sources: sources.map((s) => ({
+					audio_path: s.audioPath,
+					x: s.x,
+					y: s.y,
+					z: s.z,
+					distance: s.distance,
+					gain_db: s.gainDb,
+				})),
 				environment,
 				wet_dry_mix: wetDryMix,
 				speed: dopplerSpeed,
+				binaural,
 			}),
 		});
 		return resp.blob();

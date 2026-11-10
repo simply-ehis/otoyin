@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils/cn";
-import type { SoundSource } from "./types";
+import type { SpatialSource } from "./types";
 
 const CX = 200;
 const CY = 150;
@@ -13,7 +13,7 @@ export function SoundstageRadar({
 	onDragMove,
 	onDragEnd,
 }: {
-	sources: SoundSource[];
+	sources: SpatialSource[];
 	dragging: string | null;
 	onDragStart: (id: string) => void;
 	onDragMove: (x: number, y: number) => void;

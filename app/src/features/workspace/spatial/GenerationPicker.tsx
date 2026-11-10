@@ -8,12 +8,15 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover";
 
 /** Completed-generation picker (searchable popover) for render sources. */
 export function GenerationPicker({
+	sourceId,
 	selectedId,
 	onSelect,
 	className,
 }: {
+	/** The source being configured — reported back with the chosen generation. */
+	sourceId: string;
 	selectedId: string | null;
-	onSelect: (gen: HistoryResponse) => void;
+	onSelect: (sourceId: string, gen: HistoryResponse) => void;
 	className?: string;
 }) {
 	const [open, setOpen] = useState(false);
@@ -37,7 +40,7 @@ export function GenerationPicker({
 					variant="outline"
 					size="sm"
 					className={cn("h-8 justify-start text-xs", className)}
-					aria-label="Select source generation"
+					aria-label={`Select source audio for ${sourceId}`}
 				>
 					<span className="min-w-0 flex-1 truncate text-left">
 						{selected ? (
@@ -50,9 +53,7 @@ export function GenerationPicker({
 								</span>
 							</>
 						) : (
-							<span className="text-muted-foreground">
-								Select a generation…
-							</span>
+							<span className="text-muted-foreground">Select audio…</span>
 						)}
 					</span>
 				</Button>
@@ -85,7 +86,7 @@ export function GenerationPicker({
 									: "hover:bg-secondary",
 							)}
 							onClick={() => {
-								onSelect(g);
+								onSelect(sourceId, g);
 								setOpen(false);
 							}}
 						>
