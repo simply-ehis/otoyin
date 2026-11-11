@@ -55,6 +55,20 @@
 		"optional": "optional",
 		"remove": "Remove"
 	},
+	"updater": {
+		"updateAvailable": "Mise à jour {{version}} prête",
+		"readyToInstall": "Téléchargée et prête à être installée.",
+		"whatsNew": "Nouveautés ?",
+		"updateNow": "Mettre à jour",
+		"restartNow": "Redémarrer maintenant",
+		"later": "Plus tard",
+		"dismiss": "Fermer",
+		"updateBusy": "Attendez la fin de la tâche en cours",
+		"updateFailed": "Échec de la mise à jour.",
+		"retry": "Réessayer",
+		"newVersionTitle": "Otoyin {{version}} est en cours d’exécution",
+		"newVersionBody": "Découvrez les changements de cette version."
+	},
 	"nav": {
 		"generate": "Generate",
 		"stories": "Stories",

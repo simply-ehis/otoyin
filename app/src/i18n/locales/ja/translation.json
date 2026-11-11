@@ -19,6 +19,20 @@
 		"optional": "optional",
 		"remove": "Remove"
 	},
+	"updater": {
+		"updateAvailable": "アップデート {{version}} の準備ができました",
+		"readyToInstall": "ダウンロード済み。インストール準備完了。",
+		"whatsNew": "新機能は？",
+		"updateNow": "今すぐ更新",
+		"restartNow": "今すぐ再起動",
+		"later": "後で",
+		"dismiss": "閉じる",
+		"updateBusy": "現在のジョブが終わるまでお待ちください",
+		"updateFailed": "更新に失敗しました。",
+		"retry": "再試行",
+		"newVersionTitle": "Otoyin {{version}} を実行中",
+		"newVersionBody": "このリリースの変更内容をご覧ください。"
+	},
 	"nav": {
 		"generate": "生成",
 		"stories": "ストーリー",

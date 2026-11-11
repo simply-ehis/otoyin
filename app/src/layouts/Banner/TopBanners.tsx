@@ -7,6 +7,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { UpdateBanner } from "@/layouts/Banner/UpdateBanner";
 import { apiClient } from "@/lib/api/client";
 import type { Announcement } from "@/lib/api/types";
 import { useBootReadiness } from "@/lib/hooks/useBootReadiness";
@@ -118,9 +119,9 @@ function useRecommendedModelsStrip(): StripModel | null {
 
 /**
  * Single compact top strip: at most one banner, highest priority first
- * (backend failure → announcement → missing models). Replaces the previous
- * three stacked cards that each added mt-3 + full padding and left a dead
- * zone under the header even after one was dismissed.
+ * (backend failure → announcement → missing models → update available).
+ * Replaces the previous three stacked cards that each added mt-3 + full padding
+ * and left a dead zone under the header even after one was dismissed.
  */
 export function TopBanners() {
 	const navigate = useNavigate();
@@ -232,7 +233,8 @@ export function TopBanners() {
 		);
 	}
 
-	return null;
+	// Priority 4 — update available (calm banner, doesn't interrupt workflow)
+	return <UpdateBanner />;
 }
 
 function Strip({
@@ -266,6 +268,8 @@ function Strip({
 						}
 					}}
 					className="shrink-0 rounded-md bg-accent px-2.5 py-0.5 text-[11px] font-medium text-accent-foreground hover:opacity-90"
+					title={model.cta.label}
+					aria-label={model.cta.label}
 				>
 					{model.cta.label}
 				</button>
@@ -276,7 +280,7 @@ function Strip({
 					onClick={model.onDismiss}
 					aria-label={`Dismiss: ${model.title}`}
 					title="Dismiss"
-					className="shrink-0 rounded-md p-1 hover:bg-secondary-hover"
+					className="shrink-0 rounded-md p-1 hover:bg-secondary"
 				>
 					<XMarkIcon className="size-3.5" aria-hidden="true" />
 				</button>

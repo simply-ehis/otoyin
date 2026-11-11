@@ -16,18 +16,24 @@ export type { UpdateStatus };
 interface UseAutoUpdaterOptions {
 	checkOnMount?: boolean;
 	showToast?: boolean;
+	/** Delay in ms before auto-checking for updates on startup (default: no auto-check) */
+	autoCheckDelay?: number;
+	/** Interval in ms between automatic background checks (default: 24 hours) */
+	autoCheckInterval?: number;
 }
 
 export function useAutoUpdater(
 	options: boolean | UseAutoUpdaterOptions = false,
 ) {
 	// Support both old boolean API and new options object
-	const { checkOnMount, showToast } =
+	const { checkOnMount, showToast, autoCheckDelay, autoCheckInterval } =
 		typeof options === "boolean"
 			? { checkOnMount: options, showToast: false }
 			: {
 					checkOnMount: options.checkOnMount ?? false,
 					showToast: options.showToast ?? false,
+					autoCheckDelay: options.autoCheckDelay,
+					autoCheckInterval: options.autoCheckInterval,
 				};
 
 	const platform = usePlatform();
@@ -56,7 +62,6 @@ export function useAutoUpdater(
 			setStatus(newStatus);
 		});
 		return unsubscribe;
-		// Empty dependency array - platform is stable from context
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [platform.updater.subscribe]);
 
@@ -86,6 +91,44 @@ export function useAutoUpdater(
 		// Empty dependency array - only run once on mount
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [checkOnMount, checkForUpdates, platform.metadata.isTauri]);
+
+	// Auto-check after startup delay (idle period)
+	useEffect(() => {
+		if (!autoCheckDelay || autoCheckDelay <= 0) {
+			return;
+		}
+		if (platform.metadata.isTauri && !hasCheckedRef.current) {
+			hasCheckedRef.current = true;
+			const timer = setTimeout(async () => {
+				try {
+					await checkForUpdates();
+				} catch (error) {
+					showStudioErrorToast(error);
+				}
+			}, autoCheckDelay);
+			return () => clearTimeout(timer);
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [autoCheckDelay, checkForUpdates, platform.metadata.isTauri]);
+
+	// Periodic auto-check (about once a day)
+	useEffect(() => {
+		if (!autoCheckInterval || autoCheckInterval <= 0) {
+			return;
+		}
+		if (platform.metadata.isTauri && !hasCheckedRef.current) {
+			hasCheckedRef.current = true;
+		}
+		const timer = setInterval(async () => {
+			try {
+				await checkForUpdates();
+			} catch {
+				// Silent fail for background checks
+			}
+		}, autoCheckInterval);
+		return () => clearInterval(timer);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [autoCheckInterval, checkForUpdates, platform.metadata.isTauri]);
 
 	// Show toast when update is available
 	useEffect(() => {

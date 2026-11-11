@@ -67,6 +67,20 @@
 		"optional": "optional",
 		"remove": "Remove"
 	},
+	"updater": {
+		"updateAvailable": "Update {{version}} is ready",
+		"readyToInstall": "Downloaded and ready to install.",
+		"whatsNew": "What's new?",
+		"updateNow": "Update now",
+		"restartNow": "Restart now",
+		"later": "Later",
+		"dismiss": "Dismiss",
+		"updateBusy": "Finish the current job before updating",
+		"updateFailed": "Update failed.",
+		"retry": "Retry",
+		"newVersionTitle": "Otoyin {{version}} is running",
+		"newVersionBody": "Read what changed in this release."
+	},
 	"nav": {
 		"generate": "Generate",
 		"stories": "Stories",
@@ -931,6 +945,12 @@
 				"label": "Performance mode",
 				"description": "Prioritize performance over visual quality. Reduces animations and visual effects."
 			}
+		},
+		"schema": {
+			"title": "Settings",
+			"description": "All user settings, organized by category. Change any value and it takes effect immediately.",
+			"export": "Export settings",
+			"import": "Import settings"
 		},
 		"general": {
 			"docs": {

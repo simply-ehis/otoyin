@@ -55,6 +55,20 @@
 		"optional": "optional",
 		"remove": "Remove"
 	},
+	"updater": {
+		"updateAvailable": "Actualización {{version}} lista",
+		"readyToInstall": "Descargada y lista para instalar.",
+		"whatsNew": "¿Qué hay de nuevo?",
+		"updateNow": "Actualizar ahora",
+		"restartNow": "Reiniciar ahora",
+		"later": "Más tarde",
+		"dismiss": "Cerrar",
+		"updateBusy": "Espere a que termine la tarea actual",
+		"updateFailed": "La actualización falló.",
+		"retry": "Reintentar",
+		"newVersionTitle": "Otoyin {{version}} en ejecución",
+		"newVersionBody": "Lea qué ha cambiado en esta versión."
+	},
 	"nav": {
 		"generate": "Generate",
 		"stories": "Stories",

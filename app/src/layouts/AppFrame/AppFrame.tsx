@@ -1,10 +1,12 @@
 import { useRouterState } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useState } from "react";
+import { usePostUpdateNotice } from "@/hooks/usePostUpdateNotice";
 import { useThemeSync } from "@/hooks/useThemeSync";
 import { AppBackground } from "@/layouts/AppFrame/AppBackground";
 import { AppHeader } from "@/layouts/AppFrame/AppHeader";
 import { BackendStatusBanner } from "@/layouts/AppFrame/BackendStatusBanner";
 import { AudioKeepAlive } from "@/layouts/AudioPlayer/AudioKeepAlive";
+import { UpdateBanner } from "@/layouts/Banner/UpdateBanner";
 import { ErrorBoundary } from "@/layouts/ErrorBoundary/ErrorBoundary";
 import { Sidebar } from "@/layouts/Sidebar/Sidebar";
 import { TitleBarDragRegion } from "@/layouts/TitleBarDragRegion";
@@ -119,6 +121,7 @@ interface AppFrameProps {
 export function AppFrame({ children }: AppFrameProps) {
 	useServerErrorToast();
 	useServerLifecycle();
+	usePostUpdateNotice();
 	useThemeSync();
 	const theme = useUIStore((s) => s.theme);
 
@@ -259,6 +262,7 @@ export function AppFrame({ children }: AppFrameProps) {
 				<TitleBarDragRegion />
 				<AudioKeepAlive />
 				<BackendStatusBanner />
+				<UpdateBanner />
 				<AppBackground />
 
 				<AppHeader
