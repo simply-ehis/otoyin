@@ -22,6 +22,7 @@ UPDATED: 2026-09-11
 - [94-onboarding.md](94-onboarding.md) - First-launch wizard: welcome → use-case cards (registry-driven tabs enabled + model space) → setup (get a voice) → generate + listen; Skip on every step; Re-run from Settings → Workspace.
 - [95-settings-schema.md](95-settings-schema.md) - Settings §5 slice S1: typed settings schema persisted to settings.json via Tauri settings_read/settings_write commands; theme migrated from uiStore localStorage onto the schema; atomic writes, defaults, clamping.
 - [96-agent-harness.md](96-agent-harness.md) - Agent harness in-app driver: typed command registry (commandRegistry.ts), registry-driven assistantCommands, RootLayout mounts the listener. Commands discoverable via getFunctionSchemas() for agent tool calling.
+- [97-updater.md](97-updater.md) - §6 updater (stable-only): UpdateBanner (AppFrame) with available/ready/error states, job-aware Restart disable, offline-safe auto-check (20 s + daily); usePostUpdateNotice one-time What's new toast; export/import settings backup (§5 S4). Live update flow NOT verified.
 
 ## Master Agent-Callable Reference
 
