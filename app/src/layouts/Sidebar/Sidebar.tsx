@@ -161,10 +161,10 @@ export function Sidebar() {
 					isMobile
 						? "fixed inset-0 z-[60] w-[280px] border-r-0 transform transition-transform duration-300"
 						: "sticky top-0 z-30",
-					!sidebarOpen && !isMobile ? "w-[56px]" : "",
+					!sidebarOpen && !isMobile ? "w-16" : "",
 					!mobileDrawerOpen && isMobile ? "-translate-x-full" : "",
 				)}
-				style={{ width: isMobile ? 280 : sidebarOpen ? sidebarWidth : 56 }}
+				style={{ width: isMobile ? 280 : sidebarOpen ? sidebarWidth : 64 }}
 				aria-label={t("sidebar.ariaLabel")}
 			>
 				{/* Header — brand + close on mobile */}
@@ -215,7 +215,7 @@ export function Sidebar() {
 										aria-label={group.label}
 										onClick={() => toggleGroup(group.label)}
 										className={cn(
-											"flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground",
+											"flex w-full h-8 items-center gap-2 rounded-md px-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground",
 											!sidebarOpen && !isMobile && "justify-center px-1.5",
 										)}
 									>
@@ -345,73 +345,63 @@ export function Sidebar() {
 					</ul>
 				</nav>
 
-				{/* Clipboard indicator */}
-				{sidebarOpen && !isMobile && (
-					<div className="px-1.5 pb-0.5">
-						<ClipboardIndicator />
-					</div>
-				)}
-
-				{/* Mini-game */}
+				{/* Single compact footer row: clipboard + mini-game + collapse (desktop) */}
 				{!isMobile && (
-					<div className="border-t border-border/50 mx-1.5 pt-1.5 pb-0.5">
+					<div className="mx-1.5 mt-1 flex items-center gap-1 border-t border-border/50 pt-1.5 pb-1">
+						<ClipboardIndicator compact />
 						<button
 							type="button"
 							onClick={() => useUIStore.getState().setMiniGameOpen(true)}
-							className={cn(
-								"flex items-center rounded-md border border-dashed border-border bg-secondary hover:bg-secondary-hover hover:border-border transition-colors",
-								sidebarOpen
-									? "w-full gap-2 px-2.5 py-1"
-									: "mx-auto size-7 justify-center",
-							)}
+							className="flex size-7 shrink-0 items-center justify-center rounded-md border border-dashed border-border bg-secondary transition-colors hover:border-border hover:bg-secondary-hover"
 							title="Brick Survivors — play while you generate"
 							aria-label="Open Brick Survivors"
 						>
 							<PuzzlePiece
-								className="size-3.5 shrink-0 text-muted-foreground"
+								className="size-3.5 text-muted-foreground"
 								aria-hidden="true"
 							/>
+						</button>
+						<button
+							type="button"
+							onClick={() => setSidebarOpen(!sidebarOpen)}
+							className="ml-auto flex size-7 shrink-0 items-center justify-center rounded-md hover:bg-muted/50 transition-colors"
+							aria-label={
+								sidebarOpen ? t("sidebar.collapse") : t("sidebar.expand")
+							}
+							aria-expanded={sidebarOpen}
+							title={sidebarOpen ? t("sidebar.collapse") : t("sidebar.expand")}
+						>
 							{sidebarOpen ? (
-								<span className="text-[11px] font-medium tracking-wide text-muted-foreground truncate">
-									Brick Survivors
-								</span>
-							) : null}
+								<ChevronLeftIcon
+									className="size-4 text-muted-foreground"
+									aria-hidden="true"
+								/>
+							) : (
+								<ChevronDoubleLeftIcon
+									className="size-4 rotate-180 text-muted-foreground"
+									aria-hidden="true"
+								/>
+							)}
 						</button>
 					</div>
 				)}
 
-				{/* Collapse/Expand toggle — desktop only */}
-				{!isMobile && (
-					<button
-						type="button"
-						onClick={() => setSidebarOpen(!sidebarOpen)}
-						className={cn(
-							"flex h-9 items-center justify-center border-t border-border mx-1.5 mb-1 rounded-md hover:bg-muted/50 transition-colors",
-							sidebarOpen ? "justify-start pl-2.5" : "justify-center",
-						)}
-						aria-label={
-							sidebarOpen ? t("sidebar.collapse") : t("sidebar.expand")
-						}
-						aria-expanded={sidebarOpen}
-						title={sidebarOpen ? t("sidebar.collapse") : t("sidebar.expand")}
-					>
-						{sidebarOpen ? (
-							<ChevronLeftIcon
-								className="size-4 text-muted-foreground"
+				{/* Mobile drawer close — bottom bar keeps the collapse affordance reachable */}
+				{isMobile && (
+					<div className="flex items-center gap-1 border-t border-border/50 px-3 py-2">
+						<ClipboardIndicator compact />
+						<button
+							type="button"
+							onClick={() => setMobileDrawerOpen(false)}
+							className="ml-auto flex size-7 shrink-0 items-center justify-center rounded-md hover:bg-muted/50 transition-colors"
+							aria-label={t("sidebar.collapse")}
+						>
+							<XMark
+								className="size-5 text-muted-foreground"
 								aria-hidden="true"
 							/>
-						) : (
-							<ChevronDoubleLeftIcon
-								className="size-4 text-muted-foreground rotate-180"
-								aria-hidden="true"
-							/>
-						)}
-						{sidebarOpen && (
-							<span className="ml-2 text-xs font-medium text-muted-foreground">
-								{t("sidebar.collapse")}
-							</span>
-						)}
-					</button>
+						</button>
+					</div>
 				)}
 			</aside>
 		</>

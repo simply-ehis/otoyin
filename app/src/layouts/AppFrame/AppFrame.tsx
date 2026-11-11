@@ -269,6 +269,7 @@ export function AppFrame({ children }: AppFrameProps) {
 					assistantOpen={assistantOpen}
 					onToggleAssistant={() => setAssistantOpen(!assistantOpen)}
 					onOpenHelp={() => setHelpOpen(true)}
+					onOpenSearch={() => setCommandPaletteOpen(true)}
 				/>
 
 				{/* Main layout: sidebar + content + assistant panel */}

@@ -11,8 +11,11 @@ import { Spinner } from "@/ui/primitives";
  * Sidebar clipboard indicator: shows a badge when the server clipboard
  * holds a clip, and opens the full ClipboardPanel in a popover on click.
  * Mounted between the nav and the collapse toggle.
+ *
+ * `compact` renders an icon-only button (for the single-row sidebar
+ * footer); the popover still opens the full panel.
  */
-export function ClipboardIndicator() {
+export function ClipboardIndicator({ compact = false }: { compact?: boolean }) {
 	const { t } = useTranslation();
 
 	const live = useQuery({
@@ -33,7 +36,7 @@ export function ClipboardIndicator() {
 					className={cn(
 						"relative flex items-center rounded-md border transition-colors",
 						"border-dashed border-border bg-secondary hover:bg-secondary-hover",
-						"mx-2 mb-1 px-3 py-1.5",
+						compact ? "size-7 justify-center" : "mx-2 mb-1 px-3 py-1.5",
 					)}
 					title={
 						hasClip
@@ -46,16 +49,20 @@ export function ClipboardIndicator() {
 						className="size-3.5 shrink-0 text-muted-foreground"
 						aria-hidden="true"
 					/>
-					{live.isLoading ? (
-						<Spinner size="sm" className="ml-2" />
-					) : hasClip ? (
-						<span className="ml-2 truncate text-xs font-medium text-foreground">
-							{clipName}
-						</span>
-					) : (
-						<span className="ml-2 text-xs text-muted-foreground">
-							{t("clipboard.emptyTitle", { defaultValue: "No clips yet" })}
-						</span>
+					{compact ? null : (
+						<>
+							{live.isLoading ? (
+								<Spinner size="sm" className="ml-2" />
+							) : hasClip ? (
+								<span className="ml-2 truncate text-xs font-medium text-foreground">
+									{clipName}
+								</span>
+							) : (
+								<span className="ml-2 text-xs text-muted-foreground">
+									{t("clipboard.emptyTitle", { defaultValue: "No clips yet" })}
+								</span>
+							)}
+						</>
 					)}
 					{hasClip && (
 						<span

@@ -135,7 +135,7 @@ const uiStore = create<UIStore>()(
 		(set) => ({
 			sidebarOpen: true,
 			setSidebarOpen: (open) => set({ sidebarOpen: open }),
-			sidebarWidth: 220,
+			sidebarWidth: 240,
 			setSidebarWidth: (width) => set({ sidebarWidth: width }),
 
 			mobileDrawerOpen: false,
