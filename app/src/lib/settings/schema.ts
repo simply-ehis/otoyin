@@ -128,7 +128,7 @@ export const SETTINGS_SCHEMA: SettingDef[] = [
 	{
 		key: "appearance.on_launch",
 		type: "select",
-		default: "last_tab",
+		default: "new_generate",
 		options: ["new_generate", "last_tab", "library"],
 		label: "On launch",
 		description:
