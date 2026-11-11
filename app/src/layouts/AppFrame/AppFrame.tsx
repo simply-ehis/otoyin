@@ -8,6 +8,7 @@ import { BackendStatusBanner } from "@/layouts/AppFrame/BackendStatusBanner";
 import { AudioKeepAlive } from "@/layouts/AudioPlayer/AudioKeepAlive";
 import { UpdateBanner } from "@/layouts/Banner/UpdateBanner";
 import { ErrorBoundary } from "@/layouts/ErrorBoundary/ErrorBoundary";
+import { RouteErrorBoundary } from "@/layouts/ErrorBoundary/RouteErrorBoundary";
 import { Sidebar } from "@/layouts/Sidebar/Sidebar";
 import { TitleBarDragRegion } from "@/layouts/TitleBarDragRegion";
 import { TOP_SAFE_AREA_PADDING } from "@/lib/constants/ui";
@@ -282,7 +283,7 @@ export function AppFrame({ children }: AppFrameProps) {
 							</div>
 						}
 					>
-						{children}
+						<RouteErrorBoundary>{children}</RouteErrorBoundary>
 					</Suspense>
 
 					{/* Assistant slide-in panel */}

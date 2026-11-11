@@ -4,7 +4,6 @@ import {
 	createRouter,
 	redirect,
 } from "@tanstack/react-router";
-import { lazy } from "react";
 import { CommunityPresetsPage } from "@/features/content/CommunityPresetsPage";
 import { OffersPage } from "@/features/content/OffersPage";
 import { StandaloneProjectPage } from "@/features/content/StandaloneProjectPage";
@@ -29,216 +28,217 @@ import { StorePage } from "@/features/store/StorePage";
 import { StoryEditor } from "@/features/stories/StoryEditor";
 import { TranslateView } from "@/features/translate/TranslateView";
 import { RootLayout } from "@/layouts/RootLayout/RootLayout";
+import { lazyRetry } from "@/lib/lazyRetry";
 import { REGISTRY } from "@/lib/tabs/registry";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 // Lazy-loaded page components for code splitting
-const CapturesTab = lazy(() =>
+const CapturesTab = lazyRetry(() =>
 	import("@/features/captures/CapturesTab").then((m) => ({
 		default: m.CapturesTab,
 	})),
 );
-const EffectsTab = lazy(() =>
+const EffectsTab = lazyRetry(() =>
 	import("@/features/effects/EffectsTab").then((m) => ({
 		default: m.EffectsTab,
 	})),
 );
-const AudioEnhanceView = lazy(() =>
+const AudioEnhanceView = lazyRetry(() =>
 	import("@/features/workspace/AudioEnhanceView").then((m) => ({
 		default: m.AudioEnhanceView,
 	})),
 );
-const AutomationView = lazy(() =>
+const AutomationView = lazyRetry(() =>
 	import("@/features/workspace/AutomationView").then((m) => ({
 		default: m.AutomationView,
 	})),
 );
-const ConversationView = lazy(() =>
+const ConversationView = lazyRetry(() =>
 	import("@/features/workspace/ConversationView").then((m) => ({
 		default: m.ConversationView,
 	})),
 );
-const DiarizationView = lazy(() =>
+const DiarizationView = lazyRetry(() =>
 	import("@/features/workspace/DiarizationView").then((m) => ({
 		default: m.DiarizationView,
 	})),
 );
-const MultiTakeCompingView = lazy(() =>
+const MultiTakeCompingView = lazyRetry(() =>
 	import("@/features/workspace/MultiTakeCompingView").then((m) => ({
 		default: m.MultiTakeCompingView,
 	})),
 );
-const MusicGenView = lazy(() =>
+const MusicGenView = lazyRetry(() =>
 	import("@/features/workspace/MusicGenView").then((m) => ({
 		default: m.MusicGenView,
 	})),
 );
-const NoiseReductionView = lazy(() =>
+const NoiseReductionView = lazyRetry(() =>
 	import("@/features/workspace/NoiseReductionView").then((m) => ({
 		default: m.NoiseReductionView,
 	})),
 );
-const PlatformExportView = lazy(() =>
+const PlatformExportView = lazyRetry(() =>
 	import("@/features/workspace/PlatformExportView").then((m) => ({
 		default: m.PlatformExportView,
 	})),
 );
-const SoundEffectsView = lazy(() =>
+const SoundEffectsView = lazyRetry(() =>
 	import("@/features/workspace/SoundEffectsView").then((m) => ({
 		default: m.SoundEffectsView,
 	})),
 );
-const SpatialView = lazy(() =>
+const SpatialView = lazyRetry(() =>
 	import("@/features/workspace/SpatialView").then((m) => ({
 		default: m.SpatialView,
 	})),
 );
-const SpectrogramView = lazy(() =>
+const SpectrogramView = lazyRetry(() =>
 	import("@/features/workspace/SpectrogramView").then((m) => ({
 		default: m.SpectrogramView,
 	})),
 );
-const TranscriptEditView = lazy(() =>
+const TranscriptEditView = lazyRetry(() =>
 	import("@/features/workspace/TranscriptEditView").then((m) => ({
 		default: m.TranscriptEditView,
 	})),
 );
-const VideoPreviewView = lazy(() =>
+const VideoPreviewView = lazyRetry(() =>
 	import("@/features/workspace/VideoPreviewView").then((m) => ({
 		default: m.VideoPreviewView,
 	})),
 );
-const VocalIsolationView = lazy(() =>
+const VocalIsolationView = lazyRetry(() =>
 	import("@/features/workspace/VocalIsolationView").then((m) => ({
 		default: m.VocalIsolationView,
 	})),
 );
-const VoiceConverterView = lazy(() =>
+const VoiceConverterView = lazyRetry(() =>
 	import("@/features/workspace/VoiceConverterView").then((m) => ({
 		default: m.VoiceConverterView,
 	})),
 );
-const YouTubeDownloadView = lazy(() =>
+const YouTubeDownloadView = lazyRetry(() =>
 	import("@/features/workspace/YouTubeDownloadView").then((m) => ({
 		default: m.YouTubeDownloadView,
 	})),
 );
-const MainEditor = lazy(() =>
+const MainEditor = lazyRetry(() =>
 	import("@/features/generate/GeneratePage").then((m) => ({
 		default: m.GeneratePage,
 	})),
 );
-const AudioStudio = lazy(() =>
+const AudioStudio = lazyRetry(() =>
 	import("@/features/audioStudio/AudioStudio").then((m) => ({
 		default: m.AudioStudio,
 	})),
 );
-const AboutPage = lazy(() =>
+const AboutPage = lazyRetry(() =>
 	import("@/features/settings/AboutPage").then((m) => ({
 		default: m.AboutPage,
 	})),
 );
-const CapturesPage = lazy(() =>
+const CapturesPage = lazyRetry(() =>
 	import("@/features/settings/CapturesPage").then((m) => ({
 		default: m.CapturesPage,
 	})),
 );
-const GeneralPage = lazy(() =>
+const GeneralPage = lazyRetry(() =>
 	import("@/features/settings/GeneralPage").then((m) => ({
 		default: m.GeneralPage,
 	})),
 );
-const GenerationPage = lazy(() =>
+const GenerationPage = lazyRetry(() =>
 	import("@/features/settings/GenerationPage").then((m) => ({
 		default: m.GenerationPage,
 	})),
 );
-const GpuPage = lazy(() =>
+const GpuPage = lazyRetry(() =>
 	import("@/features/settings/GpuPage").then((m) => ({
 		default: m.GpuPage,
 	})),
 );
-const LogsPage = lazy(() =>
+const LogsPage = lazyRetry(() =>
 	import("@/features/settings/LogsPage").then((m) => ({
 		default: m.LogsPage,
 	})),
 );
-const MCPPage = lazy(() =>
+const MCPPage = lazyRetry(() =>
 	import("@/features/settings/MCPPage").then((m) => ({
 		default: m.MCPPage,
 	})),
 );
-const WorkspaceSettingsPage = lazy(() =>
+const WorkspaceSettingsPage = lazyRetry(() =>
 	import("@/features/settings/WorkspacePage").then((m) => ({
 		default: m.WorkspacePage,
 	})),
 );
-const SettingsLayout = lazy(() =>
+const SettingsLayout = lazyRetry(() =>
 	import("@/features/settings/SettingsLayout").then((m) => ({
 		default: m.SettingsLayout,
 	})),
 );
-const SongwriterTab = lazy(() =>
+const SongwriterTab = lazyRetry(() =>
 	import("@/features/songwriter/SongwriterTab").then((m) => ({
 		default: m.SongwriterTab,
 	})),
 );
-const LauncherTab = lazy(() =>
+const LauncherTab = lazyRetry(() =>
 	import("@/features/launcher/LauncherTab").then((m) => ({
 		default: m.LauncherTab,
 	})),
 );
-const InstrumentLibraryTab = lazy(() =>
+const InstrumentLibraryTab = lazyRetry(() =>
 	import("@/features/instruments/InstrumentLibrary").then((m) => ({
 		default: m.InstrumentLibrary,
 	})),
 );
-const AudiobooksTab = lazy(() =>
+const AudiobooksTab = lazyRetry(() =>
 	import("@/features/audiobooks/AudiobooksTab").then((m) => ({
 		default: m.AudiobooksTab,
 	})),
 );
-const ClonePage = lazy(() =>
+const ClonePage = lazyRetry(() =>
 	import("@/features/voices/ClonePage").then((m) => ({
 		default: m.ClonePage,
 	})),
 );
-const TimelineView = lazy(() =>
+const TimelineView = lazyRetry(() =>
 	import("@/features/workspace/TimelineView").then((m) => ({
 		default: m.TimelineView,
 	})),
 );
-const PitchMapView = lazy(() =>
+const PitchMapView = lazyRetry(() =>
 	import("@/features/workspace/PitchMapView").then((m) => ({
 		default: m.PitchMapView,
 	})),
 );
-const MixerView = lazy(() =>
+const MixerView = lazyRetry(() =>
 	import("@/features/workspace/MixerView").then((m) => ({
 		default: m.MixerView,
 	})),
 );
-const DspView = lazy(() =>
+const DspView = lazyRetry(() =>
 	import("@/features/workspace/DspView").then((m) => ({
 		default: m.DspView,
 	})),
 );
-const ADRView = lazy(() =>
+const ADRView = lazyRetry(() =>
 	import("@/features/workspace/adr/ADRView").then((m) => ({
 		default: m.ADRView,
 	})),
 );
-const StudioView = lazy(() =>
+const StudioView = lazyRetry(() =>
 	import("@/features/workspace/StudioView").then((m) => ({
 		default: m.StudioView,
 	})),
 );
-const AudioPlanView = lazy(() =>
+const AudioPlanView = lazyRetry(() =>
 	import("@/features/workspace/AudioPlanView").then((m) => ({
 		default: m.AudioPlanView,
 	})),
 );
-const BatchQueueView = lazy(() =>
+const BatchQueueView = lazyRetry(() =>
 	import("@/features/workspace/BatchQueueView").then((m) => ({
 		default: m.BatchQueueView,
 	})),
