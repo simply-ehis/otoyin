@@ -1,5 +1,6 @@
 import { useRouterState } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useState } from "react";
+import { TabTip } from "@/features/help/TabTip";
 import { usePostUpdateNotice } from "@/hooks/usePostUpdateNotice";
 import { useThemeSync } from "@/hooks/useThemeSync";
 import { AppBackground } from "@/layouts/AppFrame/AppBackground";
@@ -276,15 +277,18 @@ export function AppFrame({ children }: AppFrameProps) {
 				{/* Main layout: sidebar + content + assistant panel */}
 				<div className="flex flex-1 min-h-0 overflow-hidden">
 					<Sidebar />
-					<Suspense
-						fallback={
-							<div className="flex h-full items-center justify-center text-muted-foreground">
-								Loading...
-							</div>
-						}
-					>
-						<RouteErrorBoundary>{children}</RouteErrorBoundary>
-					</Suspense>
+					<div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+						<TabTip tabPath={routerState.location.pathname} />
+						<Suspense
+							fallback={
+								<div className="flex h-full items-center justify-center text-muted-foreground">
+									Loading...
+								</div>
+							}
+						>
+							<RouteErrorBoundary>{children}</RouteErrorBoundary>
+						</Suspense>
+					</div>
 
 					{/* Assistant slide-in panel */}
 					<WhenReady ready={assistantOpen}>
