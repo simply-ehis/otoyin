@@ -166,6 +166,35 @@ export function commitMoveResize(
 	return result;
 }
 
+/** PATCH body the backend accepts for a dub segment move/resize. */
+export interface DubSegmentPatch {
+	start: number;
+	end: number;
+	speed?: number;
+	original_duration?: number;
+}
+
+/**
+ * dubSegmentPatch — map a committed segment to the server PATCH body.
+ *
+ * Forwards start/end plus whatever resize economics commitMoveResize produced:
+ * a RESIZE carries speed (unless it landed back on exactly 1.0, in which case
+ * the key is deleted) and the preserved original_duration so successive resizes
+ * compound; a MOVE forwards the unchanged economics. This is the single place
+ * the resize economics cross into the API — if it drops speed/original_duration,
+ * resize changes never persist.
+ */
+export function dubSegmentPatch(seg: DubSegmentLike): DubSegmentPatch {
+	const patch: DubSegmentPatch = { start: seg.start, end: seg.end };
+	if (seg.speed !== undefined) {
+		patch.speed = seg.speed;
+	}
+	if (seg.original_duration !== undefined) {
+		patch.original_duration = seg.original_duration;
+	}
+	return patch;
+}
+
 /**
  * detectOverlaps — Set of String(id) for every segment that overlaps a
  * neighbour (start-sorted sweep; tiny epsilon so touching edges don't flag).

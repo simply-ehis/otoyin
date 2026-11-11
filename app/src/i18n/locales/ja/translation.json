@@ -1462,6 +1462,13 @@
 		}
 	},
 	"sidebar": {
+		"timeline": "タイムライン",
+		"platformExport": "プラットフォーム書き出し",
+		"batch": "一括処理",
+		"audioPlan": "オーディオプラン",
+		"adr": "ADR",
+		"conversation": "会話",
+		"transcriptEdit": "文字起こし編集",
 		"generate": "Generate",
 		"audioStudio": "Audio Studio",
 		"stories": "Stories",

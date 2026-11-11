@@ -1,5 +1,12 @@
 {
 	"sidebar": {
+		"timeline": "Timeline",
+		"platformExport": "Platform Export",
+		"batch": "Batch",
+		"audioPlan": "Audio Plan",
+		"adr": "ADR",
+		"conversation": "Conversation",
+		"transcriptEdit": "Transcript Edit",
 		"generate": "Generate",
 		"audioStudio": "Audio Studio",
 		"stories": "Stories",

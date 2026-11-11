@@ -1006,6 +1006,18 @@ Enhanced the existing `UseCaseWizard` (welcome → usecase → setup → generat
 
 - **Gate note**: biome **lint** step still fails only on the same 13 pre-existing Phase-2 files; no new lint failures introduced. All other gate steps pass.
 
+### Workspace audit verification + repair pass (2026-11-11)
+
+Verification of the Workspace Completeness Audit Phase 2 claims (read actual code, not docs). Findings and repairs:
+
+- **BUG-008 (dubbing resize speed never persisted)**: backend PATCH `/dubbing/segment/:id` and `dubbingClient.moveResizeDubSegment` already accepted `speed`/`original_duration`, but all three call sites in `DubTimeline.tsx` sent only `{ start, end }` — resize economics were computed by `commitMoveResize` and silently dropped (`onSuccess` replaced state with the server echo). Fixed: new `dubSegmentPatch()` helper in `app/src/lib/utils/timeline.ts` forwards start/end plus any resize economics present; mutationFn now takes `{ id, patch }`; all three call sites use it. 5 new tests in `timeline.test.ts` pin the patch contents (pure move forwards unchanged economics; resize shorter/longer carries speed+original_duration; speed=1.0 deletes `speed` but keeps `original_duration`; successive resizes compound). Tests would fail if the fields are dropped again.
+- **Tab registry missing 7 router-addressable views** (`/timeline`, `/export`, `/batch`, `/audio-plan`, `/adr`, `/conversation`, `/transcript`) — they were unreachable from sidebar/Ctrl+K/Settings→Workspace even though `/timeline` etc. existed in the router. Added all 7 to `app/src/lib/tabs/registry.ts` (43 entries total, no duplicates: conversation→Create, timeline/batch/audio-plan→Studio, transcript→Voice & Transcription, export→Processing, adr→Video) with keywords + 13 new `sidebar.*` i18n label keys across all 9 locales. `SettingsLayout`/`WorkspacePage` map the registry dynamically so toggles appear automatically. `Sidebar.test.tsx` hideable list extended to the 40 hideable tabs (cross-checked programmatically; nav collapse test passes).
+- **i18n**: 7 new `sidebar.*` keys added to all 9 locales (en/fr/es/de/ko/pt-BR/ja/zh-CN/zh-TW), byte-verified via JSON round-trip; the other session's `updater.*` keys were already in place (i18nKeys test green again).
+- **Live-boot gap**: `/dsp/stream` and `/effects/preview-path` previously verified only at handler level. Boot-tested against a live backend on 127.0.0.1:17493: upload→stream→preview round-trip + traversal rejection (see workspace audit verification notes).
+- **Gate**: typecheck clean; biome format clean (incl. 2 banner files reformatted earlier today); Sidebar/i18nKeys/CommandPalette/timeline tests pass; vitest audit-critical files 63/63 (58 before + 5 new `dubSegmentPatch` tests).
+
+`Otoyin Workspace Completeness Audit (Agent Prompt).md` remaining: live-app smoke of the new routes in the full Tauri app, and the 7 registry-restored tabs' own completeness scores can now be re-scored (they were nav-reachable before the hidden-tabs rewrite and unreachable until this fix).
+
 `Otoyin Onboarding, Hidden Tabs, Search, Settings, Updater and Startup Design.md` progress: §3 hidden tabs ✅, §4 Ctrl+K search ✅, §2 onboarding ✅ (cards + skip), §5 settings schema ✅ (slice S1). Remaining per doc: settings credential store / schema-driven UI / appearance presets, models step / device check / agent step / privacy toggle / sample-audio "first win" (need backend), §6 updater, §8 startup + loader. Do not begin those without owner go-ahead.
 
 ### Settings schema + JSON storage — Slice S1 (2026-11-10)

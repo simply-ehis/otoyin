@@ -165,6 +165,13 @@ export const REGISTRY: TabEntry[] = [
 		"sound effects",
 		"freesound",
 	]),
+	T("/conversation", "sidebar.conversation", MicrophoneIcon, "create", [
+		"conversation",
+		"dialogue",
+		"speakers",
+		"multi voice",
+		"roleplay",
+	]),
 	// Studio
 	T("/audio-studio", "sidebar.audioStudio", MusicalNoteIcon, "studio", [
 		"audio studio",
@@ -225,6 +232,26 @@ export const REGISTRY: TabEntry[] = [
 		"macro",
 		"batch",
 	]),
+	T("/timeline", "sidebar.timeline", ClockIcon, "studio", [
+		"timeline",
+		"tracks",
+		"clips",
+		"arrange",
+		"multitrack",
+	]),
+	T("/batch", "sidebar.batch", BoltIcon, "studio", [
+		"batch",
+		"bulk",
+		"queue",
+		"jobs",
+	]),
+	T("/audio-plan", "sidebar.audioPlan", DocumentTextIcon, "studio", [
+		"audio plan",
+		"scene",
+		"dialogue",
+		"pre-production",
+		"script",
+	]),
 	// Voice & Transcription
 	T("/captures", "sidebar.captures", MicrophoneIcon, "voice", [
 		"captures",
@@ -253,6 +280,12 @@ export const REGISTRY: TabEntry[] = [
 		"speaker diarization",
 		"speakers",
 	]),
+	T("/transcript", "sidebar.transcriptEdit", DocumentTextIcon, "voice", [
+		"transcript",
+		"transcription",
+		"word edit",
+		"captions",
+	]),
 	// Processing
 	T("/effects", "sidebar.effects", SparklesIcon, "processing", [
 		"effects",
@@ -279,12 +312,26 @@ export const REGISTRY: TabEntry[] = [
 		"demucs",
 		"separate stems",
 	]),
+	T("/export", "sidebar.platformExport", CloudArrowDownIcon, "processing", [
+		"export",
+		"platform",
+		"loudness",
+		"lufs",
+		"publish",
+	]),
 	// Video
 	T("/dubbing", "sidebar.dubbing", FilmIcon, "video", [
 		"dubbing",
 		"dub",
 		"video",
 		"revoice",
+	]),
+	T("/adr", "sidebar.adr", FilmIcon, "video", [
+		"adr",
+		"dialogue replace",
+		"revoice",
+		"loop",
+		"automated dialogue replacement",
 	]),
 	T("/video", "sidebar.video", FilmIcon, "video", ["video", "preview"]),
 	T("/download", "sidebar.download", CloudArrowDownIcon, "video", [

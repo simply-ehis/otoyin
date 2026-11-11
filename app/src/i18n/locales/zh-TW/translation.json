@@ -1462,6 +1462,13 @@
 		}
 	},
 	"sidebar": {
+		"timeline": "時間軸",
+		"platformExport": "平台匯出",
+		"batch": "批次處理",
+		"audioPlan": "音訊計畫",
+		"adr": "ADR",
+		"conversation": "對話",
+		"transcriptEdit": "轉錄編輯",
 		"generate": "Generate",
 		"audioStudio": "Audio Studio",
 		"stories": "Stories",

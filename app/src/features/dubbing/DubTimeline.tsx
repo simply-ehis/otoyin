@@ -19,6 +19,7 @@ import {
 	clampSegmentEdit,
 	commitMoveResize,
 	detectOverlaps,
+	dubSegmentPatch,
 	formatTime,
 	nearestOnset,
 	snapCandidates,
@@ -134,13 +135,16 @@ export function DubTimeline({
 	const moveResizeMutation = useMutation({
 		mutationFn: ({
 			id,
-			start,
-			end,
+			patch,
 		}: {
 			id: number;
-			start: number;
-			end: number;
-		}) => dubbingClient.moveResizeDubSegment(id, { start, end }),
+			patch: {
+				start: number;
+				end: number;
+				speed?: number;
+				original_duration?: number;
+			};
+		}) => dubbingClient.moveResizeDubSegment(id, patch),
 		onSuccess: (data) => {
 			queryClient.invalidateQueries({ queryKey: ["dub-job"] });
 			onSegmentsChange?.(
@@ -358,8 +362,7 @@ export function DubTimeline({
 				) {
 					moveResizeMutation.mutate({
 						id: updated.id as number,
-						start: updated.start,
-						end: updated.end,
+						patch: dubSegmentPatch(updated),
 					});
 				}
 			}
@@ -454,8 +457,7 @@ export function DubTimeline({
 				const updated = commitMoveResize(seg, next);
 				moveResizeMutation.mutate({
 					id: updated.id as number,
-					start: updated.start,
-					end: updated.end,
+					patch: dubSegmentPatch(updated),
 				});
 			}
 			return;
@@ -488,8 +490,7 @@ export function DubTimeline({
 			const updated = commitMoveResize(seg, next);
 			moveResizeMutation.mutate({
 				id: updated.id as number,
-				start: updated.start,
-				end: updated.end,
+				patch: dubSegmentPatch(updated),
 			});
 		}
 	};

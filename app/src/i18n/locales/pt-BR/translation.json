@@ -5,6 +5,13 @@
 		"note": "Structural mirror of en with English values. Replace values with reviewed translations; do not machine-translate and call it done."
 	},
 	"sidebar": {
+		"timeline": "Timeline",
+		"platformExport": "Exportação de plataforma",
+		"batch": "Lote",
+		"audioPlan": "Plano de áudio",
+		"adr": "ADR",
+		"conversation": "Conversa",
+		"transcriptEdit": "Editar transcrição",
 		"generate": "Generate",
 		"audioStudio": "Audio Studio",
 		"stories": "Stories",

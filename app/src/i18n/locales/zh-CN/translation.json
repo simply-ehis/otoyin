@@ -1462,6 +1462,13 @@
 		}
 	},
 	"sidebar": {
+		"timeline": "时间线",
+		"platformExport": "平台导出",
+		"batch": "批量处理",
+		"audioPlan": "音频方案",
+		"adr": "ADR",
+		"conversation": "对话",
+		"transcriptEdit": "转录编辑",
 		"generate": "Generate",
 		"audioStudio": "Audio Studio",
 		"stories": "Stories",

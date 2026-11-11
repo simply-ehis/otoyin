@@ -5,6 +5,13 @@
 		"note": "Structural mirror of en with English values. Replace values with reviewed translations; do not machine-translate and call it done."
 	},
 	"sidebar": {
+		"timeline": "타임라인",
+		"platformExport": "플랫폼 내보내기",
+		"batch": "일괄 처리",
+		"audioPlan": "오디오 플랜",
+		"adr": "ADR",
+		"conversation": "대화",
+		"transcriptEdit": "텍스트 편집",
 		"generate": "Generate",
 		"audioStudio": "Audio Studio",
 		"stories": "Stories",
