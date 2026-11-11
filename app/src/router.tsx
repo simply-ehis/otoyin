@@ -18,6 +18,7 @@ import { LottieExportPage } from "@/features/settings/LottieExportPage";
 import { ModelHealthPage } from "@/features/settings/ModelHealthPage";
 import { PluginsPage } from "@/features/settings/PluginsPage";
 import { PrivacyPage } from "@/features/settings/PrivacyPage";
+import { SchemaSettingsPage } from "@/features/settings/SchemaSettingsPage";
 import { ScriptingPage } from "@/features/settings/ScriptingPage";
 import { ShortcutsPage } from "@/features/settings/ShortcutsPage";
 import { SupportPage } from "@/features/settings/SupportPage";
@@ -365,6 +366,12 @@ const settingsGeneralRoute = createRoute({
 	getParentRoute: () => settingsRoute,
 	path: "/",
 	component: GeneralPage,
+});
+
+const settingsSchemaRoute = createRoute({
+	getParentRoute: () => settingsRoute,
+	path: "/schema",
+	component: SchemaSettingsPage,
 });
 
 const settingsGenerationRoute = createRoute({
@@ -1025,6 +1032,7 @@ const routeTree = rootRoute.addChildren([
 	// Settings
 	settingsRoute.addChildren([
 		settingsGeneralRoute,
+		settingsSchemaRoute,
 		settingsGenerationRoute,
 		settingsCapturesRoute,
 		settingsMCPRoute,

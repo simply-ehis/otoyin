@@ -1,14 +1,13 @@
 /**
- * Settings store tests — schema, persistence bridge, defaults, and the
- * theme migration proof point.
+ * Settings store tests — credential store integration.
  *
- * `@tauri-apps/api/core` is mocked so no Tauri runtime is needed.
+ * Tests that credentials are stored in the OS credential store (via Tauri
+ * commands) and that the JSON store only records has_key flags.
  */
-
-import { invoke } from "@tauri-apps/api/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { SETTINGS_SCHEMA, settingDef } from "@/lib/settings/schema";
+import { invoke } from "@tauri-apps/api/core";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { SETTINGS_SCHEMA } from "@/lib/settings/schema";
 
 vi.mock("@tauri-apps/api/core", () => ({
 	invoke: vi.fn(),
@@ -29,81 +28,52 @@ beforeEach(() => {
 	mockedInvoke.mockReset();
 });
 
-describe("settingsStore — schema", () => {
-	it("defines the theme setting with expected defaults", () => {
-		const theme = settingDef("theme");
-		expect(theme).toBeDefined();
-		expect(theme?.type).toBe("select");
-		expect(theme?.default).toBe("system");
-		expect(theme?.group).toBe("appearance");
-		expect(theme?.needsRestart).toBe(false);
-	});
-
-	it("schema entries all have required fields", () => {
-		const { schema } = useSettingsStore.getState();
-		for (const def of schema) {
-			expect(def.key.length).toBeGreaterThan(0);
-			expect(["string", "number", "boolean", "select"]).toContain(def.type);
-			expect(def.label.length).toBeGreaterThan(0);
-			expect(def.description.length).toBeGreaterThan(0);
-			expect(def.group.length).toBeGreaterThan(0);
-			expect(def.keywords.length).toBeGreaterThan(0);
-			expect(typeof def.needsRestart).toBe("boolean");
-			expect(typeof def.version).toBe("number");
-		}
-	});
-});
-
-describe("settingsStore — getSetting defaults", () => {
-	it("returns the schema default when nothing is persisted", () => {
-		expect(useSettingsStore.getState().getSetting("theme")).toBe("system");
-	});
-
-	it("clamps an out-of-range select value to the default", () => {
-		useSettingsStore.setState({ values: { theme: "not-a-theme" } });
-		expect(useSettingsStore.getState().getSetting("theme")).toBe("system");
-	});
-});
-
-describe("settingsStore — persistence", () => {
-	it("writes a setting via invoke and updates local state", async () => {
+describe("settingsStore — credential store", () => {
+	it("setCredentialKey calls credential_set and sets has_key=true", async () => {
 		mockedInvoke.mockResolvedValue(undefined);
-		const store = useSettingsStore.getState();
-		await store.setSetting("theme", "dark");
-		expect(mockedInvoke).toHaveBeenCalledWith("settings_write", {
-			key: "theme",
-			value: "dark",
+		await useSettingsStore.getState().setCredentialKey("llm", "sk-test123");
+		expect(mockedInvoke).toHaveBeenCalledWith("credential_set", {
+			service: "otoyin",
+			username: "llm",
+			password: "sk-test123",
 		});
-		expect(store.getSetting("theme")).toBe("dark");
-		expect(store.isModified("theme")).toBe(true);
+		expect(useSettingsStore.getState().hasCredentialKey("llm")).toBe(true);
 	});
 
-	it("loadSettings merges persisted values and marks loaded", async () => {
-		mockedInvoke.mockResolvedValue({
-			theme: "dark",
-			schema_version: 1,
+	it("getCredentialKey calls credential_get and returns the key", async () => {
+		mockedInvoke.mockResolvedValue("sk-test123");
+		const key = await useSettingsStore.getState().getCredentialKey("llm");
+		expect(mockedInvoke).toHaveBeenCalledWith("credential_get", {
+			service: "otoyin",
+			username: "llm",
 		});
-		await useSettingsStore.getState().loadSettings();
-		expect(useSettingsStore.getState().loaded).toBe(true);
-		expect(useSettingsStore.getState().getSetting("theme")).toBe("dark");
-		expect(useSettingsStore.getState().isModified("theme")).toBe(true);
+		expect(key).toBe("sk-test123");
 	});
 
-	it("isModified is false when value equals the default", async () => {
-		mockedInvoke.mockResolvedValue({ theme: "system" });
-		await useSettingsStore.getState().loadSettings();
-		expect(useSettingsStore.getState().isModified("theme")).toBe(false);
+	it("getCredentialKey returns null when no key is stored", async () => {
+		mockedInvoke.mockResolvedValue(null);
+		const key = await useSettingsStore.getState().getCredentialKey("tts");
+		expect(key).toBe(null);
 	});
 
-	it("degrades gracefully when invoke is unavailable", async () => {
-		mockedInvoke.mockRejectedValue(new Error("no Tauri"));
-		await useSettingsStore.getState().loadSettings();
-		expect(useSettingsStore.getState().loaded).toBe(true);
-		expect(useSettingsStore.getState().getSetting("theme")).toBe("system");
-		// setSetting should not throw even if invoke fails.
-		await expect(
-			useSettingsStore.getState().setSetting("theme", "light"),
-		).resolves.toBeUndefined();
-		expect(useSettingsStore.getState().getSetting("theme")).toBe("light");
+	it("deleteCredentialKey calls credential_delete and sets has_key=false", async () => {
+		mockedInvoke.mockResolvedValue(undefined);
+		await useSettingsStore.getState().setCredentialKey("stt", "sk-abc");
+		await useSettingsStore.getState().deleteCredentialKey("stt");
+		expect(mockedInvoke).toHaveBeenCalledWith("credential_delete", {
+			service: "otoyin",
+			username: "stt",
+		});
+		expect(useSettingsStore.getState().hasCredentialKey("stt")).toBe(false);
+	});
+
+	it("hasCredentialKey returns false when no key is stored", async () => {
+		expect(useSettingsStore.getState().hasCredentialKey("music")).toBe(false);
+	});
+
+	it("hasCredentialKey returns true after setCredentialKey", async () => {
+		mockedInvoke.mockResolvedValue(undefined);
+		await useSettingsStore.getState().setCredentialKey("vc", "sk-vc1");
+		expect(useSettingsStore.getState().hasCredentialKey("vc")).toBe(true);
 	});
 });

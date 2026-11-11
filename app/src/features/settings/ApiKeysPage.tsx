@@ -11,6 +11,7 @@ import {
 } from "@/lib/api/clientProviders";
 import { showStudioErrorToast } from "@/lib/errors";
 import { logger } from "@/lib/utils/debug";
+import { useSettingsStore } from "@/stores/settingsStore";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -39,8 +40,10 @@ const DOMAIN_ORDER = ["llm", "stt", "tts", "sfx", "music", "vc"];
 const EMPTY_FORM = { name: "", base_url: "", api_key: "", model: "" };
 
 /**
- * BYOK provider keys per domain. Keys are encrypted at rest server-side
- * and used automatically across the app. Deletion confirms first.
+ * BYOK provider keys per domain. Keys are stored in the OS credential store
+ * (Windows Credential Manager, macOS Keychain, Linux Secret Service) and never
+ * written to settings.json. The JSON only records that a key exists
+ * (`api_keys.<domain>.has_key`).
  */
 export function ApiKeysPage() {
 	const [providers, setProviders] = useState<ModelProvider[]>([]);
@@ -48,6 +51,7 @@ export function ApiKeysPage() {
 	const [addingDomain, setAddingDomain] = useState<string | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<ModelProvider | null>(null);
 	const [form, setForm] = useState(EMPTY_FORM);
+	const store = useSettingsStore();
 
 	const load = useCallback(async () => {
 		setLoading(true);
@@ -69,13 +73,18 @@ export function ApiKeysPage() {
 			return;
 		}
 		try {
+			// Provider metadata (name, base_url, model) goes to the backend.
+			// The API key goes to the OS credential store, never to settings.json.
 			await modelProvidersClient.create({
 				domain,
 				name: form.name,
 				base_url: form.base_url,
-				api_key: form.api_key || undefined,
 				model: form.model || undefined,
+				// api_key intentionally omitted — stored in credential store below
 			});
+			if (form.api_key.trim()) {
+				await store.setCredentialKey(domain, form.api_key);
+			}
 			setAddingDomain(null);
 			setForm(EMPTY_FORM);
 			await load();
@@ -86,6 +95,10 @@ export function ApiKeysPage() {
 
 	const remove = async (id: string) => {
 		try {
+			const provider = providers.find((p) => p.id === id);
+			if (provider) {
+				await store.deleteCredentialKey(provider.domain);
+			}
 			await modelProvidersClient.delete(id);
 			await load();
 		} catch (e: unknown) {
@@ -107,6 +120,8 @@ export function ApiKeysPage() {
 		label: DOMAIN_LABELS[d] ?? d,
 		providers: providers.filter((p) => p.domain === d),
 	}));
+
+	const hasKey = (domain: string) => store.hasCredentialKey(domain);
 
 	return (
 		<div className="flex max-w-4xl flex-col gap-6">
@@ -158,10 +173,10 @@ export function ApiKeysPage() {
 										</p>
 										<p className="truncate text-xs text-muted-foreground/70">
 											{p.base_url}
-											{p.has_api_key ? (
-												<span className="ml-2 text-success">key set</span>
-											) : null}
 										</p>
+										{hasKey(domain) ? (
+											<span className="ml-2 text-success">key set</span>
+										) : null}
 									</div>
 									<span className="flex shrink-0 items-center gap-1">
 										{!p.is_default ? (

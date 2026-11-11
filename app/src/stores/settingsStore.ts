@@ -13,6 +13,12 @@
 
 import { create } from "zustand";
 import {
+	CREDENTIAL_SERVICE,
+	deleteCredential,
+	getCredential,
+	setCredential,
+} from "@/lib/settings/credentialStore";
+import {
 	clampValue,
 	SETTINGS_SCHEMA,
 	type SettingDef,
@@ -36,6 +42,15 @@ interface SettingsState {
 	getSetting: (key: string) => unknown;
 	/** True if the current value differs from the schema default. */
 	isModified: (key: string) => boolean;
+
+	/** Store an API key in the OS credential store and mark has_key=true. */
+	setCredentialKey: (domain: string, apiKey: string) => Promise<void>;
+	/** Read an API key from the OS credential store. Returns null if not set. */
+	getCredentialKey: (domain: string) => Promise<string | null>;
+	/** Delete an API key from the OS credential store and mark has_key=false. */
+	deleteCredentialKey: (domain: string) => Promise<void>;
+	/** Check whether a key exists for the given domain. */
+	hasCredentialKey: (domain: string) => boolean;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -68,6 +83,34 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 		const def = settingDef(key);
 		const current = get().getSetting(key);
 		return current !== def?.default;
+	},
+
+	/** Store an API key in the OS credential store and mark has_key=true. */
+	setCredentialKey: async (domain: string, apiKey: string) => {
+		await setCredential(CREDENTIAL_SERVICE, domain, apiKey);
+		await writeSetting(`api_keys.${domain}.has_key`, true);
+		set((state) => ({
+			values: { ...state.values, [`api_keys.${domain}.has_key`]: true },
+		}));
+	},
+
+	/** Read an API key from the OS credential store. Returns null if not set. */
+	getCredentialKey: async (domain: string): Promise<string | null> => {
+		return getCredential(CREDENTIAL_SERVICE, domain);
+	},
+
+	/** Delete an API key from the OS credential store and mark has_key=false. */
+	deleteCredentialKey: async (domain: string) => {
+		await deleteCredential(CREDENTIAL_SERVICE, domain);
+		await writeSetting(`api_keys.${domain}.has_key`, false);
+		set((state) => ({
+			values: { ...state.values, [`api_keys.${domain}.has_key`]: false },
+		}));
+	},
+
+	/** Check whether a key exists for the given domain. */
+	hasCredentialKey: (domain: string): boolean => {
+		return get().getSetting(`api_keys.${domain}.has_key`) === true;
 	},
 }));
 

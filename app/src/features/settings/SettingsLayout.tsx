@@ -42,6 +42,11 @@ const TAB_GROUPS: { label: string; tabs: SettingsTab[] }[] = [
 				path: "/settings/workspace",
 				icon: Squares2X2Icon,
 			},
+			{
+				labelKey: "settings.tabs.schema",
+				path: "/schema",
+				icon: Squares2X2Icon,
+			},
 		],
 	},
 	{

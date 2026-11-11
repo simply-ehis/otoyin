@@ -873,6 +873,7 @@
 		"tabs": {
 			"general": "General",
 			"workspace": "Workspace",
+			"schema": "Schema",
 			"generation": "Generation",
 			"captures": "Captures",
 			"mcp": "MCP",
@@ -908,6 +909,28 @@
 				"meshDark": "Mesh Dark"
 			},
 			"special": "Special"
+		},
+		"appearance": {
+			"on_launch": {
+				"label": "On launch",
+				"description": "What Otoyin opens on startup: a new Generate window, the last tab you used, or the Library."
+			},
+			"accent_hue": {
+				"label": "Accent hue",
+				"description": "Custom accent color hue (0–360 degrees). Overrides the accent preset color."
+			},
+			"background_pattern": {
+				"label": "Background pattern",
+				"description": "Background tile style shown in empty canvas areas."
+			},
+			"network_access": {
+				"label": "Network access",
+				"description": "Allow the app to access the network for model downloads and updates."
+			},
+			"performance_mode": {
+				"label": "Performance mode",
+				"description": "Prioritize performance over visual quality. Reduces animations and visual effects."
+			}
 		},
 		"general": {
 			"docs": {
