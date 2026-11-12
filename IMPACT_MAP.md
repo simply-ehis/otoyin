@@ -1091,3 +1091,13 @@ Follow-up to the verification pass above. The `keyring = "1.4"` pin was unresolv
 - Cleanup: 13 tracked root-level diag/inspection scripts removed (zero references tree-wide); 4 untracked stray logs archived to Temp.
 - Crosscheck: 0 lucide-react imports; 0 TODO/FIXME/HACK; boot-readiness poller confirmed ref-counted; knowledge index lists 93-97; settings.rs .bak corrupt-file recovery confirmed present.
 - Flagged, not changed: .neon (orgId/projectId); ThemeSelect.test.tsx timed out once under full load then passed; full bin/check.ps1 not re-run after these commits (tree carries other session's WIP).
+
+### Onboarding models + agent steps (2026-11-12, implementing session, commit 70476dc4)
+
+- Design doc S2 steps 3-4 implemented: wizard is now welcome -> usecase -> models -> agent -> generate.
+- Models step: recommended-pack filtered to picks, size/compat from /device/capabilities (Install hard-blocked on compatible=false; reason always shown), new get_disk_space Rust command (sysinfo 0.40, owner-approved) measures the model-cache drive via /models/cache-dir with a disk-tight warning; explicit Install clicks only (owner decision; no silent auto-download); backend-down degrades honestly.
+- Agent step: planner-4b install + host verdict (compatible=false hard-blocks), Provider+key routing to /api-keys, MCP one-liner + copy for coding agents (/mcp + X-21-labs-Client-Id).
+- Rust: new disk.rs; lib.rs registers get_disk_space (compile-verified, NOT runtime-verified in the desktop shell).
+- i18n: new steps use inline English fallbacks; other locales fall back until translated.
+- 19/19 onboarding tests, tsc clean, biome clean on touched files, full gate 11/11 at commit time.
+- Known gaps unchanged: safe-default Skip (Generate/Edit/Reduce noise + Search) not implemented (product call pending); sample-audio first win absent; onboarding agent step writes no settings (by design).
