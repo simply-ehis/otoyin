@@ -43,12 +43,14 @@ interface SettingsState {
 	/** True if the current value differs from the schema default. */
 	isModified: (key: string) => boolean;
 
-	/** Store an API key in the OS credential store and mark has_key=true. */
-	setCredentialKey: (domain: string, apiKey: string) => Promise<void>;
+	/** Store an API key in the OS credential store and mark has_key=true.
+	 * Returns false (and writes nothing) when the credential store fails. */
+	setCredentialKey: (domain: string, apiKey: string) => Promise<boolean>;
 	/** Read an API key from the OS credential store. Returns null if not set. */
 	getCredentialKey: (domain: string) => Promise<string | null>;
-	/** Delete an API key from the OS credential store and mark has_key=false. */
-	deleteCredentialKey: (domain: string) => Promise<void>;
+	/** Delete an API key from the OS credential store and mark has_key=false.
+	 * Returns false when the credential store fails. */
+	deleteCredentialKey: (domain: string) => Promise<boolean>;
 	/** Check whether a key exists for the given domain. */
 	hasCredentialKey: (domain: string) => boolean;
 }
@@ -85,13 +87,21 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 		return current !== def?.default;
 	},
 
-	/** Store an API key in the OS credential store and mark has_key=true. */
-	setCredentialKey: async (domain: string, apiKey: string) => {
-		await setCredential(CREDENTIAL_SERVICE, domain, apiKey);
+	/** Store an API key in the OS credential store and mark has_key=true.
+	 * Returns false (and writes nothing) when the credential store fails. */
+	setCredentialKey: async (
+		domain: string,
+		apiKey: string,
+	): Promise<boolean> => {
+		const stored = await setCredential(CREDENTIAL_SERVICE, domain, apiKey);
+		if (!stored) {
+			return false;
+		}
 		await writeSetting(`api_keys.${domain}.has_key`, true);
 		set((state) => ({
 			values: { ...state.values, [`api_keys.${domain}.has_key`]: true },
 		}));
+		return true;
 	},
 
 	/** Read an API key from the OS credential store. Returns null if not set. */
@@ -99,13 +109,18 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 		return getCredential(CREDENTIAL_SERVICE, domain);
 	},
 
-	/** Delete an API key from the OS credential store and mark has_key=false. */
-	deleteCredentialKey: async (domain: string) => {
-		await deleteCredential(CREDENTIAL_SERVICE, domain);
+	/** Delete an API key from the OS credential store and mark has_key=false.
+	 * Returns false when the credential store fails. */
+	deleteCredentialKey: async (domain: string): Promise<boolean> => {
+		const removed = await deleteCredential(CREDENTIAL_SERVICE, domain);
+		if (!removed) {
+			return false;
+		}
 		await writeSetting(`api_keys.${domain}.has_key`, false);
 		set((state) => ({
 			values: { ...state.values, [`api_keys.${domain}.has_key`]: false },
 		}));
+		return true;
 	},
 
 	/** Check whether a key exists for the given domain. */

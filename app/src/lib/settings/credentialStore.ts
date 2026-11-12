@@ -13,17 +13,21 @@
 
 import { invoke } from "@tauri-apps/api/core";
 
-/** Store a credential in the OS credential store. No-op without Tauri. */
+/** Store a credential in the OS credential store.
+ * Returns false when the credential store fails — callers must NOT persist
+ * `has_key=true` in that case, or the UI would claim a key is stored when it
+ * is not. */
 export async function setCredential(
 	service: string,
 	username: string,
 	password: string,
-): Promise<void> {
+): Promise<boolean> {
 	try {
 		await invoke("credential_set", { service, username, password });
+		return true;
 	} catch {
-		// Not running under Tauri — local state still updates so the UI stays
-		// consistent; the value persists once Tauri is available.
+		// Not running under Tauri, or the store is locked/failed.
+		return false;
 	}
 }
 
@@ -44,15 +48,18 @@ export async function getCredential(
 	}
 }
 
-/** Delete a credential from the OS credential store. No-op without Tauri. */
+/** Delete a credential from the OS credential store.
+ * Returns false when the credential store fails. */
 export async function deleteCredential(
 	service: string,
 	username: string,
-): Promise<void> {
+): Promise<boolean> {
 	try {
 		await invoke("credential_delete", { service, username });
+		return true;
 	} catch {
-		// Not running under Tauri — nothing to clean up.
+		// Not running under Tauri — nothing was deleted.
+		return false;
 	}
 }
 

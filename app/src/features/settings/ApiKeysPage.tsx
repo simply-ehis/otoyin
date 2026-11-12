@@ -83,7 +83,19 @@ export function ApiKeysPage() {
 				// api_key intentionally omitted — stored in credential store below
 			});
 			if (form.api_key.trim()) {
-				await store.setCredentialKey(domain, form.api_key);
+				const stored = await store.setCredentialKey(domain, form.api_key);
+				if (!stored) {
+					showStudioErrorToast(
+						new Error(
+							"Could not store the API key in the OS credential store. " +
+								"Re-enter the key and try again.",
+						),
+					);
+					setAddingDomain(null);
+					setForm(EMPTY_FORM);
+					await load();
+					return;
+				}
 			}
 			setAddingDomain(null);
 			setForm(EMPTY_FORM);
@@ -97,7 +109,16 @@ export function ApiKeysPage() {
 		try {
 			const provider = providers.find((p) => p.id === id);
 			if (provider) {
-				await store.deleteCredentialKey(provider.domain);
+				const deleted = await store.deleteCredentialKey(provider.domain);
+				if (!deleted) {
+					showStudioErrorToast(
+						new Error(
+							"Could not remove the stored API key from the OS credential store. " +
+								"The provider was kept.",
+						),
+					);
+					return;
+				}
 			}
 			await modelProvidersClient.delete(id);
 			await load();

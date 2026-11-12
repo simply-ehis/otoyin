@@ -76,4 +76,25 @@ describe("settingsStore — credential store", () => {
 		await useSettingsStore.getState().setCredentialKey("vc", "sk-vc1");
 		expect(useSettingsStore.getState().hasCredentialKey("vc")).toBe(true);
 	});
+
+	it("setCredentialKey returns false and does not persist has_key when the OS credential store fails", async () => {
+		mockedInvoke.mockRejectedValue(new Error("keyring unavailable"));
+		const stored = await useSettingsStore
+			.getState()
+			.setCredentialKey("llm", "sk-test");
+		expect(stored).toBe(false);
+		expect(useSettingsStore.getState().hasCredentialKey("llm")).toBe(false);
+	});
+
+	it("deleteCredentialKey returns false and keeps has_key when the OS credential store fails", async () => {
+		mockedInvoke.mockResolvedValue(undefined);
+		await useSettingsStore.getState().setCredentialKey("tts", "sk-abc");
+		expect(useSettingsStore.getState().hasCredentialKey("tts")).toBe(true);
+		mockedInvoke.mockRejectedValue(new Error("delete failed"));
+		const deleted = await useSettingsStore
+			.getState()
+			.deleteCredentialKey("tts");
+		expect(deleted).toBe(false);
+		expect(useSettingsStore.getState().hasCredentialKey("tts")).toBe(true);
+	});
 });
