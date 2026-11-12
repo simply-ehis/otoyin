@@ -355,6 +355,25 @@ export const TAB_HELP_DATA: Record<string, TabHelpItem> = {
 			{ label: "Create a project", shortcut: "" },
 		],
 	},
+	"/launcher": {
+		what: "Clip Launcher: trigger clips across tracks in real time — launch scenes or individual clips live.",
+		actions: [
+			{ label: "Create a launcher session", shortcut: "" },
+			{ label: "Trigger a clip or a scene", shortcut: "" },
+			{ label: "Arrange clips into scenes", shortcut: "" },
+		],
+		tips: [
+			"Scenes launch every track in a row together — build them as arrangements.",
+		],
+	},
+	"/dubbing": {
+		what: "Revoice a video's dialogue — translate to another language or swap to a different voice.",
+		actions: [
+			{ label: "Import a video", shortcut: "" },
+			{ label: "Translate and re-voice lines", shortcut: "" },
+			{ label: "Export the dubbed video", shortcut: "" },
+		],
+	},
 };
 
 interface TabHelpProps {

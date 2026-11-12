@@ -17,7 +17,8 @@ export const TAB_TIP_DATA: Record<string, string> = {
 	"/conversation": "Each speaker can use a different cloned or preset voice.",
 	"/audio-studio": "Tracks can be recorded straight in, no export step needed.",
 	"/stories": "Create character profiles first, then assign them per line.",
-	"/launcher": "Pin frequently used models here for one-click launches.",
+	"/launcher":
+		"Scenes trigger every track in a row at once — build them as arrangement blocks.",
 	"/instruments": "Drop a .sf2 SoundFont onto the panel to import it.",
 	"/audiobooks":
 		"Paste the full chapter text; casting assigns voices automatically.",
