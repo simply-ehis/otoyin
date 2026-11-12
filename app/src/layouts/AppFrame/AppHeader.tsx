@@ -67,27 +67,17 @@ export function AppHeader({
 					Otoyin
 				</span>
 			</Link>
-			{/* Centred Ctrl+K search box (design doc §7: one bar, logo · search · bell/help/window icons) */}
-			<div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+			<div className="ml-auto flex items-center gap-1">
 				<button
 					type="button"
 					onClick={onOpenSearch}
 					data-tour="search"
-					className="pointer-events-auto flex h-7 w-56 items-center gap-2 rounded-lg border border-border bg-secondary px-2 text-xs text-muted-foreground transition-colors hover:border-border-hover hover:text-foreground md:w-72 lg:w-80"
-					aria-label="Search tabs, settings and actions (Ctrl+K)"
+					className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors duration-150 hover:bg-muted/80 hover:text-foreground"
 					title="Search tabs, settings and actions (Ctrl+K)"
+					aria-label="Search tabs, settings and actions (Ctrl+K)"
 				>
-					<MagnifyingGlassIcon
-						className="size-3.5 shrink-0"
-						aria-hidden="true"
-					/>
-					<span className="truncate">Search everything…</span>
-					<kbd className="ml-auto shrink-0 rounded border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-						Ctrl K
-					</kbd>
+					<MagnifyingGlassIcon className="size-4" aria-hidden="true" />
 				</button>
-			</div>
-			<div className="ml-auto flex items-center gap-1">
 				<Suspense fallback={null}>
 					<NotificationBell />
 				</Suspense>
