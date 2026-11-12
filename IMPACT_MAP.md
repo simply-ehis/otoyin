@@ -1083,3 +1083,11 @@ Follow-up to the verification pass above. The `keyring = "1.4"` pin was unresolv
 - **Search icon** (`ae1c1db2`): centered search pill removed per owner; MagnifyingGlassIcon button added first in the top-row icon cluster (data-tour=search, title/aria-label with Ctrl+K shortcut).
 - **Worksheets/knowledge:** 06-updater.md (install-on-quit wired; live flow unverified), 08-startup.md (all §8 slices; nothing live-verified), master-plan.md (all plan slices DONE except live verification), docs/knowledge/97-updater.md.
 - **Tooling note (machine-specific):** full `bin/check.ps1` did not complete in reasonable time on this box during this session — pre-commit scoped gates passed on every commit instead. A full re-run was launched; result pending at time of writing.
+
+### Bug hunt + cleanup pass (2026-11-12, implementing session, commits 4fb34804 / 66f66bd0)
+
+- Bug fixed: credential store pretended success. credential_set/credential_delete failures were swallowed and has_key=true|false persisted anyway. credentialStore now returns boolean; the store writes nothing on failure; ApiKeysPage toasts and keeps user state; +2 failure-path tests (11/11 green). Scoped pre-commit gate green.
+- NOT included: the concurrent session's uncommitted corrupt-settings.json (corruptReset/dismissCorruptNotice) and per-setting-reset (resetSetting) work that lives in the same files - deliberately excluded; remains in the working tree uncommitted.
+- Cleanup: 13 tracked root-level diag/inspection scripts removed (zero references tree-wide); 4 untracked stray logs archived to Temp.
+- Crosscheck: 0 lucide-react imports; 0 TODO/FIXME/HACK; boot-readiness poller confirmed ref-counted; knowledge index lists 93-97; settings.rs .bak corrupt-file recovery confirmed present.
+- Flagged, not changed: .neon (orgId/projectId); ThemeSelect.test.tsx timed out once under full load then passed; full bin/check.ps1 not re-run after these commits (tree carries other session's WIP).
