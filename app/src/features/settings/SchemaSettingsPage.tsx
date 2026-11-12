@@ -118,7 +118,7 @@ export function SchemaSettingsPage() {
 			{groups.map(([groupId, group]) => (
 				<SettingSection key={groupId} title={group.label}>
 					{group.keys.map((key) => (
-						<SchemaSettingRow key={key} />
+						<SchemaSettingRow key={key} settingKey={key} />
 					))}
 				</SettingSection>
 			))}

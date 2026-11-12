@@ -26,12 +26,12 @@ import {
 import { Slider } from "@/ui/slider";
 
 interface SchemaSettingRowProps {
-	key: string;
+	settingKey: string;
 }
 
-export function SchemaSettingRow({ key }: SchemaSettingRowProps) {
+export function SchemaSettingRow({ settingKey }: SchemaSettingRowProps) {
 	const store = useSettingsStore();
-	const def = settingDef(key);
+	const def = settingDef(settingKey);
 
 	const handleChange = useCallback(
 		(value: unknown) => {
