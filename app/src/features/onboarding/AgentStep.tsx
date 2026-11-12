@@ -11,10 +11,10 @@ import { Button } from "@/ui/button";
 import { DialogDescription, DialogFooter, DialogTitle } from "@/ui/dialog";
 
 const CLAUDE_COMMAND =
-	'claude mcp add 21-labs --transport http --url http://127.0.0.1:17493/mcp --header "X-21-labs-Client-Id: claude-code"';
+	'claude mcp add otoyin --transport http --url http://127.0.0.1:17493/mcp --header "X-otoyin-Client-Id: claude-code"';
 
 const MCP_GUIDANCE =
-	"Any MCP client: point it at http://127.0.0.1:17493/mcp with the header X-21-labs-Client-Id.";
+	"Any MCP client: point it at http://127.0.0.1:17493/mcp with the header X-otoyin-Client-Id.";
 
 type T = (key: string, fallback: string) => string;
 type PlannerState = "loading" | "ready" | "unavailable";
@@ -51,6 +51,7 @@ export function AgentStep({
 	const [plannerCompat, setPlannerCompat] = useState<PlannerCompat | null>(
 		null,
 	);
+	const [plannerQueued, setPlannerQueued] = useState(false);
 	const [installing, setInstalling] = useState(false);
 	const [installError, setInstallError] = useState("");
 	const [copied, setCopied] = useState(false);
@@ -107,6 +108,9 @@ export function AgentStep({
 		setInstallError("");
 		try {
 			await apiClient.triggerModelDownload("planner-4b");
+			// Honest state: a 2.4 GB download is queued/running, not "installed".
+			// The Store owns progress; the wizard re-checks on next open.
+			setPlannerQueued(true);
 		} catch (error) {
 			setInstallError(
 				error instanceof Error ? error.message : "Download failed to start",
@@ -154,35 +158,45 @@ export function AgentStep({
 							)}
 						</p>
 						<div className="mt-2 flex items-center gap-2">
+							{plannerQueued && (
+								<output className="text-xs text-muted-foreground">
+									{t(
+										"onboarding.agent.plannerQueued",
+										"Download queued — track progress in the Store.",
+									)}
+								</output>
+							)}
 							{plannerState === "ready" && plannerInstalled && (
 								<span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
 									<CheckCircleIcon className="size-4" aria-hidden="true" />
 									{t("onboarding.agent.plannerReady", "Planner installed")}
 								</span>
 							)}
-							{plannerState === "ready" && !plannerInstalled && (
-								<Button
-									size="sm"
-									variant="outline"
-									disabled={
-										installing ||
-										(plannerCompat !== null && !plannerCompat.compatible)
-									}
-									title={
-										plannerCompat && !plannerCompat.compatible
-											? (plannerCompat.reason ?? undefined)
-											: undefined
-									}
-									onClick={() => void installPlanner()}
-								>
-									{installing
-										? t("onboarding.models.starting", "Starting…")
-										: t(
-												"onboarding.agent.installPlanner",
-												"Install planner (4B)",
-											)}
-								</Button>
-							)}
+							{plannerState === "ready" &&
+								!plannerInstalled &&
+								!plannerQueued && (
+									<Button
+										size="sm"
+										variant="outline"
+										disabled={
+											installing ||
+											(plannerCompat !== null && !plannerCompat.compatible)
+										}
+										title={
+											plannerCompat && !plannerCompat.compatible
+												? (plannerCompat.reason ?? undefined)
+												: undefined
+										}
+										onClick={() => void installPlanner()}
+									>
+										{installing
+											? t("onboarding.models.starting", "Starting…")
+											: t(
+													"onboarding.agent.installPlanner",
+													"Install planner (4B)",
+												)}
+									</Button>
+								)}
 							{plannerState === "loading" && (
 								<span className="text-xs text-muted-foreground">
 									{t("common.loading", "Loading…")}

@@ -112,6 +112,7 @@ pub fn run() {
             disk::get_disk_space,
             startup::app_ready,
             startup::updater_set_pending_install,
+            startup::safe_mode_clear,
             audio::is_system_audio_supported,
             audio::start_system_audio_capture,
             audio::stop_system_audio_capture,

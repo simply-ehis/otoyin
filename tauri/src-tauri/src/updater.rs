@@ -22,8 +22,28 @@ use tauri_plugin_updater::UpdaterExt;
 ///
 /// Returns `Ok(())` when the install was kicked off (Windows: process is
 /// about to exit inside the plugin) or completed. Returns `Err` for check
-/// or install failures — the caller keeps the current version.
+/// or install failures - the caller keeps the current version.
+///
+/// A stalled network would otherwise hang the window close forever (the
+/// CloseRequested path spawns this without any other escape hatch), so the
+/// whole check+download+install is bounded: on timeout the caller closes
+/// normally with the current version, never nags.
 pub async fn install_pending_update(app: &AppHandle) -> Result<(), String> {
+    match tokio::time::timeout(
+        std::time::Duration::from_secs(300),
+        install_pending_update_inner(app),
+    )
+    .await
+    {
+        Ok(result) => result,
+        Err(_) => Err(
+            "update install timed out after 5 minutes - kept the current version"
+                .to_string(),
+        ),
+    }
+}
+
+async fn install_pending_update_inner(app: &AppHandle) -> Result<(), String> {
     let updater = app
         .updater_builder()
         .build()

@@ -168,7 +168,13 @@ async function advanceToModels(user: ReturnType<typeof userEvent.setup>) {
 async function advanceToAgent(user: ReturnType<typeof userEvent.setup>) {
 	await advanceToModels(user);
 	await user.click(screen.getByRole("button", { name: "Next" }));
-	return screen.findByRole("heading", { name: "Assistant & coding agent" });
+	// Under the pre-commit gate's parallel load, jsdom can overrun the default
+	// 1s findBy* timeout — same flake class documented for TTS container waits.
+	return screen.findByRole(
+		"heading",
+		{ name: "Assistant & coding agent" },
+		{ timeout: 3000 },
+	);
 }
 
 describe("UseCaseWizard tour", () => {
@@ -318,6 +324,11 @@ describe("UseCaseWizard tour", () => {
 		});
 		await user.click(install);
 		expect(apiClient.triggerModelDownload).toHaveBeenCalledWith("planner-4b");
+		// Honest queued state — the Install button does not remain clickable.
+		expect(await screen.findByText(/Download queued/)).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Install planner (4B)" }),
+		).not.toBeInTheDocument();
 	});
 
 	it("blocks the planner install and shows the backend verdict when the host cannot run it", async () => {
@@ -368,7 +379,7 @@ describe("UseCaseWizard tour", () => {
 		await advanceToAgent(user);
 
 		expect(
-			await screen.findByText(/claude mcp add 21-labs/),
+			await screen.findByText(/claude mcp add otoyin/),
 		).toBeInTheDocument();
 	});
 

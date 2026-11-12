@@ -3,9 +3,10 @@
  *
  * Mounted once in AppFrame below the backend status banner. Three states:
  *
- * 1. `available` — "Update X is ready" with a What's-new pointer, an
+ * 1. `available` - "Update X is ready" with a What's-new pointer, an
  *    "Update now" action (disabled while a job is running), and "Later"
- *    which hides the banner for the current session.
+ *    which hides the banner for the session and marks the update pending —
+ *    the next quit installs it (§6 "Later installs on quit").
  * 2. `readyToInstall` — the update downloaded in the background; offers
  *    "Restart now" (disabled while busy) and "Later" (session dismiss).
  * 3. `error` — a failed check/download keeps the current version and shows
@@ -80,11 +81,11 @@ export function UpdateBanner() {
 		await checkForUpdates();
 	};
 
-	// §6 "Later installs on quit": mark a downloaded-but-not-applied update
-	// as pending; Rust applies it in the CloseRequested path instead of a
-	// plain close.
+	// §6 "Later installs on quit": mark the update (available or already
+	// downloaded) as pending; Rust does check + download + install in the
+	// CloseRequested path instead of a plain close.
 	const handleLater = () => {
-		if (status.readyToInstall) {
+		if (status.readyToInstall || status.available) {
 			void invoke("updater_set_pending_install", { pending: true }).catch(
 				() => {},
 			);

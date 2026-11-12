@@ -24,6 +24,7 @@ export function BackendStatusBanner() {
 	const status = useBootReadiness(baseUrl);
 	const platform = usePlatform();
 	const [safeMode, setSafeMode] = useState(false);
+	const [startError, setStartError] = useState("");
 
 	useEffect(() => {
 		if (!platform.metadata.isTauri) {
@@ -42,21 +43,33 @@ export function BackendStatusBanner() {
 		return (
 			<output className="flex items-center justify-center gap-2 border-b border-destructive/40 bg-danger-soft px-3 py-2 text-xs text-danger-text">
 				<span className="inline-block size-2 rounded-full bg-destructive" />
-				Otoyin&rsquo;s engine failed to start twice — it wasn&rsquo;t started
+				Otoyin&rsquo;s engine failed to start twice - it wasn&rsquo;t started
 				automatically.
 				<button
 					type="button"
 					onClick={() => {
+						setStartError("");
 						void invoke("restart_server", {
 							modelsDir: null,
 							port: null,
-						}).catch(() => {});
-						setSafeMode(false);
+						})
+							.then(() => invoke("safe_mode_clear"))
+							.then(() => setSafeMode(false))
+							.catch(() =>
+								setStartError(
+									"The engine still couldn't start — check the logs for details.",
+								),
+							);
 					}}
 					className="rounded-md border border-danger-text/40 bg-transparent px-2 py-0.5 text-[11px] font-medium text-danger-text transition-colors hover:bg-danger-soft"
 				>
 					Start engine anyway
 				</button>
+				{startError && (
+					<span role="alert" className="text-[11px]">
+						{startError}
+					</span>
+				)}
 			</output>
 		);
 	}

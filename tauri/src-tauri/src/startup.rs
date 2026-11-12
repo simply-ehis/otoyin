@@ -64,3 +64,17 @@ pub fn updater_set_pending_install(
         .update_pending_install
         .store(pending, Ordering::SeqCst);
 }
+
+/// Clear the crash-loop counter after a successful manual engine start (§8 P2).
+/// Without this the persisted failure count never resets outside the
+/// auto-start path, so a user who starts the engine manually re-enters safe
+/// mode on every subsequent launch — a permanent demotion the design never
+/// wanted. Called by the "Start engine anyway" banner action on success.
+#[tauri::command]
+pub fn safe_mode_clear(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, crate::AppState>,
+) {
+    state.startup.backend_failures.store(0, Ordering::SeqCst);
+    write_backend_failures(&app, 0);
+}
