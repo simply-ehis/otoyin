@@ -29,6 +29,7 @@ cpal = "0.15"
 symphonia = { version = "0.5", features = ["all"] }
 scopeguard = "1.2.0"
 keyring = "4"
+sysinfo = "0.40.3"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 screencapturekit = { version = "1", features = ["async"] }

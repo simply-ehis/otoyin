@@ -1,5 +1,4 @@
 import {
-	ArrowDownTrayIcon,
 	BookOpenIcon,
 	MicrophoneIcon,
 	MusicalNoteIcon,
@@ -10,6 +9,8 @@ import {
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { AgentStep } from "@/features/onboarding/AgentStep";
+import { ModelsStep } from "@/features/onboarding/ModelsStep";
 import { tabByPath } from "@/lib/tabs/registry";
 import { cn } from "@/lib/utils/cn";
 import {
@@ -36,14 +37,14 @@ const USE_CASE_ICONS: Record<UseCaseKey, typeof SparklesIcon> = {
 
 const USE_CASE_KEYS = Object.keys(USE_CASE_PROFILES) as UseCaseKey[];
 
-const STEP_IDS = ["welcome", "usecase", "setup", "generate"] as const;
+const STEP_IDS = ["welcome", "usecase", "models", "agent", "generate"] as const;
 type StepId = (typeof STEP_IDS)[number];
 
 /**
  * First-launch onboarding tour for the whole app.
- * Step 1 (use case) is the original one-pager, kept verbatim — it decides
- * which sidebar tabs are visible. The surrounding steps cover welcome,
- * getting a voice, and generating + listening.
+ * Step 1 (use case) decides which sidebar tabs are visible. The steps that
+ * follow cover getting this machine ready: models for the chosen picks, the
+ * assistant/coding agent, and generating + listening.
  */
 export function UseCaseWizard() {
 	const { t } = useTranslation();
@@ -89,10 +90,7 @@ export function UseCaseWizard() {
 	};
 
 	const handleUseCaseContinue = () => {
-		if (selected.size === 0) {
-			// "Everything" — show all tabs
-			markOnboarded();
-		} else {
+		if (selected.size > 0) {
 			applyUseCases([...selected]);
 		}
 		setStep(2);
@@ -121,19 +119,29 @@ export function UseCaseWizard() {
 						onContinue={handleUseCaseContinue}
 					/>
 				) : null}
-				{stepId === "setup" ? (
-					<SetupStep
+				{stepId === "models" ? (
+					<ModelsStep
 						t={t}
+						selected={selected}
 						onBack={() => setStep(1)}
 						onNext={() => setStep(3)}
 						onSkip={handleSkip}
 						onOpenStore={() => goSomewhere("/store")}
 					/>
 				) : null}
+				{stepId === "agent" ? (
+					<AgentStep
+						t={t}
+						onBack={() => setStep(2)}
+						onNext={() => setStep(4)}
+						onSkip={handleSkip}
+						onOpenApiKeys={() => goSomewhere("/api-keys")}
+					/>
+				) : null}
 				{stepId === "generate" ? (
 					<GenerateStep
 						t={t}
-						onBack={() => setStep(2)}
+						onBack={() => setStep(3)}
 						onFinish={() => goSomewhere("/")}
 						onSkip={handleSkip}
 					/>
@@ -330,80 +338,6 @@ function UseCaseStep({
 	);
 }
 
-function SetupStep({
-	t,
-	onBack,
-	onNext,
-	onSkip,
-	onOpenStore,
-}: {
-	t: T;
-	onBack: () => void;
-	onNext: () => void;
-	onSkip: () => void;
-	onOpenStore: () => void;
-}) {
-	return (
-		<>
-			<DialogTitle>{t("onboarding.setup.title", "Get a voice")}</DialogTitle>
-			<DialogDescription>
-				{t(
-					"onboarding.setup.description",
-					"Voices come from models. Grab a free one from the Store, then manage voices on the Voices tab.",
-				)}
-			</DialogDescription>
-			<ul className="flex flex-col gap-2 py-2">
-				<li className="flex items-start gap-3">
-					<span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-secondary text-muted-foreground">
-						<ArrowDownTrayIcon className="size-4" aria-hidden="true" />
-					</span>
-					<span className="min-w-0">
-						<span className="block text-sm font-medium">
-							{t("onboarding.setup.storeTitle", "1. Download a model")}
-						</span>
-						<span className="mt-0.5 block text-xs text-muted-foreground">
-							{t(
-								"onboarding.setup.storeBody",
-								"Store → pick a voice engine → Download. Free voices work fully offline.",
-							)}
-						</span>
-					</span>
-				</li>
-				<li className="flex items-start gap-3">
-					<span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-secondary text-muted-foreground">
-						<MicrophoneIcon className="size-4" aria-hidden="true" />
-					</span>
-					<span className="min-w-0">
-						<span className="block text-sm font-medium">
-							{t("onboarding.setup.voicesTitle", "2. Pick or make a voice")}
-						</span>
-						<span className="mt-0.5 block text-xs text-muted-foreground">
-							{t(
-								"onboarding.setup.voicesBody",
-								"Voices → use a built-in preset, clone yours, or design one by description.",
-							)}
-						</span>
-					</span>
-				</li>
-			</ul>
-			<DialogFooter className="flex-row justify-between sm:justify-between">
-				<Button variant="ghost" onClick={onBack}>
-					{t("common.back", "Back")}
-				</Button>
-				<Button variant="ghost" onClick={onSkip}>
-					{t("onboarding.wizard.skipTour", "Skip tour")}
-				</Button>
-				<span className="flex gap-2">
-					<Button variant="outline" onClick={onOpenStore}>
-						{t("onboarding.setup.openStore", "Open Store")}
-					</Button>
-					<Button onClick={onNext}>{t("common.next", "Next")}</Button>
-				</span>
-			</DialogFooter>
-		</>
-	);
-}
-
 function GenerateStep({
 	t,
 	onBack,
@@ -473,6 +407,12 @@ function GenerateStep({
 					</span>
 				</li>
 			</ul>
+			<p className="text-center text-xs text-muted-foreground">
+				{t(
+					"onboarding.generate.ctrlKHint",
+					"Tip — press Ctrl+K to search anything.",
+				)}
+			</p>
 			<DialogFooter className="flex-row justify-between sm:justify-between">
 				<Button variant="ghost" onClick={onBack}>
 					{t("common.back", "Back")}

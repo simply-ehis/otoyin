@@ -502,3 +502,5 @@ Every knowledge doc should have an `## Agent Callable` section with exact MCP to
 - [ABOUT-SETTINGS.md](ABOUT-SETTINGS.md) — Settings: 14 sub-tabs for app/server configuration.
 - [ABOUT-ASSISTANT.md](ABOUT-ASSISTANT.md) — AI Assistant: chat-based helper with tool access.
 - [BUTTON-REFERENCE.md](BUTTON-REFERENCE.md) — Complete UI action catalog: every button across all tabs.
+
+- [98-onboarding-models-agent.md](98-onboarding-models-agent.md) - 2026-11-12 onboarding steps 3-4: models for your picks (recommended pack, RAM + disk-space check via sysinfo, explicit Install only) and assistant/coding-agent step (GGUF planner / provider+key / MCP one-liner). Planner compat hard-block on low-RAM hosts.

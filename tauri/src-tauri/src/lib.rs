@@ -15,6 +15,7 @@ mod audio_mac;
 mod audio_win;
 #[cfg(feature = "rust-backend")]
 mod backend;
+mod disk;
 mod mic_webview;
 mod server;
 mod settings;
@@ -108,6 +109,7 @@ pub fn run() {
             settings::credential_set,
             settings::credential_get,
             settings::credential_delete,
+            disk::get_disk_space,
             startup::app_ready,
             startup::updater_set_pending_install,
             audio::is_system_audio_supported,

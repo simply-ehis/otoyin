@@ -1,0 +1,24 @@
+# 98 — Onboarding: "Models for your picks" + "Assistant & coding agent" steps (2026-11-12)
+
+PURPOSE: Record the two onboarding steps added to the first-run wizard (design doc §2 steps 3–4), what is verified, and what is not.
+OWNS: `app/src/features/onboarding/{ModelsStep,AgentStep,UseCaseWizard}.tsx`, `app/src/lib/system/disk.ts`, `tauri/src-tauri/src/disk.rs`.
+READ-WHEN: touching the wizard, model install flows, or the disk-space command.
+KEY-FILES: `UseCaseWizard.tsx` (5 steps: welcome, usecase, models, agent, generate), `app/src/lib/api/{clientModels,types}.ts` (recommended pack / device capabilities / cache-dir), `backend/utils/model_status.py` (recommended pack 4 models), `backend/routes/models/{recommended,device}.py`, `backend/mcp_server/README.md` (MCP wiring the agent step documents).
+INVARIANTS: downloads start ONLY from an explicit Install click (owner decision 2026-11-12); no silent auto-download. The planner (`planner-4b`) is offered only in the agent step, never in the models step. Onboarding never hard-fails when the backend is down — both steps render a degraded honest state and Continue keeps working. Install buttons are disabled when the host reports the model incompatible (`compatible: false` from `/device/capabilities`); the backend verdict is always shown when present, even when `compatible: true` (reason may say "may run slowly").
+GOTCHAS: `demucs-htdemucs` (recommended pack, `music` role) is NOT in `/device/capabilities`'s registered-model catalog — size/compat render as unknown (no fake numbers); the disk-space summer ignores models without known size. `Whisper "whisper-tiny-en"` not in catalog either on some installs — same fallback. `get_disk_space` (Rust `sysinfo` 0.40) is compile-verified only — NOT runtime-verified in the desktop shell. The wizard mounts per fresh profile; full-disk numbers vary by drive. The i18n keys used in the new steps ship with inline English fallbacks; `en/translation.json` carries `onboarding.models.unavailable` / `onboarding.agent.plannerUnknown` equivalents in `pt-BR` only as of writing — other locales fall back to English.
+UPDATED: 2026-11-12.
+
+## What the steps do
+
+**Step 3 — Models for your picks.** Lists only the recommended-pack models the chosen use cases need (mapping: tts→kokoro-onnx, podcast→+whisper-tiny-en, audiobook→kokoro-onnx, music→demucs-htdemucs, voiceChanger→whisper-tiny-en; no selection→all non-LLM pack models; `everything` therefore excludes `planner-4b`). Per row: display name (from the device catalog, falling back to `model_name`), size (same source; hidden when unknown), backend compatibility verdict (Install disabled on `compatible: false`), downloaded state. RAM line (`total_ram_mb` + tier) and free space on the model-cache drive via the new `get_disk_space` Rust command (`sysinfo`); the row asks the backend for `/models/cache-dir` first and falls back to the app data drive. Disk-tight amber warning appears only when the missing models' known sizes exceed free space. "Open Store" navigates to `/store` (marks onboarded, like before).
+
+**Step 4 — Assistant & coding agent (skippable).**
+- **Local brain (offline):** planner-4b install state from `/models/recommended`; Install button triggers `triggerModelDownload("planner-4b")`. Host verdict from `/device/capabilities`: `compatible: false` hard-blocks Install; any `reason` (e.g. "may run slowly") is shown under the button. **Important on low-end hardware:** the dev host (`tier=low_end`, ~3.4 GB RAM) reports `compatible: true` with reason "Large for a low-end device - may run slowly", so the Install is allowed but the warning is shown.
+- **Provider and key:** "Add provider & key" navigates to `/api-keys` (existing page; keys go to the OS credential store).
+- **Connect your coding agent:** shows the `claude mcp add 21-labs --transport http --url http://127.0.0.1:17493/mcp --header "X-21-labs-Client-Id: claude-code"` one-liner with a copy button, plus the generic MCP endpoint note. Otoyin serves 110 tools on `/mcp` (Streamable HTTP) per `backend/mcp_server/README.md`.
+
+## Verification
+- `npx vitest run src/features/onboarding` — **19/19 pass** (welcome→usecase→models→agent→generate traversal, Back chain, skip on every step, install clicks hitting `triggerModelDownload`, unavailable-backend degradation, low-disk warning, planner incompatible hard-block).
+- `npx tsc --noEmit` clean; `npx biome check` clean on touched files; `cargo check` clean with `sysinfo = 0.40`.
+- NOT verified live: `get_disk_space` inside the desktop shell; the real `/models/recommended` against this machine (works — `all_downloaded=False` — only confirms the API, not the UI path). The dev webview serves `/` empty during Vite's on-demand transform (minutes on this box); lazy chunk compile, not a defect.
+- The shared dev profile is NOT marked onboarded by this verification; `Skip`/`Finish` were never clicked in the live app.
