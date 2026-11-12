@@ -4,35 +4,123 @@ import {
 	createRouter,
 	redirect,
 } from "@tanstack/react-router";
-import { CommunityPresetsPage } from "@/features/content/CommunityPresetsPage";
-import { OffersPage } from "@/features/content/OffersPage";
-import { StandaloneProjectPage } from "@/features/content/StandaloneProjectPage";
-import { WhatsNewPage } from "@/features/content/WhatsNewPage";
-import { DubPage } from "@/features/dubbing/DubPage";
-import { HelpPage } from "@/features/help/HelpPage";
-import { LibraryTab } from "@/features/library/LibraryTab";
-import { ApiKeysPage } from "@/features/settings/ApiKeysPage";
-import { CloudModelsPage } from "@/features/settings/CloudModelsPage";
-import { LottieExportPage } from "@/features/settings/LottieExportPage";
-import { ModelHealthPage } from "@/features/settings/ModelHealthPage";
-import { PluginsPage } from "@/features/settings/PluginsPage";
-import { PrivacyPage } from "@/features/settings/PrivacyPage";
-import { SchemaSettingsPage } from "@/features/settings/SchemaSettingsPage";
-import { ScriptingPage } from "@/features/settings/ScriptingPage";
-import { ShortcutsPage } from "@/features/settings/ShortcutsPage";
-import { SupportPage } from "@/features/settings/SupportPage";
-import { TelemetryPage } from "@/features/settings/TelemetryPage";
-import { TimecodeDisplay } from "@/features/settings/TimecodeDisplay";
-// Direct imports for page components referenced by createRoute (not lazy-loaded)
-import { StorePage } from "@/features/store/StorePage";
-import { StoryEditor } from "@/features/stories/StoryEditor";
-import { TranslateView } from "@/features/translate/TranslateView";
+// Every page component is lazy-loaded. The boot chunk carries only the shell.
 import { RootLayout } from "@/layouts/RootLayout/RootLayout";
 import { lazyRetry } from "@/lib/lazyRetry";
 import { REGISTRY } from "@/lib/tabs/registry";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 // Lazy-loaded page components for code splitting
+const CommunityPresetsPage = lazyRetry(() =>
+	import("@/features/content/CommunityPresetsPage").then((m) => ({
+		default: m.CommunityPresetsPage,
+	})),
+);
+const OffersPage = lazyRetry(() =>
+	import("@/features/content/OffersPage").then((m) => ({
+		default: m.OffersPage,
+	})),
+);
+const StandaloneProjectPage = lazyRetry(() =>
+	import("@/features/content/StandaloneProjectPage").then((m) => ({
+		default: m.StandaloneProjectPage,
+	})),
+);
+const WhatsNewPage = lazyRetry(() =>
+	import("@/features/content/WhatsNewPage").then((m) => ({
+		default: m.WhatsNewPage,
+	})),
+);
+const DubPage = lazyRetry(() =>
+	import("@/features/dubbing/DubPage").then((m) => ({
+		default: m.DubPage,
+	})),
+);
+const HelpPage = lazyRetry(() =>
+	import("@/features/help/HelpPage").then((m) => ({
+		default: m.HelpPage,
+	})),
+);
+const LibraryTab = lazyRetry(() =>
+	import("@/features/library/LibraryTab").then((m) => ({
+		default: m.LibraryTab,
+	})),
+);
+const ApiKeysPage = lazyRetry(() =>
+	import("@/features/settings/ApiKeysPage").then((m) => ({
+		default: m.ApiKeysPage,
+	})),
+);
+const CloudModelsPage = lazyRetry(() =>
+	import("@/features/settings/CloudModelsPage").then((m) => ({
+		default: m.CloudModelsPage,
+	})),
+);
+const LottieExportPage = lazyRetry(() =>
+	import("@/features/settings/LottieExportPage").then((m) => ({
+		default: m.LottieExportPage,
+	})),
+);
+const ModelHealthPage = lazyRetry(() =>
+	import("@/features/settings/ModelHealthPage").then((m) => ({
+		default: m.ModelHealthPage,
+	})),
+);
+const PluginsPage = lazyRetry(() =>
+	import("@/features/settings/PluginsPage").then((m) => ({
+		default: m.PluginsPage,
+	})),
+);
+const PrivacyPage = lazyRetry(() =>
+	import("@/features/settings/PrivacyPage").then((m) => ({
+		default: m.PrivacyPage,
+	})),
+);
+const SchemaSettingsPage = lazyRetry(() =>
+	import("@/features/settings/SchemaSettingsPage").then((m) => ({
+		default: m.SchemaSettingsPage,
+	})),
+);
+const ScriptingPage = lazyRetry(() =>
+	import("@/features/settings/ScriptingPage").then((m) => ({
+		default: m.ScriptingPage,
+	})),
+);
+const ShortcutsPage = lazyRetry(() =>
+	import("@/features/settings/ShortcutsPage").then((m) => ({
+		default: m.ShortcutsPage,
+	})),
+);
+const SupportPage = lazyRetry(() =>
+	import("@/features/settings/SupportPage").then((m) => ({
+		default: m.SupportPage,
+	})),
+);
+const TelemetryPage = lazyRetry(() =>
+	import("@/features/settings/TelemetryPage").then((m) => ({
+		default: m.TelemetryPage,
+	})),
+);
+const TimecodeDisplay = lazyRetry(() =>
+	import("@/features/settings/TimecodeDisplay").then((m) => ({
+		default: m.TimecodeDisplay,
+	})),
+);
+const StorePage = lazyRetry(() =>
+	import("@/features/store/StorePage").then((m) => ({
+		default: m.StorePage,
+	})),
+);
+const StoryEditor = lazyRetry(() =>
+	import("@/features/stories/StoryEditor").then((m) => ({
+		default: m.StoryEditor,
+	})),
+);
+const TranslateView = lazyRetry(() =>
+	import("@/features/translate/TranslateView").then((m) => ({
+		default: m.TranslateView,
+	})),
+);
 const CapturesTab = lazyRetry(() =>
 	import("@/features/captures/CapturesTab").then((m) => ({
 		default: m.CapturesTab,

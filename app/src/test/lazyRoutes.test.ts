@@ -11,6 +11,10 @@
  *    router.tsx. A registry entry without a matching route is a tab that
  *    renders nothing.
  *
+ * 3. router.tsx carries no static `@/features/...` imports. Anything loaded
+ *    statically lands in the boot chunk, which defeats the whole lazy
+ *    graph — the P5 deferral boundary is enforced here, not by convention.
+ *
  * Sources are read as raw strings via Vite's `?raw` / `import.meta.glob`
  * so this test stays in the Vite module graph (no node builtins — see
  * i18nKeys.test.ts for the same pattern). It never executes the route
@@ -48,6 +52,16 @@ describe("lazy route graph", () => {
 
 	it("router.tsx declares at least one lazy import", () => {
 		expect(specs.length).toBeGreaterThan(0);
+	});
+
+	it("router.tsx carries no static @/features/... imports (P5 boot-chunk boundary)", () => {
+		const staticFeatureImports = [
+			...routerSource.matchAll(/import\s*\{[^}]*\}\s*from\s*"@\/features\//g),
+		];
+		expect(
+			staticFeatureImports.map((m) => m[0]),
+			"boot chunk must not statically import feature modules",
+		).toEqual([]);
 	});
 
 	for (const spec of specs) {
