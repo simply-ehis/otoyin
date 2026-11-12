@@ -19,15 +19,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs;
 use std::path::PathBuf;
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 
 const SETTINGS_FILE: &str = "settings.json";
-const SETTINGS_TMP_FILE: &str = "settings.json.tmp";
 const SCHEMA_VERSION: u64 = 1;
-
-// Credential store service name — all otoyin credentials live under this
-// service so they can be enumerated / cleared together.
-const CREDENTIAL_SERVICE: &str = "otoyin";
 
 #[derive(Serialize, Deserialize)]
 struct SettingsFile {
@@ -93,7 +88,7 @@ pub async fn settings_write(
     Ok(())
 }
 
-##[tauri::command]
+#[tauri::command]
 pub async fn credential_set(
     service: String,
     username: String,
@@ -123,12 +118,12 @@ pub async fn credential_delete(service: String, username: String) -> Result<(), 
     let entry = Entry::new(&service, &username)
         .map_err(|e| format!("failed to open credential entry: {e}"))?;
     entry
-        .delete_password()
+        .delete_credential()
         .map_err(|e| format!("failed to delete credential: {e}"))?;
     Ok(())
 }
 
-[cfg(test)]
+#[cfg(test)]
 mod tests {
     use super::*;
     use std::env;
@@ -160,7 +155,7 @@ mod tests {
         fs::rename(&tmp, &path).unwrap();
 
         assert!(path.exists());
-        assert!(!dir.join(SETTINGS_TMP_FILE).exists());
+        assert!(!dir.join("settings.json.tmp").exists());
 
         let text = fs::read_to_string(&path).unwrap();
         let file: SettingsFile = serde_json::from_str(&text).unwrap();

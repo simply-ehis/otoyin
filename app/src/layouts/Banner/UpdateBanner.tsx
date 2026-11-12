@@ -23,6 +23,7 @@ import {
 	XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { useNavigate } from "@tanstack/react-router";
+import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAutoUpdater } from "@/hooks/useAutoUpdater";
@@ -77,6 +78,18 @@ export function UpdateBanner() {
 	const handleRetry = async () => {
 		setDismissed(false);
 		await checkForUpdates();
+	};
+
+	// §6 "Later installs on quit": mark a downloaded-but-not-applied update
+	// as pending; Rust applies it in the CloseRequested path instead of a
+	// plain close.
+	const handleLater = () => {
+		if (status.readyToInstall) {
+			void invoke("updater_set_pending_install", { pending: true }).catch(
+				() => {},
+			);
+		}
+		setDismissed(true);
 	};
 
 	if (showError) {
@@ -162,7 +175,7 @@ export function UpdateBanner() {
 					)}
 				</Button>
 				<Button
-					onClick={() => setDismissed(true)}
+					onClick={handleLater}
 					variant="ghost"
 					size="sm"
 					className="text-xs"

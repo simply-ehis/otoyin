@@ -1,4 +1,5 @@
 import { useRouterState } from "@tanstack/react-router";
+import { invoke } from "@tauri-apps/api/core";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { TabTip } from "@/features/help/TabTip";
 import { usePostUpdateNotice } from "@/hooks/usePostUpdateNotice";
@@ -125,6 +126,11 @@ export function AppFrame({ children }: AppFrameProps) {
 	useServerLifecycle();
 	usePostUpdateNotice();
 	useThemeSync();
+
+	// Tell Rust the renderer committed; the hidden-window watchdog uses this.
+	useEffect(() => {
+		void invoke("app_ready").catch(() => {});
+	}, []);
 	const theme = useUIStore((s) => s.theme);
 
 	useEffect(() => {

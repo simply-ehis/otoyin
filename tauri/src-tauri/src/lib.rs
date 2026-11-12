@@ -18,6 +18,8 @@ mod backend;
 mod mic_webview;
 mod server;
 mod settings;
+mod startup;
+mod updater;
 mod window_state;
 
 use std::sync::atomic::Ordering;
@@ -29,6 +31,7 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 pub(crate) struct AppState {
     pub server: server::ServerState,
     pub audio: audio::AudioState,
+    pub startup: startup::StartupState,
 }
 
 /// Crash log cap: rotate instead of growing without bound.
@@ -95,6 +98,7 @@ pub fn run() {
             tauri_plugin_global_shortcut::Builder::new().build(),
         )
         .invoke_handler(tauri::generate_handler![
+            #[cfg(feature = "rust-backend")]
             backend::start_rust_backend,
             server::start_server,
             server::stop_server,
@@ -104,6 +108,8 @@ pub fn run() {
             settings::credential_set,
             settings::credential_get,
             settings::credential_delete,
+            startup::app_ready,
+            startup::updater_set_pending_install,
             audio::is_system_audio_supported,
             audio::start_system_audio_capture,
             audio::stop_system_audio_capture,
@@ -138,13 +144,72 @@ pub fn run() {
                         }
                     })?;
 
-                // Start the bundled backend before the UI begins polling
-                // /health. Non-fatal: in dev the backend is usually already
-                // running (adopted), and without a bundled binary we stay
-                // silent and let the UI health banner guide the user.
+                // Crash-loop watchdog (§8 P2): restore the persisted failure
+                // counter, then decide whether to auto-start the backend.
+                let stored_failures = startup::read_backend_failures(app.handle());
+                app.state::<AppState>()
+                    .startup
+                    .backend_failures
+                    .store(stored_failures, Ordering::SeqCst);
+                if stored_failures >= 2 {
+                    // Safe mode: do not auto-start. The frontend shows a
+                    // banner offering a manual engine start. A locked or
+                    // half-dead backend must never hold the UI hostage
+                    // silently.
+                    let _ = app
+                        .handle()
+                        .emit("backend-safe-mode", "previous engine starts failed twice");
+                } else {
+                    // Start the bundled backend before the UI begins polling
+                    // /health. Non-fatal: in dev the backend is usually
+                    // already running (adopted), and without a bundled binary
+                    // we stay silent and let the UI health banner guide the user.
+                    let handle = app.handle().clone();
+                    tauri::async_runtime::spawn(async move {
+                        match server::ensure_started(&handle, None).await {
+                            Ok(url) => {
+                                handle
+                                    .state::<AppState>()
+                                    .startup
+                                    .backend_failures
+                                    .store(0, Ordering::SeqCst);
+                                startup::write_backend_failures(&handle, 0);
+                                let _ = handle.emit("backend-ready", url);
+                            }
+                            Err(e) => {
+                                let failures = handle
+                                    .state::<AppState>()
+                                    .startup
+                                    .backend_failures
+                                    .fetch_add(1, Ordering::SeqCst)
+                                    + 1;
+                                startup::write_backend_failures(&handle, failures);
+                                let _ = handle.emit("backend-failed", e.clone());
+                                if failures >= 2 {
+                                    let _ = handle.emit("backend-safe-mode", e);
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Hidden-window watchdog (§8 P2): if the renderer never
+                // reports app-ready in 6s, force the window visible and say
+                // so. A frameless window that renders nothing leaves the user
+                // with no clickable close control.
                 let handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
-                    let _ = server::ensure_started(&handle, None).await;
+                    tokio::time::sleep(std::time::Duration::from_secs(6)).await;
+                    let state = handle.state::<AppState>();
+                    if !state.startup.app_ready.load(Ordering::SeqCst) {
+                        if let Some(win) = handle.get_webview_window("main") {
+                            let _ = win.show();
+                        }
+                        let _ = handle.emit(
+                            "startup-watchdog",
+                            "renderer did not report ready in 6s",
+                        );
+                    }
                 });
 
                 // Rust backend (Phase 1): start health-check server on a
@@ -179,6 +244,33 @@ pub fn run() {
                     // before the process can exit and orphan it.
                     server::stop_if_ours(&state);
                     server::release_ownership(&handle.state::<AppState>().models_dir());
+                    // §6 "Later installs on quit": if an update is pending,
+                    // apply it now instead of closing. On Windows the NSIS
+                    // installer replaces the app and the process exits during
+                    // install (the installer relaunches the app afterwards).
+                    // On failure the app closes normally and keeps the current
+                    // version — never nag.
+                    if state.startup.update_pending_install.swap(false, Ordering::SeqCst) {
+                        let handle = handle.clone();
+                        tauri::async_runtime::spawn(async move {
+                            match updater::install_pending_update(&handle).await {
+                                Ok(()) => {
+                                    // Finished without the installer taking over
+                                    // the process (e.g. macOS/Linux): close.
+                                    if let Some(win) = handle.get_webview_window("main") {
+                                        let _ = win.destroy();
+                                    }
+                                }
+                                Err(e) => {
+                                    eprintln!("otoyin: pending update install failed: {e}");
+                                    if let Some(win) = handle.get_webview_window("main") {
+                                        let _ = win.destroy();
+                                    }
+                                }
+                            }
+                        });
+                        return;
+                    }
                     if let Some(win) = handle.get_webview_window("main") {
                         let _ = win.destroy();
                     }
