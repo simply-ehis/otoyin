@@ -265,7 +265,7 @@ export function NotificationBell() {
 								</ul>
 								<Link
 									to="/store"
-									className="mt-3 block w-full rounded-md bg-primary px-3 py-1.5 text-center text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+									className="mt-3 block w-full rounded-md bg-primary px-3 py-2 text-center text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
 								>
 									Get from Store ({missing.length})
 								</Link>

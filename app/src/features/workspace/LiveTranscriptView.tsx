@@ -111,6 +111,7 @@ export function LiveTranscriptView() {
 	return (
 		<div className="flex h-full min-h-0 flex-col gap-4 p-4 overflow-hidden">
 			<ScreenHeader
+				helpPath="/transcript"
 				title="Live Transcript"
 				actions={
 					<div className="flex flex-wrap items-center gap-2">

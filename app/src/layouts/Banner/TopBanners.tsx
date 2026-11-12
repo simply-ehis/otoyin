@@ -248,7 +248,7 @@ function Strip({
 	return (
 		<output
 			className={cn(
-				"flex h-9 shrink-0 items-center gap-2.5 border-b px-4",
+				"flex h-9 shrink-0 items-center gap-2 border-b px-4",
 				severityStyles(model.variant),
 			)}
 		>
@@ -267,7 +267,7 @@ function Strip({
 							onCta(model.cta.to);
 						}
 					}}
-					className="shrink-0 rounded-md bg-accent px-2.5 py-0.5 text-[11px] font-medium text-accent-foreground hover:opacity-90"
+					className="shrink-0 rounded-md bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground hover:opacity-90"
 					title={model.cta.label}
 					aria-label={model.cta.label}
 				>

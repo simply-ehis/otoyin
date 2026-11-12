@@ -76,7 +76,7 @@ export function LottieExportPage() {
 
 	return (
 		<div className="flex max-w-4xl flex-col gap-6">
-			<ScreenHeader title="Lottie export" />
+			<ScreenHeader helpPath="/settings" title="Lottie export" />
 			<Card>
 				<CardTitle className="text-sm">Export settings</CardTitle>
 				<CardBody className="mt-3 flex flex-col gap-4">

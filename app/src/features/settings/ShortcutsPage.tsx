@@ -88,6 +88,7 @@ export function ShortcutsPage() {
 	return (
 		<div className="flex max-w-4xl flex-col gap-6">
 			<ScreenHeader
+				helpPath="/settings"
 				title="Keyboard shortcuts"
 				actions={
 					<Select value={selected} onValueChange={setSelected}>

@@ -19,6 +19,7 @@ export function TimecodeDisplay() {
 	return (
 		<div className="flex flex-col gap-4 p-6">
 			<ScreenHeader
+				helpPath="/settings"
 				title="Timecode"
 				description="Set or view the current playhead timecode"
 			/>

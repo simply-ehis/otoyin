@@ -48,7 +48,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/ui/dropdown-menu";
-import { EmptyState, LoadingState } from "@/ui/states";
+import { LoadingState } from "@/ui/states";
 import { useToast } from "@/ui/use-toast";
 
 const PAGE_SIZE = 20;
@@ -178,10 +178,9 @@ export function HistoryList() {
 			</div>
 
 			{items.length === 0 ? (
-				<EmptyState
-					title="No generations yet"
-					body="Your audio captures will appear here. Generate your first voice line to get started."
-				/>
+				<p className="px-1 py-2 text-xs text-muted-foreground/80">
+					No generations yet — your history appears here.
+				</p>
 			) : (
 				<div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto pb-4">
 					<div

@@ -63,7 +63,7 @@ export function SupportPage() {
 
 	return (
 		<div className="mx-auto max-w-4xl">
-			<ScreenHeader title="Contact & support" />
+			<ScreenHeader helpPath="/settings" title="Contact & support" />
 			<div className="mb-6 mt-4 flex flex-wrap gap-2 text-sm">
 				{[
 					{ href: "https://discord.gg/otoyin", label: "Discord" },
@@ -221,7 +221,7 @@ function CrashDiagnostics() {
 
 	return (
 		<section aria-label="Diagnostics and crash reports" className="mt-10">
-			<ScreenHeader title="Diagnostics" />
+			<ScreenHeader helpPath="/settings" title="Diagnostics" />
 			<p className="mt-3 max-w-prose text-xs text-muted-foreground">
 				Crashes are always logged privately on this device (scrubbed of emails,
 				keys, and file paths). Sharing only sends new reports to 21labs to help

@@ -64,7 +64,14 @@ import { usePresetAudition } from "./usePresetAudition";
  * Speed is the shared listening speed (playerStore.playbackRate) — it
  * changes how previews play, not how voices are synthesized.
  */
-export function PromptBar({ storyId }: { storyId?: string | null }) {
+export function PromptBar({
+	storyId,
+	toolbar,
+}: {
+	storyId?: string | null;
+	/** Optional right-aligned toolbar slot rendered in Row 1 (e.g. tab help, import/create actions). */
+	toolbar?: React.ReactNode;
+}) {
 	const { t } = useTranslation();
 	const { toast } = useToast();
 	const navigate = useNavigate();
@@ -416,7 +423,7 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 							}
 							setVoiceOpen((v) => !v);
 						}}
-						className="flex items-center gap-1.5 rounded-md border border-border bg-secondary/50 px-2 py-1 text-xs transition-colors hover:bg-secondary"
+						className="flex items-center gap-2 rounded-md border border-border bg-secondary/50 px-2 py-1 text-xs transition-colors hover:bg-secondary"
 						aria-expanded={voiceOpen}
 						aria-haspopup="listbox"
 					>
@@ -454,7 +461,7 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 								}}
 							/>
 							<div className="absolute left-0 top-full z-50 mt-1 w-72 rounded-md border border-border bg-card shadow-lg">
-								<div className="max-h-72 overflow-y-auto p-1.5">
+								<div className="max-h-72 overflow-y-auto p-2">
 									{/* Preset voices from the model — shown first */}
 									{hasPresetVoices && (
 										<>
@@ -462,7 +469,7 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 												Built-in voices · {enginePresetVoices.length}
 											</div>
 											{showPresetSearch && (
-												<div className="px-1.5 pb-1">
+												<div className="px-2 pb-1">
 													<input
 														type="search"
 														value={presetQuery}
@@ -494,7 +501,7 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 															}
 														}}
 														className={cn(
-															"flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+															"flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-left text-xs transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-ring",
 															isUsed
 																? "bg-accent/10 text-accent"
 																: "hover:bg-secondary",
@@ -504,11 +511,11 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 															{v.name.charAt(0).toUpperCase()}
 														</span>
 														<div className="min-w-0 flex-1">
-															<div className="flex items-center gap-1.5">
+															<div className="flex items-center gap-2">
 																<span className="truncate font-medium">
 																	{v.name}
 																</span>
-																<span className="shrink-0 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
+																<span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
 																	Preset
 																</span>
 															</div>
@@ -564,7 +571,7 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 														setVoiceOpen(false);
 													}}
 													className={cn(
-														"flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs transition-colors",
+														"flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-xs transition-colors",
 														p.id === selectedProfileId
 															? "bg-accent/10 text-accent"
 															: "hover:bg-secondary",
@@ -574,11 +581,11 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 														{p.name.charAt(0).toUpperCase()}
 													</span>
 													<div className="min-w-0 flex-1">
-														<div className="flex items-center gap-1.5">
+														<div className="flex items-center gap-2">
 															<span className="truncate font-medium">
 																{p.name}
 															</span>
-															<span className="shrink-0 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
+															<span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
 																{VOICE_TYPE_LABELS[p.voice_type ?? ""] ??
 																	p.voice_type}
 															</span>
@@ -612,7 +619,7 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 
 								{/* Action buttons: Clone + Design (capability-gated) */}
 								{(supportsClone || supportsDesign) && (
-									<div className="border-t border-border p-1.5">
+									<div className="border-t border-border p-2">
 										{supportsClone && (
 											<button
 												type="button"
@@ -620,7 +627,7 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 													setVoiceOpen(false);
 													navigate({ to: "/voices" });
 												}}
-												className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+												className="flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
 											>
 												<FingerPrintIcon className="size-4" />
 												Clone a voice
@@ -633,7 +640,7 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 													setVoiceOpen(false);
 													navigate({ to: "/voices" });
 												}}
-												className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+												className="flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
 											>
 												<SparklesIcon className="size-4" />
 												Design a voice
@@ -755,7 +762,7 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 					type="button"
 					onClick={() => fileRef.current?.click()}
 					title="Attach .txt or .md file"
-					className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+					className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
 				>
 					<ArrowUpTrayIcon className="size-4" aria-hidden="true" />
 				</button>
@@ -772,6 +779,10 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 						e.target.value = "";
 					}}
 				/>
+
+				{toolbar ? (
+					<span className="flex shrink-0 items-center gap-1">{toolbar}</span>
+				) : null}
 			</div>
 
 			{/* Row 2: Textarea + Generate */}
@@ -878,6 +889,41 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 							</Button>
 						)}
 					</div>
+
+					{text.trim().length === 0 ? (
+						<div className="flex items-center gap-2 border-t border-border/50 px-3 pb-2 pt-0.5 text-[11px] text-muted-foreground">
+							<SparklesIcon
+								className="size-3.5 shrink-0 text-accent"
+								aria-hidden="true"
+							/>
+							<span className="shrink-0">Try an example:</span>
+							{[
+								{
+									label: "Welcome",
+									text: "Welcome back to the show! Today we're exploring how generative audio is changing storytelling.",
+								},
+								{
+									label: "News brief",
+									text: "This is your ten o'clock news brief. In local news, the harbor festival draws a record crowd this weekend.",
+								},
+								{
+									label: "Story opening",
+									text: "In a small coastal town at the edge of the map, a lighthouse keeper kept the last light burning through the night.",
+								},
+							].map((ex) => (
+								<button
+									key={ex.label}
+									type="button"
+									onClick={() =>
+										form.setValue("text", ex.text, { shouldDirty: true })
+									}
+									className="rounded-md border border-border bg-secondary px-2 py-0.5 text-[11px] text-foreground transition-colors hover:bg-secondary-hover"
+								>
+									{ex.label}
+								</button>
+							))}
+						</div>
+					) : null}
 				</form>
 			</FormProvider>
 
@@ -886,7 +932,7 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 				<button
 					type="button"
 					onClick={() => setMoreOpen((v) => !v)}
-					className="flex w-full items-center gap-2 px-3 py-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground"
+					className="flex w-full items-center gap-2 px-3 py-2 text-[11px] text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground"
 					aria-expanded={moreOpen}
 				>
 					{moreOpen ? (
@@ -1037,7 +1083,7 @@ export function PromptBar({ storyId }: { storyId?: string | null }) {
 								placeholder={t("generation.instruct.placeholder")}
 								rows={2}
 								maxLength={500}
-								className="w-full resize-none max-h-[100px] overflow-y-auto rounded-md border border-border bg-secondary/30 px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-ring"
+								className="w-full resize-none max-h-[100px] overflow-y-auto rounded-md border border-border bg-secondary/30 px-2 py-2 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-ring"
 							/>
 						) : null}
 					</div>

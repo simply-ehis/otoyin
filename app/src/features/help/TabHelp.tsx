@@ -123,6 +123,13 @@ export const TAB_HELP_DATA: Record<string, TabHelpItem> = {
 			{ label: "Export or share", shortcut: "" },
 		],
 	},
+	"/offers": {
+		what: "Limited-time offers and bundles for the marketplace.",
+		actions: [
+			{ label: "Browse offers", shortcut: "" },
+			{ label: "Claim an offer", shortcut: "" },
+		],
+	},
 	"/store": {
 		what: "Browse and download voice packs and effects from the marketplace.",
 		actions: [
@@ -401,7 +408,7 @@ export function TabHelp({ tabPath, className }: TabHelpProps) {
 			<button
 				type="button"
 				onClick={() => setOpen((v) => !v)}
-				className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+				className="flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
 				title={t("tabHelp.learn", "Learn about this tab")}
 				aria-label={t("tabHelp.learn", "Learn about this tab")}
 				aria-expanded={open}

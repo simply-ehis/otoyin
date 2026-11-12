@@ -135,7 +135,7 @@ export function GettingStarted() {
 							{step.link && !step.done ? (
 								<Link
 									to={step.link.to}
-									className="mt-1.5 inline-block text-xs font-medium text-accent hover:underline"
+									className="mt-2 inline-block text-xs font-medium text-accent hover:underline"
 								>
 									{step.link.label} →
 								</Link>

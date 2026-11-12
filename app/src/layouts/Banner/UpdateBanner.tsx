@@ -94,7 +94,7 @@ export function UpdateBanner() {
 
 	if (showError) {
 		return (
-			<output className="flex h-9 shrink-0 items-center gap-2.5 border-b border-warning/40 bg-warning-soft px-4 text-warning-text">
+			<output className="flex h-9 shrink-0 items-center gap-2 border-b border-warning/40 bg-warning-soft px-4 text-warning-text">
 				<RetryIcon className="size-4 shrink-0" aria-hidden="true" />
 				<p className="min-w-0 flex-1 truncate text-xs">
 					<span className="font-semibold">{t("updater.updateFailed")}</span>{" "}
@@ -123,7 +123,7 @@ export function UpdateBanner() {
 	}
 
 	return (
-		<output className="flex h-9 shrink-0 items-center gap-2.5 border-b border-warning/40 bg-warning-soft px-4 text-warning-text">
+		<output className="flex h-9 shrink-0 items-center gap-2 border-b border-warning/40 bg-warning-soft px-4 text-warning-text">
 			<DownloadIcon className="size-4 shrink-0" aria-hidden="true" />
 			<p className="min-w-0 flex-1 truncate text-xs">
 				<span className="font-semibold">

@@ -98,7 +98,7 @@ export function OffersPage() {
 
 	return (
 		<div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader title="Special Offers" />
+			<ScreenHeader helpPath="/offers" title="Special Offers" />
 
 			{isLoading ? (
 				<div className="flex items-center gap-2 text-sm text-muted-foreground">

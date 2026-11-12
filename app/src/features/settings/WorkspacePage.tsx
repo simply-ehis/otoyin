@@ -76,6 +76,7 @@ export function WorkspacePage() {
 	return (
 		<div className="space-y-6">
 			<ScreenHeader
+				helpPath="/settings"
 				title={t("settings.workspace.title", {
 					defaultValue: "Sidebar tabs",
 				})}

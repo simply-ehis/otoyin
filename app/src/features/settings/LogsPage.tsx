@@ -140,6 +140,7 @@ export function LogsPage() {
 	return (
 		<div className="flex h-full min-h-0 flex-col">
 			<ScreenHeader
+				helpPath="/settings"
 				title={t("settings.logs.title")}
 				actions={
 					<>

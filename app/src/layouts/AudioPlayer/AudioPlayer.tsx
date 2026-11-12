@@ -863,7 +863,7 @@ function AudioPlayerInner() {
 
 	return (
 		<div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
-			<div className="pointer-events-auto glass-panel flex h-14 w-full max-w-3xl items-center gap-2.5 rounded-2xl px-2.5 py-2">
+			<div className="pointer-events-auto glass-panel flex h-14 w-full max-w-3xl items-center gap-2 rounded-2xl px-2 py-2">
 				{/* Play/Pause Button */}
 				<button
 					type="button"
@@ -918,7 +918,7 @@ function AudioPlayerInner() {
 								onClick={retryLoad}
 								title="Retry loading audio"
 								aria-label="Retry loading audio"
-								className="shrink-0 rounded-full border border-border px-2.5 py-0.5 text-xs text-foreground transition-colors hover:bg-secondary"
+								className="shrink-0 rounded-full border border-border px-2 py-0.5 text-xs text-foreground transition-colors hover:bg-secondary"
 							>
 								Retry
 							</button>

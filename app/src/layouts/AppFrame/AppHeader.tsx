@@ -73,7 +73,7 @@ export function AppHeader({
 					type="button"
 					onClick={onOpenSearch}
 					data-tour="search"
-					className="pointer-events-auto flex h-7 w-56 items-center gap-2 rounded-lg border border-border bg-secondary px-2.5 text-xs text-muted-foreground transition-colors hover:border-border-hover hover:text-foreground md:w-72 lg:w-80"
+					className="pointer-events-auto flex h-7 w-56 items-center gap-2 rounded-lg border border-border bg-secondary px-2 text-xs text-muted-foreground transition-colors hover:border-border-hover hover:text-foreground md:w-72 lg:w-80"
 					aria-label="Search tabs, settings and actions (Ctrl+K)"
 					title="Search tabs, settings and actions (Ctrl+K)"
 				>
@@ -82,7 +82,7 @@ export function AppHeader({
 						aria-hidden="true"
 					/>
 					<span className="truncate">Search everything…</span>
-					<kbd className="ml-auto shrink-0 rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+					<kbd className="ml-auto shrink-0 rounded border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
 						Ctrl K
 					</kbd>
 				</button>

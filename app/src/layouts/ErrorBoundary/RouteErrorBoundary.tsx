@@ -39,7 +39,7 @@ export function RouteErrorBoundary({
 						aria-label="Reload tab"
 						title="Reload tab"
 					>
-						<ArrowPathIcon className="mr-1.5 size-3.5" aria-hidden="true" />
+						<ArrowPathIcon className="mr-2 size-3.5" aria-hidden="true" />
 						Reload tab
 					</Button>
 				</div>

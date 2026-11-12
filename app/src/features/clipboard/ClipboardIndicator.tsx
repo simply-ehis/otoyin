@@ -36,7 +36,7 @@ export function ClipboardIndicator({ compact = false }: { compact?: boolean }) {
 					className={cn(
 						"relative flex items-center rounded-md border transition-colors",
 						"border-dashed border-border bg-secondary hover:bg-secondary-hover",
-						compact ? "size-7 justify-center" : "mx-2 mb-1 px-3 py-1.5",
+						compact ? "size-7 justify-center" : "mx-2 mb-1 px-3 py-2",
 					)}
 					title={
 						hasClip

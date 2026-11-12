@@ -74,35 +74,6 @@ export function GeneratePage() {
 
 	return (
 		<div className="flex h-full min-h-0 flex-col overflow-hidden">
-			<div className="flex shrink-0 items-center gap-2 pb-3">
-				<div className="flex shrink-0 items-center gap-2">
-					<Suspense fallback={null}>
-						<TabHelp tabPath="/" />
-					</Suspense>
-					<RecordAudioButton compact />
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						title={t("main.importVoice")}
-						aria-label={t("main.importVoice")}
-						onClick={() => fileRef.current?.click()}
-					>
-						<ArrowUpTrayIcon className="mr-1.5 size-3.5" aria-hidden="true" />
-						{t("main.importVoice")}
-					</Button>
-					<Button
-						type="button"
-						size="sm"
-						title={t("main.createVoice")}
-						aria-label={t("main.createVoice")}
-						onClick={() => navigate({ to: "/voices" })}
-					>
-						<SparklesIcon className="mr-1.5 size-3.5" aria-hidden="true" />
-						{t("main.createVoice")}
-					</Button>
-				</div>
-			</div>
 			<input
 				ref={fileRef}
 				type="file"
@@ -130,7 +101,43 @@ export function GeneratePage() {
 				<div className="min-h-0 flex-1 overflow-y-auto pb-4">
 					<GettingStarted />
 					<div className="mt-4">
-						<PromptBar />
+						<PromptBar
+							toolbar={
+								<>
+									<Suspense fallback={null}>
+										<TabHelp tabPath="/" />
+									</Suspense>
+									<RecordAudioButton compact />
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										title={t("main.importVoice")}
+										aria-label={t("main.importVoice")}
+										onClick={() => fileRef.current?.click()}
+									>
+										<ArrowUpTrayIcon
+											className="mr-2 size-3.5"
+											aria-hidden="true"
+										/>
+										{t("main.importVoice")}
+									</Button>
+									<Button
+										type="button"
+										size="sm"
+										title={t("main.createVoice")}
+										aria-label={t("main.createVoice")}
+										onClick={() => navigate({ to: "/voices" })}
+									>
+										<SparklesIcon
+											className="mr-2 size-3.5"
+											aria-hidden="true"
+										/>
+										{t("main.createVoice")}
+									</Button>
+								</>
+							}
+						/>
 					</div>
 					<div className="mt-2">
 						<GenerationProgressList />
@@ -176,7 +183,7 @@ export function GeneratePage() {
 								className="size-5 text-muted-foreground"
 								aria-hidden="true"
 							/>
-							<span className="rounded-md bg-secondary px-1.5 py-0.5 text-xs font-semibold tabular-nums text-muted-foreground">
+							<span className="rounded-md bg-secondary px-2 py-0.5 text-xs font-semibold tabular-nums text-muted-foreground">
 								{historyTotal}
 							</span>
 							<ChevronDoubleLeftIcon

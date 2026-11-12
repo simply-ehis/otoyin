@@ -40,7 +40,7 @@ export function BackendStatusBanner() {
 
 	if (safeMode) {
 		return (
-			<output className="flex items-center justify-center gap-2 border-b border-destructive/40 bg-danger-soft px-3 py-1.5 text-xs text-danger-text">
+			<output className="flex items-center justify-center gap-2 border-b border-destructive/40 bg-danger-soft px-3 py-2 text-xs text-danger-text">
 				<span className="inline-block size-2 rounded-full bg-destructive" />
 				Otoyin&rsquo;s engine failed to start twice — it wasn&rsquo;t started
 				automatically.
@@ -66,7 +66,7 @@ export function BackendStatusBanner() {
 	}
 
 	return (
-		<output className="flex items-center justify-center gap-2 border-b border-warning/30 bg-warning-soft px-3 py-1.5 text-xs text-warning-text">
+		<output className="flex items-center justify-center gap-2 border-b border-warning/30 bg-warning-soft px-3 py-2 text-xs text-warning-text">
 			<span className="inline-block size-2 animate-pulse rounded-full bg-warning" />
 			Backend is starting — downloads and playback will resume automatically.
 		</output>

@@ -190,7 +190,7 @@ export function GpuPage() {
 
 	return (
 		<div className="flex max-w-4xl flex-col gap-6">
-			<ScreenHeader title="GPU" />
+			<ScreenHeader helpPath="/settings" title="GPU" />
 			<GpuInfoCard health={health} />
 
 			{!hasNativeGpu && !isCuda ? (

@@ -96,7 +96,7 @@ export function SkillsBrowser() {
 
 	return (
 		<div className="flex min-h-0 flex-col gap-4">
-			<ScreenHeader title="Skills" />
+			<ScreenHeader helpPath="/help" title="Skills" />
 			<div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
 				<Field label="Skill ID" htmlFor="skill-id">
 					<Input
