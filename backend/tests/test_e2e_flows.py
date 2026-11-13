@@ -25,7 +25,14 @@ import wave
 import zipfile
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "marketplace"))
+_MARKETPLACE_DIR = Path(__file__).resolve().parents[2] / "marketplace"
+sys.path.insert(0, str(_MARKETPLACE_DIR))
+_MARKETPLACE_AVAILABLE = (_MARKETPLACE_DIR / "marketplace_server").is_dir()
+
+
+def _marketplace_missing() -> bool:
+    return not _MARKETPLACE_AVAILABLE
+
 
 import pytest
 from cryptography.hazmat.primitives import serialization
@@ -206,6 +213,7 @@ def _wire_marketplace_keys(monkeypatch):
 
 
 class TestBuyInstallFlow:
+    @pytest.mark.skipif(_marketplace_missing(), reason="marketplace package not checked out")
     def test_dev_checkout_to_entitlement(self, backend_client, monkeypatch):
         from httpx import ASGITransport, AsyncClient
         from marketplace_server.app import app as mp_app
@@ -271,6 +279,7 @@ class TestBuyInstallFlow:
 
 
 class TestDeviceIdEndpoint:
+    @pytest.mark.skipif(_marketplace_missing(), reason="marketplace package not checked out")
     def test_device_id_matches_machine_fingerprint(self, backend_client):
         """GET /marketplace/device-id returns what licensing verifies against."""
         import re

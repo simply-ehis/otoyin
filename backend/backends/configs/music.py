@@ -137,18 +137,8 @@ def _get_translation_configs() -> list[ModelConfig]:
 
 
 def _get_audio_processing_configs() -> list[ModelConfig]:
-    """Return audio-processing model configs (Demucs stem separation)."""
-    return [
-        ModelConfig(
-            model_name="demucs_onnx",
-            display_name="Demucs HTDemucs (vocal isolation)",
-            engine="demucs_onnx",
-            hf_repo_id="MrCitron/demucs-v4-onnx",
-            model_size="htdemucs",
-            size_mb=316,
-            category="sfx",
-        ),
-    ]
+    """Return audio-processing model configs (none left; Demucs lives in _get_demucs_configs)."""
+    return []
 
 
 def _get_soundfont_configs() -> list[ModelConfig]:
@@ -205,9 +195,9 @@ def _get_demucs_configs() -> list[ModelConfig]:
     return [
         ModelConfig(
             model_name="demucs-int8",
-            display_name="Demucs (Stem Separation, int8 ONNX)",
+            display_name="Demucs (Stem Separation)",
             engine="demucs_onnx",
-            hf_repo_id="MrCitron/demucs-v4-onnx",
+            hf_repo_id="itamiArika/htdemucs-int8-memory",
             model_size="int8",
             size_mb=94,
             min_ram_mb=2000,

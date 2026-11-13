@@ -49,6 +49,8 @@ def _build_name_map() -> dict[str, str]:
         "21labs.plan_templates": "plan_templates",
         # SDK models list
         "21labs.list_sdk_models": "list_models",
+        # Stems (MCP surface uses stem_status, assistant surface uses stem_separation_status)
+        "21labs.stem_status": "stem_separation_status",
     }
     result.update({k: v for k, v in _overrides.items() if v is not None})
 
@@ -187,6 +189,10 @@ ENDPOINT_MAP = {
     "separate_audio": "/audio/separate",
     "separate_stems": "/stems/separate",
     "stem_separation_status": "/stems/status",
+    "stem_vocal_split": "/stems/{job_id}/vocal-split",
+    "stem_mixdown": "/stems/{job_id}/mixdown",
+    "stem_beats": "/stems/{job_id}/beats",
+    "stem_download": "/stems/{job_id}/{name}",
     "run_recipe": "/recipe/run",
     "export_reaper_project": "/audio-studio/sessions/{session_id}/export-reaper",
     # Phase 6 instruments + studio tools
@@ -411,6 +417,8 @@ TOOL_METHODS = {
     "list_skills": "GET",
     "plan_templates": "GET",
     "stem_separation_status": "GET",
+    "stem_beats": "GET",
+    "stem_download": "GET",
 }
 
 # Tools that drive the browser UI instead of calling a backend endpoint.

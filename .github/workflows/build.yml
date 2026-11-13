@@ -95,6 +95,14 @@ jobs:
         with:
           workspaces: tauri/src-tauri
 
+      # Sidecars the installer ships with the app. Staging is release-pinned
+      # scripts; rerun when bumping the sidecar versions.
+      - name: Stage ffmpeg
+        run: bash scripts/stage-ffmpeg.sh
+
+      - name: Stage llama.cpp bundle (GGUF planner, TTS CLI)
+        run: bash scripts/stage-llama.sh
+
       - name: Install frontend dependencies
         run: npm ci --ignore-scripts
 

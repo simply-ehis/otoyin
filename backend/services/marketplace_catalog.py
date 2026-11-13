@@ -158,7 +158,8 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "tts",
         "price_usd": 80,
         "paid": True,
-        "note": "4.56B Dual-AR GGUF via s2.cpp, 10 languages, voice cloning, [emotion] tags. GPU (Vulkan) or large RAM. Fish Audio Research License.",
+        "coming_soon": True,
+        "note": "4.56B Dual-AR GGUF via s2.cpp, 10 languages, voice cloning, [emotion] tags. GPU (Vulkan) or large RAM. Fish Audio Research License. Coming soon — binary not shipped yet.",
     },
     {
         "id": "voxcpm2-q8",
@@ -331,7 +332,8 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "music",
         "price_usd": 43,
         "paid": True,
-        "note": "7.7GB GGUF, full song generation with vocals + instruments. CPU-friendly with Q8 quant.",
+        "coming_soon": True,
+        "note": "7.7GB GGUF, full song generation with vocals + instruments. CPU-friendly with Q8 quant. Coming soon — binary not shipped yet.",
     },
     {
         "id": "heartmula-3b",
@@ -435,14 +437,6 @@ PRODUCTS: list[dict[str, Any]] = [
         "note": "Planned cloud-hosted LLM Max tier. Top-tier model, maximum capability, subscription billing coming soon.",
     },
     # --- Free downloadable utilities (not bundled, install from Marketplace) ---
-    {
-        "id": "demucs_onnx",
-        "name": "Demucs HTDemucs — Vocal Isolation",
-        "category": "utilities",
-        "price_usd": 0,
-        "paid": False,
-        "note": "MIT-licensed stem separation. Extracts vocals, drums, bass or other from any mix. ~316MB, runs on CPU.",
-    },
     {
         "id": "translate-en-es",
         "name": "Translate English ↔ Spanish",

@@ -50,21 +50,9 @@ DEFAULT_TIMEOUT_S = 300.0
 
 def find_llama_tts() -> Path | None:
     """Resolve the llama.cpp TTS binary (env override, bundled sidecar, PATH)."""
-    env_path = os.environ.get("TWENTYLABS_LLAMA_TTS")
-    if env_path and Path(env_path).exists():
-        return Path(env_path)
+    from ..utils.bundled import find_bundled_sidecar, legacy_models_dir
 
-    from ..config import get_models_dir
-
-    bundled = get_models_dir() / ("llama-tts.exe" if os.name == "nt" else "llama-tts")
-    if bundled.exists():
-        return bundled
-
-    exe = "llama-tts.exe" if os.name == "nt" else "llama-tts"
-    import shutil
-
-    found = shutil.which(exe)
-    return Path(found) if found else None
+    return find_bundled_sidecar("llama-tts", "TWENTYLABS_LLAMA_TTS") or legacy_models_dir("llama-tts")
 
 
 def build_tts_args(

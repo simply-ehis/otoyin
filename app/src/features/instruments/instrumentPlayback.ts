@@ -165,7 +165,7 @@ async function getOrCreateSynth(
 		eventsEnabled: false,
 	});
 	synth.soundBankManager.addSoundBank(soundBank, "otoyin");
-	const ready = synth.processorInitialized.then(() => {
+	const ready = synth.ready.then(() => {
 		synth.setSystemParameter("autoAllocateVoices", true);
 	});
 
@@ -177,7 +177,7 @@ async function getOrCreateSynth(
 export function invalidateSynthCache(data?: ArrayBuffer) {
 	if (!data) {
 		for (const entry of synthCache.values()) {
-			entry.synth.destroySynthProcessor();
+			entry.synth.destroy();
 		}
 		synthCache.clear();
 		return;
@@ -185,7 +185,7 @@ export function invalidateSynthCache(data?: ArrayBuffer) {
 	const key = `${data.byteLength}`;
 	for (const [k, entry] of synthCache) {
 		if (k.startsWith(key)) {
-			entry.synth.destroySynthProcessor();
+			entry.synth.destroy();
 			synthCache.delete(k);
 		}
 	}

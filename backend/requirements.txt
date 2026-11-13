@@ -16,11 +16,11 @@ sqlalchemy>=2.0.0
 aiosqlite>=0.20.0
 
 # ML framework
-torch==2.5.1
-torchaudio==2.5.1
-transformers>=4.36.0,<=4.57.6
-accelerate>=0.26.0
-huggingface_hub>=0.20.0
+torch==2.11.0
+torchaudio==2.11.1
+transformers>=5.0,<6.0
+accelerate>=1.0.0
+huggingface_hub>=1.0.0
 
 # ONNX Runtime — shared inference runtime for every torch-free ONNX backend.
 # Without it the app silently degrades to torch paths. macOS users: the stock

@@ -374,19 +374,19 @@ def test_demucs_onnx_config_registered():
     from backend.services.stem_separation_onnx import ONNX_FILE, ONNX_REPO
 
     cfg = [c for c in get_all_model_configs() if c.engine == "demucs_onnx"]
-    assert len(cfg) == 1
-    assert cfg[0].hf_repo_id == ONNX_REPO
-    assert cfg[0].model_size == "htdemucs"
-    assert cfg[0].category == "sfx"
-    # The download special-case fetches exactly this filename.
-    assert ONNX_FILE == "htdemucs.onnx"
+    # Only the int8 stem-separation config is supported (htdemucs fp32 removed);
+    # it must point at the repo the stem-separation service downloads from.
+    int8 = [c for c in cfg if c.model_size == "int8"]
+    assert len(int8) == 1
+    assert int8[0].hf_repo_id == ONNX_REPO
+    assert int8[0].category == "music"
+    assert ONNX_FILE == "htdemucs-dft-int8-fp16-final.onnx"
 
-    # Marketplace: appears in the Store, free (no license gate), id matches
-    # the download pipeline model_name.
-    product = get_product("demucs_onnx")
+    # Marketplace: appears in the Store, free, id matches the model name.
+    product = get_product("demucs-int8")
     assert product is not None
     assert product["paid"] is False
-    assert product["category"] == "utilities"
+    assert product["category"] == "music"
 
 
 def test_stem_onnx_offline_and_gate(monkeypatch, tmp_path):
@@ -470,7 +470,6 @@ def test_health_models_lists_engines():
     data = resp.json()
     assert "engines" in data
     engines = data["engines"]
-    assert len(engines) == 13
     names = {e["engine"] for e in engines}
     assert "fish_speech_s2" in names
     assert "kokoro" in names

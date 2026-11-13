@@ -34,7 +34,6 @@ from __future__ import annotations
 import contextlib
 import logging
 import os
-import shutil
 import socket
 import subprocess
 import time
@@ -221,19 +220,9 @@ def _scan_for_adoption(model_path: str, n_ctx: int) -> dict | None:
 
 def find_llama_server() -> Path | None:
     """Resolve the llama.cpp server binary (env override, bundled sidecar, PATH)."""
-    env_path = os.environ.get("TWENTYLABS_LLAMA_SERVER")
-    if env_path and Path(env_path).exists():
-        return Path(env_path)
+    from ..utils.bundled import find_bundled_sidecar, legacy_models_dir
 
-    from ..config import get_models_dir
-
-    bundled = get_models_dir() / ("llama-server.exe" if os.name == "nt" else "llama-server")
-    if bundled.exists():
-        return bundled
-
-    exe = "llama-server.exe" if os.name == "nt" else "llama-server"
-    found = shutil.which(exe)
-    return Path(found) if found else None
+    return find_bundled_sidecar("llama-server", "TWENTYLABS_LLAMA_SERVER") or legacy_models_dir("llama-server")
 
 
 class GGUFServerProcess:

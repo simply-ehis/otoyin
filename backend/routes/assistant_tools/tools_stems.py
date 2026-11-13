@@ -23,4 +23,64 @@ STEMS_TOOLS = [
             "parameters": {"type": "object", "properties": {}},
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "stem_vocal_split",
+            "description": "Split the vocals stem of a separated job into lead and backing voices.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "job_id": {"type": "string", "description": "ID of the stem separation job"},
+                },
+                "required": ["job_id"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "stem_mixdown",
+            "description": "Combine all stems of a job into a single mix WAV.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "job_id": {"type": "string", "description": "ID of the stem separation job"},
+                },
+                "required": ["job_id"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "stem_beats",
+            "description": "Detect beats and estimate BPM for a separated job.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "job_id": {"type": "string", "description": "ID of the stem separation job"},
+                },
+                "required": ["job_id"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "stem_download",
+            "description": "Download a stem file from a separated job.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "job_id": {"type": "string", "description": "ID of the stem separation job"},
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the stem to download (e.g. vocals, drums, bass, other)",
+                    },
+                },
+                "required": ["job_id", "name"],
+            },
+        },
+    },
 ]

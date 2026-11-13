@@ -17,7 +17,8 @@
     "createUpdaterArtifacts": true,
     "resources": {
       "binaries/otoyin-server/": "otoyin-server/",
-      "binaries/ffmpeg/": "ffmpeg/"
+      "binaries/ffmpeg/": "ffmpeg/",
+      "binaries/llama/": "llama/"
     },
     "externalBin": [
       "binaries/otoyin-mcp"
@@ -58,7 +59,7 @@
   "app": {
     "macOSPrivateApi": true,
     "security": {
-      "csp": "default-src 'self' blob: data: media:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob: data: media:; connect-src 'self' ipc: http://ipc.localhost http://localhost:17493 http://127.0.0.1:17493 ws://localhost:17493 ws://127.0.0.1:17493; font-src 'self' data:",
+      "csp": "default-src 'self' blob: data: media:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob: data: media:; connect-src 'self' ipc: http://ipc.localhost http://localhost:* http://127.0.0.1:* https://localhost:* ws://localhost:* ws://127.0.0.1:*; font-src 'self' data:",
       "capabilities": [
         "default"
       ]

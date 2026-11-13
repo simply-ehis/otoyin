@@ -1,6 +1,8 @@
-"""Tests for SteerTTS backend (subprocess)."""
+"""Tests for SteerTTS backend (subprocess; requires the steertts package)."""
 
 import pytest
+
+pytest.importorskip("steertts")
 
 from backends.steer_tts_backend import SteerTTSBackend
 

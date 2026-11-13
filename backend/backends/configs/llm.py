@@ -196,27 +196,32 @@ def _get_gguf_llm_configs() -> list[ModelConfig]:
             paid=True,
             custom_binary_env="TWENTYLABS_LLAMA_SERVER_BONSAI",
         ),
+        ModelConfig(
+            model_name="planner-lfm2-24b-a2b",
+            display_name="LFM2.5-24B-A2B ($80, MoE)",
+            engine="gguf_llm",
+            hf_repo_id="LiquidAI/LFM2.5-24B-A2B-GGUF",
+            model_size="LFM2.5-24B-A2B-Q4_K_M",
+            size_mb=14000,
+            min_ram_mb=8000,
+            min_vram_mb=4096,
+            quant="Q4_K_M",
+            languages=planner_languages,
+            category="llm",
+            supports_instruct=True,
+            supported_tags=["thinking", "tool_call", "json_mode"],
+            is_moe=True,
+            paid=True,
+        ),
     ]
 
 
 def _get_cloud_llm_configs() -> list[ModelConfig]:
-    """Cloud LLM — coming soon, third-party routed.
+    """Cloud LLM - coming soon, third-party routed.
 
     Planned tiers ($10/$20/$50) with increasing capability. Users pick a tier,
     not a specific model. Access will be gated by active subscription license.
     """
-    planner_languages = [
-        "en",
-        "zh",
-        "ja",
-        "ko",
-        "de",
-        "fr",
-        "es",
-        "it",
-        "pt",
-        "ru",
-    ]
     return [
         ModelConfig(
             model_name="llm-cloud-starter",
@@ -262,23 +267,6 @@ def _get_cloud_llm_configs() -> list[ModelConfig]:
             supports_instruct=True,
             supported_tags=["thinking", "tool_call", "json_mode"],
             languages=["*"],
-        ),
-        ModelConfig(
-            model_name="planner-lfm2-24b-a2b",
-            display_name="LFM2.5-24B-A2B ($80, MoE)",
-            engine="gguf_llm",
-            hf_repo_id="LiquidAI/LFM2.5-24B-A2B-GGUF",
-            model_size="LFM2.5-24B-A2B-Q4_K_M",
-            size_mb=14000,
-            min_ram_mb=8000,
-            min_vram_mb=4096,
-            quant="Q4_K_M",
-            languages=planner_languages,
-            category="llm",
-            supports_instruct=True,
-            supported_tags=["thinking", "tool_call", "json_mode"],
-            is_moe=True,
-            paid=True,
         ),
     ]
 

@@ -33,22 +33,10 @@ DEFAULT_INSTRUCT = "A clear, neutral voice speaking at a moderate pace."
 
 
 def find_crispasr() -> Path | None:
-    """Resolve the CrispASR binary (env override, bundled sidecar, PATH)."""
-    env_path = os.environ.get("TWENTYLABS_CRISPASR")
-    if env_path and Path(env_path).exists():
-        return Path(env_path)
+    """Resolve the CrispASR binary (env override, bundled sidecar, PATH, auto-download)."""
+    from ..utils.sidecar_downloader import find_crispasr as _find
 
-    from ..config import get_models_dir
-
-    bundled = get_models_dir() / ("crispasr.exe" if os.name == "nt" else "crispasr")
-    if bundled.exists():
-        return bundled
-
-    exe = "crispasr.exe" if os.name == "nt" else "crispasr"
-    import shutil
-
-    found = shutil.which(exe)
-    return Path(found) if found else None
+    return _find()
 
 
 def _local_file(filename: str) -> str:

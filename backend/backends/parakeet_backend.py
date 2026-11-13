@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import shutil
 import subprocess
 from pathlib import Path
 
@@ -137,24 +136,10 @@ class ParakeetSTTBackend(BackendBase):
         logger.info("parakeet model cached at %s", dest)
 
     def _find_binary(self) -> Path | None:
-        """Locate the parakeet.cpp binary."""
-        # Check data/bin first
-        data_bin = config.get_data_dir() / "bin" / "parakeet"
-        if data_bin.exists():
-            return data_bin
+        """Locate the parakeet.cpp binary (env -> data/bin -> PATH -> auto-download)."""
+        from ..utils.sidecar_downloader import find_parakeet
 
-        # Check PATH
-        which = shutil.which("parakeet")
-        if which:
-            return Path(which)
-
-        # Check common locations
-        for name in ("parakeet.exe", "parakeet.cpp.exe", "parakeet-cpp"):
-            candidate = config.get_data_dir() / "bin" / name
-            if candidate.exists():
-                return candidate
-
-        return None
+        return find_parakeet()
 
     async def transcribe(
         self,
