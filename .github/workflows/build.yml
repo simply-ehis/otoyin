@@ -52,11 +52,9 @@ jobs:
             target: x86_64-unknown-linux-gnu
           - platform: macos-latest
             target: aarch64-apple-darwin
-          # macOS Intel — native x86_64 runner (macos-13); PyInstaller cannot
-          # cross-compile the Python backend, so this needs an Intel runner,
-          # not a --target flag on the arm64 one.
-          - platform: macos-13
-            target: x86_64-apple-darwin
+          # macOS Intel (macos-13) dropped for v0.1.0: the leg never got a
+          # runner and `release` needs every matrix leg - the draft release
+          # would block indefinitely. Intel macOS returns as a follow-up.
           # ── ARM64 legs (GitHub public-preview ARM runners — org opt-in) ──
           # - platform: windows-11-arm
           #   target: aarch64-pc-windows-msvc
@@ -82,6 +80,7 @@ jobs:
             librsvg2-dev \
             libssl-dev \
             libxdo-dev \
+            portaudio19-dev \
             build-essential \
             curl \
             wget \
@@ -90,6 +89,12 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
+
+      # macOS: the backend's pyaudio dependency builds from source and needs
+      # portaudio.h, which the arm64 runner does not preinstall.
+      - name: Install macOS PortAudio
+        if: runner.os == 'macOS'
+        run: brew install portaudio
 
       - uses: Swatinem/rust-cache@v2
         with:
@@ -124,8 +129,7 @@ jobs:
         if: runner.os != 'macOS'
         run: |
           python -m pip install --upgrade pip
-          python -m pip install torch==2.5.1 torchaudio==2.5.1 \
-            --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cpu
 
       - name: Install backend build dependencies
         run: |
