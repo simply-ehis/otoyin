@@ -4,10 +4,11 @@
  * Tests that credentials are stored in the OS credential store (via Tauri
  * commands) and that the JSON store only records has_key flags.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { invoke } from "@tauri-apps/api/core";
-import { useSettingsStore } from "@/stores/settingsStore";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SETTINGS_SCHEMA } from "@/lib/settings/schema";
+import { useSettingsStore } from "@/stores/settingsStore";
 
 vi.mock("@tauri-apps/api/core", () => ({
 	invoke: vi.fn(),
@@ -124,7 +125,9 @@ describe("settingsStore — credential store", () => {
 
 	it("setCredentialKey returns false and does not persist has_key when the OS credential store fails", async () => {
 		mockedInvoke.mockRejectedValue(new Error("keyring unavailable"));
-		const stored = await useSettingsStore.getState().setCredentialKey("llm", "sk-test");
+		const stored = await useSettingsStore
+			.getState()
+			.setCredentialKey("llm", "sk-test");
 		expect(stored).toBe(false);
 		expect(useSettingsStore.getState().hasCredentialKey("llm")).toBe(false);
 	});
@@ -134,7 +137,9 @@ describe("settingsStore — credential store", () => {
 		await useSettingsStore.getState().setCredentialKey("tts", "sk-abc");
 		expect(useSettingsStore.getState().hasCredentialKey("tts")).toBe(true);
 		mockedInvoke.mockRejectedValue(new Error("delete failed"));
-		const deleted = await useSettingsStore.getState().deleteCredentialKey("tts");
+		const deleted = await useSettingsStore
+			.getState()
+			.deleteCredentialKey("tts");
 		expect(deleted).toBe(false);
 		expect(useSettingsStore.getState().hasCredentialKey("tts")).toBe(true);
 	});
