@@ -1,4 +1,11 @@
-"""Cloud models router — proxies LLM/TTS/donation requests to a private cloud router."""
+"""Cloud models router - proxies LLM/TTS/donation requests to a private cloud router.
+
+The cloud subscription is a separate hosted product; this module is its wire,
+not a general "free cloud" switch. The auth gate is FAIL CLOSED: with no
+configured router, no allowlist and no explicit dev key, every request is
+refused (503) rather than accepted — acceptance on error would spend the app's
+router key on unauthenticated traffic.
+"""
 
 from __future__ import annotations
 
@@ -29,26 +36,33 @@ async def require_subscription(x_subscription_key: str | None = Header(default=N
     key = x_subscription_key or DEV_SUBSCRIPTION_KEY
     if not key:
         raise HTTPException(status_code=401, detail="Missing subscription key")
+    if DEV_SUBSCRIPTION_KEY and key == DEV_SUBSCRIPTION_KEY:
+        # Explicit local escape hatch, env-set only - never a hardcoded default.
+        return key
     if ALLOWED_KEYS:
-        if key not in ALLOWED_KEYS and key != DEV_SUBSCRIPTION_KEY:
+        if key not in ALLOWED_KEYS:
             raise HTTPException(status_code=403, detail="Invalid subscription key")
         return key
-    # Real validation against the router (cached).
+    if not ROUTER_URL:
+        # Fail closed: this build has no upstream router to validate against.
+        raise HTTPException(status_code=503, detail="Cloud subscription is not configured on this build")
+    # Real validation against the router (cached, positive validations only).
     now = time.monotonic()
     exp = _VALIDATION_CACHE.get(key)
     if exp is not None and exp > now:
         return key
-    if ROUTER_URL:
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                r = await client.get(
-                    f"{ROUTER_URL}/v1/models",
-                    headers={"Authorization": f"Bearer {key}"},
-                )
-                if r.status_code >= 400:
-                    raise HTTPException(status_code=403, detail="Invalid subscription key")
-        except httpx.HTTPError:
-            logger.warning("subscription validation failed (router unreachable); accepting")
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.get(
+                f"{ROUTER_URL}/v1/models",
+                headers={"Authorization": f"Bearer {key}"},
+            )
+            if r.status_code >= 400:
+                raise HTTPException(status_code=403, detail="Invalid subscription key")
+    except httpx.HTTPError:
+        # Never accept on a validation error: the router may be down, not stolen.
+        logger.warning("subscription validation failed (router unreachable); denying")
+        raise HTTPException(status_code=503, detail="Subscription validation failed — router unreachable") from None
     _VALIDATION_CACHE[key] = now + _VALIDATION_TTL
     return key
 
