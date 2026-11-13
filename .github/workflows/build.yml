@@ -48,13 +48,13 @@ jobs:
         include:
           - platform: windows-latest
             target: x86_64-pc-windows-msvc
-          - platform: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-          - platform: macos-latest
-            target: aarch64-apple-darwin
-          # macOS Intel (macos-13) dropped for v0.1.0: the leg never got a
-          # runner and `release` needs every matrix leg - the draft release
-          # would block indefinitely. Intel macOS returns as a follow-up.
+          # v0.1.0 ships Windows only (owner decision 2026-11-13): Linux/macOS
+          # need their own sidecar staging (Linux/Darwin llama.cpp builds, a
+          # Linux ffmpeg static build, non-NSIS bundle targets) plus real
+          # on-metal runtime testing before a shippable installer exists.
+          # macos-13 never got a runner; macos-latest/ubuntu get past the
+          # Python deps but bundle NSIS only - unreachable targets. Re-enable
+          # as a proper cross-platform port, not as unchecked CI legs.
           # ── ARM64 legs (GitHub public-preview ARM runners — org opt-in) ──
           # - platform: windows-11-arm
           #   target: aarch64-pc-windows-msvc
@@ -68,33 +68,9 @@ jobs:
           node-version: 22
           cache: npm
 
-      # Linux system deps — Tauri v2 needs webkit2gtk 4.1 (README lists it as a
-      # prereq; the runner image does not preinstall it).
-      - name: Install Linux system dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            libssl-dev \
-            libxdo-dev \
-            portaudio19-dev \
-            build-essential \
-            curl \
-            wget \
-            file
-
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-
-      # macOS: the backend's pyaudio dependency builds from source and needs
-      # portaudio.h, which the arm64 runner does not preinstall.
-      - name: Install macOS PortAudio
-        if: runner.os == 'macOS'
-        run: brew install portaudio
 
       - uses: Swatinem/rust-cache@v2
         with:
@@ -140,6 +116,12 @@ jobs:
         run: |
           bash scripts/build-server.sh
           ls -la tauri/src-tauri/binaries/otoyin-server/ | head -5
+        env:
+          PYTHON: python
+
+      # externalBin sidecar - bundle step fails without it
+      - name: Build MCP shim and stage sidecar
+        run: bash scripts/build-shim.sh
         env:
           PYTHON: python
 
