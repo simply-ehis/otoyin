@@ -8,6 +8,7 @@
  * event plumbing is needed — the server is the source of truth.
  */
 
+import { remoteAuthHeaders } from "@/lib/remoteAuth";
 import { useServerStore } from "@/stores/serverStore";
 
 export type ClipKind =
@@ -57,7 +58,10 @@ export async function copyClip(clip: Clip): Promise<void> {
 	try {
 		const res = await fetch(`${serverUrl()}/clipboard`, {
 			method: "PUT",
-			headers: { "Content-Type": "application/json" },
+			headers: {
+				"Content-Type": "application/json",
+				...(await remoteAuthHeaders()),
+			},
 			body: JSON.stringify({
 				kind: clip.kind,
 				entity_id: clip.id,
@@ -77,7 +81,9 @@ export async function copyClip(clip: Clip): Promise<void> {
 
 export async function getClip(): Promise<Clip | null> {
 	try {
-		const res = await fetch(`${serverUrl()}/clipboard`);
+		const res = await fetch(`${serverUrl()}/clipboard`, {
+			headers: await remoteAuthHeaders(),
+		});
 		if (res.status === 404) {
 			return null;
 		}
@@ -96,7 +102,10 @@ export async function getClip(): Promise<Clip | null> {
 
 export async function clearClip(): Promise<void> {
 	try {
-		const res = await fetch(`${serverUrl()}/clipboard`, { method: "DELETE" });
+		const res = await fetch(`${serverUrl()}/clipboard`, {
+			method: "DELETE",
+			headers: await remoteAuthHeaders(),
+		});
 		if (!res.ok) {
 			throw new Error(`clipboard clear failed: ${res.status}`);
 		}
@@ -120,7 +129,9 @@ function toHistoryEntry(
 
 /** Past copies, newest first (server prunes to the newest 20). */
 export async function listClipHistory(): Promise<ClipHistoryEntry[]> {
-	const res = await fetch(`${serverUrl()}/clipboard/history`);
+	const res = await fetch(`${serverUrl()}/clipboard/history`, {
+		headers: await remoteAuthHeaders(),
+	});
 	if (!res.ok) {
 		throw new Error(`clipboard history failed: ${res.status}`);
 	}
@@ -131,7 +142,7 @@ export async function listClipHistory(): Promise<ClipHistoryEntry[]> {
 export async function deleteClipHistory(historyId: string): Promise<void> {
 	const res = await fetch(
 		`${serverUrl()}/clipboard/history/${encodeURIComponent(historyId)}`,
-		{ method: "DELETE" },
+		{ method: "DELETE", headers: await remoteAuthHeaders() },
 	);
 	if (!res.ok) {
 		throw new Error(`clipboard history delete failed: ${res.status}`);

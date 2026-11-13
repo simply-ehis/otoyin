@@ -1,3 +1,4 @@
+import { remoteAuthHeaders } from "@/lib/remoteAuth";
 import { useServerStore } from "@/stores/serverStore";
 
 const DEFAULT_TIMEOUT = 15_000;
@@ -7,9 +8,14 @@ function baseUrl() {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+	const auth = await remoteAuthHeaders();
 	const res = await fetch(`${baseUrl()}${path}`, {
-		headers: { "Content-Type": "application/json" },
 		...init,
+		headers: {
+			"Content-Type": "application/json",
+			...auth,
+			...(init?.headers ?? {}),
+		},
 		signal: AbortSignal.timeout(DEFAULT_TIMEOUT),
 	});
 	if (!res.ok) {

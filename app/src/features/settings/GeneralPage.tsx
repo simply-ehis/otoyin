@@ -23,6 +23,7 @@ import { Spinner } from "@/ui/primitives";
 import { Progress } from "@/ui/progress";
 import { useToast } from "@/ui/use-toast";
 import { LanguageSelect } from "./LanguageSelect";
+import { RemoteEngineToken } from "./RemoteEngineToken";
 import { SettingRow, SettingSection } from "./rows";
 import { ThemeSelect } from "./ThemeSelect";
 
@@ -133,6 +134,10 @@ export function GeneralPage() {
 					<Banner tone="warning">
 						{t("settings.general.networkAccess.needsUrl")}
 					</Banner>
+				) : null}
+
+				{platform.metadata.isTauri && mode === "remote" ? (
+					<RemoteEngineToken />
 				) : null}
 
 				<SettingRow

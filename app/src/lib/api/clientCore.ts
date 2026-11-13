@@ -1,3 +1,4 @@
+import { remoteAuthHeaders } from "@/lib/remoteAuth";
 import { debug } from "@/lib/utils/debug";
 import { useServerStore } from "@/stores/serverStore";
 import type { VocalQAResult } from "./types";
@@ -144,11 +145,13 @@ export class ApiClientCore {
 		}
 
 		try {
+			const authHeaders = await remoteAuthHeaders();
 			const response = await fetch(url, {
 				...options,
 				signal: controller.signal,
 				headers: {
 					...(isFormData ? {} : { "Content-Type": "application/json" }),
+					...authHeaders,
 					...options?.headers,
 				},
 			});

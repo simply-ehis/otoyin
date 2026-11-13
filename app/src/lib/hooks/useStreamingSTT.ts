@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { WhisperModelSize } from "@/lib/api/types";
+import { remoteAuthHeaders } from "@/lib/remoteAuth";
 import { useServerStore } from "@/stores/serverStore";
 
 interface StreamingSTTOptions {
@@ -138,7 +139,10 @@ export function useStreamingSTT(
 			try {
 				const res = await fetch(`${getBaseUrl()}/stt/stream/chunk`, {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
+					headers: {
+						"Content-Type": "application/json",
+						...(await remoteAuthHeaders()),
+					},
 					body: JSON.stringify({ session_id: sid, audio: audioData }),
 				});
 				if (!res.ok) {
@@ -242,7 +246,10 @@ registerProcessor("pcm-processor", PCMProcessor);
 		try {
 			const sidRes = await fetch(`${getBaseUrl()}/stt/stream/start`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {
+					"Content-Type": "application/json",
+					...(await remoteAuthHeaders()),
+				},
 				body: JSON.stringify({
 					model_id: modelId,
 					language,
@@ -292,7 +299,10 @@ registerProcessor("pcm-processor", PCMProcessor);
 		try {
 			const res = await fetch(`${getBaseUrl()}/stt/stream/stop`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {
+					"Content-Type": "application/json",
+					...(await remoteAuthHeaders()),
+				},
 				body: JSON.stringify({ session_id: sid }),
 			});
 			if (!res.ok) {

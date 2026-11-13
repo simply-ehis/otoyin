@@ -309,7 +309,10 @@ if __name__ == "__main__":
             import starlette.middleware.base
             import starlette.responses
 
-            _remote_token = secrets.token_urlsafe(32)
+            env_token = os.environ.get("OTOYIN_REMOTE_TOKEN")
+            _remote_token = env_token or secrets.token_urlsafe(32)
+            if env_token:
+                logger.warning("REMOTE MODE: bearer token read from OTOYIN_REMOTE_TOKEN")
 
             class RemoteAuthMiddleware(starlette.middleware.base.BaseHTTPMiddleware):
                 """Require Bearer token for all requests in remote mode."""
@@ -340,16 +343,22 @@ if __name__ == "__main__":
             # Override host to listen on all interfaces
             args.host = "0.0.0.0"
             logger.warning("=" * 60)
-            logger.warning("REMOTE MODE ENABLED — Bearer token required")
-            logger.warning("Token printed to stdout below — copy it now")
+            logger.warning("REMOTE MODE ENABLED - Bearer token required")
+            if env_token:
+                logger.warning("Token from OTOYIN_REMOTE_TOKEN (not printing it)")
+            else:
+                logger.warning("Token printed to stdout below - copy it now")
             logger.warning("Use: Authorization: Bearer <token>")
             logger.warning("=" * 60)
-            # Print to stdout only (not stderr, not logs) so the user can copy it.
-            # Never log the token — logs get shipped to aggregation systems.
-            print(f"\n{'=' * 60}", flush=True)
-            print(f"  REMOTE ACCESS TOKEN: {_remote_token}", flush=True)
-            print(f"  Use header: Authorization: Bearer {_remote_token}", flush=True)
-            print(f"{'=' * 60}\n", flush=True)
+            if env_token:
+                pass  # never print the env-configured token
+            else:
+                # Print to stdout only (not stderr, not logs) so the user can copy it.
+                # Never log the token - logs get shipped to aggregation systems.
+                print(f"\n{'=' * 60}", flush=True)
+                print(f"  REMOTE ACCESS TOKEN: {_remote_token}", flush=True)
+                print(f"  Use header: Authorization: Bearer {_remote_token}", flush=True)
+                print(f"{'=' * 60}\n", flush=True)
 
         # Set data directory if provided
         if args.data_dir:

@@ -12,6 +12,8 @@
  *   // To cancel: abort();
  */
 
+import { remoteAuthHeaders } from "@/lib/remoteAuth";
+
 export interface StreamTtsOptions {
 	text: string;
 	engine?: string;
@@ -41,7 +43,10 @@ export function streamTts(options: StreamTtsOptions): () => void {
 		try {
 			const response = await fetch("/tts/stream", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {
+					"Content-Type": "application/json",
+					...(await remoteAuthHeaders()),
+				},
 				body: JSON.stringify({
 					text,
 					engine,
