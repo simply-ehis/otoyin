@@ -830,6 +830,14 @@
 		}
 	},
 	"settings": {
+		"schema": {
+			"title": "設定",
+			"description": "按類別整理的所有設定。變更會立即生效。",
+			"export": "匯出設定",
+			"import": "匯入設定",
+			"corruptTitle": "你的設定已重設",
+			"corruptBody": "設定檔案已損毀。已保留備份 (settings.json.bak)，所有設定已重設為預設值。"
+		},
 		"tabs": {
 			"general": "一般",
 			"workspace": "工作區",
@@ -849,7 +857,8 @@
 			"about": "關於",
 			"apiKeys": "API Keys",
 			"support": "Support",
-			"system": "System"
+			"system": "System",
+			"schema": "Schema"
 		},
 		"language": {
 			"label": "語言",
@@ -857,17 +866,7 @@
 		},
 		"theme": {
 			"label": "佈景主題",
-			"description": "跟隨系統外觀，或固定為淺色 / 深色模式。",
-			"options": {
-				"system": "跟隨系統",
-				"light": "淺色",
-				"dark": "深色",
-				"coastalLight": "Coastal Light",
-				"diStefano": "Otoyin",
-				"meshDark": "Mesh Dark",
-				"stripe": "Stripe"
-			},
-			"special": "Special"
+			"description": "跟隨系統外觀，或固定為淺色 / 深色模式。"
 		},
 		"general": {
 			"docs": {
@@ -877,13 +876,6 @@
 				"title": "加入 Discord",
 				"subtitle": "取得協助與分享聲音"
 			},
-			"serverUrl": {
-				"title": "伺服器 URL",
-				"description": "otoyin 後端伺服器的位址。",
-				"invalidUrl": "請輸入有效的 URL",
-				"updatedTitle": "伺服器 URL 已更新",
-				"updatedDescription": "已連線至 {{url}}"
-			},
 			"networkAccess": {
 				"title": "允許網路存取",
 				"description": "讓網路上的其他裝置可存取伺服器。變更後請重新啟動應用程式。",
@@ -891,11 +883,6 @@
 				"enabled": "已啟用網路存取。重新啟動應用程式以套用。",
 				"disabled": "已停用網路存取。重新啟動應用程式以套用。",
 				"needsUrl": "Remote mode is on but the server address is still local. Enter your server address above."
-			},
-			"connection": {
-				"connecting": "連線中",
-				"offline": "離線",
-				"online": "線上"
 			},
 			"updates": {
 				"title": "應用程式更新",
@@ -938,22 +925,6 @@
 			"performanceMode": {
 				"description": "Trade RAM for speed: keep models loaded and render all UI immediately instead of deferring off-screen work.",
 				"title": "Performance Mode"
-			},
-			"serverPort": {
-				"busy": "That port is already in use — pick a free one.",
-				"description": "The port the backend listens on. Takes effect after a backend restart.",
-				"devHint": "Port {{port}} saved. Restart your backend with OTOYIN_PORT={{port}} to apply it.",
-				"invalid": "Enter a port between 1024 and 65535",
-				"pendingRestart": "Port {{port}} saved — restart the backend to apply it.",
-				"restarting": "Restarting backend…",
-				"save": "Save port",
-				"saveRestart": "Save & restart",
-				"saving": "Saving…",
-				"servingNow": "Serving on port {{port}}",
-				"title": "Backend port",
-				"updatedDescription": "Backend is now serving on port {{port}}",
-				"updatedTitle": "Backend port updated",
-				"failedTitle": "無法更新連接埠"
 			}
 		},
 		"generation": {
@@ -1647,6 +1618,12 @@
 		"restore": "Put back on clipboard"
 	},
 	"onboarding": {
+		"agent": {
+			"plannerUnknown": "暫時無法檢查規劃器 - 稍後在商店中安裝。"
+		},
+		"models": {
+			"unavailable": "無法連線引擎以檢查您的模型。略過不會造成任何損壞 - 稍後在商店中安裝。"
+		},
 		"generate": {
 			"description": "Everything happens on the Generate tab.",
 			"finish": "Start generating",
@@ -1656,16 +1633,8 @@
 			"moreTitle": "3. Go further",
 			"title": "Generate and listen",
 			"writeBody": "Pick a voice and language, type your script, hit Generate. Watch live progress under the prompt bar.",
-			"writeTitle": "1. Write and generate"
-		},
-		"setup": {
-			"description": "Voices come from models. Grab a free one from the Store, then manage voices on the Voices tab.",
-			"openStore": "Open Store",
-			"storeBody": "Store → pick a voice engine → Download. Free voices work fully offline.",
-			"storeTitle": "1. Download a model",
-			"title": "Get a voice",
-			"voicesBody": "Voices → use a built-in preset, clone yours, or design one by description.",
-			"voicesTitle": "2. Pick or make a voice"
+			"writeTitle": "1. Write and generate",
+			"ctrlKHint": "Ctrl+K 隨處打開搜尋"
 		},
 		"welcome": {
 			"description": "A quick tour before you start — under a minute.",

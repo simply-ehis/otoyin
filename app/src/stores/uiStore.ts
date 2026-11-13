@@ -1,11 +1,21 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { DEFAULT_ACCENT } from "@/lib/design-system";
+import {
+	ALL_THEMES,
+	PLAIN_THEMES,
+	SPECIAL_THEMES,
+	type Theme,
+} from "@/lib/themes";
 import { useSettingsStore } from "@/stores/settingsStore";
 
-export type BackgroundPattern = "line-in-motion" | "waveform" | "none";
+export { ALL_THEMES, PLAIN_THEMES, SPECIAL_THEMES, type Theme };
+
+export type BackgroundPattern = "line-in-motion" | "waveform" | "mesh" | "none";
 export const BACKGROUND_PATTERNS: readonly BackgroundPattern[] = [
 	"line-in-motion",
 	"waveform",
+	"mesh",
 	"none",
 ];
 export const BACKGROUND_PATTERN_META: Record<
@@ -20,26 +30,12 @@ export const BACKGROUND_PATTERN_META: Record<
 		label: "Waveform",
 		hint: "Two-row audio waveform bars, all themes",
 	},
+	mesh: {
+		label: "Mesh",
+		hint: "Subtle dark blobs — designed for dark themes",
+	},
 	none: { label: "None", hint: "No background pattern" },
 };
-
-export type Theme =
-	| "light"
-	| "dark"
-	| "system"
-	| "di-stefano"
-	| "stripe"
-	| "coastal-light"
-	| "mesh-dark";
-
-export const PLAIN_THEMES: Theme[] = ["system", "light", "dark"];
-export const SPECIAL_THEMES: Theme[] = [
-	"di-stefano",
-	"stripe",
-	"coastal-light",
-	"mesh-dark",
-];
-export const ALL_THEMES: Theme[] = [...PLAIN_THEMES, ...SPECIAL_THEMES];
 
 export const THEME_META: Record<
 	Theme,
@@ -48,10 +44,7 @@ export const THEME_META: Record<
 	system: { label: "System", accent: "#888888", dark: false },
 	light: { label: "Light", accent: "#888888", dark: false },
 	dark: { label: "Dark", accent: "#888888", dark: true },
-	"di-stefano": { label: "Otoyin", accent: "#C87864", dark: true },
 	stripe: { label: "Stripe", accent: "#FFFFFF", dark: true },
-	"coastal-light": { label: "Coastal Light", accent: "#E8836A", dark: false },
-	"mesh-dark": { label: "Mesh Dark", accent: "#A0A8B4", dark: true },
 };
 
 // Draft state for the create voice profile form
@@ -116,8 +109,9 @@ interface UIStore {
 	// Theme
 	theme: Theme;
 	setTheme: (theme: Theme) => void;
-	accentHue: number | null; // null = use theme default; 0-360 = custom hue
-	setAccentHue: (hue: number | null) => void;
+	/** Accent preset id (see ACCENT_PRESETS in lib/design-system.ts). "rose" is the default. */
+	accent: string;
+	setAccent: (accent: string) => void;
 	// Background pattern tile (independent of theme)
 	backgroundPattern: BackgroundPattern;
 	setBackgroundPattern: (pattern: BackgroundPattern) => void;
@@ -176,8 +170,8 @@ const uiStore = create<UIStore>()(
 				set({ theme });
 				void useSettingsStore.getState().setSetting("theme", theme);
 			},
-			accentHue: null,
-			setAccentHue: (hue) => set({ accentHue: hue }),
+			accent: DEFAULT_ACCENT,
+			setAccent: (accent) => set({ accent }),
 			backgroundPattern: "line-in-motion",
 			setBackgroundPattern: (pattern) => set({ backgroundPattern: pattern }),
 
@@ -188,9 +182,43 @@ const uiStore = create<UIStore>()(
 		}),
 		{
 			name: "otoyin-ui",
+			version: 3,
+			migrate: (persisted, version) => {
+				const state = (persisted ?? {}) as Record<string, unknown> & {
+					theme?: string;
+					accentHue?: unknown;
+				};
+				const next: Record<string, unknown> = { ...state };
+				// v3 drops the unused hue slider; accent is a named preset.
+				delete next.accentHue;
+				if (version < 3) {
+					next.accent = DEFAULT_ACCENT;
+				} else if (typeof next.accent !== "string") {
+					next.accent = DEFAULT_ACCENT;
+				}
+				// Theme safety: drop themes that no longer exist (di-stefano
+				// was retired 2026-11 — map it to system, not to a broken value).
+				if (
+					typeof next.theme !== "string" ||
+					!ALL_THEMES.includes(next.theme as Theme)
+				) {
+					next.theme = "system";
+				}
+				// Background pattern safety.
+				if (
+					typeof next.backgroundPattern !== "string" ||
+					!BACKGROUND_PATTERNS.includes(
+						next.backgroundPattern as BackgroundPattern,
+					)
+				) {
+					next.backgroundPattern = "line-in-motion";
+				}
+				return next as unknown as UIStore;
+			},
 			partialize: (state) => ({
+				theme: state.theme,
 				selectedProfileId: state.selectedProfileId,
-				accentHue: state.accentHue,
+				accent: state.accent,
 				backgroundPattern: state.backgroundPattern,
 				sidebarOpen: state.sidebarOpen,
 				sidebarWidth: state.sidebarWidth,
@@ -201,16 +229,26 @@ const uiStore = create<UIStore>()(
 	),
 );
 
-// Sync theme when settingsStore finishes loading so the persisted value wins
-// over the "system" default used during uiStore initialization.
+// Sync theme when settingsStore finishes loading. Only applies a REAL
+// persisted value from settings.json — otherwise keeps whatever uiStore
+// rehydrated from its own persist ("otoyin-ui"), which is the only channel
+// that works outside Tauri (readSettings returns {} without it).
+// Settings → uiStore sync. Fires on any values write, not just the initial
+// load, so changing the schema "Theme" setting takes effect live (and survives
+// reloads). Early-outs when the theme didn't actually change to avoid loops.
 useSettingsStore.subscribe((state, prevState) => {
-	if (!prevState.loaded && state.loaded) {
-		const theme = useSettingsStore.getState().getSetting("theme") as
-			| Theme
-			| undefined;
-		if (theme) {
-			uiStore.getState().setTheme(theme);
-		}
+	const persisted = (state.values as Record<string, unknown>)?.theme;
+	if (
+		state.loaded &&
+		typeof persisted === "string" &&
+		ALL_THEMES.includes(persisted as Theme) &&
+		// No-op when nothing changed — avoids a settings.json rewrite on every
+		// boot (uiStore also persists theme via its own partialize).
+		uiStore.getState().theme !== persisted &&
+		(state.values as Record<string, unknown>)?.theme !==
+			(prevState.values as Record<string, unknown>)?.theme
+	) {
+		uiStore.getState().setTheme(persisted as Theme);
 	}
 });
 

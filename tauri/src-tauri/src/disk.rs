@@ -47,13 +47,25 @@ pub fn get_disk_space(
     path: Option<String>,
 ) -> Result<DiskSpaceReport, String> {
     let target: PathBuf = match path.as_deref().map(str::trim) {
-        Some(raw) if !raw.is_empty() => PathBuf::from(raw),
+        Some(raw) if !raw.is_empty() => {
+            let p = PathBuf::from(raw);
+            // The renderer supplies the models directory. Require an absolute
+            // path so we never probe relative/UNC prefixes — the path is only
+            // used for mount-point matching and is never opened.
+            if !p.is_absolute() {
+                return Err(format!("path must be absolute, got: {raw}"));
+            }
+            p
+        }
         _ => app.path().app_data_dir().map_err(|e| e.to_string())?,
     };
     let disks = Disks::new_with_refreshed_list().map_err(|e| format!("{e:?}"))?;
-    let disk = disk_for_path(&disks, &target)
-        .or_else(|| disks.iter().next())
-        .ok_or_else(|| "no disks detected".to_string())?;
+    // Fail closed: a path matching no mounted disk must not be silently
+    // attributed to an arbitrary drive (e.g. C:) — that would bless downloads
+    // onto a disk the user never chose.
+    let disk = disk_for_path(&disks, &target).ok_or_else(|| {
+        format!("path matches no mounted disk: {}", target.display())
+    })?;
     Ok(DiskSpaceReport {
         mount_point: disk.mount_point().to_string_lossy().into_owned(),
         total_bytes: disk.total_space(),

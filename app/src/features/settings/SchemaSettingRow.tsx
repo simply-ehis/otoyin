@@ -9,9 +9,10 @@
  * and persisted to settings.json via Tauri commands.
  */
 
-import { useCallback } from "react";
+import { ArrowPathIcon as ResetIcon } from "@heroicons/react/24/outline";
+import { memo, useCallback } from "react";
 import { SettingRow } from "@/features/settings/rows";
-import { settingDef } from "@/lib/settings/schema";
+import { clampValue, settingDef } from "@/lib/settings/schema";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { Switch } from "@/ui/controls";
 import { Input } from "@/ui/input";
@@ -29,25 +30,40 @@ interface SchemaSettingRowProps {
 	settingKey: string;
 }
 
-export function SchemaSettingRow({ settingKey }: SchemaSettingRowProps) {
-	const store = useSettingsStore();
+export const SchemaSettingRow = memo(function SchemaSettingRow({
+	settingKey,
+}: SchemaSettingRowProps) {
+	// Subscribe to just this row's value and the actions — a write to any other
+	// setting must not re-render every row.
+	const hasOverride = useSettingsStore((s) =>
+		Object.prototype.hasOwnProperty.call(s.values, settingKey),
+	);
+	const override = useSettingsStore((s) => s.values[settingKey]);
+	const setSetting = useSettingsStore((s) => s.setSetting);
+	const resetSetting = useSettingsStore((s) => s.resetSetting);
 	const def = settingDef(settingKey);
 
 	const handleChange = useCallback(
-		(value: unknown) => {
+		(next: unknown) => {
 			if (def) {
-				void store.setSetting(def.key, value);
+				void setSetting(def.key, next);
 			}
 		},
-		[store, def],
+		[def, setSetting],
 	);
+
+	const handleReset = useCallback(() => {
+		if (def) {
+			void resetSetting(def.key);
+		}
+	}, [def, resetSetting]);
 
 	if (!def) {
 		return null;
 	}
 
-	const current = store.getSetting(def.key);
-	const isModified = store.isModified(def.key);
+	const current = hasOverride ? clampValue(def, override) : def.default;
+	const isModified = current !== def.default;
 
 	return (
 		<SettingRow
@@ -59,6 +75,17 @@ export function SchemaSettingRow({ settingKey }: SchemaSettingRowProps) {
 						<Badge tone="accent" className="text-xs">
 							modified
 						</Badge>
+					)}
+					{isModified && (
+						<button
+							type="button"
+							onClick={handleReset}
+							className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+							title="Reset to default"
+							aria-label="Reset to default"
+						>
+							<ResetIcon className="size-4" aria-hidden="true" />
+						</button>
 					)}
 					{def.type === "select" ? (
 						<Select
@@ -84,9 +111,9 @@ export function SchemaSettingRow({ settingKey }: SchemaSettingRowProps) {
 						/>
 					) : def.type === "number" ? (
 						<Slider
-							min={0}
-							max={100}
-							step={1}
+							min={def.min ?? 0}
+							max={def.max ?? 100}
+							step={def.step ?? 1}
 							value={[Number(current ?? def.default) ?? 0]}
 							onValueChange={([v]) => handleChange(v ?? 0)}
 						/>
@@ -100,4 +127,4 @@ export function SchemaSettingRow({ settingKey }: SchemaSettingRowProps) {
 			}
 		/>
 	);
-}
+});

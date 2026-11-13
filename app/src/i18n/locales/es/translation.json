@@ -873,6 +873,14 @@
 		}
 	},
 	"settings": {
+		"schema": {
+			"title": "Ajustes",
+			"description": "Todos tus ajustes, organizados por categoría. Cualquier cambio se aplica de inmediato.",
+			"export": "Exportar ajustes",
+			"import": "Importar ajustes",
+			"corruptTitle": "Se restablecieron tus ajustes",
+			"corruptBody": "El archivo de ajustes estaba dañado. Se conservó una copia (settings.json.bak) y todo volvió a sus valores por defecto."
+		},
 		"tabs": {
 			"general": "General",
 			"workspace": "Espacio de trabajo",
@@ -892,7 +900,8 @@
 			"changelog": "Changelog",
 			"system": "System",
 			"support": "Support",
-			"about": "About"
+			"about": "About",
+			"schema": "Esquema"
 		},
 		"language": {
 			"label": "Language",
@@ -900,17 +909,7 @@
 		},
 		"theme": {
 			"label": "Theme",
-			"description": "Match your system, or pick a fixed light or dark appearance.",
-			"options": {
-				"system": "System",
-				"light": "Light",
-				"dark": "Dark",
-				"diStefano": "Otoyin",
-				"stripe": "Stripe",
-				"coastalLight": "Coastal Light",
-				"meshDark": "Mesh Dark"
-			},
-			"special": "Special"
+			"description": "Match your system, or pick a fixed light or dark appearance."
 		},
 		"general": {
 			"docs": {
@@ -920,13 +919,6 @@
 				"title": "Join the Discord",
 				"subtitle": "Get help & share voices"
 			},
-			"serverUrl": {
-				"title": "Server URL",
-				"description": "The address of your Otoyin backend server.",
-				"invalidUrl": "Please enter a valid URL",
-				"updatedTitle": "Server URL updated",
-				"updatedDescription": "Connected to {{url}}"
-			},
 			"networkAccess": {
 				"title": "Allow network access",
 				"description": "Makes the server accessible from other devices on your network. Restart the app after changing.",
@@ -934,11 +926,6 @@
 				"enabled": "Network access enabled. Restart the app to apply.",
 				"disabled": "Network access disabled. Restart the app to apply.",
 				"needsUrl": "Remote mode is on but the server address is still local. Enter your server address above."
-			},
-			"connection": {
-				"connecting": "Connecting",
-				"offline": "Offline",
-				"online": "Online"
 			},
 			"updates": {
 				"title": "App Updates",
@@ -981,22 +968,6 @@
 			"performanceMode": {
 				"title": "Performance Mode",
 				"description": "Trade RAM for speed: keep models loaded and render all UI immediately instead of deferring off-screen work."
-			},
-			"serverPort": {
-				"busy": "That port is already in use — pick a free one.",
-				"description": "The port the backend listens on. Takes effect after a backend restart.",
-				"devHint": "Port {{port}} saved. Restart your backend with OTOYIN_PORT={{port}} to apply it.",
-				"invalid": "Enter a port between 1024 and 65535",
-				"pendingRestart": "Port {{port}} saved — restart the backend to apply it.",
-				"restarting": "Restarting backend…",
-				"save": "Save port",
-				"saveRestart": "Save & restart",
-				"saving": "Saving…",
-				"servingNow": "Serving on port {{port}}",
-				"title": "Backend port",
-				"updatedDescription": "Backend is now serving on port {{port}}",
-				"updatedTitle": "Backend port updated",
-				"failedTitle": "No se pudo actualizar el puerto"
 			}
 		},
 		"generation": {
@@ -1652,6 +1623,12 @@
 		"restore": "Put back on clipboard"
 	},
 	"onboarding": {
+		"agent": {
+			"plannerUnknown": "Todavía no se puede comprobar el planificador - instálalo más tarde desde la Tienda."
+		},
+		"models": {
+			"unavailable": "No se pudo contactar con el motor para comprobar tus modelos. Nada se rompe si lo omites - instálalos más tarde desde la Tienda."
+		},
 		"generate": {
 			"description": "Everything happens on the Generate tab.",
 			"finish": "Start generating",
@@ -1661,16 +1638,8 @@
 			"moreTitle": "3. Go further",
 			"title": "Generate and listen",
 			"writeBody": "Pick a voice and language, type your script, hit Generate. Watch live progress under the prompt bar.",
-			"writeTitle": "1. Write and generate"
-		},
-		"setup": {
-			"description": "Voices come from models. Grab a free one from the Store, then manage voices on the Voices tab.",
-			"openStore": "Open Store",
-			"storeBody": "Store → pick a voice engine → Download. Free voices work fully offline.",
-			"storeTitle": "1. Download a model",
-			"title": "Get a voice",
-			"voicesBody": "Voices → use a built-in preset, clone yours, or design one by description.",
-			"voicesTitle": "2. Pick or make a voice"
+			"writeTitle": "1. Write and generate",
+			"ctrlKHint": "Ctrl+K abre la búsqueda desde cualquier lugar"
 		},
 		"welcome": {
 			"description": "A quick tour before you start — under a minute.",

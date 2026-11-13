@@ -135,7 +135,7 @@ export function UseCaseWizard() {
 						onBack={() => setStep(2)}
 						onNext={() => setStep(4)}
 						onSkip={handleSkip}
-						onOpenApiKeys={() => goSomewhere("/api-keys")}
+						onOpenApiKeys={() => goSomewhere("/settings/api-keys")}
 					/>
 				) : null}
 				{stepId === "generate" ? (

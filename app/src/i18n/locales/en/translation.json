@@ -919,26 +919,12 @@
 		},
 		"theme": {
 			"label": "Theme",
-			"description": "Match your system, or pick a fixed light or dark appearance.",
-			"options": {
-				"system": "System",
-				"light": "Light",
-				"dark": "Dark",
-				"diStefano": "Otoyin",
-				"stripe": "Stripe",
-				"coastalLight": "Coastal Light",
-				"meshDark": "Mesh Dark"
-			},
-			"special": "Special"
+			"description": "Match your system, or pick a fixed light or dark appearance."
 		},
 		"appearance": {
 			"on_launch": {
 				"label": "On launch",
 				"description": "What Otoyin opens on startup: a new Generate window, the last tab you used, or the Library."
-			},
-			"accent_hue": {
-				"label": "Accent hue",
-				"description": "Custom accent color hue (0–360 degrees). Overrides the accent preset color."
 			},
 			"background_pattern": {
 				"label": "Background pattern",
@@ -957,7 +943,9 @@
 			"title": "Settings",
 			"description": "All user settings, organized by category. Change any value and it takes effect immediately.",
 			"export": "Export settings",
-			"import": "Import settings"
+			"import": "Import settings",
+			"corruptTitle": "Your settings were reset",
+			"corruptBody": "The settings file was corrupted. A backup was kept (settings.json.bak) and everything was reset to defaults."
 		},
 		"general": {
 			"docs": {
@@ -967,29 +955,6 @@
 				"title": "Join the Discord",
 				"subtitle": "Get help & share voices"
 			},
-			"serverUrl": {
-				"title": "Server URL",
-				"description": "The address of your Otoyin backend server.",
-				"invalidUrl": "Please enter a valid URL",
-				"updatedTitle": "Server URL updated",
-				"updatedDescription": "Connected to {{url}}"
-			},
-			"serverPort": {
-				"title": "Backend port",
-				"description": "The port the backend listens on. Takes effect after a backend restart.",
-				"servingNow": "Serving on port {{port}}",
-				"pendingRestart": "Port {{port}} saved — restart the backend to apply it.",
-				"saveRestart": "Save & restart",
-				"save": "Save port",
-				"saving": "Saving…",
-				"restarting": "Restarting backend…",
-				"updatedTitle": "Backend port updated",
-				"updatedDescription": "Backend is now serving on port {{port}}",
-				"invalid": "Enter a port between 1024 and 65535",
-				"busy": "That port is already in use — pick a free one.",
-				"devHint": "Port {{port}} saved. Restart your backend with OTOYIN_PORT={{port}} to apply it.",
-				"failedTitle": "Failed to update the port"
-			},
 			"networkAccess": {
 				"title": "Allow network access",
 				"description": "Makes the server accessible from other devices on your network. Restart the app after changing.",
@@ -997,11 +962,6 @@
 				"enabled": "Network access enabled. Restart the app to apply.",
 				"disabled": "Network access disabled. Restart the app to apply.",
 				"needsUrl": "Remote mode is on but the server address is still local. Enter your server address above."
-			},
-			"connection": {
-				"connecting": "Connecting",
-				"offline": "Offline",
-				"online": "Online"
 			},
 			"updates": {
 				"title": "App Updates",
@@ -1705,6 +1665,12 @@
 		"restore": "Put back on clipboard"
 	},
 	"onboarding": {
+		"agent": {
+			"plannerUnknown": "Can't check the planner yet - install it later from the Store."
+		},
+		"models": {
+			"unavailable": "Couldn't reach the engine to check your models. Nothing breaks if you skip - install them later from the Store."
+		},
 		"generate": {
 			"description": "Everything happens on the Generate tab.",
 			"finish": "Start generating",
@@ -1714,16 +1680,8 @@
 			"moreTitle": "3. Go further",
 			"title": "Generate and listen",
 			"writeBody": "Pick a voice and language, type your script, hit Generate. Watch live progress under the prompt bar.",
-			"writeTitle": "1. Write and generate"
-		},
-		"setup": {
-			"description": "Voices come from models. Grab a free one from the Store, then manage voices on the Voices tab.",
-			"openStore": "Open Store",
-			"storeBody": "Store → pick a voice engine → Download. Free voices work fully offline.",
-			"storeTitle": "1. Download a model",
-			"title": "Get a voice",
-			"voicesBody": "Voices → use a built-in preset, clone yours, or design one by description.",
-			"voicesTitle": "2. Pick or make a voice"
+			"writeTitle": "1. Write and generate",
+			"ctrlKHint": "Ctrl+K opens search from everywhere"
 		},
 		"welcome": {
 			"description": "A quick tour before you start — under a minute.",

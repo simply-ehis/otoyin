@@ -10,6 +10,8 @@
  * frontend owns validation, defaults, and clamping via this schema.
  */
 
+import { ALL_THEMES } from "@/lib/themes";
+
 export type SettingType = "string" | "number" | "boolean" | "select";
 
 export interface SettingDef {
@@ -21,6 +23,10 @@ export interface SettingDef {
 	default: unknown;
 	/** Allowed values when type is "select". */
 	options?: string[];
+	/** Slider bounds for type "number" (defaults 0–100, step 1). */
+	min?: number;
+	max?: number;
+	step?: number;
 	/** Human-readable label shown in the UI. */
 	label: string;
 	/** One-line plain-language description. */
@@ -42,15 +48,7 @@ export const SETTINGS_SCHEMA: SettingDef[] = [
 		key: "theme",
 		type: "select",
 		default: "system",
-		options: [
-			"system",
-			"light",
-			"dark",
-			"di-stefano",
-			"stripe",
-			"coastal-light",
-			"mesh-dark",
-		],
+		options: [...ALL_THEMES],
 		label: "Theme",
 		description: "Match your system, or pick a fixed light or dark appearance.",
 		group: "appearance",
@@ -139,22 +137,10 @@ export const SETTINGS_SCHEMA: SettingDef[] = [
 		version: SCHEMA_VERSION,
 	},
 	{
-		key: "appearance.accent_hue",
-		type: "number",
-		default: 0,
-		label: "Accent hue",
-		description:
-			"Custom accent color hue (0–360 degrees). Overrides the accent preset color.",
-		group: "appearance",
-		keywords: ["accent", "hue", "color", "customize"],
-		needsRestart: false,
-		version: SCHEMA_VERSION,
-	},
-	{
 		key: "appearance.background_pattern",
 		type: "select",
 		default: "line-in-motion",
-		options: ["line-in-motion", "waveform", "none"],
+		options: ["line-in-motion", "waveform", "mesh", "none"],
 		label: "Background pattern",
 		description: "Background tile style shown in empty canvas areas.",
 		group: "appearance",
@@ -202,8 +188,15 @@ export function clampValue(def: SettingDef, value: unknown): unknown {
 	switch (def.type) {
 		case "boolean":
 			return Boolean(value);
-		case "number":
-			return Number(value);
+		case "number": {
+			const n = Number(value);
+			if (Number.isNaN(n)) {
+				return def.default;
+			}
+			const lo = def.min ?? 0;
+			const hi = def.max ?? 100;
+			return Math.min(hi, Math.max(lo, n));
+		}
 		case "select":
 			return def.options?.includes(value as string) ? value : def.default;
 		default:

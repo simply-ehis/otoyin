@@ -13,6 +13,7 @@
 import {
 	ArrowDownTrayIcon as DownloadIcon,
 	ArrowUpTrayIcon as UploadIcon,
+	ExclamationTriangleIcon as WarningIcon,
 } from "@heroicons/react/24/outline";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -24,7 +25,9 @@ import { Button } from "@/ui/button";
 
 export function SchemaSettingsPage() {
 	const { t } = useTranslation();
-	const store = useSettingsStore();
+	const corruptReset = useSettingsStore((s) => s.corruptReset);
+	const setSetting = useSettingsStore((s) => s.setSetting);
+	const dismissCorruptNotice = useSettingsStore((s) => s.dismissCorruptNotice);
 
 	const groups = useMemo(() => {
 		const grouped = new Map<string, { label: string; keys: string[] }>();
@@ -41,7 +44,7 @@ export function SchemaSettingsPage() {
 	}, []);
 
 	const handleExport = async () => {
-		const values = store.values;
+		const values = useSettingsStore.getState().values;
 		const exportable = Object.fromEntries(
 			Object.entries(values).filter(([k]) => !k.startsWith("_")),
 		);
@@ -71,7 +74,7 @@ export function SchemaSettingsPage() {
 				if (key.startsWith("_")) {
 					continue;
 				}
-				await store.setSetting(key, value);
+				await setSetting(key, value);
 			}
 		} catch (err) {
 			throw new Error(`Failed to import settings: ${err}`);
@@ -95,6 +98,29 @@ export function SchemaSettingsPage() {
 
 	return (
 		<div className="flex max-w-4xl flex-col gap-6">
+			{corruptReset && (
+				<output
+					role="alert"
+					className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-warning-text"
+				>
+					<WarningIcon className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+					<span className="min-w-0 flex-1 text-sm">
+						<span className="block font-semibold">
+							{t("settings.schema.corruptTitle")}
+						</span>
+						<span className="block text-xs opacity-90">
+							{t("settings.schema.corruptBody")}
+						</span>
+					</span>
+					<button
+						type="button"
+						onClick={dismissCorruptNotice}
+						className="shrink-0 rounded-md px-2 py-1 text-xs font-medium transition-colors hover:bg-warning/20"
+					>
+						{t("common.dismiss", "Dismiss")}
+					</button>
+				</output>
+			)}
 			<div className="flex items-center justify-between">
 				<div>
 					<h1 className="text-lg font-semibold text-foreground">
@@ -106,11 +132,11 @@ export function SchemaSettingsPage() {
 				</div>
 				<div className="flex gap-2">
 					<Button onClick={handleExport} variant="outline" size="sm">
-						<DownloadIcon className="mr-1.5 size-3.5" />
+						<DownloadIcon className="mr-2 size-3.5" />
 						{t("settings.schema.export")}
 					</Button>
 					<Button onClick={handleImportFile} variant="outline" size="sm">
-						<UploadIcon className="mr-1.5 size-3.5" />
+						<UploadIcon className="mr-2 size-3.5" />
 						{t("settings.schema.import")}
 					</Button>
 				</div>

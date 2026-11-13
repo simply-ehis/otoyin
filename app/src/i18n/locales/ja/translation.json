@@ -830,6 +830,14 @@
 		}
 	},
 	"settings": {
+		"schema": {
+			"title": "設定",
+			"description": "カテゴリーごとに整理されたすべての設定です。変更はすぐに反映されます。",
+			"export": "設定を書き出す",
+			"import": "設定を読み込む",
+			"corruptTitle": "設定がリセットされました",
+			"corruptBody": "設定ファイルが破損していました。バックアップ (settings.json.bak) を保持し、すべての設定を既定値に戻しました。"
+		},
 		"tabs": {
 			"general": "一般",
 			"workspace": "ワークスペース",
@@ -849,7 +857,8 @@
 			"about": "このアプリについて",
 			"apiKeys": "API Keys",
 			"support": "Support",
-			"system": "System"
+			"system": "System",
+			"schema": "スキーマ"
 		},
 		"language": {
 			"label": "言語",
@@ -857,17 +866,7 @@
 		},
 		"theme": {
 			"label": "テーマ",
-			"description": "システム設定に合わせるか、ライト / ダークを固定します。",
-			"options": {
-				"system": "システム",
-				"light": "ライト",
-				"dark": "ダーク",
-				"coastalLight": "Coastal Light",
-				"diStefano": "Otoyin",
-				"meshDark": "Mesh Dark",
-				"stripe": "Stripe"
-			},
-			"special": "Special"
+			"description": "システム設定に合わせるか、ライト / ダークを固定します。"
 		},
 		"general": {
 			"docs": {
@@ -877,13 +876,6 @@
 				"title": "Discord に参加",
 				"subtitle": "ヘルプやボイスの共有"
 			},
-			"serverUrl": {
-				"title": "サーバー URL",
-				"description": "otoyin バックエンドサーバーのアドレス。",
-				"invalidUrl": "有効な URL を入力してください",
-				"updatedTitle": "サーバー URL を更新しました",
-				"updatedDescription": "{{url}} に接続しました"
-			},
 			"networkAccess": {
 				"title": "ネットワークアクセスを許可",
 				"description": "ネットワーク上の他のデバイスからサーバーにアクセスできるようにします。変更後はアプリを再起動してください。",
@@ -891,11 +883,6 @@
 				"enabled": "ネットワークアクセスが有効になりました。適用するにはアプリを再起動してください。",
 				"disabled": "ネットワークアクセスが無効になりました。適用するにはアプリを再起動してください。",
 				"needsUrl": "Remote mode is on but the server address is still local. Enter your server address above."
-			},
-			"connection": {
-				"connecting": "接続中",
-				"offline": "オフライン",
-				"online": "オンライン"
 			},
 			"updates": {
 				"title": "アプリの更新",
@@ -938,22 +925,6 @@
 			"performanceMode": {
 				"description": "Trade RAM for speed: keep models loaded and render all UI immediately instead of deferring off-screen work.",
 				"title": "Performance Mode"
-			},
-			"serverPort": {
-				"busy": "That port is already in use — pick a free one.",
-				"description": "The port the backend listens on. Takes effect after a backend restart.",
-				"devHint": "Port {{port}} saved. Restart your backend with OTOYIN_PORT={{port}} to apply it.",
-				"invalid": "Enter a port between 1024 and 65535",
-				"pendingRestart": "Port {{port}} saved — restart the backend to apply it.",
-				"restarting": "Restarting backend…",
-				"save": "Save port",
-				"saveRestart": "Save & restart",
-				"saving": "Saving…",
-				"servingNow": "Serving on port {{port}}",
-				"title": "Backend port",
-				"updatedDescription": "Backend is now serving on port {{port}}",
-				"updatedTitle": "Backend port updated",
-				"failedTitle": "ポートを更新できませんでした"
 			}
 		},
 		"generation": {
@@ -1647,6 +1618,12 @@
 		"restore": "Put back on clipboard"
 	},
 	"onboarding": {
+		"agent": {
+			"plannerUnknown": "プランナーをまだ確認できません - 後でストアからインストールしてください。"
+		},
+		"models": {
+			"unavailable": "モデルを確認するためにエンジンに接続できませんでした。スキップしても何も壊れません - 後でストアからインストールしてください。"
+		},
 		"generate": {
 			"description": "Everything happens on the Generate tab.",
 			"finish": "Start generating",
@@ -1656,16 +1633,8 @@
 			"moreTitle": "3. Go further",
 			"title": "Generate and listen",
 			"writeBody": "Pick a voice and language, type your script, hit Generate. Watch live progress under the prompt bar.",
-			"writeTitle": "1. Write and generate"
-		},
-		"setup": {
-			"description": "Voices come from models. Grab a free one from the Store, then manage voices on the Voices tab.",
-			"openStore": "Open Store",
-			"storeBody": "Store → pick a voice engine → Download. Free voices work fully offline.",
-			"storeTitle": "1. Download a model",
-			"title": "Get a voice",
-			"voicesBody": "Voices → use a built-in preset, clone yours, or design one by description.",
-			"voicesTitle": "2. Pick or make a voice"
+			"writeTitle": "1. Write and generate",
+			"ctrlKHint": "Ctrl+Kでどこからでも検索を開く"
 		},
 		"welcome": {
 			"description": "A quick tour before you start — under a minute.",

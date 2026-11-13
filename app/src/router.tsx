@@ -5,6 +5,7 @@ import {
 	redirect,
 } from "@tanstack/react-router";
 // Every page component is lazy-loaded. The boot chunk carries only the shell.
+import { NotFound, SettingsNotFound } from "@/components/NotFound";
 import { RootLayout } from "@/layouts/RootLayout/RootLayout";
 import { lazyRetry } from "@/lib/lazyRetry";
 import { REGISTRY } from "@/lib/tabs/registry";
@@ -447,6 +448,7 @@ const settingsRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/settings",
 	component: SettingsLayout,
+	notFoundComponent: SettingsNotFound,
 });
 
 // Settings sub-routes
@@ -1148,7 +1150,10 @@ const routeTree = rootRoute.addChildren([
 ]);
 
 // Create router
-export const router = createRouter({ routeTree });
+export const router = createRouter({
+	routeTree,
+	defaultNotFoundComponent: NotFound,
+});
 
 // Register router for type safety
 declare module "@tanstack/react-router" {

@@ -70,7 +70,6 @@ marketplace/.license_private.key
 tauri/src-tauri/*.pem
 tauri/src-tauri/minisign.zip
 tauri/src-tauri/gen/Assets.car
-tauri/src-tauri/gen/di-stefano.icns
 tauri/src-tauri/gen/partial.plist
 tauri/src-tauri/gen/21labs.icns
 tauri/src-tauri/gen/schemas/

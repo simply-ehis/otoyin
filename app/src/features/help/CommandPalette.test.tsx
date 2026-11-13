@@ -100,6 +100,43 @@ describe("CommandPalette", () => {
 		expect(await screen.findByText("Stem mastering")).toBeInTheDocument();
 	});
 
+	describe("CommandPalette — settings from the schema", () => {
+		beforeEach(() => {
+			useWorkspaceStore.setState({
+				hiddenTabs: [],
+				visibleTabs: null,
+				selectedUseCases: [],
+				onboarded: true,
+			});
+			localStorage.removeItem("otoyin:search-recents");
+			vi.mocked(apiClient.searchHelp).mockResolvedValue({
+				query: "",
+				results: [],
+			});
+		});
+
+		it("finds a setting by label and navigates to the schema page", async () => {
+			const user = userEvent.setup();
+			render(<CommandPalette open={true} onClose={() => {}} />);
+			await user.type(screen.getByPlaceholderText(/Type a command/i), "theme");
+			expect(await screen.findByText("Theme")).toBeInTheDocument();
+			expect(screen.getByText("Settings")).toBeInTheDocument();
+			await user.click(screen.getByText("Theme"));
+			expect(navigateMock).toHaveBeenCalledWith({ to: "/settings/schema" });
+		});
+
+		it("finds a setting by keyword (search synonyms from the schema)", async () => {
+			const user = userEvent.setup();
+			render(<CommandPalette open={true} onClose={() => {}} />);
+			// "on launch" is a keyword on appearance.on_launch
+			await user.type(
+				screen.getByPlaceholderText(/Type a command/i),
+				"on launch",
+			);
+			expect(await screen.findByText("On launch")).toBeInTheDocument();
+		});
+	});
+
 	describe("CommandPalette — registry tabs", () => {
 		beforeEach(() => {
 			useWorkspaceStore.setState({

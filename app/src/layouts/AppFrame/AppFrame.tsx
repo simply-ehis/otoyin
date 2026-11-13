@@ -14,14 +14,14 @@ import { RouteErrorBoundary } from "@/layouts/ErrorBoundary/RouteErrorBoundary";
 import { Sidebar } from "@/layouts/Sidebar/Sidebar";
 import { TitleBarDragRegion } from "@/layouts/TitleBarDragRegion";
 import { TOP_SAFE_AREA_PADDING } from "@/lib/constants/ui";
-import { applyThemeAccent } from "@/lib/design-system";
+
 import { useServerErrorToast } from "@/lib/hooks/useServerErrorToast";
 import { useServerLifecycle } from "@/lib/hooks/useServerLifecycle";
 import { useStory } from "@/lib/hooks/useStories";
 import { cn } from "@/lib/utils/cn";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useStoryStore } from "@/stores/storyStore";
-import { useUIStore } from "@/stores/uiStore";
+
 import { useWorkspaceStore } from "@/stores/workspaceStore";
 import { TooltipProvider } from "@/ui/tooltip";
 
@@ -131,11 +131,6 @@ export function AppFrame({ children }: AppFrameProps) {
 	useEffect(() => {
 		void invoke("app_ready").catch(() => {});
 	}, []);
-	const theme = useUIStore((s) => s.theme);
-
-	useEffect(() => {
-		applyThemeAccent(theme);
-	}, [theme]);
 
 	const [assistantOpen, setAssistantOpen] = useState(false);
 	const [helpOpen, setHelpOpen] = useState(false);

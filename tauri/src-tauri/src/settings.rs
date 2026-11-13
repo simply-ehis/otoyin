@@ -43,6 +43,24 @@ fn settings_path(app: &AppHandle) -> Result<PathBuf, String> {
         .map_err(|e| e.to_string())
 }
 
+/// Quarantine a corrupt settings.json to a .bak file without ever clobbering
+/// an earlier backup. Falls back to a timestamped name. Never panics.
+fn quarantine(path: &std::path::Path) {
+    let bak = path.with_extension("json.bak");
+    let target = if bak.exists() {
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        path.with_extension(format!("json.{stamp}.bak"))
+    } else {
+        bak
+    };
+    if let Err(e) = fs::rename(path, &target) {
+        eprintln!("[settings] quarantine to {} failed: {e}", target.display());
+    }
+}
+
 #[tauri::command]
 pub async fn settings_read(app: AppHandle) -> Result<Value, String> {
     let path = settings_path(&app)?;
@@ -51,8 +69,13 @@ pub async fn settings_read(app: AppHandle) -> Result<Value, String> {
         return Ok(Value::Object(defaults()));
     }
     let text = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    let file: SettingsFile =
-        serde_json::from_str(&text).map_err(|e| e.to_string())?;
+    let file: SettingsFile = serde_json::from_str(&text).map_err(|e| {
+        // Quarantine the broken file (kept as .json.bak). A copy would leave the
+        // corrupt original in place, so every later read would fail and every
+        // write would error out forever — recovery must actually complete.
+        quarantine(&path);
+        format!("settings_corrupt: {e}")
+    })?;
     Ok(Value::Object(file.values))
 }
 
@@ -64,12 +87,19 @@ pub async fn settings_write(
 ) -> Result<(), String> {
     let path = settings_path(&app)?;
 
-    // Merge: read existing values, set the key, write back atomically.
+    // Merge: read existing values, set the key, write back atomically. A
+    // corrupt file is quarantined and healed to schema-defaults + this key
+    // rather than erroring forever — the advertised recovery path.
     let mut values = if path.exists() {
         let text = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-        let file: SettingsFile =
-            serde_json::from_str(&text).map_err(|e| e.to_string())?;
-        file.values
+        match serde_json::from_str::<SettingsFile>(&text) {
+            Ok(file) => file.values,
+            Err(e) => {
+                eprintln!("[settings] settings_write: corrupt file quarantined: {e}");
+                quarantine(&path);
+                defaults()
+            }
+        }
     } else {
         defaults()
     };

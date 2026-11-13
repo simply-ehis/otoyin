@@ -6,7 +6,7 @@ import {
 	XMarkIcon as XMark,
 } from "@heroicons/react/24/outline";
 import { Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ClipboardIndicator } from "@/features/clipboard/ClipboardIndicator";
 import { REGISTRY, TAB_GROUPS } from "@/lib/tabs/registry";
@@ -35,8 +35,8 @@ interface NavGroup {
  * no visible items disappear entirely. Filtered once per render; the store
  * subscribes to hiddenTabs.
  *
- * Collapsed mode: shows group icons; hover reveals a flyout with child items.
- * Accordion: opening one group closes all others.
+ * Collapsed mode: an icon rail — tapping a group unfolds the sidebar and
+ * opens that group's sub-tabs beneath it. Accordion: opening one group closes all others.
  */
 function buildNavGroups(hiddenTabs: string[]): NavGroup[] {
 	return TAB_GROUPS.map((group) => ({
@@ -60,15 +60,13 @@ export function Sidebar() {
 	const sidebarOpen = useUIStore((s) => s.sidebarOpen);
 	const setSidebarOpen = useUIStore((s) => s.setSidebarOpen);
 	const hiddenTabs = useWorkspaceStore((s) => s.hiddenTabs);
-	const navGroups = buildNavGroups(hiddenTabs);
+	const navGroups = useMemo(() => buildNavGroups(hiddenTabs), [hiddenTabs]);
 	const storeSidebarWidth = useUIStore((s) => s.sidebarWidth);
 	const [sidebarWidth] = useState(() => storeSidebarWidth);
 	const mobileDrawerOpen = useUIStore((s) => s.mobileDrawerOpen);
 	const setMobileDrawerOpen = useUIStore((s) => s.setMobileDrawerOpen);
 	const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set());
-	const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
 	const [isMobile, setIsMobile] = useState(false);
-	const flyoutRef = useRef<HTMLDivElement | null>(null);
 
 	useEffect(() => {
 		const check = () => setIsMobile(window.innerWidth < 768);
@@ -81,6 +79,13 @@ export function Sidebar() {
 		location.pathname === path || location.pathname.startsWith(`${path}/`);
 
 	const toggleGroup = (label: string) => {
+		if (!sidebarOpen && !isMobile) {
+			// Collapsed rail: tapping a folded group unfolds the sidebar and
+			// opens that group's sub-tabs beneath it (accordion semantics).
+			setSidebarOpen(true);
+			setOpenGroups(new Set([label]));
+			return;
+		}
 		setOpenGroups((prev) => {
 			const next = new Set(prev);
 			if (next.has(label)) {
@@ -99,20 +104,6 @@ export function Sidebar() {
 			setMobileDrawerOpen(false);
 		}
 	};
-
-	// Close flyout on click outside (collapsed mode)
-	useEffect(() => {
-		if (!hoveredGroup) {
-			return;
-		}
-		const handleClick = (e: MouseEvent) => {
-			if (flyoutRef.current && !flyoutRef.current.contains(e.target as Node)) {
-				setHoveredGroup(null);
-			}
-		};
-		document.addEventListener("mousedown", handleClick);
-		return () => document.removeEventListener("mousedown", handleClick);
-	}, [hoveredGroup]);
 
 	return (
 		<>
@@ -176,7 +167,7 @@ export function Sidebar() {
 						<button
 							type="button"
 							onClick={() => setMobileDrawerOpen(false)}
-							className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+							className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
 							aria-label={t("sidebar.collapse")}
 						>
 							<XMark className="size-5" aria-hidden="true" />
@@ -186,37 +177,59 @@ export function Sidebar() {
 
 				{/* Navigation — category groups */}
 				<nav
-					className="flex-1 overflow-y-auto py-2 px-1.5 scrollbar-thin"
+					className="flex-1 overflow-y-auto py-2 px-2 scrollbar-thin"
 					aria-label={t("sidebar.navigation")}
 				>
 					<ul className="space-y-1">
 						{navGroups.map((group) => {
 							const open = openGroups.has(group.label);
-							const hovered = hoveredGroup === group.label;
+							// Single-tab groups (e.g. Settings, Library, Store, Music) don't
+							// pretend to be folders — they navigate directly.
+							if (group.items.length === 1) {
+								const item = group.items[0];
+								const active = isActive(item.path);
+								return (
+									<li key={group.label} className="relative mb-1">
+										<Link
+											to={item.path}
+											title={t(item.label)}
+											aria-label={t(item.label)}
+											aria-current={active ? "page" : undefined}
+											data-active={active ? "true" : undefined}
+											onClick={handleItemClick}
+											className={cn(
+												"flex w-full h-8 items-center gap-2 rounded-md px-2 text-[11px] font-semibold uppercase tracking-wider transition-colors border-l-2",
+												active
+													? "bg-accent-muted text-accent-ink border-accent"
+													: "text-muted-foreground/80 border-transparent hover:bg-muted/50 hover:text-foreground",
+												!sidebarOpen && !isMobile && "justify-center px-2",
+											)}
+										>
+											<item.icon
+												className="size-4 shrink-0"
+												aria-hidden="true"
+											/>
+											{sidebarOpen && (
+												<span className="truncate transition-opacity duration-150 opacity-100">
+													{t(item.label)}
+												</span>
+											)}
+										</Link>
+									</li>
+								);
+							}
 							return (
-								<li
-									key={group.label}
-									className="relative mb-1"
-									onMouseEnter={() => {
-										if (!sidebarOpen && !isMobile) {
-											setHoveredGroup(group.label);
-										}
-									}}
-									onMouseLeave={() => {
-										if (!sidebarOpen && !isMobile) {
-											setHoveredGroup(null);
-										}
-									}}
-								>
+								<li key={group.label} className="relative mb-1">
 									{/* Group header button */}
 									<button
 										type="button"
 										aria-expanded={open}
 										aria-label={group.label}
+										title={group.label}
 										onClick={() => toggleGroup(group.label)}
 										className={cn(
-											"flex w-full h-8 items-center gap-2 rounded-md px-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground",
-											!sidebarOpen && !isMobile && "justify-center px-1.5",
+											"flex w-full h-8 items-center gap-2 rounded-md px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground",
+											!sidebarOpen && !isMobile && "justify-center px-2",
 										)}
 									>
 										<group.icon
@@ -260,7 +273,7 @@ export function Sidebar() {
 															title={t(item.label)}
 															aria-label={t(item.label)}
 															className={cn(
-																"flex items-center gap-2.5 min-w-0 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors border-l-2 relative",
+																"flex items-center gap-2 min-w-0 rounded-md px-2 py-2 text-[13px] font-medium transition-colors border-l-2 relative",
 																active
 																	? "bg-accent-muted text-accent-ink border-accent"
 																	: "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent",
@@ -283,7 +296,7 @@ export function Sidebar() {
 											{group.description && (
 												<li>
 													<p
-														className="px-2.5 py-1 text-[10px] text-muted-foreground/60 truncate"
+														className="px-2 py-1 text-[10px] text-muted-foreground/60 truncate"
 														title={group.description}
 													>
 														{group.description}
@@ -291,53 +304,6 @@ export function Sidebar() {
 												</li>
 											)}
 										</ul>
-									)}
-
-									{/* Collapsed mode: hover flyout */}
-									{!sidebarOpen && !isMobile && hovered && (
-										<div
-											ref={flyoutRef}
-											className="absolute left-full top-0 z-50 ml-2 w-56 rounded-lg border border-border bg-background shadow-lg py-2"
-										>
-											<div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 border-b border-border/50 mb-1">
-												{group.label}
-											</div>
-											<ul className="space-y-0.5 px-1">
-												{group.items.map((item) => {
-													const active = isActive(item.path);
-													return (
-														<li key={item.path}>
-															<Link
-																to={item.path}
-																title={t(item.label)}
-																aria-label={t(item.label)}
-																className={cn(
-																	"flex items-center gap-2.5 min-w-0 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors",
-																	active
-																		? "bg-accent-muted text-accent-ink"
-																		: "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-																)}
-																aria-current={active ? "page" : undefined}
-																onClick={() => setHoveredGroup(null)}
-															>
-																<item.icon
-																	className="size-4 shrink-0"
-																	aria-hidden="true"
-																/>
-																<span className="truncate">
-																	{t(item.label)}
-																</span>
-															</Link>
-														</li>
-													);
-												})}
-											</ul>
-											{group.description && (
-												<p className="px-3 py-1 mt-1 text-[10px] text-muted-foreground/60 border-t border-border/50">
-													{group.description}
-												</p>
-											)}
-										</div>
 									)}
 								</li>
 							);

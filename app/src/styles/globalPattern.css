@@ -64,6 +64,40 @@
 	opacity: var(--pattern-opacity);
 }
 
+/* Mesh — layered radial-gradient blobs in flat neutrals, no hue bias */
+.gs-theme-pattern--mesh {
+	background-image:
+		radial-gradient(
+			ellipse 60% 50% at 30% 25%,
+			hsl(0 0% 16%) 0%,
+			transparent 60%
+		),
+		radial-gradient(
+			ellipse 55% 65% at 78% 15%,
+			hsl(0 0% 13%) 0%,
+			transparent 65%
+		),
+		radial-gradient(
+			ellipse 65% 55% at 12% 82%,
+			hsl(0 0% 12%) 0%,
+			transparent 60%
+		),
+		radial-gradient(
+			ellipse 70% 60% at 70% 75%,
+			hsl(0 0% 9%) 0%,
+			transparent 70%
+		),
+		radial-gradient(
+			ellipse 45% 45% at 50% 50%,
+			hsl(0 0% 7%) 0%,
+			transparent 80%
+		);
+	opacity: 0.85;
+	mask-image: none;
+	-webkit-mask-image: none;
+	background-color: transparent;
+}
+
 /* Waveform variant — same mechanism, owner's oto.css tile at its 0.035 opacity. */
 .gs-theme-pattern--waveform {
 	-webkit-mask-image: var(--pattern-tile-waveform);

@@ -1,126 +1,9 @@
 /**
- * otoyin Design System — Grayscale utilities + per-theme token maps
+ * otoyin Design System — per-theme token maps and accent presets.
  *
- * Implements the locked design spec:
- * - 50-step perceptually-spaced grayscale scale
- * - Threshold-based text contrast (midpoint = step 24/50)
- * - Beneath-based button contrast flip
- * - Session drift engine
- * - Per-theme semantic token overrides
+ * Grayscale scale lives in `tokens.css` as static `--gs-*` custom properties;
+ * no runtime grayscale computation exists here.
  */
-
-// ─── Grayscale Scale ───────────────────────────────────────────────
-
-function generatePerceptualScale(): number[] {
-	const min = 4;
-	const max = 98;
-	const count = 50;
-	const gamma = 0.43;
-	const steps: number[] = [];
-	for (let i = 0; i < count; i++) {
-		const t = i / (count - 1);
-		const perceptual = t ** gamma;
-		const lightness = Math.round(min + (max - min) * perceptual);
-		const prev = i > 0 ? steps[i - 1] : min - 1;
-		steps.push(Math.max(lightness, prev + (i < count - 1 ? 1 : 0)));
-	}
-	return steps;
-}
-
-export const GRAYSCALE_STEPS: readonly number[] = generatePerceptualScale();
-export const SCALE_LENGTH = GRAYSCALE_STEPS.length;
-export const MIDPOINT_INDEX = 24;
-export const MIDPOINT_LIGHTNESS = GRAYSCALE_STEPS[MIDPOINT_INDEX];
-
-// ─── Contrast Utilities ────────────────────────────────────────────
-
-export function isLighterThanMidpoint(lightness: number): boolean {
-	return lightness > MIDPOINT_LIGHTNESS;
-}
-
-export function getContrastColor(bgLightness: number): "black" | "white" {
-	return isLighterThanMidpoint(bgLightness) ? "black" : "white";
-}
-
-export function getButtonColor(parentLightness: number): "black" | "white" {
-	return parentLightness < MIDPOINT_LIGHTNESS ? "white" : "black";
-}
-
-export function lightnessToStep(lightness: number): number {
-	let closest = 0;
-	let minDiff = Infinity;
-	for (let i = 0; i < SCALE_LENGTH; i++) {
-		const diff = Math.abs(GRAYSCALE_STEPS[i] - lightness);
-		if (diff < minDiff) {
-			minDiff = diff;
-			closest = i;
-		}
-	}
-	return closest;
-}
-
-export function getStepHSL(step: number): string {
-	const clamped = Math.max(0, Math.min(SCALE_LENGTH - 1, step));
-	return `0 0% ${GRAYSCALE_STEPS[clamped]}%`;
-}
-
-// ─── Drift Engine ──────────────────────────────────────────────────
-
-export const DRIFT_MAX_OFFSET = 8;
-export const DRIFT_DURATION_MS = 2 * 60 * 60 * 1000;
-
-export function calculateDriftOffset(
-	elapsedMs: number,
-	direction: "darker" | "lighter",
-): { stepOffset: number; cssVar: string } {
-	const progress = Math.min(elapsedMs / DRIFT_DURATION_MS, 1);
-	const eased = progress * progress;
-	const stepOffset = eased * DRIFT_MAX_OFFSET;
-	return {
-		stepOffset,
-		cssVar: direction === "darker" ? `-${stepOffset}` : `${stepOffset}`,
-	};
-}
-
-// ─── CSS Variable Helpers ──────────────────────────────────────────
-
-const SEMANTIC_BASE_STEPS: Record<string, number> = {
-	"--gs-bg": 6,
-	"--gs-fg": 48,
-	"--gs-card": 8,
-	"--gs-card-fg": 47,
-	"--gs-primary": 18,
-	"--gs-primary-fg": 48,
-	"--gs-secondary": 12,
-	"--gs-secondary-fg": 47,
-	"--gs-muted": 12,
-	"--gs-muted-fg": 30,
-	"--gs-accent": 18,
-	"--gs-accent-fg": 48,
-	"--gs-border": 12,
-	"--gs-input": 12,
-	"--gs-ring": 40,
-	"--gs-sidebar": 4,
-};
-
-export function applyGrayscaleCSSVariables(): void {
-	const root = document.documentElement;
-	for (let i = 0; i < SCALE_LENGTH; i++) {
-		root.style.setProperty(`--gs-${i}`, `${GRAYSCALE_STEPS[i]}%`);
-	}
-}
-
-export function applyDriftOffset(offset: number): void {
-	const root = document.documentElement;
-	root.style.setProperty("--drift-offset", `${offset}`);
-	for (const [varName, baseStep] of Object.entries(SEMANTIC_BASE_STEPS)) {
-		const shifted = Math.max(
-			0,
-			Math.min(SCALE_LENGTH - 1, Math.round(baseStep + offset)),
-		);
-		root.style.setProperty(varName, `${GRAYSCALE_STEPS[shifted]}%`);
-	}
-}
 
 // ─── Per-Theme Accent Colors ───────────────────────────────────────
 // Applied as CSS custom properties on <html> by useThemeSync.
@@ -153,29 +36,6 @@ export interface ThemeAccentConfig {
 }
 
 const THEME_ACCENTS: Record<string, ThemeAccentConfig> = {
-	"di-stefano": {
-		// Warm rose accent — Caravaggio-style single-source light
-		accent: "15 65% 55%",
-		accentFg: "0 0% 98%",
-		border: "0 0% 18%",
-		sidebar: "0 0% 3%",
-		card: "0 0% 8%/0.92",
-		cardFg: "0 0% 96%",
-		primary: "15 65% 55%",
-		primaryFg: "0 0% 98%",
-		muted: "0 0% 16%",
-		mutedFg: "0 0% 58%",
-		// Extended tokens
-		surface: "0 0% 6%",
-		surfaceFg: "0 0% 94%",
-		surfaceElevated: "0 0% 10%",
-		surfaceElevatedFg: "0 0% 97%",
-		accentMuted: "15 40% 25%",
-		accentSubtle: "15 30% 15%",
-		// accent-on-accentMuted was 3.06:1 (WCAG AA needs 4.5). Same hue and
-		// saturation as the accent, lightened just enough to clear AA.
-		accentInk: "15 65% 68%",
-	},
 	stripe: {
 		// High-contrast B&W — diagonal scan lines, sharp
 		accent: "0 0% 100%",
@@ -197,52 +57,6 @@ const THEME_ACCENTS: Record<string, ThemeAccentConfig> = {
 		accentSubtle: "0 0% 8%",
 		// White on 20% grey is already 12.63:1 — the accent needs no adjustment.
 		accentInk: "0 0% 100%",
-	},
-	"coastal-light": {
-		// Warm pastel — airy, coastal morning light
-		accent: "14 75% 52%",
-		accentFg: "0 0% 100%",
-		border: "18 25% 78%",
-		sidebar: "25 35% 96%",
-		card: "0 0% 98%/0.9",
-		cardFg: "0 0% 10%",
-		primary: "14 75% 52%",
-		primaryFg: "0 0% 100%",
-		muted: "22 20% 88%",
-		mutedFg: "0 0% 38%",
-		// Extended tokens
-		surface: "0 0% 99%",
-		surfaceFg: "0 0% 8%",
-		surfaceElevated: "0 0% 96%",
-		surfaceElevatedFg: "0 0% 6%",
-		accentMuted: "14 45% 85%",
-		accentSubtle: "14 35% 92%",
-		// accent-on-accentMuted was 2.62:1. Darkened along the same hue/sat
-		// rather than crushing the light tint to black, which would have
-		// destroyed the airy look this theme depends on.
-		accentInk: "14 75% 36.8%",
-	},
-	"mesh-dark": {
-		// Cool tech — perforated metal, cyan accent
-		accent: "195 85% 55%",
-		accentFg: "0 0% 0%",
-		border: "210 15% 25%/0.2",
-		sidebar: "215 20% 4%",
-		card: "215 20% 6%/0.92",
-		cardFg: "210 15% 94%",
-		primary: "195 85% 55%",
-		primaryFg: "0 0% 0%",
-		muted: "215 15% 12%",
-		mutedFg: "210 10% 52%",
-		// Extended tokens
-		surface: "215 20% 3%",
-		surfaceFg: "210 15% 96%",
-		surfaceElevated: "215 15% 8%",
-		surfaceElevatedFg: "210 10% 98%",
-		accentMuted: "195 50% 18%",
-		accentSubtle: "195 40% 10%",
-		// Cyan on 18% cyan is already 5.61:1 — the accent needs no adjustment.
-		accentInk: "195 85% 55%",
 	},
 };
 
@@ -297,26 +111,97 @@ export function applyThemeAccent(theme: string): void {
 }
 
 /**
- * Override the accent hue for the current theme. `null` clears the override
- * and restores the theme's default accent.
+ * Accent presets — soft tones, not saturated primaries. Shift the app's
+ * accent everywhere by setting the CSS custom properties on <html>.
+ * Default is rose (the original brand accent).
  */
-export function applyAccentHueOverride(hue: number | null): void {
+interface AccentPreset {
+	id: string;
+	label: string;
+	/** Bare HSL triplet, shadcn convention ("348 68% 58%"). */
+	hsl: string;
+	/** Text to use on a solid accent swatch. */
+	fg: string;
+}
+
+export const ACCENT_PRESETS: AccentPreset[] = [
+	{ id: "rose", label: "Rose", hsl: "348 68% 58%", fg: "0 0% 98%" },
+	{ id: "coral", label: "Coral", hsl: "12 75% 56%", fg: "0 0% 98%" },
+	{ id: "amber", label: "Amber", hsl: "38 85% 55%", fg: "0 0% 12%" },
+	{ id: "blue", label: "Blue", hsl: "217 75% 60%", fg: "0 0% 98%" },
+	{ id: "teal", label: "Teal", hsl: "188 65% 48%", fg: "0 0% 12%" },
+	{ id: "violet", label: "Violet", hsl: "265 65% 62%", fg: "0 0% 98%" },
+];
+
+export const DEFAULT_ACCENT = "rose";
+const accentById = (id: string | null | undefined): AccentPreset =>
+	ACCENT_PRESETS.find((a) => a.id === id) ?? ACCENT_PRESETS[0];
+
+/** Properties owned by the accent preset — everything else keeps its default. */
+const ACCENT_PRESET_PROPS = [
+	"--theme-accent",
+	"--theme-accent-fg",
+	"--theme-primary",
+	"--theme-primary-fg",
+	"--color-accent",
+	"--color-primary",
+	"--color-ring",
+	"--color-accent-muted",
+	"--color-primary-foreground",
+	"--theme-accent-muted",
+	"--theme-accent-subtle",
+	"--theme-accent-ink",
+] as const;
+
+/** Remove every property written by the preset so theme defaults take over. */
+export function clearAccentPreset(): void {
 	const root = document.documentElement;
-	if (hue == null) {
-		root.style.removeProperty("--color-accent");
-		root.style.removeProperty("--color-primary");
-		root.style.removeProperty("--color-ring");
-		root.style.removeProperty("--theme-accent-muted");
-		root.style.removeProperty("--theme-accent-ink");
+	for (const name of ACCENT_PRESET_PROPS) {
+		root.style.removeProperty(name);
+	}
+}
+
+/**
+ * Apply an accent preset to <html>. Passing `null` clears the override and
+ * falls back to the token defaults — rose on plain themes. In the app the
+ * plain themes always pass the persisted store accent (default
+ * DEFAULT_ACCENT); special themes keep their curated accent instead.
+ */
+export function applyAccentPreset(
+	accentId: string | null,
+	isDark: boolean,
+): void {
+	const root = document.documentElement;
+	const preset = accentId ? accentById(accentId) : null;
+	if (!preset) {
+		clearAccentPreset();
 		return;
 	}
-	const accent = `${hue} 65% 55%`;
-	const primary = `${hue} 65% 55%`;
-	const ring = `${hue} 65% 55%`;
-	const accentMuted = `${hue} 40% 25%`;
-	root.style.setProperty("--color-accent", `hsl(${accent})`);
-	root.style.setProperty("--color-primary", `hsl(${primary})`);
-	root.style.setProperty("--color-ring", `hsl(${ring})`);
-	// Bare triplet: CSS consumes this as hsl(var(--theme-accent-muted)).
-	root.style.setProperty("--theme-accent-muted", accentMuted);
+	// hsl triplets carry a unit on the saturation ("217 75% 60%"), so parseFloat
+	// rather than Number — Number("75%") is NaN and poisoned ink/muted/subtle.
+	const [h, s] = preset.hsl.split(" ").map((t) => Number.parseFloat(t));
+	// Muted/subtle companions, lightness-shifted for light vs dark surfaces.
+	const muted = isDark
+		? `${h} ${Math.max(8, Math.round(s * 0.62))}% 22%`
+		: `${h} ${Math.max(8, Math.round(s * 0.55))}% 88%`;
+	const subtle = isDark
+		? `${h} ${Math.max(6, Math.round(s * 0.5))}% 14%`
+		: `${h} ${Math.max(6, Math.round(s * 0.5))}% 94%`;
+	// Ink (text on an accentMuted pill) — always AA against muted.
+	const ink = isDark
+		? `${h} ${Math.min(80, Math.round(s * 1.05))}% 72%`
+		: `${h} ${Math.min(80, Math.round(s * 1.05))}% 30%`;
+	const fg = preset.fg;
+	root.style.setProperty("--theme-accent", preset.hsl);
+	root.style.setProperty("--theme-accent-fg", fg);
+	root.style.setProperty("--theme-primary", preset.hsl);
+	root.style.setProperty("--theme-primary-fg", fg);
+	root.style.setProperty("--theme-accent-muted", muted);
+	root.style.setProperty("--theme-accent-subtle", subtle);
+	root.style.setProperty("--theme-accent-ink", ink);
+	root.style.setProperty("--color-accent", `hsl(${preset.hsl})`);
+	root.style.setProperty("--color-primary", `hsl(${preset.hsl})`);
+	root.style.setProperty("--color-ring", `hsl(${preset.hsl})`);
+	root.style.setProperty("--color-accent-muted", `hsl(${muted})`);
+	root.style.setProperty("--color-primary-foreground", `hsl(${fg})`);
 }

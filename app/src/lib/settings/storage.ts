@@ -9,22 +9,38 @@
 
 import { invoke } from "@tauri-apps/api/core";
 
-/** Read the whole settings object. Returns `{}` when Tauri isn't available. */
-export async function readSettings(): Promise<Record<string, unknown>> {
+export interface ReadSettingsResult {
+	values: Record<string, unknown>;
+	/** True when settings.json existed but could not be parsed (a .bak copy is kept). */
+	corrupted: boolean;
+}
+
+function isCorruptError(error: unknown): boolean {
+	// settings_read tags its corruption error with a stable marker so the UI can
+	// distinguish "file is broken (backed up, defaults in effect)" from "Tauri is absent".
+	return String(error ?? "").includes("settings_corrupt");
+}
+
+/** Read the whole settings object. `values` is `{}` when unavailable; `corrupted`
+ * tells the caller the file was broken (a settings.json.bak is kept). */
+export async function readSettings(): Promise<ReadSettingsResult> {
 	try {
 		const result = await invoke<Record<string, unknown>>("settings_read");
-		return result ?? {};
-	} catch {
-		return {};
+		return { values: result ?? {}, corrupted: false };
+	} catch (error) {
+		return { values: {}, corrupted: isCorruptError(error) };
 	}
 }
 
-/** Write a single setting value. No-op when Tauri isn't available. */
+/** Write a single setting value. Failures are reported via console — in-memory
+ * state still updates; persistence retries on the next write. */
 export async function writeSetting(key: string, value: unknown): Promise<void> {
 	try {
 		await invoke("settings_write", { key, value });
-	} catch {
-		// Not running under Tauri — local state still updates so the UI stays
-		// consistent; the value persists once Tauri is available.
+	} catch (error) {
+		// Outside Tauri this call rejects permanently; an explicit warn keeps
+		// real persistence failures (disk, locks, corrupt-file-on-disk) from
+		// vanishing silently instead of surfacing them on every boot.
+		console.warn("[settings] writeSetting failed for", key, error);
 	}
 }

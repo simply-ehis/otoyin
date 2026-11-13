@@ -33,11 +33,15 @@ interface SettingsState {
 	values: Record<string, unknown>;
 	/** True once loadSettings has completed. */
 	loaded: boolean;
+	/** True when settings.json was corrupted on load and reset to defaults (.bak kept). */
+	corruptReset: boolean;
 
 	/** Load settings from settings.json (merge with defaults). */
 	loadSettings: () => Promise<void>;
 	/** Validate, clamp, persist, and store one setting value. */
 	setSetting: (key: string, value: unknown) => Promise<void>;
+	/** Persist the schema default for a key (clears the "modified" state). */
+	resetSetting: (key: string) => Promise<void>;
 	/** Return the effective value for a key (persisted or default). */
 	getSetting: (key: string) => unknown;
 	/** True if the current value differs from the schema default. */
@@ -53,16 +57,19 @@ interface SettingsState {
 	deleteCredentialKey: (domain: string) => Promise<boolean>;
 	/** Check whether a key exists for the given domain. */
 	hasCredentialKey: (domain: string) => boolean;
+	/** Dismiss the "settings were corrupted and reset" notice. */
+	dismissCorruptNotice: () => void;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
 	schema: SETTINGS_SCHEMA,
 	values: {},
 	loaded: false,
+	corruptReset: false,
 
 	loadSettings: async () => {
-		const values = await readSettings();
-		set({ values, loaded: true });
+		const { values, corrupted } = await readSettings();
+		set({ values, loaded: true, corruptReset: corrupted });
 	},
 
 	setSetting: async (key, value) => {
@@ -70,6 +77,20 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 		const clamped = def ? clampValue(def, value) : value;
 		await writeSetting(key, clamped);
 		set((state) => ({ values: { ...state.values, [key]: clamped } }));
+	},
+
+	resetSetting: async (key) => {
+		const def = settingDef(key);
+		// Refuse to persist a value we cannot validate, and never delete local
+		// state without the write landing — callers above guard too.
+		if (!def) {
+			console.error("[settings] resetSetting called for unknown key", key);
+			return;
+		}
+		// Persist the default explicitly: isModified compares against def.default,
+		// so storing it clears the modified badge deterministically.
+		await writeSetting(key, def.default);
+		set((state) => ({ values: { ...state.values, [key]: def.default } }));
 	},
 
 	getSetting: (key) => {
@@ -127,6 +148,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 	hasCredentialKey: (domain: string): boolean => {
 		return get().getSetting(`api_keys.${domain}.has_key`) === true;
 	},
+
+	dismissCorruptNotice: () => set({ corruptReset: false }),
 }));
 
 /** Kick off loading as soon as the store module is imported. */

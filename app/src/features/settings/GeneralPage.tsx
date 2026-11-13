@@ -5,17 +5,10 @@ import {
 	BookOpenIcon,
 	ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import * as z from "zod";
 import { useAutoUpdater } from "@/hooks/useAutoUpdater";
-import { apiClient } from "@/lib/api/client";
 import { showStudioErrorToast } from "@/lib/errors";
-import { useBackendRestart } from "@/lib/hooks/useBackendRestart";
-import { useServerHealth } from "@/lib/hooks/useServer";
 import { usePerformanceSettings } from "@/lib/hooks/useSettings";
 import { debug } from "@/lib/utils/debug";
 import { usePlatform } from "@/platform/PlatformContext";
@@ -26,7 +19,6 @@ import {
 import { Banner } from "@/ui/banner";
 import { Button } from "@/ui/button";
 import { Switch } from "@/ui/controls";
-import { Field, Input } from "@/ui/input";
 import { Spinner } from "@/ui/primitives";
 import { Progress } from "@/ui/progress";
 import { useToast } from "@/ui/use-toast";
@@ -34,112 +26,18 @@ import { LanguageSelect } from "./LanguageSelect";
 import { SettingRow, SettingSection } from "./rows";
 import { ThemeSelect } from "./ThemeSelect";
 
-function connectionSchema(invalidUrl: string) {
-	return z.object({ serverUrl: z.url(invalidUrl) });
-}
-
 /**
- * General settings: connection, server behavior, language, theme,
- * API reference, updates. toggles apply immediately; the server URL
- * saves explicitly (validated) so a typo never bricks the connection.
+ * General settings: performance, language, theme, updates. Tauri-only
+ * network-access toggle switches remote/local; connection values are fixed.
  */
 export function GeneralPage() {
 	const { t } = useTranslation();
 	const platform = usePlatform();
 	const serverUrl = useServerStore((s) => s.serverUrl);
-	const setServerUrl = useServerStore((s) => s.setServerUrl);
 	const mode = useServerStore((s) => s.mode);
 	const setMode = useServerStore((s) => s.setMode);
 	const { toast } = useToast();
-	const { data: health, isLoading, error: healthError } = useServerHealth();
 	const { settings: perf, update: updatePerf } = usePerformanceSettings();
-	const {
-		phase: restartPhase,
-		error: restartError,
-		restart,
-	} = useBackendRestart();
-
-	const { data: serverPort, refetch: refetchServerPort } = useQuery({
-		queryKey: ["server-port"],
-		queryFn: () => apiClient.getServerPort(),
-		retry: 1,
-		enabled: !healthError,
-	});
-	const [portInput, setPortInput] = useState<string | null>(null);
-	const [portSaving, setPortSaving] = useState(false);
-	const shownPort = portInput ?? String(serverPort?.port ?? "");
-
-	const handleSavePort = async () => {
-		const port = Number(shownPort);
-		if (!Number.isInteger(port) || port < 1024 || port > 65535) {
-			toast({
-				title: t("settings.general.serverPort.invalid"),
-				variant: "destructive",
-			});
-			return;
-		}
-		setPortSaving(true);
-		try {
-			const state = await apiClient.updateServerPort(port);
-			setPortInput(null);
-			void refetchServerPort();
-			if (!state.needs_restart) {
-				toast({ title: t("settings.general.serverPort.updatedTitle") });
-				return;
-			}
-			if (platform.metadata.isTauri) {
-				// Backend restart binds the new port; the hook moves the
-				// client over to the returned URL and polls health.
-				await restart(port);
-				toast({
-					title: t("settings.general.serverPort.updatedTitle"),
-					description: t("settings.general.serverPort.updatedDescription", {
-						port,
-					}),
-				});
-				void refetchServerPort();
-			} else {
-				toast({
-					title: t("settings.general.serverPort.updatedTitle"),
-					description: t("settings.general.serverPort.devHint", { port }),
-				});
-			}
-		} catch (err: unknown) {
-			const msg = err instanceof Error ? err.message : "";
-			const busy = /already in use/.test(msg);
-			toast({
-				title: busy
-					? t("settings.general.serverPort.busy")
-					: t("settings.general.serverPort.failedTitle"),
-				description: busy ? undefined : msg || undefined,
-				variant: "destructive",
-			});
-			if (!busy) {
-				showStudioErrorToast(err);
-			}
-		} finally {
-			setPortSaving(false);
-		}
-	};
-
-	const form = useForm<{ serverUrl: string }>({
-		resolver: useMemo(
-			() =>
-				zodResolver(
-					connectionSchema(t("settings.general.serverUrl.invalidUrl")),
-				),
-			[t],
-		),
-		defaultValues: { serverUrl },
-	});
-	useEffect(() => {
-		form.reset({ serverUrl });
-	}, [serverUrl, form]);
-	useEffect(() => {
-		if (form.formState.errors.serverUrl) {
-			void form.trigger("serverUrl");
-		}
-	}, [form]);
 
 	return (
 		<div className="flex max-w-4xl flex-col gap-8">
@@ -195,106 +93,6 @@ export function GeneralPage() {
 			</div>
 
 			<SettingSection>
-				<SettingRow
-					title={t("settings.general.serverUrl.title")}
-					description={t("settings.general.serverUrl.description")}
-					action={
-						<ConnectionStatus
-							health={health}
-							isLoading={isLoading}
-							healthError={healthError}
-						/>
-					}
-				>
-					<form
-						onSubmit={form.handleSubmit((data) => {
-							setServerUrl(data.serverUrl);
-							form.reset(data);
-							toast({
-								title: t("settings.general.serverUrl.updatedTitle"),
-								description: t(
-									"settings.general.serverUrl.updatedDescription",
-									{
-										url: data.serverUrl,
-									},
-								),
-							});
-						})}
-						className="flex gap-2"
-					>
-						<Field
-							label={t("settings.general.serverUrl.title")}
-							htmlFor="server-url"
-							error={form.formState.errors.serverUrl?.message}
-						>
-							<Input
-								id="server-url"
-								placeholder="http://127.0.0.1:17493"
-								{...form.register("serverUrl")}
-							/>
-						</Field>
-						{form.formState.isDirty ? (
-							<Button type="submit" size="sm" className="mt-[22px] shrink-0">
-								{t("common.save")}
-							</Button>
-						) : null}
-					</form>
-				</SettingRow>
-
-				<SettingRow
-					title={t("settings.general.serverPort.title")}
-					description={t("settings.general.serverPort.description")}
-					action={
-						serverPort ? (
-							<span className="text-xs tabular-nums text-muted-foreground">
-								{t("settings.general.serverPort.servingNow", {
-									port: serverPort.current_port,
-								})}
-							</span>
-						) : undefined
-					}
-				>
-					<div className="flex gap-2">
-						<Field
-							label={t("settings.general.serverPort.title")}
-							htmlFor="server-port"
-						>
-							<Input
-								id="server-port"
-								type="number"
-								min={1024}
-								max={65535}
-								step={1}
-								value={shownPort}
-								onChange={(e) => setPortInput(e.target.value)}
-								placeholder="17493"
-							/>
-						</Field>
-						<Button
-							size="sm"
-							className="mt-[22px] shrink-0"
-							onClick={handleSavePort}
-							disabled={portSaving || restartPhase !== "idle"}
-						>
-							{portSaving || restartPhase !== "idle"
-								? t("settings.general.serverPort.restarting")
-								: platform.metadata.isTauri
-									? t("settings.general.serverPort.saveRestart")
-									: t("settings.general.serverPort.save")}
-						</Button>
-					</div>
-					{serverPort?.needs_restart ? (
-						<p className="mt-1.5 text-xs text-warning-text">
-							{t("settings.general.serverPort.pendingRestart", {
-								port: serverPort.port,
-							})}
-						</p>
-					) : null}
-					{restartError ? (
-						<p className="mt-1.5 text-xs text-destructive">{restartError}</p>
-					) : null}
-				</SettingRow>
-
 				<SettingRow
 					title={t("settings.general.performanceMode.title")}
 					description={t("settings.general.performanceMode.description")}
@@ -357,52 +155,6 @@ export function GeneralPage() {
 			{platform.metadata.isTauri ? <UpdatesSection /> : null}
 		</div>
 	);
-}
-
-function ConnectionStatus({
-	health,
-	isLoading,
-	healthError,
-}: {
-	health: ReturnType<typeof useServerHealth>["data"];
-	isLoading: boolean;
-	healthError: ReturnType<typeof useServerHealth>["error"];
-}) {
-	const { t } = useTranslation();
-	if (isLoading) {
-		return (
-			<span className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1">
-				<Spinner size="xs" />
-				<span className="text-xs text-muted-foreground">
-					{t("settings.general.connection.connecting")}
-				</span>
-			</span>
-		);
-	}
-	if (healthError) {
-		return (
-			<span className="inline-flex items-center gap-2 rounded-full border border-destructive/40 bg-danger-soft px-3 py-1">
-				<span
-					aria-hidden="true"
-					className="size-2 rounded-full bg-destructive"
-				/>
-				<span className="text-xs text-danger-text">
-					{t("settings.general.connection.offline")}
-				</span>
-			</span>
-		);
-	}
-	if (health) {
-		return (
-			<span className="inline-flex items-center gap-2 rounded-full border border-success/40 bg-success-soft px-3 py-1">
-				<span aria-hidden="true" className="size-2 rounded-full bg-success" />
-				<span className="text-xs text-success-text">
-					{t("settings.general.connection.online")}
-				</span>
-			</span>
-		);
-	}
-	return null;
 }
 
 function UpdatesSection() {

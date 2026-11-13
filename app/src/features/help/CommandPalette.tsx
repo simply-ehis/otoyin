@@ -26,6 +26,7 @@ import { useTranslation } from "react-i18next";
 import { apiClient } from "@/lib/api/client";
 import type { HelpSearchResult } from "@/lib/api/types";
 import { showStudioErrorToast } from "@/lib/errors";
+import { SETTINGS_SCHEMA, type SettingDef } from "@/lib/settings/schema";
 import { REGISTRY, tabByPath } from "@/lib/tabs/registry";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
 
@@ -47,6 +48,20 @@ interface TabResult {
 	score: number;
 	hidden: boolean;
 }
+
+interface SettingResult {
+	def: SettingDef;
+	score: number;
+}
+
+const MAX_SETTING_RESULTS = 5;
+
+// Haystacks never change — build them once up front instead of re-templating
+// and lower-casing 11 strings on every keystroke.
+const SETTING_HAYSTACKS = SETTINGS_SCHEMA.map(
+	(def) =>
+		`${def.label} ${def.description} ${def.group} ${def.keywords.join(" ")}`,
+);
 
 /**
  * Fuzzy score for a query against a haystack.
@@ -280,6 +295,22 @@ export function CommandPalette({
 		(a, b) => b.score - a.score || a.entry.path.localeCompare(b.entry.path),
 	);
 
+	// --- Settings from the schema (keywords are consumed here) -----------
+
+	const settingsResults = useMemo<SettingResult[]>(() => {
+		const q = query.trim();
+		if (!q) {
+			return [];
+		}
+		return SETTINGS_SCHEMA.map((def, i) => {
+			const score = scoreMatch(q, SETTING_HAYSTACKS[i]);
+			return score > 0 ? { def, score } : null;
+		})
+			.filter((r): r is SettingResult => r !== null)
+			.sort((a, b) => b.score - a.score || a.def.key.localeCompare(b.def.key))
+			.slice(0, MAX_SETTING_RESULTS);
+	}, [query]);
+
 	// --- Help catalog (server-side, debounced) ----------------------------
 
 	useEffect(() => {
@@ -307,7 +338,7 @@ export function CommandPalette({
 
 	const getSelectableItems = useCallback(() => {
 		// Built on each call so keyboard nav always reflects the current list.
-		const items: Array<{ kind: string; action: () => void }> = [];
+		const items: Array<{ kind: string; id?: string; action: () => void }> = [];
 		if (!query) {
 			for (const recent of getRecents()) {
 				const entry = tabByPath(recent);
@@ -345,6 +376,16 @@ export function CommandPalette({
 				},
 			});
 		}
+		for (const setting of settingsResults) {
+			items.push({
+				kind: "setting",
+				id: setting.def.key,
+				action: () => {
+					navigate({ to: "/settings/schema" });
+					onClose();
+				},
+			});
+		}
 		helpResults.forEach(() => {
 			items.push({
 				kind: "help",
@@ -364,6 +405,7 @@ export function CommandPalette({
 		getRecents,
 		commandResults,
 		tabResults,
+		settingsResults,
 		helpResults,
 		navigate,
 		showTab,
@@ -472,6 +514,7 @@ export function CommandPalette({
 		const hasRecents = !q && recentsList.length > 0;
 		const hasCommands = commandResults.length > 0;
 		const hasTabs = tabResults.length > 0;
+		const hasSettings = settingsResults.length > 0;
 		const hasHelp = helpResults.length > 0;
 
 		// Flat index of every selectable row, in render order, so keyboard
@@ -488,12 +531,20 @@ export function CommandPalette({
 		for (const tab of tabResults) {
 			order.push({ kind: "tab", id: tab.entry.path });
 		}
+		for (const setting of settingsResults) {
+			order.push({ kind: "setting", id: setting.def.key });
+		}
 		for (const hit of helpResults) {
 			order.push({ kind: "help", id: hit.id });
 		}
 
 		const nothing =
-			!hasRecents && !hasCommands && !hasTabs && !hasHelp && !helpLoading;
+			!hasRecents &&
+			!hasCommands &&
+			!hasTabs &&
+			!hasSettings &&
+			!hasHelp &&
+			!helpLoading;
 
 		if (nothing) {
 			return (
@@ -600,6 +651,34 @@ export function CommandPalette({
 									}}
 									selected={selectedIndex === flatIndex}
 									hidden={tab.hidden}
+								/>
+							);
+						})}
+					</>
+				),
+			});
+		}
+
+		if (hasSettings) {
+			sections.push({
+				title: "Settings",
+				nodes: (
+					<>
+						{settingsResults.map((setting) => {
+							const flatIndex = order.findIndex(
+								(o) => o.kind === "setting" && o.id === setting.def.key,
+							);
+							return (
+								<SelectableRow
+									key={setting.def.key}
+									icon={<Cog6ToothIcon className="size-4" aria-hidden="true" />}
+									label={setting.def.label}
+									subtitle={`${setting.def.group} — ${setting.def.description}`}
+									onSelect={() => {
+										navigate({ to: "/settings/schema" });
+										onClose();
+									}}
+									selected={selectedIndex === flatIndex}
 								/>
 							);
 						})}

@@ -15,19 +15,19 @@
             parsed = JSON.parse(raw);
             if (parsed?.state?.theme) theme = parsed.state.theme;
           }
-          const resolved = theme === 'system'
-            ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-            : theme;
-          // Apply dark class for dark themes
-          const DARK_THEMES = ['dark', 'di-stefano', 'stripe', 'mesh-dark'];
-          if (DARK_THEMES.includes(resolved)) {
-            document.documentElement.classList.add('dark');
+          // Keep this in step with src/lib/themes.ts (THEME_IDS): unknown
+          // (e.g. retired) themes boot as system, never with a dead class.
+          const KNOWN = ['system', 'light', 'dark', 'stripe'];
+          let resolved = KNOWN.includes(theme) ? theme : 'system';
+          if (resolved === 'system') {
+            resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
           }
-          // Apply special theme class
-          if (resolved === 'di-stefano') {
-            document.documentElement.classList.add('di-stefano');
-          } else if (resolved !== 'light' && resolved !== 'dark') {
-            document.documentElement.classList.add('theme-' + resolved);
+          if (resolved === 'light') {
+            document.documentElement.classList.add('light');
+          } else if (resolved === 'stripe') {
+            document.documentElement.classList.add('dark', 'theme-stripe');
+          } else {
+            document.documentElement.classList.add('dark');
           }
         } catch (_) {}
       })();

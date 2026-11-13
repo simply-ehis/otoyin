@@ -20,12 +20,33 @@ function resetStore() {
 		schema: SETTINGS_SCHEMA,
 		values: {},
 		loaded: false,
+		corruptReset: false,
 	});
 }
 
 beforeEach(() => {
 	resetStore();
 	mockedInvoke.mockReset();
+});
+
+describe("settingsStore — corruption handling", () => {
+	it("flags corruptReset and resets to defaults when settings_read reports corruption", async () => {
+		mockedInvoke.mockRejectedValue(
+			"settings_corrupt: expected value at line 1",
+		);
+		await useSettingsStore.getState().loadSettings();
+		const state = useSettingsStore.getState();
+		expect(state.loaded).toBe(true);
+		expect(state.corruptReset).toBe(true);
+		expect(state.values).toEqual({});
+	});
+
+	it("keeps corruptReset false when the read succeeds", async () => {
+		mockedInvoke.mockResolvedValue({ theme: "dark" });
+		await useSettingsStore.getState().loadSettings();
+		expect(useSettingsStore.getState().corruptReset).toBe(false);
+		expect(useSettingsStore.getState().values).toEqual({ theme: "dark" });
+	});
 });
 
 describe("settingsStore — credential store", () => {
@@ -71,6 +92,30 @@ describe("settingsStore — credential store", () => {
 		expect(useSettingsStore.getState().hasCredentialKey("music")).toBe(false);
 	});
 
+	it("resetSetting persists the schema default and clears the modified state", async () => {
+		mockedInvoke.mockResolvedValue(undefined);
+		await useSettingsStore
+			.getState()
+			.setSetting("appearance.network_access", true);
+		expect(
+			useSettingsStore.getState().getSetting("appearance.network_access"),
+		).toBe(true);
+		expect(
+			useSettingsStore.getState().isModified("appearance.network_access"),
+		).toBe(true);
+		await useSettingsStore.getState().resetSetting("appearance.network_access");
+		expect(
+			useSettingsStore.getState().getSetting("appearance.network_access"),
+		).toBe(false);
+		expect(
+			useSettingsStore.getState().isModified("appearance.network_access"),
+		).toBe(false);
+		expect(mockedInvoke).toHaveBeenLastCalledWith("settings_write", {
+			key: "appearance.network_access",
+			value: false,
+		});
+	});
+
 	it("hasCredentialKey returns true after setCredentialKey", async () => {
 		mockedInvoke.mockResolvedValue(undefined);
 		await useSettingsStore.getState().setCredentialKey("vc", "sk-vc1");
@@ -79,9 +124,7 @@ describe("settingsStore — credential store", () => {
 
 	it("setCredentialKey returns false and does not persist has_key when the OS credential store fails", async () => {
 		mockedInvoke.mockRejectedValue(new Error("keyring unavailable"));
-		const stored = await useSettingsStore
-			.getState()
-			.setCredentialKey("llm", "sk-test");
+		const stored = await useSettingsStore.getState().setCredentialKey("llm", "sk-test");
 		expect(stored).toBe(false);
 		expect(useSettingsStore.getState().hasCredentialKey("llm")).toBe(false);
 	});
@@ -91,9 +134,7 @@ describe("settingsStore — credential store", () => {
 		await useSettingsStore.getState().setCredentialKey("tts", "sk-abc");
 		expect(useSettingsStore.getState().hasCredentialKey("tts")).toBe(true);
 		mockedInvoke.mockRejectedValue(new Error("delete failed"));
-		const deleted = await useSettingsStore
-			.getState()
-			.deleteCredentialKey("tts");
+		const deleted = await useSettingsStore.getState().deleteCredentialKey("tts");
 		expect(deleted).toBe(false);
 		expect(useSettingsStore.getState().hasCredentialKey("tts")).toBe(true);
 	});

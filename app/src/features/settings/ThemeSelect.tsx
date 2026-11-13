@@ -1,4 +1,5 @@
 import { CheckIcon } from "@heroicons/react/24/outline";
+import { ACCENT_PRESETS } from "@/lib/design-system";
 import { cn } from "@/lib/utils/cn";
 import {
 	BACKGROUND_PATTERN_META,
@@ -9,37 +10,28 @@ import {
 	type Theme,
 	useUIStore,
 } from "@/stores/uiStore";
-import { Slider } from "@/ui/slider";
 
 /** Solid thumbnail washes (pure CSS, no image assets). */
-const THUMB_WASH: Record<string, string> = {
-	"di-stefano":
-		"linear-gradient(135deg, hsl(28 6% 9%) 0%, hsl(28 5% 16%) 100%)",
-	stripe:
-		"repeating-linear-gradient(135deg, hsl(0 0% 8%) 0 8px, hsl(0 0% 14%) 8px 16px)",
-	"coastal-light":
-		"linear-gradient(135deg, hsl(35 40% 96%) 0%, hsl(25 30% 92%) 100%)",
-	"mesh-dark":
-		"radial-gradient(ellipse at 30% 20%, hsl(215 20% 18%) 0%, hsl(215 20% 4%) 70%)",
-	system: "linear-gradient(135deg, hsl(0 0% 94%) 0%, hsl(0 0% 98%) 100%)",
+const THUMB_WASH: Record<Theme, string> = {
+	// Split card: half light, half dark to read as "follow the OS"
+	system:
+		"linear-gradient(135deg, hsl(0 0% 96%) 0 50%, hsl(0 0% 10%) 50% 100%)",
 	light: "linear-gradient(135deg, hsl(0 0% 96%) 0%, hsl(0 0% 100%) 100%)",
 	dark: "linear-gradient(135deg, hsl(0 0% 6%) 0%, hsl(0 0% 14%) 100%)",
+	stripe:
+		"repeating-linear-gradient(135deg, hsl(0 0% 8%) 0 8px, hsl(0 0% 14%) 8px 16px)",
 };
 
 function ThemeCard({
 	theme,
 	active,
 	onSelect,
-	customHue,
 }: {
 	theme: Theme;
 	active: boolean;
 	onSelect: () => void;
-	customHue: number | null;
 }) {
 	const meta = THEME_META[theme];
-	const accentColor =
-		customHue != null ? `hsl(${customHue} 65% 55%)` : meta.accent;
 	return (
 		<button
 			type="button"
@@ -48,19 +40,17 @@ function ThemeCard({
 			className={cn(
 				"relative flex flex-col items-center gap-2 rounded-md border-2 p-2 transition-all duration-150",
 				"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-				active
-					? "border-accent shadow-[0_0_12px_hsl(348_68%_58%/0.3)]"
-					: "border-border hover:border-strong",
+				active ? "border-accent" : "border-border hover:border-strong",
 			)}
 		>
 			<span
 				aria-hidden="true"
 				className="grid h-14 w-full place-items-center overflow-hidden rounded-sm border border-border"
-				style={{ background: THUMB_WASH[theme] ?? THUMB_WASH.dark }}
+				style={{ background: THUMB_WASH[theme] }}
 			>
 				<span
 					className="grid size-6 place-items-center rounded-full"
-					style={{ background: accentColor }}
+					style={{ background: meta.accent }}
 				>
 					{active ? (
 						<CheckIcon className="size-3.5 text-white" aria-hidden="true" />
@@ -80,60 +70,81 @@ function ThemeCard({
 	);
 }
 
-function AccentHueSlider() {
-	const accentHue = useUIStore((s) => s.accentHue);
-	const setAccentHue = useUIStore((s) => s.setAccentHue);
-	const hue = accentHue ?? 348;
-
+/** Accent picker: presets come from ACCENT_PRESETS; rose is the default. */
+function AccentPicker() {
+	const accent = useUIStore((s) => s.accent);
+	const setAccent = useUIStore((s) => s.setAccent);
 	return (
-		<div className="space-y-1.5">
-			<div className="flex items-center justify-between">
-				<label htmlFor="accent-hue" className="text-xs text-muted-foreground">
-					Accent color
-				</label>
-				<span className="text-xs tabular-nums text-muted-foreground/60">
-					{accentHue != null ? `${hue}°` : "default"}
-				</span>
-			</div>
-			<div className="flex items-center gap-2">
-				<span
-					aria-hidden="true"
-					className="size-4 shrink-0 rounded-full border border-border"
-					style={{ background: `hsl(${hue} 65% 55%)` }}
-				/>
-				<Slider
-					min={0}
-					max={360}
-					step={1}
-					value={[hue]}
-					onValueChange={([v]) => setAccentHue(v)}
-					className="flex-1"
-					aria-label="Accent hue"
-				/>
-			</div>
-			{accentHue != null && (
-				<button
-					type="button"
-					onClick={() => setAccentHue(null)}
-					className="text-[10px] text-muted-foreground/60 hover:text-muted-foreground"
-				>
-					Reset to theme default
-				</button>
-			)}
-		</div>
+		<fieldset className="grid grid-cols-6 gap-2">
+			<legend className="sr-only">Accent colour</legend>
+			{ACCENT_PRESETS.map((preset) => {
+				const active = accent === preset.id;
+				return (
+					<button
+						key={preset.id}
+						type="button"
+						onClick={() => setAccent(preset.id)}
+						aria-pressed={active}
+						title={preset.label}
+						aria-label={`Accent: ${preset.label}`}
+						className={cn(
+							"group flex flex-col items-center gap-1.5 rounded-md border-2 p-1.5 transition-all duration-150",
+							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+							active ? "border-accent" : "border-border hover:border-strong",
+						)}
+					>
+						<span
+							aria-hidden="true"
+							className="grid size-7 place-items-center rounded-full border border-black/10"
+							style={{ background: `hsl(${preset.hsl})` }}
+						>
+							{active ? (
+								<CheckIcon className="size-3.5 text-white" aria-hidden="true" />
+							) : null}
+						</span>
+						<span className="text-[10px] font-medium leading-none text-muted-foreground">
+							{preset.label}
+						</span>
+					</button>
+				);
+			})}
+		</fieldset>
 	);
 }
 
-/** Background tile picker: Off / Line in motion / Waveform. */
+/** Background tile picker: None / Line in motion / Waveform / Mesh. */
 function BackgroundPicker() {
 	const backgroundPattern = useUIStore((s) => s.backgroundPattern);
 	const setBackgroundPattern = useUIStore((s) => s.setBackgroundPattern);
 	return (
-		<fieldset className="grid grid-cols-3 gap-2">
+		<fieldset className="grid grid-cols-4 gap-2">
 			<legend className="sr-only">Background pattern</legend>
 			{BACKGROUND_PATTERNS.map((pattern) => {
 				const active = backgroundPattern === pattern;
 				const meta = BACKGROUND_PATTERN_META[pattern];
+				const isNone = pattern === "none";
+				const isMesh = pattern === "mesh";
+				const style = isMesh
+					? undefined
+					: isNone
+						? { background: "hsl(var(--theme-surface, 30 5% 12%))" }
+						: {
+								backgroundColor: "var(--pattern-color)",
+								WebkitMaskImage:
+									pattern === "waveform"
+										? "var(--pattern-tile-waveform)"
+										: "var(--pattern-tile)",
+								maskImage:
+									pattern === "waveform"
+										? "var(--pattern-tile-waveform)"
+										: "var(--pattern-tile)",
+								WebkitMaskSize:
+									pattern === "waveform" ? "96px 96px" : "120px 120px",
+								maskSize: pattern === "waveform" ? "96px 96px" : "120px 120px",
+								WebkitMaskRepeat: "repeat",
+								maskRepeat: "repeat",
+								opacity: 0.6,
+							};
 				return (
 					<button
 						key={pattern}
@@ -144,37 +155,18 @@ function BackgroundPicker() {
 						className={cn(
 							"relative flex flex-col items-center gap-2 rounded-md border-2 p-2 transition-all duration-150",
 							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-							active
-								? "border-accent shadow-[0_0_12px_hsl(348_68%_58%/0.3)]"
-								: "border-border hover:border-strong",
+							active ? "border-accent" : "border-border hover:border-strong",
 						)}
 					>
 						<span
 							aria-hidden="true"
-							className="grid h-14 w-full place-items-center overflow-hidden rounded-sm border border-border bg-card"
-							style={
-								pattern === "none"
-									? { background: "hsl(var(--theme-surface, 30 20% 96%))" }
-									: {
-											backgroundColor: "var(--pattern-color)",
-											WebkitMaskImage:
-												pattern === "waveform"
-													? "var(--pattern-tile-waveform)"
-													: "var(--pattern-tile)",
-											maskImage:
-												pattern === "waveform"
-													? "var(--pattern-tile-waveform)"
-													: "var(--pattern-tile)",
-											WebkitMaskSize:
-												pattern === "waveform" ? "96px 96px" : "120px 120px",
-											maskSize:
-												pattern === "waveform" ? "96px 96px" : "120px 120px",
-											WebkitMaskRepeat: "repeat",
-											maskRepeat: "repeat",
-											opacity: 0.6,
-										}
-							}
-						/>
+							className="relative h-14 w-full overflow-hidden rounded-sm border border-border"
+							style={style}
+						>
+							{isMesh && (
+								<span className="gs-theme-pattern--mesh absolute inset-0" />
+							)}
+						</span>
 						<span className="text-xs font-medium leading-none text-muted-foreground">
 							{meta.label}
 						</span>
@@ -191,14 +183,13 @@ function BackgroundPicker() {
 	);
 }
 
-/** Theme gallery: plain themes first, special looks below the fold line. */
+/** Theme gallery + background picker + accent picker. */
 export function ThemeSelect() {
 	const theme = useUIStore((s) => s.theme);
 	const setTheme = useUIStore((s) => s.setTheme);
-	const accentHue = useUIStore((s) => s.accentHue);
 	return (
 		<div className="flex flex-col gap-3">
-			<fieldset className="grid grid-cols-4 gap-2">
+			<fieldset className="grid grid-cols-2 gap-2 sm:grid-cols-4">
 				<legend className="sr-only">Color themes</legend>
 				{PLAIN_THEMES.map((t) => (
 					<ThemeCard
@@ -206,46 +197,28 @@ export function ThemeSelect() {
 						theme={t}
 						active={theme === t}
 						onSelect={() => setTheme(t)}
-						customHue={accentHue}
 					/>
 				))}
-				<ThemeCard
-					theme="di-stefano"
-					active={theme === "di-stefano"}
-					onSelect={() => setTheme("di-stefano")}
-					customHue={accentHue}
-				/>
-			</fieldset>
-			<div className="relative" aria-hidden="true">
-				<div className="absolute inset-0 flex items-center">
-					<div className="w-full border-t border-border" />
-				</div>
-				<div className="relative flex justify-center">
-					<span className="bg-background px-2 text-xs uppercase tracking-wider text-muted-foreground/70">
-						Special
-					</span>
-				</div>
-			</div>
-			<fieldset className="grid grid-cols-3 gap-2">
-				<legend className="sr-only">Special themes</legend>
-				{SPECIAL_THEMES.filter((t) => t !== "di-stefano").map((t) => (
+				{SPECIAL_THEMES.map((t) => (
 					<ThemeCard
 						key={t}
 						theme={t}
 						active={theme === t}
 						onSelect={() => setTheme(t)}
-						customHue={accentHue}
 					/>
 				))}
 			</fieldset>
 			<div className="pt-1 border-t border-border">
 				<h3 className="mb-2 px-0.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+					Accent
+				</h3>
+				<AccentPicker />
+			</div>
+			<div className="pt-1 border-t border-border">
+				<h3 className="mb-2 px-0.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
 					Background
 				</h3>
 				<BackgroundPicker />
-			</div>
-			<div className="pt-1 border-t border-border">
-				<AccentHueSlider />
 			</div>
 		</div>
 	);
