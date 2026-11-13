@@ -116,9 +116,7 @@ jobs:
           python -m pip install -r backend/requirements.txt pyinstaller
 
       - name: Build backend server (otoyin-server)
-        run: |
-          bash scripts/build-server.sh
-          ls -la tauri/src-tauri/binaries/otoyin-server/ | head -5
+        run: bash scripts/build-server.sh
         env:
           PYTHON: python
 
