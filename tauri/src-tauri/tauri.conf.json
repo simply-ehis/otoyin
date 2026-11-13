@@ -18,7 +18,8 @@
     "resources": {
       "binaries/otoyin-server/": "otoyin-server/",
       "binaries/ffmpeg/": "ffmpeg/",
-      "binaries/llama/": "llama/"
+      "binaries/llama/": "llama/",
+      "binaries/steam-audio/": "steam-audio/"
     },
     "externalBin": [
       "binaries/otoyin-mcp"

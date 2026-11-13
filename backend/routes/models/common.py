@@ -25,13 +25,13 @@ router = APIRouter()
 _download_executor = ThreadPoolExecutor(max_workers=2)
 _cpu_executor = ThreadPoolExecutor(max_workers=1)
 
-# Steam Audio SDK version and GitHub release URL
+# Steam Audio SDK release asset (v4.8.1, Apache-2.0) and its layout.
 STEAMAUDIO_VERSION = "4.8.1"
 STEAMAUDIO_URL = f"https://github.com/ValveSoftware/steam-audio/releases/download/v{STEAMAUDIO_VERSION}/steamaudio_{STEAMAUDIO_VERSION}.zip"
 STEAMAUDIO_PLATFORMS = {
-    "Windows": ("bin/Windows64/phonon.dll", "phonon.dll"),
-    "Linux": ("bin/linux64/libphonon.so", "libphonon.so"),
-    "Darwin": ("bin/macos/libphonon.dylib", "libphonon.dylib"),
+    "Windows": ("windows-x64/phonon.dll", "phonon.dll"),
+    "Linux": ("linux-x64/libphonon.so", "libphonon.so"),
+    "Darwin": ("osx/libphonon.dylib", "libphonon.dylib"),
 }
 
 
@@ -129,7 +129,9 @@ def _download_steam_audio_sdk(progress_manager, model_name: str) -> None:
 
     with zipfile.ZipFile(zip_path) as zf:
         for name in zf.namelist():
-            if name.endswith(src_path.split("/")[-1]):
+            # Match the platform library exactly (or under its platform dir) —
+            # a bare filename match would grab x86/x64 arbitrarily.
+            if name == f"steamaudio/lib/{src_path}" or name.endswith(f"/{src_path}"):
                 # Zip-slip guard: only write into the intended destination.
                 target = (dest_dir / dst_name).resolve()
                 if not target.is_relative_to(dest_dir.resolve()):

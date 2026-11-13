@@ -621,7 +621,7 @@ PRODUCTS: list[dict[str, Any]] = [
         "category": "spatial",
         "price_usd": 0,
         "paid": False,
-        "note": "10MB. Binaural rendering, HRTF, occlusion. Free download — requires phonon.dll on disk.",
+        "note": "Bundled with Otoyin 0.1.0 (Apache-2.0 phonon.dll, ~50 MB). Binaural HRTF + occlusion out of the box; re-download restores it if deleted.",
     },
     {
         "id": "steer-tts",

@@ -14,7 +14,7 @@ def _get_steam_audio_configs() -> list[ModelConfig]:
             engine="steam_audio",
             hf_repo_id="ValveSoftware/steam-audio",
             model_size="v4.8.1",
-            size_mb=10,
+            size_mb=51,
             category="spatial",
         )
     ]

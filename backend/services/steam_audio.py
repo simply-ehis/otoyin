@@ -29,6 +29,7 @@ binaural path when enabled, otherwise to the NumPy path.
 
 import ctypes
 import logging
+import os
 import platform
 import threading
 from pathlib import Path
@@ -118,9 +119,14 @@ def _lib_path() -> Path | None:
     """Find phonon shared library for this platform.
 
     Searches in order:
-      1. data/steam-audio/<Platform>/phonon.{dll,so,dylib}  (platform-specific)
-      2. data/steam-audio/phonon.{dll,so,dylib}             (flat, user convenience)
+      1. OTOYIN_STEAM_AUDIO env override (explicit path to the library)
+      2. Bundled sidecar next to the install (or the repo's Tauri binaries dir in dev)
+      3. data/steam-audio/<Platform>/phonon.{dll,so,dylib}  (platform-specific)
+      4. data/steam-audio/phonon.{dll,so,dylib}             (flat, user convenience)
     """
+    import shutil
+    import sys
+
     from ..config import get_data_dir
 
     names = {"Windows": "phonon.dll", "Linux": "libphonon.so", "Darwin": "libphonon.dylib"}
@@ -128,6 +134,27 @@ def _lib_path() -> Path | None:
     system = platform.system()
     if system not in names:
         return None
+
+    env_override = os.environ.get("OTOYIN_STEAM_AUDIO")
+    if env_override:
+        p = Path(env_override)
+        if p.is_file():
+            return p
+        return None
+
+    # Bundled: frozen exe dir and its parent (bundle resources unpack next to
+    # the install), or the repo's staged binaries dir in dev.
+    if getattr(sys, "frozen", False):
+        exe_dir = Path(sys.executable).resolve().parent
+        bundle_dirs = [exe_dir, exe_dir.parent]
+    else:
+        repo_root = Path(__file__).resolve().parent.parent.parent
+        bundle_dirs = [repo_root, repo_root / "tauri" / "src-tauri" / "binaries"]
+    for base in bundle_dirs:
+        cand = base / "steam-audio" / names[system]
+        if cand.is_file():
+            return cand
+
     base = get_data_dir() / "steam-audio"
     candidates = [
         base / dirs[system] / names[system],
@@ -136,6 +163,10 @@ def _lib_path() -> Path | None:
     for p in candidates:
         if p.exists():
             return p
+
+    found = shutil.which(names[system])
+    if found:
+        return Path(found)
     return _extract_sdk_from_zip()
 
 
@@ -143,11 +174,11 @@ def _ir_length(sample_rate: int, decay_ms: float) -> int:
     return max(1, int(sample_rate * decay_ms / 1000))
 
 
-# Steam Audio SDK zip layout: bin/<platform>/phonon.{dll,so,dylib}
+# Steam Audio SDK zip layout (v4.8.1): steamaudio/lib/<platform>-x64/phonon.{dll,so,dylib}
 _STEAM_ZIP_BIN = {
-    "Windows": "bin/Windows64/phonon.dll",
-    "Linux": "bin/linux64/libphonon.so",
-    "Darwin": "bin/macos/libphonon.dylib",
+    "Windows": "steamaudio/lib/windows-x64/phonon.dll",
+    "Linux": "steamaudio/lib/linux-x64/libphonon.so",
+    "Darwin": "steamaudio/lib/osx/libphonon.dylib",
 }
 
 
@@ -172,7 +203,13 @@ def _extract_sdk_from_zip() -> Path | None:
 
         with zipfile.ZipFile(zip_path) as zf:
             target = _STEAM_ZIP_BIN[system]
-            hit = next((n for n in zf.namelist() if n.endswith(target.split("/")[-1])), None)
+            platform_dirs = {"Windows": "windows-x64", "Linux": "linux-x64", "Darwin": "osx"}
+            filename = target.rsplit("/", 1)[-1]
+            # Exact v4.8.1 path, else any entry under this platform's lib dir —
+            # never a bare filename match (that grabbed x86/x64 arbitrarily).
+            hit = next(
+                (n for n in zf.namelist() if n == target or n.endswith(f"/{platform_dirs[system]}/{filename}")), None
+            )
             if hit is None:
                 logger.warning("Steam Audio zip missing %s", target)
                 return None

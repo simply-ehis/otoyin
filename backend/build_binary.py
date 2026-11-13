@@ -19,6 +19,36 @@ import PyInstaller.__main__
 logger = logging.getLogger(__name__)
 
 
+def _remove_typing_backport():
+    """Uninstall the ``typing`` backport distribution if installed.
+
+    resemblyzer depends on ``typing``; the only publishable release is
+    3.7.4.3, which PyInstaller refuses to freeze ("obsolete backport...
+    incompatible with PyInstaller"). Python's stdlib typing covers
+    resemblyzer at runtime, so removing the backport is safe.
+    """
+    import subprocess
+
+    try:
+        probe = subprocess.run(
+            [sys.executable, "-m", "pip", "show", "typing"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except Exception:
+        logger.debug("suppressed exception in build_binary.py:typing-probe", exc_info=True)
+        return
+    if probe.returncode != 0:
+        return  # not installed - nothing to do
+    logger.info("Uninstalling obsolete 'typing' backport before PyInstaller build")
+    subprocess.run(
+        [sys.executable, "-m", "pip", "uninstall", "-y", "typing"],
+        capture_output=True,
+        check=False,
+    )
+
+
 def _filter_missing_deps(args):
     """Drop collect/hidden-import/copy-metadata entries whose target can't be imported.
 
@@ -65,6 +95,8 @@ def build_server(cuda=False):
               otoyin-server-cuda instead of otoyin-server.
     """
     backend_dir = Path(__file__).parent
+
+    _remove_typing_backport()
 
     binary_name = "otoyin-server-cuda" if cuda else "otoyin-server"
 
@@ -454,9 +486,7 @@ def build_server(cuda=False):
         if _deepfilter_src is None:
             from huggingface_hub import hf_hub_download
 
-            _deepfilter_src = Path(
-                hf_hub_download(repo_id="soniqo/DeepFilterNet3-ONNX", filename="deepfilter.onnx")
-            )
+            _deepfilter_src = Path(hf_hub_download(repo_id="soniqo/DeepFilterNet3-ONNX", filename="deepfilter.onnx"))
     except Exception as exc:
         logger.warning("DeepFilterNet fetch failed (%s) — denoise will be unavailable", exc)
     if _deepfilter_src is not None and _deepfilter_src.is_file():
@@ -633,6 +663,8 @@ def build_shim():
     torch, no ML deps, just httpx + asyncio.
     """
     backend_dir = Path(__file__).parent
+
+    _remove_typing_backport()
 
     args = [
         "mcp_shim/__main__.py",
