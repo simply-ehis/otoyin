@@ -24,10 +24,11 @@ import {
 	PlusIcon,
 	SpeakerWaveIcon,
 } from "@heroicons/react/24/outline";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "@/lib/api/client";
 import { getClip } from "@/lib/clip";
+import { loadDraft, saveDraft } from "@/lib/drafts";
 import { useHistory } from "@/lib/hooks/useHistory";
 import {
 	useAddStoryItem,
@@ -82,7 +83,7 @@ export function StoryContent() {
 	const [addOpen, setAddOpen] = useState(false);
 	const [importing, setImporting] = useState(false);
 	const [dragging, setDragging] = useState(false);
-	const [scriptText, setScriptText] = useState("");
+	const [scriptText, setScriptText] = useState(() => loadDraft("story-script"));
 	const [generatingText, setGeneratingText] = useState(false);
 	const selectedProfileId = useUIStore((s) => s.selectedProfileId);
 	const { data: historyData } = useHistory();
@@ -91,6 +92,14 @@ export function StoryContent() {
 	const currentTimeMs = useStoryStore((s) => s.currentTimeMs);
 	const playbackStoryId = useStoryStore((s) => s.playbackStoryId);
 	useStoryPlayback(story?.items);
+
+	// Persist script draft as it is typed (debounced). Cleared on successful generate.
+	useEffect(() => {
+		const handle = window.setTimeout(() => {
+			saveDraft("story-script", scriptText);
+		}, 200);
+		return () => window.clearTimeout(handle);
+	}, [scriptText]);
 
 	const sensors = useSensors(
 		useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -251,6 +260,7 @@ export function StoryContent() {
 					data: { generation_id: gen.id },
 				});
 			}
+			saveDraft("story-script", "");
 			setScriptText("");
 			setAddOpen(false);
 			toast({

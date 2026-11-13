@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import type { ActiveDownloadTask } from "@/lib/api/types";
+import { debug } from "@/lib/utils/debug";
 import { useGenerationStore } from "@/stores/generationStore";
 
 // Polling interval in milliseconds
@@ -99,5 +100,3 @@ export const MODEL_DISPLAY_NAMES: Record<string, string> = {
 	"whisper-medium": "Whisper Medium",
 	"whisper-large": "Whisper Large",
 };
-
-import { debug } from "../../lib/utils/debug";

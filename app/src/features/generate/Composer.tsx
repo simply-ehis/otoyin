@@ -13,7 +13,9 @@ import { useTranslation } from "react-i18next";
 import { apiClient } from "@/lib/api/client";
 import type { EffectPresetResponse } from "@/lib/api/types";
 import { getLanguageOptionsForEngine } from "@/lib/constants/languages";
+import { clearDraft } from "@/lib/drafts";
 import { useGenerationForm } from "@/lib/hooks/useGenerationForm";
+import { usePersistentDraft } from "@/lib/hooks/usePersistentDraft";
 import { useProfile, useProfiles } from "@/lib/hooks/useProfiles";
 import { cn } from "@/lib/utils/cn";
 import { useGenerationStore } from "@/stores/generationStore";
@@ -100,6 +102,8 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 
 	const { form, handleSubmit, isPending } = useGenerationForm({
 		onSuccess: (generationId) => {
+			// Draft served its purpose — the script is now in the DB.
+			clearDraft("composer");
 			setExpanded(false);
 			if (storyId && generationId) {
 				addPendingStoryAdd(generationId, storyId);
@@ -116,6 +120,8 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 			);
 		},
 	});
+
+	usePersistentDraft("composer", form);
 
 	// Default-select the first voice; clear stale selections.
 	useEffect(() => {
@@ -295,17 +301,14 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 					className="mt-3 flex flex-col gap-3"
 				>
 					{tags.length > 0 ? (
-						<ul
-							className="flex flex-wrap gap-1.5"
-							aria-label="Insert voice tag"
-						>
+						<ul className="flex flex-wrap gap-2" aria-label="Insert voice tag">
 							{tags.map((tag) => (
 								<li key={tag}>
 									<button
 										type="button"
 										onClick={() => insertTag(tag)}
 										title={`Insert ${tag}`}
-										className="rounded-full border border-accent/30 bg-secondary px-2.5 py-0.5 font-mono text-xs text-accent transition-colors hover:bg-secondary-hover"
+										className="rounded-full border border-accent/30 bg-secondary px-2 py-0.5 font-mono text-xs text-accent transition-colors hover:bg-secondary-hover"
 									>
 										{tag}
 									</button>
@@ -507,7 +510,7 @@ export function Composer({ storyId }: { storyId?: string | null }) {
 										</SelectTrigger>
 										<SelectContent>
 											{engineOptions.length === 0 ? (
-												<p className="px-2 py-1.5 text-xs text-muted-foreground">
+												<p className="px-2 py-2 text-xs text-muted-foreground">
 													Download a TTS model to generate
 												</p>
 											) : (

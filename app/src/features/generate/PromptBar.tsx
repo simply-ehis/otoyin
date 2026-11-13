@@ -20,7 +20,9 @@ import type {
 } from "@/lib/api/types";
 import { engineLabel } from "@/lib/constants/engines";
 import { getLanguageOptionsForEngine } from "@/lib/constants/languages";
+import { clearDraft } from "@/lib/drafts";
 import { useGenerationForm } from "@/lib/hooks/useGenerationForm";
+import { usePersistentDraft } from "@/lib/hooks/usePersistentDraft";
 import { useProfile, useProfiles } from "@/lib/hooks/useProfiles";
 import { useStreamingTtsPreview } from "@/lib/hooks/useStreamingTtsPreview";
 import { cn } from "@/lib/utils/cn";
@@ -115,6 +117,7 @@ export function PromptBar({
 
 	const { form, handleSubmit, isPending } = useGenerationForm({
 		onSuccess: (generationId) => {
+			clearDraft("composer");
 			if (storyId && generationId) {
 				addPendingStoryAdd(generationId, storyId);
 			}
@@ -314,6 +317,8 @@ export function PromptBar({
 		},
 		[engine, profiles, queryClient, setSelectedProfileId, toast],
 	);
+
+	usePersistentDraft("composer", form);
 
 	// Filter saved profiles: show all, but group by relevance to current engine
 	const filteredProfiles = profiles ?? [];

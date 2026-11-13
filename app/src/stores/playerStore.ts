@@ -43,6 +43,14 @@ interface PlayerState {
 	clearAutoPlayFlag: () => void;
 	setOnFinish: (callback: (() => void) | null) => void;
 	setMasterAnalyser: (analyser: AnalyserNode | null) => void;
+	/** Resume a track from a persisted resume point (no autoplay). */
+	resumeTrack: (
+		url: string,
+		id: string,
+		profileId: string | null,
+		title: string | null,
+		position: number,
+	) => void;
 	reset: () => void;
 }
 
@@ -107,6 +115,18 @@ export const usePlayerStore = create<PlayerState>()(
 			clearAutoPlayFlag: () => set({ shouldAutoPlay: false }),
 			setOnFinish: (callback) => set({ onFinish: callback }),
 			setMasterAnalyser: (analyser) => set({ masterAnalyser: analyser }),
+			resumeTrack: (url, id, profileId, title, position) =>
+				set({
+					audioUrl: url,
+					audioId: id,
+					profileId: profileId || null,
+					title: title || null,
+					currentTime: position,
+					duration: 0,
+					isPlaying: false,
+					shouldRestart: false,
+					shouldAutoPlay: false,
+				}),
 			reset: () =>
 				set({
 					audioUrl: null,

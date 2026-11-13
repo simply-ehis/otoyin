@@ -14,7 +14,9 @@ import { RouteErrorBoundary } from "@/layouts/ErrorBoundary/RouteErrorBoundary";
 import { Sidebar } from "@/layouts/Sidebar/Sidebar";
 import { TitleBarDragRegion } from "@/layouts/TitleBarDragRegion";
 import { TOP_SAFE_AREA_PADDING } from "@/lib/constants/ui";
-
+import { useGenerationProgress } from "@/lib/hooks/useGenerationProgress";
+import { usePlayerResume } from "@/lib/hooks/usePlayerResume";
+import { useRestoreActiveTasks } from "@/lib/hooks/useRestoreActiveTasks";
 import { useServerErrorToast } from "@/lib/hooks/useServerErrorToast";
 import { useServerLifecycle } from "@/lib/hooks/useServerLifecycle";
 import { useStory } from "@/lib/hooks/useStories";
@@ -126,6 +128,13 @@ export function AppFrame({ children }: AppFrameProps) {
 	useServerLifecycle();
 	usePostUpdateNotice();
 	useThemeSync();
+	// Resume any in-flight generation from the last session so the progress UI
+	// reappears instead of a silent detached backend task.
+	useRestoreActiveTasks();
+	// Reattach SSE subscriptions for any pending generation IDs restored above.
+	useGenerationProgress();
+	// Resume last track at its last position (no autoplay).
+	usePlayerResume();
 
 	// Tell Rust the renderer committed; the hidden-window watchdog uses this.
 	useEffect(() => {
