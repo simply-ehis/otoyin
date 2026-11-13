@@ -1148,3 +1148,10 @@ Findings handed to the concurrent session (their files, deliberately not touched
 ### v0.1.0 global-shortcut panic fix (2026-11-13/14, owner-reported)
 - Installed app exited instantly with code 101: panicked at src/lib.rs:284 - 'plugins.global-shortcut: invalid type: map, expected unit'. tauri.conf.json carried plugins.global-shortcut = {""all"": true} (slipped in via cdc47bb2); tauri-plugin-global-shortcut takes NO configuration (Builder::new().build() in lib.rs). Removed the block; without it the app panics before any window is created - every packaged install ran dead on arrival. Local exe rebuilt post-fix and launches to the main window.
 - tauri.conf.json pubkey pinned earlier to base64 of the full minisign .pub (fix(updater) commit a543339d).
+
+### v0.1.0 RELEASE BUILT - draft published, keys verified (2026-11-13/14)
+- Tag run 43527390053 GREEN (windows-latest build + frontend-build + release job). Draft release v0.1.0 created with artifacts: x86_64-pc-windows-msvc-Otoyin.Studio_0.1.0_x64-setup.exe (411 MB), .sig, latest.json. Publishing the draft is OWNER-gated.
+- Updater chain verified end-to-end by decoding latest.json with Python (not eyeballing): conf pubkey = base64 of full minisign .pub (key id 39994F5CB339E87D) and the signature in latest.json embeds key_num 7de839b35c4f9939 which matches the .pub file exactly. An earlier apparent 1-byte mismatch was a hand-copied base64 string in my own scratch decode, not a real key mismatch - Python reading the artifacts directly confirmed match.
+- Root causes fixed on the way to green: (1) tauri.conf.json pinned only the raw key line - base64 of full .pub required; (2) nested artifact upload broke the prefix-flatten step (top-level glob skipped dirs, rm -rf deleted the payload); (3) global-shortcut map config panicked every installed instance (exit 101); (4) window-build order masking: CPU-torch pwsh, typing backport, MCP shim missing, ls-la-in-pwsh.
+- Local unsigned dev smoke build works (window launches to main window) after the global-shortcut fix.
+- NOT Authenticode-signed: SmartScreen will warn on first install; a cert is a separate milestone decision.
