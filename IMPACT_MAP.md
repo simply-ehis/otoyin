@@ -1144,3 +1144,7 @@ Findings handed to the concurrent session (their files, deliberately not touched
 
 ### v0.1.0 updater pubkey format fix (2026-11-13, owner-directed)
 - The v0.1.0 tag run built the NSIS installer (411 MiB) then died at the updater-signing step: 'failed to decode pubkey ... invalid utf-8 sequence of 1 bytes from index 3'. The rotated pubkey pinned in tauri.conf.json was the raw base64 Ed25519 key line only; Tauri expects base64 of the entire .pub file (untrusted comment + key). Fixed by pinning base64 of the full .pub file (key id 39994F5CB339E87D unchanged; pair unchanged; CI secrets unchanged). DEPLOY.md records the format gotcha. The retired pair, custody rules, and this format constraint are the release signing contract.
+
+### v0.1.0 global-shortcut panic fix (2026-11-13/14, owner-reported)
+- Installed app exited instantly with code 101: panicked at src/lib.rs:284 - 'plugins.global-shortcut: invalid type: map, expected unit'. tauri.conf.json carried plugins.global-shortcut = {""all"": true} (slipped in via cdc47bb2); tauri-plugin-global-shortcut takes NO configuration (Builder::new().build() in lib.rs). Removed the block; without it the app panics before any window is created - every packaged install ran dead on arrival. Local exe rebuilt post-fix and launches to the main window.
+- tauri.conf.json pubkey pinned earlier to base64 of the full minisign .pub (fix(updater) commit a543339d).

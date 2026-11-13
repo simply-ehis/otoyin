@@ -87,9 +87,6 @@
     "shell": {
       "open": "^(https?|tauri):.*"
     },
-    "global-shortcut": {
-      "all": true
-    },
     "updater": {
       "endpoints": [
         "https://github.com/simply-ehis/otoyin/releases/latest/download/latest.json"
