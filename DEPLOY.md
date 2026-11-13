@@ -50,36 +50,48 @@ verify against it — that constraint drives everything below.
 
 **Custody rules**
 
-- Private key: `tauri/src-tauri/.tauri-updater.key` — gitignored
-  (`.gitignore:64`), **never committed** (untracked, absent from all git
-  history — verified). It exists in exactly two places: the release
-  manager's machine and the `TAURI_SIGNING_PRIVATE_KEY` GitHub secret.
-- The `.key.pub` file is also untracked. The pubkey that ships is the one
-  embedded in `tauri.conf.json` — that tracked field is the source of truth.
-- The current pair is password-encrypted (`rsign encrypted secret key`,
-  real password — generated 2026-09-22, key id `8875…`; stale predecessors
-  backed up to `~/.tauri`). CI passes `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
-  through (build.yml), and the updater e2e test reads the same variable —
-  an encrypted key without that secret hangs the signing step.
+- Private key: **outside the repository** at
+  `%LOCALAPPDATA%\otoyin-signing-current-2026-11-13\.tauri-updater.key`
+  (generated 2026-11-13, key id `39994F5CB339E87D`). The `.pub` sits next to
+  it. Two places only: the release manager's machine and the
+  `TAURI_SIGNING_PRIVATE_KEY` GitHub secret.
+- The pubkey that ships is the one embedded in `tauri.conf.json`
+  (`plugins.updater.pubkey`) — that tracked field is the source of truth.
+  It was last set 2026-11-13 during the pre-first-release rotation.
+- The current pair is password-encrypted (minisign; CI passes
+  `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` through (build.yml), and the updater
+  e2e test reads the same variable — an encrypted key without that secret
+  hangs the signing step).
 - Never pass the key on a command line in scripts or workflows; env var or
   `TAURI_SIGNING_PRIVATE_KEY_PATH` only.
+
+**History**
+
+- 2026-11-13: full rotation. The pair generated 2026-09-22
+  (pubkey prefix `RWSIdWY+`, key id `8875…`) had an unencrypted raw seed
+  (`.tauri-updater.key.legacy-raw.bak`) sitting in the working tree. Those
+  files were moved out of the repo into
+  `%LOCALAPPDATA%\otoyin-signing-retired-2026-11-13\` (nothing deleted). No
+  release was ever signed by the retired pair, so the rotation stranded
+  nothing.
 
 **Generation**
 
 ```bash
 cd tauri
-npx tauri signer generate -w src-tauri/.tauri-updater.key  # writes .key + .key.pub
-gh secret set TAURI_SIGNING_PRIVATE_KEY < src-tauri/.tauri-updater.key
-# then paste the one-line base64 from .key.pub into tauri.conf.json
-# plugins.updater.pubkey (that field takes the file's base64 box verbatim)
+npx tauri signer generate -w "%LOCALAPPDATA%\otoyin-signing-current-2026-11-13\.tauri-updater.key"  # writes .key + .key.pub
+gh secret set TAURI_SIGNING_PRIVATE_KEY < "%LOCALAPPDATA%\otoyin-signing-current-2026-11-13\.tauri-updater.key"
+gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD --body "<the password>"
+# then paste the RWS... line from .key.pub into tauri.conf.json
+# plugins.updater.pubkey
 ```
 
 Verify before tagging a release:
 
 ```bash
 # signs without prompting, using exactly the env vars CI uses:
-TAURI_SIGNING_PRIVATE_KEY_PATH=src-tauri/.tauri-updater.key \
-TAURI_SIGNING_PRIVATE_KEY_PASSWORD="" npx tauri signer sign /tmp/dummy.bin
+TAURI_SIGNING_PRIVATE_KEY_PATH="$LOCALAPPDATA/otoyin-signing-current-2026-11-13/.tauri-updater.key" \
+TAURI_SIGNING_PRIVATE_KEY_PASSWORD="<the password>" npx tauri signer sign /tmp/dummy.bin
 # manifest generator finds installer + .sig for at least one leg (rc 0):
 # (needs GITHUB_REPOSITORY / GITHUB_REF_NAME set, run from the repo root)
 python .github/scripts/build_update_manifest.py <artifact-dir>
