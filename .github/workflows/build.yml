@@ -171,17 +171,18 @@ jobs:
           path: artifacts/
 
       # Keep per-leg folders (each uploaded as tauri-<target>) and flatten them
-      # into artifacts/ with a <triple>- filename prefix. Two macOS legs both
-      # produce "<product>.app.tar.gz"; the prefix keeps release assets unique
-      # and lets build_update_manifest.py map each platform to its installer.
+      # into artifacts/ with a <triple>- filename prefix. Upload-artifact keeps
+      # the matched directory structure, so the files are nested - find -r, not
+      # a top-level glob. Two macOS legs both produce "<product>.app.tar.gz";
+      # the prefix keeps release assets unique and lets build_update_manifest.py
+      # map each platform to its installer.
       - name: Prefix artifacts with target triple
         shell: bash
         run: |
           shopt -s nullglob
           for dir in artifacts/tauri-*; do
             triple="${dir#artifacts/tauri-}"
-            for f in "$dir"/*; do
-              [ -f "$f" ] || continue
+            find "$dir" -type f | while IFS= read -r f; do
               mv "$f" "artifacts/${triple}-$(basename "$f")"
             done
             rm -rf "$dir"
