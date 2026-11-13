@@ -37,7 +37,8 @@ def test_get_cloud_provider_returns_none_without_default():
         _cleanup(db, engine, path)
 
 
-def test_get_cloud_provider_returns_decrypted_creds():
+def test_get_cloud_provider_returns_creds_when_vault_has_key(monkeypatch):
+    monkeypatch.setattr("backend.utils.device_credentials.read_byok_key", lambda domain: "sk-topsecret")
     db, engine, path = _make_db()
     try:
         svc.create_provider(
@@ -45,7 +46,6 @@ def test_get_cloud_provider_returns_decrypted_creds():
             domain="tts",
             name="CloudTTS",
             base_url="https://tts.example/v1",
-            api_key="sk-topsecret",
             model="tts-1",
             is_default=True,
         )
@@ -53,6 +53,23 @@ def test_get_cloud_provider_returns_decrypted_creds():
         assert creds["base_url"] == "https://tts.example/v1"
         assert creds["api_key"] == "sk-topsecret"
         assert creds["model"] == "tts-1"
+    finally:
+        _cleanup(db, engine, path)
+
+
+def test_get_cloud_provider_returns_none_when_vault_has_no_key(monkeypatch):
+    monkeypatch.setattr("backend.utils.device_credentials.read_byok_key", lambda domain: None)
+    db, engine, path = _make_db()
+    try:
+        svc.create_provider(
+            db,
+            domain="tts",
+            name="CloudTTS",
+            base_url="https://tts.example/v1",
+            model="tts-1",
+            is_default=True,
+        )
+        assert cloud.get_cloud_provider("tts", db=db) is None
     finally:
         _cleanup(db, engine, path)
 

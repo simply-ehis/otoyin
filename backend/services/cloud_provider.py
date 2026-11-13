@@ -55,7 +55,11 @@ def get_cloud_provider(domain: str, db=None) -> dict[str, str] | None:
         row = providers.get_default_provider(db, domain)
         if row is None:
             return None
-        return providers.provider_credentials(row)
+        creds = providers.provider_credentials(row)
+        # An empty key is not a credential — never send an empty Bearer.
+        if not creds.get("api_key"):
+            return None
+        return creds
     finally:
         if own:
             db.close()

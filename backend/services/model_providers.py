@@ -1,20 +1,27 @@
 """
 BYOK model provider storage + lookup.
 
-True BYOK: users supply an arbitrary base URL + API key for any domain
-(tts, music, sfx, vc, llm). No curated provider list. The key is encrypted
-at rest (see ``utils.secret_store``); callers that need to actually call the
-cloud endpoint use ``get_provider`` to fetch the decrypted credentials.
+True BYOK: users register an arbitrary base URL + API key for any domain
+(tts, music, sfx, vc, llm). No curated provider list. Keys are NEVER stored
+here — they live in the OS credential store (Windows Credential Manager,
+macOS Keychain, Linux Secret Service), written by the frontend through the
+Rust keyring commands. This module holds the provider config (name, base
+URL, model, default) and reads the key from the vault at call time; callers
+that need to actually call the cloud endpoint use ``get_provider`` plus
+``provider_credentials``.
 """
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from sqlalchemy.orm import Session
 
 from ..database.models import ModelProvider as DBModelProvider
-from ..utils.secret_store import decrypt_secret, encrypt_secret
+from ..utils import device_credentials
+
+logger = logging.getLogger(__name__)
 
 
 def _to_dict(row: DBModelProvider) -> dict[str, Any]:
@@ -28,8 +35,8 @@ def _to_dict(row: DBModelProvider) -> dict[str, Any]:
         "created_at": row.created_at.isoformat() if row.created_at else None,
         "updated_at": row.updated_at.isoformat() if row.updated_at else None,
         # API key is intentionally NOT returned in plaintext; the client only
-        # needs to know it is set.
-        "has_api_key": bool(row.encrypted_api_key),
+        # needs to know whether one is stored in the OS credential store.
+        "has_api_key": device_credentials.read_byok_key(row.domain) is not None,
     }
 
 
@@ -61,6 +68,13 @@ def create_provider(
     model: str | None = None,
     is_default: bool = False,
 ) -> dict[str, Any]:
+    if api_key:
+        # Keys never land here. The frontend stores them in the OS credential
+        # store via its Rust keyring commands. The parameter stays for API
+        # compatibility and is deliberately ignored.
+        logger.warning(
+            "api_key in create_provider is ignored — keys are stored only in the OS credential store via the frontend"
+        )
     if is_default:
         _clear_defaults(db, domain)
     row = DBModelProvider(
@@ -68,7 +82,7 @@ def create_provider(
         name=name,
         base_url=base_url,
         model=model,
-        encrypted_api_key=encrypt_secret(api_key or ""),
+        encrypted_api_key="",
         is_default=is_default,
     )
     db.add(row)
@@ -91,7 +105,11 @@ def update_provider(
         if key in patch:
             setattr(row, key, patch[key])
     if "api_key" in patch:
-        row.encrypted_api_key = encrypt_secret(patch["api_key"] or "")
+        # Same deal: keys live only in the OS credential store. Ignored on
+        # purpose so a stray caller cannot re-create the at-rest secret.
+        logger.warning(
+            "api_key in update_provider is ignored — keys are stored only in the OS credential store via the frontend"
+        )
     db.commit()
     db.refresh(row)
     return _to_dict(row)
@@ -112,9 +130,14 @@ def _clear_defaults(db: Session, domain: str) -> None:
 
 
 def provider_credentials(row: DBModelProvider) -> dict[str, str]:
-    """Return decrypted ``{base_url, api_key, model}`` for actually calling the cloud."""
+    """Return ``{base_url, api_key, model}`` for actually calling the cloud.
+
+    The key is read from the OS credential store at call time; ``api_key`` is
+    ``""`` when no key is stored. Callers that talk to a provider must
+    treat an empty key as "not configured" (see cloud_provider).
+    """
     return {
         "base_url": row.base_url,
-        "api_key": decrypt_secret(row.encrypted_api_key),
+        "api_key": device_credentials.read_byok_key(row.domain) or "",
         "model": row.model or "",
     }

@@ -2,8 +2,10 @@
 BYOK model-provider API endpoints.
 
 True BYOK: users register an arbitrary cloud endpoint (base URL + API key)
-for any domain (tts, music, sfx, vc, llm, stt). No curated provider list. The
-API key is encrypted at rest; responses never echo it back in plaintext.
+for any domain (tts, music, sfx, vc, llm, stt). No curated provider list. Keys
+are never stored here — they live in the OS credential store (written by the
+frontend via the Rust keyring commands); this service holds only config.
+Responses never echo a key back in plaintext.
 """
 
 from enum import StrEnum
