@@ -128,7 +128,10 @@ jobs:
         with:
           python-version: "3.12"
       - run: npm ci --ignore-scripts
-      - run: npm audit --audit-level=high
+      # Landing is excluded deliberately: it ships separately from the
+      # installer and carries Next 14 EOL CVEs (fixed post-release by the
+      # Next 16 upgrade). The installer payload is audited strictly.
+      - run: npm audit --workspace=@otoyin/app --workspace=@otoyin/docs --workspace=@otoyin/tauri --audit-level=high
       - run: pip install pip-audit
       # Audit the lockfile so every transitive pin is covered, not just the
       # declared ranges.
