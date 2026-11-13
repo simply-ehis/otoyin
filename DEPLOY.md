@@ -56,8 +56,14 @@ verify against it — that constraint drives everything below.
   it. Two places only: the release manager's machine and the
   `TAURI_SIGNING_PRIVATE_KEY` GitHub secret.
 - The pubkey that ships is the one embedded in `tauri.conf.json`
-  (`plugins.updater.pubkey`) — that tracked field is the source of truth.
+  (`plugins.updater.pubkey`) - that tracked field is the source of truth.
   It was last set 2026-11-13 during the pre-first-release rotation.
+  **Format gotcha (bit us in the first v0.1.0 tag run):** the field must
+  hold base64 of the *entire `.pub` file* (`untrusted comment:...\n<key>\n`),
+  not the raw key line alone - the bundler base64-decodes it to UTF-8 text and
+  parses the minisign format. Pinning only the key line fails at
+  `failed to decode pubkey ... invalid utf-8 sequence` *after* the installer
+  has already been produced.
 - The current pair is password-encrypted (minisign; CI passes
   `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` through (build.yml), and the updater
   e2e test reads the same variable — an encrypted key without that secret
