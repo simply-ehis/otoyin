@@ -1,6 +1,6 @@
 {
   "identifier": "default",
-  "description": "Default capability for the main window — core + dialog/fs/shell/process/updater plugin access",
+  "description": "Default capability for the main window - core + dialog/fs/shell/process/updater plugin access. Write scope deliberately excludes $HOME/** (export targets live in user content folders).",
   "windows": ["main"],
   "permissions": [
     "core:default",
@@ -14,7 +14,6 @@
     {
       "identifier": "fs:scope",
       "allow": [
-        { "path": "$HOME/**" },
         { "path": "$DESKTOP/**" },
         { "path": "$DOWNLOAD/**" },
         { "path": "$DOCUMENT/**" },
