@@ -1155,3 +1155,8 @@ Findings handed to the concurrent session (their files, deliberately not touched
 - Root causes fixed on the way to green: (1) tauri.conf.json pinned only the raw key line - base64 of full .pub required; (2) nested artifact upload broke the prefix-flatten step (top-level glob skipped dirs, rm -rf deleted the payload); (3) global-shortcut map config panicked every installed instance (exit 101); (4) window-build order masking: CPU-torch pwsh, typing backport, MCP shim missing, ls-la-in-pwsh.
 - Local unsigned dev smoke build works (window launches to main window) after the global-shortcut fix.
 - NOT Authenticode-signed: SmartScreen will warn on first install; a cert is a separate milestone decision.
+
+### v0.1.0 RELEASED AND LIVE (2026-11-14)
+- Repo flipped to PUBLIC (owner decision) - anonymous downloads + the updater endpoint were dead while private.
+- Verified live: releases/latest/download/latest.json serves v0.1.0 (windows-x86_64); the installer asset URL returns HTTP 200 (411 MB). Draft release published (gh release edit --draft=false; 'gh release publish' is not a subcommand - used gh release edit).
+- The installed copy on the dev machine is the stale pre-fix build - owner must reinstall from the GitHub release page (or run the local build6 installer).
