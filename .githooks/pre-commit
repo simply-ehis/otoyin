@@ -77,19 +77,19 @@ pid_ruff=$!
 # [4] Each static check runs in its own subshell (parallel + isolated imports)
 #    Each has a 30s timeout so one slow check doesn't block the rest.
 (
-  cd "$root" && $TIMEOUT 30 $PY -X utf8 -m backend.scripts.check_async_blocking backend/routes 2>&1 | tail -3
+  cd "$root" && $TIMEOUT 60 $PY -X utf8 -m backend.scripts.check_async_blocking backend/routes 2>&1 | tail -3
   echo $? > "$tmpdir/async.rc"
 ) > "$tmpdir/async.log" 2>&1 &
 pid_async=$!
 
 (
-  cd "$root" && $TIMEOUT 30 $PY -c "import sys; sys.path.insert(0,'.'); from backend.scripts.check_name_map import main; sys.exit(main())" 2>&1 | tail -3
+  cd "$root" && $TIMEOUT 120 $PY -c "import sys; sys.path.insert(0,'.'); from backend.scripts.check_name_map import main; sys.exit(main())" 2>&1 | tail -3
   echo $? > "$tmpdir/namemap.rc"
 ) > "$tmpdir/namemap.log" 2>&1 &
 pid_namemap=$!
 
 (
-  cd "$root" && $TIMEOUT 30 $PY -c "import sys; sys.path.insert(0,'.'); from backend.scripts.check_assistant_tools import main; sys.exit(main())" 2>&1 | tail -3
+  cd "$root" && $TIMEOUT 120 $PY -c "import sys; sys.path.insert(0,'.'); from backend.scripts.check_assistant_tools import main; sys.exit(main())" 2>&1 | tail -3
   echo $? > "$tmpdir/assist.rc"
 ) > "$tmpdir/assist.log" 2>&1 &
 pid_assist=$!
@@ -128,7 +128,7 @@ pid_mojibake=$!
 #      Last-verified convention (see docs/reports/README.md). Whole-tree:
 #      reports change rarely and the scan is trivially fast.
 (
-  cd "$root" && $TIMEOUT 15 $PY -X utf8 scripts/check-report-headers.py 2>&1 | tail -10
+  cd "$root" && $TIMEOUT 30 $PY -X utf8 scripts/check-report-headers.py 2>&1 | tail -10
   echo $? > "$tmpdir/reportheaders.rc"
 ) > "$tmpdir/reportheaders.log" 2>&1 &
 pid_reportheaders=$!

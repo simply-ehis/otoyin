@@ -49,18 +49,16 @@ export function ClipboardIndicator({ compact = false }: { compact?: boolean }) {
 						className="size-3.5 shrink-0 text-muted-foreground"
 						aria-hidden="true"
 					/>
-					{compact ? null : (
-						live.isLoading ? (
-								<Spinner size="sm" className="ml-2" />
-							) : hasClip ? (
-								<span className="ml-2 truncate text-xs font-medium text-foreground">
-									{clipName}
-								</span>
-							) : (
-								<span className="ml-2 text-xs text-muted-foreground">
-									{t("clipboard.emptyTitle", { defaultValue: "No clips yet" })}
-								</span>
-							)
+					{compact ? null : live.isLoading ? (
+						<Spinner size="sm" className="ml-2" />
+					) : hasClip ? (
+						<span className="ml-2 truncate text-xs font-medium text-foreground">
+							{clipName}
+						</span>
+					) : (
+						<span className="ml-2 text-xs text-muted-foreground">
+							{t("clipboard.emptyTitle", { defaultValue: "No clips yet" })}
+						</span>
 					)}
 					{hasClip && (
 						<span

@@ -73,7 +73,9 @@ export function MusicGenView() {
 	});
 	const models = modelsQuery.data?.models ?? [];
 	const musicInstalled = (id: string) => {
-		if (id === "cloud") { return true; }
+		if (id === "cloud") {
+			return true;
+		}
 		return !!models.find((m) => m.engine === id)?.downloaded;
 	};
 	const musicDownloading = (id: string) =>
