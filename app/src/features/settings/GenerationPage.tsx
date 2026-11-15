@@ -165,6 +165,18 @@ export function GenerationPage() {
 					/>
 
 					<SettingRow
+						title={t("settings.generation.lowMemory.title")}
+						description={t("settings.generation.lowMemory.description")}
+						action={
+							<Switch
+								checked={settings?.low_memory_mode ?? false}
+								label={t("settings.generation.lowMemory.title")}
+								onCheckedChange={(v) => update({ low_memory_mode: v })}
+							/>
+						}
+					/>
+
+					<SettingRow
 						title={t("settings.generation.folder.title")}
 						description={
 							generationsPath ?? t("settings.generation.folder.description")

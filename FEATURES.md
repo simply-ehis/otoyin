@@ -11,6 +11,7 @@ Branding: 21labs. License model: free open-source app, paid premium models.
   phonon, inflect_v2, supertonic, piper_tts, chatterbox_turbo, audio8_tts,
   cosyvoice3, magpie_tts, omnivoice, yue2, zonos3, fish_drama3, sa3_music, moss_soundeffect
   (all audio.cpp-supported engines run as audio.cpp one-shots; ONNX/torch runtimes deleted 2026-11-14).
+- **Low memory mode** - `low_memory_mode` generation-settings toggle (Settings > Generation). Passes audiocpp's `.mem_saver=true` session option to the families that implement it (fish_audio, qwen3_tts, omnivoice, cosyvoice3, audio8_tts, stable_audio [sfx+music], yue2, voxcpm2) - cached AR/phase graphs are released after each phase instead of staying resident. Slower per chunk, lower peak RAM/VRAM; unsupported engines silently ignore it. Power users can also pass any audiocpp session option via `TWENTYLABS_AUDIOCPP_SESSION_OPTS` (e.g. `qwen3_tts.kv_cache_type=f16`) - no KV-cache quantization exists for TTS upstream today (qwen3_tts KV is f16 max); qwen3 F16 KV and `qwen3_tts.stitch_decode=true` are the available RAM/seam levers.
 - **Model catalog** (24 TTS entries in `backend/backends/configs/tts.py`; 7 music + 2 SFX in `configs/music.py`): Kokoro (~181MB GGUF),
   Pocket TTS (26 voices), MOSS TTS Nano, Kitten TTS, Parler-TTS Mini,
   Qwen3 TTS 1.7B (Apache-2.0, 10 langs), Fish Audio S2 Pro (non-commercial-research),

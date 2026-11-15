@@ -152,6 +152,21 @@ def test_run_one_shot_no_family_no_flag(monkeypatch, tmp_path):
     assert "--session-option" not in sent[0]
 
 
+def test_run_one_shot_env_dedupe_mem_saver(monkeypatch, tmp_path):
+    binary = tmp_path / "audiocpp_cli.exe"
+    binary.touch()
+    monkeypatch.setattr(ac, "find_audiocpp", lambda: binary)
+    monkeypatch.setattr(settings_service, "get_low_memory_mode", lambda: True)
+    monkeypatch.setenv("TWENTYLABS_AUDIOCPP_SESSION_OPTS", "fish_audio.mem_saver=true")
+    sent = _capture_run(monkeypatch)
+
+    ac.run_one_shot(["--task", "tts"], sample_rate=24000, prefix="test", mem_saver_family="fish_audio")
+
+    argv = sent[0]
+    mem_saver_flags = [argv[i + 1] for i, a in enumerate(argv) if a == "--session-option"]
+    assert mem_saver_flags == ["fish_audio.mem_saver=true"]
+
+
 def test_oneshot_specs_carry_mem_saver_only_for_supported_families():
     from backend.backends import oneshot_audiocpp as oc
 

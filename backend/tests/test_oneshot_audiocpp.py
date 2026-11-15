@@ -100,6 +100,95 @@ def test_emotion_tag_models_wired():
     assert inflect.quant == "F32"  # upstream ships no quant; orig GGUF only
 
 
+def test_generate_clones_route_to_clon_task(monkeypatch):
+    """Reference-protected generate() must use --task clon with the reference wav."""
+    import numpy as np
+    from pathlib import Path
+
+    sent = []
+
+    def _fake_run(args, **kwargs):
+        sent.append((list(args), kwargs))
+        return np.zeros(24000, dtype=np.float32), 24000
+
+    monkeypatch.setattr(oc, "find_audiocpp", lambda: Path("tmp/audiocpp_cli.exe"))
+    monkeypatch.setattr(
+        oc.OneShotAudiocpp,
+        "_is_model_cached",
+        lambda self, *a, **k: True,
+    )
+    monkeypatch.setattr(oc, "run_one_shot", _fake_run)
+
+    async def _go():
+        await oc.cosyvoice3_backend.generate("cloning check", {"audio_path": "ref.wav", "reference_text": "exact"})
+
+    asyncio.run(_go())
+    args = sent[0][0]
+    assert args[args.index("--task") + 1] == "clon"
+    assert args[args.index("--voice-ref") + 1] == "ref.wav"
+
+
+def test_generate_magpie_uses_request_option_not_voice_id(monkeypatch):
+    """MagpieTTS selects baked voices via --request-option voice_id=<name>."""
+    import numpy as np
+    from pathlib import Path
+
+    sent = []
+
+    def _fake_run(args, **kwargs):
+        sent.append((list(args), kwargs))
+        return np.zeros(24000, dtype=np.float32), 24000
+
+    monkeypatch.setattr(oc, "find_audiocpp", lambda: Path("tmp/audiocpp_cli.exe"))
+    monkeypatch.setattr(oc.OneShotAudiocpp, "_is_model_cached", lambda self, *a, **k: True)
+    monkeypatch.setattr(oc, "run_one_shot", _fake_run)
+
+    async def _go():
+        await oc.magpie_tts_backend.generate("magpie check", {"voice_id": "Sofia"})
+
+    asyncio.run(_go())
+    args = sent[0][0]
+    assert "--voice-id" not in args
+    assert args[args.index("--request-option") + 1] == "voice_id=Sofia"
+
+
+def test_generate_supertonic_uses_voice_id(monkeypatch):
+    import numpy as np
+    from pathlib import Path
+
+    sent = []
+
+    def _fake_run(args, **kwargs):
+        sent.append((list(args), kwargs))
+        return np.zeros(24000, dtype=np.float32), 24000
+
+    monkeypatch.setattr(oc, "find_audiocpp", lambda: Path("tmp/audiocpp_cli.exe"))
+    monkeypatch.setattr(oc.OneShotAudiocpp, "_is_model_cached", lambda self, *a, **k: True)
+    monkeypatch.setattr(oc, "run_one_shot", _fake_run)
+
+    async def _go():
+        await oc.supertonic_backend.generate("supertonic check", {"voice_id": "M1"})
+
+    asyncio.run(_go())
+    args = sent[0][0]
+    assert args[args.index("--voice-id") + 1] == "M1"
+
+
+def test_generate_new_engines_registered():
+    # engines exposed through the public registry resolve cleanly.
+    from backend.backends.registry import get_tts_backend_for_engine
+
+    for engine, family in (
+        ("magpie_tts", "magpie_tts"),
+        ("cosyvoice3", "cosyvoice3"),
+        ("audio8_tts", "audio8_tts"),
+        ("zonos3", "zonos3"),
+    ):
+        backend = get_tts_backend_for_engine(engine)
+        assert backend is not None
+        assert backend.spec.family == family
+
+
 def test_new_engines_registered():
     for engine in (
         "phonon",

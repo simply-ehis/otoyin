@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/api/client", () => ({
 	apiClient: {
-		listProfiles: vi.fn(() => Promise.resolve({ profiles: [] })),
+		listProfiles: vi.fn(() => Promise.resolve([])),
 		getModelStatus: vi.fn(() => Promise.resolve({ models: [] })),
 		convertVoice: vi.fn(() => Promise.resolve(new Blob(["wav"]))),
 		saveGeneratedAudio: vi.fn(() =>

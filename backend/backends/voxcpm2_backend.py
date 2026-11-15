@@ -164,6 +164,7 @@ class VoxCPM2Backend:
             sample_rate=SAMPLE_RATE,
             prefix="voxcpm2",
             timeout_s=DEFAULT_TIMEOUT_S,
+            mem_saver_family="voxcpm2",
         )
 
 

@@ -82,11 +82,15 @@ def run_one_shot(
 
     # Low memory mode: cheap session-level win for staged families - release
     # cached AR graphs / phase graphs after each request phase.
+    # Skip if TWENTYLABS_AUDIOCPP_SESSION_OPTS already carries the same key -
+    # audio.cpp rejects duplicate keys rather than last-wins.
+    env_opts = os.environ.get("TWENTYLABS_AUDIOCPP_SESSION_OPTS", "")
+    env_keys = {p.split("=", 1)[0].strip() for p in env_opts.split(",") if "=" in p}
     if mem_saver_family:
         try:
             from ..services.settings import get_low_memory_mode
 
-            if get_low_memory_mode():
+            if get_low_memory_mode() and f"{mem_saver_family}.mem_saver" not in env_keys:
                 args += ["--session-option", f"{mem_saver_family}.mem_saver=true"]
         except Exception:
             logger.debug("low_memory_mode append failed; skipping mem_saver", exc_info=True)
@@ -99,8 +103,7 @@ def run_one_shot(
     threads = os.environ.get("TWENTYLABS_AUDIOCPP_THREADS")
     if threads:
         args += ["--threads", threads]
-    extra_opts = os.environ.get("TWENTYLABS_AUDIOCPP_SESSION_OPTS", "")
-    for pair in (p.strip() for p in extra_opts.split(",") if p.strip()):
+    for pair in (p.strip() for p in env_opts.split(",") if p.strip()):
         if "=" in pair:
             args += ["--session-option", pair]
     budget = float(

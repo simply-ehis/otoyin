@@ -163,6 +163,13 @@ class SA3SfxBackend:
                 duration_seconds=duration_seconds,
                 output=out_wav,
             )
+            try:
+                from ..services.settings import get_low_memory_mode
+
+                if get_low_memory_mode():
+                    args += ["--session-option", "stable_audio.mem_saver=true"]
+            except Exception:
+                logger.debug("low_memory_mode read failed; skipping stable_audio.mem_saver", exc_info=True)
             proc = run_hidden(
                 [str(binary), *args],
                 capture_output=True,

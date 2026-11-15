@@ -375,6 +375,7 @@ export interface GenerationSettings {
 	autoplay_on_generate: boolean;
 	audio_tags_enabled: boolean;
 	preload_on_start: boolean;
+	low_memory_mode: boolean;
 }
 
 export type GenerationSettingsUpdate = Partial<GenerationSettings>;

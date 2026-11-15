@@ -28,11 +28,15 @@ class OneShotSpec:
         *,
         repo: str = "audio-cpp/audio.cpp-gguf",
         task: str = "tts",
-        voice_kind: str = "none",  # "none" | "voice_id" | "reference" | "gen"
+        voice_kind: str = "none",  # "none" | "voice_id" | "request_option_voice_id" | "reference" | "gen"
         sample_rate: int = 24000,
         language_hint: str = "en",
         supports_cloning: bool = False,
         extra_args: tuple[str, str] | None = None,
+        # When the family implements audio.cpp's `.mem_saver=true` session
+        # option, pass the family prefix (usually same as family). The global
+        # "Low memory mode" generation setting turns it on per call.
+        mem_saver_family: str | None = None,
     ):
         self.model_file = model_file
         self.family = family
@@ -43,6 +47,7 @@ class OneShotSpec:
         self.language_hint = language_hint
         self.supports_cloning = supports_cloning
         self.extra_args = extra_args or ()
+        self.mem_saver_family = mem_saver_family
 
 
 class OneShotAudiocpp:
@@ -110,16 +115,28 @@ class OneShotAudiocpp:
         ref = voice_prompt.get("audio_path") if self.spec.voice_kind == "reference" else None
         ref_text = voice_prompt.get("reference_text") if self.spec.voice_kind == "reference" else None
 
+        # Reference given -> cloning route. Every clone-capable family supports
+        # --task clon (usually an alias of the same path; for some it is the only
+        # documented route). Task cloning guard never fires for non-clones (no ref).
+        task = "clon" if (ref and self.spec.voice_kind == "reference") else self.spec.task
+
+        # MagpieTTS (and any family whose baked voices are session-level) reads
+        # voice selection from --request-option voice_id=<name>, not --voice-id.
+        voice_id = str(speaker) if (speaker and self.spec.voice_kind == "voice_id") else None
+        extra = list(self.spec.extra_args)
+        if speaker and self.spec.voice_kind == "request_option_voice_id":
+            extra += ["--request-option", f"voice_id={speaker}"]
+
         args = build_args(
             model=self._local_file(),
             text=text,
             family=self.spec.family,
-            task=self.spec.task,
-            voice_id=str(speaker) if speaker else None,
+            task=task,
+            voice_id=voice_id,
             reference_wav=ref,
             reference_text=ref_text,
             seed=seed,
-            extra=list(self.spec.extra_args),
+            extra=extra,
         )
         return await asyncio.to_thread(
             run_one_shot,
@@ -127,6 +144,7 @@ class OneShotAudiocpp:
             sample_rate=self.sample_rate,
             prefix=self.spec.family,
             timeout_s=600.0,
+            mem_saver_family=self.spec.mem_saver_family,
         )
 
     async def convert(self, source: str, reference: str, seed: int | None = None):
@@ -184,6 +202,7 @@ audio8_spec = OneShotSpec(
     language_hint="en",
     voice_kind="reference",
     supports_cloning=True,
+    mem_saver_family="audio8_tts",
 )
 cosyvoice3_spec = OneShotSpec(
     model_file="CosyVoice3-GGUF/cosyvoice3-q8_0.gguf",
@@ -192,13 +211,14 @@ cosyvoice3_spec = OneShotSpec(
     language_hint="zh",
     voice_kind="reference",
     supports_cloning=True,
+    mem_saver_family="cosyvoice3",
 )
 magpie_spec = OneShotSpec(
     model_file="MagpieTTS-Multilingual-357M-GGUF/magpie-tts-multilingual-357m-q8_0.gguf",
     family="magpie_tts",
     sample_rate=24000,
     language_hint="en",
-    voice_kind="voice_id",
+    voice_kind="request_option_voice_id",
     supports_cloning=False,
 )
 moss_soundeffect_spec = OneShotSpec(
@@ -216,6 +236,7 @@ omnivoice_spec = OneShotSpec(
     language_hint="en",
     voice_kind="reference",
     supports_cloning=True,
+    mem_saver_family="omnivoice",
 )
 yue2_spec = OneShotSpec(
     model_file="yue2-3b-q8_0.gguf",
@@ -225,6 +246,7 @@ yue2_spec = OneShotSpec(
     sample_rate=44100,
     language_hint="en",
     voice_kind="none",
+    mem_saver_family="yue2",
 )
 zonos3_spec = OneShotSpec(
     model_file="gguf/backbone-ptq.gguf",
@@ -251,6 +273,7 @@ sa3_music_spec = OneShotSpec(
     sample_rate=44100,
     language_hint="en",
     voice_kind="none",
+    mem_saver_family="stable_audio",
 )
 
 phonon_backend = OneShotAudiocpp(PHONON)

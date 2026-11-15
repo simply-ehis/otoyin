@@ -169,6 +169,7 @@ class FishSpeechS2Backend:
             sample_rate=SAMPLE_RATE,
             prefix="fish-audio",
             timeout_s=DEFAULT_TIMEOUT_S,
+            mem_saver_family="fish_audio",
         )
 
 

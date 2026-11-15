@@ -162,6 +162,7 @@ class Qwen3TTSBackend:
             sample_rate=SAMPLE_RATE,
             prefix="qwen3-tts",
             timeout_s=DEFAULT_TIMEOUT_S,
+            mem_saver_family="qwen3_tts",
         )
 
 

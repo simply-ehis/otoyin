@@ -932,12 +932,12 @@
 			"description": "長文字生成的控制項。這些設定適用於所有引擎。",
 			"chunkLimit": {
 				"title": "自動分塊上限",
-				"description": "長文字會在句子邊界處分塊。較低的值可以提升長輸出的品質。",
+				"description": "長文本在句子邊界（考慮縮寫與標籤）拆分，並用交叉淡化接合——句號或換行結束一段。數值越小，峰值記憶體越低；數值越大，接縫越少。音樂與音效引擎忽略此設定。",
 				"value": "{{chars}} 字元"
 			},
 			"crossfade": {
 				"title": "區塊間淡入淡出",
-				"description": "在區塊之間混合音訊以平滑過渡。設為 0 表示硬切換。",
+				"description": "在分段之間做淡入淡出，讓接合後的語音更連貫。0 ms 為硬切割。",
 				"cut": "切換",
 				"ms": "{{ms}} 毫秒"
 			},
@@ -948,6 +948,10 @@
 			"autoplay": {
 				"title": "生成後自動播放",
 				"description": "生成完成後自動播放音訊。"
+			},
+			"lowMemory": {
+				"title": "Low memory mode",
+				"description": "Passes audio.cpp's mem_saver flag to engines that support it - cached runtime graphs are released after each phase instead of staying resident. Slower per chunk, lower peak RAM/VRAM. Engines without the flag ignore it."
 			},
 			"folder": {
 				"title": "生成資料夾",
