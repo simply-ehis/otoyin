@@ -154,7 +154,7 @@ class OneShotAudiocpp:
 # ── Specs for the 13 new 2026-11 additions ─────────────────────────────
 
 PHONON = OneShotSpec(
-    model_file="Phonon-31m-en/phonon-31m-en-q8_0.gguf",
+    model_file="phonon-31m-en-q8_0.gguf",
     family="gradium_phonon",
     repo="gradium/phonon-31m-en-audiocpp",
     sample_rate=24000,
