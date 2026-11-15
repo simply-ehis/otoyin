@@ -78,6 +78,12 @@ class GenerationSettings(Base):
     # fresh install never assumes a default engine; only a cached model is
     # preloaded and only when the user leaves this enabled.
     preload_on_start = Column(Boolean, nullable=False, default=True)
+    # Low memory mode: passes audiocpp's `.mem_saver=true` session option to
+    # families that support it (fish_audio, qwen3_tts, omnivoice, cosyvoice3,
+    # audio8_tts, stable_audio, yue2, voxcpm2) - graphs are released between
+    # phases instead of staying resident. Slightly slower per request, lower
+    # peak RAM/VRAM. Families without the option silently ignore this flag.
+    low_memory_mode = Column(Boolean, nullable=False, default=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
 

@@ -53,9 +53,9 @@ class PresetVoiceConfig:
 class ModelConfig:
     """Declarative config for a downloadable model variant."""
 
-    model_name: str  # e.g. "zonos-v0.1", "kokoro"
-    display_name: str  # e.g. "Zyphra Zonos v0.1"
-    engine: str  # e.g. "zonos", "kokoro"
+    model_name: str  # e.g. "kokoro-82m", "qwen3-tts-1.7b"
+    display_name: str  # e.g. "Kokoro", "Qwen3 TTS"
+    engine: str  # e.g. "kokoro", "qwen3_tts"
     hf_repo_id: str  # e.g. "YatharthS/LuxTTS"
     model_size: str = "default"
     size_mb: int = 0
@@ -88,10 +88,23 @@ class ModelConfig:
     # pins numpy<=1.23.5). If set, pip installs into data/venvs/{venv_name}/
     # instead of the main environment. None = install into main env.
     venv_name: str | None = None
-    # MoE (Mixture of Experts) flag — when True, the GGUF server backend
+    # MoE (Mixture of Experts) flag - when True, the GGUF server backend
     # passes --moe-stream-cache / --moe-stream-direct to llama-server to
     # enable SSD-based expert weight streaming (see PR #25294).
     is_moe: bool = False
+    # Repo-relative filename for single-file HF installs (e.g.
+    # "Fish-Audio-S2-Pro-GGUF/fish-audio-s2-pro-q8_0.gguf"). When set, the
+    # download worker installs exactly this file instead of snapshotting the
+    # whole repo (the audio.cpp-gguf umbrella contains dozens of models).
+    download_file: str | None = None
+    # Repo-relative directory for subtree installs (e.g.
+    # "PocketTTS-GGUF/english" — the GGUF plus packaged voice-state
+    # embeddings/). When set, the worker snapshot-downloads that directory.
+    download_subtree: str | None = None
+    # HuggingFace allow_patterns for surgical installs (e.g.
+    # ["gguf/backbone-ptq.gguf", "gguf/spk-encoder.gguf"]). When set,
+    # the worker runs snapshot_download(repo_id, allow_patterns=DOWNLOAD_PATTERNS).
+    download_patterns: list[str] = field(default_factory=list)
     # Whether the model requires a paid license / subscription to use.
     paid: bool = False
     license_id: str = ""
@@ -137,7 +150,7 @@ class ModelConfig:
                 # Default to Q4_K_M for GGUF LLM
                 self.quant = "Q4_K_M"
 
-        elif self.engine in {"neutts_2e", "orpheus"}:
+        elif self.engine in {"orpheus"}:
             # GGUF-based TTS - must have quant
             if not self.quant:
                 raise ValueError(f"Engine {self.engine} must have quant field")
@@ -154,7 +167,7 @@ class ModelConfig:
             if not self.quant:
                 self.quant = "int8"
 
-        elif self.engine in {"acestep_gguf", "heartmula", "sa3_sfx", "minimax_music3"}:
+        elif self.engine in {"acestep_gguf", "heartmula", "sa3_sfx"}:
             # Music generation models
             if not self.quant:
                 self.quant = "bf16" if self.engine == "acestep_gguf" else "Q8_0"
@@ -402,19 +415,32 @@ class MusicBackend(Protocol):
 # The factory function uses this for the if/elif chain; the model configs live on the backend classes.
 TTS_ENGINES = {
     "kokoro": "Kokoro 82M",
-    "fish_speech_s2": "Fish Audio S2 Pro (GGUF)",
-    "zonos_gguf": "Zyphra Zonos (GGUF)",
-    "pocket_tts": "Pocket-TTS",
-    "parler_tts_gguf": "Parler-TTS Mini (GGUF)",
-    "moss_tts_nano": "MOSS-TTS-Nano",
-    "kitten_tts": "KittenTTS (mini)",
+    "fish_speech_s2": "Fish Audio S2 Pro",
+    "pocket_tts": "Pocket TTS",
+    "parler_tts_gguf": "Parler-TTS Mini",
+    "moss_tts_nano": "MOSS TTS Nano",
+    "kitten_tts": "Kitten TTS",
     "neutts": "NeuTTS-Air",
     "neutts_2e": "NeuTTS-2E",
     "orpheus": "Orpheus TTS 3B",
-    "qwen3_tts": "Qwen3-TTS 12Hz 1.7B Base",
-    "bark_small": "Bark Small (GGUF)",
-    "voxcpm2": "VoxCPM2 (GGUF)",
+    "qwen3_tts": "Qwen3 TTS",
+    "bark_small": "Bark Small",
+    "voxcpm2": "VoxCPM2",
     "steer_tts": "SteerTTS (WhissleAI)",
+    "phonon": "Phonon-31m-en",
+    "inflect_v2": "Inflect Micro v2",
+    "supertonic": "Supertonic 3",
+    "piper_tts": "Piper",
+    "chatterbox_turbo": "Chatterbox Turbo",
+    "audio8_tts": "Audio8-TTS",
+    "cosyvoice3": "CosyVoice3",
+    "magpie_tts": "MagpieTTS",
+    "omnivoice": "OmniVoice",
+    "yue2": "Yue2-3B",
+    "zonos3": "ZONOS3-Mini",
+    "fish_drama3": "Drama-3",
+    "moss_soundeffect": "MOSS-SoundEffect v2",
+    "sa3_music": "Stable Audio 3 Small Music",
 }
 
 LLM_ENGINES = {
@@ -427,8 +453,16 @@ MUSIC_ENGINES = {
     "acestep_gguf": "ACE-Step 1.5 GGUF (music generation)",
     "heartmula": "HeartMuLa 3B (music generation)",
     "sa3_sfx": "Stable Audio 3 Small SFX (sound effects)",
-    "minimax_music3": "MiniMax Music 3 (music generation)",
+    "sa3_music": "Stable Audio 3 Small Music",
+    "moss_soundeffect": "MOSS-SoundEffect v2 (sound effects)",
+    "yue2": "Yue2-3B (music generation)",
     "cloud": "Cloud (BYOK)",
+}
+
+# SFX alias — subset of Music engine set used by Store SFX tab
+SFX_ENGINES = {
+    "sa3_sfx": "Stable Audio 3 Small SFX",
+    "moss_soundeffect": "MOSS-SoundEffect v2",
 }
 
 # Lock guarding the global backend instance registries in registry.py.

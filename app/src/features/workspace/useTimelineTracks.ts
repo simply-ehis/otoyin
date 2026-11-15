@@ -1,11 +1,11 @@
-﻿import { useCallback, useRef, useState } from "react";
-import {
+﻿import {
+	type DragEndEvent,
+	type DragStartEvent,
 	PointerSensor,
 	useSensor,
 	useSensors,
-	type DragEndEvent,
-	type DragStartEvent,
 } from "@dnd-kit/core";
+import { useCallback, useRef, useState } from "react";
 
 /** Grid snap step, in seconds. */
 export const SNAP_GRID_SECONDS = 1;

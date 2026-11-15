@@ -66,8 +66,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-SKIP_DIRS = {".git", "node_modules", "target", "venv", ".venv", "dist",
-             "build", "__pycache__", ".pytest_cache", "archive"}
+SKIP_DIRS = {
+    ".git",
+    "node_modules",
+    "target",
+    "venv",
+    ".venv",
+    "dist",
+    "build",
+    "__pycache__",
+    ".pytest_cache",
+    "archive",
+}
 
 _FFFD = "\ufffd"
 _BOM = "\ufeff"
@@ -75,13 +85,12 @@ _MAX_SPLICE = 200
 
 # All characters Windows-1252 maps 0x80-0xFF to; mojibake output can only
 # contain these. Runs of 2+ such chars are the double-encoding signature.
-_CP1252_HIGH = set(
-    bytes(range(0x80, 0x100)).decode("cp1252", errors="replace")
-) - {_FFFD}
+_CP1252_HIGH = set(bytes(range(0x80, 0x100)).decode("cp1252", errors="replace")) - {
+    _FFFD
+}
 _MOJIBAKE_RUN = re.compile("[" + re.escape("".join(sorted(_CP1252_HIGH))) + "]{2,}")
 
-_ASCII_CTRL_NAMES = {8: "backspace", 11: "vertical-tab",
-                     12: "form-feed", 127: "DEL"}
+_ASCII_CTRL_NAMES = {8: "backspace", 11: "vertical-tab", 12: "form-feed", 127: "DEL"}
 
 
 def _round_trips(run: str) -> bool:
@@ -111,7 +120,8 @@ def _read_staged(rel: str) -> bytes | None:
     try:
         out = subprocess.run(
             ["git", "show", f":{rel}"],
-            capture_output=True, check=True,
+            capture_output=True,
+            check=True,
             cwd=str(ROOT),
         ).stdout
     except (OSError, subprocess.CalledProcessError):
@@ -126,8 +136,7 @@ def _git_files(staged: bool) -> list[str] | None:
     else:
         cmd = ["git", "ls-files", "-z"]
     try:
-        out = subprocess.run(cmd, capture_output=True, check=True,
-                             cwd=str(ROOT)).stdout
+        out = subprocess.run(cmd, capture_output=True, check=True, cwd=str(ROOT)).stdout
     except (OSError, subprocess.CalledProcessError):
         return None
     return [p for p in out.decode("utf-8", errors="surrogateescape").split("\0") if p]
@@ -138,7 +147,8 @@ def _rev_files(rev: str) -> list[str] | None:
     try:
         out = subprocess.run(
             ["git", "ls-tree", "-r", "-z", "--name-only", rev],
-            capture_output=True, check=True,
+            capture_output=True,
+            check=True,
             cwd=str(ROOT),
         ).stdout
     except (OSError, subprocess.CalledProcessError):
@@ -151,7 +161,9 @@ def _rev_blobs(rev: str, files: list[str]) -> dict[str, bytes]:
     payload = "".join(f"{rev}:{p}\n" for p in files).encode("utf-8")
     out = subprocess.run(
         ["git", "cat-file", "--batch"],
-        input=payload, capture_output=True, check=True,
+        input=payload,
+        capture_output=True,
+        check=True,
         cwd=str(ROOT),
     ).stdout
     blobs: dict[str, bytes] = {}
@@ -164,7 +176,7 @@ def _rev_blobs(rev: str, files: list[str]) -> dict[str, bytes]:
         if len(parts) != 3:  # "<obj> missing" — path not in tree
             continue
         size = int(parts[2])
-        blobs[rel] = out[pos:pos + size]
+        blobs[rel] = out[pos : pos + size]
         pos += size + 1  # skip the trailing newline after the object
     return blobs
 
@@ -204,10 +216,14 @@ def _scan_text(rel: str, text: str, report: list[str]) -> None:
         if _FFFD in line:
             excerpt = line.strip().replace(_FFFD, "\u2400")  # visible marker
             report.append(f"  {rel}:{lineno}: {excerpt[:100]}")
-        ctrl = [c for c in line
-                if ord(c) < 0x20 and c not in "\t\r\n\f"
-                or ord(c) == 0x7F
-                or 0x80 <= ord(c) <= 0x9F]
+        ctrl = [
+            c
+            for c in line
+            if ord(c) < 0x20
+            and c not in "\t\r\n\f"
+            or ord(c) == 0x7F
+            or 0x80 <= ord(c) <= 0x9F
+        ]
         if ctrl:
             pretty: list[str] = []
             for c in dict.fromkeys(ctrl):
@@ -218,8 +234,10 @@ def _scan_text(rel: str, text: str, report: list[str]) -> None:
                 else:
                     pretty.append(f"U+{ord(c):04X}")
             excerpt = line.strip()[:80]
-            report.append(f"  {rel}:{lineno}: stray control byte(s) "
-                          f"{', '.join(pretty)} in {excerpt!r}")
+            report.append(
+                f"  {rel}:{lineno}: stray control byte(s) "
+                f"{', '.join(pretty)} in {excerpt!r}"
+            )
         if _MOJIBAKE_RUN.search(line):
             # Report only runs that round-trip (real double-encoded mojibake).
             shown = []
@@ -287,10 +305,10 @@ def _splice_cp1252_bytes(data: bytes) -> tuple[bytes, int]:
             if i >= len(data):
                 return data, spliced
             try:
-                ch = data[i:i + 1].decode("cp1252")
+                ch = data[i : i + 1].decode("cp1252")
             except UnicodeDecodeError:
                 return data, spliced  # undefined cp1252 byte: cannot map
-            data = data[:i] + ch.encode("utf-8") + data[i + 1:]
+            data = data[:i] + ch.encode("utf-8") + data[i + 1 :]
             spliced += 1
     return data, spliced
 
@@ -300,7 +318,7 @@ def _fix_text(text: str) -> str:
     # Mid-file BOMs: drop every U+FEFF except a leading one at position 0.
     if _BOM in text:
         head = _BOM if text.startswith(_BOM) else ""
-        body = text[len(head):] if head else text
+        body = text[len(head) :] if head else text
         text = head + body.replace(_BOM, "")
     out_lines = []
     for line in text.splitlines(keepends=True):
@@ -356,7 +374,11 @@ def main() -> int:
     commit_rev: str | None = None
     if "--commit" in argv:
         i = argv.index("--commit")
-        commit_rev = argv[i + 1] if i + 1 < len(argv) and not argv[i + 1].startswith("-") else "HEAD"
+        commit_rev = (
+            argv[i + 1]
+            if i + 1 < len(argv) and not argv[i + 1].startswith("-")
+            else "HEAD"
+        )
     for arg in argv:
         if arg.startswith("--commit="):
             commit_rev = arg.split("=", 1)[1] or "HEAD"
@@ -364,14 +386,18 @@ def main() -> int:
         print("error: --staged and --commit are mutually exclusive")
         return 2
     if do_fix and (staged or commit_rev is not None):
-        print("error: --fix works on the working tree only "
-              "(git index/objects cannot be rewritten)")
+        print(
+            "error: --fix works on the working tree only "
+            "(git index/objects cannot be rewritten)"
+        )
         return 2
 
     if commit_rev is not None:
         files = _rev_files(commit_rev)
         if files is None:
-            print(f"error: cannot read tree at {commit_rev!r} (bad rev or git unavailable)")
+            print(
+                f"error: cannot read tree at {commit_rev!r} (bad rev or git unavailable)"
+            )
             return 2
         if not files:
             print(f"encoding check OK — no files in tree at {commit_rev}")
@@ -382,12 +408,16 @@ def main() -> int:
             if rel in blobs:
                 _scan_bytes(rel, blobs[rel], report)
         if report:
-            print(f"encoding check FAILED — {len(report)} violation(s) committed at {commit_rev}:")
+            print(
+                f"encoding check FAILED — {len(report)} violation(s) committed at {commit_rev}:"
+            )
             for line in report:
                 print(line)
             return 1
-        print(f"encoding check OK — {len(files)} files at {commit_rev} clean "
-              f"(no invalid UTF-8, U+FFFD, C1/BOM, or double-encoding)")
+        print(
+            f"encoding check OK — {len(files)} files at {commit_rev} clean "
+            f"(no invalid UTF-8, U+FFFD, C1/BOM, or double-encoding)"
+        )
         return 0
 
     files = _git_files(staged)
@@ -419,12 +449,16 @@ def main() -> int:
             print("then re-stage and re-run. Or run scripts/check-encoding.py --fix")
             print("to auto-apply the known corruption maps (worktree only).")
         else:
-            print(f"--fix rewrote {fixed_files} file(s); remaining violations "
-                  f"above are lossy (U+FFFD / stray controls) and need manual repair.")
+            print(
+                f"--fix rewrote {fixed_files} file(s); remaining violations "
+                f"above are lossy (U+FFFD / stray controls) and need manual repair."
+            )
         return 1
     scope = "staged files" if staged else f"{len(files)} tracked files"
-    print(f"encoding check OK — {scope} clean (no invalid UTF-8, U+FFFD, "
-          f"C1/BOM, or double-encoding)")
+    print(
+        f"encoding check OK — {scope} clean (no invalid UTF-8, U+FFFD, "
+        f"C1/BOM, or double-encoding)"
+    )
     return 0
 
 

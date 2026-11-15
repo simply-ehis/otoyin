@@ -272,7 +272,7 @@ export function DubbingTab() {
 
 	return (
 		<div className="flex h-full min-h-0 flex-col overflow-hidden">
-			<ScreenHeader title="Video dubbing" />
+			<ScreenHeader helpPath="/dubbing" title="Video dubbing" />
 			<div className="mt-4 min-h-0 flex-1 space-y-6 overflow-y-auto pb-4">
 				<p className="flex items-center gap-1.5 text-xs text-muted-foreground">
 					<span className="sr-only">

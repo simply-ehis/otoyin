@@ -399,13 +399,9 @@ class TestHealthFeatures:
             "deepfilternet",
             "faster_whisper",
             "pywhispercpp",
-            "torch",
             "onnxruntime",
             "argostranslate",
             "deep_translator",
-            "resemblyzer",
-            "silero_vad",
-            "sklearn",
             "pymupdf",
             "yt_dlp",
             "audio_dsp",
@@ -429,12 +425,14 @@ class TestHealthFeatures:
         if df["available"]:
             assert df.get("engine") == "onnx"
 
-    def test_torch_has_cuda_field(self, client):
-        """Torch entry includes cuda availability."""
+    def test_torch_absent_after_removal(self, client):
+        """Torch was removed from the app (2026-11-15); the key must not reappear."""
         resp = client.get("/health/features")
-        torch_info = resp.json()["features"]["torch"]
-        assert "cuda" in torch_info
-        assert isinstance(torch_info["cuda"], bool)
+        features = resp.json()["features"]
+        assert "torch" not in features
+        assert "resemblyzer" not in features
+        assert "silero_vad" not in features
+        assert "sklearn" not in features
 
     def test_features_caching(self, client):
         """Two consecutive calls return the same probed_at (cached)."""

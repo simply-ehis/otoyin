@@ -5,7 +5,7 @@ description: Generate full songs/music from a text prompt on-device via the ACE-
 # ACE-Step Music Generation
 
 > **RENAMED — engine key is now `acestep_gguf`.** `MUSIC_ENGINES` contains
-> `acestep_gguf`, `heartmula`, and `minimax_music3` for music, plus
+> `acestep_gguf` and `heartmula` for music, plus
 > `stable_audio` and `sa3_sfx` for SFX. `21labs.generate_music` and
 > `POST /generate/music` are live. Use this page for ACE-Step-family music; for
 > SFX use [sfx-stable-audio](../sfx-stable-audio/SKILL.md).
@@ -33,7 +33,7 @@ engines (the other is Stable Audio for SFX). Fully offline, returns `(audio, sr)
 | mood | str | "neutral" | folded into prompt |
 | tempo | int \| None | None | if set, appended as `{tempo} bpm`; may be None |
 | seed | int \| None | None | sets `torch.manual_seed` for reproducibility |
-| engine | str | "acestep_gguf" | `acestep_gguf` (default), `heartmula`, or `minimax_music3` |
+| engine | str | "acestep_gguf" | `acestep_gguf` (default), or `heartmula` |
 | mode | `generate`, `cover`, `repaint` | `generate` | cover/repaint use the same prompt/style controls |
 
 Return shape (MCP): `audio_base64` (WAV), `sample_rate` (44100), `duration`, `engine`, `prompt`.

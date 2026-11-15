@@ -113,7 +113,7 @@ export function ClonePage() {
 					selectedVoiceId={selectedVoiceId}
 				/>
 				<div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-					<ScreenHeader title="Clone Voice" />
+					<ScreenHeader helpPath="/voices" title="Clone Voice" />
 					<div className="flex shrink-0 items-center gap-1 px-5 py-4">
 						<Button
 							size="sm"

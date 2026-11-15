@@ -293,7 +293,7 @@ def test_voice_convert_requires_consent():
         "/voice-convert",
         json={
             "audio_path": "test.wav",
-            "engine": "rvc_onnx",
+            "engine": "seed_vc",
         },
     )
     assert resp.status_code == 400

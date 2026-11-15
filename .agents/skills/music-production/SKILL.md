@@ -15,7 +15,7 @@ Create original music — from simple loops to full arrangements — using otoyi
 - User needs drum patterns or beats
 
 ## Prerequisites
-- At least one music engine available (`acestep_gguf`, `heartmula`, `minimax_music3`, or Stable Audio for beds)
+- At least one music engine available (`acestep_gguf`, `heartmula`, or Stable Audio for beds)
 - Optional: SoundFont for GM instruments
 
 ## Parameters / Schema

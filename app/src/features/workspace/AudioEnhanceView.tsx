@@ -187,7 +187,10 @@ export function AudioEnhanceView() {
 
 	return (
 		<div className="flex h-full max-w-xl flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader title="Audio Enhance & Noise Reduction" />
+			<ScreenHeader
+				helpPath="/audio-enhance"
+				title="Audio Enhance & Noise Reduction"
+			/>
 
 			<Separator />
 

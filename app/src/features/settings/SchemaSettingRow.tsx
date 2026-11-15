@@ -36,7 +36,7 @@ export const SchemaSettingRow = memo(function SchemaSettingRow({
 	// Subscribe to just this row's value and the actions — a write to any other
 	// setting must not re-render every row.
 	const hasOverride = useSettingsStore((s) =>
-		Object.prototype.hasOwnProperty.call(s.values, settingKey),
+		Object.hasOwn(s.values, settingKey),
 	);
 	const override = useSettingsStore((s) => s.values[settingKey]);
 	const setSetting = useSettingsStore((s) => s.setSetting);

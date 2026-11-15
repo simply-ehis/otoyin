@@ -370,7 +370,7 @@ export function VocalIsolationView() {
 			onDragOver={handleDragOver}
 			onDragLeave={handleDragLeave}
 		>
-			<ScreenHeader title="Stem Separation" />
+			<ScreenHeader helpPath="/vocal-isolation" title="Stem Separation" />
 
 			<Separator />
 

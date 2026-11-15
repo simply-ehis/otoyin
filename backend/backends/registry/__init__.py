@@ -65,18 +65,19 @@ _load_lock = threading.Lock()  # serialize concurrent model loads so two engines
 async def load_engine_model(engine: str, model_size: str = "default") -> None:
     """Load a model for the given engine, handling engines with multiple model sizes.
 
-    Enforces a single resident TTS engine: any other TTS engine currently loaded
-    is offloaded first, so switching providers frees the previous model's memory
-    immediately instead of waiting for the idle timeout.
+    Keeps a bounded pool of resident models (orpheus/llama-server, stable_audio,
+    faster-whisper, ACE-Step, ...) instead of forcing single-residency: up to
+    ``TWENTYLABS_WARM_POOL_MAX_ENGINES`` engines / ``TWENTYLABS_WARM_POOL_MAX_MB``
+    MB of resident models may coexist; LRU victims are evicted to make room
+    for the requester. Keep-warm engines are never evicted. See
+    ``services/warm_pool.py``.
 
     Before loading, checks GPU VRAM pressure.  If under the threshold,
     attempts to free idle models and waits up to 30s for recovery.
     Raises HTTPException (503) if VRAM is insufficient.
 
-    Concurrency: concurrent calls for different engines are serialized by
-    ``_load_lock`` so the offload loop can't race — without it two threads
-    could both see the other as loaded, both offload the other, then both
-    load and briefly hold two full models in VRAM (the crash we saw).
+    Concurrency: concurrent calls are serialized by ``_load_lock`` so the pool
+    decision can't race.
     """
     # Manifest gate: TTS models may only load if entitled (downloaded via the
     # Models tab, or seeded from the bundle on first launch). This covers every
@@ -123,13 +124,31 @@ async def load_engine_model(engine: str, model_size: str = "default") -> None:
         "qwen3_tts",
         "bark_small",
         "fish_speech_s2",
-        "zonos_gguf",
         "parler_tts_gguf",
         "voxcpm2",
         "moonshine",
         "acestep_gguf",
-        "rvc_onnx",
-        "openvoice_onnx",
+        "seed_vc",
+        "meanvc2",
+        "tone_color_vc",
+        "kokoro",
+        "pocket_tts",
+        "kitten_tts",
+        "moss_tts_nano",
+        "phonon",
+        "inflect_v2",
+        "supertonic",
+        "piper_tts",
+        "chatterbox_turbo",
+        "audio8_tts",
+        "cosyvoice3",
+        "magpie_tts",
+        "omnivoice",
+        "yue2",
+        "zonos3",
+        "fish_drama3",
+        "moss_soundeffect",
+        "sa3_music",
     }
     estimated_mb = cfg.size_mb if cfg else 0
     skip_vram_check = engine in _subprocess_engines or (cfg is not None and not cfg.gpu_only and estimated_mb < 100)
@@ -147,36 +166,19 @@ async def load_engine_model(engine: str, model_size: str = "default") -> None:
                 detail=str(e),
             ) from e
 
-    # Serialize loads so two concurrent callers (e.g. planner LLM + Orpheus)
-    # don't both think the other is the extra.  The check + offload + load
-    # is atomic under the lock's critical section — only the actual heavy
-    # load is done outside via await (so we hold the lock only for the
-    # offload decision, not the minutes-long download).
-    # We use a threading.Lock with a short hold; the heavy await is outside.
-    # The lock is only for the offload decision; the backend's own load path
-    # has its own internal lock for the model attribute.
-    # Offload any other currently-loaded TTS engine before loading the new one.
-    # This must run under _load_lock to prevent concurrent load races, but the
-    # actual unload is offloaded to a thread via asyncio.to_thread so it doesn't
-    # block the event loop (unload can take 5+ seconds for subprocess backends).
+    # Serialize the residency decision (the pool needs a consistent snapshot
+    # of what is loaded). The actual unloads run in a worker thread via
+    # asyncio.to_thread so they don't block the event loop.
     async with asyncio.timeout(30):
-        # Acquire the lock in a thread to avoid blocking the event loop while
-        # waiting.  The critical section itself is fast (just the loop body)
-        # because the heavy unload work is delegated to to_thread below.
         await asyncio.to_thread(_load_lock.acquire)
         try:
-            for other_engine, other_backend in list(_tts_backends.items()):
-                if other_engine != engine and other_backend.is_loaded():
-                    try:
-                        await asyncio.to_thread(other_backend.unload_model)
-                    except (RuntimeError, OSError, AttributeError) as e:
-                        logger.error(
-                            "Failed to offload TTS engine '%s' during switch to '%s': %s",
-                            other_engine,
-                            engine,
-                            e,
-                            exc_info=True,
-                        )
+            from ...services.warm_pool import enforce_warm_pool
+
+            await asyncio.to_thread(
+                enforce_warm_pool,
+                requesting_engine=engine,
+                requesting_mb=cfg.size_mb if cfg else None,
+            )
         finally:
             _load_lock.release()
 
@@ -283,12 +285,6 @@ def get_model_load_func(config: ModelConfig):
     if config.engine == "stable_audio":
         return lambda: get_music_backend("stable_audio").load_model()
 
-    if config.engine == "rvc_onnx":
-        from ..configs import get_vc_backend
-
-        voice_name = config.model_name.removeprefix("rvc-onnx-")
-        return lambda: get_vc_backend("rvc_onnx").load_model(voice_name)
-
     return lambda: get_tts_backend_for_engine(config.engine).load_model()
 
 
@@ -333,7 +329,7 @@ def get_tts_backend_for_engine(engine: str) -> TTSBackend:
     requires only a new row in the table — no code changes to this function.
 
     Args:
-        engine: Engine name (e.g. "kokoro", "zonos", "fish_speech")
+        engine: Engine name (e.g. "kokoro", "qwen3_tts", "fish_speech_s2")
 
     Returns:
         TTS backend instance
@@ -357,7 +353,7 @@ def get_tts_backend_for_engine(engine: str) -> TTSBackend:
         backend = resolve_tts_backend(entry)
         # resolve_tts_backend() caches into its own module-level dict (tts.py).
         # Mirror the instance into THIS module's _tts_backends too — the
-        # single-resident offload loop and get_tts_backend_for_engine() both
+        # warm pool membership and get_tts_backend_for_engine() both
         # read this dict. Without the mirror, every call re-instantiated a
         # fresh unloaded backend and check_model_loaded() always returned False
         # ("backend did not report loaded after load" → 500).
@@ -506,10 +502,18 @@ def get_music_backend(engine: str = "stable_audio") -> MusicBackend:
             from ..sa3_sfx_backend import sa3_sfx_backend
 
             backend = sa3_sfx_backend
-        elif engine == "minimax_music3":
-            from ..minimax_music3_backend import minimax_music3_backend
+        elif engine == "sa3_music":
+            from ..oneshot_audiocpp import sa3_music_backend
 
-            backend = minimax_music3_backend
+            backend = sa3_music_backend
+        elif engine == "moss_soundeffect":
+            from ..oneshot_audiocpp import moss_soundeffect_backend
+
+            backend = moss_soundeffect_backend
+        elif engine == "yue2":
+            from ..oneshot_audiocpp import yue2_backend
+
+            backend = yue2_backend
         elif engine == "cloud":
             from ..cloud_music_backend import cloud_music_backend
 

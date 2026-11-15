@@ -27,7 +27,7 @@ describe("clampValue", () => {
 	});
 
 	it("falls back to the default for unknown select values", () => {
-		expect(clampValue(themeDef!, "ocean")).toBe(themeDef!.default);
+		expect(clampValue(themeDef!, "ocean")).toBe(themeDef?.default);
 		expect(clampValue(themeDef!, "light")).toBe("light");
 	});
 

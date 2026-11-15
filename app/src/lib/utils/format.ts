@@ -46,8 +46,7 @@ export function formatAbsoluteDate(date: string | Date): string {
 
 const ENGINE_DISPLAY_NAMES: Record<string, string> = {
 	kokoro: "Kokoro",
-	zonos: "Zonos",
-	zonos_gguf: "Zonos",
+	voxcpm2: "VoxCPM2",
 	qwen3_tts: "Qwen3-TTS",
 	bark_small: "Bark Small",
 	styletts2: "StyleTTS2",

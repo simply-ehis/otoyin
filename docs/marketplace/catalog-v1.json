@@ -330,22 +330,6 @@
       "description": "Open SFX generation. Requires registration."
     },
     {
-      "id": "music.minimax-music3",
-      "name": "MiniMax Music 3",
-      "category": "music",
-      "price_usd": 80.00,
-      "license": {
-        "type": "community",
-        "sellable": true,
-        "revenue_cap_usd": 20000000,
-        "attribution": "MiniMax-Music3"
-      },
-      "engine": "minimax-music3",
-      "model_size": "8B",
-      "checksum": { "sha256": "" },
-      "description": "Full 5-min songs, 32kHz stereo. Runtime: SGLang-Omni server."
-    },
-    {
       "id": "vc.rvc",
       "name": "RVC",
       "category": "vc",

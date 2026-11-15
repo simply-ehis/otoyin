@@ -1,123 +1,23 @@
 """
-Voice prompt caching utilities.
+Cache-clearing utilities for combined-voice audio and profile data.
+
+Voice-prompt caching itself was retired with the audio.cpp consolidation —
+all audiocpp engines keep no resident state to cache.
 """
 
 from __future__ import annotations
 
-import hashlib
 import logging
-import os
-from collections import OrderedDict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    import torch
 
 from .. import config
 
 logger = logging.getLogger(__name__)
 
-_MAX_MEMORY_CACHE = 128  # Maximum number of entries in memory cache
-
 
 def _get_cache_dir() -> Path:
     """Get cache directory from config."""
     return config.get_cache_dir()
-
-
-# In-memory LRU cache - can store dict (voice prompt) or tensor (legacy)
-_memory_cache: OrderedDict[str, Any] = OrderedDict()
-
-
-def get_cache_key(audio_path: str, reference_text: str) -> str:
-    """
-    Generate cache key from audio file and reference text.
-
-    Uses a streaming hash that reads only the first 64KB + file size + mtime
-    instead of loading the entire file into memory.
-    """
-    hasher = hashlib.md5()
-
-    # Hash first 64KB of audio
-    with open(audio_path, "rb") as f:
-        hasher.update(f.read(65536))
-
-    # Include file size and mtime for uniqueness
-    stat = os.stat(audio_path)
-    hasher.update(str(stat.st_size).encode())
-    hasher.update(str(int(stat.st_mtime)).encode())
-
-    # Include reference text
-    hasher.update(reference_text.encode("utf-8"))
-
-    return hasher.hexdigest()
-
-
-def get_cached_voice_prompt(
-    cache_key: str,
-) -> torch.Tensor | dict[str, Any] | None:
-    """
-    Get cached voice prompt if available.
-
-    Args:
-        cache_key: Cache key
-
-    Returns:
-        Cached voice prompt (dict or tensor) or None
-    """
-    # Check in-memory cache
-    if cache_key in _memory_cache:
-        _memory_cache.move_to_end(cache_key)
-        return _memory_cache[cache_key]
-
-    # Check disk cache
-    cache_file = _get_cache_dir() / f"{cache_key}.prompt"
-    if cache_file.exists():
-        try:
-            import torch
-
-            # weights_only=True only prevents pickle exploitation on PyTorch >= 2.4.
-            # On older versions, skip disk cache to avoid arbitrary code execution risk.
-            if torch.__version__ < "2.4":
-                logger.debug("PyTorch %s < 2.4, skipping disk voice cache (pickle risk)", torch.__version__)
-                return None
-            prompt = torch.load(cache_file, weights_only=True)
-            _memory_cache[cache_key] = prompt
-            # Evict oldest entries if cache is full
-            while len(_memory_cache) > _MAX_MEMORY_CACHE:
-                _memory_cache.popitem(last=False)
-            return prompt
-        except Exception:
-            # Cache file corrupted, delete it
-            logger.debug("Corrupted cache file %s, deleting", cache_file, exc_info=True)
-            cache_file.unlink()
-
-    return None
-
-
-def cache_voice_prompt(
-    cache_key: str,
-    voice_prompt: torch.Tensor | dict[str, Any],
-) -> None:
-    """
-    Cache voice prompt to memory and disk.
-
-    Args:
-        cache_key: Cache key
-        voice_prompt: Voice prompt (dict or tensor)
-    """
-    # Store in memory with LRU eviction
-    _memory_cache[cache_key] = voice_prompt
-    _memory_cache.move_to_end(cache_key)
-    while len(_memory_cache) > _MAX_MEMORY_CACHE:
-        _memory_cache.popitem(last=False)
-
-    # Store on disk (torch.save can handle both dicts and tensors)
-    cache_file = _get_cache_dir() / f"{cache_key}.prompt"
-    import torch
-
-    torch.save(voice_prompt, cache_file)
 
 
 def clear_voice_prompt_cache() -> int:
@@ -127,10 +27,6 @@ def clear_voice_prompt_cache() -> int:
     Returns:
         Number of cache files deleted
     """
-    # Clear memory cache
-    _memory_cache.clear()
-
-    # Clear disk cache
     cache_dir = _get_cache_dir()
     deleted_count = 0
 

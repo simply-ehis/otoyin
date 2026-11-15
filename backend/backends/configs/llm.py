@@ -8,10 +8,10 @@ from ..protocols import ModelConfig
 def _get_gguf_llm_configs() -> list[ModelConfig]:
     """Return GGUF planner LLM configs.
 
-    Lineup: Qwopus 4B (free default), Qwopus 4B v3 ($20, premium),
-    LFM2.5-2.6B (free, multilingual), Spark-X 2.5-4B ($20, agentic),
+    Lineup: LFM2.5-2.6B (free, multilingual, default),
     LFM2.5-8B-A1B ($40, MoE), Ling-3.0-tiny ($40, MoE),
-    Bonsai 2 27B ($80, ternary quantized, requires custom llama.cpp fork).
+    Bonsai 2 27B ($80, ternary quantized, requires custom llama.cpp fork),
+    LFM2.5-24B-A2B ($80, MoE).
     All run via llama.cpp server.exe (or custom fork for Bonsai).
     """
     planner_languages = [
@@ -28,44 +28,6 @@ def _get_gguf_llm_configs() -> list[ModelConfig]:
     ]
 
     return [
-        ModelConfig(
-            model_name="planner-4b",
-            display_name="Qwopus 4B (Free)",
-            engine="gguf_llm",
-            hf_repo_id="bartowski/Qwen3.5-4B-125B-16EF-GGUF",
-            model_size="Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M",
-            size_mb=2740,
-            min_ram_mb=3000,
-            quant="Q4_K_M",
-            languages=planner_languages,
-            category="llm",
-        ),
-        ModelConfig(
-            model_name="planner-4b-v3",
-            display_name="Qwopus 4B v3 ($20)",
-            engine="gguf_llm",
-            hf_repo_id="bartowski/Qwen3.5-4B-125B-40EF-GGUF",
-            model_size="Qwen_Qwen3.5-4B-125B-40EF-Q4_K_M",
-            size_mb=2800,
-            min_ram_mb=3000,
-            quant="Q4_K_M",
-            languages=planner_languages,
-            category="llm",
-            supports_instruct=True,
-            supported_tags=["thinking", "tool_call", "json_mode"],
-        ),
-        ModelConfig(
-            model_name="planner-spark-x-2.5-4b",
-            display_name="Spark-X 2.5-4B ($20)",
-            engine="gguf_llm",
-            hf_repo_id="bartowski/Spark-2.5B-A3B-GGUF",
-            model_size="Spark-2.5B-A3B-Q4_K_M",
-            size_mb=2500,
-            min_ram_mb=2800,
-            quant="Q4_K_M",
-            languages=planner_languages,
-            category="llm",
-        ),
         ModelConfig(
             model_name="planner-lfm2-2.6b",
             display_name="LFM2.5-2.6B (Free)",
@@ -286,17 +248,17 @@ def planner_config_for_size(model_size: str) -> ModelConfig | None:
     return next((c for c in _get_gguf_llm_configs() if c.model_size == model_size), None)
 
 
-# Default planner size: the free Qwopus 4B. Single source of truth — every
+# Default planner size: the free LFM2.5-2.6B. Single source of truth - every
 # route, default, and pattern below must reference this, never a literal.
-DEFAULT_PLANNER_SIZE = "Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M"
+DEFAULT_PLANNER_SIZE = "2.6B-Q4_0"
 
 # Pre-catalog size ids (DB rows, saved settings, old clients) mapped to their
 # current catalog size. Applied at every LLM entry point so renames never
-# strand stored values again.
+# strand stored values again. Qwopus/Spark ids migrate to the LFM default.
 LEGACY_PLANNER_SIZE_ALIASES: dict[str, str] = {
     "4B-Q4_K_M": DEFAULT_PLANNER_SIZE,
-    "4B-v3-Q4_K_M": "Qwen_Qwen3.5-4B-125B-40EF-Q4_K_M",
-    "spark-4B-Q4_K_M": "Spark-2.5B-A3B-Q4_K_M",
+    "4B-v3-Q4_K_M": DEFAULT_PLANNER_SIZE,
+    "spark-4B-Q4_K_M": DEFAULT_PLANNER_SIZE,
 }
 
 

@@ -7,7 +7,7 @@ must not become a second crash.
 
 What each piece catches:
 - ``faulthandler``: native segfaults / hard hangs (SIGABRT dump). Python
-  exception handlers never see these, so without this a torch/CUDA fault
+  exception handlers never see these, so without this a fatal fault
   leaves zero diagnostics.
 - ``sys.excepthook``: uncaught exceptions on the main thread (lifespan
   callbacks, uvicorn edge paths outside FastAPI's handler).

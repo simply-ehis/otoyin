@@ -328,6 +328,7 @@ export function LauncherTab() {
 	return (
 		<div className="flex h-full flex-col gap-3 overflow-y-auto p-4">
 			<ScreenHeader
+				helpPath="/launcher"
 				title={t("launcher.title", { defaultValue: "Clip Launcher" })}
 				actions={
 					<div className="flex items-center gap-2">

@@ -24,12 +24,12 @@ from .tts import (
     _get_tts_gguf_configs,
 )
 from .vc import (
+    _get_meanvc2_configs,
     _get_neutts_2e_configs,
     _get_neutts_configs,
-    _get_openvoice_onnx_configs,
     _get_orpheus_configs,
-    _get_rvc_onnx_configs,
     _get_seed_vc_configs,
+    _get_tone_color_vc_configs,
 )
 
 
@@ -38,7 +38,7 @@ def engine_needed(engine: str) -> bool:
 
     Returns True if at least one model config with the given engine
     has been downloaded/cached. Used to skip loading unused inference
-    engines (torch, onnxruntime, sherpa, etc.) at startup.
+    engines (onnxruntime, native sidecars, etc.) at startup.
     """
     try:
         from ...services.model_registry import is_downloaded
@@ -54,9 +54,10 @@ def get_vc_backend(engine: str):
     """Return the voice-conversion backend for the requested engine.
 
     Engines:
-      - ``rvc_onnx``     → RVCOnnxBackend (pre-trained voice packs, ONNX, no torch)
-      - ``seed_vc``      → SeedVCBackend (zero-shot from reference audio)
-      - ``openvoice_onnx`` → OpenVoiceOnnxBackend (tone-color conversion, ONNX, no torch)
+      - ``meanvc2``      → MeanVC2Backend (zero-shot, Apache-2.0)
+      - ``tone_color_vc`` → ToneColorVCBackend (OpenVoice V2 standalone, MIT)
+      - ``seed_vc``      → SeedVCBackend (zero-shot clone + optional SVC routes)
+      - ``cloud``        → CloudVCBackend (BYOK, no local weights)
 
     Local engines require no factory-level manifest row: backends
     self-gate on cache presence at load, and ``cloud`` (BYOK, no local
@@ -67,25 +68,23 @@ def get_vc_backend(engine: str):
 
         lifecycle_manager.register("seed_vc", seed_vc_backend.is_loaded, seed_vc_backend.unload_model)
         return seed_vc_backend
-    if engine == "openvoice_onnx":
-        from ..openvoice_onnx_backend import openvoice_onnx_backend
+    if engine == "meanvc2":
+        from ..meanvc2_backend import meanvc2_backend
 
-        lifecycle_manager.register(
-            "openvoice_onnx", openvoice_onnx_backend.is_loaded, openvoice_onnx_backend.unload_model
-        )
-        return openvoice_onnx_backend
-    if engine == "rvc_onnx":
-        from ..rvc_onnx_backend import rvc_onnx_backend
+        lifecycle_manager.register("meanvc2", meanvc2_backend.is_loaded, meanvc2_backend.unload_model)
+        return meanvc2_backend
+    if engine == "tone_color_vc":
+        from ..tone_color_vc_backend import tone_color_vc_backend
 
-        lifecycle_manager.register("rvc_onnx", rvc_onnx_backend.is_loaded, rvc_onnx_backend.unload_model)
-        return rvc_onnx_backend
+        lifecycle_manager.register("tone_color_vc", tone_color_vc_backend.is_loaded, tone_color_vc_backend.unload_model)
+        return tone_color_vc_backend
     if engine == "cloud":
         from ..cloud_vc_backend import cloud_vc_backend
 
         lifecycle_manager.register("cloud", cloud_vc_backend.is_loaded, cloud_vc_backend.unload_model)
         return cloud_vc_backend
     raise ValueError(
-        f"Unknown voice-conversion engine: {engine!r} (expected rvc_onnx, seed_vc, openvoice_onnx, or cloud)"
+        f"Unknown voice-conversion engine: {engine!r} (expected meanvc2, tone_color_vc, seed_vc, or cloud)"
     )
 
 
@@ -97,9 +96,9 @@ def get_all_model_configs() -> list[ModelConfig]:
         + get_stt_model_configs()
         + _get_gguf_llm_configs()
         + _get_cloud_llm_configs()
-        + _get_rvc_onnx_configs()
         + _get_seed_vc_configs()
-        + _get_openvoice_onnx_configs()
+        + _get_meanvc2_configs()
+        + _get_tone_color_vc_configs()
         + _get_neutts_configs()
         + _get_neutts_2e_configs()
         + _get_orpheus_configs()
@@ -142,7 +141,7 @@ def engine_has_model_sizes(engine: str) -> bool:
     """Whether this engine supports multiple user-selectable model sizes.
 
     Counts distinct non-default ``model_size`` values — format variants
-    (e.g. torch vs ONNX both with ``model_size="default"``) do not count
+    (e.g. different ONNX precision variants sharing ``model_size="default"``) do not count
     as separate sizes.
     """
     sizes = {c.model_size for c in get_tts_model_configs() if c.engine == engine and c.model_size != "default"}

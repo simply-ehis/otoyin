@@ -1,10 +1,11 @@
 /**
  * MusicGenView tests — model picker install state + engine passed to generate.
  */
-import { describe, expect, it, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const models = [
 	{
@@ -36,6 +37,8 @@ vi.mock("@tanstack/react-router", async (importOriginal) => {
 });
 vi.mock("@/ui/use-toast", () => ({
 	useToast: vi.fn(() => ({ toast: vi.fn() })),
+	toast: vi.fn(),
+	dismissToast: vi.fn(),
 }));
 
 import { apiClient } from "@/lib/api/client";
@@ -52,6 +55,9 @@ const renderView = (ui: React.ReactElement) =>
 
 beforeEach(() => {
 	vi.resetAllMocks();
+	// node Blob is not jsdom-shaped; stub the URL factories (used by the player).
+	URL.createObjectURL = vi.fn(() => "blob:music-test");
+	URL.revokeObjectURL = vi.fn();
 	mockedApi.getModelStatus.mockResolvedValue({ models });
 	mockedApi.generateMusic.mockResolvedValue(new Blob());
 });

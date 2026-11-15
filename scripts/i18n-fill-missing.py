@@ -56,7 +56,9 @@ def deep_merge(base: dict, overlay: dict) -> dict:
 
 
 def main() -> None:
-    en_data = json.loads((LOCALES_DIR / SOURCE / "translation.json").read_text(encoding="utf-8"))
+    en_data = json.loads(
+        (LOCALES_DIR / SOURCE / "translation.json").read_text(encoding="utf-8")
+    )
     en_flat = flatten(en_data)
 
     summary: dict[str, int] = {}

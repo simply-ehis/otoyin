@@ -175,28 +175,21 @@ def register_voice_changer_tools(mcp: FastMCP) -> None:
         return await _rest("GET", "/voice-changer/capabilities")
 
     @mcp.tool(
-        name="21labs.list_voice_packs",
-        description="List available RVC v2 voice packs (installed + downloadable).",
-    )
-    async def twentylabs_list_voice_packs() -> dict[str, Any]:
-        return await _rest("GET", "/voice-packs")
-
-    @mcp.tool(
         name="21labs.convert_voice",
         description=(
-            "Convert a stored audio file into a downloaded RVC v2 voice pack. "
-            "Returns base64 WAV. Requires the pack to be downloaded first. "
-            "consent_given must be true — caller attests rights to use the audio."
+            "Convert a stored audio file into the voice of a reference clip. "
+            "Engines: meanvc2 (best quality, CPU), tone_color_vc (fastest, smallest), "
+            "seed_vc (alternative, GPL-3.0-only weights). Returns base64 WAV. Zero-shot "
+            "voice conversion; consent_given must be true — caller attests rights to "
+            "use the source and reference audio."
         ),
     )
     async def twentylabs_convert_voice(
         audio_path: str,
-        engine: str = "rvc_onnx",
+        engine: str = "meanvc2",
         consent_given: bool = False,
-        voice_pack: str = "",
         reference_audio_path: str = "",
-        transpose: int = 0,
-        diffusion_steps: int = 10,
+        seed: int | None = None,
     ) -> dict[str, Any]:
         return await _rest(
             "POST",
@@ -205,10 +198,8 @@ def register_voice_changer_tools(mcp: FastMCP) -> None:
                 "audio_path": audio_path,
                 "engine": engine,
                 "consent_given": consent_given,
-                "voice_pack": voice_pack,
                 "reference_audio_path": reference_audio_path,
-                "transpose": transpose,
-                "diffusion_steps": diffusion_steps,
+                "seed": seed,
             },
         )
 

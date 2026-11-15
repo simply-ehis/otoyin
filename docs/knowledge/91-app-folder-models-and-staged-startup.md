@@ -18,7 +18,7 @@ HuggingFace" and "read a model". Nothing else in the app reads the HF cache.
 | `is_model_installed(repo, file)` | every `_is_model_cached()` | app-folder existence check |
 | `install_model_file(repo, file)` | install branches, on-demand loads | download → copy to `data/models/<slug>/` → **clear cache entry** |
 | `install_model_file_to(repo, file, dest)` | whisper / faster-whisper / moonshine | same, but to a backend-specific layout |
-| `install_snapshot(repo)` | whole-repo engines (minimax, stable-audio, generic) | snapshot copy → clear repo cache |
+| `install_snapshot(repo)` | whole-repo engines (stable-audio, generic) | snapshot copy → clear repo cache |
 | `resolve_model_file(repo, file)` | runtime loaders | app folder first, install if missing |
 | `clear_hf_repo_cache(repo)` | after an engine downloads into its own dir | wipes the repo dir incl. blobs |
 | `is_snapshot_installed(repo)` | whole-repo status checks | any weight file under the slug dir |

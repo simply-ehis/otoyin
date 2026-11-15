@@ -168,7 +168,7 @@ export function PlatformExportView() {
 
 	return (
 		<div className="flex h-full max-w-4xl flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader title="Platform Export" />
+			<ScreenHeader helpPath="/export" title="Platform Export" />
 
 			<Separator />
 

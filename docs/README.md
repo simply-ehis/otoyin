@@ -21,7 +21,7 @@ npm run typecheck    # TypeScript check
 | [MARKETPLACE_PLAN.md](MARKETPLACE_PLAN.md) | Monetization plan |
 | [AUDIO_PRODUCTION_GUIDE.md](AUDIO_PRODUCTION_GUIDE.md) | Production best practices |
 | [FEATURES.md](FEATURES.md) | User-facing feature catalog |
-| [ASSISTANT_ARCHITECTURE.md](ASSISTANT_ARCHITECTURE.md) | Planner-executor architecture, GGUF quants |
+| [knowledge/56-assistant-agent.md](knowledge/56-assistant-agent.md) | On-device assistant stack (LFM2.5 via llama.cpp sidecar) |
 | [DEPLOYMENT_TEST_PLAN.md](DEPLOYMENT_TEST_PLAN.md) | Pre-release smoke-test checklist |
 | [Knowledge Base](knowledge/00-index.md) | Feature docs, tool reference, error handling |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Contribution guidelines |

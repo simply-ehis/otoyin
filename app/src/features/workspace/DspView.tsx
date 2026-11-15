@@ -701,7 +701,7 @@ export function DspView() {
 
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader title="Synth / DSP" />
+			<ScreenHeader helpPath="/dsp" title="Synth / DSP" />
 			{capsQuery.isError ? (
 				<ErrorState
 					title="Engine list couldn't load"

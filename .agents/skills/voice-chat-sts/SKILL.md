@@ -17,7 +17,7 @@ tool calling through voice.
 
 ## Prerequisites
 - STT model downloaded for the configured voice-chat backend; the session default is `base`.
-- LLM model downloaded: `planner-4b` (free default) or `planner-lfm2-2.6b` (low-RAM fallback).
+- LLM model downloaded: `planner-lfm2-2.6b` (free default, LFM2.5-2.6B).
 - TTS engine: `kokoro` for low-latency default speech. `zonos_gguf`, `qwen3_tts`, and `fish_speech_s2` are one-shot/subprocess engines, so expect higher latency.
 - WebSocket endpoint: `ws://localhost:17493/voice-chat/ws`
 - REST status: `GET /voice-chat/status` — returns session count, active flag.

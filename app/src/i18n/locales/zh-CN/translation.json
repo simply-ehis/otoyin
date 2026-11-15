@@ -1099,10 +1099,11 @@
 				"model": {
 					"title": "精修模型",
 					"description": "更大的模型速度较慢,但能更好地处理细微的自我纠正和技术词汇。",
-					"size08": "Qwen3.5-0.8B · 700 MB · {{tail}}",
-					"size2b": "Qwen3.5-2B · 1.7 GB · {{tail}}",
-					"size4b": "Qwopus3.5-4B-v3 · 2.8 GB · {{tail}}",
-					"size3b": "Ministral-3-3B · 2 GB · {{tail}}",
+					"size26b": "LFM2.5-2.6B · 1.6 GB · {{tail}}",
+					"size8bMoE": "LFM2.5-8B-A1B · 4.5 GB · {{tail}}",
+					"sizeTiny": "Ling-3.0-tiny · 4.8 GB · {{tail}}",
+					"size27b": "Bonsai 2 27B · 6.1 GB · {{tail}}",
+					"size24bA2b": "LFM2.5-24B-A2B · 14 GB · {{tail}}",
 					"tail": {
 						"veryFast": "非常快",
 						"fast": "快速",

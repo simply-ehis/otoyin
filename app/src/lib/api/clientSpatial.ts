@@ -182,17 +182,10 @@ export class SpatialMethods extends ADRMethods {
 
 	async convertVoice(opts: {
 		audio_path: string;
-		engine?: "rvc" | "seed_vc" | "openvoice" | "cloud";
+		engine?: "meanvc2" | "tone_color_vc" | "seed_vc" | "cloud";
 		consent_given?: boolean;
-		voice_pack?: string;
-		transpose?: number;
-		index_rate?: number;
-		f0_method?: string;
 		reference_audio_path?: string;
-		diffusion_steps?: number;
-		length_adjust?: number;
-		inference_cfg_rate?: number;
-		f0_condition?: boolean;
+		seed?: number;
 	}): Promise<Blob> {
 		const resp = await this.fetchWithAuth("/voice-convert", {
 			method: "POST",
@@ -327,19 +320,7 @@ export class SpatialMethods extends ADRMethods {
 		return this.request("/stt/stream/status");
 	}
 
-	// --- RVC Voice Conversion ---
-
-	async getVoicePacks(): Promise<{
-		voice_packs: Array<{ name: string; repo: string; installed: boolean }>;
-	}> {
-		return this.request("/voice-packs");
-	}
-	async downloadVoicePack(name: string): Promise<{ status: string; pack: string }> {
-		return this.request(`/voice-pack/download?pack_name=${encodeURIComponent(name)}`, {
-			method: "POST",
-		});
-	}
-
+	// --- Voice Conversion ---
 
 	async searchFreesound(
 		query: string,

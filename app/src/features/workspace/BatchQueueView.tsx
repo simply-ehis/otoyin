@@ -156,6 +156,7 @@ export function BatchQueueView() {
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
+				helpPath="/batch"
 				title="Batch Queue"
 				actions={
 					<div className="flex items-center gap-2">

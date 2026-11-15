@@ -95,8 +95,17 @@ def test_find_crispasr_bundled(monkeypatch, tmp_path):
 
 
 def test_find_crispasr_missing(monkeypatch, tmp_path):
+    import shutil
+
+    import backend.utils.sidecar_downloader as sidecar
+
     monkeypatch.delenv("TWENTYLABS_CRISPASR", raising=False)
     monkeypatch.setattr(cfg_mod, "get_models_dir", lambda: tmp_path / "nope")
+    # get_data_dir is machine state (a downloaded data/bin/crispasr counts) —
+    # pin it so "missing" means missing everywhere, on every machine.
+    monkeypatch.setattr(cfg_mod, "get_data_dir", lambda: tmp_path / "no-data")
+    monkeypatch.setattr(shutil, "which", lambda *args, **kwargs: None)
+    monkeypatch.setattr(sidecar, "ensure_crispasr", lambda: None)
     assert bark.find_crispasr() is None
 
 

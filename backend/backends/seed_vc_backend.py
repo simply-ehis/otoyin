@@ -1,145 +1,145 @@
+"""Seed-VC backend via the audio.cpp one-shot CLI.
+
+Migrated from the PyTorch wrapper to ``audiocpp_cli --task vc --family
+seed_vc`` (2026-11-15). Zero-shot voice conversion (no training):
+
+- ``audio-cpp/audio.cpp-gguf`` →
+  ``SeedVC-MLX-GGUF/seed-vc-mlx-q8_0.gguf`` (~3.0 GB, Q8_0)
+
+Upstream (Plachtaa/seed-vc) is **GPL-3.0** — review your obligations before
+redistributing binaries or model weights; the app itself contains no GPL
+code (one-shot subprocess invocation is a compatible boundary).
+
+Also supports ``--task svc`` (singing voice conversion, `v1_svc` route),
+not wired in this path. Audio.cpp does not expose a seed here (diffusion
+RNG seed is accepted as ``--seed`` for reproducibility though with a
+``--request-option seed=...`` if ever needed.
 """
-Seed-VC voice-conversion backend.
 
-Zero-shot voice conversion: clone a target voice from a reference audio clip
-(1-30s) with NO training. Uses the official Seed-VC wrapper (Plachtaa/seed-vc).
-Heavier than RVC (DiT + Whisper + BigVGAN + CAMPPlus + RMVPE) and GPU-friendly,
-but needs no pre-trained voice pack — just a reference file.
-
-This backend is OPTIONAL: it lazy-imports ``seed_vc_wrapper`` and degrades
-gracefully if Seed-VC is not installed or if models fail to download.
-"""
-
-from __future__ import annotations
-
+import asyncio
 import logging
-import threading
-from pathlib import Path
 
 import numpy as np
 
-from .. import config
-from .base import BackendBase
+from .audio_cpp import find_audiocpp, run_one_shot
 
 logger = logging.getLogger(__name__)
 
+HF_REPO = "audio-cpp/audio.cpp-gguf"
+MODEL_FILE = "SeedVC-MLX-GGUF/seed-vc-mlx-q8_0.gguf"
+SAMPLE_RATE = 24000
 
-class SeedVCBackend(BackendBase):
-    _model_attr = "model"
-    """Zero-shot (reference-audio) voice conversion backend."""
+DEFAULT_TIMEOUT_S = 600.0
+
+
+def build_args(
+    *,
+    model: str,
+    source: str,
+    reference: str,
+    route: str = "v2_vc",
+    seed: int | None = None,
+) -> list[str]:
+    """Build the ``audiocpp_cli --task vc --family seed_vc`` argument list (pure, unit-testable)."""
+    args = [
+        "--task",
+        "vc",
+        "--family",
+        "seed_vc",
+        "--model",
+        model,
+        "--audio",
+        source,
+        "--voice-ref",
+        reference,
+        "--task-route",
+        route,
+    ]
+    allowed = {"v2_vc", "v1_whisper_bigvgan_vc", "v1_xlsr_hift_vc"}
+    if route not in allowed:
+        raise ValueError(f"Unknown Seed-VC route {route!r}; expected one of {sorted(allowed)}")
+    if seed is not None:
+        args += ["--seed", str(seed)]
+    return args
+
+
+class SeedVCBackend:
+    """Seed-VC backend driving the audio.cpp one-shot CLI (no resident model)."""
+
+    hf_repo = HF_REPO
+    sample_rate = SAMPLE_RATE
 
     def __init__(self):
-        self.model = None
-        self._lock = threading.Lock()
-        self._device = "cuda" if self._cuda_available() else "cpu"
+        self.load_error: str | None = None
 
-    def _cuda_available(self) -> bool:
-        try:
-            import torch
+    # -- cache / path resolution -------------------------------------------
 
-            return torch.cuda.is_available()
-        except Exception:
-            logger.debug("CUDA detection failed, falling back to CPU", exc_info=True)
-            return False
+    def _is_model_cached(self) -> bool:
+        from ..services.model_files import is_model_installed
+
+        return is_model_installed(HF_REPO, MODEL_FILE)
+
+    def _local_file(self, filename: str) -> str:
+        from ..services.model_files import resolve_model_file
+
+        return str(resolve_model_file(HF_REPO, filename))
+
+    def _get_model_path(self, model_size: str) -> str:
+        return self._local_file(MODEL_FILE)
+
+    # -- lifecycle ----------------------------------------------------------
+
+    async def load_model(self, model_size: str = "default") -> None:
+        binary = find_audiocpp()
+        if binary is None:
+            self.load_error = (
+                "audiocpp_cli binary not found. Bundle audiocpp_cli next to the sidecars or set TWENTYLABS_AUDIOCPP."
+            )
+            raise RuntimeError(self.load_error)
+        if not self._is_model_cached():
+            raise RuntimeError("Seed-VC is not downloaded. Use the Model Downloads page to download it first.")
+        self.load_error = None
+
+    def unload_model(self) -> None:
+        """Nothing resident to unload — subprocesses exit after each call."""
 
     def is_loaded(self) -> bool:
-        return self.model is not None
+        return False
 
-    def _venv_site_packages(self) -> Path | None:
-        """Locate the Seed-VC side-venv site-packages, if installed.
+    # -- conversion ---------------------------------------------------------
 
-        Resolved from ``SEED_VC_VENV`` env (a venv dir) or the default
-        ``data/models/seed_vc_venv`` created by ``scripts/install_seed_vc.py``.
-        Returns the site-packages path, or ``None`` if no venv exists.
-        """
-        import os
-
-        env = os.environ.get("SEED_VC_VENV")
-        candidates = []
-        if env:
-            candidates.append(Path(env))
-        candidates.append(config.get_models_dir() / "seed_vc_venv")
-        for venv in candidates:
-            if not venv.exists():
-                continue
-            for sub in ("lib/python*/site-packages", "Lib/site-packages"):
-                import glob
-
-                hits = glob.glob(str(venv / sub))
-                if hits:
-                    return Path(sorted(hits)[-1])
-        return None
-
-    def _load_model_sync(self) -> None:
-        import sys
-
-        site = self._venv_site_packages()
-        if site is not None and str(site) not in sys.path:
-            sys.path.insert(0, str(site))
-
-        try:
-            from seed_vc_wrapper import SeedVCWrapper
-        except ImportError as e:
-            raise RuntimeError(
-                "Seed-VC is not installed. Run `python scripts/install_seed_vc.py` "
-                "(creates an isolated venv) or set SEED_VC_VENV to an existing venv."
-            ) from e
-
-        with self._lock:
-            if self.model is not None:
-                return
-            self.model = SeedVCWrapper()
-            logger.info("Seed-VC wrapper loaded on %s", self._device)
-
-    # unload_model() inherited from BackendBase
-
-    def convert(
+    async def convert(
         self,
-        audio: np.ndarray,
-        sample_rate: int,
-        reference_audio_path: str,
-        diffusion_steps: int = 10,
-        length_adjust: float = 1.0,
-        inference_cfg_rate: float = 0.7,
-        f0_condition: bool = False,
-        pitch_shift: int = 0,
+        source: str,
+        reference: str,
+        route: str = "v2_vc",
+        seed: int | None = None,
     ) -> tuple[np.ndarray, int]:
-        import tempfile
+        """Convert ``source`` WAV so its timbre matches ``reference``.
 
-        import soundfile as sf
+        ``route``: ``v2_vc`` (default, V2 CFM), ``v1_whisper_bigvgan_vc`` or
+        ``v1_xlsr_hift_vc`` (V1 families with explicit F0/duration controls).
+        """
+        allowed = {"v2_vc", "v1_whisper_bigvgan_vc", "v1_xlsr_hift_vc"}
+        if route not in allowed:
+            raise ValueError(f"Unknown Seed-VC route {route!r}; expected one of {sorted(allowed)}")
 
-        with self._lock:
-            if self.model is None:
-                self._load_model_sync()
+        if find_audiocpp() is None:
+            raise RuntimeError(
+                "audiocpp_cli binary not found. Bundle audiocpp_cli next to the sidecars or set TWENTYLABS_AUDIOCPP."
+            )
+        if not self._is_model_cached():
+            raise RuntimeError("Seed-VC is not downloaded. Use the Model Downloads page to download it first.")
 
-            with tempfile.NamedTemporaryFile(suffix=".wav") as tmp_in:
-                import numpy as np
-
-                sf.write(tmp_in, np.asarray(audio, dtype=np.float32), int(sample_rate))
-                result = self.model.convert_voice(
-                    source=tmp_in.name,
-                    target=reference_audio_path,
-                    diffusion_steps=diffusion_steps,
-                    length_adjust=length_adjust,
-                    inference_cfg_rate=inference_cfg_rate,
-                    f0_condition=f0_condition,
-                    auto_f0_adjust=True,
-                    pitch_shift=pitch_shift,
-                    stream_output=False,
-                )
-                # stream_output=False returns the full audio as a numpy array.
-                if isinstance(result, tuple):
-                    sr, wav = result
-                else:
-                    wav = result
-                    sr = int(sample_rate)
-                import numpy as np
-
-                wav = np.asarray(wav, dtype=np.float32)
-                if wav.ndim > 1:
-                    wav = wav.mean(axis=1)
-                return wav, int(sr)
+        model_file = self._local_file(MODEL_FILE)
+        args = build_args(model=model_file, source=source, reference=reference, route=route, seed=seed)
+        return await asyncio.to_thread(
+            run_one_shot,
+            args,
+            sample_rate=SAMPLE_RATE,
+            prefix="seed-vc",
+            timeout_s=DEFAULT_TIMEOUT_S,
+        )
 
 
-# Singleton used by the routes/services layer.
 seed_vc_backend = SeedVCBackend()

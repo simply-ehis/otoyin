@@ -14,11 +14,17 @@ import sys
 # They can also be broken file objects in some edge cases.
 # Redirect to devnull to prevent crashes from print()/tqdm/logging.
 def _is_writable(stream):
-    """Check if a stream is usable for writing."""
+    """Check if a stream is usable for writing.
+
+    An empty-string probe can slip through: Python may short-circuit a
+    zero-byte write without ever touching the broken OS handle, while
+    tqdm's real writes fail with OSError 22. Write a newline and flush.
+    """
     if stream is None:
         return False
     try:
-        stream.write("")
+        stream.write("\n")
+        stream.flush()
         return True
     except Exception:
         logger.debug("suppressed exception in server.py:23", exc_info=True)

@@ -53,12 +53,38 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-SKIP_DIRS = {".git", "node_modules", "target", "venv", ".venv", "dist",
-             "build", "__pycache__", ".pytest_cache", "archive", "data",
-             "binaries", "coverage"}
+SKIP_DIRS = {
+    ".git",
+    "node_modules",
+    "target",
+    "venv",
+    ".venv",
+    "dist",
+    "build",
+    "__pycache__",
+    ".pytest_cache",
+    "archive",
+    "data",
+    "binaries",
+    "coverage",
+}
 
-TEXT_EXTS = {".ts", ".tsx", ".js", ".jsx", ".json", ".md", ".py", ".html",
-             ".css", ".txt", ".yml", ".yaml", ".toml", ".svg"}
+TEXT_EXTS = {
+    ".ts",
+    ".tsx",
+    ".js",
+    ".jsx",
+    ".json",
+    ".md",
+    ".py",
+    ".html",
+    ".css",
+    ".txt",
+    ".yml",
+    ".yaml",
+    ".toml",
+    ".svg",
+}
 
 CODE_FILE_EXTS = {".ts", ".tsx", ".js", ".jsx"}
 
@@ -91,11 +117,11 @@ class Candidate:
 
     @property
     def pre(self) -> str:
-        return self.raw_line[max(0, self.col - CTX):self.col]
+        return self.raw_line[max(0, self.col - CTX) : self.col]
 
     @property
     def post(self) -> str:
-        return self.raw_line[self.col + 1:self.col + 1 + CTX]
+        return self.raw_line[self.col + 1 : self.col + 1 + CTX]
 
     @property
     def replacement(self) -> str | None:
@@ -118,8 +144,12 @@ def _iter_files() -> list[Path]:
 
 def _string_spans(text: str) -> list[tuple[int, int]]:
     """Spans of string/template literals in JS/TS code."""
-    return [m.span() for m in re.finditer(
-        r"'(?:[^'\\\n]|\\.)*'|\"(?:[^\"\\\n]|\\.)*\"|`(?:[^`\\]|\\.)*`", text)]
+    return [
+        m.span()
+        for m in re.finditer(
+            r"'(?:[^'\\\n]|\\.)*'|\"(?:[^\"\\\n]|\\.)*\"|`(?:[^`\\]|\\.)*`", text
+        )
+    ]
 
 
 def _looks_like_comment(line: str, at: int) -> bool:
@@ -128,10 +158,10 @@ def _looks_like_comment(line: str, at: int) -> bool:
 
 def _looks_like_url(line: str, q: int) -> bool:
     """True when the '?' at index `q` sits in a URL query (?a=b&c=d)."""
-    before = line[max(0, q - 60):q]
+    before = line[max(0, q - 60) : q]
     if "http" in before or before.rstrip().endswith(("/", "&", "=")):
         return True
-    return bool(re.match(r"^[a-z_]+=?", line[q + 1:q + 40]))
+    return bool(re.match(r"^[a-z_]+=?", line[q + 1 : q + 40]))
 
 
 def _collect(files: list[Path]) -> tuple[list[Candidate], dict[str, str]]:
@@ -167,9 +197,11 @@ def _collect(files: list[Path]) -> tuple[list[Candidate], dict[str, str]]:
                         # always carry ` : ` after the true-branch. This holds
                         # inside strings too (a degraded dash would need real
                         # prose after it, not ` : expr`).
-                        if re.search(r"\s:\s", line[q + 1:q + 90]):
+                        if re.search(r"\s:\s", line[q + 1 : q + 90]):
                             continue
-                        if cat in ("accent", "contraction") and not (in_string or in_comment):
+                        if cat in ("accent", "contraction") and not (
+                            in_string or in_comment
+                        ):
                             continue
                     raw_lines_key = f"{rel}:{lineno}"
                     raw_lines[raw_lines_key] = line
@@ -185,7 +217,10 @@ def _git_head_blobs(paths: list[str]) -> dict[str, str]:
     try:
         out = subprocess.run(
             ["git", "cat-file", "--batch"],
-            input=payload, capture_output=True, check=False, cwd=str(ROOT),
+            input=payload,
+            capture_output=True,
+            check=False,
+            cwd=str(ROOT),
         ).stdout
     except OSError:
         return {}
@@ -200,7 +235,7 @@ def _git_head_blobs(paths: list[str]) -> dict[str, str]:
         if len(parts) != 3:  # "<path> missing"
             continue
         size = int(parts[2])
-        blobs[p] = out[pos:pos + size]
+        blobs[p] = out[pos : pos + size]
         pos += size + 1
     return {k: v.decode("utf-8", errors="replace") for k, v in blobs.items()}
 
@@ -210,9 +245,7 @@ def _probe_git_twins(cands: list[Candidate]) -> None:
     pre/post context with a real glyph at the '?' position."""
     paths = sorted({c.path for c in cands})
     blobs = _git_head_blobs(paths)
-    head_lines: dict[str, list[str]] = {
-        p: t.splitlines() for p, t in blobs.items()
-    }
+    head_lines: dict[str, list[str]] = {p: t.splitlines() for p, t in blobs.items()}
     for c in cands:
         lines = head_lines.get(c.path)
         if not lines:
@@ -232,7 +265,7 @@ def _probe_git_twins(cands: list[Candidate]) -> None:
                 j = i + len(pre)
                 if j >= len(ln) or ln[j] == "?":
                     continue
-                if not ln[j + 1:].startswith(post[:8]):
+                if not ln[j + 1 :].startswith(post[:8]):
                     continue
                 if ln[j] in TWIN_CHARS:
                     found.append(ln[j])
@@ -263,6 +296,7 @@ class _Corpus:
 
     def _line_of(self, off: int) -> tuple[str, int, str]:
         import bisect
+
         i = bisect.bisect_right(self.offsets, off) - 1
         return self.lines[i]
 
@@ -281,7 +315,7 @@ class _Corpus:
             j = i + len(pre)
             if j >= len(self.text) or self.text[j] == "?":
                 continue
-            if not self.text[j + 1:].startswith(post[:8]):
+            if not self.text[j + 1 :].startswith(post[:8]):
                 continue
             rel, n, _ = self._line_of(i)
             if (rel, n) == skip:
@@ -313,7 +347,7 @@ def _apply_fixes(confirmed: list[Candidate]) -> int:
             assert ch is not None
             line = lines[c.line_no - 1]
             if c.col < len(line) and line[c.col] == "?":
-                lines[c.line_no - 1] = line[:c.col] + ch + line[c.col + 1:]
+                lines[c.line_no - 1] = line[: c.col] + ch + line[c.col + 1 :]
                 changed = True
                 fixed += 1
             else:
@@ -337,8 +371,11 @@ def _is_allowed(c: Candidate, allow: list[dict]) -> str | None:
     line still starts with the pinned excerpt; None otherwise."""
     prefix = c.raw_line.strip()[:60]
     for e in allow:
-        if (e.get("path") == c.path and e.get("line") == c.line_no
-                and e.get("category") == c.category):
+        if (
+            e.get("path") == c.path
+            and e.get("line") == c.line_no
+            and e.get("category") == c.category
+        ):
             if str(prefix).startswith(str(e.get("excerpt", ""))[:40]):
                 return e.get("reason", "allowlisted")
             return None  # stale entry — do not suppress
@@ -350,8 +387,11 @@ def main() -> int:
     do_fix = "--fix" in argv
     as_json = "--json" in argv
 
-    files = [p for p in _iter_files()
-             if p.name not in (Path(__file__).name, "lossy-qmark-allow.json")]
+    files = [
+        p
+        for p in _iter_files()
+        if p.name not in (Path(__file__).name, "lossy-qmark-allow.json")
+    ]
     cands, _raw = _collect(files)
     if not cands:
         print("lossy-? scan OK — no candidates in prose contexts")
@@ -365,21 +405,32 @@ def main() -> int:
     disallowed: list[Candidate] = []
     for c in cands:
         reason = _is_allowed(c, allow)
-        (allowed if reason else disallowed).append(
-            (c, reason) if reason else c)
+        (allowed if reason else disallowed).append((c, reason) if reason else c)
 
     confirmed = [c for c in disallowed if c.replacement]
     unconfirmed = [c for c in disallowed if not c.replacement]
 
     if as_json:
-        print(json.dumps({
-            "candidates": [
-                {"path": c.path, "line": c.line_no, "col": c.col,
-                 "category": c.category, "excerpt": c.raw_line.strip()[:120],
-                 "twins": c.twins, "replacement": c.replacement}
-                for c in cands
-            ],
-        }, ensure_ascii=False, indent=1))
+        print(
+            json.dumps(
+                {
+                    "candidates": [
+                        {
+                            "path": c.path,
+                            "line": c.line_no,
+                            "col": c.col,
+                            "category": c.category,
+                            "excerpt": c.raw_line.strip()[:120],
+                            "twins": c.twins,
+                            "replacement": c.replacement,
+                        }
+                        for c in cands
+                    ],
+                },
+                ensure_ascii=False,
+                indent=1,
+            )
+        )
         return 1 if cands else 0
 
     if do_fix and confirmed:
@@ -387,33 +438,47 @@ def main() -> int:
 
     for c in unconfirmed:
         twins = {k: "".join(sorted(set(v))) for k, v in c.twins.items() if v}
-        print(f"{c.path}:{c.line_no}:{c.col} [{c.category}] no-agreement "
-              f"twins={twins or '{}'} :: {c.raw_line.strip()[:100]}")
+        print(
+            f"{c.path}:{c.line_no}:{c.col} [{c.category}] no-agreement "
+            f"twins={twins or '{}'} :: {c.raw_line.strip()[:100]}"
+        )
     for c in confirmed:
         ch = c.replacement
         assert ch is not None
-        print(f"{c.path}:{c.line_no}:{c.col} [{c.category}] confirmed "
-              f"replacement {ch!r} :: {c.raw_line.strip()[:100]}"
-              + ("  (fixed)" if do_fix else ""))
+        print(
+            f"{c.path}:{c.line_no}:{c.col} [{c.category}] confirmed "
+            f"replacement {ch!r} :: {c.raw_line.strip()[:100]}"
+            + ("  (fixed)" if do_fix else "")
+        )
     stale_allow = []
     for e in allow:
-        hit = next((c for c in cands if c.path == e.get("path")
-                    and c.line_no == e.get("line")
-                    and c.category == e.get("category")), None)
+        hit = next(
+            (
+                c
+                for c in cands
+                if c.path == e.get("path")
+                and c.line_no == e.get("line")
+                and c.category == e.get("category")
+            ),
+            None,
+        )
         matches = hit is not None and _is_allowed(hit, allow) is not None
         if hit is None or not matches:
             stale_allow.append(e)
     for e in stale_allow:
-        print(f"stale allowlist entry (no longer matches): {e.get('path')}:{e.get('line')}")
+        print(
+            f"stale allowlist entry (no longer matches): {e.get('path')}:{e.get('line')}"
+        )
 
     remaining = unconfirmed if do_fix else disallowed
     if remaining or stale_allow:
-        print(f"lossy-? scan: {len(remaining)} site(s) need attention "
-              f"({len(confirmed)} confirmed, {len(unconfirmed)} unconfirmed, "
-              f"{len(allowed)} allowlisted)")
+        print(
+            f"lossy-? scan: {len(remaining)} site(s) need attention "
+            f"({len(confirmed)} confirmed, {len(unconfirmed)} unconfirmed, "
+            f"{len(allowed)} allowlisted)"
+        )
         return 1
-    print(f"lossy-? scan OK — {len(allowed)} reviewed allowlisted, "
-          f"0 need attention")
+    print(f"lossy-? scan OK — {len(allowed)} reviewed allowlisted, 0 need attention")
     return 0
 
 

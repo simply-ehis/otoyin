@@ -291,7 +291,7 @@ export function TimelineView() {
 			onDragEnd={handleDragEnd}
 		>
 			<div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
-				<ScreenHeader title="Timeline" />
+				<ScreenHeader helpPath="/timeline" title="Timeline" />
 
 				{tracks.length === 0 ? (
 					<EmptyState

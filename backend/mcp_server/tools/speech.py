@@ -129,14 +129,13 @@ def register_speech_tools(mcp: FastMCP) -> None:
     @mcp.tool(
         name="21labs.diarize",
         description=(
-            "Transcribe an audio clip AND tag each segment with a speaker "
-            "('SPEAKER_00', 'SPEAKER_01', ...) using offline speaker "
-            "diarization (Silero VAD + Resemblyzer + SpectralClustering — "
-            "torch-free, ~7MB). Pass exactly one of `audio_base64` (bytes as "
-            "base64) or `audio_path` (absolute local file path — loopback "
-            "callers only). num_speakers: known speaker count (2-6) or None to "
-            "auto-detect. model: Whisper model size (e.g. 'tiny', 'base') or "
-            "None for default."
+            "Transcribe an audio clip AND tag each segment with a speaker. "
+            "The diarization stack is not installed in this build, so all "
+            "segments carry a single SPEAKER_00 tag. Pass exactly one of "
+            "`audio_base64` (base64 bytes) or `audio_path` (absolute local "
+            "file path - loopback callers only). num_speakers: known speaker "
+            "count (2-6) or None to auto-detect. model: Whisper model size "
+            "(e.g. 'tiny', 'base') or None for default."
         ),
     )
     async def twentylabs_diarize(
@@ -657,6 +656,11 @@ async def _diarize_file(
         aligned = [SimpleNamespace(**seg) for seg in segments]
         diarization_service.align_speakers(aligned, turns)
         segments = [{"start": s.start, "end": s.end, "text": s.text, "speaker": s.speaker} for s in aligned]
+    else:
+        # Diarization stack is not installed - degrade to single-speaker
+        # output instead of crashing on the missing speaker key.
+        for seg in segments:
+            seg.setdefault("speaker", "SPEAKER_00")
 
     speakers = sorted({s["speaker"] for s in segments})
     return {

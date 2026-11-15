@@ -63,14 +63,14 @@ def test_status_surface_exposes_quant():
     assert status.model_size == cfg.model_size
 
 
-@pytest.mark.parametrize("product_id", ["pocket-tts-onnx", "neutts-2e-q4", "neutts-2e-q8"])
+@pytest.mark.parametrize("product_id", ["pocket-tts", "neutts-2e-orig", "kokoro-onnx"])
 def test_variant_pairs_stay_distinguishable(product_id):
     """Renamed headlines must still tell variants apart (ids are stable)."""
     from backend.services.marketplace_catalog import get_product
 
     names = {
-        "pocket-tts-onnx": "Pocket-TTS",
-        "neutts-2e-q4": "NeuTTS-2E",
-        "neutts-2e-q8": "NeuTTS-2E (high fidelity)",
+        "pocket-tts": "Pocket TTS",
+        "neutts-2e-orig": "NeuTTS-2E",
+        "kokoro-onnx": "Kokoro 82M",
     }
     assert get_product(product_id)["name"] == names[product_id]

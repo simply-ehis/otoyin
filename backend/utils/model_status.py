@@ -16,8 +16,8 @@ from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
-# Ordered recommended pack — Kokoro 82M is the default voice (tiny, fast,
-# Apache-2.0). Whisper-tiny powers transcription/STT input, Qwopus 4B is the
+# Ordered recommended pack - Kokoro 82M is the default voice (tiny, fast,
+# Apache-2.0). Whisper-tiny powers transcription/STT input, LFM2.5-2.6B is the
 # on-device assistant brain. DeepFilterNet ships inside the frozen bundle
 # (build_binary.py stages it at <bundle>/deepfilter/, 8.6 MB); LavaSR is not
 # bundled — audiosronnx resolves it on first use and caches it under
@@ -34,7 +34,7 @@ RECOMMENDED_MODELS: list[dict] = [
         "reason": "Transcription and speech-to-speech input",
     },
     {
-        "model_name": "planner-4b",
+        "model_name": "planner-lfm2-2.6b",
         "role": "llm",
         "reason": "On-device assistant brain for the in-app agent",
     },
@@ -53,11 +53,11 @@ RECOMMENDED_MODELS: list[dict] = [
 
 @lru_cache(maxsize=1)
 def _has_cuda_gpu() -> bool:
-    """True if a CUDA-capable GPU is available via torch."""
+    """True if a CUDA-capable NVIDIA GPU is present (via nvidia-smi)."""
     try:
-        import torch
+        from .gpu_query import probe_nvidia_smi
 
-        return torch.cuda.is_available()
+        return probe_nvidia_smi() is not None
     except Exception:
         logger.debug("suppressed exception in model_status.py:56", exc_info=True)
         return False
@@ -85,8 +85,8 @@ def _onnxruntime_available() -> bool:
 #   10  ONNX-only, tiny model (< 100 MB)  — kitten_tts, moss_tts_nano
 #   20  ONNX-preferred, small model        — kokoro (82M)
 #   30  Subprocess one-shot, no resident   — qwen3_tts, bark_small
-#   40  GGUF singleton (llama.cpp sidecar) — neutts, neutts_2e, orpheus, zonos_gguf, parler_tts_gguf
-#   50  Torch-only, small/medium model     — pocket_tts
+#   40  Subprocess/GGUF singleton (audio.cpp sidecar) - neutts, neutts_2e, orpheus, parler_tts_gguf
+#   50  heavier one-shot model            - pocket_tts
 
 _ENGINE_WEIGHTS: dict[str, int] = {
     "kitten_tts": 10,
@@ -98,32 +98,32 @@ _ENGINE_WEIGHTS: dict[str, int] = {
     "neutts": 40,
     "neutts_2e": 40,
     "orpheus": 40,
-    "zonos_gguf": 30,
     "parler_tts_gguf": 30,
     "styletts2": 60,
-    "rvc_onnx": 30,
-    "openvoice_onnx": 30,
+    "seed_vc": 30,
+    "meanvc2": 30,
+    "tone_color_vc": 30,
     "acestep_gguf": 30,
 }
 
-# Engines whose *preferred* backend is ONNX (even if a torch fallback exists).
+# Engines whose *preferred* backend is ONNX
 _ONNX_PREFERRED_ENGINES = {
-    "kokoro",
     "styletts2",
-    "pocket_tts",
-    "kitten_tts",
-    "moss_tts_nano",
 }
 
-# Engines that run as subprocesses — no GPU memory, no torch dependency.
+# Engines that run as subprocesses - no resident GPU memory, no Python ML deps.
 _SUBPROCESS_ENGINES = {
     "qwen3_tts",
     "bark_small",
-    "zonos_gguf",
     "parler_tts_gguf",
     "acestep_gguf",
-    "rvc_onnx",
-    "openvoice_onnx",
+    "seed_vc",
+    "meanvc2",
+    "tone_color_vc",
+    "kokoro",
+    "pocket_tts",
+    "kitten_tts",
+    "moss_tts_nano",
 }
 
 
@@ -132,14 +132,14 @@ def _score_engine(engine: str, cached: bool) -> float:
 
     Scoring formula:
         base = _ENGINE_WEIGHTS[engine]  (10-60)
-        +5 if torch-only and no CUDA GPU (penalise heavy engines on CPU)
+        +5 no-GPU penalty (penalise heavy engines on CPU)
         -5 if ONNX-preferred and onnxruntime is available (reward native path)
         -10 if cached on disk (instant availability)
         -5 if subprocess (always cheap to start)
     """
     base = _ENGINE_WEIGHTS.get(engine, 50)  # unknown engines default to heavy
 
-    # Penalise torch-heavy engines when there's no GPU
+    # Penalise heavy engines when there's no GPU
     if engine not in _ONNX_PREFERRED_ENGINES and engine not in _SUBPROCESS_ENGINES and not _has_cuda_gpu():
         base += 5
 
@@ -162,7 +162,7 @@ def dynamic_tts_preference_order() -> list[str]:
     """Return TTS engines ranked lightest-first for the current hardware.
 
     The ranking considers:
-    1. Engine weight class (ONNX-only < ONNX-preferred < subprocess < GGUF < torch)
+    1. Engine weight class (ONNX-only < ONNX-preferred < subprocess < GGUF)
     2. Hardware capabilities (CUDA GPU, onnxruntime)
     3. Cache state (downloaded engines are preferred for instant availability)
 
@@ -198,7 +198,7 @@ def dynamic_tts_preference_order() -> list[str]:
 # Legacy alias — kept for backward compatibility with imports.
 def _static_preference_order() -> list[str]:
     """Fallback static order when dynamic ranking is unavailable."""
-    return ["kitten_tts", "moss_tts_nano", "kokoro", "zonos"]
+    return ["kitten_tts", "moss_tts_nano", "kokoro"]
 
 
 # Module-level cache: computed once on first access, then stable.
@@ -306,25 +306,49 @@ def is_engine_cached(engine: str) -> bool:
         return False
 
 
-def pick_cached_tts_engine(preferred: str | None = None) -> str | None:
-    """Resolve a TTS engine from manifest-entitled models only — never a default.
+_CAPABILITY_FIELDS = frozenset(
+    {
+        "clone_voice",
+        "voice_design",
+        "emotion_control",
+        "paralinguistic_tags",
+        "supports_instruct",
+        "supports_editing",
+        "supports_voice_mixing",
+    }
+)
+
+
+def pick_cached_tts_engine(preferred: str | None = None, *, require_capability: str | None = None) -> str | None:
+    """Resolve a TTS engine from manifest-entitled models only - never a default.
 
     Returns ``preferred`` when it is entitled (manifest row + on disk);
     otherwise the first entitled engine in the *dynamic* hardware-aware
     preference order; otherwise ``None`` (caller must surface a
     missing-model error with the recommended pack).
 
+    ``require_capability`` filters candidates by a ModelConfig capability flag
+    (e.g. ``"clone_voice"``) so callers that need cloning/design/emotion never
+    land on a preset-voice-only engine.
+
     The dynamic ranking prefers:
-    1. ONNX-only tiny engines (kitten_tts, moss_tts_nano) on any hardware
-    2. ONNX-preferred engines when onnxruntime is installed
-    3. Subprocess engines (qwen3_tts, bark_small) — no resident memory
-    4. Cached engines over non-cached ones
-    5. Lighter torch engines over heavier ones, especially on CPU-only hosts
+    1. Tiny low-RAM one-shot engines on any hardware
+    2. Subprocess one-shots (no resident memory)
+    3. Cached engines over non-cached ones
+    4. Lighter engines over heavier ones, especially on CPU-only hosts
     """
     from ..backends.configs import get_all_model_configs
     from ..services.model_registry import is_downloaded
 
+    if require_capability is not None and require_capability not in _CAPABILITY_FIELDS:
+        raise ValueError(f"Unknown capability {require_capability!r}; expected one of {sorted(_CAPABILITY_FIELDS)}")
+
     configs = get_all_model_configs()
+
+    def _has_capability(eng: str) -> bool:
+        if require_capability is None:
+            return True
+        return any(c.engine == eng and getattr(c, require_capability, False) for c in configs)
 
     def _entitled(eng: str) -> bool:
         """True if the engine has a manifest row AND its files are on disk."""
@@ -332,11 +356,11 @@ def pick_cached_tts_engine(preferred: str | None = None) -> str | None:
             eng
         )
 
-    if preferred and _entitled(preferred):
+    if preferred and _entitled(preferred) and _has_capability(preferred):
         return preferred
     preference = get_tts_preference_order()
     for engine in preference:
-        if _entitled(engine):
+        if _entitled(engine) and _has_capability(engine):
             return engine
     return None
 

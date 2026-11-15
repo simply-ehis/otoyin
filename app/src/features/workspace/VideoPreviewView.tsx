@@ -116,7 +116,7 @@ export function VideoPreviewView() {
 
 	return (
 		<div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader title="Video Preview" />
+			<ScreenHeader helpPath="/video" title="Video Preview" />
 
 			<div className="space-y-1">
 				<Label htmlFor="video-path">Video file path (on the server)</Label>

@@ -155,7 +155,7 @@ class TestValidateProfileFields:
             preset_engine=None,
             preset_voice_id=None,
             design_prompt=None,
-            default_engine="zonos_gguf",
+            default_engine="qwen3_tts",
         )
         assert result is None
 
@@ -236,7 +236,7 @@ class TestValidateProfileEngine:
         profile.id = "p6"
         profile.voice_type = "cloned"
         profile.design_prompt = None
-        validate_profile_engine(profile, "zonos_gguf")
+        validate_profile_engine(profile, "qwen3_tts")
 
     def test_cloned_with_invalid_engine_raises(self):
         profile = MagicMock()

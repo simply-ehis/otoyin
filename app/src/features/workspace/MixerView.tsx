@@ -245,6 +245,7 @@ export function MixerView() {
 	return (
 		<div className="flex h-full flex-col gap-3 overflow-y-auto p-4">
 			<ScreenHeader
+				helpPath="/mixer"
 				title="Mixer"
 				actions={
 					<>

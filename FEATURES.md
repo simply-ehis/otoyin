@@ -5,17 +5,28 @@ Branding: 21labs. License model: free open-source app, paid premium models.
 
 ## 1. Text-to-speech
 
-- **Runtime registry** (13 engine ids, `backend/backends/registry/tts.py`):
-  kokoro, pocket_tts, moss_tts_nano, kitten_tts, zonos_gguf, parler_tts_gguf,
-  neutts, neutts_2e, orpheus, qwen3_tts, bark_small, fish_speech_s2, voxcpm2
-  (torch + ONNX/GGUF variants where available).
-- **Model catalog** (11 entries, `backend/backends/configs/tts.py`): Kokoro 82M,
-  Pocket-TTS, MOSS-TTS-Nano (20 langs), KittenTTS mini (80MB), Zonos v0.1 (clone +
-  emotion), Parler-TTS Mini (text-described voice), Qwen3-TTS 1.7B Base (10 langs,
-  zero-shot), Fish Audio S2 Pro, VoxCPM2 2B (30 langs), Bark Small (non-verbal
-  sounds), Kokoro-ONNX.
-- **Cloning** — two paths: cloned profiles (`zonos`, `styletts2`, `pocket_tts`)
-  and generation-time reference (`moss_tts_nano`, `neutts_2e`, `qwen3_tts`).
+- **Runtime registry** (26 engine ids, `backend/backends/registry/tts.py`):
+  kokoro, pocket_tts, moss_tts_nano, kitten_tts, parler_tts_gguf,
+  neutts, neutts_2e, orpheus, qwen3_tts, bark_small, fish_speech_s2, voxcpm2,
+  phonon, inflect_v2, supertonic, piper_tts, chatterbox_turbo, audio8_tts,
+  cosyvoice3, magpie_tts, omnivoice, yue2, zonos3, fish_drama3, sa3_music, moss_soundeffect
+  (all audio.cpp-supported engines run as audio.cpp one-shots; ONNX/torch runtimes deleted 2026-11-14).
+- **Model catalog** (24 TTS entries in `backend/backends/configs/tts.py`; 7 music + 2 SFX in `configs/music.py`): Kokoro (~181MB GGUF),
+  Pocket TTS (26 voices), MOSS TTS Nano, Kitten TTS, Parler-TTS Mini,
+  Qwen3 TTS 1.7B (Apache-2.0, 10 langs), Fish Audio S2 Pro (non-commercial-research),
+  VoxCPM2 (Apache-2.0, 30 langs), Bark Small (non-verbal tags: [laughter], [laughs], [sighs], ...), NeuTTS-Air (clone), NeuTTS-2E (audio.cpp; 9 voices + emotion),
+  Supertonic-3 (31 languages; 10 preset voices, Apache-2.0), Piper (MIT),
+  Inflect Micro v2 (69MB tiny English CPU TTS, Apache-2.0, requires eSpeak-ng),
+  Phonon-31m (81MB tiny CPU), Chatterbox-Turbo (English only, built-in voice, 19 emotion/style tags),
+  Audio8-TTS (clone, 12 langs, Apache-2.0), CosyVoice3 (clone + cross-lingual, Apache-2.0),
+  MagpieTTS-357M (10 baked voices, Apache-2.0), OmniVoice (600+ langs, CC-BY-NC-4.0),
+  Yue2-3B (music generation, CC-BY-NC-4.0), ZONOS3-Mini (Zyphra, Apache-2.0),
+  Drama-3 (FACL v1.0, CUDA-only, 23.5GB), MOSS-SoundEffect v2 (Apache-2.0, SFX),
+  Stable Audio 3 Small Music (Stability Community License).
+- **Model slot policy** — multiple engines stay resident at once (warm pool), capped by `TWENTYLABS_WARM_POOL_MAX_ENGINES` (default 4) and `TWENTYLABS_WARM_POOL_MAX_MB` (default 16 GB); LRU eviction, Performance-Mode keep-warm pins never evicted. One-shot audio.cpp engines don't occupy slots. VRAM pressure gate + idle-unload still apply.
+- **Cloning** — two paths: cloned profiles (`pocket_tts`, `neutts`, `qwen3_tts`, `fish_speech_s2`, `voxcpm2`)
+  and generation-time reference (five engines incl. `qwen3_tts`, `fish_speech_s2`, `voxcpm2`).
+  NeuTTS-2E is built-in-voices + emotion only (audio.cpp neutts family has no cloning; migrated 2026-11-14).
 - **Voice profiles** — preset / cloned / designed, per-engine presets, reference
   voice shelf (`GET /reference-voices`, 1-click clone source).
 - **Long-form** — chunked narration with per-chunk timeout, needs-trim handling,
@@ -28,7 +39,7 @@ Branding: 21labs. License model: free open-source app, paid premium models.
   CTranslate2 int8), Moonshine (tiny 35MB / base / streaming small),
   Parakeet TDT 0.6B v3 (25 European languages, native C++), Qwen3-ASR
   (0.6B/1.7B INT4, 52 languages), Cloud BYOK.
-- Word-level timestamps, speaker diarization, streaming STT, subtitles (SRT/VTT)
+- Word-level timestamps, speaker diarization *(opt-in: requires `pip install resemblyzer silero-vad scikit-learn` — removed from defaults to keep torch out)*, streaming STT, subtitles (SRT/VTT)
   with speaker labels.
 
 ## 3. Voice conversion

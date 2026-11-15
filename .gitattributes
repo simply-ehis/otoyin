@@ -2,3 +2,6 @@
 # Stops the Windows CRLF <-> LF churn that intermittently fails ruff format
 # and produces noisy diffs on backend files. Frontend keeps git's default.
 backend/** text eol=lf
+
+# Binary model weights must never be line-ending normalized.
+*.onnx binary

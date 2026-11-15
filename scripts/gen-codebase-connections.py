@@ -17,7 +17,8 @@ SRC = REPO / "app" / "src"
 SKIP = {"node_modules", "dist", ".git", "__pycache__"}
 
 files = [
-    f for f in SRC.rglob("*")
+    f
+    for f in SRC.rglob("*")
     if f.is_file() and f.suffix in (".ts", ".tsx") and not (SKIP & set(f.parts))
 ]
 texts = {f: f.read_text(encoding="utf-8", errors="replace") for f in files}
@@ -44,8 +45,11 @@ def mirrors():
         by[f.name].append(rel[f])
     out = []
     for name, paths in sorted(by.items()):
-        if len(paths) > 1 and any("/components/" in p for p in paths) \
-           and any("/features/" in p for p in paths):
+        if (
+            len(paths) > 1
+            and any("/components/" in p for p in paths)
+            and any("/features/" in p for p in paths)
+        ):
             out.append((name, paths))
     return out
 
@@ -61,8 +65,13 @@ def resolve_spec(spec, importer):
         base = (importer.parent / spec).resolve()
     else:
         return None
-    for cand in (base, base.with_suffix(".ts"), base.with_suffix(".tsx"),
-                 base / "index.ts", base / "index.tsx"):
+    for cand in (
+        base,
+        base.with_suffix(".ts"),
+        base.with_suffix(".tsx"),
+        base / "index.ts",
+        base / "index.tsx",
+    ):
         if cand.exists():
             return cand.resolve()
     return None
@@ -103,7 +112,7 @@ def dead_components():
 
     def live_importer(imp):
         if "/components/" not in imp:
-            return True          # router, features, lib, tests -- always live
+            return True  # router, features, lib, tests -- always live
         if imp.startswith("components/"):
             return any(live_importer(b) for b in barrel_importers)
         owner = imp.split("/components/")[1].split("/")[0]
@@ -112,7 +121,7 @@ def dead_components():
     dirs = [d for d in sorted((SRC / "components").iterdir()) if d.is_dir()]
     live_set = {d.name for d in dirs if referenced.get(d.name)}
     changed = True
-    while changed:               # a dir held up only by dead dirs dies too
+    while changed:  # a dir held up only by dead dirs dies too
         changed = False
         for d in dirs:
             if d.name in live_set and not any(
@@ -121,10 +130,14 @@ def dead_components():
                 live_set.discard(d.name)
                 changed = True
 
-    dead = [(d.name, sum(1 for _ in d.rglob("*.ts*"))) for d in dirs
-            if d.name not in live_set]
-    live = [(d.name, sum(1 for _ in d.rglob("*.ts*"))) for d in dirs
-            if d.name in live_set]
+    dead = [
+        (d.name, sum(1 for _ in d.rglob("*.ts*")))
+        for d in dirs
+        if d.name not in live_set
+    ]
+    live = [
+        (d.name, sum(1 for _ in d.rglob("*.ts*"))) for d in dirs if d.name in live_set
+    ]
     return dead, live
 
 
@@ -147,8 +160,14 @@ def transports():
         for m in re.finditer(r"""fetch\(\s*([`"'])(.*?)\1""", t):
             tgt = m.group(2)
             mm = re.search(r"/([a-z0-9\-]+)", tgt)
-            out.append(("REST", mm.group(1) if mm else tgt[:20], rel[f],
-                        t[: m.start()].count("\n") + 1))
+            out.append(
+                (
+                    "REST",
+                    mm.group(1) if mm else tgt[:20],
+                    rel[f],
+                    t[: m.start()].count("\n") + 1,
+                )
+            )
     return out
 
 
@@ -191,17 +210,35 @@ def esc(s):
 # Four columns: shell / ui / api / backend, with transport edges between them.
 DIAG = [
     # (id, label, x, y, w, h, col, sub)
-    ("tauri",  "Tauri shell",        40,  30, 190, 54, 0, "Rust · lib.rs / server.rs"),
-    ("ui",     "React app",         290,  30, 190, 54, 0, "AppFrame → router.tsx"),
-    ("api",    "API client",        540,  30, 200, 54, 0, "clientCore.ts"),
-    ("api2",   "lib/api/client*.ts",290, 150, 190, 54, 1, "29 domain files"),
-    ("state",  "Stores (zustand)",  540, 150, 200, 54, 1, "server / player / ui"),
-    ("routes", f"{lazy_count} lazy routes",   40, 270, 190, 54, 1, "0 eager page imports"),
-    ("feats", f"{len(IMP['features'])} feature modules", 290, 390, 190, 54, 1, "@/features/*"),
+    ("tauri", "Tauri shell", 40, 30, 190, 54, 0, "Rust · lib.rs / server.rs"),
+    ("ui", "React app", 290, 30, 190, 54, 0, "AppFrame → router.tsx"),
+    ("api", "API client", 540, 30, 200, 54, 0, "clientCore.ts"),
+    ("api2", "lib/api/client*.ts", 290, 150, 190, 54, 1, "29 domain files"),
+    ("state", "Stores (zustand)", 540, 150, 200, 54, 1, "server / player / ui"),
+    (
+        "routes",
+        f"{lazy_count} lazy routes",
+        40,
+        270,
+        190,
+        54,
+        1,
+        "0 eager page imports",
+    ),
+    (
+        "feats",
+        f"{len(IMP['features'])} feature modules",
+        290,
+        390,
+        190,
+        54,
+        1,
+        "@/features/*",
+    ),
     ("comp", "components/* tree", 540, 270, 200, 54, 1, f"legacy, {len(mir)} mirrored"),
-    ("be",     "FastAPI",            40, 480, 190, 54, 2, "routes/ + services/"),
-    ("egress", "Egress (guarded)",  290, 480, 190, 54, 2, "SSRF: is_url_safe"),
-    ("fe",     "Frontend streams",  540, 390, 200, 54, 2, "2× SSE · 1× WS"),
+    ("be", "FastAPI", 40, 480, 190, 54, 2, "routes/ + services/"),
+    ("egress", "Egress (guarded)", 290, 480, 190, 54, 2, "SSRF: is_url_safe"),
+    ("fe", "Frontend streams", 540, 390, 200, 54, 2, "2× SSE · 1× WS"),
 ]
 
 EDGES = [
@@ -235,7 +272,7 @@ def svg_diagram():
             f'fill="none" stroke="#4a423e" stroke-width="1.4" marker-end="url(#a)"/>'
         )
         parts.append(
-            f'<text x="{(ax+bx)/2:.0f}" y="{(ay+by)/2 - 4:.0f}" fill="#8a8078" '
+            f'<text x="{(ax + bx) / 2:.0f}" y="{(ay + by) / 2 - 4:.0f}" fill="#8a8078" '
             f'font-size="9.5" text-anchor="middle" font-family="ui-monospace,monospace">'
             f"{esc(label)}</text>"
         )
@@ -247,11 +284,11 @@ def svg_diagram():
             f'fill="#1c1a19" stroke="{c}" stroke-width="1.3"/>'
         )
         parts.append(
-            f'<text x="{x + w/2:.0f}" y="{y + 21}" fill="#e8e2dc" font-size="12.5" '
+            f'<text x="{x + w / 2:.0f}" y="{y + 21}" fill="#e8e2dc" font-size="12.5" '
             f'font-weight="600" text-anchor="middle">{esc(label)}</text>'
         )
         parts.append(
-            f'<text x="{x + w/2:.0f}" y="{y + 37}" fill="#8a8078" font-size="9.5" '
+            f'<text x="{x + w / 2:.0f}" y="{y + 37}" fill="#8a8078" font-size="9.5" '
             f'text-anchor="middle" font-family="ui-monospace,monospace">{esc(sub)}</text>'
         )
     return (
@@ -282,7 +319,9 @@ ep_rows = "".join(
     f'<td class="sites"><code>{esc(v[0])}</code></td></tr>'
     for k, v in sorted(eps.items(), key=lambda kv: -len(kv[1]))
 )
-route_items = "".join(f"<li><code>{esc(r)}</code></li>" for r in sorted(set(route_list)))
+route_items = "".join(
+    f"<li><code>{esc(r)}</code></li>" for r in sorted(set(route_list))
+)
 ws_rows = "".join(
     f'<tr><td><code>{esc(f)}</code></td><td class="n">{line}</td>'
     f"<td><code>{esc(sym)}</code></td></tr>"
@@ -302,8 +341,7 @@ ws_note = (
     else ""
 )
 ws_block = (
-    ws_note
-    + '<table><thead><tr><th>importing file</th><th>line</th>'
+    ws_note + "<table><thead><tr><th>importing file</th><th>line</th>"
     f"<th>symbol</th></tr></thead><tbody>{ws_rows}</tbody></table>"
     if ws_deps
     else '<div class="find good"><h3>components/Workspace — no inbound imports</h3>'
@@ -377,7 +415,7 @@ DOC = f"""<!doctype html>
 <div class="grid">
   <div class="stat"><b>{len(route_list)}</b><span>routes</span></div>
   <div class="stat"><b>{lazy_count}</b><span>lazy() boundaries</span></div>
-  <div class="stat"><b>{len(IMP['features'])}</b><span>feature modules</span></div>
+  <div class="stat"><b>{len(IMP["features"])}</b><span>feature modules</span></div>
   <div class="stat"><b>{len(mir)}</b><span>mirrored components</span></div>
   <div class="stat"><b>{len(dead)}</b><span>dead component dirs</span></div>
   <div class="stat"><b>{len(eps)}</b><span>distinct endpoints</span></div>

@@ -2,23 +2,29 @@
 
 The release installer ships ffmpeg and llama.cpp; everything else is fetched
 exactly when the user downloads the model that needs it, so the base install
-stays lean. Windows x64 CPU bundles only - Linux/macOS sidecars are not
-asserted here and fall back to the env/models-dir/PATH lookups the backends
-would already have done.
+stays lean. Windows sidecars (crispasr, parakeet) are Windows-only; the
+audio.cpp sidecar auto-download resolves per platform (Windows x64, Linux
+x64/arm64, macOS arm64/x64) against the published v0.9.4 release assets.
+Linux/macOS builds ship CPU-portable/Metal targets; GPU builds are opt-in via
+TWENTYLABS_AUDIOCPP_VARIANT={cpu|vulkan|cuda}. On unknown platforms the
+lookup returns None and callers surface an install-needed error instead of
+crashing.
 
 Binaries live under ``<data>/bin/<name>/``:
 
 - crispasr: ``data/bin/crispasr/crispasr.exe`` (+ openblas.dll runtime, license)
 - parakeet: ``data/bin/parakeet/parakeet.exe``
-- audio.cpp: ``data/bin/audiocpp/audiocpp_cli.exe`` (+ MSVC runtime DLLs, model_specs/, license)
+- audio.cpp: ``data/bin/audiocpp/audiocpp_cli[.exe]`` (+ runtimes, model_specs/, license)
 """
 
 from __future__ import annotations
 
 import logging
 import os
+import platform
 import shutil
 import sys
+import tarfile
 import tempfile
 import urllib.request
 from pathlib import Path
@@ -62,22 +68,24 @@ def find_crispasr() -> Path | None:
 
 
 def find_audiocpp() -> Path | None:
-    """Resolve audio.cpp: env -> models dir -> PATH -> auto-download."""
+    """Resolve audiocpp_cli: env -> models dir -> binary tree -> PATH -> auto-download."""
     env_path = os.environ.get("TWENTYLABS_AUDIOCPP")
     if env_path and Path(env_path).exists():
         return Path(env_path)
 
     from ..config import get_models_dir
 
-    bundled = get_models_dir() / ("audiocpp_cli.exe" if os.name == "nt" else "audiocpp_cli")
+    exe = "audiocpp_cli.exe" if os.name == "nt" else "audiocpp_cli"
+    bundled = get_models_dir() / exe
     if bundled.exists():
         return bundled
 
-    data_bin = _bin_dir("audiocpp") / ("audiocpp_cli.exe" if os.name == "nt" else "audiocpp_cli")
-    if data_bin.exists():
-        return data_bin
+    # Auto-downloaded binaries may unpack into a versioned subdir — locate anywhere under data/bin/audiocpp.
+    data_root = _bin_dir("audiocpp")
+    candidates = sorted(data_root.rglob(exe))
+    if candidates:
+        return candidates[0]
 
-    exe = "audiocpp_cli.exe" if os.name == "nt" else "audiocpp_cli"
     found = shutil.which(exe)
     if found:
         return Path(found)
@@ -111,11 +119,28 @@ def _download_zip(url: str, dest: Path) -> None:
         shutil.copyfileobj(resp, fh, length=8 * 1024 * 1024)
 
 
+def _extract_tar(url: str, target_dir: Path) -> bool:
+    """Download ``url`` and unpack the tarball into ``target_dir``."""
+    tmp = tempfile.mkdtemp(prefix=f"sidecar_{target_dir.name}_")
+    try:
+        tar_path = Path(tmp) / "asset.tar.gz"
+        _download_zip(url, tar_path)
+        with tarfile.open(tar_path) as tf:
+            # Skip entries that would escape the target dir (tar-slip).
+            root = target_dir.resolve()
+            for member in tf.getmembers():
+                dest = (target_dir / member.name).resolve()
+                if not str(dest).startswith(str(root)):
+                    logger.warning("skipping unsafe tar member %r", member.name)
+                    continue
+                tf.extract(member, target_dir)
+        return True
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def _extract(url: str, target_dir: Path, flatten_to: str | None = None) -> bool:
     """Extract a remote zip into ``target_dir`` (flattening one level if requested)."""
-    if not _WIN_X64:
-        logger.debug("sidecar auto-download is Windows-only; refusing on %s", sys.platform)
-        return False
     tmp = tempfile.mkdtemp(prefix=f"sidecar_{target_dir.name}_")
     try:
         zip_path = Path(tmp) / "asset.zip"
@@ -159,21 +184,64 @@ def ensure_crispasr() -> Path | None:
     return exe if ok and exe.is_file() else None
 
 
-def ensure_audiocpp() -> Path | None:
-    """Download audio.cpp v0.9.4 (CPU build)."""
-    from .. import config
+def _audiocpp_asset() -> tuple[str, bool] | None:
+    """Pick (url, is_tarball) for the published v0.9.4 asset for this platform.
 
-    if not _WIN_X64:
+    Default is the portable CPU build everywhere (what this code has always
+    shipped; the GPU bundles are several times larger and need matching
+    drivers/runtimes we cannot assert offline). GPU builds are opt-in via
+    TWENTYLABS_AUDIOCPP_VARIANT={cpu|vulkan|cuda}: cuda = cuda12.8-colab on
+    Linux, cuda12.4 on Windows; vulkan = Vulkan-portable bundle. macOS binds
+    the Metal build; arm64 Macs get the arm64 asset. Returns None on platforms
+    with no published binary (callers surface an install-needed error).
+    """
+    base = "https://github.com/0xShug0/audio.cpp/releases/download/v0.9.4"
+    variant = (os.environ.get("TWENTYLABS_AUDIOCPP_VARIANT") or "cpu").strip().lower()
+    if sys.platform == "win32":
+        if variant == "cuda":
+            return (f"{base}/audio-v0.9.4-bin-windows-x64-cuda12.4.zip", False)
+        if variant == "vulkan":
+            return (f"{base}/audio-v0.9.4-bin-windows-x64-vulkan-portable.zip", False)
+        return (f"{base}/audio-v0.9.4-bin-windows-x64-cpu-portable.zip", False)
+    if sys.platform == "darwin":
+        mac_arch = "arm64" if platform.machine().lower() in ("arm64", "aarch64") else "x64"
+        return (f"{base}/audio-v0.9.4-bin-macos-{mac_arch}-metal.tar.gz", True)
+    if sys.platform.startswith("linux"):
+        if variant == "cuda":
+            return (f"{base}/audio-v0.9.4-bin-ubuntu-x64-cuda12.8-colab.tar.gz", True)
+        if variant == "vulkan":
+            return (f"{base}/audio-v0.9.4-bin-ubuntu-x64-vulkan-portable.tar.gz", True)
+        return (f"{base}/audio-v0.9.4-bin-ubuntu-x64-cpu-portable.tar.gz", True)
+    logger.warning("audio.cpp sidecar has no published v0.9.4 binary for platform %s", sys.platform)
+    return None
+
+
+def ensure_audiocpp() -> Path | None:
+    """Download audio.cpp v0.9.4 for this platform and resolve the CLI binary."""
+    exe_name = "audiocpp_cli.exe" if os.name == "nt" else "audiocpp_cli"
+    data_root = _bin_dir("audiocpp")
+    existing = sorted(data_root.rglob(exe_name))
+    if existing:
+        return _make_executable(existing[0])
+    asset = _audiocpp_asset()
+    if asset is None:
         return None
-    exe = config.get_data_dir() / "bin" / "audiocpp" / "audiocpp_cli.exe"
-    if exe.is_file():
-        return exe
-    target = _bin_dir("audiocpp")
-    ok = _extract(
-        "https://github.com/0xShug0/audio.cpp/releases/download/v0.9.4/audio-v0.9.4-bin-windows-x64-cpu.zip",
-        target,
-    )
-    return exe if ok and exe.is_file() else None
+    url, is_tar = asset
+    ok = _extract_tar(url, data_root) if is_tar else _extract(url, data_root)
+    if not ok:
+        return None
+    found = sorted(data_root.rglob(exe_name))
+    return _make_executable(found[0]) if found else None
+
+
+def _make_executable(path: Path) -> Path:
+    """Mark a resolved sidecar binary executable (no-op on Windows)."""
+    try:
+        if os.name != "nt":
+            path.chmod(path.stat().st_mode | 0o755)
+    except OSError:
+        logger.debug("could not chmod +x %s", path)
+    return path
 
 
 def ensure_parakeet() -> Path | None:

@@ -22,7 +22,8 @@ export const CATEGORIES = [
 	{ id: "stt", label: "Transcription", icon: ChatBubbleLeftRightIcon },
 	{ id: "llm", label: "Assistant", icon: SparklesIcon },
 	{ id: "vc", label: "Voice Convert", icon: BoltIcon },
-	{ id: "music", label: "Music & SFX", icon: MusicalNoteIcon },
+	{ id: "music", label: "Music", icon: MusicalNoteIcon },
+	{ id: "sfx", label: "Sound Effects", icon: SpeakerWaveIcon },
 	{ id: "instruments", label: "Instruments", icon: SpeakerWaveIcon },
 	{ id: "translation", label: "Translation", icon: ChatBubbleLeftRightIcon },
 	{ id: "extras", label: "Extras", icon: PuzzlePieceIcon },
@@ -48,7 +49,8 @@ export const CATEGORY_LABELS: Record<string, string> = {
 	stt: "Transcription",
 	llm: "Assistant Brains",
 	vc: "Voice Conversion",
-	music: "Music & SFX",
+	music: "Music",
+	sfx: "Sound Effects",
 	instruments: "Instrument Packs",
 	translation: "Translation Packs",
 	extras: "Extras",
@@ -71,14 +73,40 @@ export const CATEGORY_ACCENT: Record<string, string> = {
 
 /** Rich per-model descriptions (ported from the old ServerSettings tree). */
 export const MODEL_DESCRIPTIONS: Record<string, string> = {
+	"phonon-31m-en":
+		"Phonon-31m-en - 81MB tiny CPU English TTS. Apache-2.0, real-time on CPU.",
+	supertonic:
+		"Supertonic 3 - 31 languages, 10 preset voices. Apache-2.0. CPU-friendly.",
+	"piper-en-us-lessac-medium":
+		"Piper - 60MB, en-US lessac-medium voice. MIT. Minimal resource footprint.",
+	"chatterbox-turbo":
+		"Chatterbox Turbo - 667MB distilled 350M English TTS, MIT. Single built-in voice, 19 emotion/style tags ([laugh], [sigh], [happy], [angry], [whispering], ...).",
+	"inflect-micro-v2":
+		"Inflect Micro v2 - 69MB tiny English CPU TTS, Apache-2.0. Fast, requires eSpeak-ng.",
+	"audio8-tts-realistic":
+		"Audio8-TTS - 1.4GB, 12 languages with zero-shot clone. Apache-2.0.",
+	cosyvoice3:
+		"CosyVoice3 - 2.2GB FunAudioLLM cloning, cross-lingual synthesis. Apache-2.0.",
+	"magpie-tts-357m":
+		"MagpieTTS - 1.5GB NVIDIA multilingual lightweight, 10 baked voices. Apache-2.0.",
+	zonos3:
+		"ZONOS3-Mini - 1.1GB, Zyphra Apache-2.0. Clones voices from ~5s audio. ~110 ms CPU latency.",
+	omnivoice:
+		"OmniVoice - 1.29GB, 600+ languages, zero-shot clone + voice design. CC-BY-NC-4.0.",
+	"drama-3-4bit":
+		"Drama-3 - 23.5GB CUDA-only, Fish Audio Community License v1.0 (free < $500K/yr). VRAM 16GB+ required.",
+	"yue2-3b":
+		"Yue2-3B - 4.3GB, lyric-conditioned music generation with VAE. CC-BY-NC-4.0.",
+	"stable-audio-3-small-music":
+		"Stable Audio 3 Small Music - 1.6GB Stability Community License. Text-to-music.",
+	"moss-soundeffect-v2":
+		"MOSS-SoundEffect v2 - 3.8GB MOSS SFX v2, English+Chinese prompt. Apache-2.0.",
 	"kokoro-onnx":
 		"Kokoro 82M by hexgrad — the default Otoyin voice. Tiny 82M ONNX model that speaks in realtime on CPU, 45 warm preset voices across 8 languages, plus voice-mixing to blend your own. Apache 2.0, no PyTorch needed. Best starting point for podcasts, dialogue, and voice-overs.",
 	"fish-speech-s2-pro":
-		"Fish Audio S2 Pro (4.5B GGUF) — SOTA Dual-AR TTS. 80+ languages, voice cloning from 10-30s, inline emotion tags ([whisper], [angry], etc). Slow-AR 4B + Fast-AR 0.4B. GPU or 24GB+ RAM.",
-	"zonos-v0.1":
-		"Zyphra ZonOS v0.1 — studio-grade zero-shot cloning with emotion, rate, and audio-prefix control. 23 languages, expressive delivery from a single reference. For dramatic reads and trailers.",
+		"Fish Audio S2 Pro (Dual-AR TTS, 4.5B GGUF) - 80+ languages, voice cloning from 10-30s, inline emotion tags ([whisper], [angry], etc). Slow-AR 4B + Fast-AR 0.4B. GPU or 24GB+ RAM.",
 	"qwen3-tts-1.7b":
-		"Qwen3-TTS 12Hz 1.7B (GGUF, Apache-2.0) — premium cloning via llama-tts sidecar. 10 languages, 24kHz, faithful timbre from a short sample. The upgrade when Kokoro isn't enough.",
+		"Qwen3-TTS 12Hz 1.7B (GGUF, Apache-2.0) - premium cloning via the audio.cpp sidecar. 10 languages, 24kHz, faithful timbre from a short sample. The upgrade when Kokoro isn't enough.",
 	"bark-small":
 		"Bark Small (GGUF, MIT) — 26 built-in speakers, 13 languages, plus laughs, sighs and music-aware generation. Runs via CrispASR one-shot, perfect for playful characters and sound-rich scenes.",
 	styletts2:
@@ -88,19 +116,15 @@ export const MODEL_DESCRIPTIONS: Record<string, string> = {
 	"f5-tts":
 		"F5-TTS Small — flow-matching zero-shot clone with no speaker embedding. Clean, faithful cloning from one clip, English + Mandarin focus.",
 	"pocket-tts":
-		"Pocket-TTS (100M) — compact CPU-realtime multilingual TTS for 6 European languages. Clone or pick 18 presets, <200MB download.",
-	"pocket-tts-onnx":
-		"Pocket-TTS ONNX — same 6 languages and presets, no torch required. The lightest clone-capable voice for travel laptops.",
+		"Pocket TTS (100M) - compact CPU-realtime English TTS. Clone or pick from 26 packaged voices, ~270MB download.",
 	"moss-tts-nano":
 		"MOSS-TTS-Nano 100M ONNX — 20+ languages in 763MB. Zero-shot cloning without PyTorch, ideal for multilingual UIs and edge devices.",
 	"parler-tts-mini":
 		'Parler-TTS Mini — "describe the voice" instead of cloning. Prompt it like "a warm, low, fast NPR host" and get a matching voice, 14 presets to start from.',
 	"kitten-tts-mini":
 		"KittenTTS mini (80MB, Apache-2.0) — the instant-voice. 8 presets, CPU-only, no dependencies, <1s to first audio. Perfect for quick drafts and low-end machines.",
-	"neutts-2e-q4":
-		"NeuTTS-2E Q4 — emotion-aware cloning with 4 speakers × 7 emotions (angry, happy, sad…). Q4 GGUF is the balanced pick; 24kHz, fast enough for batches.",
-	"neutts-2e-q8":
-		"NeuTTS-2E Q8 — same 4 speakers & 7 emotions, higher fidelity at larger size. Choose Q8 for final masters and Q4 for drafts.",
+	"neutts-2e-orig":
+		"NeuTTS-2E - emotion-aware TTS (angry, happy, sad, neutral...), 9 built-in voices, English only. Single GGUF via audio.cpp.",
 	"orpheus-q4-k-m":
 		"Orpheus 3B Q4 — 8 voices with inline tags <laugh> <sigh> <cough>. Expressive storyteller via llama-cpp + SNAC 24kHz. 2.4GB, great value.",
 	"orpheus-q8-0":
@@ -125,12 +149,6 @@ export const MODEL_DESCRIPTIONS: Record<string, string> = {
 		"Qwen3-ASR 1.7B INT4 — 52 languages, offline, ONNX Runtime. Near-cloud accuracy without the cloud.",
 	"qwen3-asr-0.6b-int4":
 		"Qwen3-ASR 0.6B INT4 — 52 languages in 600MB. Best quality-per-size for multilingual teams.",
-	"planner-4b":
-		"Qwen3.5-4B (Free) — strong all-rounder for reasoning, tool calling, and multi-step workflows. 2.7GB, needs 3.5GB+ RAM.",
-	"planner-4b-v3":
-		"Qwopus 4B v3 ($20) — Claude-distilled premium planner. Highest-quality reasoning and tool calling for complex multi-step workflows.",
-	"planner-spark-x-2.5-4b":
-		"Spark-X 2.5-4B ($20) — iFLYTEK's agentic king. 1M native context, 200+ languages, hybrid sliding-window attention. Apache 2.0.",
 	"planner-lfm2-2.6b":
 		"LFM2.5-2.6B (Free) — LiquidAI's on-device planner. 128K context, 24 languages, native tool calling + thinking tags.",
 	"llm-cloud-starter":

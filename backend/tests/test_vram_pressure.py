@@ -1,7 +1,7 @@
 """Tests for the GPU VRAM pressure detector.
 
 Verifies:
-- VRAM status probing (with mocked torch.cuda)
+- VRAM status probing (with mocked gpu_query probe)
 - Pressure detection logic (threshold, required_mb)
 - wait_for_vram blocking/timeout behavior
 - VRAMInsufficientError message formatting
@@ -121,28 +121,24 @@ class TestGetThreshold:
 # get_vram_status
 # ---------------------------------------------------------------------------
 
+from backend.utils.gpu_query import NvidiaGpu
+
 
 class TestGetVRAMStatus:
-    def test_no_gpu_returns_no_pressure(self):
-        """Without torch.cuda available, should return no-pressure status."""
-        with patch.dict("sys.modules", {"torch": None}):
-            status = get_vram_status()
-            assert status.available is False
-            assert status.pressure is False
+    def test_no_gpu_returns_no_pressure(self, monkeypatch):
+        """Without nvidia-smi, should return no-pressure status."""
+        monkeypatch.setattr("backend.utils.gpu_query.probe_nvidia_smi", lambda: None)
+        status = get_vram_status()
+        assert status.available is False
+        assert status.pressure is False
 
-    def test_cuda_gpu_returns_status(self):
-        """With mocked CUDA, should return real VRAM info."""
-        mock_torch = MagicMock()
-        mock_torch.cuda.is_available.return_value = True
-        mock_torch.cuda.current_device.return_value = 0
-        mock_torch.cuda.mem_get_info.return_value = (
-            8 * 1024 * 1024 * 1024,  # total: 8 GB
-            6 * 1024 * 1024 * 1024,  # free: 6 GB
+    def test_cuda_gpu_returns_status(self, monkeypatch):
+        """With a mocked NVIDIA GPU, should return real VRAM info."""
+        monkeypatch.setattr(
+            "backend.utils.gpu_query.probe_nvidia_smi",
+            lambda: NvidiaGpu(name="RTX 4090", total_mb=8192, free_mb=6144),
         )
-        mock_torch.cuda.get_device_name.return_value = "RTX 4090"
-
-        with patch.dict("sys.modules", {"torch": mock_torch}):
-            status = get_vram_status()
+        status = get_vram_status()
 
         assert status.available is True
         assert status.total_mb == pytest.approx(8192, rel=0.01)
@@ -151,19 +147,13 @@ class TestGetVRAMStatus:
         assert status.device_name == "RTX 4090"
         assert status.pressure is False  # 75% free > 20% threshold
 
-    def test_cuda_low_vram_reports_pressure(self):
+    def test_cuda_low_vram_reports_pressure(self, monkeypatch):
         """With very little free VRAM, should report pressure."""
-        mock_torch = MagicMock()
-        mock_torch.cuda.is_available.return_value = True
-        mock_torch.cuda.current_device.return_value = 0
-        mock_torch.cuda.mem_get_info.return_value = (
-            8 * 1024 * 1024 * 1024,  # total: 8 GB
-            1 * 1024 * 1024 * 1024,  # free: 1 GB (12.5% — below 20%)
+        monkeypatch.setattr(
+            "backend.utils.gpu_query.probe_nvidia_smi",
+            lambda: NvidiaGpu(name="RTX 4090", total_mb=8192, free_mb=1024),  # 12.5% free
         )
-        mock_torch.cuda.get_device_name.return_value = "RTX 4090"
-
-        with patch.dict("sys.modules", {"torch": mock_torch}):
-            status = get_vram_status()
+        status = get_vram_status()
 
         assert status.pressure is True
         assert status.percent_free == pytest.approx(0.125, abs=0.01)
@@ -374,8 +364,8 @@ class TestLoadEngineModelVRAMGate:
         assert vram_check_called is False, "VRAM check should be skipped for subprocess engines"
 
     @pytest.mark.asyncio
-    async def test_torch_engine_checks_vram(self, monkeypatch):
-        """Torch engines should go through VRAM pressure check."""
+    async def test_heavy_engine_checks_vram(self, monkeypatch):
+        """Heavy engines should go through the VRAM pressure check."""
         from backend.backends import registry
 
         load_called = False
@@ -413,7 +403,7 @@ class TestLoadEngineModelVRAMGate:
 
         await registry.load_engine_model("chattts")
         assert load_called is True
-        assert vram_check_called is True, "VRAM check should run for torch engines"
+        assert vram_check_called is True, "VRAM check should run for heavy engines"
 
 
 # ---------------------------------------------------------------------------

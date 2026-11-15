@@ -20,8 +20,8 @@ import { useToast } from "@/ui/use-toast";
 const ENGINE_KEYS = [
 	"kokoro",
 	"fish_speech_s2",
-	"zonos_gguf",
 	"qwen3_tts",
+	"voxcpm2",
 	"bark_small",
 	"styletts2",
 	"pocket_tts",
@@ -215,7 +215,7 @@ export function useGenerationForm(options: UseGenerationFormOptions = {}) {
 
 			// instruct reaches the backend only for models that can act on it:
 			// supports_instruct or emotion_control (instruct-as-emotion-tag for
-			// zonos/orpheus).
+			// styletts2/orpheus).
 			const modelStatusCache =
 				queryClient.getQueryData<ModelStatusListResponse>(["modelStatus"]);
 			const capModel = modelStatusCache?.models.find(

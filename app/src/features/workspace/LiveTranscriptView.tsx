@@ -55,7 +55,7 @@ export function LiveTranscriptView() {
 	});
 	const sttModels = sttModelsQuery.data?.models ?? [];
 	const sttInstalled = (id: string) => {
-		if (id === "cloud") return true;
+		if (id === "cloud") { return true; }
 		return !!sttModels.find(
 			(m) => m.engine === "whisper" && m.model_size === id,
 		)?.downloaded;

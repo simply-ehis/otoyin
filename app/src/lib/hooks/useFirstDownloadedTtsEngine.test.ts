@@ -69,8 +69,8 @@ describe("downloadedTtsEngines", () => {
 				category: "stt",
 			}),
 			model({
-				model_name: "zonos_gguf",
-				engine: "zonos_gguf",
+				model_name: "voxcpm2",
+				engine: "voxcpm2",
 				downloaded: false,
 			}),
 		]);

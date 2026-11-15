@@ -369,6 +369,7 @@ export function MultiTakeCompingView() {
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
+				helpPath="/comping"
 				title="Multi-Take Comping"
 				actions={
 					<Button

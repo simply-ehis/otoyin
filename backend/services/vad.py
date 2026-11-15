@@ -6,9 +6,17 @@ Replaces the basic energy-based VAD for reliable turn-taking.
 
 Uses ONNX Runtime instead of PyTorch — faster startup, lower memory,
 no torch dependency for this module.
+
+Model contract (silero_vad_16k_op15.onnx, MIT, bundled in backend/data):
+  input  (1, 576) float32 — 64-sample context from the previous frame,
+          followed by the current 512-sample frame (16 kHz)
+  state  (2, 1, 128) float32 — h/c recurrent state, zeroed per utterance
+  sr     scalar int64 (16000)
+  output (1, 1) float32 — speech probability
 """
 
 import logging
+import sys
 import threading
 from pathlib import Path
 
@@ -18,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 SAMPLE_RATE = 16000
 WINDOW_SIZE = 512  # Silero native frame size at 16kHz (32ms)
+CONTEXT_SIZE = 64  # Silero v5: last 64 samples of the previous frame are prepended
 
 # State shape: h=[1, batch, 128], c=[1, batch, 128], concat → [2, batch, 128]
 _STATE_H_SHAPE = (1, 1, 128)
@@ -25,42 +34,35 @@ _STATE_C_SHAPE = (1, 1, 128)
 
 
 def _find_onnx_model() -> str | None:
-    """Locate silero_vad.onnx — check torch cache, then HF cache."""
-    # 1. torch.hub cache (already downloaded by prior torch usage)
-    torch_cache = Path.home() / ".cache" / "torch" / "hub"
-    # Prefer the 16kHz op15 model — smaller, faster, no Conv shape issues
-    for pattern in (
-        "snakers4_silero-vad*/src/silero_vad/data/silero_vad_16k_op15.onnx",
-        "snakers4_silero-vad*/src/silero_vad/data/silero_vad.onnx",
-    ):
-        for candidate in torch_cache.glob(pattern):
-            if candidate.is_file():
-                return str(candidate)
+    """Locate the bundled Silero VAD ONNX weights.
 
-    # 2. HuggingFace cache
+    The MIT-licensed ``silero_vad_16k_op15.onnx`` (16 kHz, op15) ships inside
+    the app as ``backend/data/silero_vad_16k_op15.onnx`` and is bundled into
+    frozen builds at ``backend/data/`` (see build_binary.py). No pip package
+    and no torch anywhere - only onnxruntime loads it.
+
+    Lookup order: PyInstaller bundle (_MEIPASS) → <backend>/data (dev and
+    source checkouts) → HF cache (dev machines that fetched it).
+    """
+    names = ("silero_vad_16k_op15.onnx", "silero_vad.onnx")
+
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        for name in names:
+            bundled = Path(meipass) / "backend" / "data" / name
+            if bundled.is_file():
+                return str(bundled)
+
+    data_dir = Path(__file__).resolve().parent.parent / "data"
+    for name in names:
+        candidate = data_dir / name
+        if candidate.is_file():
+            return str(candidate)
+
     hf_cache = Path.home() / ".cache" / "huggingface" / "hub"
     for candidate in hf_cache.glob("models--snakers4*silero*vad*/**/silero_vad*.onnx"):
         if candidate.is_file():
             return str(candidate)
-
-    # 3. data/ directory (bundled in PyInstaller builds)
-    data_dir = Path(__file__).resolve().parent.parent.parent / "data"
-    for name in ("silero_vad_16k_op15.onnx", "silero_vad.onnx"):
-        bundled = data_dir / name
-        if bundled.is_file():
-            return str(bundled)
-
-    # 4. installed silero-vad wheel (ships its own onnx weights)
-    try:
-        import silero_vad
-
-        pkg_data = Path(silero_vad.__file__).resolve().parent / "data"
-        for name in ("silero_vad_16k_op15.onnx", "silero_vad.onnx"):
-            candidate = pkg_data / name
-            if candidate.is_file():
-                return str(candidate)
-    except ImportError:
-        pass
 
     return None
 
@@ -88,6 +90,7 @@ class SileroVAD:
         self._lock = threading.Lock()
         self._h = np.zeros(_STATE_H_SHAPE, dtype=np.float32)
         self._c = np.zeros(_STATE_C_SHAPE, dtype=np.float32)
+        self._context = np.zeros((1, CONTEXT_SIZE), dtype=np.float32)
         self._speech_count = 0
         self._silence_count = 0
         self._is_speech = False
@@ -104,7 +107,9 @@ class SileroVAD:
 
                 model_path = _find_onnx_model()
                 if model_path is None:
-                    raise FileNotFoundError("silero_vad.onnx not found in torch cache or data/")
+                    raise FileNotFoundError(
+                        "silero_vad_16k_op15.onnx missing from backend/data - voice chat will use the energy-based VAD"
+                    )
 
                 from ..backends._onnx_precision import resolve_providers
 
@@ -126,13 +131,16 @@ class SileroVAD:
         with self._lock:
             self._h = np.zeros(_STATE_H_SHAPE, dtype=np.float32)
             self._c = np.zeros(_STATE_C_SHAPE, dtype=np.float32)
+            self._context = np.zeros((1, CONTEXT_SIZE), dtype=np.float32)
 
     def detect(self, audio_chunk: np.ndarray) -> dict:
         """Detect speech in an audio chunk.
 
         Args:
-            audio_chunk: Float32 PCM samples at 16kHz. Can be any length
-                         but 512 samples (32ms) is the Silero native frame size.
+            audio_chunk: Float32 PCM samples at 16kHz. Any length is accepted;
+                         the signal is flattened to mono and processed in
+                         consecutive 512-sample frames (final partial frame is
+                         zero-padded). 512 samples (32ms) is the native frame size.
 
         Returns:
             dict with keys:
@@ -149,26 +157,51 @@ class SileroVAD:
         return self._detect_silero(audio_chunk)
 
     def _detect_silero(self, audio_chunk: np.ndarray) -> dict:
-        """Silero VAD detection via ONNX Runtime."""
+        """Silero VAD detection via ONNX Runtime.
+
+        Accepts any chunk length. The signal is flattened to mono and run
+        through the model in consecutive 512-sample frames (padding the
+        final partial frame); every frame advances the recurrent state and
+        context so successive calls stay coherent. The returned verdict is
+        the last frame's.
+        """
         if len(audio_chunk) == 0:
             return {"speech_prob": 0.0, "is_speech": False, "speech_started": False, "speech_ended": False}
 
-        # Ensure float32 and correct shape [batch=1, samples]
         audio = np.asarray(audio_chunk, dtype=np.float32)
-        if audio.ndim == 1:
-            audio = audio.reshape(1, -1)
+        if audio.ndim == 2:
+            # stereo: prefer channel-major if it looks like (2, N), else (N, 2)
+            axis = 0 if audio.shape[0] <= 2 and audio.shape[0] < audio.shape[1] else 1
+            audio = audio.mean(axis=axis) if audio.shape[axis] > 1 else audio.reshape(-1)
+        audio = audio.reshape(-1)
 
+        result = {"speech_prob": 0.0, "is_speech": False, "speech_started": False, "speech_ended": False}
+        for start in range(0, max(audio.size, 1), WINDOW_SIZE):
+            frame = audio[start : start + WINDOW_SIZE]
+            if frame.size < WINDOW_SIZE:
+                frame = np.pad(frame, (0, WINDOW_SIZE - frame.size))
+            result = self._run_frame(frame)
+        return result
+
+    def _run_frame(self, audio: np.ndarray) -> dict:
+        """Run one 512-sample frame through the model and update edge state."""
+        frame_in = audio.reshape(1, -1)
         with self._lock:
+            # Silero v5 input contract: the last 64 samples of the previous
+            # frame are prepended (576-sample effective window). Feeding a
+            # bare 512-sample frame yields ~0 probability for everything.
+            frame = np.concatenate([self._context, frame_in], axis=1)
             state = np.concatenate([self._h, self._c], axis=0)  # [2, 1, 128]
             sr = np.array(SAMPLE_RATE, dtype=np.int64)
 
             output, state_n = self._session.run(
                 None,
-                {"input": audio, "state": state, "sr": sr},
+                {"input": frame, "state": state, "sr": sr},
             )
+            self._context = frame_in[:, -CONTEXT_SIZE:].copy()
 
             speech_prob = float(output[0, 0])
-            # state_n shape: [batch=1, 2, 128] → split into h and c
+            # state_n shape: [2, batch=1, 128] - split into h and c
             self._h = state_n[0:1, :, :].copy()  # [1, 1, 128]
             self._c = state_n[1:2, :, :].copy()  # [1, 1, 128]
 

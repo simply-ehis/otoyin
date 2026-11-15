@@ -6,54 +6,69 @@ from ..protocols import ModelConfig, PresetVoiceConfig
 # circular import through .base -> configs).
 _BARK_STRUCTURED_VOICES: list[PresetVoiceConfig] | None = None
 
-# Shared Pocket-TTS voice presets (torch + ONNX variants use identical lists).
+# Shared Pocket-TTS voice presets — the english package's built-in voice
+# states (embeddings/) shipped with pocket-tts-english-q8_0.gguf. The list
+# previously carried the kyutai dev names, which do not exist in the audiocpp
+# package.
 _POCKET_TTS_PRESET_IDS = [
     "alba",
-    "alba-mackenna",
-    "amanda",
-    "brian",
-    "brian-friend",
-    "chris",
-    "jenny",
-    "jenny-schroeder",
-    "jordan",
-    "jordan-friend",
-    "leo",
-    "leo-friend",
-    "mahrus",
-    "mahrus-langman",
-    "mila",
-    "mila-friend",
-    "patt",
-    "patt-friend",
-    "tom",
-    "tom-langman",
+    "anna",
+    "azelma",
+    "bill_boerst",
+    "caro_davy",
+    "charles",
+    "cosette",
+    "eponine",
+    "estelle",
+    "eve",
+    "fantine",
+    "george",
+    "giovanni",
+    "jane",
+    "javert",
+    "jean",
+    "juergen",
+    "lola",
+    "marius",
+    "mary",
+    "michael",
+    "paul",
+    "peter_yearsley",
+    "rafael",
+    "stuart_bell",
+    "vera",
 ]
 _POCKET_TTS_STRUCTURED_VOICES = [
     PresetVoiceConfig(id="alba", name="Alba", gender="female", language="en"),
-    PresetVoiceConfig(id="alba-mackenna", name="Alba Mackenna", gender="female", language="en"),
-    PresetVoiceConfig(id="amanda", name="Amanda", gender="female", language="en"),
-    PresetVoiceConfig(id="brian", name="Brian", gender="male", language="en"),
-    PresetVoiceConfig(id="brian-friend", name="Brian (Friend)", gender="male", language="en"),
-    PresetVoiceConfig(id="chris", name="Chris", gender="male", language="en"),
-    PresetVoiceConfig(id="jenny", name="Jenny", gender="female", language="en"),
-    PresetVoiceConfig(id="jenny-schroeder", name="Jenny Schroeder", gender="female", language="en"),
-    PresetVoiceConfig(id="jordan", name="Jordan", gender="neutral", language="en"),
-    PresetVoiceConfig(id="jordan-friend", name="Jordan (Friend)", gender="neutral", language="en"),
-    PresetVoiceConfig(id="leo", name="Leo", gender="male", language="en"),
-    PresetVoiceConfig(id="leo-friend", name="Leo (Friend)", gender="male", language="en"),
-    PresetVoiceConfig(id="mahrus", name="Mahrus", gender="male", language="en"),
-    PresetVoiceConfig(id="mahrus-langman", name="Mahrus Langman", gender="male", language="en"),
-    PresetVoiceConfig(id="mila", name="Mila", gender="female", language="en"),
-    PresetVoiceConfig(id="mila-friend", name="Mila (Friend)", gender="female", language="en"),
-    PresetVoiceConfig(id="patt", name="Patt", gender="female", language="en"),
-    PresetVoiceConfig(id="patt-friend", name="Patt (Friend)", gender="female", language="en"),
-    PresetVoiceConfig(id="tom", name="Tom", gender="male", language="en"),
-    PresetVoiceConfig(id="tom-langman", name="Tom Langman", gender="male", language="en"),
+    PresetVoiceConfig(id="anna", name="Anna", gender="female", language="en"),
+    PresetVoiceConfig(id="azelma", name="Azelma", gender="female", language="en"),
+    PresetVoiceConfig(id="bill_boerst", name="Bill Boerst", gender="male", language="en"),
+    PresetVoiceConfig(id="caro_davy", name="Caro Davy", gender="female", language="en"),
+    PresetVoiceConfig(id="charles", name="Charles", gender="male", language="en"),
+    PresetVoiceConfig(id="cosette", name="Cosette", gender="female", language="en"),
+    PresetVoiceConfig(id="eponine", name="Éponine", gender="female", language="en"),
+    PresetVoiceConfig(id="estelle", name="Estelle", gender="female", language="en"),
+    PresetVoiceConfig(id="eve", name="Eve", gender="female", language="en"),
+    PresetVoiceConfig(id="fantine", name="Fantine", gender="female", language="en"),
+    PresetVoiceConfig(id="george", name="George", gender="male", language="en"),
+    PresetVoiceConfig(id="giovanni", name="Giovanni", gender="male", language="en"),
+    PresetVoiceConfig(id="jane", name="Jane", gender="female", language="en"),
+    PresetVoiceConfig(id="javert", name="Javert", gender="male", language="en"),
+    PresetVoiceConfig(id="jean", name="Jean", gender="male", language="en"),
+    PresetVoiceConfig(id="juergen", name="Juergen", gender="male", language="en"),
+    PresetVoiceConfig(id="lola", name="Lola", gender="female", language="en"),
+    PresetVoiceConfig(id="marius", name="Marius", gender="male", language="en"),
+    PresetVoiceConfig(id="mary", name="Mary", gender="female", language="en"),
+    PresetVoiceConfig(id="michael", name="Michael", gender="male", language="en"),
+    PresetVoiceConfig(id="paul", name="Paul", gender="male", language="en"),
+    PresetVoiceConfig(id="peter_yearsley", name="Peter Yearsley", gender="male", language="en"),
+    PresetVoiceConfig(id="rafael", name="Rafael", gender="male", language="en"),
+    PresetVoiceConfig(id="stuart_bell", name="Stuart Bell", gender="male", language="en"),
+    PresetVoiceConfig(id="vera", name="Vera", gender="female", language="en"),
 ]
 
 
-# Shared Kokoro voice presets (torch + ONNX variants use identical lists).
+# Shared Kokoro voice presets.
 _KOKORO_STRUCTURED_VOICES = [
     # American English female
     PresetVoiceConfig(id="af_alloy", name="Alloy", gender="female", language="en"),
@@ -116,6 +131,11 @@ _KOKORO_STRUCTURED_VOICES = [
     PresetVoiceConfig(id="zf_xiaoni", name="Xiaoni", gender="female", language="zh"),
     PresetVoiceConfig(id="zf_xiaoxiao", name="Xiaoxiao", gender="female", language="zh"),
     PresetVoiceConfig(id="zf_xiaoyi", name="Xiaoyi", gender="female", language="zh"),
+    # Mandarin Chinese male
+    PresetVoiceConfig(id="zm_yunjian", name="Yunjian", gender="male", language="zh"),
+    PresetVoiceConfig(id="zm_yunxi", name="Yunxi", gender="male", language="zh"),
+    PresetVoiceConfig(id="zm_yunxia", name="Yunxia", gender="male", language="zh"),
+    PresetVoiceConfig(id="zm_yunyang", name="Yunyang", gender="male", language="zh"),
 ]
 
 
@@ -134,48 +154,49 @@ def _get_tts_configs() -> list[ModelConfig]:
         ]
     return [
         # --- Kokoro 82M (ONNX): torch-free, same 45 voices, 8 languages ---
-        # quant=int8: the backend prefers kokoro-v1.0.int8.onnx (114 MB) from the
-        # kokoro-onnx GitHub release, falling back to fp16 then the fp32 HF
-        # mirror. Upstream reports 0.916 spectral correlation vs fp32. This is
-        # ~212 MB smaller per install than the fp32-only mirror graph.
+        # --- Kokoro 82M: audio.cpp kokoro_tts family (no torch, no ONNX) ---
+        # Single self-contained Q8_0 GGUF (181 MB): weights, config, vocab,
+        # 54 upstream voice packs. Runs anywhere (CPU-first).
         ModelConfig(
             model_name="kokoro-onnx",
-            display_name="Kokoro 82M",
+            display_name="Kokoro",
             engine="kokoro",
-            hf_repo_id="Heliosoph/kokoro-v1.0-onnx",
-            size_mb=114,
+            hf_repo_id="audio-cpp/audio.cpp-gguf",
+            size_mb=181,
             min_ram_mb=250,
+            download_file="Kokoro-82M-GGUF/kokoro-82m-q8_0.gguf",
             languages=["en", "es", "fr", "hi", "it", "pt", "ja", "zh"],
             supports_voice_mixing=True,
             structured_preset_voices=_KOKORO_STRUCTURED_VOICES,
             category="tts",
-            quant="int8",
-            pip_packages=["kokoro>=0.9.4", "misaki[en,ja,zh]>=0.9.4"],
+            quant="Q8_0",
+            pip_packages=[],
             preload_priority=0,
             cold_start_ms=3000,
             warm_start_ms=500,
             streaming=True,
-            execution_provider="CPU",
+            execution_provider="",
         ),
-        # --- Fish Audio S2 Pro (GGUF, 4.56B Dual-AR): s2.cpp sidecar -----
-        # Fish Audio Research License (non-commercial research). Q4_K_M GGUF
-        # (3.4 GB) packs Dual-AR weights + RVQ codec. One-shot subprocess per
-        # generation; voice cloning from 5-30s reference audio. Priced at
-        # $80 user anchor (overrides $91 equation — see PRICING_PLAN.md §3).
+        # --- Fish Audio S2 Pro (GGUF, 4.56B Dual-AR): audiocpp_cli sidecar --
+        # Fish Audio Research License (non-commercial research). Single
+        # self-contained Q8_0 GGUF (6.0 GB) packs Dual-AR weights + RVQ codec.
+        # One-shot subprocess per generation; voice cloning from 5-30s
+        # reference audio. Priced at $80 user anchor (PRICING_PLAN.md §3).
         ModelConfig(
             model_name="fish-speech-s2-pro",
-            display_name="Fish Audio S2 Pro (GGUF)",
+            display_name="Fish Audio S2 Pro",
             engine="fish_speech_s2",
-            hf_repo_id="rodrigomt/s2-pro-gguf",
-            size_mb=3400,
-            min_ram_mb=3500,
+            hf_repo_id="audio-cpp/audio.cpp-gguf",
+            size_mb=6025,
+            min_ram_mb=8000,
+            download_file="Fish-Audio-S2-Pro-GGUF/fish-audio-s2-pro-q8_0.gguf",
             min_vram_mb=2048,
             clone_voice=True,
             category="tts",
             emotion_control=True,
             paralinguistic_tags=True,
             gpu_only=True,
-            quant="Q4_K_M",
+            quant="Q8_0",
             supported_tags=[
                 "[angry]",
                 "[sad]",
@@ -191,54 +212,45 @@ def _get_tts_configs() -> list[ModelConfig]:
             license_note="Non-commercial research use. Verify rights before commercial deployment.",
             commercial_use=False,
         ),
-        # --- Pocket-TTS: 100M, CPU, clone + presets, CC-BY-4.0 -----
+        # --- Pocket-TTS: audiocpp pocket_tts family (no torch, no ONNX) ---
+        # English package: q8_0 GGUF (~122 MB) + packaged voice-state
+        # embeddings installed as a subtree (--voice-id alba). Cloning via
+        # --voice-ref. Other languages (fr/de/pt/it/es) can ship as separate
+        # catalog entries later (PocketTTS-GGUF/<lang>/).
         ModelConfig(
             model_name="pocket-tts",
-            display_name="Pocket-TTS",
+            display_name="Pocket TTS",
             engine="pocket_tts",
-            hf_repo_id="kyutai/pocket-tts",
-            size_mb=200,
+            hf_repo_id="audio-cpp/audio.cpp-gguf",
+            size_mb=450,
+            min_ram_mb=400,
             clone_voice=True,
             category="tts",
-            pip_packages=["pocket-tts>=0.1.0"],
+            pip_packages=[],
             preset_voices=_POCKET_TTS_PRESET_IDS,
             structured_preset_voices=_POCKET_TTS_STRUCTURED_VOICES,
-            languages=["en", "fr", "de", "pt", "it", "es"],
+            languages=["en"],
+            quant="Q8_0",
+            download_subtree="PocketTTS-GGUF/english",
             license_id="cc-by-4.0",
             license_note="Pocket-TTS weights are CC-BY; attribution required.",
         ),
-        # --- Pocket-TTS ONNX: torch-free, 6 languages ---
-        ModelConfig(
-            model_name="pocket-tts-onnx",
-            display_name="Pocket-TTS",
-            engine="pocket_tts",
-            hf_repo_id="KevinAHM/pocket-tts-onnx",
-            size_mb=200,
-            clone_voice=True,
-            category="tts",
-            pip_packages=["pocket-tts>=0.1.0", "sentencepiece>=0.2.0"],
-            preset_voices=_POCKET_TTS_PRESET_IDS,
-            structured_preset_voices=_POCKET_TTS_STRUCTURED_VOICES,
-            languages=["en", "de", "fr", "it", "pt", "es"],
-            quant="int8",
-            license_id="cc-by-4.0",
-            license_note="Pocket-TTS ONNX conversion is CC-BY; attribution required.",
-        ),
-        # --- MOSS-TTS-Nano: 100M, torch-free ONNX, zero-shot clone -----
-        # Weights = MOSS-TTS-Nano-100M-ONNX (~673MB: .data + .onnx) +
-        # MOSS-Audio-Tokenizer-Nano-ONNX (~91MB codec). Only ONNX path
-        # exists (no torch fallback); factory raises if assets absent.
+        # --- MOSS-TTS-Nano: audiocpp moss_tts_nano family (Apache-2.0) ---
+        # Single self-contained Q8_0 GGUF (~184 MB). Zero-shot clone.
+        # Note: upstream warns of q8 vs incremental-decode drift on CUDA/HIP;
+        # on affected GPUs use session option weight_type=f16 or the bf16 GGUF.
         ModelConfig(
             model_name="moss-tts-nano",
-            display_name="MOSS-TTS-Nano",
+            display_name="MOSS TTS Nano",
             engine="moss_tts_nano",
-            hf_repo_id="OpenMOSS-Team/MOSS-TTS-Nano-100M-ONNX",
-            size_mb=640,
-            min_ram_mb=800,
+            hf_repo_id="audio-cpp/audio.cpp-gguf",
+            size_mb=184,
+            min_ram_mb=250,
             min_vram_mb=0,
+            download_file="MOSS-TTS-Nano-100M-GGUF/moss-tts-nano-100m-q8_0.gguf",
             clone_voice=True,
             category="tts",
-            pip_packages=["sentencepiece>=0.2.0"],
+            pip_packages=[],
             languages=[
                 "en",
                 "zh",
@@ -261,24 +273,22 @@ def _get_tts_configs() -> list[ModelConfig]:
                 "sv",
                 "fi",
             ],
-            # fp32, not int8: the official OpenMOSS-Team export ships no int8
-            # graphs. A third-party int8 build exists
-            # (REALBITS/MOSS-TTS-Nano-100M-ONNX-int8, ~198 MB) but it is a
-            # community upload tuned for ORT-Mobile, not the reference export.
-            quant="fp32",
+            quant="Q8_0",
         ),
-        # --- KittenTTS mini: Apache-2.0, lightest TTS (no torch, CPU-only).
-        # Checkpoint is selectable via KITTEN_SIZE env (mini=80MB / micro=40MB /
-        # nano=15MB). 8 preset voices, no cloning, no voice mixing. Output 24kHz.
+        # --- KittenTTS mini: audiocpp kitten_tts family (Apache-2.0).
+        # Single GGUF, original precision (upstream ships no quantized package;
+        # the int8 below the nano-size is a different model). 8 preset voices,
+        # no cloning, no voice mixing. Output 24kHz.
         ModelConfig(
             model_name="kitten-tts-mini",
-            display_name="KittenTTS (mini, 80MB)",
+            display_name="Kitten TTS",
             engine="kitten_tts",
-            hf_repo_id="KittenML/kitten-tts-mini-0.8",
+            hf_repo_id="audio-cpp/audio.cpp-gguf",
             model_size="mini",
-            size_mb=80,
+            size_mb=288,
+            download_file="KittenTTS-GGUF/kitten-tts-mini-0.8-orig.gguf",
             category="tts",
-            pip_packages=["phonemizer>=3.2.0", "safetensors>=0.4.0"],
+            pip_packages=[],
             preset_voices=["Bella", "Jasper", "Luna", "Bruno", "Rosie", "Hugo", "Kiki", "Leo"],
             structured_preset_voices=[
                 PresetVoiceConfig(id="Bella", name="Bella", gender="female", language="en"),
@@ -291,27 +301,25 @@ def _get_tts_configs() -> list[ModelConfig]:
                 PresetVoiceConfig(id="Leo", name="Leo", gender="male", language="en"),
             ],
             languages=["en"],
-            # fp32, not int8: KittenML/kitten-tts-mini-0.8 publishes only
-            # kitten_tts_mini_v0_8.onnx (78,268,016 B). Upstream ships int8 only
-            # for the *nano* size (KittenML/kitten-tts-nano-0.8-int8), not mini.
-            # Claiming int8 here overstated the saving; the real graph is fp32.
+            # Upstream ships no quantized package — this is original precision.
             quant="fp32",
         ),
-        # --- Qwen3-TTS 12Hz 1.7B Base (GGUF): llama-tts sidecar ------------
+        # --- Qwen3-TTS 12Hz 1.7B Base (GGUF): audiocpp_cli sidecar ----------
         # Apache-2.0 weights, sellable (catalog id qwen3-tts-1.7b, $40).
-        # Needs TWO files from ggml-org/Qwen3-TTS-12Hz-1.7B-Base-GGUF:
-        # backbone Q8_0 (1.85 GB) + mmproj Q8_0 (446 MB). One-shot
-        # subprocess per generation; batch TTS on weak CPUs (RTF ~3-6).
+        # Single self-contained GGUF (audio.cpp qwen3_tts family):
+        # Qwen3-TTS-12Hz-1.7B-Base-GGUF/qwen3-tts-12hz-1.7b-base-q8_0_v2.gguf
+        # (~2.57 GB). One-shot subprocess per generation.
         ModelConfig(
             model_name="qwen3-tts-1.7b",
-            display_name="Qwen3-TTS 12Hz 1.7B Base (GGUF)",
+            display_name="Qwen3 TTS",
             engine="qwen3_tts",
-            hf_repo_id="Qwen/Qwen3-TTS-1.7B-GGUF",
-            size_mb=2296,
-            min_ram_mb=2500,
+            hf_repo_id="audio-cpp/audio.cpp-gguf",
+            size_mb=2570,
+            min_ram_mb=3500,
+            download_file="Qwen3-TTS-12Hz-1.7B-Base-GGUF/qwen3-tts-12hz-1.7b-base-q8_0_v2.gguf",
             min_vram_mb=0,
             clone_voice=True,
-            voice_design=True,
+            voice_design=False,  # Base clones only; VoiceDesign is a separate GGUF variant
             category="tts",
             quant="Q8_0",
             languages=["zh", "en", "de", "it", "pt", "es", "ja", "ko", "fr", "ru"],
@@ -333,6 +341,15 @@ def _get_tts_configs() -> list[ModelConfig]:
             preset_voices=[v.id for v in _BARK_STRUCTURED_VOICES],
             structured_preset_voices=_BARK_STRUCTURED_VOICES,
             languages=["en", "de", "es", "fr", "hi", "it", "ja", "ko", "pl", "pt", "ru", "tr", "zh"],
+            paralinguistic_tags=True,
+            supported_tags=[
+                "[laughter]",
+                "[laughs]",
+                "[sighs]",
+                "[gasps]",
+                "[clears throat]",
+                "[music]",
+            ],
         ),
         # --- SteerTTS (WhissleAI) — expressive TTS with style control (C++ native text processing) ---
         ModelConfig(
@@ -353,23 +370,6 @@ def _get_tts_configs() -> list[ModelConfig]:
 def _get_tts_gguf_configs() -> list[ModelConfig]:
     """Return GGUF/ONNX variant TTS configs (no torch required)."""
     return [
-        # --- Zonos v0.1 GGUF (CrispASR CLI, no torch) ---
-        ModelConfig(
-            model_name="zonos-v0.1-gguf",
-            display_name="Zyphra Zonos v0.1 (GGUF)",
-            engine="zonos_gguf",
-            hf_repo_id="zyphra/Zonos-v0.1-GGUF",
-            size_mb=1700,
-            min_ram_mb=1800,
-            min_vram_mb=0,
-            clone_voice=True,
-            category="tts",
-            emotion_control=True,
-            paralinguistic_tags=False,
-            pip_packages=[],
-            languages=["en"],
-            quant="Q8_0",
-        ),
         # --- Parler TTS Mini GGUF (CrispASR CLI, no torch) ---
         ModelConfig(
             model_name="parler-tts-mini-gguf",
@@ -385,14 +385,17 @@ def _get_tts_gguf_configs() -> list[ModelConfig]:
             languages=["en"],
             quant="Q8_0",
         ),
-        # --- VoxCPM2 GGUF (CrispASR CLI, no torch) ---
+        # --- VoxCPM2 GGUF (audiocpp_cli sidecar, no torch) ---
+        # OpenBMB VoxCPM2: 2M+ hours multilingual, cloning + voice design.
+        # Single self-contained Q8_0 GGUF.
         ModelConfig(
             model_name="voxcpm2-q8",
-            display_name="VoxCPM2 2B (GGUF)",
+            display_name="VoxCPM2",
             engine="voxcpm2",
-            hf_repo_id="cstr/voxcpm2-GGUF",
-            size_mb=2830,
+            hf_repo_id="audio-cpp/audio.cpp-gguf",
+            size_mb=2818,
             min_ram_mb=3000,
+            download_file="VoxCPM2-GGUF/voxcpm2-q8_0.gguf",
             min_vram_mb=0,
             clone_voice=True,
             voice_design=True,
@@ -432,5 +435,353 @@ def _get_tts_gguf_configs() -> list[ModelConfig]:
             ],
             quant="Q8_0",
             paid=True,
+        ),
+        # --- Phonon-31m-en: 31M tiny CPU English TTS (audiocpp gradium_phonon) ---
+        # Apache-2.0 (Gradium phonon-31m-en). Single GGUF + default voice-safesntensors.
+        ModelConfig(
+            model_name="phonon-31m-en",
+            display_name="Phonon-31m-en",
+            engine="phonon",
+            hf_repo_id="gradium/phonon-31m-en-audiocpp",
+            size_mb=82,
+            min_ram_mb=200,
+            clone_voice=False,
+            category="tts",
+            pip_packages=[],
+            download_patterns=["phonon-31m-en-q8_0.gguf", "default-voice.safetensors"],
+            languages=["en"],
+            quant="Q8_0",
+            license_id="apache-2.0",
+            license_note="Gradium Phonon 31M (Apache-2.0).",
+        ),
+        # --- Supertonic 3: 31 languages + preset voices (audiocpp supertonic) ---
+        ModelConfig(
+            model_name="supertonic-3",
+            display_name="Supertonic 3",
+            engine="supertonic",
+            hf_repo_id="audio-cpp/audio.cpp-gguf",
+            size_mb=433,
+            min_ram_mb=700,
+            clone_voice=False,
+            category="tts",
+            languages=[
+                "en",
+                "ko",
+                "ja",
+                "ar",
+                "bg",
+                "cs",
+                "da",
+                "de",
+                "el",
+                "es",
+                "et",
+                "fi",
+                "fr",
+                "hi",
+                "hr",
+                "hu",
+                "id",
+                "it",
+                "lt",
+                "lv",
+                "nl",
+                "pl",
+                "pt",
+                "ro",
+                "ru",
+                "sk",
+                "sl",
+                "sv",
+                "tr",
+                "uk",
+                "vi",
+            ],
+            preset_voices=["M1", "M2", "M3", "M4", "M5", "F1", "F2", "F3", "F4", "F5"],
+            structured_preset_voices=[
+                PresetVoiceConfig(id="M1", name="M1 (Male 1)", gender="male", language="en"),
+                PresetVoiceConfig(id="M2", name="M2 (Male 2)", gender="male", language="en"),
+                PresetVoiceConfig(id="M3", name="M3 (Male 3)", gender="male", language="en"),
+                PresetVoiceConfig(id="M4", name="M4 (Male 4)", gender="male", language="en"),
+                PresetVoiceConfig(id="M5", name="M5 (Male 5)", gender="male", language="en"),
+                PresetVoiceConfig(id="F1", name="F1 (Female 1)", gender="female", language="en"),
+                PresetVoiceConfig(id="F2", name="F2 (Female 2)", gender="female", language="en"),
+                PresetVoiceConfig(id="F3", name="F3 (Female 3)", gender="female", language="en"),
+                PresetVoiceConfig(id="F4", name="F4 (Female 4)", gender="female", language="en"),
+                PresetVoiceConfig(id="F5", name="F5 (Female 5)", gender="female", language="en"),
+            ],
+            pip_packages=[],
+            download_file="Supertonic-3-GGUF/supertonic-3-q8_0.gguf",
+            quant="Q8_0",
+            license_id="apache-2.0",
+            license_note="Supertone Supertonic 3 (Apache-2.0).",
+        ),
+        # --- Piper TTS: en-US lessac-medium (audiocpp piper_tts) ---
+        # MIT license; 22 kHz mono; eSpeak-ng required. 100+ voices available
+        # upstream, only one bundled pack configured here.
+        ModelConfig(
+            model_name="piper-en-us-lessac-medium",
+            display_name="Piper",
+            engine="piper_tts",
+            hf_repo_id="audio-cpp/audio.cpp-gguf",
+            size_mb=60,
+            min_ram_mb=100,
+            clone_voice=False,
+            category="tts",
+            languages=["en"],
+            preset_voices=["en-us-lessac-medium"],
+            pip_packages=[],
+            download_file="Piper-TTS-GGUF/piper-en-us-lessac-medium-orig.gguf",
+            quant="F32",
+            license_id="mit",
+            license_note="Piper VITS lessac-medium (MIT).",
+        ),
+        # --- Inflect Micro v2: 31M tiny English TTS (audiocpp inflect_v2) ---
+        # Apache-2.0 (owensong/Inflect-Micro-v2). FP32-only — ships no Q8_0/GGUF
+        # quant; orig GGUF is 68.7 MB. Requires eSpeak-ng. No clone, no tags.
+        ModelConfig(
+            model_name="inflect-micro-v2",
+            display_name="Inflect Micro v2",
+            engine="inflect_v2",
+            hf_repo_id="audio-cpp/audio.cpp-gguf",
+            size_mb=69,
+            min_ram_mb=150,
+            clone_voice=False,
+            category="tts",
+            languages=["en"],
+            pip_packages=[],
+            download_file="Inflect-Micro-v2-GGUF/inflect-micro-v2-orig.gguf",
+            quant="F32",
+            license_id="apache-2.0",
+            license_note="Inflect Micro v2 (Apache-2.0). FP32-only; requires eSpeak-ng.",
+        ),
+        # --- Chatterbox-Turbo: 350M English built-in voice only (audiocpp) ---
+        # MIT (community repack). English only. No voice cloning supported.
+        ModelConfig(
+            model_name="chatterbox-turbo",
+            display_name="Chatterbox Turbo",
+            engine="chatterbox_turbo",
+            hf_repo_id="audio-cpp/audio.cpp-gguf",
+            size_mb=667,
+            min_ram_mb=900,
+            clone_voice=False,
+            category="tts",
+            languages=["en"],
+            pip_packages=[],
+            download_file="Chatterbox-Turbo-GGUF/chatterbox-turbo-q8_0.gguf",
+            quant="Q8_0",
+            license_id="mit",
+            license_note="Chatterbox-Turbo repacked under MIT (community conversion).",
+            paralinguistic_tags=True,
+            supported_tags=[
+                "[advertisement]",
+                "[angry]",
+                "[chuckle]",
+                "[clear throat]",
+                "[cough]",
+                "[crying]",
+                "[dramatic]",
+                "[fear]",
+                "[gasp]",
+                "[groan]",
+                "[happy]",
+                "[laugh]",
+                "[narration]",
+                "[sarcastic]",
+                "[shush]",
+                "[sigh]",
+                "[sniff]",
+                "[surprised]",
+                "[whispering]",
+            ],
+        ),
+        # --- Audio8-TTS: realistic 0.6B, clone, multilingual ---
+        # Apache-2.0. Small folder download 1.4 GB.
+        ModelConfig(
+            model_name="audio8-tts-realistic",
+            display_name="Audio8-TTS",
+            engine="audio8_tts",
+            hf_repo_id="audio-cpp/Audio8-TTS-Realistic-0.6b-GGUF",
+            size_mb=1363,
+            min_ram_mb=2000,
+            min_vram_mb=0,
+            clone_voice=True,
+            category="tts",
+            languages=["en", "zh", "de", "es", "fr", "it", "ja", "ko", "nl", "pl", "yue", "auto"],
+            pip_packages=[],
+            download_file="audio8-tts-realistic-0.6b-q8_0.gguf",
+            quant="Q8_0",
+            license_id="apache-2.0",
+            license_note="Audio8-TTS Realistic 0.6b (Apache-2.0).",
+        ),
+        # --- CosyVoice3: cloning + cross-lingual (audiocpp cosyvoice3) ---
+        ModelConfig(
+            model_name="cosyvoice3",
+            display_name="CosyVoice3",
+            engine="cosyvoice3",
+            hf_repo_id="audio-cpp/audio.cpp-gguf",
+            size_mb=2153,
+            min_ram_mb=3200,
+            min_vram_mb=2000,
+            clone_voice=True,
+            category="tts",
+            supported_tags=[],
+            pip_packages=[],
+            download_file="CosyVoice3-GGUF/cosyvoice3-q8_0.gguf",
+            quant="Q8_0",
+            languages=["zh", "en", "ja", "ko", "de", "es", "fr", "it", "ru", "yue"],
+            license_id="apache-2.0",
+            license_note="FunAudioLLM CosyVoice3 (Apache-2.0). Voice cloning = user's responsibility.",
+        ),
+        # --- MagpieTTS-357M: NVIDIA 357M multilingual preset (audiocpp magpie_tts) ---
+        # baked 10 voices (Aria/Jason/John/Leo/Sofia). Apache-2.0.
+        ModelConfig(
+            model_name="magpie-tts-357m",
+            display_name="MagpieTTS",
+            engine="magpie_tts",
+            hf_repo_id="audio-cpp/audio.cpp-gguf",
+            size_mb=1490,
+            min_ram_mb=2000,
+            clone_voice=False,
+            category="tts",
+            preset_voices=["Aria", "Jason", "John", "Leo", "Sofia"],
+            pip_packages=[],
+            download_file="MagpieTTS-Multilingual-357M-GGUF/magpie-tts-multilingual-357m-q8_0.gguf",
+            quant="Q8_0",
+            languages=["de", "en", "es", "fr", "hi", "it", "ko", "pt-BR", "vi", "zh"],
+            license_id="apache-2.0",
+            license_note="NVIDIA MagpieTTS (Apache-2.0). Baked voices only; no reference cloning.",
+        ),
+        # --- ZONOS3-Mini: 11 layers GQA, clone, Apache-2.0 (Zyphra) ---
+        # Needs 3 files from Zyphra/ZONOS3-Mini subtree: GGUF + speaker encoders.
+        ModelConfig(
+            model_name="zonos3-mini",
+            display_name="ZONOS3-Mini",
+            engine="zonos3",
+            hf_repo_id="Zyphra/ZONOS3-Mini",
+            size_mb=1106,
+            min_ram_mb=2500,
+            clone_voice=True,
+            category="tts",
+            languages=[
+                "ar",
+                "bg",
+                "bn",
+                "cs",
+                "da",
+                "de",
+                "el",
+                "en",
+                "es",
+                "fi",
+                "fr",
+                "gu",
+                "he",
+                "hi",
+                "hu",
+                "id",
+                "it",
+                "ja",
+                "ka",
+                "kn",
+                "ko",
+                "ml",
+                "mr",
+                "ms",
+                "nl",
+                "no",
+                "or",
+                "pa",
+                "pl",
+                "pt",
+                "ro",
+                "ru",
+                "sk",
+                "sv",
+                "ta",
+                "te",
+                "th",
+                "tl",
+                "tr",
+                "uk",
+                "ur",
+                "vi",
+                "zh",
+            ],
+            pip_packages=[],
+            download_patterns=[
+                "gguf/backbone-ptq.gguf",
+                "gguf/zac-keep2.gguf",
+                "gguf/spk-encoder.gguf",
+            ],
+            quant="PTQ",
+            license_id="apache-2.0",
+            license_note="Zyphra ZONOS3-Mini (Apache-2.0 weights).",
+        ),
+        # --- OmniVoice: 600+ languages, clone + design, NC license ---
+        ModelConfig(
+            model_name="omnivoice",
+            display_name="OmniVoice",
+            engine="omnivoice",
+            hf_repo_id="audio-cpp/audio.cpp-gguf",
+            size_mb=1288,
+            min_ram_mb=1800,
+            min_vram_mb=2000,
+            clone_voice=True,
+            voice_design=True,
+            supported_tags=["[laughter]", "[sigh]", "[breath]", "[cough]"],
+            category="tts",
+            pip_packages=[],
+            download_file="OmniVoice-GGUF/omnivoice-q8_0.gguf",
+            quant="Q8_0",
+            languages=["en", "zh", "ja", "ko", "fr", "de", "es", "it", "pt", "ru", "ar", "hi"],
+            license_id="cc-by-nc-4.0",
+            license_note="OmniVoice (CC-BY-NC-4.0). Non-commercial use only.",
+            commercial_use=False,
+        ),
+        # --- Yue2-3B: lyrics + style, NC ---
+        # 2 files: yue2-3b-q8_0.gguf + yue2-vae-f16.gguf. 4.3 GB total.
+        ModelConfig(
+            model_name="yue2-3b",
+            display_name="Yue2-3B",
+            engine="yue2",
+            hf_repo_id="audio-cpp/Yue2-3B-GGUF",
+            size_mb=4322,
+            min_ram_mb=6000,
+            min_vram_mb=8000,
+            clone_voice=False,
+            category="music",
+            pip_packages=[],
+            download_patterns=[
+                "yue2-3b-q8_0.gguf",
+                "yue2-vae-f16.gguf",
+            ],
+            quant="Q8_0",
+            languages=["en", "zh"],
+            license_id="cc-by-nc-4.0",
+            license_note="Yue2-3B (CC-BY-NC-4.0). Non-commercial.",
+            commercial_use=False,
+        ),
+        # --- Drama-3: 35B params, CUDA required (fish_drama3) ---
+        # Fish Audio Community License v1.0 — free < $500k/yr revenue,
+        # attribution required, no hosted service.
+        ModelConfig(
+            model_name="drama-3-4bit",
+            display_name="Drama-3",
+            engine="fish_drama3",
+            hf_repo_id="Jmica/Drama-3-GGUF",
+            size_mb=23500,
+            min_ram_mb=24000,
+            min_vram_mb=16000,
+            gpu_only=True,
+            clone_voice=True,
+            category="tts",
+            languages=["en"],
+            pip_packages=[],
+            download_file="drama-3-backbone-8bit-experts-Q4_K_S.gguf",
+            quant="Q4_K_S",
+            license_id="fish-audio-community-license",
+            license_note="Fish Audio Community License v1.0 — free under $500K/yr, no hosted service.",
+            commercial_use=False,
         ),
     ]

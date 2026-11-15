@@ -68,7 +68,7 @@ class TestCloningEngines:
 
     def test_known_engines_present(self):
         """Core cloning engines should be in the set."""
-        for engine in ("zonos_gguf", "styletts2", "qwen3_tts", "parler_tts_gguf", "neutts_2e", "orpheus"):
+        for engine in ("voxcpm2", "fish_speech_s2", "styletts2", "qwen3_tts", "parler_tts_gguf", "orpheus"):
             assert engine in CLONING_ENGINES, f"{engine} missing from CLONING_ENGINES"
 
 
@@ -82,14 +82,14 @@ class TestClonedProfileCreation:
             VoiceProfileCreate(
                 name="My Clone",
                 voice_type="cloned",
-                default_engine="zonos_gguf",
+                default_engine="qwen3_tts",
             ),
             db,
         )
         assert profile.id is not None
         assert profile.name == "My Clone"
         assert profile.voice_type == "cloned"
-        assert profile.default_engine == "zonos_gguf"
+        assert profile.default_engine == "qwen3_tts"
 
     @pytest.mark.asyncio
     async def test_create_cloned_profile_all_engines(self, db, mock_profiles_dir):
@@ -139,7 +139,7 @@ class TestClonedEngineValidation:
         profile = MagicMock()
         profile.voice_type = "cloned"
         profile.design_prompt = None
-        validate_profile_engine(profile, "zonos_gguf")
+        validate_profile_engine(profile, "qwen3_tts")
 
     def test_invalid_engine_raises(self):
         profile = MagicMock()
@@ -167,7 +167,7 @@ class TestClonedProfileSamples:
             VoiceProfileCreate(
                 name="With Sample",
                 voice_type="cloned",
-                default_engine="zonos_gguf",
+                default_engine="qwen3_tts",
             ),
             db,
         )
@@ -202,7 +202,7 @@ class TestClonedProfileSamples:
             VoiceProfileCreate(
                 name="Sample List",
                 voice_type="cloned",
-                default_engine="zonos_gguf",
+                default_engine="qwen3_tts",
             ),
             db,
         )
@@ -238,7 +238,7 @@ class TestClonedFieldValidation:
             preset_engine=None,
             preset_voice_id=None,
             design_prompt=None,
-            default_engine="zonos_gguf",
+            default_engine="qwen3_tts",
         )
         assert result is None
 
@@ -270,7 +270,7 @@ class TestClonedFieldValidation:
             preset_engine="kokoro",
             preset_voice_id=None,
             design_prompt=None,
-            default_engine="zonos_gguf",
+            default_engine="qwen3_tts",
         )
         assert result is not None
 
@@ -280,6 +280,6 @@ class TestClonedFieldValidation:
             preset_engine=None,
             preset_voice_id=None,
             design_prompt="Some prompt",
-            default_engine="zonos_gguf",
+            default_engine="qwen3_tts",
         )
         assert result is not None

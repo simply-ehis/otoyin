@@ -4,7 +4,7 @@ OWNS: `backend/utils/llm_context.py` (formula + clamp), `backend/backends/gguf_s
 
 READ-WHEN: You change model sizes, the context budget, idle-unload behavior, or the Settings UI for LLM context/tokens.
 
-KEY-FILES: `docs/knowledge/45-agent-manifest.md` (agent prompt source), `docs/ASSISTANT_ARCHITECTURE.md` (planner lineup + migration).
+KEY-FILES: `docs/knowledge/45-agent-manifest.md` (agent prompt source), `docs/knowledge/56-assistant-agent.md` (planner lineup + refinement).
 
 INVARIANTS:
 - n_ctx is chosen from TOTAL system RAM (psutil) and the loaded model size via `compute_llm_context`.

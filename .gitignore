@@ -196,3 +196,6 @@ backup-pre-test-*/
 
 backend/models/*.onnx
 
+
+# Local experiment/scratch dirs (model snapshots, test downloads - never commit)
+scratch/

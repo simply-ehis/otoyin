@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from backend.services.mastering import master_audio
-from backend.services.stem_separation import SEPARATION_AVAILABLE, separate_audio
+from backend.services.stem_separation_onnx import _is_model_cached, separate_audio_onnx
 
 SR = 44100
 TONE = (
@@ -37,8 +37,8 @@ class TestMastering:
 
 
 class TestStemSeparation:
-    def test_gated_without_demucs(self):
-        if SEPARATION_AVAILABLE:
-            pytest.skip("Demucs installed; full separation requires model download")
+    def test_gated_without_weights(self):
+        if _is_model_cached():
+            pytest.skip("Demucs ONNX weights are installed; full separation requires model")
         with pytest.raises(RuntimeError):
-            separate_audio(TONE, SR, stem="vocals")
+            separate_audio_onnx(TONE, SR, stem="vocals")

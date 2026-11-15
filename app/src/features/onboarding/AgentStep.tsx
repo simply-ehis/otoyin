@@ -61,7 +61,9 @@ export function AgentStep({
 		void (async () => {
 			try {
 				const res = await apiClient.getRecommendedModels();
-				const planner = res.models.find((m) => m.model_name === "planner-4b");
+				const planner = res.models.find(
+					(m) => m.model_name === "planner-lfm2-2.6b",
+				);
 				if (!cancelled) {
 					setPlannerInstalled(planner?.downloaded === true);
 					setPlannerState("ready");
@@ -84,7 +86,9 @@ export function AgentStep({
 		void (async () => {
 			try {
 				const res = await apiClient.getDeviceCapabilities();
-				const compat = res.models.find((m) => m.model_name === "planner-4b");
+				const compat = res.models.find(
+					(m) => m.model_name === "planner-lfm2-2.6b",
+				);
 				if (!cancelled) {
 					setPlannerCompat(
 						compat
@@ -107,7 +111,7 @@ export function AgentStep({
 		setInstalling(true);
 		setInstallError("");
 		try {
-			await apiClient.triggerModelDownload("planner-4b");
+			await apiClient.triggerModelDownload("planner-lfm2-2.6b");
 			// Honest state: a 2.4 GB download is queued/running, not "installed".
 			// The Store owns progress; the wizard re-checks on next open.
 			setPlannerQueued(true);

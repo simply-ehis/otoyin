@@ -15,20 +15,20 @@ Create custom sound effects and ambient textures from scratch using otoyin's syn
 - User wants to layer multiple sounds into a composite effect
 
 ## Prerequisites
-- At least one audio generation engine available (`stable_audio`, `sa3_sfx`, `acestep_gguf`, `heartmula`, or `minimax_music3`)
+- At least one audio generation engine available (`stable_audio`, `sa3_sfx`, `acestep_gguf`, or `heartmula`)
 - Effects chain available for post-processing
 
 ## Parameters / Schema
 - **text**: Description of the desired sound (natural language)
 - **duration_seconds**: Length in seconds (`generate_sfx`: 0.1–30)
-- **engine**: `stable_audio` or `sa3_sfx` for SFX; `acestep_gguf`, `heartmula`, or `minimax_music3` for musical textures
+- **engine**: `stable_audio` or `sa3_sfx` for SFX; `acestep_gguf` or `heartmula` for musical textures
 - **effects**: Optional post-processing chain
 
 ## Agent procedure
 
 ### 1. Determine the sound type
 - **Human sounds** (laugh, cough, sigh, gasp) → describe them in a Stable Audio prompt; there is no dedicated non-verbal engine in the current set.
-- **Musical textures** (pads, drones, risers) → use `generate_music` with `acestep_gguf`, `heartmula`, or `minimax_music3`.
+- **Musical textures** (pads, drones, risers) → use `generate_music` with `acestep_gguf` or `heartmula`.
 - **Everything else** (impacts, ambiences, foley, UI sounds) → use `generate_sfx`.
 
 ### 2. Generate the base sound

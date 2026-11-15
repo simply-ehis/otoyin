@@ -147,7 +147,7 @@ export function NoiseReductionView() {
 
 	return (
 		<div className="flex h-full max-w-xl flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader title="Noise Reduction" />
+			<ScreenHeader helpPath="/noise-reduction" title="Noise Reduction" />
 
 			<Separator />
 

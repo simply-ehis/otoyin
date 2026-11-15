@@ -1,10 +1,12 @@
 """One-off audit: broken internal imports + unused/missing deps."""
+
 import ast
 from pathlib import Path
 
 repo = Path(__file__).resolve().parent.parent
 root = repo / "backend"
 errors = []
+
 
 def resolve(mod: str, level: int, src_file: Path):
     """Resolve an import target; return True if it exists."""
@@ -20,23 +22,30 @@ def resolve(mod: str, level: int, src_file: Path):
             return True  # external/stdlib — skip
         rel = mod.split(".", 1)[1] if "." in mod else ""
         cand = root / rel.replace(".", "/")
-    return (cand.with_suffix(".py").exists()
-            or (cand / "__init__.py").exists()
-            or cand.is_dir())
+    return (
+        cand.with_suffix(".py").exists()
+        or (cand / "__init__.py").exists()
+        or cand.is_dir()
+    )
+
 
 for p in root.rglob("*.py"):
     parts = p.parts
     if "venv" in parts or "__pycache__" in parts or "build" in parts or "dist" in parts:
         continue
     try:
-        tree = ast.parse(p.read_text(encoding="utf-8", errors="ignore"), filename=str(p))
+        tree = ast.parse(
+            p.read_text(encoding="utf-8", errors="ignore"), filename=str(p)
+        )
     except SyntaxError as e:
         errors.append(f"{p}: SYNTAX ERROR {e}")
         continue
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom):
             if not resolve(node.module or "", node.level or 0, p):
-                errors.append(f"{p}:{node.lineno}: broken -> {'.' * node.level}{node.module}")
+                errors.append(
+                    f"{p}:{node.lineno}: broken -> {'.' * node.level}{node.module}"
+                )
         elif isinstance(node, ast.Import):
             for a in node.names:
                 if a.name.startswith("backend") and not resolve(a.name, 0, p):
@@ -52,21 +61,37 @@ declared = set()
 for line in req_file.read_text().splitlines():
     line = line.strip()
     if line and not line.startswith("#"):
-        pkg = line.split(";")[0].split("==")[0].split(">=")[0].split("<")[0].split("[")[0].strip()
+        pkg = (
+            line.split(";")[0]
+            .split("==")[0]
+            .split(">=")[0]
+            .split("<")[0]
+            .split("[")[0]
+            .strip()
+        )
         declared.add(pkg.lower())
 
 # pip-name -> import-name(s); first match wins
 pip_to_imports = {
-    "pillow": {"pil"}, "scikit-learn": {"sklearn"}, "pyyaml": {"yaml"},
-    "beautifulsoup4": {"bs4"}, "python-dotenv": {"dotenv"},
-    "python-multipart": set(),          # fastapi form runtime dep — never imported directly
-    "llama-cpp-python": {"llama_cpp"}, "faster-whisper": {"faster_whisper"},
-    "parler-tts": {"parler_tts"}, "pocket-tts": {"pocket_tts"},
-    "silero-vad": {"silero_vad"}, "webrtcvad-wheels": {"webrtcvad"},
-    "sse-starlette": {"sse_starlette"}, "yt-dlp": {"yt_dlp"},
-    "onnxruntime-coreml": set(),        # mac provider extra
-    "fish-speech": set(), "misaki": {"misaki"},
-    "pymupdf": {"fitz", "pymupdf"}, "accelerate": {"accelerate"},
+    "pillow": {"pil"},
+    "scikit-learn": {"sklearn"},
+    "pyyaml": {"yaml"},
+    "beautifulsoup4": {"bs4"},
+    "python-dotenv": {"dotenv"},
+    "python-multipart": set(),  # fastapi form runtime dep — never imported directly
+    "llama-cpp-python": {"llama_cpp"},
+    "faster-whisper": {"faster_whisper"},
+    "parler-tts": {"parler_tts"},
+    "pocket-tts": {"pocket_tts"},
+    "silero-vad": {"silero_vad"},
+    "webrtcvad-wheels": {"webrtcvad"},
+    "sse-starlette": {"sse_starlette"},
+    "yt-dlp": {"yt_dlp"},
+    "onnxruntime-coreml": set(),  # mac provider extra
+    "fish-speech": set(),
+    "misaki": {"misaki"},
+    "pymupdf": {"fitz", "pymupdf"},
+    "accelerate": {"accelerate"},
     "numba": {"numba"},
 }
 
@@ -95,32 +120,110 @@ for p in root.rglob("*.py"):
                 break
             j = src.find(tok[-1], i + len(tok))
             if j != -1:
-                imported_modules.add(src[i + len(tok):j].split(".")[0].lower())
+                imported_modules.add(src[i + len(tok) : j].split(".")[0].lower())
             idx = i + 1
 
-stdlib_like = {"os", "sys", "json", "re", "time", "logging", "asyncio", "pathlib",
-               "typing", "datetime", "collections", "itertools", "functools", "contextlib",
-               "dataclasses", "enum", "abc", "io", "base64", "hashlib", "uuid", "random",
-               "math", "threading", "subprocess", "shutil", "tempfile", "socket", "struct",
-               "signal", "traceback", "warnings", "inspect", "importlib", "urllib", "http",
-               "email", "unittest", "sqlite3", "csv", "textwrap", "copy", "string",
-               "argparse", "glob", "platform", "ctypes", "wave", "array", "types",
-               "multiprocessing", "queue", "secrets", "zipfile", "xml", "html", "ast",
-               "__future__", "builtins", "statistics", "difflib", "shlex", "fnmatch",
-               "weakref", "gc", "atexit", "codecs", "numbers", "operator", "heapq",
-               "calendar", "zoneinfo", "tomllib", "concurrent", "contextvars"}
-internal_tops = {"backend"} | {d.name.lower() for d in root.iterdir()
-                               if d.is_dir() and not d.name.startswith((".", "_"))}
+stdlib_like = {
+    "os",
+    "sys",
+    "json",
+    "re",
+    "time",
+    "logging",
+    "asyncio",
+    "pathlib",
+    "typing",
+    "datetime",
+    "collections",
+    "itertools",
+    "functools",
+    "contextlib",
+    "dataclasses",
+    "enum",
+    "abc",
+    "io",
+    "base64",
+    "hashlib",
+    "uuid",
+    "random",
+    "math",
+    "threading",
+    "subprocess",
+    "shutil",
+    "tempfile",
+    "socket",
+    "struct",
+    "signal",
+    "traceback",
+    "warnings",
+    "inspect",
+    "importlib",
+    "urllib",
+    "http",
+    "email",
+    "unittest",
+    "sqlite3",
+    "csv",
+    "textwrap",
+    "copy",
+    "string",
+    "argparse",
+    "glob",
+    "platform",
+    "ctypes",
+    "wave",
+    "array",
+    "types",
+    "multiprocessing",
+    "queue",
+    "secrets",
+    "zipfile",
+    "xml",
+    "html",
+    "ast",
+    "__future__",
+    "builtins",
+    "statistics",
+    "difflib",
+    "shlex",
+    "fnmatch",
+    "weakref",
+    "gc",
+    "atexit",
+    "codecs",
+    "numbers",
+    "operator",
+    "heapq",
+    "calendar",
+    "zoneinfo",
+    "tomllib",
+    "concurrent",
+    "contextvars",
+}
+internal_tops = {"backend"} | {
+    d.name.lower()
+    for d in root.iterdir()
+    if d.is_dir() and not d.name.startswith((".", "_"))
+}
 
-used_external = {m for m in imported_modules if m.lower() not in stdlib_like and m.lower() not in internal_tops}
+used_external = {
+    m
+    for m in imported_modules
+    if m.lower() not in stdlib_like and m.lower() not in internal_tops
+}
 
 never_used = sorted(
-    d for d in declared
-    if not any(imp in used_external for imp in pip_to_imports.get(d, {d.replace("-", "_")}))
+    d
+    for d in declared
+    if not any(
+        imp in used_external for imp in pip_to_imports.get(d, {d.replace("-", "_")})
+    )
 )
 missing = sorted(
-    m for m in used_external
-    if m.lower() not in {imp.lower() for imps in pip_to_imports.values() for imp in imps}
+    m
+    for m in used_external
+    if m.lower()
+    not in {imp.lower() for imps in pip_to_imports.values() for imp in imps}
     and m.lower() not in {d.replace("-", "_").lower() for d in declared}
 )
 

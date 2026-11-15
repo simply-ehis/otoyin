@@ -382,46 +382,21 @@ def _mount_frontend(application: FastAPI) -> None:
 
 
 def _get_gpu_status() -> str:
-    """Return a human-readable string describing GPU availability.
+    """Return a human-readable string describing GPU availability."""
+    from .utils.gpu_query import probe_nvidia_smi
+    from .utils.platform_detect import get_gpu_info, is_apple_silicon
 
-    torch is imported lazily here (not at module top) so the app boots without
-    paying the torch import cost unless a torch model or GPU probe is requested.
-    """
-    try:
-        import torch
-    except ImportError:
-        return "unavailable (torch not installed)"
-
-    if torch.cuda.is_available():
-        from .backends.base import check_cuda_compatibility
-
-        device_name = torch.cuda.get_device_name(0)
-        compatible, _warning = check_cuda_compatibility()
-        is_rocm = hasattr(torch.version, "hip") and torch.version.hip is not None
-        if is_rocm:
-            label = f"ROCm ({device_name})"
-        else:
-            label = f"CUDA ({device_name})"
-        if not compatible:
-            label += " [UNSUPPORTED - see logs]"
-        return label
-    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+    cuda = probe_nvidia_smi()
+    if cuda is not None:
+        return f"CUDA ({cuda.name})"
+    if is_apple_silicon():
         return "MPS (Apple Silicon)"
-
-    # Intel XPU (Arc / Data Center) via IPEX
     try:
-        import intel_extension_for_pytorch
-
-        if hasattr(torch, "xpu") and torch.xpu.is_available():
-            try:
-                xpu_name = torch.xpu.get_device_name(0)
-            except Exception:
-                logger.debug("suppressed exception in app.py:408", exc_info=True)
-                xpu_name = "Intel GPU"
-            return f"XPU ({xpu_name})"
-    except ImportError:
-        pass
-
+        info = get_gpu_info()
+        if info.get("acceleration") == "directml" and info.get("name"):
+            return f"DirectML ({info['name']})"
+    except Exception:
+        logger.debug("suppressed exception in app.py:get_gpu_status", exc_info=True)
     return "None (CPU only)"
 
 

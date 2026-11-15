@@ -132,7 +132,7 @@ export function DiarizationView() {
 
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader title="Diarization" />
+			<ScreenHeader helpPath="/diarize" title="Diarization" />
 
 			<Separator />
 

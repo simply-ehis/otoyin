@@ -174,6 +174,7 @@ export function LibraryTab() {
 	return (
 		<div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
 			<ScreenHeader
+				helpPath="/library"
 				title="Library"
 				actions={
 					<span className="flex items-center gap-2">

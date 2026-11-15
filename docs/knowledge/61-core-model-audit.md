@@ -1,5 +1,21 @@
 # Core Model / Runtime Audit
 
+**SUPERSEDED 2026-11-15 — the torch+torchaudio pin proposal (item #5) is obsolete.**
+PyTorch was removed from the product entirely on 2026-11-15 (see
+`docs/TORCH_AUDIT.md` and `IMPACT_MAP.md`): no dependency pulls it, CI no
+longer installs it, and the frozen binary excludes it. The GOTCHAS
+"torch/torchaudio must ship as a matched pair" and the `#5` recommendation no
+longer apply. The ONNX-declaration fix (item #2/onnxruntime) stands.
+
+PURPOSE: Audit otoyin's pre-installed/core pieces (the "always there" deps + bundled model artifacts) for version staleness and better alternatives - items already confirmed ONNX-first (DeepFilterNet, Kokoro) plus Whisper/STT, spaCy G2P, the LLM runtime, and the shared ML runtime underneath.
+OWNS: backend/requirements.txt, backend/build_binary.py, backend/backends/kokoro_tts_backend.py, backend/services/{deepfilter_cleanup,deepfilter_onnx,noise_reduction}.py, backend/backends/lfm_gguf_backend.py, backend/utils/platform_detect.py, docs/knowledge/48-onnx-tts-backends.md.
+READ-WHEN: You change requirements, the frozen-binary wheel collection, the STT model choice, the LLM inference engine, or add/remove a torch-free ONNX backend.
+KEY-FILES: backend/requirements.txt (pins), backend/build_binary.py (frozen-binary bundling), backend/services/noise_reduction.py (DeepFilterNet ONNX-first dispatch via deepfilter_onnx -> deepfilter_cleanup fallback), backend/utils/platform_detect.py (backend selection), docs/knowledge/48-onnx-tts-backends.md (ONNX-first dispatch contract).
+INVARIANTS: Everything stays offline/on-device, CPU-first, ONNX-first. Anything that breaks the ONNX path must fail loud, not silently degrade.
+GOTCHAS: llama-cpp-python is a C-extension that bundles llama.cpp - its floor matters for GGUF feature parity, not ABI compat. onnxruntime is imported in 15+ files but was undeclared here before this audit (now fixed in backend/requirements.txt).
+UPDATED: 2026-11-15 (superseded notice; original audit text below is historical)
+
+
 PURPOSE: Audit otoyin's pre-installed/core pieces (the "always there" deps + bundled model artifacts) for version staleness and better alternatives — items already confirmed ONNX-first (DeepFilterNet, Kokoro) plus Whisper/STT, spaCy G2P, the LLM runtime, and the shared ML runtime underneath.
 OWNS: backend/requirements.txt, backend/build_binary.py, backend/backends/whisper_cpp_backend.py, backend/backends/kokoro_backend.py (+ kokoro_onnx_backend.py), backend/services/{deepfilter_cleanup,deepfilter_onnx,noise_reduction}.py, backend/backends/lfm_gguf_backend.py, backend/utils/platform_detect.py, docs/knowledge/48-onnx-tts-backends.md.
 READ-WHEN: You change requirements, the frozen-binary wheel collection, the STT model choice, the LLM inference engine, or add/remove a torch-free ONNX backend.

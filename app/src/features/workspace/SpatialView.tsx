@@ -232,6 +232,7 @@ export function SpatialView() {
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
+				helpPath="/spatial"
 				title={t("spatial.title", { defaultValue: "3D Spatializer" })}
 				description={t("spatial.description", {
 					defaultValue:

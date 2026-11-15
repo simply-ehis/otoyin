@@ -92,42 +92,27 @@ def _get_system_ram_mb() -> tuple[int, int]:
 
 def _get_gpu_info() -> tuple[int, int, str | None, str | None]:
     """Return (total_vram_mb, free_vram_mb, gpu_name, gpu_type)."""
-    # Try CUDA first
+    # NVIDIA CUDA via nvidia-smi
+    from ..utils.gpu_query import probe_nvidia_smi
+    from ..utils.platform_detect import get_gpu_info
+
+    cuda = probe_nvidia_smi()
+    if cuda is not None:
+        return int(cuda.total_mb), int(cuda.free_mb), cuda.name, "cuda"
+
+    # DirectML (Windows) - name only; no VRAM counter exposed via ONNX
     try:
-        import torch
-
-        if torch.cuda.is_available():
-            free, total = torch.cuda.mem_get_info(0)
-            name = torch.cuda.get_device_name(0)
-            return (
-                int(total // (1024 * 1024)),
-                int(free // (1024 * 1024)),
-                name,
-                "cuda",
-            )
-    except Exception:
-        logger.debug("suppressed exception in device_capabilities.py:108", exc_info=True)
-
-    # Try DirectML (Windows)
-    try:
-        from ..utils.platform_detect import get_gpu_info
-
         info = get_gpu_info()
         if info.get("acceleration") == "directml":
-            # DirectML doesn't expose VRAM via torch; fall back to None
             return 0, 0, info.get("name"), "directml"
     except Exception:
-        logger.debug("suppressed exception in device_capabilities.py:119", exc_info=True)
+        logger.debug("suppressed exception in device_capabilities.py:109", exc_info=True)
 
-    # Try MPS (macOS)
-    try:
-        import torch
+    # Apple Silicon MPS - unified memory, no separate VRAM counter
+    import platform as _platform
 
-        if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-            # MPS doesn't expose VRAM; use unified memory = system RAM
-            return 0, 0, "Apple Silicon (MPS)", "mps"
-    except Exception:
-        logger.debug("suppressed exception in device_capabilities.py:129", exc_info=True)
+    if _platform.system() == "Darwin" and _platform.machine() == "arm64":
+        return 0, 0, "Apple Silicon (MPS)", "mps"
 
     return 0, 0, None, None
 

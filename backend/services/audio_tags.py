@@ -103,18 +103,6 @@ NATIVE_TAG_ENGINES: dict[str, set[str]] = {
         "[music]",
         "[ring]",
     },
-    "zonos": {
-        "[angry]",
-        "[happy]",
-        "[sad]",
-        "[fearful]",
-        "[surprised]",
-        "[whisper]",
-        "[shout]",
-        "[laugh]",
-        "[cry]",
-        "[excited]",
-    },
     "orpheus": {"<laugh>", "<sigh>", "<cough>", "<sniffle>", "<groan>", "<yawn>", "<gasp>"},
 }
 
@@ -126,10 +114,6 @@ _TAG_NATIVE_MAP: dict[str, dict[str, str]] = {
         "cough": "[cough]",
         "umm": "[um]",
         "uhh": "[uh]",
-    },
-    "zonos": {
-        "laughs": "[laugh]",
-        "laugh": "[laugh]",
     },
     "orpheus": {
         "laughs": "<laugh>",

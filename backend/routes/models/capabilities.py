@@ -38,10 +38,15 @@ async def model_capabilities():
             "available": _safe_available(lambda: get_llm_backend_for_engine("gguf_llm")),
             "always_on": is_engine_always_on("gguf_llm"),
         },
-        "rvc_onnx": {
-            "label": "Voice Conversion — RVC ONNX",
-            "available": _safe_available(lambda: get_vc_backend("rvc_onnx")),
-            "always_on": is_engine_always_on("rvc_onnx"),
+        "meanvc2": {
+            "label": "Voice Conversion - MeanVC2",
+            "available": _safe_available(lambda: get_vc_backend("meanvc2")),
+            "always_on": is_engine_always_on("meanvc2"),
+        },
+        "tone_color_vc": {
+            "label": "Voice Conversion - Tone Color VC",
+            "available": _safe_available(lambda: get_vc_backend("tone_color_vc")),
+            "always_on": is_engine_always_on("tone_color_vc"),
         },
         "seed_vc": {
             "label": "Voice Conversion — Seed-VC",

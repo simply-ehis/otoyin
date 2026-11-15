@@ -170,7 +170,7 @@ export function StudioView() {
 	const [openSection, setOpenSection] = useState<string | null>(null);
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader title="Studio" />
+			<ScreenHeader helpPath="/studio" title="Studio" />
 			<Tabs defaultValue="instruments">
 				<TabsList aria-label="Studio sections">
 					<TabsTrigger value="instruments">Instruments</TabsTrigger>

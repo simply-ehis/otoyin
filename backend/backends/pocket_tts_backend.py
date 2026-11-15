@@ -1,89 +1,117 @@
-"""
-Pocket-TTS (Kyutai) backend.
+"""Pocket TTS (100M) backend via the audio.cpp one-shot CLI.
 
-CC-BY-4.0 (gated, no voice cloning without consent). ~100M, CPU-only
-by design, real-time. Supports voice cloning from a wav (or a preset
-voice from the kyutai/tts-voices catalog) and multiple languages.
+Migrated from torch/ONNX to ``audiocpp_cli --task tts --family pocket_tts``
+(2026-11-14). English package — q8_0 GGUF (~122 MB) plus packaged voice-state
+embeddings installed as a subtree:
+
+- ``audio-cpp/audio.cpp-gguf`` → ``PocketTTS-GGUF/english/``
+  ``pocket-tts-english-q8_0.gguf`` + ``embeddings/*.safetensors`` (~270 MB)
+
+CC-BY-4.0 (catalog id ``pocket-tts``). Output is 24 kHz mono WAV. Voice
+selection via ``--voice-id`` from packaged states (alba, anna, cosette, ...);
+voice cloning via ``--voice-ref`` (no transcript needed — Pocket TTS does not
+use one). Long-form handled inside the runtime.
+
+Non-English packages (``PocketTTS-GGUF/{french,german,italian,portuguese,
+spanish}``) can ship later as separate catalog entries.
 """
 
 import asyncio
 import logging
-import threading
+from pathlib import Path
 
 import numpy as np
 
-from .base import (
-    BackendBase,
-    model_load_progress,
-)
+from .audio_cpp import find_audiocpp, run_one_shot
+from .base import combine_voice_prompts as _combine_voice_prompts
 
 logger = logging.getLogger(__name__)
 
-POCKET_HF_REPO = "kyutai/pocket-tts"
-POCKET_SAMPLE_RATE = 24000
-POCKET_PRESET_VOICES = (
-    "alba",
-    "alba-mackenna",
-    "amanda",
-    "brian",
-    "brian-friend",
-    "chris",
-    "jenny",
-    "jenny-schroeder",
-    "jordan",
-    "jordan-friend",
-    "leo",
-    "leo-friend",
-    "mahrus",
-    "mahrus-langman",
-    "mila",
-    "mila-friend",
-    "patt",
-    "patt-friend",
-    "tom",
-    "tom-langman",
-)
+HF_REPO = "audio-cpp/audio.cpp-gguf"
+MODEL_FILE = "PocketTTS-GGUF/english/pocket-tts-english-q8_0.gguf"
+MODEL_DIR_REL = "PocketTTS-GGUF/english"
+SAMPLE_RATE = 24000
+DEFAULT_VOICE = "alba"
+
+DEFAULT_TIMEOUT_S = 300.0
 
 
-class PocketTTSBackend(BackendBase):
-    _model_attr = "model"
-    """Kyutai Pocket-TTS — tiny CPU TTS with cloning + presets."""
+def build_args(
+    *,
+    model_dir: str,
+    text: str,
+    voice_id: str | None = None,
+    speaker_file: str | None = None,
+    seed: int | None = None,
+) -> list[str]:
+    """Build the ``audiocpp_cli --task tts --family pocket_tts`` argument list (pure, unit-testable)."""
+    args = [
+        "--task",
+        "tts",
+        "--family",
+        "pocket_tts",
+        "--model",
+        model_dir,
+        "--text",
+        text,
+    ]
+    if speaker_file:
+        args += ["--voice-ref", speaker_file]
+    elif voice_id:
+        args += ["--voice-id", voice_id]
+    else:
+        args += ["--voice-id", DEFAULT_VOICE]
+    if seed is not None:
+        args += ["--seed", str(seed)]
+    return args
+
+
+class PocketTTSBackend:
+    """Pocket TTS backend driving the audio.cpp one-shot CLI (no resident model)."""
+
+    hf_repo = HF_REPO
+    sample_rate = SAMPLE_RATE
 
     def __init__(self):
-        self.model = None
-        self._load_lock = threading.Lock()
+        self.load_error: str | None = None
 
-    def is_loaded(self) -> bool:
-        return self.model is not None
+    # -- cache / path resolution -------------------------------------------
+
+    def _app_dir(self) -> Path:
+        from ..services.model_files import app_snapshot_dir
+
+        return app_snapshot_dir(HF_REPO) / MODEL_DIR_REL
+
+    def _is_model_cached(self) -> bool:
+        # The package is installed as a subtree snapshot; the q8_0 GGUF must exist.
+        from ..services.model_files import is_model_installed
+
+        return is_model_installed(HF_REPO, MODEL_FILE)
 
     def _get_model_path(self, model_size: str) -> str:
-        return POCKET_HF_REPO
+        # audiocpp_cli loads the Pocket TTS package directory.
+        return str(self._app_dir())
 
-    def _is_model_cached(self, model_size: str = "default") -> bool:
-        # NOTE: pocket_tts.TTSModel.load_model() resolves internally
-        # (library-managed cache); the app layers check the app folder.
-        from ..services.model_files import is_snapshot_installed
-
-        return is_snapshot_installed(POCKET_HF_REPO)
+    # -- lifecycle ----------------------------------------------------------
 
     async def load_model(self, model_size: str = "default") -> None:
-        if self.model is not None:
-            return
-        await asyncio.to_thread(self._load_model_sync)
+        binary = find_audiocpp()
+        if binary is None:
+            self.load_error = (
+                "audiocpp_cli binary not found. Bundle audiocpp_cli next to the sidecars or set TWENTYLABS_AUDIOCPP."
+            )
+            raise RuntimeError(self.load_error)
+        if not self._is_model_cached():
+            raise RuntimeError("Pocket TTS is not downloaded. Use the Model Downloads page to download it first.")
+        self.load_error = None
 
-    def _load_model_sync(self):
-        with self._load_lock:
-            if self.model is not None:
-                return
-            model_name = "pocket-tts"
-            is_cached = self._is_model_cached()
-            with model_load_progress(model_name, is_cached):
-                from pocket_tts import TTSModel
+    def unload_model(self) -> None:
+        """Nothing resident to unload — subprocesses exit after each call."""
 
-                self.model = TTSModel.load_model()
-            logger.info("Pocket-TTS loaded")
+    def is_loaded(self) -> bool:
+        return False
 
-    # unload_model() inherited from BackendBase
+    # -- voice prompts ------------------------------------------------------
 
     async def create_voice_prompt(
         self,
@@ -91,18 +119,20 @@ class PocketTTSBackend(BackendBase):
         reference_text: str,
         use_cache: bool = True,
     ) -> tuple[dict, bool]:
-        await self.load_model()
-        # A preset voice id (e.g. "alba") or a local/remote wav path both
-        # work via get_state_for_audio_prompt. We pass the reference wav;
-        # for preset profiles the caller supplies a voice name as audio_path.
-        ref = audio_path or POCKET_PRESET_VOICES[0]
-        return {"voice_type": "clone", "ref": ref}, False
+        return {
+            "voice_type": "clone",
+            "audio_path": audio_path,
+            "reference_text": reference_text,
+        }, False
 
-    async def combine_voice_prompts(self, audio_paths, reference_texts):
-        # Pocket has no multi-sample combine — use the first reference.
-        from .base import combine_voice_prompts as _cvp
+    async def combine_voice_prompts(
+        self,
+        audio_paths: list[str],
+        reference_texts: list[str],
+    ) -> tuple[np.ndarray, str]:
+        return await _combine_voice_prompts(audio_paths, reference_texts, sample_rate=SAMPLE_RATE)
 
-        return await _cvp(audio_paths, reference_texts, sample_rate=POCKET_SAMPLE_RATE)
+    # -- generation ---------------------------------------------------------
 
     async def generate(
         self,
@@ -113,15 +143,32 @@ class PocketTTSBackend(BackendBase):
         instruct: str | None = None,
         temperature: float | None = None,
     ) -> tuple[np.ndarray, int]:
-        await self.load_model()
+        if find_audiocpp() is None:
+            raise RuntimeError(
+                "audiocpp_cli binary not found. Bundle audiocpp_cli next to the sidecars or set TWENTYLABS_AUDIOCPP."
+            )
+        if not self._is_model_cached():
+            raise RuntimeError("Pocket TTS is not downloaded. Use the Model Downloads page to download it first.")
 
-        def _generate_sync():
-            ref = voice_prompt.get("ref")
-            voice_state = self.model.get_state_for_audio_prompt(ref)
-            gen_kwargs: dict = {}
-            if temperature is not None:
-                gen_kwargs["temperature"] = temperature
-            audio = self.model.generate_audio(voice_state, text, **gen_kwargs)
-            return np.asarray(audio.numpy(), dtype=np.float32), POCKET_SAMPLE_RATE
+        ref_audio = voice_prompt.get("audio_path") if voice_prompt.get("voice_type") == "clone" else None
+        # Pocket TTS cloning does not use a reference transcript.
+        voice_id = voice_prompt.get("preset_voice_id") or voice_prompt.get("pocket_voice")
+        model_dir = self._get_model_path("default")
 
-        return await asyncio.to_thread(_generate_sync)
+        args = build_args(
+            model_dir=model_dir,
+            text=text,
+            voice_id=str(voice_id) if voice_id else None,
+            speaker_file=ref_audio,
+            seed=seed,
+        )
+        return await asyncio.to_thread(
+            run_one_shot,
+            args,
+            sample_rate=SAMPLE_RATE,
+            prefix="pocket-tts",
+            timeout_s=DEFAULT_TIMEOUT_S,
+        )
+
+
+pocket_tts_backend = PocketTTSBackend()

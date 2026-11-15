@@ -68,22 +68,19 @@ ignore = [
 # Entry points and scripts legitimately use print.
 "server.py" = ["T201", "N806", "E402", "SIM115"]
 "main.py" = ["T201"]
-# AMD GPU env vars must be set before torch import.
+# app.py registers its GPU/CUDA probe at import time before gunicorn/uvicorn spawn workers
 "app.py" = ["E402", "F401"]
 
-# ML backends import torch/heavy deps lazily inside methods (cold-load per the
-# project's lazy-loading philosophy), so ruff sees `torch`/`np` as undefined at
-# module scope. E402 covers the same deliberate late-import pattern.
-"backends/stable_audio_backend.py" = ["F821"]
+# Heavy ML deps (torch/np) are only imported inside function bodies now — no
+# need for F821 silence on module scope. Kept for reference.
+# "backends/stable_audio_backend.py" = ["F821"]
 # SQLAlchemy filter() expressions need `== True`/`== False` (operator overload
 # builds the SQL clause); `is True` would evaluate in plain Python and break
 # the query silently.
 "services/model_providers.py" = ["E712"]
-"utils/cache.py" = ["F821"]
-# PyInstaller runtime hooks patch numpy/torch internals with intentional
+# PyInstaller runtime hooks patch numpy internals with intentional
 # single-letter aliases and pre-import ordering.
 "pyi_rth_numpy_compat.py" = ["F821"]
-"pyi_rth_torch_compiler_disable.py" = ["N806"]
 # Audio DSP uses conventional single-capital coefficient names (Q, K, V0, T)
 # and the loudness/ITU biquad math reads better with them.
 "services/loudness.py" = ["N806"]
@@ -107,13 +104,8 @@ ignore = [
 # (torch.xpu/IPEX enablement, ONNX runtime presence, MLX/Apple Silicon,
 # DeepFilterNet/HF optional deps). The import is intentionally unused.
 "backends/base.py" = ["F401"]
-"backends/kokoro_onnx_backend.py" = ["F401"]
-"backends/moss_tts_nano_onnx_backend.py" = ["F401"]
-"backends/pocket_tts_onnx_backend.py" = ["F401"]
-"backends/styletts2_onnx_backend.py" = ["F401"]
 "routes/health.py" = ["F401"]
 "services/deepfilter_onnx.py" = ["F401"]
-"services/stem_separation.py" = ["F401"]
 "services/stem_separation_onnx.py" = ["F401"]
 "utils/hf_offline_patch.py" = ["F401"]
 "utils/platform_detect.py" = ["F401"]

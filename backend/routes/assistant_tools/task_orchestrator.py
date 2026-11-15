@@ -145,7 +145,6 @@ READ_ONLY_TOOLS: frozenset[str] = frozenset(
         "list_skills",
         "plan_templates",
         "list_export_presets",
-        "list_voice_packs",
         "dub_languages",
         "dub_status",
         "translate_languages",

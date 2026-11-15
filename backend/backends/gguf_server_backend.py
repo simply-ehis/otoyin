@@ -2,9 +2,6 @@
 
 Replaces the llama-cpp-python LFM backend. The planner stack:
 
-    Qwopus 4B            (free default planner)
-    Qwopus 4B v3         (paid planner, $20)
-    Spark-X 2.5-4B       (paid planner, $20)
     LFM2.5-2.6B          (free multilingual planner)
     LFM2.5-8B-A1B        (paid MoE planner, $40)
     Ling-3.0-tiny        (paid MoE planner, $40)

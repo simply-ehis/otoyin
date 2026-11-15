@@ -74,13 +74,13 @@ def test_record_is_downloaded_forget(monkeypatch):
     sess = _make_session_factory()
     monkeypatch.setattr(mr, "SessionLocal", sess)
 
-    assert mr.is_downloaded("planner-4b", "Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M") is False
-    mr.record_download(sess(), "planner-4b", "Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M", "gguf_llm", "r/f", None, None)
-    assert mr.is_downloaded("planner-4b", "Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M") is True
-    assert mr.is_downloaded("planner-4b", None) is False  # size-scoped
-    assert mr.forget_download("planner-4b", "Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M") is True
-    assert mr.is_downloaded("planner-4b", "Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M") is False
-    assert mr.forget_download("planner-4b", "Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M") is False
+    assert mr.is_downloaded("planner-lfm2-2.6b", "2.6B-Q4_0") is False
+    mr.record_download(sess(), "planner-lfm2-2.6b", "2.6B-Q4_0", "gguf_llm", "r/f", None, None)
+    assert mr.is_downloaded("planner-lfm2-2.6b", "2.6B-Q4_0") is True
+    assert mr.is_downloaded("planner-lfm2-2.6b", None) is False  # size-scoped
+    assert mr.forget_download("planner-lfm2-2.6b", "2.6B-Q4_0") is True
+    assert mr.is_downloaded("planner-lfm2-2.6b", "2.6B-Q4_0") is False
+    assert mr.forget_download("planner-lfm2-2.6b", "2.6B-Q4_0") is False
 
 
 def test_reconcile_seeds_from_cache(monkeypatch):
@@ -328,42 +328,6 @@ def _install_fake_onnxruntime(monkeypatch):
 
     fake.InferenceSession = _Session
     monkeypatch.setitem(sys.modules, "onnxruntime", fake)
-
-
-def test_kokoro_onnx_weights_offline(monkeypatch):
-    """Kokoro must resolve a cached quantized graph without touching the network.
-
-    Regression history: the backend used to resolve *only* through the HF mirror
-    (fp32, 326 MB). It now prefers an int8/fp16 variant downloaded from the
-    kokoro-onnx GitHub release and cached under data/models/kokoro-onnx. When
-    that cache already holds a variant, no download of any kind may happen.
-    """
-    import huggingface_hub
-
-    from backend.backends.kokoro_onnx_backend import KokoroONNXBackend
-    from backend.services import model_files
-
-    def fake_hf(*args, **kwargs):
-        raise AssertionError("must not hit HF when a cached variant exists")
-
-    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_hf)
-    monkeypatch.setattr(huggingface_hub, "snapshot_download", fake_hf)
-    monkeypatch.setattr(model_files, "install_model_file", lambda *args, **kwargs: fake_hf())
-    # Point the variants root at a tmp dir that already holds an int8 graph.
-    import tempfile
-    from pathlib import Path
-
-    tmp = Path(tempfile.mkdtemp())
-    (tmp / "kokoro-v1.0_int8.onnx").write_bytes(b"stub")
-    monkeypatch.setattr(KokoroONNXBackend, "_variants_root", lambda self: str(tmp))
-    monkeypatch.setattr(KokoroONNXBackend, "_resolve_voices_path", lambda self: "/fake/voices.bin")
-
-    inst = KokoroONNXBackend.__new__(KokoroONNXBackend)
-    model_path, voices = inst._resolve_paths()
-    assert model_path.endswith("kokoro-v1.0_int8.onnx"), model_path
-    assert voices == "/fake/voices.bin"
-    # The cached path must be reported as cached so the Models tab agrees.
-    assert inst._cached_variant() == (model_path, "int8")
 
 
 def test_demucs_onnx_config_registered():

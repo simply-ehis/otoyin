@@ -13,7 +13,7 @@ from .hidden_subprocess import popen_hidden, run_hidden
 
 logger = logging.getLogger(__name__)
 
-BackendType = Literal["onnx", "pytorch"]
+BackendType = Literal["onnx", "cpu"]
 
 
 def get_windows_version() -> tuple[int, int, int]:
@@ -106,13 +106,13 @@ def get_backend_type() -> BackendType:
 
     Priority:
       1. ONNX Runtime with hardware EP available → ONNX (uses CUDA/DirectML/CoreML/CPU automatically)
-      2. Fallback → PyTorch
+      2. Fallback → CPU
     """
     providers = _detect_onnx_providers()
     if providers:
         return "onnx"
 
-    return "pytorch"
+    return "cpu"
 
 
 def log_platform_info() -> None:

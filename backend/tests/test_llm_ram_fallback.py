@@ -9,8 +9,11 @@ def test_requested_model_kept_when_ram_fits():
 
 
 def test_low_ram_falls_back_to_smallest_fitting_planner():
-    selected = select_llm_model_size(DEFAULT_PLANNER_SIZE, available_mb=1900)
-    assert selected != DEFAULT_PLANNER_SIZE
+    # Current catalog: the default planner IS the smallest (min_ram_mb=1800).
+    # 1.9 GB therefore keeps it. The fallback path itself is exercised by
+    # requesting a bigger planner with RAM that only fits the default.
+    selected = select_llm_model_size("27B-PTQ1_0", available_mb=1900)
+    assert selected == DEFAULT_PLANNER_SIZE
     cfg = next(c for c in get_planner_configs() if c.model_size == selected)
     assert cfg.min_ram_mb <= 1900
 

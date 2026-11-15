@@ -386,7 +386,7 @@ async def separate_audio_route(
     model_name: str = "htdemucs",
     invert: bool = False,
 ):
-    """Separate one stem (vocals/drums/bass/other) from a mix via Demucs.
+    """Separate one stem (vocals/drums/bass/other) from a mix via Demucs ONNX.
 
     If invert=True, returns the mix minus that stem (e.g. instrumental).
     """
@@ -395,10 +395,13 @@ async def separate_audio_route(
         raise HTTPException(status_code=404, detail=ERR_AUDIO_NOT_FOUND)
 
     audio, sample_rate = await async_load_audio(str(resolved))
-    from ...services.stem_separation import separate_audio
+    from ...services.stem_separation_onnx import is_onnx_available, separate_audio_onnx
+
+    if not is_onnx_available():
+        raise HTTPException(status_code=501, detail="Stem separation needs ONNX Runtime, which is not installed.")
 
     try:
-        separated = separate_audio(
+        separated = separate_audio_onnx(
             audio,
             sample_rate,
             stem=stem,

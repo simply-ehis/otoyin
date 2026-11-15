@@ -1,4 +1,4 @@
-"""Voice-conversion model configs — RVC ONNX, NeuTTS, Orpheus, Seed-VC, OpenVoice ONNX."""
+"""Voice-conversion configs — audiocpp_cli one-shot VC engines."""
 
 from ..protocols import ModelConfig, PresetVoiceConfig
 
@@ -27,49 +27,37 @@ def _get_neutts_configs() -> list[ModelConfig]:
 
 
 def _get_neutts_2e_configs() -> list[ModelConfig]:
-    """Return NeuTTS-2E configs (emotion-aware, GGUF backbone, 4 preset speakers)."""
+    """Return NeuTTS-2E config (audiocpp neutts family, emotion-aware, 9 preset voices)."""
     neutts_2e_voices = [
+        PresetVoiceConfig(id="dave", name="Dave", gender="male", language="en"),
         PresetVoiceConfig(id="emily", name="Emily", gender="female", language="en"),
+        PresetVoiceConfig(id="greta", name="Greta", gender="female", language="en"),
+        PresetVoiceConfig(id="jo", name="Jo", gender="neutral", language="en"),
+        PresetVoiceConfig(id="juliette", name="Juliette", gender="female", language="en"),
+        PresetVoiceConfig(id="mateo", name="Mateo", gender="male", language="en"),
         PresetVoiceConfig(id="paul", name="Paul", gender="male", language="en"),
         PresetVoiceConfig(id="sophie", name="Sophie", gender="female", language="en"),
         PresetVoiceConfig(id="steven", name="Steven", gender="male", language="en"),
     ]
     return [
         ModelConfig(
-            model_name="neutts-2e-q4",
-            display_name="NeuTTS-2E (Q4 GGUF)",
+            model_name="neutts-2e-orig",
+            display_name="NeuTTS-2E",
             engine="neutts_2e",
-            hf_repo_id="neuphonic/neutts-2e-q4-gguf",
-            model_size="q4",
-            size_mb=500,
-            min_ram_mb=600,
+            hf_repo_id="audio-cpp/audio.cpp-gguf",
+            model_size="orig",
+            size_mb=2877,
+            min_ram_mb=3500,
             min_vram_mb=0,
             languages=["en"],
-            clone_voice=True,
+            clone_voice=False,
             emotion_control=True,
             category="tts",
-            pip_packages=["neutts[llama,onnx]>=0.1.0"],
+            pip_packages=[],
+            download_file="NeuTTS-2E-GGUF/neutts-2e-orig.gguf",
             structured_preset_voices=neutts_2e_voices,
-            quant="Q4_0",
-            license_id="neutts-open-license",
-            license_note="NeuTTS-2E uses a custom open license; verify terms before commercial use.",
-        ),
-        ModelConfig(
-            model_name="neutts-2e-q8",
-            display_name="NeuTTS-2E (Q8_0 GGUF)",
-            engine="neutts_2e",
-            hf_repo_id="neuphonic/neutts-2e-q8-gguf",
-            model_size="q8",
-            size_mb=800,
-            min_ram_mb=900,
-            min_vram_mb=0,
-            languages=["en"],
-            clone_voice=True,
-            emotion_control=True,
-            category="tts",
-            pip_packages=["neutts[llama,onnx]>=0.1.0"],
-            structured_preset_voices=neutts_2e_voices,
-            quant="Q8_0",
+            # Upstream ships no quantized package; original precision is unknown to us — claim nothing.
+            quant=None,
             license_id="neutts-open-license",
             license_note="NeuTTS-2E uses a custom open license; verify terms before commercial use.",
         ),
@@ -111,66 +99,79 @@ def _get_orpheus_configs() -> list[ModelConfig]:
     ]
 
 
-def _get_seed_vc_configs() -> list[ModelConfig]:
-    """Return Seed-VC config (zero-shot, reference-audio, optional user download)."""
+def _get_meanvc2_configs() -> list[ModelConfig]:
+    """Return MeanVC2 config (ASLP-Lab, Apache-2.0, 110 ms latency VC)."""
     return [
         ModelConfig(
-            model_name="seed-vc",
-            display_name="Seed-VC (zero-shot clone)",
-            engine="seed_vc",
-            hf_repo_id="Plachta/Seed-VC",
-            model_size="base",
-            size_mb=1500,
-            min_ram_mb=1600,
-            min_vram_mb=2000,
-            languages=["en"],
+            model_name="meanvc2-fp32",
+            display_name="MeanVC2",
+            engine="meanvc2",
+            hf_repo_id="audio-cpp/audio.cpp-gguf",
+            model_size="120ms-40ms",
+            size_mb=1554,
+            min_ram_mb=2000,
+            min_vram_mb=0,
+            languages=["en", "zh", "ja", "ko", "fr", "de", "es", "pt", "it", "ru", "ar", "hi"],
             clone_voice=True,
-            gpu_only=True,
+            gpu_only=False,
             category="vc",
-            pip_packages=["seed-vc"],
-            venv_name="seed_vc",
+            pip_packages=[],
+            download_file="MeanVC2-GGUF/meanvc2-120ms-40ms-fp32.gguf",
+            quant="F32",
+            license_id="apache-2.0",
+            license_note="Apache-2.0 (ASLP-lab/MeanVC2).",
         ),
     ]
 
 
-def _get_openvoice_onnx_configs() -> list[ModelConfig]:
-    """Return OpenVoice ONNX config (tone-color conversion, no torch)."""
+def _get_tone_color_vc_configs() -> list[ModelConfig]:
+    """Return Tone-Color-VC config (OpenVoice V2 standalone, MIT)."""
     return [
         ModelConfig(
-            model_name="openvoice-onnx-v2",
-            display_name="OpenVoice V2 ONNX (zero-shot tone color)",
-            engine="openvoice_onnx",
-            hf_repo_id="Hinotsuba/OpenVoice-ONNX-v2",
-            model_size="v2",
-            size_mb=161,
+            model_name="tone-color-vc-f16",
+            display_name="Tone Color VC",
+            engine="tone_color_vc",
+            hf_repo_id="audio-cpp/audio.cpp-gguf",
+            model_size="default",
+            size_mb=63,
+            min_ram_mb=200,
+            min_vram_mb=0,
+            languages=["en", "zh", "ja", "ko", "fr", "de", "es", "pt", "it", "ru", "ar", "hi"],
+            clone_voice=True,
+            gpu_only=False,
             category="vc",
-            pip_packages=["onnxruntime>=1.16.0"],
+            pip_packages=[],
+            download_file="Tone-Color-VC-GGUF/tone-color-vc-f16.gguf",
+            quant="F16",
+            license_id="mit",
+            license_note="MIT (MyShell OpenVoice V2 lineage).",
         ),
     ]
 
 
-def _get_rvc_onnx_configs() -> list[ModelConfig]:
-    """Return RVC ONNX voice-conversion pack configs (no torch)."""
-    from ..rvc_onnx_backend import RVC_VOICE_PACKS
-
-    configs = []
-    for name, desc in RVC_VOICE_PACKS.items():
-        repo = desc["repo"] if isinstance(desc, dict) else desc
-        configs.append(
-            ModelConfig(
-                model_name=f"rvc-onnx-{name}",
-                display_name=f"RVC ONNX Voice Pack: {name}",
-                engine="rvc_onnx",
-                hf_repo_id=repo,
-                model_size=name,
-                size_mb=120,
-                min_ram_mb=512,
-                min_vram_mb=0,
-                languages=["en"],
-                gpu_only=False,
-                category="vc",
-                pip_packages=["onnxruntime>=1.16.0"],
-                venv_name="rvc",
-            )
-        )
-    return configs
+def _get_seed_vc_configs() -> list[ModelConfig]:
+    """Return Seed-VC config (audio.cpp seed_vc family; GPL-3.0 upstream)."""
+    return [
+        ModelConfig(
+            model_name="seed-vc-mlx-q8",
+            display_name="Seed-VC",
+            engine="seed_vc",
+            hf_repo_id="audio-cpp/audio.cpp-gguf",
+            model_size="default",
+            size_mb=2976,
+            min_ram_mb=3400,
+            min_vram_mb=2000,
+            languages=["en", "zh"],
+            clone_voice=True,
+            gpu_only=False,
+            category="vc",
+            pip_packages=[],
+            download_file="SeedVC-MLX-GGUF/seed-vc-mlx-q8_0.gguf",
+            quant="Q8_0",
+            license_id="gpl-3.0",
+            license_note=(
+                "GPL-3.0 upstream (Plachtaa/seed-vc). One-shot subprocess invocation; "
+                "redistribution of weights needs license review."
+            ),
+        ),
+    ]

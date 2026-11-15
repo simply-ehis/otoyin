@@ -59,7 +59,7 @@ function CapturesTabInner() {
 	const { settings: captureSettings, update: updateCaptureSettings } =
 		useCaptureSettings();
 	const sttModel = captureSettings?.stt_model;
-	const llmModel = captureSettings?.llm_model ?? "4B-Q4_K_M";
+	const llmModel = captureSettings?.llm_model ?? "2.6B-Q4_0";
 	const hotkeyEnabled = captureSettings?.hotkey_enabled ?? false;
 	const pushKeys = captureSettings?.chord_push_to_talk_keys ?? [];
 	const toggleKeys = captureSettings?.chord_toggle_to_talk_keys ?? [];

@@ -93,7 +93,47 @@ def update_generation_settings(db: Session, patch: dict[str, Any]) -> DBGenerati
     _apply_patch(row, patch)
     db.commit()
     db.refresh(row)
+    # Invalidate the low_memory_mode cache so the toggle applies immediately,
+    # not after the 5s TTL.
+    if "low_memory_mode" in patch:
+        global _LOW_MEMORY_CACHE
+        _LOW_MEMORY_CACHE = None
     return row
+
+
+_LOW_MEMORY_CACHE: tuple[float, bool] | None = None
+_LOW_MEMORY_TTL_S = 5.0
+
+
+def get_low_memory_mode() -> bool:
+    """Cached read of the ``low_memory_mode`` generation setting.
+
+    Backends call this per (one-shot) generation to decide whether to pass
+    audiocpp ``.mem_saver=true`` session options. Cached for ~5 s so a
+    long-form chunked render (many subprocesses) does not hit SQLite per
+    sentence; a fresh session gets its own snapshot. Never raises - any
+    failure reads as "off" so generation never breaks on a settings hiccup.
+    """
+    global _LOW_MEMORY_CACHE
+    import time
+
+    now = time.monotonic()
+    if _LOW_MEMORY_CACHE is not None and (now - _LOW_MEMORY_CACHE[0]) < _LOW_MEMORY_TTL_S:
+        return _LOW_MEMORY_CACHE[1]
+    try:
+        from ..database.session import SessionLocal
+
+        db = SessionLocal()
+        try:
+            row = db.query(DBGenerationSettings).filter(DBGenerationSettings.id == SINGLETON_ID).first()
+            value = bool(getattr(row, "low_memory_mode", False)) if row is not None else False
+        finally:
+            db.close()
+    except Exception:
+        logger.debug("low_memory_mode read failed; defaulting to off", exc_info=True)
+        value = False
+    _LOW_MEMORY_CACHE = (now, value)
+    return value
 
 
 def _get_or_create_assistant_row(db: Session) -> DBAssistantSettings:

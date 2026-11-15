@@ -400,57 +400,6 @@ def test_librosa_load_requires_numba_so_bundle_must_keep_it():
     )
 
 
-def test_kokoro_local_names_match_precision_resolver():
-    """Kokoro variant filenames must use the resolver's underscore convention.
-
-    Regression: the local name was derived by slicing '.onnx' off the release
-    filename, but the stem 'kokoro-v1.0' itself ends in '.0' — so the slice left
-    'kokoro-v1.0.int8.onnx' (dot) instead of 'kokoro-v1.0_int8.onnx' (underscore),
-    and resolve_session_path() never found the downloaded file. It silently fell
-    back to the 326 MB fp32 mirror.
-    """
-    from backend.backends.kokoro_onnx_backend import KOKORO_ONNX_VARIANTS
-
-    stem = "kokoro-v1.0"
-    names = {local for _release, local, _size in KOKORO_ONNX_VARIANTS}
-    assert names == {
-        "kokoro-v1.0_int8.onnx",
-        "kokoro-v1.0_fp16.onnx",
-        "kokoro-v1.0.onnx",
-    }, f"unexpected local variant names: {sorted(names)}"
-
-    # Every local name must be one the resolver would actually probe.
-    for local in names:
-        assert local in (f"{stem}.onnx", f"{stem}_int8.onnx", f"{stem}_fp16.onnx"), (
-            f"{local} is not a filename resolve_session_path() looks for"
-        )
-
-
-def test_kokoro_variant_ladder_is_ordered_smallest_first():
-    """int8 must be attempted before fp16/fp32 so users get the smallest graph."""
-    from backend.backends.kokoro_onnx_backend import KOKORO_ONNX_VARIANTS
-
-    sizes = [size for _r, _l, size in KOKORO_ONNX_VARIANTS]
-    assert sizes == sorted(sizes), f"variant ladder not smallest-first: {sizes}"
-    assert KOKORO_ONNX_VARIANTS[0][1].endswith("_int8.onnx"), "first choice must be int8"
-
-
-def test_kokoro_config_advertises_downloaded_size():
-    """Declared size_mb must match the graph we actually fetch.
-
-    Regression: the config claimed int8 while the only reachable source was the
-    fp32 mirror (326 MB), understating the download by ~212 MB.
-    """
-    from backend.backends.configs.tts import _get_tts_configs
-
-    kokoro = [c for c in _get_tts_configs() if c.model_name == "kokoro-onnx"]
-    assert kokoro, "kokoro-onnx config missing"
-    cfg = kokoro[0]
-    assert cfg.quant == "int8", f"expected int8, got {cfg.quant!r}"
-    # int8 graph is 114,119,327 bytes; allow a little slack for rounding.
-    assert 100 <= cfg.size_mb <= 130, f"size_mb={cfg.size_mb} does not match the int8 graph (~114 MB)"
-
-
 def test_parakeet_sizes_are_not_inverted():
     """f16 must not be declared smaller than q8 — both were understated.
 
@@ -479,15 +428,27 @@ def test_parakeet_sizes_are_not_inverted():
 # claiming int8/Q8_0 when only fp32 exists misreports both download size and RAM.
 _VERIFIED_QUANT_SOURCES: dict[str, tuple[str, str | None, str]] = {
     "kokoro-onnx": (
-        "thewh1teagle/kokoro-onnx (GitHub release)",
-        "int8",
-        "int8/fp16/fp32 all published; backend prefers int8 with fp32 fallback",
+        "audio-cpp/audio.cpp-gguf (Kokoro-82M-GGUF/kokoro-82m-q8_0.gguf)",
+        "Q8_0",
+        "self-contained q8_0 GGUF; weights+vocab+54 voices",
     ),
     "kitten-tts-mini": ("KittenML/kitten-tts-mini-0.8", None, "mini has no int8; only nano-0.8-int8 exists"),
-    "moss-tts-nano": ("OpenMOSS-Team/MOSS-TTS-Nano-100M-ONNX", None, "reference export ships no int8 graphs"),
+    "moss-tts-nano": (
+        "audio-cpp/audio.cpp-gguf (MOSS-TTS-Nano-100M-GGUF/moss-tts-nano-100m-q8_0.gguf)",
+        "Q8_0",
+        "self-contained q8_0 GGUF; reference ONNX export is fp32-only (legacy note)",
+    ),
     "stable-audio-open-1.0": ("StabilityAI/stable-audio-open-1.0", None, "fp32/bf16 safetensors only"),
-    "stable-audio-3-small-sfx": ("stabilityai/stable-audio-open-small", None, "no GGUF/Q8_0 published"),
-    "pocket-tts-onnx": ("KevinAHM/pocket-tts-onnx", "int8", "genuine _int8.onnx variants exist"),
+    "stable-audio-3-small-sfx": (
+        "audio-cpp/audio.cpp-gguf (Stable-Audio-3-Small-SFX-GGUF/stable-audio-3-small-sfx-q8_0.gguf)",
+        "Q8_0",
+        "self-contained q8_0 GGUF; stabilityai upstream ships fp32 safetensors only — we load the GGUF pack, not the safetensors",
+    ),
+    "pocket-tts": (
+        "audio-cpp/audio.cpp-gguf (PocketTTS-GGUF/english-q8_0)",
+        "Q8_0",
+        "self-contained q8_0 GGUF with 26 packaged voice states",
+    ),
 }
 
 
@@ -511,7 +472,11 @@ def test_no_false_quant_claims():
 
 
 def test_stable_audio_sizes_match_safetensors():
-    """Stable Audio declared Q8_0/2500MB; the repo ships a 4.4GB fp32 checkpoint."""
+    """Stable Audio declared Q8_0/2500MB; the repo ships a 4.4GB fp32 checkpoint.
+
+    stable-audio-open-1.0 ships fp32 safetensors only (~4415 MB).
+    stable-audio-3-small-sfx ships via the audiocpp GGUF pack (~1606 MB q8_0).
+    """
     from backend.backends import get_all_model_configs
 
     by_name = {c.model_name: c for c in get_all_model_configs()}
@@ -523,9 +488,9 @@ def test_stable_audio_sizes_match_safetensors():
 
     small = by_name.get("stable-audio-3-small-sfx")
     assert small is not None
-    assert small.quant == "fp32", f"expected fp32, got {small.quant!r}"
-    # model.safetensors = 1,676,829,212 B (~1599 MB)
-    assert 1500 <= small.size_mb <= 1700, f"size_mb={small.size_mb}, expected ~1599"
+    assert small.quant == "Q8_0", f"expected Q8_0, got {small.quant!r}"
+    # audiocpp GGUF pack: stable-audio-3-small-sfx-q8_0.gguf = 1,683,576,512 B (~1606 MB)
+    assert 1550 <= small.size_mb <= 1650, f"size_mb={small.size_mb}, expected ~1606"
 
 
 # -- Tool registry idempotency ---------------------------------------------
@@ -575,7 +540,7 @@ def test_health_route_offloads_blocking_probes():
     """GET /health must build its snapshot off the event loop.
 
     Regression (caught 2026-10-03): ``/health`` is ``async def`` but ran every
-    probe inline — GPU probe (torch/CUDA init, ~5.2 s cold), TTS engine
+    probe inline - GPU probe (driver init, ~5.2 s cold), TTS engine
     registry scan, model-directory walk, psutil. The first call after startup
     therefore froze the whole loop for >10 s, so the app looked hung right
     after launch and ``test_graceful_shutdown_unloads_models_and_exits_cleanly``
@@ -606,7 +571,7 @@ def test_startup_warms_health_snapshot_off_the_readiness_path():
     and queue are up so the app is usable immediately, and the expensive
     probes run in a background tier (>1 s later, off the event loop). The
     regression this guards is the warm-up being awaited *before* readiness
-    again - that would make every launch pay for torch's import before the
+    again - that would make every launch pay for the GPU probe before the
     window is useful.
     """
     app_py = Path(ac.__file__).resolve().parent.parent / "app.py"
@@ -627,7 +592,7 @@ def test_startup_warms_health_snapshot_off_the_readiness_path():
     # Readiness fires before the tier is scheduled, and the tier sleeps first.
     assert ready_at < tier_at, (
         "_signal_ready() must fire before the warm-up tier is scheduled, "
-        "otherwise the first launch still blocks on torch's import"
+        "otherwise the first launch still blocks on the GPU probe"
     )
     assert "await asyncio.sleep" in tier_body, "the warm-up tier must yield before heating the GPU probes"
     assert "asyncio.to_thread(_warm_health_snapshot)" in text, (
@@ -692,3 +657,20 @@ def test_shim_does_not_exclude_stdlib_typing():
         "build_shim() must not exclude 'typing' — it is stdlib on Python 3.12 "
         "and functools imports it; the shim crashes on launch without it"
     )
+
+
+def test_kokoro_config_advertises_downloaded_size():
+    """Declared size_mb must match the GGUF we actually fetch.
+
+    The model moved to the audiocpp lane in 2026-11: one self-contained
+    kokoro-82m-q8_0.gguf (~181 MB) with all voice packs and no precision
+    ladder.
+    """
+    from backend.backends.configs.tts import _get_tts_configs
+
+    kokoro = [c for c in _get_tts_configs() if c.model_name == "kokoro-onnx"]
+    assert kokoro, "kokoro config missing"
+    cfg = kokoro[0]
+    assert cfg.quant == "Q8_0", f"expected Q8_0, got {cfg.quant!r}"
+    assert 170 <= cfg.size_mb <= 200, f"size_mb={cfg.size_mb} does not match the q8_0 GGUF (~181 MB)"
+    assert cfg.download_file == "Kokoro-82M-GGUF/kokoro-82m-q8_0.gguf"

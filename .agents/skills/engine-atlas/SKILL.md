@@ -64,13 +64,10 @@ languages, clone flags), `backend/backends/registry.py` (factory), and GROUNDING
 | openvoice | OpenVoice (tone-color) | zero-shot, 6 languages, MIT |
 
 ## LLM engine
-- **gguf_llm** (jackrong Qwen3.5 family, GGUF via llama.cpp `server` sidecar):
+- **gguf_llm** (LFM2.5 family, GGUF via llama.cpp `server` sidecar):
   | model_name | repo | size | quant | paid |
   |-----------|------|------|-------|------|
-  | planner-4b | bartowski/Qwen3.5-4B-125B-16EF-GGUF | 2.7 GB | Q4_K_M | No (default) |
-  | planner-4b-v3 | bartowski/Qwen3.5-4B-125B-40EF-GGUF | 2.8 GB | Q4_K_M | Yes |
-  | planner-spark-x-2.5-4b | bartowski/Spark-2.5B-A3B-GGUF | 2.5 GB | Q4_K_M | Yes |
-  | planner-lfm2-2.6b | LiquidAI/LFM2.5-2.6B-GGUF | 1.6 GB | Q4_0 | Yes |
+  | planner-lfm2-2.6b | LiquidAI/LFM2.5-2.6B-GGUF | 1.6 GB | Q4_0 | No (default) |
   | planner-lfm2-8b-a1b | LiquidAI/LFM2.5-8B-A1B-GGUF | 4.5 GB | Q4_K_M | Yes (MoE) |
   | planner-ling-tiny | inclusionAI/Ling-3.0-tiny-GGUF | 4.8 GB | Q4_K_M | Yes (MoE) |
   | planner-bonsai-2-27b | prism-ml/Ternary-Bonsai-2-27B-gguf | 6.1 GB | PTQ1_0 | Yes |

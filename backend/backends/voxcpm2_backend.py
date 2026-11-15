@@ -1,87 +1,66 @@
-"""VoxCPM2 (GGUF) backend via the CrispASR one-shot CLI.
+"""VoxCPM2 backend via the audio.cpp one-shot CLI.
 
-CrispASR (https://github.com/CrispStrobe/CrispASR) supports VoxCPM2 TTS
-via ``--backend voxcpm2-tts``. The model is ``cstr/voxcpm2-GGUF``
-(2.83 GB Q8_0, Apache-2.0). No Python TTS dependencies — zero torch.
+Migrated from CrispASR ``voxcpm2-tts`` to ``audiocpp_cli --task tts
+--family voxcpm2`` (2026-11-14). Single self-contained GGUF (Apache-2.0;
+catalog id ``voxcpm2``):
 
-VoxCPM2 is a 2B tokenizer-free diffusion-autoregressive TTS model (OpenBMB)
-trained on 2M+ hours of multilingual speech. 30 languages, 48 kHz output,
-zero-shot voice cloning from a reference WAV, and voice design via
-parenthesized instructions in the input text (e.g.
-``(A young woman, gentle voice)Hello!``).
+- ``audio-cpp/audio.cpp-gguf`` → ``VoxCPM2-GGUF/voxcpm2-q8_0.gguf``
+  (~2.8 GB, Q8_0)
 
-Voices are cloned from a reference WAV via ``--voice <wav>`` (requires
-``--i-have-rights`` flag for voice cloning consent). Voice design is
-achieved by prepending a parenthesized description to the text — no
-separate ``--instruct`` flag needed for this backend.
+VoxCPM2 is a 2B tokenizer-free diffusion-autoregressive TTS model (OpenBMB),
+2M+ hours multilingual speech. Voice cloning via ``--voice-ref`` (ultimate
+clone adds ``--reference-text``). Voice design via parenthesized style in the
+text itself (e.g. ``(A young woman, gentle voice)Hello!``) — no separate
+voice-design flag; streaming is offline-only in this path.
 """
 
 import asyncio
 import logging
-import os
-import subprocess
-import tempfile
-from pathlib import Path
 
 import numpy as np
 
-from ..utils.audio import load_audio
-from ..utils.hidden_subprocess import run_hidden
+from .audio_cpp import find_audiocpp, run_one_shot
 from .base import combine_voice_prompts as _combine_voice_prompts
 
 logger = logging.getLogger(__name__)
 
-HF_REPO = "cstr/voxcpm2-GGUF"
-BACKBONE_QUANT = "q8_0"
+HF_REPO = "audio-cpp/audio.cpp-gguf"
+MODEL_FILE = "VoxCPM2-GGUF/voxcpm2-q8_0.gguf"
 SAMPLE_RATE = 48000
 
 DEFAULT_TIMEOUT_S = 600.0
 
 
-def find_crispasr() -> Path | None:
-    """Resolve the CrispASR binary (env override, bundled sidecar, PATH, auto-download)."""
-    from ..utils.sidecar_downloader import find_crispasr as _find
-
-    return _find()
-
-
-def _local_file(filename: str) -> str:
-    from .services.model_files import resolve_model_file
-
-    return str(resolve_model_file(HF_REPO, filename))
-
-
 def build_tts_args(
     *,
-    backbone: str,
+    model: str,
     text: str,
-    output: str,
     voice_wav: str | None = None,
-    language: str = "en",
+    reference_text: str | None = None,
     seed: int | None = None,
 ) -> list[str]:
-    """Build the ``crispasr --backend voxcpm2-tts`` argument list."""
+    """Build the ``audiocpp_cli --task tts --family voxcpm2`` argument list (pure, unit-testable)."""
     args = [
-        "--backend",
-        "voxcpm2-tts",
-        "-m",
-        backbone,
-        "--tts",
+        "--task",
+        "tts",
+        "--family",
+        "voxcpm2",
+        "--model",
+        model,
+        "--text",
         text,
-        "--tts-output",
-        output,
-        "-tl",
-        language,
     ]
     if voice_wav:
-        args += ["--voice", voice_wav, "--i-have-rights"]
+        args += ["--voice-ref", voice_wav]
+        if reference_text:
+            args += ["--reference-text", reference_text]
     if seed is not None:
-        args += ["-s", str(seed)]
+        args += ["--seed", str(seed)]
     return args
 
 
 class VoxCPM2Backend:
-    """TTS backend driving the CrispASR voxcpm2-tts CLI as one-shot subprocesses."""
+    """TTS backend driving the audio.cpp one-shot CLI (no resident model)."""
 
     hf_repo = HF_REPO
     sample_rate = SAMPLE_RATE
@@ -94,20 +73,23 @@ class VoxCPM2Backend:
     def _is_model_cached(self) -> bool:
         from ..services.model_files import is_model_installed
 
-        return is_model_installed(HF_REPO, f"voxcpm2-{BACKBONE_QUANT}.gguf")
+        return is_model_installed(HF_REPO, MODEL_FILE)
+
+    def _local_file(self, filename: str) -> str:
+        from ..services.model_files import resolve_model_file
+
+        return str(resolve_model_file(HF_REPO, filename))
 
     def _get_model_path(self, model_size: str) -> str:
-        return _local_file(f"voxcpm2-{BACKBONE_QUANT}.gguf")
+        return self._local_file(MODEL_FILE)
 
     # -- lifecycle ----------------------------------------------------------
 
     async def load_model(self, model_size: str = "default") -> None:
-        """No resident model — verify the GGUF + binary are available."""
-        binary = find_crispasr()
+        binary = find_audiocpp()
         if binary is None:
             self.load_error = (
-                "CrispASR binary not found. Bundle crispasr.exe next to "
-                "llama-server.exe in data/models/, or set TWENTYLABS_CRISPASR."
+                "audiocpp_cli binary not found. Bundle audiocpp_cli next to the sidecars or set TWENTYLABS_AUDIOCPP."
             )
             raise RuntimeError(self.load_error)
         if not self._is_model_cached():
@@ -131,6 +113,7 @@ class VoxCPM2Backend:
         return {
             "voice_type": "clone",
             "voice_wav": audio_path,
+            "audio_path": audio_path,
             "reference_text": reference_text,
         }, False
 
@@ -152,64 +135,36 @@ class VoxCPM2Backend:
         instruct: str | None = None,
         temperature: float | None = None,
     ) -> tuple[np.ndarray, int]:
-        binary = find_crispasr()
-        if binary is None:
+        if find_audiocpp() is None:
             raise RuntimeError(
-                "CrispASR binary not found. Bundle crispasr.exe next to "
-                "llama-server.exe in data/models/, or set TWENTYLABS_CRISPASR."
+                "audiocpp_cli binary not found. Bundle audiocpp_cli next to the sidecars or set TWENTYLABS_AUDIOCPP."
             )
         if not self._is_model_cached():
             raise RuntimeError("VoxCPM2 is not downloaded. Use the Model Downloads page to download it first.")
 
-        backbone = self._get_model_path("default")
-        voice_wav = voice_prompt.get("voice_wav")
+        voice_wav = voice_prompt.get("voice_wav") or voice_prompt.get("audio_path")
+        reference_text = voice_prompt.get("reference_text") if voice_wav else None
 
         # Voice design: prepend parenthesized instruction to text
         synth_text = text
         if instruct and not voice_wav:
             synth_text = f"({instruct}){text}"
 
-        timeout_s = float(os.environ.get("TWENTYLABS_CRISPASR_TIMEOUT", DEFAULT_TIMEOUT_S))
-        tmpdir = tempfile.mkdtemp(prefix="voxcpm2-")
-        out_wav = str(Path(tmpdir) / "out.wav")
-
-        try:
-            args = build_tts_args(
-                backbone=backbone,
-                text=synth_text,
-                output=out_wav,
-                voice_wav=voice_wav,
-                language=language,
-                seed=seed,
-            )
-
-            def _run_sync() -> None:
-                proc = run_hidden(
-                    [str(binary), *args],
-                    capture_output=True,
-                    text=True,
-                    timeout=timeout_s,
-                )
-                if proc.returncode != 0:
-                    tail = (proc.stderr or proc.stdout or "").strip().splitlines()[-5:]
-                    raise RuntimeError(f"crispasr voxcpm2-tts failed (exit {proc.returncode}): {' | '.join(tail)}")
-                if not Path(out_wav).exists():
-                    raise RuntimeError("crispasr voxcpm2-tts exited 0 but produced no WAV output")
-
-            await asyncio.to_thread(_run_sync)
-            audio, _sr = await asyncio.to_thread(load_audio, out_wav, sample_rate=SAMPLE_RATE)
-            return audio.astype(np.float32), SAMPLE_RATE
-        except subprocess.TimeoutExpired:
-            raise TimeoutError(
-                f"crispasr voxcpm2-tts exceeded {timeout_s:g}s. Try shorter text or a stronger machine."
-            ) from None
-        finally:
-            try:
-                import shutil
-
-                shutil.rmtree(tmpdir, ignore_errors=True)
-            except OSError:
-                pass
+        model_file = self._local_file(MODEL_FILE)
+        args = build_tts_args(
+            model=model_file,
+            text=synth_text,
+            voice_wav=voice_wav,
+            reference_text=reference_text,
+            seed=seed,
+        )
+        return await asyncio.to_thread(
+            run_one_shot,
+            args,
+            sample_rate=SAMPLE_RATE,
+            prefix="voxcpm2",
+            timeout_s=DEFAULT_TIMEOUT_S,
+        )
 
 
 voxcpm2_backend = VoxCPM2Backend()

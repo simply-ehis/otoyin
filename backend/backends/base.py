@@ -38,7 +38,7 @@ def is_model_cached(
     Check if a HuggingFace model is fully cached locally.
 
     Args:
-        hf_repo: HuggingFace repo ID (e.g. "k2-fsa/sherpa-onnx-zonos-v0.1")
+        hf_repo: HuggingFace repo ID (e.g. "neuphonic/neutts-air-q4-gguf")
         weight_extensions: File extensions that count as model weights.
         required_files: If set, check that these specific filenames exist
                         in snapshots instead of checking by extension.
@@ -104,172 +104,17 @@ def _is_model_cached_uncached(
         return False
 
 
-def get_torch_device(
-    *,
-    allow_xpu: bool = False,
-    allow_directml: bool = False,
-    allow_mps: bool = False,
-    force_cpu_on_mac: bool = False,
-) -> str:
-    """
-    Detect the best available torch device.
-
-    Args:
-        allow_xpu: Check for Intel XPU (IPEX) support.
-        allow_directml: Check for DirectML (Windows) support.
-        allow_mps: Allow MPS (Apple Silicon). If False, MPS falls back to CPU.
-        force_cpu_on_mac: Force CPU on macOS regardless of GPU availability.
-    """
-    import torch
-
-    if torch.cuda.is_available():
-        return "cuda"
-
-    if allow_xpu:
-        try:
-            import intel_extension_for_pytorch
-
-            if hasattr(torch, "xpu") and torch.xpu.is_available():
-                return "xpu"
-        except ImportError:
-            pass
-
-    if allow_directml:
-        try:
-            import torch_directml
-
-            if torch_directml.device_count() > 0:
-                return torch_directml.device(0)
-        except ImportError:
-            pass
-
-    if allow_mps and hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-        return "mps"
-
-    return "cpu"
-
-
-def check_cuda_compatibility() -> tuple[bool, str | None]:
-    """Check if the installed PyTorch supports the current GPU's compute capability.
-
-    Returns:
-        (compatible, warning_message) — compatible is True if OK or no CUDA GPU,
-        warning_message is a human-readable string if there's a problem.
-    """
-    try:
-        import torch
-    except ImportError:
-        return True, None
-
-    if not torch.cuda.is_available():
-        return True, None
-
-    major, minor = torch.cuda.get_device_capability(0)
-    capability = f"{major}.{minor}"
-    device_name = torch.cuda.get_device_name(0)
-    sm_tag = f"sm_{major}{minor}"
-
-    # torch.cuda._get_arch_list() returns the SM architectures this build
-    # was compiled for (e.g. ["sm_50", "sm_60", ..., "sm_90"]).
-    try:
-        arch_list = torch.cuda._get_arch_list()
-        if arch_list:
-            # Check for both sm_XX and compute_XX (JIT-compiled) entries
-            compute_tag = f"compute_{major}{minor}"
-            if sm_tag not in arch_list and compute_tag not in arch_list:
-                return False, (
-                    f"{device_name} (compute capability {capability} / {sm_tag}) "
-                    f"is not supported by this PyTorch build. "
-                    f"Supported architectures: {', '.join(arch_list)}. "
-                    f"Install PyTorch nightly (cu128) for newer GPU support: "
-                    f"pip install torch --index-url https://download.pytorch.org/whl/nightly/cu128"
-                )
-    except AttributeError:
-        pass
-
-    return True, None
-
-
-def empty_device_cache(device: str) -> None:
-    """
-    Free cached memory on the given device (CUDA or XPU).
-
-    Backends should call this after unloading models so VRAM is returned
-    to the OS.
-    """
-    import torch
-
-    if device == "cuda" and torch.cuda.is_available():
-        torch.cuda.empty_cache()
-    elif device == "xpu" and hasattr(torch, "xpu"):
-        torch.xpu.empty_cache()
-
-
 def cleanup_gpu_memory(*, log: bool = False) -> None:
-    """
-    Proactive GPU memory cleanup after inference.
+    """Run the Python GC after unloading a model.
 
-    Runs garbage collection (to free Python objects with circular refs)
-    then calls ``empty_cache`` on every active accelerator.  The sequence
-    matters: GC must run *first* so that CUDA tensors held by dead Python
-    objects are released *before* ``empty_cache`` reclaims the freed blocks.
-
-    Call this at the end of each generation / effect chain to reduce VRAM
-    fragmentation and keep the CUDA allocator's free-list compact.
-
-    Parameters
-    ----------
-    log : bool
-        If True, emit an INFO-level log with pre/post VRAM usage so
-        operators can verify the cleanup is effective.
+    The app never imports a CUDA runtime — every audio engine runs on a C++
+    sidecar that owns its own memory — so there is nothing to free on the
+    Python side except dead objects. Kept as a named hook because callers at
+    unload boundaries expect it.
     """
     import gc
 
-    try:
-        import torch
-    except ImportError:
-        return
-
-    # --- snapshot before cleanup ---
-    vram_before = None
-    if log and torch.cuda.is_available():
-        vram_before = torch.cuda.memory_allocated() / 1024 / 1024
-
-    # 1. Collect dead Python objects so their CUDA tensors become freeable.
     gc.collect()
-
-    # 2. Return freed blocks to the OS / CUDA allocator.
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-    if hasattr(torch, "xpu") and torch.xpu.is_available():
-        torch.xpu.empty_cache()
-
-    # --- snapshot after cleanup ---
-    if log and torch.cuda.is_available():
-        vram_after = torch.cuda.memory_allocated() / 1024 / 1024
-        freed = vram_before - vram_after if vram_before is not None else 0
-        logger.info(
-            "GPU memory cleanup: before=%.1fMB after=%.1fMB freed=%.1fMB",
-            vram_before or 0,
-            vram_after,
-            freed,
-        )
-
-
-def manual_seed(seed: int, device: str) -> None:
-    """
-    Set the random seed on both CPU and the active accelerator.
-
-    Covers CUDA and Intel XPU so that generation is reproducible
-    regardless of which GPU backend is in use.
-    """
-    import torch
-
-    torch.manual_seed(seed)
-    if device == "cuda" and torch.cuda.is_available():
-        torch.cuda.manual_seed(seed)
-    elif device == "xpu" and hasattr(torch, "xpu"):
-        torch.xpu.manual_seed(seed)
 
 
 async def combine_voice_prompts(

@@ -70,13 +70,16 @@ export const TAB_HELP_DATA: Record<string, TabHelpItem> = {
 			{ label: "Export audio", shortcut: "" },
 		],
 	},
-	"/workspace": {
-		what: "Advanced audio tools: voice changer, mixer, effects, spatial audio.",
+	"/community-presets": {
+		what: "Download and share community-made voice packs and presets.",
 		actions: [
-			{ label: "Voice changer", shortcut: "" },
-			{ label: "Mixer", shortcut: "" },
-			{ label: "Effects rack", shortcut: "" },
-			{ label: "Spatial audio", shortcut: "" },
+			{ label: "Browse the gallery", shortcut: "" },
+			{ label: "Preview a preset", shortcut: "" },
+			{ label: "Add it to your library", shortcut: "" },
+		],
+		tips: [
+			"Preview before you install — licenses are shown on every preset.",
+			"Installed presets appear next to the built-in ones automatically.",
 		],
 	},
 	"/instruments": {

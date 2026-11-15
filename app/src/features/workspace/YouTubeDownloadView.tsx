@@ -157,7 +157,7 @@ export function YouTubeDownloadView() {
 
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader title="Download from URL" />
+			<ScreenHeader helpPath="/download" title="Download from URL" />
 
 			<div className="flex max-w-4xl gap-2">
 				<Input

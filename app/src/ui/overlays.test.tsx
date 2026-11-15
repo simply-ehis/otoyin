@@ -164,7 +164,7 @@ describe("Select", () => {
 				</SelectTrigger>
 				<SelectContent>
 					<SelectItem value="kokoro">Kokoro</SelectItem>
-					<SelectItem value="zonos_gguf">Zonos</SelectItem>
+					<SelectItem value="voxcpm2">VoxCPM2</SelectItem>
 				</SelectContent>
 			</Select>,
 		);
@@ -177,9 +177,9 @@ describe("Select", () => {
 		// dismissable-layer pointer-events gap), choose via fireEvent.
 		const trigger = screen.getByRole("combobox", { name: "Engine" });
 		fireEvent.keyDown(trigger, { key: "ArrowDown" });
-		const option = await screen.findByRole("option", { name: "Zonos" });
+		const option = await screen.findByRole("option", { name: "VoxCPM2" });
 		fireEvent.click(option);
-		expect(onValueChange).toHaveBeenCalledWith("zonos_gguf");
+		expect(onValueChange).toHaveBeenCalledWith("voxcpm2");
 	});
 
 	it("announces the placeholder before a choice exists", () => {

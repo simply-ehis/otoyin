@@ -316,7 +316,6 @@ ENDPOINT_MAP = {
     "download_freesound": "/sounds/download/{sound_id}",
     "search_freesound": "/sounds/search",
     # Voice packs
-    "list_voice_packs": "/voice-packs",
     # Voice converter
     "convert_voice": "/voice-convert",
     # Models
@@ -408,7 +407,6 @@ TOOL_METHODS = {
     "list_export_presets": "GET",
     "list_reference_voices": "GET",
     "list_spatial_presets": "GET",
-    "list_voice_packs": "GET",
     "models_list": "GET",
     "reference_voice_audio": "GET",
     "search_freesound": "GET",

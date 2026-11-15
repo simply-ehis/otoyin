@@ -52,10 +52,11 @@ _catalog_lock = asyncio.Lock()
 
 # ── Kokoro ONNX preload ────────────────────────────────────────────────
 async def ensure_kokoro_preloaded() -> None:
-    """Preload Kokoro ONNX on first TTS generation.
+    """Warm the audiocpp Kokoro path on first TTS generation.
 
-    Only runs if: (a) kokoro_onnx is importable, (b) model is cached,
-    (c) preload is enabled in generation settings.  Never triggers a download.
+    One-shot engines keep no resident model, so this only verifies the
+    sidecar + GGUF are cached and marks the preload event. Never triggers a
+    download.
     """
     if _kokoro_event.is_set():
         return
@@ -63,14 +64,11 @@ async def ensure_kokoro_preloaded() -> None:
         if _kokoro_event.is_set():
             return
         try:
-            from ..backends.kokoro_onnx_backend import KokoroONNXBackend, is_onnx_available
+            from ..backends.kokoro_tts_backend import KokoroTTSBackend
 
-            if not is_onnx_available():
-                _kokoro_event.set()
-                return
-            _kokoro = KokoroONNXBackend()
+            _kokoro = KokoroTTSBackend()
             if not _kokoro._is_model_cached():
-                logger.debug("Kokoro ONNX not cached — skipping preload")
+                logger.debug("Kokoro is not cached - skipping preload")
                 _kokoro_event.set()
                 return
             # Manifest gate: don't preload models not downloaded via the Store.
@@ -357,7 +355,6 @@ async def ensure_engines_registered() -> None:
                         "kitten_tts",
                         "qwen3_tts",
                         "bark_small",
-                        "zonos_gguf",
                         "parler_tts_gguf",
                         "voxcpm2",
                         "fish_speech_s2",
@@ -394,25 +391,16 @@ async def ensure_engines_registered() -> None:
                 logger.debug("LLM backend not registered (no model available)", exc_info=True)
 
             # VC engines: only register if a model for that engine is downloaded.
-            try:
-                if engine_needed("rvc_onnx"):
-                    rvc_backend = get_vc_backend("rvc_onnx")
-                    lifecycle_manager.register("rvc_onnx", rvc_backend.is_loaded, lambda: rvc_backend.unload_model())
-                else:
-                    logger.debug("RVC ONNX backend not registered — no RVC models downloaded")
-            except Exception:
-                logger.debug("RVC ONNX backend not registered (no model available)", exc_info=True)
-
-            try:
-                if engine_needed("seed_vc"):
-                    seed_vc_backend = get_vc_backend("seed_vc")
-                    lifecycle_manager.register(
-                        "seed_vc", seed_vc_backend.is_loaded, lambda: seed_vc_backend.unload_model()
-                    )
-                else:
-                    logger.debug("Seed-VC backend not registered — no Seed-VC models downloaded")
-            except Exception:
-                logger.debug("Seed-VC backend not registered (no model available)", exc_info=True)
+            for engine in ("meanvc2", "tone_color_vc", "seed_vc"):
+                try:
+                    if engine_needed(engine):
+                        vc_backend = get_vc_backend(engine)
+                        # B023: bind the loop variable so each registration unloads its own backend.
+                        lifecycle_manager.register(engine, vc_backend.is_loaded, lambda b=vc_backend: b.unload_model())
+                    else:
+                        logger.debug("%s backend not registered - no model downloaded", engine)
+                except Exception:
+                    logger.debug("%s backend not registered (no model available)", engine, exc_info=True)
 
             # Music: only register stable_audio if a model is downloaded.
             try:

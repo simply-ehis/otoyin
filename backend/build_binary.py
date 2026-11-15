@@ -10,7 +10,6 @@ import argparse
 import importlib
 import logging
 import os
-import platform
 import sys
 from pathlib import Path
 
@@ -111,33 +110,17 @@ def build_server(cuda=False):
         binary_name,
     ]
 
-    # Hide console window on Windows only. On macOS/Linux the sidecar needs
-    # stdout/stderr for Tauri to capture logs.
-    if platform.system() == "Windows":
-        args.append("--noconsole")
+    # Do NOT pass --noconsole on Windows: the windowed bootloader replaces
+    # sys.stdout/stderr with broken handles, and every tqdm write (all model
+    # downloads) dies with OSError 22. The Tauri shell already spawns the
+    # backend with CREATE_NO_WINDOW (see src-tauri/src/server.rs), so the
+    # console is hidden anyway while stdio stays a real pipe.
+    # stdout/stderr are how the Tauri shell captures backend logs.
 
-    # numpy 2.x / torch ABI mismatch fix: install memmove fallback for
-    # torch.from_numpy() before the app starts. Runtime hooks run after
-    # FrozenImporter is registered so frozen torch/numpy are importable.
-    # Paths are passed relative to backend_dir because os.chdir(backend_dir)
-    # runs before PyInstaller. Absolute paths would get baked into the
-    # generated .spec, breaking reproducible builds on other machines / CI.
-    args.extend(
-        [
-            "--runtime-hook",
-            "pyi_rth_numpy_compat.py",
-            # Stub torch.compiler.disable before transformers imports
-            # flex_attention, which otherwise triggers torch._dynamo →
-            # torch._numpy._ufuncs and crashes at module load under
-            # PyInstaller. See pyi_rth_torch_compiler_disable.py.
-            "--runtime-hook",
-            "pyi_rth_torch_compiler_disable.py",
-            # Per-module collection overrides (e.g. forcing scipy.stats._distn_infrastructure
-            # to bundle .py source alongside .pyc so the runtime hook can source-patch it).
-            "--additional-hooks-dir",
-            "pyi_hooks",
-        ]
-    )
+    # Hidden imports are passed explicitly below; no runtime hooks.
+    # (The numpy 2.x / torch ABI runtime hook and the scipy .py-source
+    # workaround were removed in the torch excision - they existed solely
+    # for the bundled torch/scipy build.)
 
     # Add common hidden imports
     args.extend(
@@ -182,14 +165,13 @@ def build_server(cuda=False):
             "backend.services.versions",
             "--hidden-import",
             "pedalboard",
-            # --- New TTS engine backends (GGUF/ONNX, no torch) ---
+            # --- New TTS engine backends (GGML/ONNX) ---
             "--hidden-import",
-            "backend.backends.zonos_gguf_backend",
             "--hidden-import",
             "backend.backends.parler_tts_gguf_backend",
             "--hidden-import",
             "backend.backends.pocket_tts_backend",
-            # whisper.cpp STT backend (GGML, CPU-only, no PyTorch).
+            # whisper.cpp STT backend (GGML, CPU-only, no framework needed).
             "--hidden-import",
             "backend.backends.whisper_cpp_backend",
             "--hidden-import",
@@ -211,17 +193,44 @@ def build_server(cuda=False):
             "--hidden-import",
             "soundfile",
             "--copy-metadata",
-            "requests",
-            "--copy-metadata",
-            "transformers",
-            "--copy-metadata",
             "huggingface-hub",
-            "--copy-metadata",
-            "tokenizers",
             "--copy-metadata",
             "safetensors",
             "--copy-metadata",
             "tqdm",
+            # The whole HuggingFace hub dep chain is imported LAZILY inside
+            # function bodies (routes/models/download.py, model_files.py,
+            # model_integrity.py), so the entry-point walk never discovers
+            # them and the frozen app ships zero of them - every model
+            # download dies with ModuleNotFoundError before a byte moves.
+            # Collect them whole instead.
+            "--collect-all",
+            "huggingface_hub",
+            "--collect-all",
+            "tqdm",
+            "--collect-all",
+            "filelock",
+            "--collect-all",
+            "fsspec",
+            "--collect-all",
+            "requests",
+            "--collect-all",
+            "urllib3",
+            "--collect-all",
+            "idna",
+            "--collect-all",
+            "charset_normalizer",
+            "--collect-all",
+            "certifi",
+            "--collect-all",
+            "packaging",
+            "--collect-all",
+            "typing_extensions",
+            # onnx (not onnxruntime) - the post-download INT8 quantization
+            # step imports it lazily; without it every download ships FP32
+            # (kokoro-onnx is ~310 MB vs ~114 MB for the int8 path).
+            "--collect-all",
+            "onnx",
             "--hidden-import",
             "requests",
             # Fix for pkg_resources and jaraco namespace packages
@@ -233,16 +242,14 @@ def build_server(cuda=False):
             # at import time — needs .py source files, not just .pyc bytecode
             "--collect-all",
             "inflect",
-            # Kokoro 82M — REMOVED (bloat). Never auto-install or bundle.
-            # kokoro / misaki / language_tags / espeakng_loader / en_core_web_sm
-            # / unidic_lite are intentionally NOT bundled. Backend degrades
-            # gracefully (501) if kokoro is absent. Use Pocket-TTS / Parler-TTS instead.
+            # Kokoro was retired with the audiocpp unification (2026-11-14).
+            # It no longer ships and should never be bundled — use Pocket-TTS / Parler-TTS instead.
             "--hidden-import",
             "loguru",
-            # MCP server — Streamable-HTTP endpoint and the 4 21-labs.* tools.
+            # MCP server - Streamable-HTTP endpoint and the 4 21-labs.* tools.
             # FastMCP pulls in a chain of deps (mcp, cyclopts, openapi-pydantic,
             # etc.) that don't auto-discover cleanly under PyInstaller, so we
-            # collect them whole. Small compared to torch.
+            # collect them whole.
             "--hidden-import",
             "backend.mcp_server",
             "--hidden-import",
@@ -281,7 +288,7 @@ def build_server(cuda=False):
             "backend.voice_changer",
             # --- New engine backends loaded lazily by the registry ---
             "--hidden-import",
-            "backend.backends.kokoro_onnx_backend",
+            "backend.backends.kokoro_tts_backend",
             "--hidden-import",
             "backend.backends.gguf_server_backend",
             "--hidden-import",
@@ -344,29 +351,10 @@ def build_server(cuda=False):
             _mod = _pkg if _py.stem == "__init__" else f"{_pkg}.{_py.stem}"
             args.extend(["--hidden-import", _mod])
 
-    # Silero VAD weights: services/vad.py falls back to <bundle>/data/*.onnx
-    # in frozen builds. Bundle the file when it exists locally (torch.hub or
-    # HF cache); otherwise the bootstrap script fetches it into the HF cache.
-    _vad_src = next(
-        (
-            c
-            for c in (
-                *Path.home().glob(".cache/torch/hub/snakers4_silero-vad*/src/silero_vad/data/silero_vad_16k_op15.onnx"),
-                *Path.home().glob(".cache/huggingface/hub/models--snakers4*silero*vad*/**/silero_vad_16k_op15.onnx"),
-            )
-            if c.is_file()
-        ),
-        None,
-    )
-    # Silero VAD weights: the silero-vad wheel carries its own onnx files;
-    # bundle its data dir so services/vad.py's package fallback works frozen.
-    args.extend(["--collect-data", "silero_vad"])
-
-    if _vad_src is not None:
-        args.extend(["--add-data", f"{_vad_src}{os.pathsep}data"])
-        logger.info("Bundling Silero VAD weights from %s", _vad_src)
-    else:
-        logger.warning("Silero VAD onnx not found locally — run download_required_models first")
+    # No ML frameworks, no ML-adjacent wheels (silero-vad requires torch on pip
+    # - excluded by the clean resolver, and even if a dev machine has it
+    # locally, --collect-data of an absent or unwanted package must
+    # not drag it back in).
 
     # In-app Help Center catalog (backend/data/app_features.json, force-tracked
     # despite the data/ ignore). Without it the frozen backend serves an empty
@@ -378,6 +366,18 @@ def build_server(cuda=False):
         logger.info("Bundling help catalog from %s", _help_catalog_src)
     else:
         logger.warning("Help catalog %s missing — Help Center will be empty", _help_catalog_src)
+
+    # Silero VAD weights (backend/data/silero_vad_16k_op15.onnx, MIT-licensed,
+    # from snakers4/silero-vad, force-tracked despite the data/ ignore).
+    # services/vad.py prefers this bundle when frozen; without it voice chat
+    # silently degrades to the energy-based VAD. SRC is absolute (relative
+    # --add-data sources resolve against the pre-chdir cwd, not backend_dir).
+    _vad_src = backend_dir / "data" / "silero_vad_16k_op15.onnx"
+    if _vad_src.is_file():
+        args.extend(["--add-data", f"{_vad_src}{os.pathsep}backend/data"])
+        logger.info("Bundling Silero VAD weights from %s", _vad_src)
+    else:
+        logger.warning("Silero VAD weights %s missing - voice chat will use energy-based VAD", _vad_src)
 
     # Marketplace license verifying key (backend/data/marketplace_public_key.txt,
     # force-tracked despite the data/ ignore). services/licensing.py loads it
@@ -495,20 +495,13 @@ def build_server(cuda=False):
     else:
         logger.warning("DeepFilterNet weights missing — denoise will be unavailable")
 
-    # Add CUDA-specific hidden imports
+    # CUDA support is build-only; the app itself bundles audiocpp subprocesses
+    # that handle CUDA detection at runtime, independent of Python.
     if cuda:
         logger.info("Building with CUDA support")
-        args.extend(
-            [
-                "--hidden-import",
-                "torch.cuda",
-                "--hidden-import",
-                "torch.backends.cudnn",
-            ]
-        )
     else:
         # Exclude NVIDIA CUDA packages from CPU-only builds to keep binary small.
-        # When building from a venv with CUDA torch installed, PyInstaller would
+        # When building from a venv with CUDA packages installed, PyInstaller would
         # bundle ~3GB of NVIDIA shared libraries. We exclude both the Python
         # modules and the binary DLLs.
         nvidia_packages = [
@@ -553,11 +546,22 @@ def build_server(cuda=False):
             "sphn",
             "argostranslate",
             "stanza",
+            # No ML framework in the release: everything runs on GGML sidecars
+            # (llama.cpp, crispasr, audiocpp) or ONNX Runtime. Excluded so a
+            # stray lazy import inside an otherwise-collected module cannot
+            # drag the framework (and an entire CUDA stack) into the bundle.
+            "torch",
+            "torchaudio",
+            "transformers",
+            "accelerate",
+            "diffusers",
+            "resemblyzer",
+            "sklearn",
             # NOTE: do NOT add numba or llvmlite here, despite llvmlite looking
             # like 115 MB of dead weight. librosa/core/audio.py does a
             # module-level `from numba import guvectorize, jit, stencil`, so
             # excluding numba makes librosa.load() raise ModuleNotFoundError
-            # and 500s every audio route in the packaged app — while the dev
+            # and 500s every audio route in the packaged app - while the dev
             # server keeps passing, because dev has numba installed. Verified
             # against the frozen binary on 2026-10-03; pinned by
             # backend/tests/test_release_audit_regressions.py
@@ -566,7 +570,7 @@ def build_server(cuda=False):
             args.extend(["--exclude-module", pkg])
 
     if not cuda:
-        logger.info("Building for non-CUDA platform - PyTorch only")
+        logger.info("Building for non-CUDA platform (audiocpp subprocesses only)")
 
     dist_dir = str(backend_dir / "dist")
     build_dir = str(backend_dir / "build")
@@ -582,75 +586,15 @@ def build_server(cuda=False):
         ]
     )
 
-    # Change to backend directory
+    # No PyTorch dependency exists; CUDA is excluded on CPU-only builds.
     os.chdir(backend_dir)
 
-    # For CPU builds on Windows, ensure we're using CPU-only torch.
-    # If CUDA torch is installed (local dev), swap to CPU torch before building,
-    # then restore CUDA torch after. This prevents PyInstaller from bundling
-    # ~3GB of CUDA DLLs into the CPU binary.
-    restore_cuda = False
-    original_cuda_tag = None
-    if not cuda and platform.system() == "Windows":
-        import subprocess
-
-        result = subprocess.run(
-            [sys.executable, "-c", "import torch; print(torch.version.cuda or '')"], capture_output=True, text=True
-        )
-        has_cuda_torch = bool(result.stdout.strip())
-        if has_cuda_torch:
-            # Save the original CUDA version for restore (e.g. "12.6" → "cu126")
-            original_cuda = result.stdout.strip()
-            cuda_parts = original_cuda.split(".")[:2]
-            original_cuda_tag = f"cu{''.join(cuda_parts)}"
-            logger.info("CUDA torch detected (%s) — installing CPU torch for CPU build...", original_cuda)
-            subprocess.run(
-                [
-                    sys.executable,
-                    "-m",
-                    "pip",
-                    "install",
-                    "torch",
-                    "torchvision",
-                    "torchaudio",
-                    "--index-url",
-                    "https://download.pytorch.org/whl/cpu",
-                    "--force-reinstall",
-                    "-q",
-                ],
-                check=True,
-            )
-            restore_cuda = True
-
-    # Run PyInstaller
     if os.environ.get("TWENTYLABS_BUILD_SKIP_MISSING"):
         args = _filter_missing_deps(args)
     try:
         PyInstaller.__main__.run(args)
     finally:
-        # Restore CUDA torch if we swapped it out (even on build failure)
-        if restore_cuda:
-            logger.info("Restoring CUDA torch...")
-            import subprocess
-
-            # Restore to the same CUDA version that was installed before the build
-            restore_index = f"https://download.pytorch.org/whl/{original_cuda_tag}"
-            subprocess.run(
-                [
-                    sys.executable,
-                    "-m",
-                    "pip",
-                    "install",
-                    "torch",
-                    "torchvision",
-                    "torchaudio",
-                    "--index-url",
-                    restore_index,
-                    "--force-reinstall",
-                    "-q",
-                ],
-                check=True,
-            )
+        pass
 
     logger.info("Binary built in %s", backend_dir / "dist" / binary_name)
 
@@ -660,7 +604,7 @@ def build_shim():
 
     This is the bridge for MCP clients that only speak stdio — it proxies
     JSON-RPC to the main otoyin-server's /mcp endpoint. Keep it small: no
-    torch, no ML deps, just httpx + asyncio.
+    ML deps, just httpx + asyncio.
     """
     backend_dir = Path(__file__).parent
 

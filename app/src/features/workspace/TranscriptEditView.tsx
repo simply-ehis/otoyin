@@ -243,7 +243,7 @@ export function TranscriptEditView() {
 
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader title="Transcript Edit" />
+			<ScreenHeader helpPath="/transcript" title="Transcript Edit" />
 
 			<div className="flex max-w-xl items-center gap-2">
 				<Input

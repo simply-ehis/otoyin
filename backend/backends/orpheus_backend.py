@@ -11,8 +11,8 @@ Voices:    tara, leah, jess, leo, dan, mia, zac, zoe (preset, no cloning).
 Emotions:  inline tags — <laugh>, <sigh>, <cough>, <sniffle>, <groan>,
            <yawn>, <gasp> — inserted in the input text.
 
-Dependencies: onnxruntime (or torch+snac as fallback) for SNAC; GGUF is
-served by the bundled llama-server.exe (no Python llama_cpp binding).
+Dependencies: onnxruntime (SNAC); the bundled llama-server.exe serves the GGUF.
+No PyTorch required.
 License: Apache-2.0 (code) / Orpheus-TTS license (weights).
 """
 
@@ -203,68 +203,24 @@ class OrpheusBackend(BackendBase):
         logger.info("Orpheus %s loaded (SNAC=%s)", quant, self._snac_backend_name)
 
     def _load_snac(self) -> None:
-        """Load the SNAC 24kHz decoder — onnxruntime first, torch as fallback."""
+        """Load the SNAC 24kHz decoder — onnxruntime-only."""
+        from ..services.model_files import resolve_model_file
+
+        snac_path = str(resolve_model_file(SNAC_REPO, SNAC_FILENAME))
         try:
             import onnxruntime as ort
-
-            from ..services.model_files import resolve_model_file
-
-            snac_path = str(resolve_model_file(SNAC_REPO, SNAC_FILENAME))
-            self._snac_session = ort.InferenceSession(snac_path, providers=["CPUExecutionProvider"])
-            self._snac_backend_name = "onnx"
-            self._decode_fn = self._decode_with_onnx
-        except (ImportError, Exception) as exc:
-            logger.debug("SNAC ONNX unavailable (%s); trying torch+snac", exc)
-            self._load_snac_torch()
-
-    def _load_snac_torch(self) -> None:
-        """Fallback: use the ``snac`` PyTorch package."""
-        try:
-            from snac import SNAC
-
-            model = SNAC.from_pretrained("hubertsiuzdak/snac_24khz")
-            model.eval()
-            self._snac_session = model
-            self._snac_backend_name = "torch"
-            self._decode_fn = self._decode_with_torch
-        except ImportError as e:
+        except ImportError as exc:
             raise RuntimeError(
-                "Neither onnxruntime nor snac (torch) is installed. "
-                "Install one of: `pip install onnxruntime` or `pip install snac`."
-            ) from e
+                "onnxruntime is required for Orpheus orpheus (llama-server + SNAC ONNX). "
+                "Reinstall with: pip install onnxruntime"
+            ) from exc
+
+        self._snac_session = ort.InferenceSession(snac_path, providers=["CPUExecutionProvider"])
+        self._snac_backend_name = "onnx"
+        self._decode_fn = self._decode_with_onnx
 
     def _decode_with_onnx(self, token_ids: list[int]) -> np.ndarray:
         return _decode_tokens(token_ids, self._snac_session)
-
-    def _decode_with_torch(self, token_ids: list[int]) -> np.ndarray:
-        import torch
-
-        frames: list[list[int]] = []
-        for i in range(0, len(token_ids) - len(token_ids) % 7, 7):
-            group = token_ids[i : i + 7]
-            codes = [_token_to_code(t, j) for j, t in enumerate(group)]
-            if any(c is None for c in codes):
-                continue
-            frames.append(codes)
-
-        if not frames:
-            return np.array([], dtype=np.float32)
-
-        arr = torch.tensor(frames, dtype=torch.long)
-        arr.shape[0]
-
-        # Deinterleave: match the reference Orpheus-TTS decoder exactly.
-        codes_0 = arr[:, 0].unsqueeze(0)  # [1, T]
-        codes_1 = torch.stack([arr[:, 1], arr[:, 4]], dim=0)  # [2, T]
-        codes_2 = torch.stack([arr[:, 2], arr[:, 3], arr[:, 5], arr[:, 6]], dim=0)  # [4, T]
-
-        with torch.no_grad():
-            audio = self._snac_session.decode(codes_0, codes_1, codes_2)
-
-        audio_np = audio.squeeze().cpu().numpy().astype(np.float32)
-        if len(audio_np) > 4096:
-            audio_np = audio_np[2048 : 4096 + 2048]
-        return audio_np
 
     def _on_unload(self):
         self.llm.stop()

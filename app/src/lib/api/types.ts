@@ -101,7 +101,6 @@ export interface GenerationRequest {
 		| "fish_speech_s2"
 		| "chattts"
 		| "f5_tts"
-		| "zonos_gguf"
 		| "qwen3_tts"
 		| "bark_small"
 		| "styletts2"
@@ -109,6 +108,7 @@ export interface GenerationRequest {
 		| "parler_tts_gguf"
 		| "moss_tts_nano"
 		| "kitten_tts"
+		| "voxcpm2"
 		| "neutts"
 		| "neutts_2e"
 		| "orpheus"
@@ -229,10 +229,11 @@ export type WhisperModelSize =
 	| "cloud";
 
 export type PlannerModelSize =
-	| "4B-Q4_K_M"
-	| "4B-v3-Q4_K_M"
-	| "spark-4B-Q4_K_M"
 	| "2.6B-Q4_0"
+	| "8B-A1B-Q4_K_M"
+	| "ling-tiny-Q4_K_M"
+	| "27B-PTQ1_0"
+	| "LFM2.5-24B-A2B-Q4_K_M"
 	| "cloud";
 
 export type CaptureSource = "dictation" | "recording" | "file";
@@ -379,7 +380,7 @@ export interface GenerationSettings {
 export type GenerationSettingsUpdate = Partial<GenerationSettings>;
 
 export interface AssistantSettings {
-	/** GGUF planner variant, e.g. "4B-Q4_K_M". */
+	/** GGUF planner variant, e.g. "2.6B-Q4_0". */
 	model_size: string;
 	/** null = use the RAM-aware default; otherwise a user override in [2048,32768]. */
 	context_tokens: number | null;
@@ -538,10 +539,10 @@ export interface ModelProgress {
 export interface ModelStatus {
 	model_name: string;
 	display_name: string;
-	engine?: string; // backend engine key (e.g. "zonos")
+	engine?: string; // backend engine key (e.g. "kokoro")
 	hf_repo_id?: string; // HuggingFace repository ID
 	quant?: string | null; // quantization/format tag (e.g. "Q8_0") — technical detail
-	model_size?: string | null; // size variant tag (e.g. "Q8_0", "4B-Q4_K_M")
+	model_size?: string | null; // size variant tag (e.g. "Q8_0", "2.6B-Q4_0")
 	downloaded: boolean;
 	entitled?: boolean; // true when a manifest row exists (downloaded via the Models tab)
 	downloading: boolean; // True if download in progress

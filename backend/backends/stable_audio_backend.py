@@ -1,47 +1,83 @@
-"""Stable Audio Open SFX generation backend."""
+"""Stable Audio Open backends via the audio.cpp one-shot CLI.
 
-import importlib
+Migrated from PyTorch to ``audiocpp_cli --task gen --family stable_audio
+--mode offline`` (2026-11-15):
+
+- ``StabilityAI/stable-audio-open-1.0`` — the Foundation/Open v1 layout
+  audiocpp loads directly (no GGUF conversion required, no Python ML deps)
+- Stability AI Community License (non-commercial for large orgs, commercial
+  use allowed under $1M/yr with attribution).
+
+Audio 3 SFX is handled by ``sa3_sfx_backend.py`` (audiocpp stable_audio on
+the SA3-SFX GGUF). Output is 44.1 kHz stereo WAV (SAME codec is the
+Foundation runtime's native output); ``load_audio`` mixes to mono.
+"""
+
+import contextlib
+import logging
+import os
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 
 import numpy as np
 
-from .base import BackendBase, ModelNotCachedError
+from ..utils.audio import load_audio
+from ..utils.hidden_subprocess import run_hidden
+from .audio_cpp import find_audiocpp
+
+logger = logging.getLogger(__name__)
 
 STABLE_AUDIO_HF_REPO = "StabilityAI/stable-audio-open-1.0"
+SAMPLE_RATE = 44100
+
+DEFAULT_TIMEOUT_S = 3600.0
 
 
-class StableAudioBackend(BackendBase):
-    _model_attr = "model"
-    """Stable Audio Open sound effects generation engine."""
+class StableAudioBackend:
+    """Music/SFX one-shot backend driving the audio.cpp stable_audio CLI."""
 
-    def __init__(self, model_path: str | None = None):
-        self.model = None
-        self.model_path = model_path
-        self.device = "cpu"
+    hf_repo = STABLE_AUDIO_HF_REPO
+    sample_rate = SAMPLE_RATE
 
-    def load_model(self):
-        if self.model is not None:
-            return
-        import torch
+    def __init__(self) -> None:
+        self.load_error: str | None = None
 
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        from ..services.model_files import app_snapshot_dir, is_snapshot_installed
+    def _model_dir(self) -> str:
+        from ..services.model_files import app_snapshot_dir
 
-        repo = self.model_path or STABLE_AUDIO_HF_REPO
-        if self.model_path:
-            local_dir = Path(self.model_path)
-        else:
-            local_dir = app_snapshot_dir(repo)
-        if not local_dir.is_dir() or not is_snapshot_installed(repo):
-            raise ModelNotCachedError(
-                f"Model '{repo}' is not downloaded. Use the Model Downloads page to download it first."
+        return str(app_snapshot_dir(STABLE_AUDIO_HF_REPO))
+
+    def _is_model_cached(self) -> bool:
+        from ..services.model_files import is_snapshot_installed
+
+        return is_snapshot_installed(STABLE_AUDIO_HF_REPO)
+
+    def load_model(self) -> None:
+        """No resident model — verify the binary + Foundation snapshot are available."""
+        binary = find_audiocpp()
+        if binary is None:
+            self.load_error = (
+                "audiocpp_cli binary not found. Bundle audiocpp_cli next to the sidecars or set TWENTYLABS_AUDIOCPP."
             )
-        try:
-            from stable_audio_open import StableAudioPipeline
+            raise RuntimeError(self.load_error)
+        if not self._is_model_cached():
+            raise RuntimeError(
+                "Stable Audio Open is not downloaded. Use the Model Downloads page to download it first."
+            )
+        self.load_error = None
 
-            self.model = StableAudioPipeline.from_pretrained(str(local_dir)).to(self.device)
-        except ImportError as exc:
-            raise RuntimeError("Stable Audio Open not installed. Install with: pip install stable-audio-open") from exc
+    def unload_model(self) -> None:
+        """Nothing resident to unload — subprocesses exit after each call."""
+
+    def is_loaded(self) -> bool:
+        return False
+
+    def is_available(self) -> bool:
+        return find_audiocpp() is not None
+
+    # -- generation ---------------------------------------------------------
 
     def generate(
         self,
@@ -52,34 +88,55 @@ class StableAudioBackend(BackendBase):
         tempo: int | None = None,
         seed: int | None = None,
     ) -> tuple[np.ndarray, int]:
-        self.load_model()
-        if seed is not None:
-            import torch
+        binary = find_audiocpp()
+        if binary is None:
+            raise RuntimeError(
+                "audiocpp_cli binary not found. Bundle audiocpp_cli next to the sidecars or set TWENTYLABS_AUDIOCPP."
+            )
+        if not self._is_model_cached():
+            raise RuntimeError(
+                "Stable Audio Open is not downloaded. Use the Model Downloads page to download it first."
+            )
 
-            torch.manual_seed(seed)
-        result = self.model.generate(
-            prompt=prompt,
-            duration=duration_seconds,
-        )
-        audio = result.audio if hasattr(result, "audio") else result
-        if isinstance(audio, torch.Tensor):
-            audio = audio.cpu().numpy()
-        if audio.ndim > 1:
-            audio = audio.mean(axis=0)
-        return audio, result.sample_rate if hasattr(result, "sample_rate") else 44100
-
-    def is_available(self) -> bool:
+        timeout_s = float(os.environ.get("TWENTYLABS_AUDIOCPP_TIMEOUT", DEFAULT_TIMEOUT_S))
+        tmpdir = tempfile.mkdtemp(prefix="stable-audio-open-")
+        out_wav = str(Path(tmpdir) / "out.wav")
         try:
-            importlib.util.find_spec("stable_audio_open")
+            args = [
+                "--task",
+                "gen",
+                "--family",
+                "stable_audio",
+                "--mode",
+                "offline",
+                "--model",
+                self._model_dir(),
+                "--text",
+                prompt,
+                "--duration-seconds",
+                f"{duration_seconds:g}",
+                "--out",
+                out_wav,
+            ]
+            proc = run_hidden(
+                [str(binary), *args],
+                capture_output=True,
+                text=True,
+                timeout=timeout_s,
+            )
+            if proc.returncode != 0:
+                tail = (proc.stderr or proc.stdout or "").strip().splitlines()[-5:]
+                raise RuntimeError(f"audiocpp failed (exit {proc.returncode}): {' | '.join(tail)}")
+            if not Path(out_wav).exists():
+                raise RuntimeError("audiocpp exited 0 but produced no WAV output")
 
-            return True
-        except ImportError:
-            return False
-
-    def is_loaded(self) -> bool:
-        return self.model is not None
-
-    # unload_model() inherited from BackendBase
+            audio, _sr = load_audio(out_wav, sample_rate=SAMPLE_RATE)
+            return audio.astype(np.float32), SAMPLE_RATE
+        except subprocess.TimeoutExpired:
+            raise TimeoutError(f"audiocpp exceeded {timeout_s:g}s for this generation.") from None
+        finally:
+            with contextlib.suppress(OSError):
+                shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 stable_audio_backend = StableAudioBackend()

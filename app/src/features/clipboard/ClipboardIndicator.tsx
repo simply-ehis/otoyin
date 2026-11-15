@@ -50,8 +50,7 @@ export function ClipboardIndicator({ compact = false }: { compact?: boolean }) {
 						aria-hidden="true"
 					/>
 					{compact ? null : (
-						<>
-							{live.isLoading ? (
+						live.isLoading ? (
 								<Spinner size="sm" className="ml-2" />
 							) : hasClip ? (
 								<span className="ml-2 truncate text-xs font-medium text-foreground">
@@ -61,8 +60,7 @@ export function ClipboardIndicator({ compact = false }: { compact?: boolean }) {
 								<span className="ml-2 text-xs text-muted-foreground">
 									{t("clipboard.emptyTitle", { defaultValue: "No clips yet" })}
 								</span>
-							)}
-						</>
+							)
 					)}
 					{hasClip && (
 						<span

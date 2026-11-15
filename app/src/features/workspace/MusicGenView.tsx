@@ -73,7 +73,7 @@ export function MusicGenView() {
 	});
 	const models = modelsQuery.data?.models ?? [];
 	const musicInstalled = (id: string) => {
-		if (id === "cloud") return true;
+		if (id === "cloud") { return true; }
 		return !!models.find((m) => m.engine === id)?.downloaded;
 	};
 	const musicDownloading = (id: string) =>
@@ -82,7 +82,6 @@ export function MusicGenView() {
 	const MUSIC_ENGINES = [
 		{ id: "acestep_gguf", label: "ACE-Step 1.5 GGUF" },
 		{ id: "heartmula", label: "HeartMuLa 3B" },
-		{ id: "minimax_music3", label: "MiniMax Music 3" },
 		{ id: "cloud", label: "Cloud (BYOK)" },
 	];
 	const [prompt, setPrompt] = useState("");
@@ -243,7 +242,7 @@ export function MusicGenView() {
 
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader title="Music Generator" />
+			<ScreenHeader helpPath="/music-gen" title="Music Generator" />
 
 			<div className="max-w-lg space-y-1">
 				<Label htmlFor="mg-engine">Model</Label>

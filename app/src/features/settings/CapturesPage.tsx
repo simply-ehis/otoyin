@@ -552,7 +552,7 @@ function RefinementSettings() {
 				description={t("settings.captures.refinement.model.description")}
 				action={
 					<Select
-						value={settings?.llm_model ?? "4B-Q4_K_M"}
+						value={settings?.llm_model ?? "2.6B-Q4_0"}
 						onValueChange={(v) => update({ llm_model: v as PlannerModelSize })}
 						disabled={!autoRefine}
 					>
@@ -560,27 +560,36 @@ function RefinementSettings() {
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="4B-Q4_K_M">
-								{t("settings.captures.refinement.model.size4b", {
-									tail: t("settings.captures.refinement.model.tail.fast"),
-								})}
-							</SelectItem>
-							<SelectItem value="4B-v3-Q4_K_M">
-								{t("settings.captures.refinement.model.size4b", {
-									tail: t(
-										"settings.captures.refinement.model.tail.fullQuality",
-									),
-								})}
-							</SelectItem>
-							<SelectItem value="spark-4B-Q4_K_M">
-								{t("settings.captures.refinement.model.size3b", {
-									tail: t(
-										"settings.captures.refinement.model.tail.fullQuality",
-									),
-								})}
-							</SelectItem>
 							<SelectItem value="2.6B-Q4_0">
-								{t("settings.captures.refinement.model.size2b", {
+								{t("settings.captures.refinement.model.size26b", {
+									tail: t(
+										"settings.captures.refinement.model.tail.fullQuality",
+									),
+								})}
+							</SelectItem>
+							<SelectItem value="8B-A1B-Q4_K_M">
+								{t("settings.captures.refinement.model.size8bMoE", {
+									tail: t(
+										"settings.captures.refinement.model.tail.fullQuality",
+									),
+								})}
+							</SelectItem>
+							<SelectItem value="ling-tiny-Q4_K_M">
+								{t("settings.captures.refinement.model.sizeTiny", {
+									tail: t(
+										"settings.captures.refinement.model.tail.fullQuality",
+									),
+								})}
+							</SelectItem>
+							<SelectItem value="27B-PTQ1_0">
+								{t("settings.captures.refinement.model.size27b", {
+									tail: t(
+										"settings.captures.refinement.model.tail.fullQuality",
+									),
+								})}
+							</SelectItem>
+							<SelectItem value="LFM2.5-24B-A2B-Q4_K_M">
+								{t("settings.captures.refinement.model.size24bA2b", {
 									tail: t(
 										"settings.captures.refinement.model.tail.fullQuality",
 									),

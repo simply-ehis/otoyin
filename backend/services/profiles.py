@@ -144,16 +144,16 @@ def compose_design_prompt(attrs: dict | None, fallback: str | None = None) -> st
 logger = logging.getLogger(__name__)
 
 CLONING_ENGINES = {
-    "zonos_gguf",
     "styletts2",
     "qwen3_tts",
     "pocket_tts",
     "moss_tts_nano",
     "neutts",
-    "neutts_2e",
     "parler_tts_gguf",
     "orpheus",
     "bark_small",
+    "voxcpm2",
+    "fish_speech_s2",
 }
 
 # Engines that accept text-described voice design (Parler-TTS pattern:
@@ -333,7 +333,7 @@ def _profile_to_response(
 
 def _get_preset_voice_ids(engine: str) -> set[str]:
     if engine == "kokoro":
-        from ..backends.kokoro_backend import KOKORO_VOICES
+        from ..backends.kokoro_tts_backend import KOKORO_VOICES
 
         return {voice_id for voice_id, _name, _gender, _lang in KOKORO_VOICES}
 

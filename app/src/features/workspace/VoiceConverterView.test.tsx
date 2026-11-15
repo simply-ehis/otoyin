@@ -7,18 +7,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const installedPack = {
-	name: "generaluser-gs",
-	label: "GeneralUser GS",
-	repo: "mrbumpy409/GeneralUser-GS",
-	installed: true,
-} as never;
-
 vi.mock("@/lib/api/client", () => ({
 	apiClient: {
-		getVoicePacks: vi.fn(() =>
-			Promise.resolve({ voice_packs: [installedPack] }),
-		),
 		listProfiles: vi.fn(() => Promise.resolve({ profiles: [] })),
 		getModelStatus: vi.fn(() => Promise.resolve({ models: [] })),
 		convertVoice: vi.fn(() => Promise.resolve(new Blob(["wav"]))),

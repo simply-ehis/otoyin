@@ -90,8 +90,7 @@ class TestKokoroPreloadSkippedWhenNotCached:
             async def load_model(self):
                 loaded["v"] = True
 
-        monkeypatch.setattr("backend.backends.kokoro_onnx_backend.KokoroONNXBackend", FakeBackend)
-        monkeypatch.setattr("backend.backends.kokoro_onnx_backend.is_onnx_available", lambda: True)
+        monkeypatch.setattr("backend.backends.kokoro_tts_backend.KokoroTTSBackend", FakeBackend)
 
         # Manifest: kokoro not entitled -> skip
         monkeypatch.setattr("backend.backends.configs.get_all_model_configs", list)

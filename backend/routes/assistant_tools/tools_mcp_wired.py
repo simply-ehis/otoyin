@@ -419,15 +419,6 @@ MCP_WIRED_TOOLS = [
             "parameters": {"type": "object", "properties": {"query": {"type": "string"}}},
         },
     },
-    # ── Voice Packs ──────────────────────────────────────────────────
-    {
-        "type": "function",
-        "function": {
-            "name": "list_voice_packs",
-            "description": "List available voice packs.",
-            "parameters": {"type": "object", "properties": {}},
-        },
-    },
     # ── Voice Converter ──────────────────────────────────────────────
     {
         "type": "function",
@@ -438,7 +429,7 @@ MCP_WIRED_TOOLS = [
                 "type": "object",
                 "properties": {
                     "audio_path": {"type": "string"},
-                    "engine": {"type": "string", "description": "VC engine (rvc_onnx, seed_vc, openvoice_onnx)"},
+                    "engine": {"type": "string", "description": "VC engine (meanvc2, tone_color_vc, seed_vc)"},
                     "voice_pack": {"type": "string", "description": "Voice pack or model name"},
                     "reference_audio_path": {"type": "string", "description": "Reference audio for zero-shot cloning"},
                     "transpose": {"type": "integer", "description": "Pitch shift in semitones"},

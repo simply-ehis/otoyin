@@ -1,5 +1,5 @@
-"""Regression: rvc_onnx_backend / openvoice_onnx_backend import
-``backend.utils.audio.resample_audio`` — it must exist and resample correctly."""
+"""Regression: resample_audio must exist and resample correctly
+(it survived the VC backend migration to audio.cpp)."""
 
 import numpy as np
 

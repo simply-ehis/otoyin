@@ -55,7 +55,7 @@ const PACK: RecommendedModelsResponse = {
 			downloaded: true,
 		},
 		{
-			model_name: "planner-4b",
+			model_name: "planner-lfm2-2.6b",
 			role: "llm",
 			reason: "On-device assistant brain",
 			downloaded: false,
@@ -103,7 +103,7 @@ const DEVICE: DeviceCapabilitiesResponse = {
 			estimated_vram_mb: 0,
 		},
 		{
-			model_name: "planner-4b",
+			model_name: "planner-lfm2-2.6b",
 			display_name: "Planner 4B",
 			category: "llm",
 			size_mb: 2400,
@@ -323,7 +323,9 @@ describe("UseCaseWizard tour", () => {
 			name: "Install planner (4B)",
 		});
 		await user.click(install);
-		expect(apiClient.triggerModelDownload).toHaveBeenCalledWith("planner-4b");
+		expect(apiClient.triggerModelDownload).toHaveBeenCalledWith(
+			"planner-lfm2-2.6b",
+		);
 		// Honest queued state — the Install button does not remain clickable.
 		expect(await screen.findByText(/Download queued/)).toBeInTheDocument();
 		expect(
@@ -337,7 +339,7 @@ describe("UseCaseWizard tour", () => {
 			...DEVICE,
 			tier: "low_end",
 			models: DEVICE.models.map((m) =>
-				m.model_name === "planner-4b"
+				m.model_name === "planner-lfm2-2.6b"
 					? {
 							...m,
 							compatible: false,
@@ -363,7 +365,7 @@ describe("UseCaseWizard tour", () => {
 		vi.mocked(apiClient.getRecommendedModels).mockResolvedValue({
 			...PACK,
 			models: PACK.models.map((m) =>
-				m.model_name === "planner-4b" ? { ...m, downloaded: true } : m,
+				m.model_name === "planner-lfm2-2.6b" ? { ...m, downloaded: true } : m,
 			),
 		});
 

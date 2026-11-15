@@ -35,7 +35,7 @@ configure a BYOK provider.
 | **Dialogue** | Stories multi-track editor, audiobooks (EPUB/PDF + multi-voice cast), Conversation podcast mode, ADR, multi-take comping |
 | **Dubbing** | Full video pipeline: transcribe, translate, re-voice, mux |
 | **Real-time** | Live voice changer, speech-to-speech chat, streaming STT, floating dictate window with auto-paste |
-| **Music & SFX** | ACE-Step, HeartMuLa, MiniMax Music 3, Stable Audio (Open + 3 Small), drum machine, GM SoundFonts, procedural instruments, songwriter composer (lyrics + beats), Freesound cloud SFX |
+| **Music & SFX** | ACE-Step, HeartMuLa, Stable Audio (Open + 3 Small), drum machine, GM SoundFonts, procedural instruments, songwriter composer (lyrics + beats), Freesound cloud SFX |
 | **Spatial & Enhance** | 3D binaural/Doppler/convolution (Steam Audio), Demucs vocal isolation, neural enhancement + denoising with A/B compare |
 | **Agents** | In-app assistant (on-device LLM), 222 MCP tools, batch queue, content recipes, automation lanes, floating video player |
 | **Marketplace** | Model catalog with premium AI models. Pay once, own forever, no subscription. |

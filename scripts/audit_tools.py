@@ -1,4 +1,5 @@
 """Audit: every tool-registry endpoint must exist in the FastAPI app."""
+
 import sys
 from pathlib import Path
 
@@ -13,6 +14,7 @@ populate()
 # Collect real routes as {(path, method)}, unwrapping _IncludedRouter wrappers
 real_routes: set[tuple[str, str]] = set()
 
+
 def collect(routes) -> None:
     for route in routes:
         path = getattr(route, "path", None)
@@ -23,6 +25,7 @@ def collect(routes) -> None:
         if path:
             for m in methods or {"GET"}:
                 real_routes.add((path, m.upper()))
+
 
 collect(app.routes)
 

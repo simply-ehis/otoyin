@@ -58,74 +58,45 @@ _gpu_snapshot: dict | None = None
 
 
 def _populate_gpu_snapshot() -> dict:
-    """Probe GPU hardware once and return a dict of invariant fields."""
-    try:
-        import torch
+    """Probe GPU hardware once and return a dict of invariant fields.
 
-        has_cuda = torch.cuda.is_available()
-        has_mps = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
-    except ImportError:
-        torch = None  # type: ignore[assignment]
-        has_cuda = False
-        has_mps = False
+    No PyTorch in the app — CUDA presence is reported via nvidia-smi
+    (shipped with the NVIDIA driver) and DirectML/CoreML detection lives in
+    platform_detect via ONNX Runtime's provider list.
+    """
+    from ..utils.gpu_query import probe_nvidia_smi
+    from ..utils.platform_detect import get_gpu_info, is_apple_silicon
 
-    has_xpu = False
-    xpu_name = None
-    try:
-        import intel_extension_for_pytorch as ipex
+    cuda_info = probe_nvidia_smi()
+    has_cuda = cuda_info is not None
+    has_mps = is_apple_silicon()
 
-        if torch is not None and hasattr(torch, "xpu") and torch.xpu.is_available():
-            has_xpu = True
-            try:
-                xpu_name = torch.xpu.get_device_name(0)
-            except Exception as e:
-                logger.debug("XPU name detection failed: %s", e)
-                xpu_name = "Intel GPU"
-    except ImportError:
-        pass
+    gpu_type = f"CUDA ({cuda_info.name})" if has_cuda and cuda_info else None
+    if gpu_type is None and has_mps:
+        gpu_type = "MPS (Apple Silicon)"
 
-    has_directml = False
     directml_name = None
     try:
-        import torch_directml
+        info = get_gpu_info()
+        if info.get("acceleration") == "directml":
+            directml_name = info.get("name")
+    except Exception as e:
+        logger.debug("DirectML detection failed: %s", e)
 
-        if torch_directml.device_count() > 0:
-            has_directml = True
-            try:
-                directml_name = torch_directml.device_name(0)
-            except Exception as e:
-                logger.debug("DirectML name detection failed: %s", e)
-                directml_name = "DirectML GPU"
-    except ImportError:
-        pass
-
-    gpu_compat_warning = None
-    if has_cuda:
-        from ..backends.base import check_cuda_compatibility
-
-        _compatible, gpu_compat_warning = check_cuda_compatibility()
-
-    gpu_available = has_cuda or has_mps or has_xpu or has_directml
-
-    gpu_type = None
-    if has_cuda and torch is not None:
-        gpu_type = f"CUDA ({torch.cuda.get_device_name(0)})"
-    elif has_mps:
-        gpu_type = "MPS (Apple Silicon)"
-    elif has_xpu:
-        gpu_type = f"XPU ({xpu_name})"
-    elif has_directml:
+    if gpu_type is None and directml_name:
         gpu_type = f"DirectML ({directml_name})"
+
+    gpu_available = bool(gpu_type)
 
     backend_variant = os.environ.get(
         "TWENTYLABS_BACKEND_VARIANT",
-        "cuda" if (torch is not None and torch.cuda.is_available()) else ("xpu" if has_xpu else "cpu"),
+        "cuda" if has_cuda else ("directml" if directml_name else "cpu"),
     )
 
     return {
         "gpu_available": gpu_available,
         "gpu_type": gpu_type,
-        "gpu_compatibility_warning": gpu_compat_warning,
+        "gpu_compatibility_warning": None,
         "backend_type": get_backend_type(),
         "backend_variant": backend_variant,
     }
@@ -293,11 +264,11 @@ async def shutdown(request: Request):
 async def health():
     """Health check endpoint.
 
-    Invariant GPU info (availability, type, compatibility) is probed once
+    Invariant GPU info (availability, type) is probed once
     and cached in _gpu_snapshot.  Dynamic fields (VRAM, model state) are
     computed per-request.
 
-    The probes are blocking (lazy torch import, engine-registry scan, model
+    The probes are blocking (lazy GPU probe, engine-registry scan, model
     directory walk, psutil), so the whole snapshot is built in a worker
     thread.  Running it inline froze the entire event loop for ~10 s on the
     first call after startup — the UI appeared to hang right after launch,
@@ -749,7 +720,7 @@ def _probe_all_features() -> dict:
     # Stem separation / cleanup
     features["demucs"] = _probe_feature("demucs")
 
-    # Speech denoiser — ONNX path (torch-free) is the preferred engine.
+    # Speech denoiser — ONNX path is the preferred engine.
     try:
         from ..services.deepfilter_onnx import is_onnx_available
 
@@ -766,28 +737,11 @@ def _probe_all_features() -> dict:
     features["faster_whisper"] = _probe_feature("faster_whisper")
     features["pywhispercpp"] = _probe_feature("pywhispercpp")
 
-    # ML frameworks
-    try:
-        import torch
-
-        features["torch"] = {
-            "available": True,
-            "version": torch.__version__,
-            "cuda": torch.cuda.is_available(),
-        }
-    except ImportError:
-        features["torch"] = {"available": False, "version": None, "cuda": False}
-
     features["onnxruntime"] = _probe_feature("onnxruntime")
 
     # Translation
     features["argostranslate"] = _probe_feature("argostranslate")
     features["deep_translator"] = _probe_feature("deep_translator")
-
-    # Speaker analysis
-    features["resemblyzer"] = _probe_feature("resemblyzer")
-    features["silero_vad"] = _probe_feature("silero_vad")
-    features["sklearn"] = _probe_feature("sklearn")
 
     # Import / export
     features["pymupdf"] = _probe_feature("fitz")

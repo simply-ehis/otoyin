@@ -440,7 +440,7 @@ def parse_args() -> argparse.Namespace:
         "--reference-text",
         help="Transcription of reference-wav (default: read from fixtures/reference_voice.txt)",
     )
-    p.add_argument("--only", help="Comma-separated engines to run (e.g. kokoro,zonos)")
+    p.add_argument("--only", help="Comma-separated engines to run (e.g. kokoro,qwen3_tts)")
     p.add_argument("--skip", help="Comma-separated engines to skip")
     p.add_argument("--keep-data-dir", action="store_true", help="Don't delete tempdir after run")
     p.add_argument("--timeout-cached", type=int, default=DEFAULT_TIMEOUT_CACHED)

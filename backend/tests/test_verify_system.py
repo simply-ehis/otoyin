@@ -32,7 +32,9 @@ from backend.routes.assistant_tools.tool_call_middleware import (
 
 
 def test_tool_count():
-    assert len(TOOLS) == 226, f"Expected 226 tools, got {len(TOOLS)}"
+    # 226 before 2026-11-15; 225 after list_voice_packs was removed (Route removed from backend,
+    #   assistant exposed it standalone) - the count should track reality.
+    assert len(TOOLS) == 225, f"Expected 225 tools, got {len(TOOLS)}"
 
 
 def test_all_tools_have_function_wrapper():

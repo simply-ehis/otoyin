@@ -1,8 +1,8 @@
 ---
 name: llm-assistant
-description: How otoyin's on-device LLM (gguf_llm, jackrong Qwen3.5 family — GGUF via the llama.cpp server sidecar) drives the in-app assistant refinement. Covers the planner-2b/0.8b/4b-v3/ministral-3b lineup, configs, and the refinement workflow. Load when wiring or debugging the assistant's text-rewrite / refinement step.
+description: How otoyin's on-device LLM (gguf_llm, LFM2.5 family - GGUF via the llama.cpp server sidecar) drives the in-app assistant refinement. Covers the LFM2.5/Ling/Bonsai planner lineup, configs, and the refinement workflow. Load when wiring or debugging the assistant's text-rewrite / refinement step.
 ---
-# LLM — gguf_llm (jackrong Qwen3.5 planner, on-device)
+# LLM - gguf_llm (LFM2.5 planner, on-device)
 
 ## Purpose
 otoyin ships a fully local LLM that powers the in-app assistant's refinement (rewriting text in a
@@ -27,13 +27,12 @@ the llama.cpp server sidecar (Vulkan) in Q4_K_M quantization.
 ## Model lineup (from `_get_gguf_llm_configs` in `backend/backends/configs/llm.py`)
 | model_name | display | size MB | quant | best for |
 |-----------|---------|----------|-------|----------|
-| planner-4b | Qwopus 4B (Free, default) | 2740 | Q4_K_M | default planner |
-| planner-4b-v3 | Qwopus 4B v3 (Paid) | 2800 | Q4_K_M | paid, smarter |
-| planner-spark-x-2.5-4b | Spark-X 2.5-4B (Paid) | 2500 | Q4_K_M | paid alternative |
-| planner-lfm2-2.6b | LFM2.5-2.6B (Free) | 1590 | Q4_0 | low-RAM fallback |
+| planner-lfm2-2.6b | LFM2.5-2.6B (Free, default) | 1590 | Q4_0 | default planner |
+| planner-lfm2-8b-a1b | LFM2.5-8B-A1B ($40) | 4500 | Q4_K_M | MoE, fastest in class |
+| planner-ling-tiny | Ling-3.0-tiny ($40) | 4750 | Q4_K_M | 128 routed experts |
+| planner-bonsai-2-27b | Bonsai 2 27B ($80) | 6085 | PTQ1_0 | largest quality, needs PrismML fork |
 
-All share the planner languages. Repos live under
-`bartowski/*` (Qwen3.5 family) and `LiquidAI/*` (LFM2.5 family).
+All share the planner languages. Repos live under `LiquidAI/*` (LFM2.5), `inclusionAI/*` (Ling) and `prism-ml/*` (Bonsai).
 
 ## Parameters (LLMBackend.generate)
 | param | range | default | notes |
@@ -66,7 +65,7 @@ Example:
 - `POST /llm/generate` is NOT on the MCP tool surface yet — only reachable via the assistant /
   REST. Do not invent `21labs.llm_generate`.
 - The `qwen` / `qwen_custom_voice` TTS engines are REMOVED — the LLM assistant uses only the
-  `gguf_llm` (jackrong Qwen3.5) planner. Don't route LLM requests through a TTS engine.
+  `gguf_llm` (LFM2.5 family) planner. Don't route LLM requests through a TTS engine.
 - Default max_tokens=512 — long rewrites may truncate; raise via the refinement service if needed.
 
 ## Cross-links

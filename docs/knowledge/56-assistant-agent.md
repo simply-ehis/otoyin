@@ -9,7 +9,7 @@ GOTCHAS: In-app assistant and MCP have DIFFERENT backends (assistant → REST en
 UPDATED: 2026-08-17
 
 ## Two LLM paths (routes/assistant.py)
-- **Local** (`stream_local`): on-device GGUF planner via llama.cpp server.exe (`backend/backends/gguf_server_backend.py`, engine `gguf_llm`; default `model_id` `2B-Q4_K_M` — jackrong Qwen3.5-2B, see docs/ASSISTANT_ARCHITECTURE.md). No native function calling → system prompt includes a compact tool catalog (manifest.get_agent_system_prompt(with_tools=True) ⇒ base + build_local_tool_prompt). Model emits tool calls as raw JSON; assistant_stream parses it.
+- **Local** (`stream_local`): on-device GGUF planner via llama.cpp server.exe (`backend/backends/gguf_server_backend.py`, engine `gguf_llm`; default `model_id` `2.6B-Q4_0` — LiquidAI LFM2.5-2.6B, see `backend/backends/configs/llm.py`). No native function calling → system prompt includes a compact tool catalog (manifest.get_agent_system_prompt(with_tools=True) ⇒ base + build_local_tool_prompt). Model emits tool calls as raw JSON; assistant_stream parses it.
 - **Cloud** (`stream_api`): any OpenAI-compatible endpoint (OpenAI/Anthropic/Groq/Together/OpenRouter/custom). Native function calling via `tools=TOOLS`. `api_key`/`api_base_url` passed per-request.
 
 ## Streaming + tool loop (routes/assistant_stream.py)

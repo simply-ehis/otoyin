@@ -177,7 +177,7 @@ class TestPickCachedTEngineIntegration:
         """When multiple engines are cached, the lightest should be preferred."""
         from backend.utils import model_status
 
-        # Mock is_engine_cached to pretend kitten_tts and zonos are both cached
+        # Mock is_engine_cached to pretend kitten_tts and styletts2 are both cached
         def fake_is_engine_cached(engine):
             return engine in {"kitten_tts", "styletts2"}
 
@@ -188,7 +188,7 @@ class TestPickCachedTEngineIntegration:
         monkeypatch.setattr(model_status, "_TTS_PREFERENCE_CACHE", None)
 
         result = model_status.pick_cached_tts_engine()
-        # kitten_tts (weight 10) should beat zonos (weight 60)
+        # kitten_tts (weight 10) should beat styletts2 (weight 60)
         assert result == "kitten_tts"
 
     def test_returns_preferred_when_cached(self, monkeypatch):
@@ -213,3 +213,45 @@ class TestPickCachedTEngineIntegration:
 
         result = model_status.pick_cached_tts_engine()
         assert result is None
+
+    def test_require_capability_skips_preset_only_engines(self, monkeypatch):
+        # Clone-required calls must not land on the 8-voice Kitten engine.
+        from backend.utils import model_status
+
+        monkeypatch.setattr(
+            model_status,
+            "is_engine_cached",
+            lambda engine: engine in {"kitten_tts", "qwen3_tts"},
+        )
+        monkeypatch.setattr(
+            "backend.services.model_registry.is_downloaded",
+            lambda *a, **k: True,
+        )
+        monkeypatch.setattr(model_status, "_TTS_PREFERENCE_CACHE", None)
+
+        assert model_status.pick_cached_tts_engine(require_capability="clone_voice") == "qwen3_tts"
+
+    def test_require_capability_returns_none_when_no_match(self, monkeypatch):
+        # A design-requirement cannot be satisfied by cloning engines.
+        from backend.utils import model_status
+
+        monkeypatch.setattr(
+            model_status,
+            "is_engine_cached",
+            lambda engine: engine in {"kitten_tts", "qwen3_tts"},
+        )
+        monkeypatch.setattr(
+            "backend.services.model_registry.is_downloaded",
+            lambda *a, **k: True,
+        )
+        monkeypatch.setattr(model_status, "_TTS_PREFERENCE_CACHE", None)
+
+        assert model_status.pick_cached_tts_engine(require_capability="voice_design") is None
+
+    def test_unknown_capability_raises(self, monkeypatch):
+        import pytest
+
+        from backend.utils import model_status
+
+        with pytest.raises(ValueError, match="Unknown capability"):
+            model_status.pick_cached_tts_engine(require_capability="nonsense")

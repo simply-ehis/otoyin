@@ -96,7 +96,7 @@ async def create_generation(
         instruct: Natural language instruction used (if any)
         generation_id: Pre-assigned ID (for async generation flow)
         status: Generation status (generating, completed, failed)
-        engine: TTS engine used (e.g. kokoro, zonos, fish_speech)
+        engine: TTS engine used (e.g. kokoro, qwen3_tts, fish_speech_s2)
         model_size: Model size variant (only for engines with multiple sizes)
         source: Origin marker stored on the row. ``"manual"`` for regular
             /generate calls; ``"personality_speak"`` for rows created

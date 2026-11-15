@@ -85,6 +85,7 @@ export function TranslateView() {
 	return (
 		<div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 overflow-y-auto p-4">
 			<ScreenHeader
+				helpPath="/translate"
 				title={t("translate.title")}
 				description={t("translate.description")}
 			/>

@@ -69,7 +69,7 @@ def _resolve_size_label(model_size: str) -> str:
     """Extract the bare size label from a model size id.
 
     Handles both legacy ids (``4B-Q4_K_M`` → ``4B``) and catalog ids
-    (``Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M`` → ``4B``). Longer, more specific
+    (``2.6B-Q4_0`` → ``2.6B``). Longer, more specific
     labels match first so ``8B-A1B`` wins over ``4B``-style fragments.
     """
     for label in (

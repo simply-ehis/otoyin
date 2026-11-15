@@ -14,8 +14,8 @@ Design
 ------
 The detector is *conservative*: it checks *before* the load and estimates
 the incoming model's footprint from ``ModelConfig.size_mb``.  VRAM
-measurement uses ``torch.cuda.mem_get_info()`` (total - free = used) which
-accounts for both PyTorch's allocator and external allocations (ONNX Runtime,
+measurement uses ``nvidia-smi --query-gpu`` (total - free = used) which
+accounts for all in-process and external allocations (ONNX Runtime,
 CUDA context overhead).
 
 Threshold defaults to 20% free VRAM — below this, new loads are blocked.
@@ -119,59 +119,30 @@ class VRAMInsufficientError(Exception):
 def get_vram_status() -> VRAMStatus:
     """Probe current GPU memory and return a status snapshot.
 
-    Thread-safe — calls ``torch.cuda.mem_get_info()`` which is GIL-safe.
-    Cached result is NOT reused because VRAM changes rapidly.
+    Thread-safe - calls ``nvidia-smi`` (driver-shipped, no Python import cost).
+    Result is NOT cached because VRAM changes rapidly.
     """
+    from ..utils.gpu_query import probe_nvidia_smi
+
     try:
-        import torch
-
-        # --- CUDA ---
-        if torch.cuda.is_available():
-            device = torch.cuda.current_device()
-            total_bytes, free_bytes = torch.cuda.mem_get_info(device)
-            total_mb = total_bytes / (1024 * 1024)
-            free_mb = free_bytes / (1024 * 1024)
-            used_mb = total_mb - free_mb
-            percent_free = free_mb / total_mb if total_mb > 0 else 1.0
-            device_name = torch.cuda.get_device_name(device)
+        cuda = probe_nvidia_smi()
+        if cuda is not None:
             threshold = _get_threshold()
+            used_mb = cuda.used_mb
+            percent_free = cuda.free_mb / cuda.total_mb if cuda.total_mb > 0 else 1.0
             return VRAMStatus(
                 available=True,
-                total_mb=total_mb,
+                total_mb=cuda.total_mb,
                 used_mb=used_mb,
-                free_mb=free_mb,
+                free_mb=cuda.free_mb,
                 percent_free=percent_free,
                 pressure=percent_free < threshold,
-                device_name=device_name,
+                device_name=cuda.name,
             )
-
-        # --- XPU (Intel) ---
-        if hasattr(torch, "xpu") and torch.xpu.is_available():
-            device = torch.xpu.current_device()
-            total_bytes = torch.xpu.get_device_properties(device).total_mem
-            allocated = torch.xpu.memory_allocated(device)
-            total_mb = total_bytes / (1024 * 1024)
-            used_mb = allocated / (1024 * 1024)
-            free_mb = total_mb - used_mb
-            percent_free = free_mb / total_mb if total_mb > 0 else 1.0
-            device_name = torch.xpu.get_device_name(device)
-            threshold = _get_threshold()
-            return VRAMStatus(
-                available=True,
-                total_mb=total_mb,
-                used_mb=used_mb,
-                free_mb=free_mb,
-                percent_free=percent_free,
-                pressure=percent_free < threshold,
-                device_name=device_name,
-            )
-
-    except ImportError:
-        pass
     except Exception as e:
         logger.debug("VRAM probe failed: %s", e)
 
-    # No GPU or probe failed — report as no pressure
+    # No GPU or probe failed - report as no pressure
     return VRAMStatus(
         available=False,
         total_mb=0,

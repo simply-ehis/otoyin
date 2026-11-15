@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import { ERR_TITLE_VALIDATION } from "@/lib/errorMessages";
@@ -13,31 +13,30 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/ui/select";
-import { Slider } from "@/ui/slider";
-import { EmptyState, LoadingState, ScreenHeader } from "@/ui/states";
+import { ScreenHeader } from "@/ui/states";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
 import { useToast } from "@/ui/use-toast";
 import { playPreviewBlob } from "./playBlob";
 import { UploadField } from "./UploadField";
 import { VoiceChangerPanel } from "./VoiceChangerPanel";
 
-type Engine = "rvc" | "seed_vc" | "openvoice" | "cloud";
+type Engine = "meanvc2" | "tone_color_vc" | "seed_vc" | "cloud";
 
 const ENGINES: { id: Engine; label: string; hint: string }[] = [
 	{
-		id: "rvc",
-		label: "RVC Pack",
-		hint: "Pre-trained voice pack",
+		id: "meanvc2",
+		label: "MeanVC2",
+		hint: "Best quality · Apache-2.0 · CPU or GPU",
+	},
+	{
+		id: "tone_color_vc",
+		label: "Tone Color VC",
+		hint: "Fastest · smallest · MIT",
 	},
 	{
 		id: "seed_vc",
-		label: "Seed-VC Clone",
-		hint: "Clone from reference audio, no training",
-	},
-	{
-		id: "openvoice",
-		label: "OpenVoice Clone",
-		hint: "Zero-shot tone match from reference audio",
+		label: "Seed-VC",
+		hint: "GPU preferred · GPL-3.0",
 	},
 	{
 		id: "cloud",
@@ -48,48 +47,28 @@ const ENGINES: { id: Engine; label: string; hint: string }[] = [
 
 export function VoiceConverterView() {
 	const { toast } = useToast();
-	const [engine, setEngine] = useState<Engine>("rvc");
+	const [engine, setEngine] = useState<Engine>("meanvc2");
 	const [audioPath, setAudioPath] = useState("");
 	const [sourceName, setSourceName] = useState("");
-	const [selectedPack, setSelectedPack] = useState("");
 	const [referencePath, setReferencePath] = useState("");
 	const [referenceName, setReferenceName] = useState("");
 	const [referenceProfileId, setReferenceProfileId] = useState("");
-	const [transpose, setTranspose] = useState(0);
-	const [diffusionSteps, setDiffusionSteps] = useState(10);
 	const [uploading, setUploading] = useState<string | null>(null);
 	const [hasResult, setHasResult] = useState(false);
 	const [convertedBlob, setConvertedBlob] = useState<Blob | null>(null);
 
 	function switchEngine(next: Engine) {
 		setEngine(next);
-		setSelectedPack("");
 		setReferencePath("");
 		setReferenceName("");
 		setReferenceProfileId("");
 		setHasResult(false);
 	}
 
-	const packsQuery = useQuery({
-		queryKey: ["voice-packs"],
-		queryFn: () => apiClient.getVoicePacks(),
-		enabled: engine === "rvc",
-	});
-
 	const profilesQuery = useQuery({
 		queryKey: ["profiles"],
 		queryFn: () => apiClient.listProfiles(),
-		enabled: engine === "seed_vc" || engine === "openvoice",
-	});
-
-	const queryClient = useQueryClient();
-	const downloadPackMut = useMutation({
-		mutationFn: (name: string) => apiClient.downloadVoicePack(name),
-		onSuccess: (_data, name) => {
-			toast({ title: "Pack downloaded", description: `${name} is ready.` });
-			void queryClient.invalidateQueries({ queryKey: ["voice-packs"] });
-		},
-		onError: (e: unknown) => showStudioErrorToast(e),
+		enabled: engine !== "cloud",
 	});
 
 	const convertMut = useMutation({
@@ -99,13 +78,10 @@ export function VoiceConverterView() {
 				engine,
 				// Owner decision: no consent UI anywhere; responsibility is the
 				// user's (disclaimer lives in the installer). The backend
-				// attestation field is always satisfied — keeping the HTTP
+				// attestation field is always satisfied - keeping the HTTP
 				// contract unchanged for other callers.
 				consent_given: true,
-				voice_pack: selectedPack,
-				transpose,
 				reference_audio_path: referencePath,
-				diffusion_steps: diffusionSteps,
 			}),
 		onSuccess: (blob) => {
 			playPreviewBlob(blob);
@@ -202,15 +178,7 @@ export function VoiceConverterView() {
 			});
 			return;
 		}
-		if (engine === "rvc" && !selectedPack) {
-			toast({
-				title: ERR_TITLE_VALIDATION,
-				description: "Pick a target voice pack before converting",
-				variant: "destructive",
-			});
-			return;
-		}
-		if ((engine === "seed_vc" || engine === "openvoice") && !referencePath) {
+		if (engine !== "cloud" && !referencePath) {
 			toast({
 				title: "Upload a reference voice clip",
 				variant: "destructive",
@@ -220,12 +188,9 @@ export function VoiceConverterView() {
 		convertMut.mutate();
 	}
 
-	const packs = packsQuery.data?.voice_packs ?? [];
-	const installedPacks = packs.filter((p) => p.installed);
-
 	return (
 		<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-			<ScreenHeader title="Voice Transform" />
+			<ScreenHeader helpPath="/voice-converter" title="Voice Transform" />
 
 			<Tabs defaultValue="converter" className="flex flex-1 flex-col">
 				<TabsList aria-label="Voice transform modes">
@@ -267,71 +232,7 @@ export function VoiceConverterView() {
 						/>
 					</div>
 
-					{engine === "rvc" ? (
-						<div className="max-w-xl space-y-1">
-							<Label>Target voice pack</Label>
-							{packsQuery.isLoading ? (
-								<LoadingState label="Loading voice packs" />
-							) : packsQuery.isError ? (
-								<EmptyState
-									title="Voice packs couldn't load"
-									body="Check the backend connection."
-								/>
-							) : packs.length === 0 ? (
-								<EmptyState
-									title="No voice packs found"
-									body="Install an RVC pack from the Store first."
-								/>
-							) : (
-								<div className="flex flex-wrap gap-2">
-									{packs.map((p) => (
-										<>
-											<Button
-												key={p.name}
-												type="button"
-												variant={
-													selectedPack === p.name ? "default" : "outline"
-												}
-												size="sm"
-												className="h-8 capitalize"
-												disabled={!p.installed}
-												title={
-													p.installed
-														? "Ready"
-														: `Download required (${p.repo})`
-												}
-												aria-label={`Select voice ${p.name}`}
-												aria-pressed={selectedPack === p.name}
-												onClick={() => setSelectedPack(p.name)}
-											>
-												{p.name.replace(/-/g, " ")}
-												{!p.installed && (
-													<span className="ml-1.5 text-xs">(download)</span>
-												)}
-											</Button>
-											{!p.installed && (
-												<Button
-													type="button"
-													variant="ghost"
-													size="sm"
-													className="h-8 text-xs"
-													disabled={downloadPackMut.isPending}
-													onClick={() => downloadPackMut.mutate(p.name)}
-												>
-													{downloadPackMut.isPending ? (
-														<Spinner size="xs" className="mr-1" />
-													) : null}
-													Download
-												</Button>
-											)}
-										</>
-									))}
-								</div>
-							)}
-						</div>
-					) : null}
-
-					{engine === "seed_vc" || engine === "openvoice" ? (
+					{engine !== "cloud" ? (
 						<div className="max-w-xl space-y-2">
 							<Label>Reference voice clip (1–30s)</Label>
 							<div className="flex flex-wrap items-center gap-2">
@@ -363,54 +264,12 @@ export function VoiceConverterView() {
 								</Select>
 							</div>
 							<p className="text-xs text-muted-foreground">
-								{engine === "seed_vc"
-									? "Seed-VC clones the reference voice with no training. Reference is clipped to 25s automatically."
-									: "OpenVoice matches the reference clip's tone with no training."}
-							</p>
-						</div>
-					) : null}
-
-					{engine === "rvc" ? (
-						<div className="max-w-xl space-y-1">
-							<div className="flex items-center justify-between gap-2">
-								<Label htmlFor="vc-transpose">Transpose (semitones)</Label>
-								<span className="font-mono text-xs tabular-nums text-muted-foreground">
-									{transpose > 0 ? "+" : ""}
-									{transpose}
-								</span>
-							</div>
-							<Slider
-								id="vc-transpose"
-								min={-12}
-								max={12}
-								step={1}
-								value={[transpose]}
-								onValueChange={([v]) => setTranspose(v ?? 0)}
-								aria-label="Transpose semitones"
-							/>
-						</div>
-					) : null}
-					{engine === "seed_vc" ? (
-						<div className="max-w-xl space-y-1">
-							<div className="flex items-center justify-between gap-2">
-								<Label htmlFor="vc-steps">
-									Diffusion steps (quality vs speed)
-								</Label>
-								<span className="font-mono text-xs tabular-nums text-muted-foreground">
-									{diffusionSteps}
-								</span>
-							</div>
-							<Slider
-								id="vc-steps"
-								min={4}
-								max={100}
-								step={1}
-								value={[diffusionSteps]}
-								onValueChange={([v]) => setDiffusionSteps(v ?? 10)}
-								aria-label="Diffusion steps"
-							/>
-							<p className="text-xs text-muted-foreground">
-								10 = fast, 50–100 = best quality
+								{engine === "meanvc2" &&
+									"MeanVC2 converts toward the reference voice with no training."}
+								{engine === "tone_color_vc" &&
+									"Tone Color VC matches the reference clip's timbre with no training."}
+								{engine === "seed_vc" &&
+									"Seed-VC clones the reference voice with no training. GPL-3.0 weights."}
 							</p>
 						</div>
 					) : null}
@@ -419,10 +278,7 @@ export function VoiceConverterView() {
 						<Button
 							type="button"
 							size="sm"
-							disabled={
-								convertMut.isPending ||
-								(engine === "rvc" && !installedPacks.length)
-							}
+							disabled={convertMut.isPending}
 							title="Convert voice"
 							aria-label="Convert voice"
 							onClick={handleConvert}

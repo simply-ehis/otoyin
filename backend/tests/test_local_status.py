@@ -414,7 +414,7 @@ def test_physical_files_without_manifest_row_stay_unentitled(monkeypatch):
     sess = _make_session_factory()
     monkeypatch.setattr(mr, "SessionLocal", sess)
     # Non-empty manifest (one unrelated row).
-    mr.record_download(sess(), "pocket-tts-free", None, "pocket_tts_onnx", None, None)
+    mr.record_download(sess(), "pocket-tts-free", None, "pocket_tts", None, None)
     monkeypatch.setattr(
         ums,
         "is_model_downloaded",
@@ -455,7 +455,7 @@ def test_reconcile_downloads_noop_when_manifest_nonempty(monkeypatch):
 
     sess = _make_session_factory()
     monkeypatch.setattr(mr, "SessionLocal", sess)
-    mr.record_download(sess(), "pocket-tts-free", None, "pocket_tts_onnx", None, None)
+    mr.record_download(sess(), "pocket-tts-free", None, "pocket_tts", None, None)
     monkeypatch.setattr(ums, "is_model_downloaded", lambda name: name == "kokoro-onnx")
 
     assert mr.reconcile_downloads() == 0

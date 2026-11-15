@@ -7,6 +7,7 @@ route dispatch, and the MCP tool engine param. No real model or binary
 is required - everything is monkeypatched.
 """
 
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -97,9 +98,14 @@ def test_find_audiocpp_bundled(monkeypatch, tmp_path):
     assert hm.find_audiocpp() == bundled
 
 
-def test_find_audiocpp_missing(monkeypatch):
+def test_find_audiocpp_missing(monkeypatch, tmp_path):
+    import backend.utils.sidecar_downloader as sidecar
+
     monkeypatch.delenv("TWENTYLABS_AUDIOCPP", raising=False)
-    monkeypatch.setattr(cfg_mod, "get_models_dir", lambda: Path("nope"))
+    monkeypatch.setattr(cfg_mod, "get_models_dir", lambda: tmp_path / "nope")
+    monkeypatch.setattr(cfg_mod, "get_data_dir", lambda: tmp_path / "no-data")
+    monkeypatch.setattr(shutil, "which", lambda *args, **kwargs: None)
+    monkeypatch.setattr(sidecar, "ensure_audiocpp", lambda: None)
     assert hm.find_audiocpp() is None
 
 

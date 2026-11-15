@@ -1,95 +1,69 @@
-"""Qwen3-TTS 12Hz 1.7B Base (GGUF) backend.
+"""Qwen3-TTS 1.7B Base (GGUF) backend via the audio.cpp one-shot CLI.
 
-Runs Qwen3-TTS through llama.cpp's ``llama-tts`` CLI (llama.cpp >= b10270,
-PR #26254) as a one-shot subprocess per generation. No Python TTS
-dependencies and no resident model — the process exits after each WAV,
-which keeps RAM usage bounded on small machines (cold-load cost is the
-tradeoff, ~5-20 s on a 2-core box).
+Migrated from ``llama-tts`` to ``audiocpp_cli --task tts --family qwen3_tts``
+(2026-11-14). audio.cpp replaces the separate backbone+mmproj pair llama.cpp
+needed with one self-contained GGUF — no mmproj, no llama.cpp dependency:
 
-Two GGUF files are required (both from ``ggml-org/Qwen3-TTS-12Hz-1.7B-Base-GGUF``):
-- the backbone (``Qwen3-TTS-12Hz-1.7B-Base-Q4_K_M.gguf``, 1.04 GB)
-- the mmproj audio decoder (``mmproj-Qwen3-TTS-12Hz-1.7B-Base-Q8_0.gguf``,
-  446 MB) — ``llama-tts`` errors out without it.
+- ``audio-cpp/audio.cpp-gguf`` →
+  ``Qwen3-TTS-12Hz-1.7B-Base-GGUF/qwen3-tts-12hz-1.7b-base-q8_0_v2.gguf``
+  (~2.57 GB, Q8_0_v2)
 
 Weights are Apache-2.0 (sellable; catalog id ``qwen3-tts-1.7b``). Output is
-24 kHz 16-bit mono WAV. Voice cloning via ``--tts-speaker-file`` (reference
-clip, 4-10 s). Expected CPU RTF ~3-6 on weak hardware — batch TTS, not
-streaming. llama-server has no TTS endpoint; only the ``llama-tts`` CLI
-synthesizes speech (verified 2026-08-19).
+24 kHz 16-bit mono WAV. Voice cloning via ``--voice-ref`` (reference clip,
+4-10 s). No resident model — the process exits after each generation.
 """
 
 import asyncio
 import logging
-import os
-import subprocess
-import tempfile
-from pathlib import Path
 
 import numpy as np
 
-from ..utils.audio import load_audio
-from ..utils.hidden_subprocess import run_hidden
+from .audio_cpp import find_audiocpp, run_one_shot
 from .base import combine_voice_prompts as _combine_voice_prompts
 
 logger = logging.getLogger(__name__)
 
-HF_REPO = "ggml-org/Qwen3-TTS-12Hz-1.7B-Base-GGUF"
-BACKBONE_QUANT = "Q4_K_M"
-MMPROJ_FILENAME = "mmproj-Qwen3-TTS-12Hz-1.7B-Base-Q8_0.gguf"
+HF_REPO = "audio-cpp/audio.cpp-gguf"
+MODEL_FILE = "Qwen3-TTS-12Hz-1.7B-Base-GGUF/qwen3-tts-12hz-1.7b-base-q8_0_v2.gguf"
 SAMPLE_RATE = 24000
 
-# Qwen3-TTS occasionally misses its EOS and "breathes" up to the frame cap
-# (~1 in 30 utterances). 512 frames ≈ 41 s — safe because the generation
-# pipeline chunks long text into short pieces before calling generate().
-MAX_FRAMES = 512
-
-# Per-generation wall-clock budget. One-shot llama-tts loads the model per
-# call; on a 2-core box RTF ~3-6 means a 10 s sentence can take ~30-60 s.
+# Local defaults; override globally with TWENTYLABS_AUDIOCPP_TIMEOUT.
 DEFAULT_TIMEOUT_S = 300.0
-
-
-def find_llama_tts() -> Path | None:
-    """Resolve the llama.cpp TTS binary (env override, bundled sidecar, PATH)."""
-    from ..utils.bundled import find_bundled_sidecar, legacy_models_dir
-
-    return find_bundled_sidecar("llama-tts", "TWENTYLABS_LLAMA_TTS") or legacy_models_dir("llama-tts")
 
 
 def build_tts_args(
     *,
-    backbone: str,
-    mmproj: str,
+    model: str,
     text: str,
-    output: str,
-    language: str = "en",
+    language: str | None = "en",
     seed: int | None = None,
     speaker_file: str | None = None,
-    max_frames: int = MAX_FRAMES,
+    reference_text: str | None = None,
 ) -> list[str]:
-    """Build the ``llama-tts`` argument list (pure, unit-testable)."""
+    """Build the ``audiocpp_cli --task tts --family qwen3_tts`` argument list (pure, unit-testable)."""
     args = [
-        "-m",
-        backbone,
-        "-mm",
-        mmproj,
-        "-p",
+        "--task",
+        "tts",
+        "--family",
+        "qwen3_tts",
+        "--model",
+        model,
+        "--text",
         text,
-        "--tts-lang",
-        language,
-        "-n",
-        str(max_frames),
-        "-o",
-        output,
     ]
+    if language:
+        args += ["--language", language]
     if seed is not None:
-        args += ["-s", str(seed)]
+        args += ["--seed", str(seed)]
     if speaker_file:
-        args += ["--tts-speaker-file", speaker_file]
+        args += ["--voice-ref", speaker_file]
+        if reference_text:
+            args += ["--reference-text", reference_text]
     return args
 
 
 class Qwen3TTSBackend:
-    """TTS backend driving ``llama-tts`` one-shot subprocesses."""
+    """TTS backend driving the audio.cpp one-shot CLI (no resident model)."""
 
     hf_repo = HF_REPO
     sample_rate = SAMPLE_RATE
@@ -102,9 +76,7 @@ class Qwen3TTSBackend:
     def _is_model_cached(self) -> bool:
         from ..services.model_files import is_model_installed
 
-        return is_model_installed(HF_REPO, f"Qwen3-TTS-12Hz-1.7B-Base-{BACKBONE_QUANT}.gguf") and is_model_installed(
-            HF_REPO, MMPROJ_FILENAME
-        )
+        return is_model_installed(HF_REPO, MODEL_FILE)
 
     def _local_file(self, filename: str) -> str:
         from ..services.model_files import resolve_model_file
@@ -112,23 +84,20 @@ class Qwen3TTSBackend:
         return str(resolve_model_file(HF_REPO, filename))
 
     def _get_model_path(self, model_size: str) -> str:
-        return self._local_file(f"Qwen3-TTS-12Hz-1.7B-Base-{BACKBONE_QUANT}.gguf")
+        return self._local_file(MODEL_FILE)
 
     # -- lifecycle ----------------------------------------------------------
 
     async def load_model(self, model_size: str) -> None:
-        """No resident model — verify the GGUF pair + binary are available."""
-        binary = find_llama_tts()
+        """No resident model — verify the GGUF + binary are available."""
+        binary = find_audiocpp()
         if binary is None:
             self.load_error = (
-                "llama-tts binary not found. Bundle llama-tts.exe next to "
-                "llama-server.exe in data/models/, or set TWENTYLABS_LLAMA_TTS."
+                "audiocpp_cli binary not found. Bundle audiocpp_cli next to the sidecars or set TWENTYLABS_AUDIOCPP."
             )
             raise RuntimeError(self.load_error)
         if not self._is_model_cached():
-            raise RuntimeError(
-                "Qwen3-TTS 12Hz 1.7B Base is not downloaded. Use the Model Downloads page to download it first."
-            )
+            raise RuntimeError("Qwen3 TTS is not downloaded. Use the Model Downloads page to download it first.")
         self.load_error = None
 
     def unload_model(self) -> None:
@@ -145,7 +114,7 @@ class Qwen3TTSBackend:
         reference_text: str,
         use_cache: bool = True,
     ) -> tuple[dict, bool]:
-        # llama-tts takes the reference clip path directly (--tts-speaker-file).
+        # audiocpp_cli takes the reference clip path directly (--voice-ref).
         return {"voice_type": "clone", "audio_path": audio_path, "reference_text": reference_text}, False
 
     async def combine_voice_prompts(
@@ -166,63 +135,34 @@ class Qwen3TTSBackend:
         instruct: str | None = None,
         temperature: float | None = None,
     ) -> tuple[np.ndarray, int]:
-        binary = find_llama_tts()
-        if binary is None:
+        # instruct/temperature are not exposed by the qwen3_tts family; callers
+        # pass them for protocol compatibility and they are intentionally ignored.
+        if find_audiocpp() is None:
             raise RuntimeError(
-                "llama-tts binary not found. Bundle llama-tts.exe next to "
-                "llama-server.exe in data/models/, or set TWENTYLABS_LLAMA_TTS."
+                "audiocpp_cli binary not found. Bundle audiocpp_cli next to the sidecars or set TWENTYLABS_AUDIOCPP."
             )
         if not self._is_model_cached():
-            raise RuntimeError(
-                "Qwen3-TTS 12Hz 1.7B Base is not downloaded. Use the Model Downloads page to download it first."
-            )
+            raise RuntimeError("Qwen3 TTS is not downloaded. Use the Model Downloads page to download it first.")
 
-        backbone = self._local_file(f"Qwen3-TTS-12Hz-1.7B-Base-{BACKBONE_QUANT}.gguf")
-        mmproj = self._local_file(MMPROJ_FILENAME)
+        model_file = self._local_file(MODEL_FILE)
         speaker_file = voice_prompt.get("audio_path") if voice_prompt.get("voice_type") == "clone" else None
+        reference_text = voice_prompt.get("reference_text") if speaker_file else None
 
-        timeout_s = float(os.environ.get("TWENTYLABS_LLAMA_TTS_TIMEOUT", DEFAULT_TIMEOUT_S))
-        tmpdir = tempfile.mkdtemp(prefix="qwen3-tts-")
-        out_wav = str(Path(tmpdir) / "out.wav")
-
-        try:
-            args = build_tts_args(
-                backbone=backbone,
-                mmproj=mmproj,
-                text=text,
-                output=out_wav,
-                language=language,
-                seed=seed,
-                speaker_file=speaker_file,
-            )
-
-            def _run_sync() -> None:
-                proc = run_hidden(
-                    [str(binary), *args],
-                    capture_output=True,
-                    text=True,
-                    timeout=timeout_s,
-                )
-                if proc.returncode != 0:
-                    tail = (proc.stderr or proc.stdout or "").strip().splitlines()[-5:]
-                    raise RuntimeError(f"llama-tts failed (exit {proc.returncode}): {' | '.join(tail)}")
-                if not Path(out_wav).exists():
-                    raise RuntimeError("llama-tts exited 0 but produced no WAV output")
-
-            await asyncio.to_thread(_run_sync)
-            audio, _sr = await asyncio.to_thread(load_audio, out_wav, sample_rate=SAMPLE_RATE)
-            return audio.astype(np.float32), SAMPLE_RATE
-        except subprocess.TimeoutExpired:
-            raise TimeoutError(
-                f"llama-tts exceeded {timeout_s:g}s for this generation. Try a shorter text or a stronger machine."
-            ) from None
-        finally:
-            try:
-                import shutil
-
-                shutil.rmtree(tmpdir, ignore_errors=True)
-            except OSError:  # pragma: no cover - best-effort cleanup
-                pass
+        args = build_tts_args(
+            model=model_file,
+            text=text,
+            language=language,
+            seed=seed,
+            speaker_file=speaker_file,
+            reference_text=reference_text,
+        )
+        return await asyncio.to_thread(
+            run_one_shot,
+            args,
+            sample_rate=SAMPLE_RATE,
+            prefix="qwen3-tts",
+            timeout_s=DEFAULT_TIMEOUT_S,
+        )
 
 
 qwen3_tts_backend = Qwen3TTSBackend()

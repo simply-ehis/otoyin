@@ -75,6 +75,10 @@ class ModelLifecycleManager:
         self._performance_mode = False
         self._per_engine_keepalive: dict[str, bool] = {}
 
+    def engines(self) -> dict[str, _EngineHandle]:
+        """Expose registered handles so the warm pool can inspect/unload them."""
+        return self._engines
+
     def register(
         self,
         engine: str,

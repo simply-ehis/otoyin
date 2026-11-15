@@ -353,6 +353,13 @@ def _migrate_generation_settings(engine, inspector, tables: set[str]) -> None:
             "preload_on_start BOOLEAN NOT NULL DEFAULT 1",
             "preload_on_start",
         )
+    if "low_memory_mode" not in columns:
+        _add_column(
+            engine,
+            "generation_settings",
+            "low_memory_mode BOOLEAN NOT NULL DEFAULT 0",
+            "low_memory_mode",
+        )
 
 
 def _migrate_mcp_bindings(engine, inspector, tables: set[str]) -> None:

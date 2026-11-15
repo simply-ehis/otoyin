@@ -26,27 +26,17 @@ logger = logging.getLogger(__name__)
 # the corresponding model, so the base install stays lean.
 # Fallback for engines not yet in ModelConfig.pip_packages.
 _ENGINE_PIP_DEPS: dict[str, list[str]] = {
-    "kokoro": ["kokoro>=0.9.4", "misaki[en,ja,zh]>=0.9.4"],
     "faster-whisper": ["faster-whisper>=1.0.0"],
 }
 
 # Import name -> pip package name mapping for importability checks.
 _ENGINE_IMPORT_PROBES: dict[str, str] = {
-    "kokoro": "kokoro",
     "faster-whisper": "faster_whisper",
-    "pocket_tts": "pocket_tts",
     "parler_tts_gguf": "crispasr",
-    "moss_tts_nano": "sentencepiece",
-    "kitten_tts": "phonemizer",
     "neutts": "neutts",
-    "neutts_2e": "neutts",
     "orpheus": "snac",
-    "zonos_gguf": "crispasr",
-    "voxcpm2": "crispasr",
     "moonshine": "moonshine",
     "whisper": "pywhispercpp",
-    "rvc_onnx": "onnxruntime",
-    "openvoice_onnx": "onnxruntime",
     "argos_translate": "argostranslate",
     "demucs_onnx": "demucs",
 }
@@ -168,10 +158,6 @@ def _quantize_onnx_if_needed(config, model_dir: Path):
         candidates.append(model_dir / fname)
     elif config.engine == "faster-whisper":
         candidates.append(model_dir / f"faster-whisper-{config.model_size}")
-    elif config.engine == "rvc_onnx":
-        candidates.append(model_dir / "rvc" / config.model_size)
-    elif config.engine == "kokoro":
-        candidates.append(model_dir / "kokoro-onnx")
 
     onnx_files: list[Path] = []
     for cand in candidates:
@@ -248,15 +234,41 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
     """Fetch the model files for one config (single attempt)."""
     import os
 
-    from huggingface_hub import hf_hub_download
-
     # Prevent hf_hub_download from blocking indefinitely on slow networks.
     os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "120")
 
     loop = asyncio.get_running_loop()
 
     with tracker.patch_download():
-        if config.engine == "whisper":
+        if getattr(config, "download_file", None):
+            # Single-file HF install (keeps the 60+-model audio.cpp-gguf
+            # umbrella from snapshotting into the app folder).
+            from ...services.model_files import install_model_file
+
+            filename = config.download_file
+            await loop.run_in_executor(
+                _download_executor,
+                lambda f=filename: install_model_file(repo_id=config.hf_repo_id, filename=f),
+            )
+        elif getattr(config, "download_subtree", None):
+            # Subtree install (GGUF plus packaged voice states/embeddings).
+            from ...services.model_files import install_snapshot
+
+            subtree = config.download_subtree
+            await loop.run_in_executor(
+                _download_executor,
+                lambda s=subtree: install_snapshot(repo_id=config.hf_repo_id, allow_patterns=[f"{s}/**"]),
+            )
+        elif getattr(config, "download_patterns", None):
+            # Surgical install (named files; e.g. ZONOS3 backbone + speaker encoder).
+            from ...services.model_files import install_snapshot
+
+            patterns = list(config.download_patterns)
+            await loop.run_in_executor(
+                _download_executor,
+                lambda p=patterns: install_snapshot(repo_id=config.hf_repo_id, allow_patterns=p),
+            )
+        elif config.engine == "whisper":
             from ... import config as cfg_mod
             from ...backends.whisper_cpp_backend import HF_REPO, WHISPER_CPP_FILES
             from ...services.model_files import install_model_file_to
@@ -284,56 +296,6 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
                     cfg_mod.get_models_dir() / f"faster-whisper-{config.model_size}" / MODEL_FILE,
                 ),
             )
-        elif config.engine == "rvc_onnx":
-            from ... import config as cfg_mod
-            from ...backends.rvc_onnx_backend import rvc_onnx_backend
-
-            dest = cfg_mod.get_models_dir() / "rvc" / config.model_size
-            desc = rvc_onnx_backend.pack_source(config.model_size)
-            repo_id = desc["repo"]
-
-            def _download_rvc():
-                dest.mkdir(parents=True, exist_ok=True)
-                if desc.get("zip"):
-                    zip_path = hf_hub_download(
-                        repo_id=repo_id,
-                        filename=desc["zip"],
-                    )
-                    import zipfile
-
-                    with zipfile.ZipFile(zip_path) as zf:
-                        # Zip Slip protection — validate each member stays within dest
-                        for member in zf.infolist():
-                            member_path = (dest / member.filename).resolve()
-                            if not member_path.is_relative_to(dest.resolve()):
-                                raise ValueError(f"Zip entry outside dest: {member.filename}")
-                            if member.filename.startswith("/") or ".." in Path(member.filename).parts:
-                                raise ValueError(f"Rejected zip entry: {member.filename}")
-                        zf.extractall(dest)
-                else:
-                    hf_hub_download(
-                        repo_id=repo_id,
-                        filename=desc["pth"],
-                        local_dir=str(dest),
-                    )
-                    if desc.get("index"):
-                        hf_hub_download(
-                            repo_id=repo_id,
-                            filename=desc["index"],
-                            local_dir=str(dest),
-                        )
-
-            await loop.run_in_executor(_download_executor, _download_rvc)
-            from ...services.model_files import clear_hf_repo_cache
-
-            await loop.run_in_executor(_download_executor, lambda: clear_hf_repo_cache(desc["repo"]))
-        elif config.engine == "seed_vc":
-            from ...backends import get_vc_backend
-
-            await loop.run_in_executor(
-                _download_executor,
-                lambda: get_vc_backend("seed_vc")._load_model_sync(),
-            )
         elif config.engine == "gguf_llm":
             # GGUF planner repos carry every quant plus mmproj/MTP/embedding
             # artifacts. The backend only ever loads the single quant file
@@ -353,33 +315,6 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
                     repo_id=config.hf_repo_id,
                     filename=filename,
                 ),
-            )
-        elif config.engine == "qwen3_tts":
-            # Qwen3-TTS GGUF needs TWO files: the quantized backbone + the
-            # mmproj audio decoder (llama-tts refuses to run without it).
-            from ...backends.gguf_server_backend import _resolve_gguf_filename
-            from ...backends.qwen3_tts_backend import MMPROJ_FILENAME
-
-            backbone = await loop.run_in_executor(
-                _download_executor, lambda: _resolve_gguf_filename(config.hf_repo_id, config.quant)
-            )
-            from ...services.model_files import install_model_file
-
-            for filename in (backbone, MMPROJ_FILENAME):
-                await loop.run_in_executor(
-                    _download_executor,
-                    lambda f=filename: install_model_file(repo_id=config.hf_repo_id, filename=f),
-                )
-        elif config.engine == "minimax_music3":
-            # MiniMax Music 3 is accessed via the diffusers ModularPipeline; no
-            # binary download is needed — the model files are obtained from HF
-            # (accept the Community License first).  The generic
-            # snapshot_download else-branch handles the HF retrieval.
-            from ...services.model_files import install_snapshot
-
-            await loop.run_in_executor(
-                _download_executor,
-                lambda: install_snapshot(repo_id=config.hf_repo_id),
             )
         elif config.engine == "sa3_sfx":
             # Single Q8_0 GGUF packs the whole Stable Audio 3 Small SFX stack.
@@ -497,22 +432,6 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
                 _download_executor,
                 lambda: _download_steam_audio_sdk(progress_manager, model_name),
             )
-        elif config.engine == "fish_speech_s2":
-            from ...backends.fish_speech_s2_backend import S2_CPP_GGUF_DEFAULT, S2_CPP_TOKENIZER
-            from ...services.model_files import install_model_file
-
-            for filename in (S2_CPP_GGUF_DEFAULT, S2_CPP_TOKENIZER):
-                await loop.run_in_executor(
-                    _download_executor,
-                    lambda f=filename: install_model_file(repo_id=config.hf_repo_id, filename=f),
-                )
-        elif config.engine == "voxcpm2":
-            from ...services.model_files import install_model_file
-
-            await loop.run_in_executor(
-                _download_executor,
-                lambda: install_model_file(repo_id=config.hf_repo_id, filename="voxcpm2-q8_0.gguf"),
-            )
         elif config.engine == "moonshine":
             from ...backends.moonshine_backend import _MODELS
 
@@ -627,13 +546,9 @@ async def trigger_model_download(request: models.ModelDownloadRequest, db: Sessi
 
             # Quantize ONNX models if needed (INT8 quantization for ONNX TTS/STT)
             if _engine in {
-                "kokoro",
                 "styletts2",
                 "f5_tts",
-                "pocket_tts",
-                "moss_tts_nano",
                 "parler_tts_gguf",
-                "kitten_tts",
                 "chattts",
                 "demucs_onnx",
                 "faster-whisper",

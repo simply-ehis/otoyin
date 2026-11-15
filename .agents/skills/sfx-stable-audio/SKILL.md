@@ -50,7 +50,7 @@ curl -X POST http://localhost:17493/generate/sfx \
 ```
 
 ## Pitfalls / Gotchas
-- `generate_sfx` takes only `prompt`, `duration_seconds`, `seed`, and SFX `engine`; genre/mood/tempo/mode belong to live `generate_music` (`acestep_gguf`, `heartmula`, `minimax_music3`).
+- `generate_sfx` takes only `prompt`, `duration_seconds`, `seed`, and SFX `engine`; genre/mood/tempo/mode belong to live `generate_music` (`acestep_gguf` or `heartmula`).
 - Output sample rate is 44100 (hardcoded fallback), not 48000.
 - Output is mono (channel-mean'd in `stable_audio_backend.generate`).
 - Uncached model → 400 `ModelNotCachedError` (REST) or `ValueError` (MCP).

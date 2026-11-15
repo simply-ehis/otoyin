@@ -40,7 +40,7 @@ def client(monkeypatch):
     return TestClient(app)
 
 
-def _patch_planner(monkeypatch, *, loaded: bool, n_ctx: int = 8192, size: str = "Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M"):
+def _patch_planner(monkeypatch, *, loaded: bool, n_ctx: int = 8192, size: str = "2.6B-Q4_0"):
     # The routes import get_llm_backend_for_engine inside the function body,
     # so patch it where it lives (backend.backends), not on the route module.
     fake = MagicMock()
@@ -66,11 +66,11 @@ def test_get_reports_unloaded_planner(client, monkeypatch):
 
 
 def test_get_reports_live_n_ctx_when_loaded(client, monkeypatch):
-    _patch_planner(monkeypatch, loaded=True, n_ctx=16384, size="Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M")
+    _patch_planner(monkeypatch, loaded=True, n_ctx=16384, size="2.6B-Q4_0")
     body = client.get("/settings/assistant").json()
     assert body["planner_loaded"] is True
     assert body["loaded_n_ctx"] == 16384
-    assert body["loaded_model_size"] == "Qwen_Qwen3.5-4B-125B-16EF-Q4_K_M"
+    assert body["loaded_model_size"] == "2.6B-Q4_0"
 
 
 def test_reload_when_not_loaded_is_noop(client, monkeypatch):
