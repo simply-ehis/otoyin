@@ -119,6 +119,7 @@ def test_generate_clones_route_to_clon_task(monkeypatch):
         lambda self, *a, **k: True,
     )
     monkeypatch.setattr(oc, "run_one_shot", _fake_run)
+    monkeypatch.setattr(oc.OneShotAudiocpp, "_local_file", lambda self, *a, **k: "models/m.gguf")
 
     async def _go():
         await oc.cosyvoice3_backend.generate("cloning check", {"audio_path": "ref.wav", "reference_text": "exact"})
@@ -144,6 +145,7 @@ def test_generate_magpie_uses_request_option_not_voice_id(monkeypatch):
     monkeypatch.setattr(oc, "find_audiocpp", lambda: Path("tmp/audiocpp_cli.exe"))
     monkeypatch.setattr(oc.OneShotAudiocpp, "_is_model_cached", lambda self, *a, **k: True)
     monkeypatch.setattr(oc, "run_one_shot", _fake_run)
+    monkeypatch.setattr(oc.OneShotAudiocpp, "_local_file", lambda self, *a, **k: "models/m.gguf")
 
     async def _go():
         await oc.magpie_tts_backend.generate("magpie check", {"voice_id": "Sofia"})
@@ -168,6 +170,7 @@ def test_generate_supertonic_uses_voice_id(monkeypatch):
     monkeypatch.setattr(oc, "find_audiocpp", lambda: Path("tmp/audiocpp_cli.exe"))
     monkeypatch.setattr(oc.OneShotAudiocpp, "_is_model_cached", lambda self, *a, **k: True)
     monkeypatch.setattr(oc, "run_one_shot", _fake_run)
+    monkeypatch.setattr(oc.OneShotAudiocpp, "_local_file", lambda self, *a, **k: "models/m.gguf")
 
     async def _go():
         await oc.supertonic_backend.generate("supertonic check", {"voice_id": "M1"})

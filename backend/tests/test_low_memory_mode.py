@@ -167,6 +167,22 @@ def test_run_one_shot_env_dedupe_mem_saver(monkeypatch, tmp_path):
     assert mem_saver_flags == ["fish_audio.mem_saver=true"]
 
 
+def test_inject_audiocpp_env_opts_backend_threads_and_pairs(monkeypatch):
+    from backend.backends import audio_cpp as ac
+
+    monkeypatch.setenv("TWENTYLABS_AUDIOCPP_BACKEND", "best")
+    monkeypatch.setenv("TWENTYLABS_AUDIOCPP_THREADS", "8")
+    args = ["--task", "gen"]
+    ac.inject_audiocpp_env_opts(args)
+    assert args[:2] == ["--backend", "best"]
+    assert args[args.index("--threads") + 1] == "8"
+
+    # explicit --backend wins
+    args = ["--task", "gen", "--backend", "vulkan"]
+    ac.inject_audiocpp_env_opts(args)
+    assert args.count("--backend") == 1
+
+
 def test_oneshot_specs_carry_mem_saver_only_for_supported_families():
     from backend.backends import oneshot_audiocpp as oc
 

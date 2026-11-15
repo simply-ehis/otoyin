@@ -24,7 +24,7 @@ import numpy as np
 
 from ..utils.audio import load_audio
 from ..utils.hidden_subprocess import run_hidden
-from .audio_cpp import find_audiocpp
+from .audio_cpp import find_audiocpp, inject_audiocpp_env_opts
 
 logger = logging.getLogger(__name__)
 
@@ -163,6 +163,7 @@ class HeartMuLaBackend:
                 output=out_wav,
                 seed=seed,
             )
+            inject_audiocpp_env_opts(args)
             proc = run_hidden(
                 [str(binary), *args],
                 capture_output=True,

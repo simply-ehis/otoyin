@@ -43,6 +43,27 @@ DEFAULT_TIMEOUT_S = 600.0
 #   TWENTYLABS_AUDIOCPP_TIMEOUT      wall-clock budget in seconds
 
 
+def inject_audiocpp_env_opts(args: list[str]) -> list[str]:
+    """In-place inject the audio.cpp sidecar env conventions into ``args``.
+
+    Shared by every audiocpp call site (migrated backends, music, one-shots):
+    - ``--backend best`` unless --backend already set (env TWENTYLABS_AUDIOCPP_BACKEND)
+    - ``--threads N`` from TWENTYLABS_AUDIOCPP_THREADS if set
+    - ``--session-option k=v,...`` from TWENTYLABS_AUDIOCPP_SESSION_OPTS (comma-sep)
+    Returns the same (mutated) list for convenience.
+    """
+    if "--backend" not in args:
+        args[:0] = ["--backend", os.environ.get("TWENTYLABS_AUDIOCPP_BACKEND", "best")]
+    threads = os.environ.get("TWENTYLABS_AUDIOCPP_THREADS")
+    if threads:
+        args += ["--threads", threads]
+    extra_opts = os.environ.get("TWENTYLABS_AUDIOCPP_SESSION_OPTS", "")
+    for pair in (p.strip() for p in extra_opts.split(",") if p.strip()):
+        if "=" in pair:
+            args += ["--session-option", pair]
+    return args
+
+
 def find_audiocpp() -> Path | None:
     """Resolve the audiocpp_cli binary (env override, bundled sidecar, PATH, auto-download)."""
     from ..utils.sidecar_downloader import find_audiocpp as _find
@@ -96,16 +117,9 @@ def run_one_shot(
             logger.debug("low_memory_mode append failed; skipping mem_saver", exc_info=True)
 
     # Audio.cpp `usage.md` documents `--backend` with cpu|cuda|vulkan|metal|best
-    # (default `cpu`). `best` lets ggml pick the fastest available device —
+    # (default `cpu`). `best` lets ggml pick the fastest available device -
     # without it, GPU machines decode on CPU instead.
-    if "--backend" not in args:
-        args = ["--backend", os.environ.get("TWENTYLABS_AUDIOCPP_BACKEND", "best"), *args]
-    threads = os.environ.get("TWENTYLABS_AUDIOCPP_THREADS")
-    if threads:
-        args += ["--threads", threads]
-    for pair in (p.strip() for p in env_opts.split(",") if p.strip()):
-        if "=" in pair:
-            args += ["--session-option", pair]
+    inject_audiocpp_env_opts(args)
     budget = float(
         os.environ.get("TWENTYLABS_AUDIOCPP_TIMEOUT", timeout_s if timeout_s is not None else DEFAULT_TIMEOUT_S)
     )
