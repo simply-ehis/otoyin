@@ -102,8 +102,9 @@ def test_emotion_tag_models_wired():
 
 def test_generate_clones_route_to_clon_task(monkeypatch):
     """Reference-protected generate() must use --task clon with the reference wav."""
-    import numpy as np
     from pathlib import Path
+
+    import numpy as np
 
     sent = []
 
@@ -130,8 +131,9 @@ def test_generate_clones_route_to_clon_task(monkeypatch):
 
 def test_generate_magpie_uses_request_option_not_voice_id(monkeypatch):
     """MagpieTTS selects baked voices via --request-option voice_id=<name>."""
-    import numpy as np
     from pathlib import Path
+
+    import numpy as np
 
     sent = []
 
@@ -153,8 +155,9 @@ def test_generate_magpie_uses_request_option_not_voice_id(monkeypatch):
 
 
 def test_generate_supertonic_uses_voice_id(monkeypatch):
-    import numpy as np
     from pathlib import Path
+
+    import numpy as np
 
     sent = []
 
