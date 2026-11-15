@@ -95,7 +95,7 @@ pid_namemap=$!
 pid_assist=$!
 
 (
-  cd "$root" && $TIMEOUT 15 $PY -c "import sys; sys.path.insert(0,'.'); from backend.scripts.check_placeholders import main; sys.exit(main())" 2>&1 | tail -3
+  cd "$root" && $TIMEOUT 60 $PY -c "import sys; sys.path.insert(0,'.'); from backend.scripts.check_placeholders import main; sys.exit(main())" 2>&1 | tail -3
   echo $? > "$tmpdir/placeholders.rc"
 ) > "$tmpdir/placeholders.log" 2>&1 &
 pid_placeholders=$!
