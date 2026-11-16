@@ -2,9 +2,14 @@
 
 The app's own ``data/models/`` folder is the source of truth. Downloads land
 there directly (``snapshot_download`` / ``hf_hub_download`` with ``local_dir=``),
-so the HuggingFace cache is never populated at all — there is no copy step,
-no leftover cache to prune, and resumable downloads work through the
-``.incomplete`` machinery the library manages inside the destination dir.
+so the global HuggingFace cache at ``~/.cache/huggingface`` is never populated
+— there is no copy step and no leftover cache to prune.
+
+Note: ``local_dir=`` mode still writes a tiny ``.cache/huggingface/`` metadata
+subtree inside the destination (``trees/``, ``download/``). That is the
+hub's resumable-download bookkeeping and is required for interrupted downloads
+to resume correctly — removing it is not an integrity issue, just the hub
+starting over from scratch. Leave it alone.
 """
 
 import logging
