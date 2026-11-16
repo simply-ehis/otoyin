@@ -504,3 +504,4 @@ Every knowledge doc should have an `## Agent Callable` section with exact MCP to
 - [BUTTON-REFERENCE.md](BUTTON-REFERENCE.md) — Complete UI action catalog: every button across all tabs.
 
 - [98-onboarding-models-agent.md](98-onboarding-models-agent.md) - 2026-11-12 onboarding steps 3-4: models for your picks (recommended pack, RAM + disk-space check via sysinfo, explicit Install only) and assistant/coding-agent step (GGUF planner / provider+key / MCP one-liner). Planner compat hard-block on low-RAM hosts.
+- [99-espeak-ng-runtime-assets.md](99-espeak-ng-runtime-assets.md) - eSpeak-ng on-demand download for audiocpp TTS phonemization: shared DLL + data fetched at first install of any eSpeak-dependent engine; one shared asset for all.

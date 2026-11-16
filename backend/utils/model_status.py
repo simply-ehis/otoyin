@@ -78,32 +78,66 @@ def _onnxruntime_available() -> bool:
 # Engine metadata for dynamic ranking
 # ---------------------------------------------------------------------------
 #
-# Weight classes determine the *base* score — lower is better (lighter).
+# Weight classes determine the *base* score - lower is better (lighter).
 # Bonuses/penalties are applied on top based on runtime conditions.
-#
-# Weight classes:
-#   10  ONNX-only, tiny model (< 100 MB)  — kitten_tts, moss_tts_nano
-#   20  ONNX-preferred, small model        — kokoro (82M)
-#   30  Subprocess one-shot, no resident   — qwen3_tts, bark_small
-#   40  Subprocess/GGUF singleton (audio.cpp sidecar) - neutts, neutts_2e, orpheus, parler_tts_gguf
-#   50  heavier one-shot model            - pocket_tts
+# Derived from real ModelConfig.size_mb values (2026-11-15, GGUF/audio.cpp
+# migration):
+#   10  tiny  (< 150 MB)                   - phonon, piper_tts, inflect_v2, tone_color_vc,
+#                                             steer_tts, kitten_tts, moss_tts_nano
+#   20  small (< 500 MB)                   - kokoro, supertonic, bark_small, pocket_tts
+#   30  mid   (< 3 GB)                     - sa3_sfx, sa3_music, parler_tts_gguf, qwen3_tts,
+#                                             voxcpm2, audio8_tts, cosyvoice3, magpie_tts,
+#                                             omnivoice, chatterbox_turbo, neutts, neutts_2e,
+#                                             orpheus, zonos3, seed_vc, meanvc2
+#   40  large (< 5 GB)                     - stable_audio, yue2, moss_soundeffect
+#   45  very large (~8 GB)                 - acestep_gguf, heartmula
+#   50  6 GB+                              - fish_speech_s2
+#   60  10 GB+ / ONNX-preferred fallback   - styletts2, fish_drama3
 
 _ENGINE_WEIGHTS: dict[str, int] = {
+    # tiny (< 150 MB)
+    "phonon": 10,
+    "piper_tts": 10,
+    "inflect_v2": 10,
+    "tone_color_vc": 10,
+    "steer_tts": 10,
     "kitten_tts": 10,
     "moss_tts_nano": 10,
+    # small (< 500 MB)
     "kokoro": 20,
+    "supertonic": 20,
+    "bark_small": 20,
     "pocket_tts": 20,
-    "qwen3_tts": 30,
-    "bark_small": 30,
-    "neutts": 40,
-    "neutts_2e": 40,
-    "orpheus": 40,
+    # mid (< 3 GB)
+    "sa3_sfx": 30,
+    "sa3_music": 30,
     "parler_tts_gguf": 30,
-    "styletts2": 60,
+    "qwen3_tts": 30,
+    "voxcpm2": 30,
+    "audio8_tts": 30,
+    "cosyvoice3": 30,
+    "magpie_tts": 30,
+    "omnivoice": 30,
+    "chatterbox_turbo": 30,
+    "neutts": 30,
+    "neutts_2e": 30,
+    "orpheus": 30,
+    "zonos3": 30,
     "seed_vc": 30,
     "meanvc2": 30,
-    "tone_color_vc": 30,
-    "acestep_gguf": 30,
+    # large (< 5 GB)
+    "stable_audio": 40,
+    "yue2": 40,
+    "moss_soundeffect": 40,
+    # very large (~8 GB) - but a one-shot audiocpp sidecar: light to start,
+    # heavy to run. Subprocess bonus applies (weight must stay <= 35).
+    "acestep_gguf": 35,
+    "heartmula": 45,
+    # 6 GB+
+    "fish_speech_s2": 50,
+    # 10 GB+ / ONNX-preferred fallback
+    "fish_drama3": 60,
+    "styletts2": 60,
 }
 
 # Engines whose *preferred* backend is ONNX
@@ -124,7 +158,29 @@ _SUBPROCESS_ENGINES = {
     "pocket_tts",
     "kitten_tts",
     "moss_tts_nano",
+    "phonon",
+    "piper_tts",
+    "inflect_v2",
+    "supertonic",
+    "steer_tts",
+    "sa3_sfx",
+    "sa3_music",
+    "chatterbox_turbo",
+    "audio8_tts",
+    "cosyvoice3",
+    "magpie_tts",
+    "omnivoice",
+    "voxcpm2",
+    "neutts",
+    "neutts_2e",
+    "orpheus",
+    "zonos3",
 }
+# NB: heavy one-shots (yue2, moss_soundeffect, stable_audio, acestep_gguf,
+# heartmula, fish_speech_s2, fish_drama3) are audiocpp subprocess families too,
+# but deliberately excluded: the subprocess bonus rewards "light, free to start"
+# engines (< 3 GB), and these are not light. They carry their size-appropriate
+# base weights without the -5 bonus.
 
 
 def _score_engine(engine: str, cached: bool) -> float:

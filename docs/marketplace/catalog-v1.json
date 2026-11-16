@@ -32,6 +32,7 @@
       "engine": "styletts2",
       "model_size": "default",
       "checksum": { "sha256": "" },
+      "coming_soon": true,
       "description": "Style-based TTS with natural prosody."
     },
     {
@@ -47,6 +48,7 @@
       "engine": "bark",
       "model_size": "small",
       "checksum": { "sha256": "" },
+      "coming_soon": true,
       "description": "Suno's Bark TTS engine (small variant)."
     },
     {
@@ -62,6 +64,7 @@
       "engine": "bark",
       "model_size": "large",
       "checksum": { "sha256": "" },
+      "coming_soon": true,
       "description": "DROPPED 2026-08-19: no prebuilt bark-large GGUF exists (cstr org ships small only). Re-add only if an artifact or a conversion pipeline ships."
     },
     {
@@ -78,6 +81,7 @@
       "model_size": "default",
       "checksum": { "sha256": "" },
       "description": "Text-description-controlled TTS — describe the voice you want.",
+      "coming_soon": true,
       "voice_design": true
     },
     {
@@ -93,6 +97,7 @@
       "engine": "zonos",
       "model_size": "v0.1",
       "checksum": { "sha256": "" },
+      "coming_soon": true,
       "description": "Premium expressive TTS with voice cloning."
     },
     {
@@ -114,6 +119,7 @@
       },
       "checksum": { "sha256": "" },
       "description": "Multilingual TTS with 3-second voice cloning.",
+      "coming_soon": true,
       "voice_design": true
     },
     {
@@ -145,6 +151,7 @@
       "engine": "neutts-air",
       "model_size": "default",
       "checksum": { "sha256": "" },
+      "coming_soon": true,
       "description": "NeuTTS TTS + voice conversion. Apache-based license, sellable under $5M revenue."
     },
     {
@@ -160,6 +167,7 @@
       "engine": "neutts-2e",
       "model_size": "default",
       "checksum": { "sha256": "" },
+      "coming_soon": true,
       "description": "NeuTTS-2E TTS + voice conversion."
     },
     {
@@ -190,6 +198,7 @@
       "engine": "llm",
       "model_size": "2B",
       "checksum": { "sha256": "" },
+      "coming_soon": true,
       "description": "Default assistant planner — Claude-4.6-Opus reasoning distill. ~1.7GB Q4_K_M."
     },
     {
@@ -205,6 +214,7 @@
       "engine": "llm",
       "model_size": "0.8B",
       "checksum": { "sha256": "" },
+      "coming_soon": true,
       "description": "Free low-RAM fallback assistant planner. ~0.7GB Q5_K_M."
     },
     {
@@ -220,6 +230,7 @@
       "engine": "llm",
       "model_size": "4B",
       "checksum": { "sha256": "" },
+      "coming_soon": true,
       "description": "Claude-distilled 4B planner. Premium tier — highest-quality reasoning and tool calling for complex multi-step workflows. GGUF Q4_K_M 2.8GB."
     },
     {
@@ -235,6 +246,7 @@
       "engine": "llm",
       "model_size": "2B",
       "checksum": { "sha256": "" },
+      "coming_soon": true,
       "description": "PROMO — normally $20. OpenBMB 2B SOTA: competes with 4B-class models. RL + On-Policy Distillation from 16 expert teachers. 128K context, code (LiveCodeBench 69.1%), math (AIME 86.5%), agentic tasks (SWE-bench 46.4%)."
     },
     {
@@ -250,6 +262,7 @@
       "engine": "llm",
       "model_size": "4B",
       "checksum": { "sha256": "" },
+      "coming_soon": true,
       "description": "iFLYTEK 4B agentic king — 1M native context, 200+ languages. Beats Qwen3.5-9B on τ³-bench, BrowseComp, SWE-Bench Pro. Hybrid sliding-window attention."
     },
     {
@@ -265,6 +278,7 @@
       "engine": "llm",
       "model_size": "27B",
       "checksum": { "sha256": "" },
+      "coming_soon": true,
       "description": "Alibaba flagship dense 27B — native vision-language, 262K context (extensible to 1M). Gated DeltaNet + Attention hybrid. Top-tier coding, research, and agentic tasks."
     },
     {
@@ -280,6 +294,7 @@
       "engine": "acestep",
       "model_size": "1.7B",
       "checksum": { "sha256": "" },
+      "coming_soon": true,
       "description": "Music generation — LM 1.7B + DiT."
     },
     {
@@ -311,6 +326,7 @@
       "engine": "stable-audio",
       "model_size": "small",
       "checksum": { "sha256": "" },
+      "coming_soon": true,
       "description": "120s SFX specialist — 459M, CPU-capable, 2.4GB VRAM."
     },
     {
@@ -327,6 +343,7 @@
       "engine": "stable-audio-open",
       "model_size": "default",
       "checksum": { "sha256": "" },
+      "coming_soon": true,
       "description": "Open SFX generation. Requires registration."
     },
     {
@@ -343,6 +360,7 @@
       "engine": "rvc",
       "model_size": "default",
       "checksum": { "sha256": "" },
+      "coming_soon": true,
       "description": "Retrieval-based voice conversion."
     },
     {
@@ -358,6 +376,7 @@
       "engine": "seed-vc",
       "model_size": "default",
       "checksum": { "sha256": "" },
+      "coming_soon": true,
       "description": "Zero-shot voice conversion."
     },
     {
@@ -373,6 +392,7 @@
       "engine": "openvoice",
       "model_size": "v2",
       "checksum": { "sha256": "" },
+      "coming_soon": true,
       "description": "Zero-shot tone-color conversion."
     },
     {
@@ -404,6 +424,7 @@
       "model_size": "0.5B",
       "checksum": { "sha256": "" },
       "description": "Expressive TTS with paralinguistic tags and voice cloning. 13 languages.",
+      "coming_soon": true,
       "voice_design": true
     },
     {
@@ -419,6 +440,7 @@
       "engine": "chattts",
       "model_size": "default",
       "checksum": { "sha256": "" },
+      "coming_soon": true,
       "description": "Conversational TTS with emotion tags. CC-BY-NC license."
     },
     {
@@ -434,6 +456,7 @@
       "engine": "f5_tts",
       "model_size": "small",
       "checksum": { "sha256": "" },
+      "coming_soon": true,
       "description": "Fast diffusion TTS with voice cloning. English and Chinese."
     },
     {

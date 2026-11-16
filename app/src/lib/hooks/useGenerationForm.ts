@@ -31,6 +31,18 @@ const ENGINE_KEYS = [
 	"neutts",
 	"neutts_2e",
 	"orpheus",
+	"steer_tts",
+	"audio8_tts",
+	"chatterbox_turbo",
+	"cosyvoice3",
+	"fish_drama3",
+	"inflect_v2",
+	"magpie_tts",
+	"omnivoice",
+	"phonon",
+	"piper_tts",
+	"supertonic",
+	"zonos3",
 	"cloud",
 ] as const;
 

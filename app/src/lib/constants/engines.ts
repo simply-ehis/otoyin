@@ -24,6 +24,18 @@ export const TTS_ENGINES = {
 	qwen3_tts: "Qwen3 TTS",
 	voxcpm2: "VoxCPM2",
 	bark_small: "Bark Small",
+	steer_tts: "Steer TTS",
+	audio8_tts: "Audio8-TTS",
+	chatterbox_turbo: "Chatterbox Turbo",
+	cosyvoice3: "CosyVoice3",
+	fish_drama3: "Drama-3",
+	inflect_v2: "Inflect Micro v2",
+	magpie_tts: "MagpieTTS",
+	omnivoice: "OmniVoice",
+	phonon: "Phonon-31m-en",
+	piper_tts: "Piper",
+	supertonic: "Supertonic 3",
+	zonos3: "ZONOS3-Mini",
 } as const;
 
 /** Type-safe engine id union. */
@@ -61,6 +73,18 @@ export const MODEL_NAME_MAP: Record<string, (size?: string) => string> = {
 	neutts_2e: () => "neutts-2e-orig",
 	orpheus: (size) => `orpheus-${size ?? "q4-k-m"}`,
 	cloud: () => "cloud",
+	steer_tts: () => "steer-tts",
+	audio8_tts: () => "audio8-tts-realistic",
+	chatterbox_turbo: () => "chatterbox-turbo",
+	cosyvoice3: () => "cosyvoice3",
+	fish_drama3: () => "drama-3-4bit",
+	inflect_v2: () => "inflect-micro-v2",
+	magpie_tts: () => "magpie-tts-357m",
+	omnivoice: () => "omnivoice",
+	phonon: () => "phonon-31m-en",
+	piper_tts: () => "piper-en-us-lessac-medium",
+	supertonic: () => "supertonic-3",
+	zonos3: () => "zonos3-mini",
 };
 
 // ── Capability sets ─────────────────────────────────────────────────────────
@@ -71,6 +95,14 @@ export const ENGLISH_ONLY_ENGINES = new Set([
 	"parler_tts_gguf",
 	"neutts_2e",
 	"orpheus",
+	"phonon",
+	"piper_tts",
+	"inflect_v2",
+	"chatterbox_turbo",
+	"fish_drama3",
+	"steer_tts",
+	"kitten_tts",
+	"neutts",
 ]);
 
 /** Engines that support cloned (reference audio) profiles. */
@@ -82,6 +114,11 @@ export const CLONING_ENGINES = new Set([
 	"moss_tts_nano",
 	"neutts",
 	"voxcpm2",
+	"audio8_tts",
+	"cosyvoice3",
+	"fish_drama3",
+	"omnivoice",
+	"zonos3",
 ]);
 
 /** Engines that expose built-in preset/designed voices (no reference audio needed). */
@@ -90,6 +127,10 @@ export const PRESET_ONLY_ENGINES = new Set([
 	"parler_tts_gguf",
 	"kitten_tts",
 	"neutts_2e",
+	"supertonic",
+	"magpie_tts",
+	"piper_tts",
+	"bark_small",
 ]);
 
 // ── UI option lists (derived from TTS_ENGINES — never hardcoded separately) ───

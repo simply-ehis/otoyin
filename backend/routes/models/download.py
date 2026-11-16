@@ -1,6 +1,7 @@
 """Model download/cancel/delete endpoints."""
 
 import asyncio
+import contextlib
 import logging
 from pathlib import Path
 
@@ -135,97 +136,23 @@ def _friendly_download_error(e: Exception) -> str:
     return msg
 
 
-def _quantize_onnx_if_needed(config, model_dir: Path):
-    """Quantize this model's ONNX files to INT8 if not already quantized.
+def _discard_partial_download(_hf_repo_id: str, model_name: str) -> None:
+    """Drop the residue of an interrupted download.
 
-    Only the directories THIS model installed into are scanned. The old
-    version globbed the whole models dir recursively, so downloading one
-    quantized model re-quantized every unrelated model on disk
-    (yamnet, deepfilter, kokoro variants) into duplicate .int8.onnx
-    copies - minutes of CPU and hundreds of MB of dead files.
+    Direct-to-app-folder downloads (local_dir=) still write ``.incomplete``
+    files next to the target — remove them so repeated attempts don't grow
+    the app folder with stale partials.
     """
-    model_dir = Path(model_dir)
-    # Directories this model actually installed into (slug layout plus the
-    # engine-specific layouts the download branches use).
-    from ...services.model_files import app_snapshot_dir
 
-    candidates = [app_snapshot_dir(config.hf_repo_id), model_dir / config.model_name]
-    if config.engine == "whisper":
-        from ...backends.whisper_cpp_backend import WHISPER_CPP_FILES
-
-        fname = WHISPER_CPP_FILES.get(config.model_size, f"ggml-{config.model_size}.bin")
-        candidates.append(model_dir)
-        candidates.append(model_dir / fname)
-    elif config.engine == "faster-whisper":
-        candidates.append(model_dir / f"faster-whisper-{config.model_size}")
-
-    onnx_files: list[Path] = []
-    for cand in candidates:
-        if cand.is_dir():
-            onnx_files.extend(cand.glob("*.onnx"))
-            onnx_files.extend(cand.rglob("*.onnx"))
-        elif cand.is_file() and cand.suffix == ".onnx":
-            onnx_files.append(cand)
-    # De-duplicate: a candidate dir can be scanned twice (dir + explicit
-    # file), and the models dir itself may contain the file.
-    onnx_files = list(dict.fromkeys(onnx_files))
-    if not onnx_files:
-        return
-
-    import onnx
-    from onnxruntime.quantization import QuantType, quantize_dynamic
-
-    for model_path in onnx_files:
-        # Path.suffix is only the LAST extension, so ".int8.onnx" never
-        # equals a model's suffix. Match the segment instead, or an
-        # already-quantized graph gets quantized again into
-        # "<name>.int8.int8.onnx".
-        name = model_path.name.lower()
-        if ".int8." in name or ".int4." in name or ".fp16." in name:
-            continue  # Already quantized (or a deliberately different precision)
-
-        output_path = model_path.with_suffix(".int8.onnx")
-        if output_path.exists():
-            continue
-
-        try:
-            model = onnx.load(str(model_path))
-            onnx.checker.check_model(model)
-
-            quantize_dynamic(
-                model_input=str(model_path),
-                model_output=str(output_path),
-                weight_type=QuantType.QInt8,
-                per_channel=True,
-                reduce_range=False,
-                optimize_model=True,
-            )
-
-            # Verify
-            quantized = onnx.load(str(output_path))
-            onnx.checker.check_model(quantized)
-        except Exception as e:
-            # Non-fatal - log and continue
-            import logging
-
-            logging.getLogger(__name__).warning("ONNX quantization failed for %s: %s", model_path, e)
-
-
-def _discard_partial_download(hf_repo_id: str, model_name: str) -> None:
-    """Drop the residue of an interrupted download from the HF cache.
-
-    ``hf_hub_download`` streams into ``.incomplete`` files under the
-    cache and never cleans them when the progress callback raises or the
-    connection drops. Because installed weights live in the app folder
-    (never the cache), that residue is dead weight - clear it on cancel
-    and on failure so repeated attempts cannot fill the disk.
-    """
-    if not hf_repo_id:
-        return
     try:
-        from ...services.model_files import clear_hf_repo_cache
+        from ...services.model_files import app_snapshot_dir
 
-        clear_hf_repo_cache(hf_repo_id)
+        target = app_snapshot_dir(_hf_repo_id)
+        if not target.is_dir():
+            return
+        for f in target.rglob("*.incomplete"):
+            with contextlib.suppress(OSError):
+                f.unlink()
     except Exception:
         logger.debug("Partial-download cleanup skipped for %s", model_name, exc_info=True)
 
@@ -518,21 +445,28 @@ async def trigger_model_download(request: models.ModelDownloadRequest, db: Sessi
     async def download_in_background(task):
         try:
             # On-demand pip deps for bloat engines (kokoro / faster-whisper).
-            # Never bundled — installed only when the user actually downloads
+            # Never bundled - installed only when the user actually downloads
             # that engine's model. No-op if already installed or frozen.
             loop = asyncio.get_running_loop()
             await loop.run_in_executor(_cpu_executor, lambda: _ensure_engine_pip_deps(_engine))
+            # eSpeak-ng runtime for audiocpp TTS engines (kokoro, piper_tts,
+            # inflect_v2, kitten_tts). One shared install, so any of these
+            # engines can run from the same assets. Raises before we download
+            # a model that would never generate.
+            from ...services.espeak_assets import ensure_espeak_for_engine
+
+            await loop.run_in_executor(_cpu_executor, lambda: ensure_espeak_for_engine(_engine))
 
             base_progress = create_hf_progress_callback(_model_name, progress_manager)
 
-            def progress_callback(snapshot):
+            def progress_callback(downloaded, total, filename=""):
                 # A cancelled (or replaced) task must neither keep writing
-                # progress state nor keep transferring bytes — raising here
+                # progress state nor keep transferring bytes - raising here
                 # aborts snapshot_download mid-file, and the cancelled-error
                 # name in rate_limiter stops with_retry from retrying it.
                 if task.cancel_event.is_set() or not task_manager.is_active_download(_model_name, task):
                     raise DownloadCancelledError(_model_name)
-                base_progress(snapshot)
+                base_progress(downloaded, total, filename)
 
             tracker = HFProgressTracker(progress_callback)
 
@@ -543,38 +477,6 @@ async def trigger_model_download(request: models.ModelDownloadRequest, db: Sessi
                 attempts=3,
                 label=f"download {_model_name}",
             )
-
-            # Quantize ONNX models if needed (INT8 quantization for ONNX TTS/STT)
-            if _engine in {
-                "styletts2",
-                "f5_tts",
-                "parler_tts_gguf",
-                "chattts",
-                "demucs_onnx",
-                "faster-whisper",
-            }:
-                progress_manager.update_progress(
-                    model_name=_model_name,
-                    current=0,
-                    total=0,
-                    filename="Quantizing model (INT8)...",
-                    status="downloading",
-                )
-                try:
-                    from ... import config as cfg_mod
-
-                    # Find the downloaded model file
-                    model_dir = cfg_mod.get_models_dir()
-                    # For ONNX models, the model is typically in a subdirectory
-                    # or directly as model.onnx / model.int8.onnx
-                    loop = asyncio.get_running_loop()
-                    await loop.run_in_executor(
-                        _cpu_executor,
-                        lambda: _quantize_onnx_if_needed(_config, model_dir),
-                    )
-                except Exception as e:
-                    logger.warning("ONNX quantization failed for %s: %s", _model_name, e)
-                    # Non-fatal - model will still work with FP32
 
             # Post-download integrity gate: refuse to record a manifest row
             # when no weight file is actually on disk (partial/failed fetch

@@ -131,9 +131,6 @@ class ParakeetSTTBackend(BackendBase):
                 filename=filename,
                 local_dir=str(models_dir),
             )
-        from ..services.model_files import clear_hf_repo_cache
-
-        clear_hf_repo_cache(HF_REPO)
         logger.info("parakeet model cached at %s", dest)
 
     def _find_binary(self) -> Path | None:

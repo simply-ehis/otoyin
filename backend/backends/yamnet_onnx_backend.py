@@ -106,9 +106,6 @@ class YamnetOnnxBackend(BackendBase):
                 shutil.copy2(src, dest)
             except Exception as exc:
                 logger.warning("Failed to download %s: %s", filename, exc)
-        from ..services.model_files import clear_hf_repo_cache
-
-        clear_hf_repo_cache(ONNX_REPO)
 
     def _load_session(self) -> None:
         import onnxruntime as ort

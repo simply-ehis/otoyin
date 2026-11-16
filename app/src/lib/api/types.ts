@@ -112,7 +112,19 @@ export interface GenerationRequest {
 		| "neutts"
 		| "neutts_2e"
 		| "orpheus"
-		| "cloud";
+		| "cloud"
+		| "steer_tts"
+		| "audio8_tts"
+		| "chatterbox_turbo"
+		| "cosyvoice3"
+		| "fish_drama3"
+		| "inflect_v2"
+		| "magpie_tts"
+		| "omnivoice"
+		| "phonon"
+		| "piper_tts"
+		| "supertonic"
+		| "zonos3";
 	instruct?: string;
 	temperature?: number;
 	/** When true and the profile has a personality prompt, input text is rewritten in-character before TTS. */

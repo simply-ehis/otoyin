@@ -138,6 +138,8 @@ class OneShotAudiocpp:
             seed=seed,
             extra=extra,
         )
+        from ..services.espeak_assets import ESPEAK_FAMILIES
+
         return await asyncio.to_thread(
             run_one_shot,
             args,
@@ -145,6 +147,7 @@ class OneShotAudiocpp:
             prefix=self.spec.family,
             timeout_s=600.0,
             mem_saver_family=self.spec.mem_saver_family,
+            espeak_family=self.spec.family if self.spec.family in ESPEAK_FAMILIES else None,
         )
 
     async def convert(self, source: str, reference: str, seed: int | None = None):

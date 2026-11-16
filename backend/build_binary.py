@@ -7,7 +7,6 @@ Usage:
 """
 
 import argparse
-import importlib
 import logging
 import os
 import sys
@@ -49,26 +48,43 @@ def _remove_typing_backport():
 
 
 def _filter_missing_deps(args):
-    """Drop collect/hidden-import/copy-metadata entries whose target can't be imported.
+    """Drop collect/hidden-import/copy-metadata entries whose target can't be verified.
 
-    Gated by the TWENTYLABS_BUILD_SKIP_MISSING env var. When set (e.g. in an
-    offline environment where optional deps like inflect/unidic_lite aren't
-    installed), the build skips those targets instead of failing. In CI the
-    flag is unset, so missing required deps still fail the build as before.
+    Default (CI): any missing non-``backend.*`` target fails the build hard -
+    shipping silently missing pieces reproduces exactly the class of bug this
+    function exists to prevent. Set TWENTYLABS_BUILD_SKIP_MISSING=1 to degrade
+    to skip-with-warning for offline/degraded builds (never in CI/release).
     """
+    import importlib.metadata
+
+    skip_ok = os.environ.get("TWENTYLABS_BUILD_SKIP_MISSING", "").strip().lower() in {"1", "true", "yes", "on"}
+
+    def _resolves(kind: str, name: str) -> bool:
+        try:
+            if kind == "--copy-metadata":
+                # distribution name - importlib.metadata accepts it directly
+                importlib.metadata.distribution(name)
+                return True
+            importlib.import_module(name)
+            return True
+        except Exception:
+            return False
+
     skip = set()
     for i, a in enumerate(args):
         if a in ("--collect-all", "--collect-submodules", "--hidden-import", "--copy-metadata") and i + 1 < len(args):
             name = args[i + 1]
-            # Repo modules (backend.*) are always present; the build runs
-            # from backend/ so they aren't resolvable via importlib here.
             if name.startswith("backend"):
                 continue
-            try:
-                importlib.import_module(name)
-            except Exception:
-                logger.debug("suppressed exception in build_binary.py:40", exc_info=True)
+            if _resolves(a, name):
+                continue
+            if skip_ok:
                 skip.add(name)
+            else:
+                raise RuntimeError(
+                    f"build_binary: build dependency {name!r} is not importable/installed.\n"
+                    f"Install it, or set TWENTYLABS_BUILD_SKIP_MISSING=1 to build without it (never for release)."
+                )
     if not skip:
         return args
     out = []
@@ -167,15 +183,15 @@ def build_server(cuda=False):
             "pedalboard",
             # --- New TTS engine backends (GGML/ONNX) ---
             "--hidden-import",
-            "--hidden-import",
             "backend.backends.parler_tts_gguf_backend",
             "--hidden-import",
             "backend.backends.pocket_tts_backend",
             # whisper.cpp STT backend (GGML, CPU-only, no framework needed).
+            # NOTE: pywhispercpp is intentionally NOT bundled - out of scope for
+            # this build and unverified on Windows; STT defaults to CrispASR /
+            # Moonshine. The backend raises a clear error if it's ever loaded.
             "--hidden-import",
             "backend.backends.whisper_cpp_backend",
-            "--hidden-import",
-            "pywhispercpp",
             "--hidden-import",
             "fastapi",
             "--hidden-import",
@@ -238,18 +254,16 @@ def build_server(cuda=False):
             "pkg_resources.extern",
             "--collect-submodules",
             "jaraco",
-            # inflect uses typeguard @typechecked which calls inspect.getsource()
-            # at import time — needs .py source files, not just .pyc bytecode
-            "--collect-all",
-            "inflect",
+            # (inflect removed 2026-11-15: zero backend call sites; previously gated on bark_text utilities.)
             # Kokoro was retired with the audiocpp unification (2026-11-14).
-            # It no longer ships and should never be bundled — use Pocket-TTS / Parler-TTS instead.
-            "--hidden-import",
-            "loguru",
+            # It no longer ships and should never be bundled - use Pocket-TTS / Parler-TTS instead.
+            # (loguru hidden-import removed 2026-11-15: zero call sites remain repo-wide; it was gated on kokoro.)
             # MCP server - Streamable-HTTP endpoint and the 4 21-labs.* tools.
             # FastMCP pulls in a chain of deps (mcp, cyclopts, openapi-pydantic,
             # etc.) that don't auto-discover cleanly under PyInstaller, so we
-            # collect them whole.
+            # collect them whole. The mcp hook (pyi_hooks/hook-mcp.py) filters
+            # out mcp.cli, whose typer dependency belongs to the optional
+            # mcp[cli] extra the app never uses.
             "--hidden-import",
             "backend.mcp_server",
             "--hidden-import",
@@ -264,7 +278,9 @@ def build_server(cuda=False):
             "backend.mcp_server.events",
             "--collect-all",
             "fastmcp",
-            "--collect-all",
+            "--additional-hooks-dir",
+            "pyi_hooks",
+            "--hidden-import",
             "mcp",
             "--hidden-import",
             "sse_starlette",
@@ -378,6 +394,18 @@ def build_server(cuda=False):
         logger.info("Bundling Silero VAD weights from %s", _vad_src)
     else:
         logger.warning("Silero VAD weights %s missing - voice chat will use energy-based VAD", _vad_src)
+
+    # Marketplace catalog bundle (backend/data/marketplace_catalog.json,
+    # force-tracked like app_features.json). services/marketplace_catalog.py
+    # loads it at import from <bundle>/backend/data; without it a frozen build
+    # fails closed at boot (loader raises on missing catalog) - intentional,
+    # since the licensing gate must never ship an empty-free catalog.
+    _catalog_src = backend_dir / "data" / "marketplace_catalog.json"
+    if _catalog_src.is_file():
+        args.extend(["--add-data", f"{_catalog_src}{os.pathsep}backend/data"])
+        logger.info("Bundling marketplace catalog from %s", _catalog_src)
+    else:
+        logger.warning("Marketplace catalog %s missing - frozen app will fail at boot", _catalog_src)
 
     # Marketplace license verifying key (backend/data/marketplace_public_key.txt,
     # force-tracked despite the data/ ignore). services/licensing.py loads it

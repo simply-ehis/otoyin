@@ -78,6 +78,7 @@ def run_one_shot(
     prefix: str,
     timeout_s: float | None = None,
     mem_saver_family: str | None = None,
+    espeak_family: str | None = None,
 ) -> tuple[np.ndarray, int]:
     """Run audiocpp_cli as a one-shot subprocess and decode the resulting WAV.
 
@@ -90,6 +91,10 @@ def run_one_shot(
     setting is on and the family implements audiocpp's ``.mem_saver=true``
     session option, append it. Unsupported families must pass ``None`` -
     passing a family that doesn't implement the option makes the CLI fail.
+    ``espeak_family``: for the four eSpeak-dependent families (kokoro_tts,
+    piper_tts, inflect_v2, kitten_tts), ensure the shared eSpeak-ng assets are
+    installed (downloads them on first use) and pass the family-prefixed
+    session options. Other families pass ``None``.
     """
     binary = find_audiocpp()
     if binary is None:
@@ -115,6 +120,20 @@ def run_one_shot(
                 args += ["--session-option", f"{mem_saver_family}.mem_saver=true"]
         except Exception:
             logger.debug("low_memory_mode append failed; skipping mem_saver", exc_info=True)
+
+    # eSpeak-ng for the four phonemization-dependent families. One shared
+    # download on first need - the other families read nothing from eSpeak.
+    if espeak_family:
+        from ..services.espeak_assets import ensure_espeak_installed, espeak_session_opts
+
+        ensure_espeak_installed()
+        opts = espeak_session_opts(espeak_family)
+        if not opts:
+            raise RuntimeError(
+                f"eSpeak-ng assets missing after install ({espeak_family}). "
+                "Delete data/bin/espeak-ng and try again, or install eSpeak-ng manually."
+            )
+        args += opts
 
     # Audio.cpp `usage.md` documents `--backend` with cpu|cuda|vulkan|metal|best
     # (default `cpu`). `best` lets ggml pick the fastest available device -

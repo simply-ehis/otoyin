@@ -1,14 +1,13 @@
 """Shared ONNX model-file resolver.
 
-The app's own ``data/models/`` folder is the source of truth — the
-HuggingFace cache is never read as a fallback. When a model is
-installed from HF it is copied into the app folder and the cache entry
-is cleared, so the cache is a transient download buffer only.
+The app's own ``data/models/`` folder is the source of truth. Downloads land
+there directly (``snapshot_download`` / ``hf_hub_download`` with ``local_dir=``),
+so the HuggingFace cache is never populated at all — there is no copy step,
+no leftover cache to prune, and resumable downloads work through the
+``.incomplete`` machinery the library manages inside the destination dir.
 """
 
-import contextlib
 import logging
-import os
 import shutil
 from pathlib import Path
 
@@ -23,53 +22,8 @@ def _app_model_path(repo_id: str, filename: str) -> Path:
     return cfg_mod.get_models_dir() / slug / filename
 
 
-def _clear_cache_entry(cached_file: Path) -> None:
-    """Remove a downloaded file AND its blob from the HF cache (best effort).
-
-    ``hf_hub_download`` returns a snapshot symlink; unlinking only it
-    leaves the content-addressed blob behind, so resolve and delete the
-    target too. Empty parent dirs are pruned up to (not including) the
-    cache root itself.
-    """
-    try:
-        from huggingface_hub import constants as hf_constants
-
-        cache_root = Path(hf_constants.HF_HUB_CACHE)
-        target = cached_file.resolve() if cached_file.is_symlink() else None
-        cached_file.unlink(missing_ok=True)
-        if target is not None and target != cached_file and cache_root in target.parents:
-            with contextlib.suppress(OSError):
-                target.unlink(missing_ok=True)
-        for parent in cached_file.parents:
-            if parent == cache_root:
-                break
-            try:
-                parent.rmdir()  # only succeeds when empty
-            except OSError:
-                break
-    except Exception:
-        logger.debug("Cache cleanup skipped for %s", cached_file, exc_info=True)
-
-
-def clear_hf_repo_cache(repo_id: str) -> None:
-    """Delete a whole repo from the HF cache (best effort).
-
-    Called after a model is installed into the app folder so the cache
-    holds no copy. The app never reads the HF cache as a fallback.
-    """
-    try:
-        from huggingface_hub import constants as hf_constants
-
-        repo_cache = Path(hf_constants.HF_HUB_CACHE) / ("models--" + repo_id.replace("/", "--"))
-        if repo_cache.is_dir():
-            shutil.rmtree(repo_cache, ignore_errors=True)
-            logger.info("Cleared HF cache for %s", repo_id)
-    except Exception:
-        logger.debug("Repo cache cleanup skipped for %s", repo_id, exc_info=True)
-
-
 def delete_model_files(repo_id: str) -> list[Path]:
-    """Remove every app-folder copy of a repo, plus any legacy HF cache.
+    """Remove every app-folder copy of a repo.
 
     Returns the paths that were removed. The app folder is the source of
     truth, so a sub-directory that cannot be removed (Windows file lock
@@ -79,14 +33,6 @@ def delete_model_files(repo_id: str) -> list[Path]:
     """
     removed: list[Path] = []
     targets = [app_snapshot_dir(repo_id)]
-    try:
-        from huggingface_hub import constants as hf_constants
-
-        # Legacy layout: installs made before the app-folder switch lived
-        # in the HF cache. Clean those too so upgrades actually free space.
-        targets.append(Path(hf_constants.HF_HUB_CACHE) / ("models--" + repo_id.replace("/", "--")))
-    except Exception:
-        logger.debug("HF cache path unavailable for %s", repo_id, exc_info=True)
     for target in targets:
         if target.is_dir():
             shutil.rmtree(target, ignore_errors=False)
@@ -113,29 +59,24 @@ def is_snapshot_installed(repo_id: str) -> bool:
 
 
 def install_snapshot(repo_id: str, allow_patterns: list[str] | None = None) -> Path:
-    """Snapshot-download a repo into the app folder, then clear the cache.
+    """Snapshot-download a repo into the app folder.
 
-    The HF cache is the transient download buffer only: files are copied
-    (symlinks dereferenced) into data/models/<slug>/ and the cache entry
-    is deleted. Runtime resolution reads the app folder, never the cache.
+    ``allow_patterns`` pins the repo to just the files we need (main GGUF +
+    e.g. packaging sidecars) — the upstream repo may be large and we don't
+    carry unwanted shards. The HF cache is never populated; everything lands
+    straight in ``data/models/<slug>/``.
     """
     from huggingface_hub import snapshot_download
 
     dest = app_snapshot_dir(repo_id)
     if is_snapshot_installed(repo_id):
         return dest
-    snap = Path(
-        snapshot_download(repo_id=repo_id, allow_patterns=allow_patterns)
-        if allow_patterns
-        else snapshot_download(repo_id=repo_id)
-    )
     dest.mkdir(parents=True, exist_ok=True)
-    for src in snap.rglob("*"):
-        if src.is_dir() or ".no_exist" in src.parts:
-            continue
-        rel = src.relative_to(snap)
-        _atomic_copy(src, dest / rel)
-    clear_hf_repo_cache(repo_id)
+    snapshot_download(
+        repo_id=repo_id,
+        allow_patterns=allow_patterns,
+        local_dir=dest,
+    )
     logger.info("Installed snapshot %s into app folder", repo_id)
     return dest
 
@@ -145,41 +86,20 @@ def is_model_installed(repo_id: str, filename: str) -> bool:
     return _app_model_path(repo_id, filename).is_file()
 
 
-def _atomic_copy(src: Path, dest: Path) -> None:
-    """Copy src to dest atomically: a partial file must never be visible.
-
-    A half-written weight file would pass ``is_model_installed()`` and
-    later fail to load with a confusing parse error, so the copy lands in
-    a sibling temp file and is renamed over the destination in one step
-    (``os.replace`` is atomic within a volume). Any failure removes the
-    temp file and leaves the destination untouched.
-    """
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    tmp = dest.with_name(dest.name + ".part")
-    try:
-        shutil.copy2(src, tmp)
-        os.replace(tmp, dest)
-    except BaseException:
-        with contextlib.suppress(OSError):
-            tmp.unlink(missing_ok=True)
-        raise
-
-
 def install_model_file(repo_id: str, filename: str, **hf_kwargs) -> Path:
-    """Download from HF into the app folder, then clear the cache entry.
+    """Download a single file straight into the app folder.
 
-    This is the single install moment: afterwards the app folder is the
-    source of truth and the HF cache holds no copy. Extra kwargs (e.g.
-    progress callbacks) pass through to hf_hub_download.
+    ``hf_hub_download`` with ``local_dir=`` streams bytes directly to the app
+    folder — no HF cache copy, no post-install cleanup. An existing partial
+    file (``filename + '.incomplete'``) resumes where it left off.
     """
     from huggingface_hub import hf_hub_download
 
     local = _app_model_path(repo_id, filename)
     if local.is_file():
         return local
-    cached = Path(hf_hub_download(repo_id=repo_id, filename=filename, **hf_kwargs))
-    _atomic_copy(cached, local)
-    _clear_cache_entry(cached)
+    local.parent.mkdir(parents=True, exist_ok=True)
+    hf_hub_download(repo_id=repo_id, filename=filename, local_dir=local.parent, **hf_kwargs)
     logger.info("Installed %s/%s into app folder", repo_id, filename)
     return local
 
@@ -189,27 +109,20 @@ def install_model_file_to(repo_id: str, filename: str, dest: Path) -> Path:
 
     For engines whose backend reads a bespoke layout (whisper,
     faster-whisper, moonshine) instead of the ``<slug>/<file>`` convention.
-    The HF cache entry is cleared afterwards, as always.
     """
     from huggingface_hub import hf_hub_download
 
     dest = Path(dest)
     if dest.is_file():
         return dest
-    cached = Path(hf_hub_download(repo_id=repo_id, filename=filename))
-    _atomic_copy(cached, dest)
-    _clear_cache_entry(cached)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    hf_hub_download(repo_id=repo_id, filename=filename, local_dir=dest.parent)
     logger.info("Installed %s/%s to %s", repo_id, filename, dest)
     return dest
 
 
 def resolve_model_file(repo_id: str, filename: str) -> Path:
-    """Resolve a model file from the app folder, installing if needed.
-
-    Order: app folder (data/models/<repo>/<filename>) → install from HF
-    into the app folder + clear the cache entry. The HF cache is never
-    used as a read fallback.
-    """
+    """Resolve a model file from the app folder, installing if needed."""
     local = _app_model_path(repo_id, filename)
     if local.is_file():
         return local

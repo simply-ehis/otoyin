@@ -97,7 +97,24 @@ def _check_hf_cache_repo(cache_info, repo_id: str, model_name: str) -> tuple[boo
 
 
 def _check_filesystem_cache(repo_id: str, model_name: str) -> tuple[bool, float | None]:
-    """Fallback: check filesystem cache directly when scan_cache_dir is unavailable."""
+    """App-folder OR HF-cache check used as the model-presence answer.
+
+    Two storage layouts produced by the audio.cpp unification:
+      - ``download_file``       -> data/models/<slug>/<download_file>
+      - snapshot / patterns     -> data/models/<slug>/ (weight files)
+      - pre-migration installs  -> legacy HF snapshots under HF_HUB_CACHE
+    App folder wins, now that the unification makes it the source of truth.
+    """
+    try:
+        from ... import config as cfg_mod
+        from ...services.model_files import is_snapshot_installed
+
+        if is_snapshot_installed(repo_id):
+            dest = cfg_mod.get_models_dir() / repo_id.replace("/", "--")
+            total_size = sum(f.stat().st_size for f in dest.rglob("*") if f.is_file())
+            return True, total_size / (1024 * 1024)
+    except Exception as e:
+        logger.debug("App-folder check failed for %s: %s", model_name, e)
     try:
         from huggingface_hub import constants as hf_constants
 

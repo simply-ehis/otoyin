@@ -124,9 +124,6 @@ class AceStepGGUFBackend(BackendBase):
                     shutil.copy2(src, dest)
                 except Exception as e:
                     logger.warning("Failed to download %s: %s", filename, e)
-        from ..services.model_files import clear_hf_repo_cache
-
-        clear_hf_repo_cache(HF_REPO)
 
     def _models_cached(self) -> bool:
         return all((self._models_dir() / f).exists() for f in ALL_MODEL_FILES)

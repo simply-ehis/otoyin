@@ -1202,3 +1202,12 @@ Findings handed to the concurrent session (their files, deliberately not touched
 - TESTS: test_vram_pressure.py re-mocked on `backend.utils.gpu_query.probe_nvidia_smi` (was `sys.modules["torch"] = mock`); test_mastering.py gate now `_is_model_cached()` (ONNX) instead of SEPARATION_AVAILABLE; 57/57 targeted tests green; app imports; ruff clean. backend/tests/test_release_audit_regressions.py (concurrent session's, still has their SyntaxError at ~648) got 3 comment-only torch mentions cleaned; NOT otherwise touched.
 - NOT COMMITTED: staged set still blocked by the concurrent session's red pre-commit gate (6 unformatted files + their broken test file). v0.1.0 re-cut remains owner-gated.
 
+
+### eSpeak-ng on-demand runtime (2026-11-16)
+- New `backend/services/espeak_assets.py`: one shared eSpeak-ng install for all audiocpp TTS engines that phonemize (kokoro, piper_tts, inflect_v2, kitten_tts). Never bundled; downloaded at first install of any of those engines (or lazily at generation time for already-installed ones), SHA-256 pinned (PyPI wheel espeakng_loader win_amd64, 9.4 MB), atomic extract+swap under a lock. Idempotent; reused by every eSpeak engine.
+- `ensure_espeak_for_engine(engine)` wired into `/models/download` completion path (fail-fast: aborts before the model downloads if eSpeak-ng can't be installed, so the user isn't left with a model that can't speak).
+- `run_one_shot(..., espeak_family=...)` appends `--session-option <family>.espeak_library_path=<dll>` / `<family>.espeak_data_path=<data>` for the four families. `build_binary.py` adds `--add-data` for `backend/data/marketplace_catalog.json` (bundled marketplace catalog, fail-closed loader in marketplace_catalog.py).
+- Verified e2e: piper_tts GGUF generated real speech (2.4 s @ 22050 Hz) through the app's own install+generate path with zero manual steps, on a clean wipe of `data/bin/espeak-ng/`.
+- 8 offline unit tests; 133 audiocpp/voices tests green; ruff clean on all touched files.
+- Frozen build BLOCKED on this machine (3.4 GB RAM, PyInstaller OOM-killed silently at Analysis). CI must produce the installer; the eSpeak assets download at runtime so the bundle is unaffected.
+

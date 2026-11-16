@@ -150,6 +150,7 @@ class KittenTTSBackend:
             sample_rate=SAMPLE_RATE,
             prefix="kitten-tts",
             timeout_s=DEFAULT_TIMEOUT_S,
+            espeak_family="kitten_tts",
         )
 
 

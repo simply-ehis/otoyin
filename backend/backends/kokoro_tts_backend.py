@@ -228,6 +228,7 @@ class KokoroTTSBackend:
             sample_rate=KOKORO_SAMPLE_RATE,
             prefix="kokoro",
             timeout_s=DEFAULT_TIMEOUT_S,
+            espeak_family="kokoro_tts",
         )
 
 
