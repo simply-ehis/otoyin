@@ -6,8 +6,8 @@
  *     → ContentMethods → AgentMethods → HelpMethods → MemoryMethods
  *       → SpatialMethods → ADRMethods → StoriesBMethods → ... → ApiClientCore
  */
-import { ClientCloudMethods } from "./clientCloud";
+import { ClientCodingAgentsMethods } from "./clientCodingAgents";
 
-export class ApiClient extends ClientCloudMethods {}
+export class ApiClient extends ClientCodingAgentsMethods {}
 
 export const apiClient = new ApiClient();

@@ -5,7 +5,6 @@ Test script to debug model download progress tracking.
 import asyncio
 import json
 import logging
-import time
 
 # Set up logging to see what's happening
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -27,7 +26,7 @@ def test_progress_manager_basic():
 
     # Test get_progress
     progress = pm.get_progress("test-model")
-    print(f"✓ Progress stored: {progress}")
+    print(f"V Progress stored: {progress}")
     assert progress is not None
     assert progress["progress"] == 50.0
     assert progress["filename"] == "test.bin"
@@ -36,12 +35,11 @@ def test_progress_manager_basic():
     # Test mark_complete
     pm.mark_complete("test-model")
     progress = pm.get_progress("test-model")
-    print(f"✓ Marked complete: {progress}")
+    print(f"V Marked complete: {progress}")
     assert progress["status"] == "complete"
     assert progress["progress"] == 100.0
 
-    print("✓ Test 1 PASSED\n")
-    return True
+    print("V Test 1 PASSED\n")
 
 
 async def test_progress_manager_sse():
@@ -100,14 +98,13 @@ async def test_progress_manager_sse():
     assert len(collected_events) > 0, "Should have received at least one event"
     assert collected_events[-1]["status"] == "complete", "Last event should be 'complete'"
 
-    print("✓ Test 2 PASSED\n")
-    return True
+    print("V Test 2 PASSED\n")
 
 
 def test_hf_progress_tracker():
-    """Test 3: HFProgressTracker tqdm patching."""
+    """Test 3: HFProgressTracker tqdm_class injection."""
     print("\n" + "=" * 60)
-    print("Test 3: HFProgressTracker tqdm Patching")
+    print("Test 3: HFProgressTracker tqdm Injection")
     print("=" * 60)
 
     captured_progress: list[tuple] = []
@@ -118,34 +115,29 @@ def test_hf_progress_tracker():
         print(f"  Progress callback: {downloaded}/{total} bytes ({filename})")
 
     tracker = HFProgressTracker(progress_callback)
+    bar_cls = tracker.tqdm_class
 
-    with tracker.patch_download():
-        try:
-            from tqdm import tqdm
+    print("  Simulating single-file download with injected byte counter...")
+    total_size = 2_600_000
+    bar = bar_cls(total=total_size, desc="model.bin", unit="B", name="huggingface_hub.http_get")
+    for _chunk in range(0, total_size, 100_000):
+        bar.update(100_000)
+    bar.close()
 
-            print("  Simulating download with tqdm...")
-            total_size = 2_000_000
-            with tqdm(total=total_size, desc="model.bin", unit="B", unit_scale=False) as pbar:
-                for _chunk in range(0, total_size, 100_000):
-                    pbar.update(100_000)
-                    time.sleep(0.01)
+    print(f"  Captured {len(captured_progress)} progress updates")
+    assert len(captured_progress) > 0, "Should have captured progress updates"
 
-            print(f"  Captured {len(captured_progress)} progress updates")
-            assert len(captured_progress) > 0, "Should have captured progress updates"
+    # Verify progress increases and reporting never exceeds total or goes below zero
+    last_downloaded = 0
+    for downloaded, total, _filename in captured_progress:
+        assert downloaded >= last_downloaded, "Downloaded bytes should increase"
+        assert total == total_size, "Total should be consistent"
+        assert 0 <= downloaded <= total
+        last_downloaded = downloaded
 
-            # Verify progress increases
-            last_downloaded = 0
-            for downloaded, total, _filename in captured_progress:
-                assert downloaded >= last_downloaded, "Downloaded bytes should increase"
-                assert total == total_size, "Total should be consistent"
-                last_downloaded = downloaded
+    assert captured_progress[-1][0] == total_size, "Last update should be the full file"
 
-            print("✓ Test 3 PASSED\n")
-            return True
-
-        except ImportError:
-            print("✗ tqdm not available, skipping test\n")
-            return None
+    print("V Test 3 PASSED\n")
 
 
 async def test_full_integration():
@@ -177,51 +169,40 @@ async def test_full_integration():
         # Set up tracking (like the real backend does)
         progress_callback = create_hf_progress_callback("integration-test", pm)
         tracker = HFProgressTracker(progress_callback)
+        bar_cls = tracker.tqdm_class
 
         # Initialize progress
         pm.update_progress(model_name="integration-test", current=0, total=1, filename="", status="downloading")
 
-        # Simulate download with tqdm patching
-        with tracker.patch_download():
-            try:
-                from tqdm import tqdm
+        # Simulate multi-file download (like HuggingFace does)
+        files = [
+            ("model.safetensors", 2_600_000),
+            ("config.json", 1_100_000),
+            ("tokenizer.json", 1_000_000),
+        ]
 
-                # Simulate multi-file download (like HuggingFace does)
-                files = [
-                    ("model.safetensors", 5000),
-                    ("config.json", 1000),
-                    ("tokenizer.json", 500),
-                ]
+        for filename, size in files:
+            print(f"  Backend: Downloading {filename}...")
+            bar = bar_cls(total=size, desc=filename, unit="B", name="huggingface_hub.http_get")
+            for _chunk in range(0, size, 100_000):
+                bar.update(100_000)
+                await asyncio.sleep(0.01)
+            bar.close()
 
-                for filename, size in files:
-                    print(f"  Backend: Downloading {filename}...")
-                    with tqdm(total=size, desc=filename, unit="B") as pbar:
-                        for chunk in range(0, size, 500):
-                            chunk_size = min(500, size - chunk)
-                            pbar.update(chunk_size)
-                            await asyncio.sleep(0.05)
-
-                # Mark complete
-                print("  Backend: Download complete")
-                pm.mark_complete("integration-test")
-
-            except ImportError:
-                print("  ✗ tqdm not available")
-                pm.mark_error("integration-test", "tqdm not available")
+        # Mark complete
+        print("  Backend: Download complete")
+        pm.mark_complete("integration-test")
 
     # Run both
     await asyncio.gather(sse_client(), simulate_real_download())
 
     # Verify
     print(f"\n  Collected {len(collected_events)} events")
-    if len(collected_events) > 0:
-        print(f"  First event: {collected_events[0]}")
-        print(f"  Last event: {collected_events[-1]}")
-        assert collected_events[-1]["status"] == "complete", "Should end with 'complete'"
-        print("✓ Test 4 PASSED\n")
-        return True
-    print("✗ Test 4 FAILED - No events received\n")
-    return False
+    assert len(collected_events) > 0, "FAILED - No events received"
+    print(f"  First event: {collected_events[0]}")
+    print(f"  Last event: {collected_events[-1]}")
+    assert collected_events[-1]["status"] == "complete", "Should end with 'complete'"
+    print("V Test 4 PASSED\n")
 
 
 async def main():
@@ -234,30 +215,34 @@ async def main():
 
     # Test 1: Basic operations
     try:
-        results.append(("Basic Operations", test_progress_manager_basic()))
+        test_progress_manager_basic()
+        results.append(("Basic Operations", True))
     except Exception as e:
-        print(f"✗ Test 1 FAILED: {e}\n")
+        print(f"? Test 1 FAILED: {e}\n")
         results.append(("Basic Operations", False))
 
     # Test 2: SSE streaming
     try:
-        results.append(("SSE Streaming", await test_progress_manager_sse()))
+        await test_progress_manager_sse()
+        results.append(("SSE Streaming", True))
     except Exception as e:
-        print(f"✗ Test 2 FAILED: {e}\n")
+        print(f"? Test 2 FAILED: {e}\n")
         results.append(("SSE Streaming", False))
 
-    # Test 3: tqdm patching
+    # Test 3: tqdm injection
     try:
-        results.append(("tqdm Patching", test_hf_progress_tracker()))
+        test_hf_progress_tracker()
+        results.append(("tqdm Injection", True))
     except Exception as e:
-        print(f"✗ Test 3 FAILED: {e}\n")
-        results.append(("tqdm Patching", False))
+        print(f"? Test 3 FAILED: {e}\n")
+        results.append(("tqdm Injection", False))
 
     # Test 4: Full integration
     try:
-        results.append(("Full Integration", await test_full_integration()))
+        await test_full_integration()
+        results.append(("Full Integration", True))
     except Exception as e:
-        print(f"✗ Test 4 FAILED: {e}\n")
+        print(f"? Test 4 FAILED: {e}\n")
         results.append(("Full Integration", False))
 
     # Summary
@@ -266,7 +251,7 @@ async def main():
     print("=" * 60)
 
     for name, result in results:
-        status = "✓ PASS" if result else ("⊘ SKIP" if result is None else "✗ FAIL")
+        status = "V PASS" if result else ("? SKIP" if result is None else "? FAIL")
         print(f"  {status:8} {name}")
 
     passed = sum(1 for _, r in results if r is True)

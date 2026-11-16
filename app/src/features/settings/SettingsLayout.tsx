@@ -88,6 +88,11 @@ const TAB_GROUPS: { label: string; tabs: SettingsTab[] }[] = [
 				icon: GlobeAltIcon,
 			},
 			{
+				labelKey: "settings.tabs.codingAgents",
+				path: "/settings/coding-agents",
+				icon: CommandLineIcon,
+			},
+			{
 				labelKey: "settings.tabs.apiKeys",
 				path: "/settings/api-keys",
 				icon: KeyIcon,

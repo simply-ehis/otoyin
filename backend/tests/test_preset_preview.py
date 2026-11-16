@@ -42,10 +42,12 @@ def test_missing_fields_are_400():
 
 
 def test_not_downloaded_model_is_400(monkeypatch):
-    # No DB session configured → is_downloaded falls back to False.
+    # Pin the registry decision: model not downloaded -> manifest gate -> 400.
+    # (Relying on ambient state made this order-dependent in the full suite.)
     monkeypatch.setattr("backend.backends.get_all_model_configs", lambda: [_cfg()])
+    monkeypatch.setattr("backend.services.model_registry.is_downloaded", lambda *a, **k: False)
     res = _client().post("/profiles/preset-voice-preview", json={"engine": "kokoro", "voice_id": "af_heart"})
-    assert res.status_code == 400
+    assert res.status_code == 400, res.text
 
 
 def test_synthesize_and_serve_from_cache(monkeypatch, tmp_path):

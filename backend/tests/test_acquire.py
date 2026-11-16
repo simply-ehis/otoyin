@@ -8,6 +8,15 @@ from backend.agents.acquire import manager as acquire_manager
 from backend.agents.acquire.manager import acquire_asset
 
 
+@pytest.fixture(autouse=True)
+def _restore_data_dir():
+    # set_data_dir swaps the process-global data dir; restore it so the rest of
+    # the suite (e.g. sidecar lookup under data/bin/) does not see a tmp root.
+    original = config.get_data_dir()
+    yield
+    config.set_data_dir(original)
+
+
 class _FakeResp:
     def __init__(self, content=b"data", status=200, headers=None):
         self.status_code = status

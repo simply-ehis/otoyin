@@ -505,3 +505,4 @@ Every knowledge doc should have an `## Agent Callable` section with exact MCP to
 
 - [98-onboarding-models-agent.md](98-onboarding-models-agent.md) - 2026-11-12 onboarding steps 3-4: models for your picks (recommended pack, RAM + disk-space check via sysinfo, explicit Install only) and assistant/coding-agent step (GGUF planner / provider+key / MCP one-liner). Planner compat hard-block on low-RAM hosts.
 - [99-espeak-ng-runtime-assets.md](99-espeak-ng-runtime-assets.md) - eSpeak-ng on-demand download for audiocpp TTS phonemization: shared DLL + data fetched at first install of any eSpeak-dependent engine; one shared asset for all.
+- [93-acp-coding-agents.md](93-acp-coding-agents.md) - Otoyin as ACP client: hidden coding-agent CLI subprocess, registry-driven detection of 46 ACP harnesses + custom commands, SSE chat + persisted session history under Settings.

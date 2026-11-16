@@ -607,6 +607,15 @@ async def _run_shutdown() -> None:
     except Exception:
         logger.debug("Download executor shutdown skipped", exc_info=True)
 
+    # Terminate hidden coding-agent children so shutdown doesn't leave
+    # orphaned CLI processes behind.
+    try:
+        from .services.acp_client import close_all as close_acp_sessions
+
+        close_acp_sessions()
+    except Exception:
+        logger.debug("ACP session shutdown skipped", exc_info=True)
+
 
 # ---------------------------------------------------------------------------
 # Cross-platform graceful shutdown

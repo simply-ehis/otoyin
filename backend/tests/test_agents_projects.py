@@ -9,6 +9,15 @@ from backend.agents import plans as plan_service, projects as project_service
 from backend.database import Base
 
 
+@pytest.fixture(autouse=True)
+def _restore_data_dir():
+    # set_data_dir swaps the process-global data dir; restore it so the rest of
+    # the suite (e.g. sidecar lookup under data/bin/) does not see a tmp root.
+    original = config.get_data_dir()
+    yield
+    config.set_data_dir(original)
+
+
 def _make_session(tmp_path):
     config.set_data_dir(tmp_path / "data")
     engine = create_engine("sqlite:///:memory:")

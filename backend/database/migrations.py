@@ -67,6 +67,7 @@ def run_migrations(engine) -> None:
     _migrate_performance_settings(engine, inspector, tables)
     _migrate_library_tags(engine, inspector, tables)
     _migrate_custom_skills(engine, inspector, tables)
+    _migrate_coding_agent_sessions(engine, inspector, tables)
     _normalize_storage_paths(engine, tables)
 
 
@@ -654,6 +655,18 @@ def _migrate_library_tags(engine, inspector, tables: set[str]) -> None:
     if "library_item_tags" not in tables:
         Base.metadata.tables["library_item_tags"].create(bind=engine, checkfirst=True)
         logger.info("Created library_item_tags table")
+
+
+def _migrate_coding_agent_sessions(engine, inspector, tables: set[str]) -> None:
+    """Columns for ACP coding-agent sessions persisted as conversations."""
+    if "conversations" not in tables:
+        return
+    columns = _get_columns(inspector, "conversations")
+    for name in ("acp_session_id", "acp_status", "acp_cwd"):
+        if name not in columns:
+            _add_column(engine, "conversations", f"{name} VARCHAR", name)
+    if "acp_command" not in columns:
+        _add_column(engine, "conversations", "acp_command TEXT", "acp_command")
 
 
 def _migrate_custom_skills(engine, inspector, tables: set[str]) -> None:

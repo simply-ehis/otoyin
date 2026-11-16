@@ -118,7 +118,10 @@ def test_pack_voice_npz(monkeypatch, tmp_path):
     npy_dir = tmp_path / "npy"
 
     def fake_download(repo_id, filename, **kwargs):
-        path = npy_dir / filename
+        # Production downloads straight into local_dir; the fake must do the
+        # same or install_model_file() will return a path that doesn't exist.
+        root = Path(kwargs["local_dir"]) if "local_dir" in kwargs else npy_dir
+        path = root / filename
         path.parent.mkdir(parents=True, exist_ok=True)
         np.save(path, np.zeros(768, dtype=np.float16))
         return str(path)
@@ -151,7 +154,8 @@ def test_pack_voice_npz_idempotent(monkeypatch, tmp_path):
 
     def fake_download(repo_id, filename, **kwargs):
         calls.append(filename)
-        path = tmp_path / filename.replace("/", "_")
+        root = Path(kwargs["local_dir"]) if "local_dir" in kwargs else tmp_path
+        path = root / filename
         path.parent.mkdir(parents=True, exist_ok=True)
         np.save(path, np.zeros(8))
         return str(path)

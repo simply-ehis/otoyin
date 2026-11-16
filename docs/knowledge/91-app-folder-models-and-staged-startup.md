@@ -5,8 +5,8 @@ OWNS: `backend/services/model_files.py` (install/resolve/clear helpers), `backen
 READ-WHEN: A model fails to load, a download lands in the wrong place, the HF cache reappears after installs, startup feels slow, or the window opens with an unexpected size.
 KEY-FILES: `backend/services/model_files.py`, `backend/app.py`, `tauri/src-tauri/src/window_state.rs`, `app/src/layouts/TitleBarDragRegion.tsx`, `app/src/router.tsx`
 INVARIANTS: The HF cache is NEVER read as a fallback — after install, `data/models/` is the only copy and the cache entry (file AND blob) is deleted; readiness (`_signal_ready`) fires after DB + queue + worker only; the main window always opens at the default size (saved geometry is tracked but not restored); the frameless shell gets close/minimize/maximize buttons on Windows.
-GOTCHAS: `hf_hub_download` returns a snapshot SYMLINK — unlinking only it leaves the content-addressed blob behind; `_clear_cache_entry` resolves the symlink and deletes both. Engines whose third-party loader takes a repo id (NeuTTS, Kokoro-torch, pocket-tts) cannot be forced to a local dir; their `_is_model_cached` checks the app folder and the library's own cache use is documented as library-managed.
-UPDATED: 2026-10-14
+GOTCHAS: `hf_hub_download`'s `local_dir=` nests the repo filename underneath it — `local_dir` must be the dir the filename nests to, never the file's parent, or path-like filenames double-nest and callers find nothing. `.cache/huggingface/` inside the destination is the hub's resumable bookkeeping and must be left alone. Engines whose third-party loader takes a repo id (NeuTTS, Kokoro-torch, pocket-tts) cannot be forced to a local dir; their `_is_model_cached` checks the app folder and the library's own cache use is documented as library-managed.
+UPDATED: 2026-11-16
 
 ## Model storage: app folder only
 
@@ -16,11 +16,10 @@ HuggingFace" and "read a model". Nothing else in the app reads the HF cache.
 | Helper | Used by | Effect |
 |---|---|---|
 | `is_model_installed(repo, file)` | every `_is_model_cached()` | app-folder existence check |
-| `install_model_file(repo, file)` | install branches, on-demand loads | download → copy to `data/models/<slug>/` → **clear cache entry** |
-| `install_model_file_to(repo, file, dest)` | whisper / faster-whisper / moonshine | same, but to a backend-specific layout |
-| `install_snapshot(repo)` | whole-repo engines (stable-audio, generic) | snapshot copy → clear repo cache |
+| `install_model_file(repo, file)` | install branches, on-demand loads | downloads straight into `data/models/<slug>/` via `hf_hub_download(local_dir=<slug dir>)` — `local_dir` is the nest root, so path-like filenames (`speaker_embeddings/v2/*.npy`, `Stable-Audio-3-Small-SFX-GGUF/*.gguf`) land at `_app_model_path(repo, file)` exactly (fixed 2026-11-16; passing the file's parent dir double-nested them) |
+| `install_model_file_to(repo, file, dest)` | whisper / faster-whisper / moonshine | `local_dir` = `dest` with the filename's parts stripped; `dest` must end with the repo filename or it raises `ValueError` |
+| `install_snapshot(repo)` | whole-repo engines (stable-audio, generic) | `snapshot_download(local_dir=data/models/<slug>/)` — no copy step, no HF cache content |
 | `resolve_model_file(repo, file)` | runtime loaders | app folder first, install if missing |
-| `clear_hf_repo_cache(repo)` | after an engine downloads into its own dir | wipes the repo dir incl. blobs |
 | `is_snapshot_installed(repo)` | whole-repo status checks | any weight file under the slug dir |
 
 Two pre-existing bugs this removed: `force_offline_if_cached=True` was

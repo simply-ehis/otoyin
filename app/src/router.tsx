@@ -257,6 +257,11 @@ const MCPPage = lazyRetry(() =>
 		default: m.MCPPage,
 	})),
 );
+const CodingAgentsPage = lazyRetry(() =>
+	import("@/features/settings/CodingAgentsPage").then((m) => ({
+		default: m.CodingAgentsPage,
+	})),
+);
 const WorkspaceSettingsPage = lazyRetry(() =>
 	import("@/features/settings/WorkspacePage").then((m) => ({
 		default: m.WorkspacePage,
@@ -480,6 +485,12 @@ const settingsMCPRoute = createRoute({
 	getParentRoute: () => settingsRoute,
 	path: "/mcp",
 	component: MCPPage,
+});
+
+const settingsCodingAgentsRoute = createRoute({
+	getParentRoute: () => settingsRoute,
+	path: "/coding-agents",
+	component: CodingAgentsPage,
 });
 
 const settingsGpuRoute = createRoute({
@@ -1126,6 +1137,7 @@ const routeTree = rootRoute.addChildren([
 		settingsGenerationRoute,
 		settingsCapturesRoute,
 		settingsMCPRoute,
+		settingsCodingAgentsRoute,
 		settingsGpuRoute,
 		settingsSystemRoute,
 		settingsLogsRoute,

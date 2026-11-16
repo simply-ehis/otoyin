@@ -28,12 +28,17 @@ def _make_session_factory():
     return sessionmaker(bind=eng)
 
 
-def test_not_downloaded_when_no_manifest():
-    """No DB / no manifest row -> not_downloaded (safe direction)."""
-    from backend.services.model_registry import local_status_for
+def test_not_downloaded_when_no_manifest(monkeypatch):
+    """No manifest row -> not_downloaded (safe direction)."""
+    import backend.services.model_registry as mr
 
-    assert local_status_for("kokoro-onnx") == "not_downloaded"
-    assert local_status_for("whisper-large-v3-turbo") == "not_downloaded"
+    # Pin the registry to a fresh, EMPTY temp-file DB instead of ambient
+    # state - an earlier test that wires SessionLocal can otherwise leak in
+    # a kokoro-onnx manifest row (this test passes alone, fails in-suite).
+    monkeypatch.setattr(mr, "SessionLocal", _make_session_factory())
+
+    assert mr.local_status_for("kokoro-onnx") == "not_downloaded"
+    assert mr.local_status_for("whisper-large-v3-turbo") == "not_downloaded"
 
 
 def test_cached_when_manifest_row_exists(monkeypatch):

@@ -19,6 +19,13 @@ class Conversation(Base):
     title = Column(String, nullable=True)
     model_id = Column(String, nullable=True)
     provider_id = Column(String, nullable=True)
+    # Coding-agent sessions (agent_type="coding_agent"): provider_id holds the
+    # agent id (opencode/codex/…); these fields hold its ACP lifecycle state.
+    acp_session_id = Column(String, nullable=True)
+    acp_status = Column(String, nullable=True)  # idle | running | done | error | cancelled
+    acp_cwd = Column(String, nullable=True)
+    # JSON argv, set only for user-defined ACP agents so sessions survive restart.
+    acp_command = Column(Text, nullable=True)
     system_prompt = Column(Text, nullable=True)
     is_favorited = Column(Boolean, default=False)
     message_count = Column(Integer, default=0)

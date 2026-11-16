@@ -20,6 +20,15 @@ from backend.database import Base, get_db
 from backend.routes import acquire as acquire_router, projects as projects_router
 
 
+@pytest.fixture(autouse=True)
+def _restore_data_dir():
+    # set_data_dir swaps the process-global data dir; restore it so the rest of
+    # the suite (e.g. sidecar lookup under data/bin/) does not see a tmp root.
+    original = config.get_data_dir()
+    yield
+    config.set_data_dir(original)
+
+
 def _client(tmp_path: Path) -> TestClient:
     config.set_data_dir(tmp_path / "data")
     fd, db_path = tempfile.mkstemp(suffix=".db")

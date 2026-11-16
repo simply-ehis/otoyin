@@ -476,6 +476,16 @@ def build_server(cuda=False):
     else:
         logger.warning("Plugin schema %s missing — plugins-marketplace route will be skipped", _plugin_schema_src)
 
+    # ACP registry snapshot (backend/services/acp_registry.json). Detection
+    # resolves it with Path(__file__).with_name(...), so bundle it beside the
+    # frozen module or the Settings page shows an empty agent catalog.
+    _acp_registry_src = backend_dir / "services" / "acp_registry.json"
+    if _acp_registry_src.is_file():
+        args.extend(["--add-data", f"{_acp_registry_src}{os.pathsep}backend/services"])
+        logger.info("Bundling ACP registry snapshot from %s", _acp_registry_src)
+    else:
+        logger.warning("ACP registry snapshot missing - coding-agent detection will be empty")
+
     # YAMNet audio-event classifier (bundled model, ~16 MB). The backend
     # resolves <bundle>/yamnet/ when frozen, <models>/yamnet/ in dev.
     # Fetch once from HF when absent everywhere — weights are never committed

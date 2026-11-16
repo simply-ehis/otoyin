@@ -1,16 +1,16 @@
 # About: Settings Tab
 
-> **PURPOSE:** Reference for the Settings tab — 14 sub-tabs for app/server configuration.
+> **PURPOSE:** Reference for the Settings tab — settings sub-tabs for app/server configuration.
 > **OWNS:** Settings navigation, all sub-tab pages
 > **READ-WHEN:** Working on settings, configuration, API keys, MCP setup
 > **KEY-FILES:** `ServerTab.tsx`, `GeneralPage.tsx`, `ApiKeysPage.tsx`, `SettingsLayout.tsx`
-> **INVARIANTS:** 14 settings sub-tabs; some are Tauri-only (GPU, Logs)
+> **INVARIANTS:** settings sub-tabs; some are Tauri-only (GPU, Logs)
 > **GOTCHAS:** GPU and Logs tabs only visible in Tauri desktop mode
 > **UPDATED:** 2026-08-07
 
 ## Overview
 
-Settings has 14 sub-tabs for configuring the application and backend server.
+Settings has the sub-tabs listed below for configuring the application and backend server.
 
 ## Settings Navigation
 
@@ -20,6 +20,7 @@ Settings has 14 sub-tabs for configuring the application and backend server.
 | Generation | `/settings/generation` | Default TTS/music/STT/LLM engines, generation params |
 | Captures | `/settings/captures` | STT configuration, capture settings |
 | MCP | `/settings/mcp` | MCP server configuration |
+| Coding Agents | `/settings/coding-agents` | Connect local ACP coding agents, run hidden sessions, browse history (see `93-acp-coding-agents.md`) |
 | GPU | `/settings/gpu` | GPU/device selection (Tauri only) |
 | Logs | `/settings/logs` | Server logs viewer (Tauri only) |
 | Shortcuts | `/settings/shortcuts` | Keyboard shortcut configuration |
@@ -66,4 +67,4 @@ Settings has 14 sub-tabs for configuring the application and backend server.
 - **MCP Tools:** `21labs.cuda_status`, `21labs.cuda_download`, `21labs.telemetry_status`, `21labs.telemetry_toggle`
 - **REST Endpoints:** `GET /settings/captures`, `PUT /settings/captures`, `GET /settings/generation`, `PUT /settings/generation`, `GET /settings/assistant`, `PUT /settings/assistant`, `GET /health`, `GET /backend/cuda-status`, `POST /backend/download-cuda`
 - **Key Backend Files:** `backend/routes/settings.py`, `backend/routes/health.py`, `backend/routes/cuda.py`, `backend/services/settings.py`
-- **Key Frontend Files:** `app/src/features/settings/GeneralPage.tsx`, `app/src/features/settings/GenerationPage.tsx`, `app/src/features/settings/CapturesPage.tsx`, `app/src/features/settings/GpuPage.tsx`, `app/src/features/settings/MCPPage.tsx`, `app/src/features/settings/ApiKeysPage.tsx`
+- **Key Frontend Files:** `app/src/features/settings/GeneralPage.tsx`, `app/src/features/settings/GenerationPage.tsx`, `app/src/features/settings/CapturesPage.tsx`, `app/src/features/settings/GpuPage.tsx`, `app/src/features/settings/MCPPage.tsx`, `app/src/features/settings/CodingAgentsPage.tsx`, `app/src/features/settings/ApiKeysPage.tsx`

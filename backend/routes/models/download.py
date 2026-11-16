@@ -158,6 +158,7 @@ def _discard_partial_download(_hf_repo_id: str, model_name: str) -> None:
 
 
 async def _download_model_files(config, model_name: str, tracker: HFProgressTracker, progress_manager):
+    tqdm_cls = tracker.tqdm_class
     """Fetch the model files for one config (single attempt)."""
     import os
 
@@ -175,7 +176,7 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
             filename = config.download_file
             await loop.run_in_executor(
                 _download_executor,
-                lambda f=filename: install_model_file(repo_id=config.hf_repo_id, filename=f),
+                lambda f=filename: install_model_file(repo_id=config.hf_repo_id, filename=f, tqdm_class=tqdm_cls),
             )
         elif getattr(config, "download_subtree", None):
             # Subtree install (GGUF plus packaged voice states/embeddings).
@@ -184,7 +185,9 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
             subtree = config.download_subtree
             await loop.run_in_executor(
                 _download_executor,
-                lambda s=subtree: install_snapshot(repo_id=config.hf_repo_id, allow_patterns=[f"{s}/**"]),
+                lambda s=subtree: install_snapshot(
+                    repo_id=config.hf_repo_id, allow_patterns=[f"{s}/**"], tqdm_class=tqdm_cls
+                ),
             )
         elif getattr(config, "download_patterns", None):
             # Surgical install (named files; e.g. ZONOS3 backbone + speaker encoder).
@@ -193,7 +196,7 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
             patterns = list(config.download_patterns)
             await loop.run_in_executor(
                 _download_executor,
-                lambda p=patterns: install_snapshot(repo_id=config.hf_repo_id, allow_patterns=p),
+                lambda p=patterns: install_snapshot(repo_id=config.hf_repo_id, allow_patterns=p, tqdm_class=tqdm_cls),
             )
         elif config.engine == "whisper":
             from ... import config as cfg_mod
@@ -241,6 +244,7 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
                 lambda: install_model_file(
                     repo_id=config.hf_repo_id,
                     filename=filename,
+                    tqdm_class=tqdm_cls,
                 ),
             )
         elif config.engine == "sa3_sfx":
@@ -252,6 +256,7 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
                 lambda: install_model_file(
                     repo_id=config.hf_repo_id,
                     filename="Stable-Audio-3-Small-SFX-GGUF/stable-audio-3-small-sfx-q8_0.gguf",
+                    tqdm_class=tqdm_cls,
                 ),
             )
         elif config.engine == "bark_small":
@@ -267,7 +272,7 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
 
             await loop.run_in_executor(
                 _download_executor,
-                lambda: install_model_file(repo_id=config.hf_repo_id, filename=backbone),
+                lambda: install_model_file(repo_id=config.hf_repo_id, filename=backbone, tqdm_class=tqdm_cls),
             )
             for voice_id in config.preset_voices:
                 await loop.run_in_executor(_download_executor, lambda vid=voice_id: bark_backend.pack_voice_npz(vid))
@@ -279,7 +284,7 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
 
             await loop.run_in_executor(
                 _download_executor,
-                lambda: install_model_file(repo_id=config.hf_repo_id, filename=HEARTMULA_GGUF),
+                lambda: install_model_file(repo_id=config.hf_repo_id, filename=HEARTMULA_GGUF, tqdm_class=tqdm_cls),
             )
         elif config.engine == "demucs_onnx":
             # Demucs HTDemucs ONNX: single htdemucs.onnx graph powers
@@ -295,6 +300,7 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
                 lambda: install_model_file(
                     repo_id=ONNX_REPO,
                     filename=ONNX_FILE,
+                    tqdm_class=tqdm_cls,
                 ),
             )
         elif config.engine == "soundfont":
@@ -380,7 +386,7 @@ async def _download_model_files(config, model_name: str, tracker: HFProgressTrac
 
             await loop.run_in_executor(
                 _download_executor,
-                lambda: install_snapshot(repo_id=config.hf_repo_id),
+                lambda: install_snapshot(repo_id=config.hf_repo_id, tqdm_class=tqdm_cls),
             )
 
 

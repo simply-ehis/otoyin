@@ -23,7 +23,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.hf_offline_patch import force_offline_if_cached
 
-_has_tf_offline = hasattr(__import__("transformers.utils.hub", fromlist=["_is_offline_mode"]), "_is_offline_mode")
+try:
+    _tf_hub_module = __import__("transformers.utils.hub", fromlist=["_is_offline_mode"])
+except ImportError:
+    # transformers is optional (removed with torch); the HF-only tests still run.
+    _tf_hub_module = None
+
+_has_tf_offline = _tf_hub_module is not None and hasattr(_tf_hub_module, "_is_offline_mode")
 
 
 def _hf_const():

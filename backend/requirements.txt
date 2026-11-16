@@ -18,9 +18,9 @@ aiosqlite>=0.20.0
 # huggingface_hub - install/download paths need it (and the model downloader is the core of the app).
 huggingface_hub>=1.0.0
 
-# Model file formats - INT8 post-download quantization (routes/models/download.py)
-# and frozen-build metadata for safetensors weights. No torch needed for either.
-onnx>=1.14.0
+# Model file formats - safetensors frozen-build metadata and weight loading.
+# (The `onnx` IR package is gone with the removed post-download quantization;
+#  the ONNX *runtime* stays for every torch-free ONNX backend.)
 safetensors>=0.4.0
 
 # ONNX Runtime - shared inference runtime for every torch-free ONNX backend.
