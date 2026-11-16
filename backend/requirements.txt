@@ -76,7 +76,7 @@ reportlab>=4.0.0
 #  transcript when they're missing.)
 
 # Utilities
-python-multipart>=0.0.6
+python-multipart>=0.0.32
 Pillow>=10.0.0
 
 # Plugin manifest validation
