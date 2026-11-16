@@ -77,7 +77,7 @@ reportlab>=4.0.0
 
 # Utilities
 python-multipart>=0.0.6
-Pillow>=10.0.0
+Pillow>=12.3.0
 
 # Plugin manifest validation
 jsonschema>=4.0.0
